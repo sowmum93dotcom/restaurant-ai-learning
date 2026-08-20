@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bella Vista Bistro | Restaurant AI Marketing</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <header class="hero">
+    <h1 class="restaurant-name">Bella Vista Bistro</h1>
+    <p class="cuisine-type">Italian Cuisine</p>
+    <div class="details">
+      <p class="location">📍 123 Main Street, Springfield</p>
+      <p class="website">🌐 <a href="https://www.bellavistabistro.example.com" target="_blank" rel="noopener">www.bellavistabistro.example.com</a></p>
+    </div>
+  </header>
+
+  <main>
+    <section class="assistant-section">
+      <h2>AI Marketing Assistant</h2>
+      <p class="assistant-intro">
+        Describe what you'd like to promote (a new dish, a weekend special, a holiday event, etc.)
+        and generate a starter marketing campaign.
+      </p>
+
+      <label for="promo-input" class="visually-hidden">What would you like to promote?</label>
+      <textarea
+        id="promo-input"
+        rows="5"
+        placeholder="Example: We're launching a new truffle pasta special every Friday night..."
+      ></textarea>
+
+      <button id="generate-btn" type="button">Generate Marketing Campaign</button>
+
+      <div id="results" class="results-area" hidden>
+        <h3>Your Marketing Campaign</h3>
+        <div id="results-content"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Bella Vista Bistro — Built with the Restaurant AI Marketing Assistant (learning project)</p>
+  </footer>
+
+  <script src="js/script.js"></script>
+</body>
+</html>
