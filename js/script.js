@@ -30,7 +30,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     try {
 
-      const response = await fetch("/api/generate", {
+      const response = await fetch("/api/api/generate", {
 
         method: "POST",
 
