@@ -1,6 +1,4 @@
-export default async function handler(req, res) {
-
-  // Allow requests from the website
+ export default async function handler(req, res) {
 
   res.setHeader("Access-Control-Allow-Origin", "*");
 
@@ -8,15 +6,11 @@ export default async function handler(req, res) {
 
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  // Browser preflight request
-
   if (req.method === "OPTIONS") {
 
     return res.status(200).end();
 
   }
-
-  // Only allow POST requests
 
   if (req.method !== "POST") {
 
@@ -32,8 +26,6 @@ export default async function handler(req, res) {
 
     const { promoText } = req.body || {};
 
-    // Make sure the restaurant entered something
-
     if (!promoText || typeof promoText !== "string") {
 
       return res.status(400).json({
@@ -43,8 +35,6 @@ export default async function handler(req, res) {
       });
 
     }
-
-    // The API key stays securely on the server
 
     const apiKey = process.env.OPENAI_API_KEY;
 
@@ -68,7 +58,7 @@ Restaurant request:
 
 ${promoText}
 
-Return:
+Return the campaign in this exact structure:
 
 SOCIAL MEDIA POST:
 
@@ -126,9 +116,35 @@ Do not invent prices, discounts, opening hours, addresses, or facts that the res
 
     }
 
+    const campaign =
+
+      data.output_text ||
+
+      data.output
+
+        ?.flatMap((item) => item.content || [])
+
+        ?.map((item) => item.text || "")
+
+        ?.join("")
+
+        ?.trim();
+
+    if (!campaign) {
+
+      console.error("No text returned from OpenAI:", data);
+
+      return res.status(500).json({
+
+        error: "The AI service returned no campaign text.",
+
+      });
+
+    }
+
     return res.status(200).json({
 
-      campaign: data.output_text,
+      campaign,
 
     });
 
@@ -143,3 +159,5 @@ Do not invent prices, discounts, opening hours, addresses, or facts that the res
     });
 
   }
+
+}
