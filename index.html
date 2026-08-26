@@ -31,8 +31,22 @@
         rows="5"
         placeholder="Example: We're launching a new truffle pasta special every Friday night..."
       ></textarea>
+      
+      <label for="campaign-type">What would you like to create?</label>
 
-      <button id="generate-btn" type="button">Generate Marketing Campaign</button>
+<select id="campaign-type">
+
+  <option value="full">Full Marketing Campaign</option>
+
+  <option value="social">Social Media Post</option>
+
+  <option value="email">Email Campaign</option>
+
+</select>
+      
+      
+
+   <button id="generate-btn" type="button">Generate Marketing Campaign</button>
 
       <div id="results" class="results-area" hidden>
         <h3>Your Marketing Campaign</h3>
