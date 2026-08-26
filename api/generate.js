@@ -24,7 +24,7 @@ export default async function handler(req, res) {
 
   try {
 
-    const { promoText } = req.body || {};
+    const { promoText, campaignType = "full" } = req.body || {};
 
     if (!promoText || typeof promoText !== "string") {
 
@@ -52,21 +52,30 @@ export default async function handler(req, res) {
 
 You are a professional restaurant marketing assistant.
 
-Create a concise marketing campaign from the restaurant's request below.
-
+Create the type of restaurant marketing content requested below.
 Restaurant request:
 
 ${promoText}
 
-Return the campaign in this exact structure:
+Campaign type requested: ${campaignType}
+If the campaign type is "social", return only the SOCIAL MEDIA POST.
+
+
+
+If the campaign type is "email", return only the EMAIL CAMPAIGN.
+
+If the campaign type is "full", return the complete marketing campaign.
+
+
+Follow the relevant structure below based on the campaign type requested.
 
 SOCIAL MEDIA POST:
 
 Write an engaging social media post.
 
-EMAIL SUBJECT:
+EMAIL CAMPAIGN:
 
-Write one compelling email subject line.
+Write one compelling email subject line followed by a concise promotional email body.
 
 SHORT AD COPY:
 
