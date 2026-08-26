@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const generateBtn = document.getElementById("generate-btn");
 
   const promoInput = document.getElementById("promo-input");
+  const campaignType = document.getElementById("campaign-type");
 
   const resultsArea = document.getElementById("results");
 
@@ -39,10 +40,12 @@ document.addEventListener("DOMContentLoaded", function () {
           "Content-Type": "application/json"
 
         },
+          
 
         body: JSON.stringify({
 
-          promoText: promoText
+          promoText: promoText,
+          campaignType: campaignType.value
 
         })
 
