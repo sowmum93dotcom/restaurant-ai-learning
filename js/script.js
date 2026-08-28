@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const resultsArea = document.getElementById("results");
 
   const resultsContent = document.getElementById("results-content");
+  const copyBtn = document.getElementById("copy-btn");
 
   generateBtn.addEventListener("click", async function () {
 
