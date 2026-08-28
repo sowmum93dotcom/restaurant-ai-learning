@@ -151,6 +151,11 @@ textarea:focus {
     cursor: pointer;
 
 }
+#copy-btn:hover {
+
+    background-color: #163a5c;
+
+}
 
 /* Footer */
 footer {
