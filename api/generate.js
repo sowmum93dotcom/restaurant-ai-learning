@@ -51,6 +51,19 @@ export default async function handler(req, res) {
     const prompt = `
 
 You are a professional restaurant marketing assistant.
+You are creating marketing content for Bella Vista Bistro.
+
+Restaurant profile:
+
+Name: Bella Vista Bistro
+
+Cuisine: Global Cuisine
+
+Location: London, United Kingdom
+
+Use the restaurant name naturally when appropriate.
+
+Do not invent information about the restaurant that has not been provided
 
 Create the type of restaurant marketing content requested below.
 Restaurant request:
