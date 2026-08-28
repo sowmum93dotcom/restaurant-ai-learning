@@ -89,4 +89,33 @@ document.addEventListener("DOMContentLoaded", function () {
 
   });
 
+copyBtn.addEventListener("click", async function () {
+
+  const campaignText = resultsContent.textContent.trim();
+
+  if (!campaignText) {
+
+    return;
+
+  }
+
+  try {
+
+    await navigator.clipboard.writeText(campaignText);
+
+    copyBtn.textContent = "Copied!";
+
+    setTimeout(function () {
+
+      copyBtn.textContent = "Copy Campaign";
+
+    }, 1500);
+
+  } catch (error) {
+
+    console.error("Could not copy campaign:", error);
+
+  }
+
+});
 });
