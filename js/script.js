@@ -61,6 +61,7 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       resultsContent.textContent = data.campaign;
+      copyBtn.hidden = false;
 
       resultsArea.scrollIntoView({
 
