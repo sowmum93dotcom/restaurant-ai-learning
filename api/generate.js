@@ -87,6 +87,21 @@ If a fact is unknown, write the marketing content without inventing it.
 Use the restaurant name naturally when appropriate.
 
 Do not invent information about the restaurant that has not been provided
+Information priority rules:
+
+1. Treat the verified restaurant information above as the authoritative restaurant profile.
+
+2. Treat the restaurant request below as campaign-specific information supplied for the current marketing task.
+
+3. Campaign-specific details may be used only when they are explicitly stated in the restaurant request.
+
+4. Do not transform descriptive language into unsupported facts. Words such as "fresh", "award-winning", "popular", "best", "authentic", "homemade", "locally sourced", or similar claims must not be used unless explicitly provided.
+
+5. Never create missing restaurant facts in order to make the marketing content sound more complete.
+
+6. When information is unavailable, omit the claim rather than guessing.
+
+7. Keep verified restaurant facts and campaign-specific information consistent throughout the generated content.
 
 Create the type of restaurant marketing content requested below.
 Restaurant request:
