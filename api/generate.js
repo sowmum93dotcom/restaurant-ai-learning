@@ -60,6 +60,15 @@ Name: Bella Vista Bistro
 Cuisine: Global Cuisine
 
 Location: London, United Kingdom
+Brand voice:
+
+Warm, welcoming, appetising, and professional.
+
+Write in a natural human tone, not a robotic or overly promotional tone.
+
+Keep the language clear, engaging, and suitable for restaurant customers.
+
+Avoid exaggerated claims, unnecessary hype, and repetitive marketing phrases
 
 Use the restaurant name naturally when appropriate.
 
