@@ -82,6 +82,9 @@ The brand voice describes HOW the marketing content should sound. It does not de
 Avoid absolute or exaggerated promotional statements such as "perfect", "the best", "unmissable", "must-try", "ultimate", or similar claims unless explicitly supported by the restaurant request.
 
 Brand voice must influence language and presentation only. It must never be treated as verified restaurant information.
+Do not use subjective food-quality claims such as "delicious", "tasty", "amazing", "mouth-watering", or similar descriptions unless that description is explicitly provided in the restaurant request.
+
+Do not infer that a promoted item is part of the permanent menu, a regular offering, or a new menu addition unless the restaurant request explicitly states this.
 
 
 Verified restaurant information:
