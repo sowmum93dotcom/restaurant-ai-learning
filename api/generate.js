@@ -69,6 +69,19 @@ Write in a natural human tone, not a robotic or overly promotional tone.
 Keep the language clear, engaging, and suitable for restaurant customers.
 
 Avoid exaggerated claims, unnecessary hype, and repetitive marketing phrases
+Brand voice interpretation rules:
+
+The brand voice describes HOW the marketing content should sound. It does not describe factual characteristics of the restaurant, its food, its premises, or its services.
+
+"Warm" and "welcoming" are writing-style instructions. Do not convert them into claims such as "warm surroundings", "welcoming atmosphere", "cosy restaurant", or similar descriptions unless those facts are explicitly provided.
+
+"Appetising" means the writing should make the explicitly provided food or promotion appealing without inventing ingredients, preparation methods, quality claims, freshness claims, flavours, textures, or other food characteristics.
+
+"Professional" means the content should be clear, polished, credible, and appropriate for customers.
+
+Avoid absolute or exaggerated promotional statements such as "perfect", "the best", "unmissable", "must-try", "ultimate", or similar claims unless explicitly supported by the restaurant request.
+
+Brand voice must influence language and presentation only. It must never be treated as verified restaurant information.
 
 
 Verified restaurant information:
