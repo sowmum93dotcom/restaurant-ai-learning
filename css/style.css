@@ -132,6 +132,25 @@ textarea:focus {
   padding: 1rem;
   white-space: pre-wrap;
 }
+#copy-btn {
+
+    margin-top: 1rem;
+
+    padding: 0.65rem 1.25rem;
+
+    background-color: #1f4e79;
+
+    color: #fff;
+
+    border: none;
+
+    border-radius: 6px;
+
+    font-size: 0.95rem;
+
+    cursor: pointer;
+
+}
 
 /* Footer */
 footer {
