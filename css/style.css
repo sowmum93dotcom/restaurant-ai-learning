@@ -23,7 +23,7 @@ body {
 
 /* Header / hero section */
 .hero {
-  background-color: #1f4e79;
+ background: linear-gradient(135deg, #020817 0%, #071b3d 55%, #0b2f73 100%);
   color: #fff;
   text-align: center;
   padding: 3rem 1.5rem;
