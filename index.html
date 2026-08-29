@@ -3,65 +3,71 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bella Vista Bistro | Restaurant AI Marketing</title>
+  <title>DEMEOS Marketing Agent</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
 
   <header class="hero">
-    <h1 class="restaurant-name">  DEMEOS Bistro</h1>
-    <p class="cuisine-type">Global Cuisine</p>
+    <p class="agent-label">DEMEOS</p>
+
+    <h1 class="restaurant-name">Marketing Agent</h1>
+
+    <p class="cuisine-type">Business Marketing Intelligence</p>
+
     <div class="details">
-      <p class="location">📍 London, United Kingdom</p>
-      <p class="website">🌐 <a href="https://www.bellavistabistro.example.com" target="_blank" rel="noopener">www.bellavistabistro.example.com</a></p>
+      <p>Starting with restaurants</p>
     </div>
   </header>
 
   <main>
     <section class="assistant-section">
-      <h2>AI Marketing Assistant</h2>
+      <h2>What would you like DEMEOS to help you achieve?</h2>
+
       <p class="assistant-intro">
-        Describe what you'd like to promote (a new dish, a weekend special, a holiday event, etc.)
-        and generate a starter marketing campaign.
+        Tell DEMEOS what is happening in your business and what you would like to promote.
       </p>
 
-      <label for="promo-input" class="visually-hidden">What would you like to promote?</label>
+      <label for="promo-input" class="visually-hidden">
+        Tell DEMEOS what you would like to promote
+      </label>
+
       <textarea
         id="promo-input"
         rows="5"
-        placeholder="Example: We're launching a new truffle pasta special every Friday night..."
+        placeholder="Example: We are introducing a new chicken pasta this weekend and want more local customers to know about it."
       ></textarea>
-      
-      <label for="campaign-type">What would you like to create?</label>
 
-<select id="campaign-type">
+      <label for="campaign-type">
+        What would you like DEMEOS to create?
+      </label>
 
-  <option value="full">Full Marketing Campaign</option>
+      <select id="campaign-type">
+        <option value="full">Full Marketing Campaign</option>
+        <option value="social">Social Media Post</option>
+        <option value="email">Email Campaign</option>
+      </select>
 
-  <option value="social">Social Media Post</option>
-
-  <option value="email">Email Campaign</option>
-
-</select>
-      
-      
-
-   <button id="generate-btn" type="button">Generate Marketing Campaign</button>
+      <button id="generate-btn" type="button">
+        Create with DEMEOS
+      </button>
 
       <div id="results" class="results-area" hidden>
-        <h3>Your Marketing Campaign</h3>
+        <h3>Your DEMEOS Marketing Campaign</h3>
+
         <div id="results-content"></div>
+
         <button id="copy-btn" type="button" hidden>
-
-    Copy Campaign
-
-</button>
+          Copy Campaign
+        </button>
       </div>
     </section>
   </main>
 
   <footer>
-    <p>&copy; 2026 Bella Vista Bistro — Built with the Restaurant AI Marketing Assistant (learning project)</p>
+    <p>
+      &copy; 2026 DEMEOS — One System. Real Value. Shared Future.
+    </p>
   </footer>
 
   <script src="js/script.js"></script>
