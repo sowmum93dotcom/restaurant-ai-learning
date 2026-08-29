@@ -28,7 +28,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     resultsArea.hidden = false;
 
-    resultsContent.textContent = "Creating your marketing campaign...";
+    resultsContent.textContent = "DEMEOS is creating your marketing work...";
 
     try {
 
