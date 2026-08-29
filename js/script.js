@@ -23,7 +23,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     generateBtn.disabled = true;
 
-    generateBtn.textContent = "Generating...";
+    generateBtn.textContent = "DEMEOS is working...";
 
     resultsArea.hidden = false;
 
