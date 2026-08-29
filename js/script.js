@@ -83,7 +83,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       generateBtn.disabled = false;
 
-      generateBtn.textContent = "Generate Marketing Campaign";
+      generateBtn.textContent = "Create with DEMEOS";
 
     }
 
