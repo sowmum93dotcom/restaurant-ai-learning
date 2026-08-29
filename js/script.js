@@ -16,8 +16,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (!promoText) {
 
-      alert("Please describe what you'd like to promote first.");
-
+      alert("Please tell DEMEOS what you would like to achieve first.");
       return;
 
     }
