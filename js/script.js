@@ -77,7 +77,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       resultsContent.textContent =
 
-        "Sorry, the AI Marketing Assistant could not generate a campaign right now. Please try again.";
+       "Sorry, the DEMEOS Marketing Agent could not generate the marketing work right now.";
 
     } finally {
 
