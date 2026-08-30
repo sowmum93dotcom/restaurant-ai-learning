@@ -100,7 +100,7 @@ Do not infer that a promoted item is part of the permanent menu, a regular offer
 
 Verified current business information:
 
-Name: Bella Vista Bistro
+Name: ${currentBusinessProfile.name}
 
 Cuisine: Global Cuisine
 
