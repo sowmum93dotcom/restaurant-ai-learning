@@ -100,7 +100,7 @@ Only use current business facts that are explicitly provided in this prompt or i
 
 Do not assume that the restaurant offers reservations, delivery, takeaway, discounts, special offers, specific opening hours, or other services unless they have been explicitly provided.
 
-If a fact is unknown, write the marketing content without inventing it.
+If a current business fact is unknown, create the marketing content without inventing or assuming it.
 Use the restaurant name naturally when appropriate.
 
 Do not invent information about the restaurant that has not been provided
