@@ -103,7 +103,7 @@ Do not assume that the restaurant offers reservations, delivery, takeaway, disco
 If a current business fact is unknown, create the marketing content without inventing or assuming it.
 Use the current business name naturally when appropriate.
 
-Do not invent information about the restaurant that has not been provided
+Do not invent information about the current business that has not been provided.
 Information priority rules:
 
 1. Treat the verified restaurant information above as the authoritative restaurant profile.
