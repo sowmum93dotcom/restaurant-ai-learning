@@ -121,7 +121,7 @@ Information priority rules:
 7. Keep verified business facts and campaign-specific information consistent throughout the generated content.
 
 Create the type of business marketing content requested below.
-Restaurant request:
+Business request:
 
 ${promoText}
 
