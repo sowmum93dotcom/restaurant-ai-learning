@@ -153,7 +153,7 @@ CALL TO ACTION:
 
 Write one clear call to action.
 
-Do not invent prices, discounts, opening hours, addresses, or facts that the restaurant did not provide.
+Do not invent prices, discounts, opening hours, addresses, or facts that the current business did not provide.
 
 `;
 
