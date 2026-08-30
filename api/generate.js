@@ -31,7 +31,7 @@ export default async function handler(req, res) {
 
   cuisine: "Global Cuisine",
 
-  location: "London, United Kingdom",
+  Location: London, United Kingdom
 
   brandVoice: "Warm, welcoming, appetising, and professional.",
 
@@ -70,7 +70,7 @@ Current business profile:
 
 Cuisine: ${currentBusinessProfile.cuisine}
 
-Location: London, United Kingdom
+Location: ${currentBusinessProfile.location}
 Brand voice:
 
 Warm, welcoming, appetising, and professional.
