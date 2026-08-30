@@ -28,6 +28,29 @@ body {
   text-align: center;
   padding: 3rem 1.5rem;
 }
+.demeos-brand {
+
+  display: flex;
+
+  justify-content: center;
+
+  margin-bottom: 1rem;
+
+}
+
+.demeos-logo {
+
+  display: block;
+
+  width: 120px;
+
+  max-width: 32vw;
+
+  height: auto;
+
+  border-radius: 18px;
+
+}
 .agent-label {
 
   font-size: 0.8rem;
