@@ -187,7 +187,7 @@ Do not invent prices, discounts, opening hours, addresses, or facts that the cur
 
       return res.status(500).json({
 
-        error: "The AI service could not generate the campaign.",
+        error: "The DEMEOS Marketing Agent could not generate the marketing work.",
 
       });
 
