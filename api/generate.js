@@ -104,7 +104,7 @@ Name: ${currentBusinessProfile.name}
 
 Cuisine: ${currentBusinessProfile.cuisine}
 
-Location: London, United Kingdom
+Location: ${currentBusinessProfile.location}
 
 Only use current business facts that are explicitly provided in this prompt or in the business request.
 
