@@ -110,7 +110,7 @@ Information priority rules:
 
 2. Treat the business request below as campaign-specific information supplied for the current marketing task.
 
-3. Campaign-specific details may be used only when they are explicitly stated in the restaurant request.
+3. Campaign-specific details may be used only when they are explicitly stated in the business request.
 
 4. Do not transform descriptive language into unsupported facts. Words such as "fresh", "award-winning", "popular", "best", "authentic", "homemade", "locally sourced", or similar claims must not be used unless explicitly provided.
 
