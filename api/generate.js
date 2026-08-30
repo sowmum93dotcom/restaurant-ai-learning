@@ -73,7 +73,7 @@ Cuisine: ${currentBusinessProfile.cuisine}
 Location: ${currentBusinessProfile.location}
 Brand voice:
 
-Warm, welcoming, appetising, and professional.
+${currentBusinessProfile.brandVoice}
 
 Write in a natural human tone, not a robotic or overly promotional tone.
 
