@@ -118,7 +118,7 @@ Information priority rules:
 
 6. When information is unavailable, omit the claim rather than guessing.
 
-7. Keep verified restaurant facts and campaign-specific information consistent throughout the generated content.
+7. Keep verified business facts and campaign-specific information consistent throughout the generated content.
 
 Create the type of restaurant marketing content requested below.
 Restaurant request:
