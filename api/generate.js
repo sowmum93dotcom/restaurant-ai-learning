@@ -106,7 +106,7 @@ Use the current business name naturally when appropriate.
 Do not invent information about the current business that has not been provided.
 Information priority rules:
 
-1. Treat the verified restaurant information above as the authoritative restaurant profile.
+1. Treat the verified current business information above as the authoritative business profile.
 
 2. Treat the restaurant request below as campaign-specific information supplied for the current marketing task.
 
