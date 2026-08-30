@@ -44,8 +44,23 @@ document.addEventListener("DOMContentLoaded", function () {
 
         body: JSON.stringify({
 
-          promoText: promoText,
-          campaignType: campaignType.value
+  promoText: promoText,
+
+  campaignType: campaignType.value,
+
+  businessProfile: {
+
+    name: "Bella Vista Bistro",
+
+    cuisine: "Global Cuisine",
+
+    location: "London, United Kingdom",
+
+    brandVoice: "Warm, welcoming, appetising, and professional."
+
+  }
+
+})
 
         })
 
