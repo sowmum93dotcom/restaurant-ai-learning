@@ -61,9 +61,6 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
 })
-
-        })
-
       });
 
       const data = await response.json();
