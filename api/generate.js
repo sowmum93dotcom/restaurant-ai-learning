@@ -114,7 +114,7 @@ Information priority rules:
 
 4. Do not transform descriptive language into unsupported facts. Words such as "fresh", "award-winning", "popular", "best", "authentic", "homemade", "locally sourced", or similar claims must not be used unless explicitly provided.
 
-5. Never create missing restaurant facts in order to make the marketing content sound more complete.
+5. Never create missing business facts in order to make the marketing content sound more complete.
 
 6. When information is unavailable, omit the claim rather than guessing.
 
