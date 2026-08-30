@@ -129,7 +129,25 @@ textarea:focus {
   outline: none;
   border-color: #7a2e2e;
 }
+#campaign-type {
 
+  padding: 0.55rem 0.75rem;
+
+  margin-top: 0.5rem;
+
+  border: 1px solid #ccc;
+
+  border-radius: 6px;
+
+  background-color: #fff;
+
+  color: #222;
+
+  font-family: inherit;
+
+  font-size: 0.95rem;
+
+}
 #generate-btn {
   display: block;
   margin-top: 1rem;
