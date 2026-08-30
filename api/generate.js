@@ -108,7 +108,7 @@ Information priority rules:
 
 1. Treat the verified current business information above as the authoritative business profile.
 
-2. Treat the restaurant request below as campaign-specific information supplied for the current marketing task.
+2. Treat the business request below as campaign-specific information supplied for the current marketing task.
 
 3. Campaign-specific details may be used only when they are explicitly stated in the restaurant request.
 
