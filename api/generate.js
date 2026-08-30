@@ -96,7 +96,7 @@ Cuisine: Global Cuisine
 
 Location: London, United Kingdom
 
-Only use restaurant facts that are explicitly provided in this prompt or in the customer's request.
+Only use current business facts that are explicitly provided in this prompt or in the business request.
 
 Do not assume that the restaurant offers reservations, delivery, takeaway, discounts, special offers, specific opening hours, or other services unless they have been explicitly provided.
 
