@@ -66,7 +66,7 @@ You are currently supporting the restaurant sector.
 
 Current business profile:
 
-Name: Bella Vista Bistro
+ Name: ${currentBusinessProfile.name}
 
 Cuisine: Global Cuisine
 
