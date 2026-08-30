@@ -24,8 +24,7 @@ export default async function handler(req, res) {
 
   try {
 
-    const { promoText, campaignType = "full" } = req.body || {};
-
+    const { promoText, campaignType = "full", businessProfile } = req.body || {};
     if (!promoText || typeof promoText !== "string") {
 
       return res.status(400).json({
