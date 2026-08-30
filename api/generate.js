@@ -102,7 +102,7 @@ Verified current business information:
 
 Name: ${currentBusinessProfile.name}
 
-Cuisine: Global Cuisine
+Cuisine: ${currentBusinessProfile.cuisine}
 
 Location: London, United Kingdom
 
