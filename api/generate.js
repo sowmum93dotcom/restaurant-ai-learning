@@ -213,7 +213,7 @@ Do not invent prices, discounts, opening hours, addresses, or facts that the cur
 
       return res.status(500).json({
 
-        error: "The AI service returned no campaign text.",
+        error: "The DEMEOS Marketing Agent returned no marketing content.",
 
       });
 
