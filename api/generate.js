@@ -231,7 +231,7 @@ Do not invent prices, discounts, opening hours, addresses, or facts that the cur
 
     return res.status(500).json({
 
-      error: "Something went wrong while generating the campaign.",
+      error: "Something went wrong while generating the marketing work.",
 
     });
 
