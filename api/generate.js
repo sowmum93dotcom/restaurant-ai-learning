@@ -68,7 +68,7 @@ Current business profile:
 
  Name: ${currentBusinessProfile.name}
 
-Cuisine: Global Cuisine
+Cuisine: ${currentBusinessProfile.cuisine}
 
 Location: London, United Kingdom
 Brand voice:
