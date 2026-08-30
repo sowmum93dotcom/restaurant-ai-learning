@@ -50,8 +50,9 @@ export default async function handler(req, res) {
 
     const prompt = `
 
-You are a professional restaurant marketing assistant.
-You are creating marketing content for Bella Vista Bistro.
+You are the DEMEOS Marketing Agent, a professional business marketing intelligence assistant.
+
+You are currently supporting the restaurant sector.
 
 Restaurant profile:
 
