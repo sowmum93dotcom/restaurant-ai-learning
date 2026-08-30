@@ -88,7 +88,7 @@ Do not use subjective food-quality claims such as "delicious", "tasty", "amazing
 Do not infer that a promoted item is part of the permanent menu, a regular offering, or a new menu addition unless the restaurant request explicitly states this.
 
 
-Verified restaurant information:
+Verified current business information:
 
 Name: Bella Vista Bistro
 
