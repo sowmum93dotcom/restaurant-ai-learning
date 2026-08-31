@@ -11,10 +11,11 @@ body {
   color: #222;
  background:
 
-  radial-gradient(circle at 50% 0%, rgba(20, 73, 150, 0.18), transparent 38%),
+  linear-gradient(rgba(3, 12, 28, 0.72), rgba(3, 12, 28, 0.82)),
 
-  linear-gradient(180deg, #071426 0%, #0a1930 45%, #07111f 100%);
-  min-height: 100vh;
+  url("../images/demeos-marketing-background.png") center center / cover no-repeat fixed;
+
+min-height: 100vh;
 }
 
 .visually-hidden {
