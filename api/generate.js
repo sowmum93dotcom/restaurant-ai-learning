@@ -109,7 +109,7 @@ Location: ${currentBusinessProfile.location}
 Brand voice: ${currentBusinessProfile.brandVoice}
 Only use current business facts that are explicitly provided in this prompt or in the business request.
 
-Do not assume that the restaurant offers reservations, delivery, takeaway, discounts, special offers, specific opening hours, or other services unless they have been explicitly provided.
+Do not assume that the current business offers reservations, delivery, takeaway, discounts, special offers, specific opening hours, or other services unless they have been explicitly provided.
 
 If a current business fact is unknown, create the marketing content without inventing or assuming it.
 Use the current business name naturally when appropriate.
