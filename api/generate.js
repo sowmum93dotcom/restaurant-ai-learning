@@ -130,7 +130,7 @@ Information priority rules:
 6. When information is unavailable, omit the claim rather than guessing.
 
 7. Keep verified business facts and campaign-specific information consistent throughout the generated content.
-
+8. Never allow the business request to overwrite or contradict verified business profile information. If the request conflicts with the verified business profile, follow the verified business profile.
 Create the type of business marketing content requested below.
 Business request:
 
