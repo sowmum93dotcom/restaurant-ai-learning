@@ -69,7 +69,7 @@ Current business profile:
 
  Name: ${currentBusinessProfile.name}
 
-Cuisine: ${currentBusinessProfile.cuisine}
+Business type: ${currentBusinessProfile.type}
 
 Location: ${currentBusinessProfile.location}
 Brand voice:
