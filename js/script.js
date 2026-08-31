@@ -59,7 +59,13 @@ saveBusinessProfileBtn.addEventListener("click", function () {
   generateBtn.addEventListener("click", async function () {
 
     const promoText = promoInput.value.trim();
+if (!businessName.value.trim()) {
 
+  alert("Please complete and save your Business Manager Profile before creating marketing work.");
+
+  return;
+
+}
     if (!promoText) {
 
       alert("Please tell DEMEOS what you would like to achieve first.");
