@@ -92,7 +92,17 @@ saveBusinessProfileBtn.addEventListener("click", function () {
 
   promoText: promoText,
 
-  campaignType: campaignType.value
+campaignType: campaignType.value,
+
+businessProfile: {
+
+  name: businessName.value.trim(),
+
+  type: businessType.value.trim(),
+
+  location: businessLocation.value.trim(),
+
+  brandVoice: businessBrandVoice.value.trim()
 })
       });
 
