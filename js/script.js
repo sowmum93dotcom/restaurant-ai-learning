@@ -46,20 +46,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   promoText: promoText,
 
-  campaignType: campaignType.value,
-
-  businessProfile: {
-
-    name: "Bella Vista Bistro",
-
-    cuisine: "Global Cuisine",
-
-    location: "London, United Kingdom",
-
-    brandVoice: "Warm, welcoming, appetising, and professional."
-
-  }
-
+  campaignType: campaignType.value
 })
       });
 
