@@ -45,6 +45,13 @@ saveBusinessProfileBtn.addEventListener("click", function () {
 
     brandVoice: businessBrandVoice.value.trim()
   };
+  if (!businessProfile.name || !businessProfile.type || !businessProfile.location || !businessProfile.brandVoice) {
+
+  alert("Please complete all Business Manager Profile fields before saving.");
+
+  return;
+
+}
   localStorage.setItem(
 
     "demeosBusinessProfile",
