@@ -80,7 +80,7 @@ Write in a natural human tone, not a robotic or overly promotional tone.
 
 Keep the language clear, engaging, and suitable for the current business customers.
 
-Avoid exaggerated claims, unnecessary hype, and repetitive marketing phrases
+Avoid exaggerated claims, unnecessary hype, repetitive marketing phrases, and unsupported business claims.
 Brand voice interpretation rules:
 
 The brand voice describes HOW the marketing content should sound. It does not describe factual characteristics of the restaurant, its food, its premises, or its services.
