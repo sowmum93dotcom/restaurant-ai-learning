@@ -9,7 +9,11 @@ body {
   font-family: "Segoe UI", Arial, sans-serif;
   line-height: 1.6;
   color: #222;
-  background-color: #f7f5f2;
+ background:
+
+  radial-gradient(circle at 50% 0%, rgba(20, 73, 150, 0.18), transparent 38%),
+
+  linear-gradient(180deg, #071426 0%, #0a1930 45%, #07111f 100%);
 }
 
 .visually-hidden {
