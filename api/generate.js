@@ -92,7 +92,7 @@ The brand voice describes HOW the marketing content should sound. It does not de
 "Professional" means the content should be clear, polished, credible, and appropriate for customers.
 
 Avoid absolute or exaggerated promotional statements such as "perfect", "the best", "unmissable", "must-try", "ultimate", or similar claims unless explicitly supported by the restaurant request.
-
+Marketing creativity must come from how verified information is presented, not from inventing facts about the business.
 Brand voice must influence language and presentation only. It must never be treated as verified business information.
 Do not use subjective food-quality claims such as "delicious", "tasty", "amazing", "mouth-watering", or similar descriptions unless that description is explicitly provided in the restaurant request.
 
