@@ -107,16 +107,11 @@ if (!localStorage.getItem("demeosBusinessProfile")) {
 
 campaignType: campaignType.value,
 
-businessProfile: {
+businessProfile: JSON.parse(
 
-  name: businessName.value.trim(),
+  localStorage.getItem("demeosBusinessProfile")
 
-  type: businessType.value.trim(),
-
-  location: businessLocation.value.trim(),
-
-  brandVoice: businessBrandVoice.value.trim()
-})
+)
       });
 
       const data = await response.json();
