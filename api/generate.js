@@ -25,15 +25,16 @@ export default async function handler(req, res) {
   try {
 
     const { promoText, campaignType = "full", businessProfile } = req.body || {};
-    const currentBusinessProfile = businessProfile || {
 
-  name: "Bella Vista Bistro",
+  const currentBusinessProfile = businessProfile || {
 
-  cuisine: "Global Cuisine",
+  name: "",
 
-  location: "London, United Kingdom",
+  cuisine: "",
 
-  brandVoice: "Warm, welcoming, appetising, and professional.",
+  location: "",
+
+  brandVoice: "Clear, professional, credible, and appropriate for customers.",
 
 };
     if (!promoText || typeof promoText !== "string") {
