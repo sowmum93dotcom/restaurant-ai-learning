@@ -78,7 +78,7 @@ ${currentBusinessProfile.brandVoice}
 
 Write in a natural human tone, not a robotic or overly promotional tone.
 
-Keep the language clear, engaging, and suitable for restaurant customers.
+Keep the language clear, engaging, and suitable for the current business customers.
 
 Avoid exaggerated claims, unnecessary hype, and repetitive marketing phrases
 Brand voice interpretation rules:
