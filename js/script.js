@@ -18,6 +18,21 @@ const businessLocation = document.getElementById("business-location");
 const businessBrandVoice = document.getElementById("business-brand-voice");
 
 const saveBusinessProfileBtn = document.getElementById("save-business-profile-btn");
+const savedBusinessProfile = localStorage.getItem("demeosBusinessProfile");
+
+if (savedBusinessProfile) {
+
+  const businessProfile = JSON.parse(savedBusinessProfile);
+
+  businessName.value = businessProfile.name || "";
+
+  businessType.value = businessProfile.type || "";
+
+  businessLocation.value = businessProfile.location || "";
+
+  businessBrandVoice.value = businessProfile.brandVoice || "";
+
+}
 saveBusinessProfileBtn.addEventListener("click", function () {
 
   const businessProfile = {
