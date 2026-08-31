@@ -9,7 +9,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
   const resultsContent = document.getElementById("results-content");
   const copyBtn = document.getElementById("copy-btn");
+const businessName = document.getElementById("business-name");
 
+const businessType = document.getElementById("business-type");
+
+const businessLocation = document.getElementById("business-location");
+
+const businessBrandVoice = document.getElementById("business-brand-voice");
+
+const saveBusinessProfileBtn = document.getElementById("save-business-profile-btn");
   generateBtn.addEventListener("click", async function () {
 
     const promoText = promoInput.value.trim();
