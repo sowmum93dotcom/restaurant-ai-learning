@@ -18,6 +18,29 @@ const businessLocation = document.getElementById("business-location");
 const businessBrandVoice = document.getElementById("business-brand-voice");
 
 const saveBusinessProfileBtn = document.getElementById("save-business-profile-btn");
+saveBusinessProfileBtn.addEventListener("click", function () {
+
+  const businessProfile = {
+
+    name: businessName.value.trim(),
+
+    type: businessType.value.trim(),
+
+    location: businessLocation.value.trim(),
+
+    brandVoice: businessBrandVoice.value.trim()
+  };
+  localStorage.setItem(
+
+    "demeosBusinessProfile",
+
+    JSON.stringify(businessProfile)
+
+  );
+
+  alert("Business Profile saved successfully.");
+
+});
   generateBtn.addEventListener("click", async function () {
 
     const promoText = promoInput.value.trim();
