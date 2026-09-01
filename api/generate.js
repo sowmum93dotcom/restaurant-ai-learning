@@ -25,7 +25,7 @@ export default async function handler(req, res) {
   try {
 
     const { promoText, campaignType = "full", businessProfile } = req.body || {};
-
+const targetCustomer = businessProfile?.targetCustomer || "";
   const currentBusinessProfile = businessProfile || {
 
   name: "",
@@ -94,7 +94,7 @@ Location: ${currentBusinessProfile.location}
 Brand voice:
 
 ${currentBusinessProfile.brandVoice}
-
+Target customer: ${targetCustomer}
 Write in a natural human tone, not a robotic or overly promotional tone.
 
 Keep the language clear, engaging, and suitable for the current business customers.
