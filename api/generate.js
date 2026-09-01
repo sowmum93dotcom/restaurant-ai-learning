@@ -30,13 +30,32 @@ export default async function handler(req, res) {
 
   name: "",
 
-  cuisine: "",
+  type: "",
 
   location: "",
 
   brandVoice: "Clear, professional, credible, and appropriate for customers.",
 
 };
+if (
+
+  !currentBusinessProfile.name ||
+
+  !currentBusinessProfile.type ||
+
+  !currentBusinessProfile.location ||
+
+  !currentBusinessProfile.brandVoice
+
+) {
+
+  return res.status(400).json({
+
+    error: "Please complete and save the Business Manager Profile before creating marketing work.",
+
+  });
+
+}
     if (!promoText || typeof promoText !== "string") {
 
       return res.status(400).json({
