@@ -113,7 +113,9 @@ businessProfile: JSON.parse(
   localStorage.getItem("demeosBusinessProfile")
 
 )
-      });
+            })
+
+    });
 
       const data = await response.json();
 
