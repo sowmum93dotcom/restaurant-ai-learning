@@ -126,6 +126,7 @@ Business type: ${currentBusinessProfile.type}
 
 Location: ${currentBusinessProfile.location}
 Brand voice: ${currentBusinessProfile.brandVoice}
+Target customer: ${targetCustomer}
 Only use current business facts that are explicitly provided in this prompt or in the business request.
 
 Do not assume that the current business offers reservations, delivery, takeaway, discounts, special offers, specific opening hours, or other services unless they have been explicitly provided.
