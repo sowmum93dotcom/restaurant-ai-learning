@@ -45,7 +45,9 @@ if (
 
   !currentBusinessProfile.location ||
 
-  !currentBusinessProfile.brandVoice
+  !currentBusinessProfile.brandVoice ||
+
+!targetCustomer
 
 ) {
 
