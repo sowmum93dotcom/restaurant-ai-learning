@@ -26,6 +26,7 @@ export default async function handler(req, res) {
 
     const { promoText, campaignType = "full", businessProfile } = req.body || {};
 const targetCustomer = businessProfile?.targetCustomer || "";
+const primaryGoal = businessProfile?.goal || "";
   const currentBusinessProfile = businessProfile || {
 
   name: "",
