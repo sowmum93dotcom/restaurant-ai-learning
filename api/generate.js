@@ -48,8 +48,8 @@ if (
 
   !currentBusinessProfile.brandVoice ||
 
-!targetCustomer
-
+!targetCustomer ||
+!primaryGoal
 ) {
 
   return res.status(400).json({
