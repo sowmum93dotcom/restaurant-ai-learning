@@ -126,7 +126,7 @@ businessProfile: JSON.parse(
 
       if (!response.ok) {
 
-        throw new Error(data.error || "The AI service could not generate the campaign.");
+        throw new Error(data.error || "DEMEOS could not generate your marketing work.");
 
       }
 
