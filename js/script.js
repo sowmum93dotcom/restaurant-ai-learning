@@ -13,6 +13,7 @@ const businessName = document.getElementById("business-name");
 
 const businessType = document.getElementById("business-type");
 const businessTargetCustomer = document.getElementById("business-target-customer");
+const businessGoal = document.getElementById("business-goal");
 const businessLocation = document.getElementById("business-location");
 
 const businessBrandVoice = document.getElementById("business-brand-voice");
@@ -32,6 +33,7 @@ if (savedBusinessProfile) {
 
   businessBrandVoice.value = businessProfile.brandVoice || "";
 businessTargetCustomer.value = businessProfile.targetCustomer || "";
+businessGoal.value = businessProfile.goal || "";
 }
 saveBusinessProfileBtn.addEventListener("click", function () {
 
@@ -45,10 +47,11 @@ saveBusinessProfileBtn.addEventListener("click", function () {
 
     brandVoice: businessBrandVoice.value.trim(),
 
-targetCustomer: businessTargetCustomer.value.trim()
+targetCustomer: businessTargetCustomer.value.trim(),
+goal: businessGoal.value.trim()
   };
 
-  if (!businessProfile.name || !businessProfile.type || !businessProfile.location || !businessProfile.brandVoice || !businessProfile.targetCustomer) {
+  if (!businessProfile.name || !businessProfile.type || !businessProfile.location || !businessProfile.targetCustomer || !businessProfile.goal) {
 
   alert("Please complete all Business Manager Profile fields before saving.");
 
