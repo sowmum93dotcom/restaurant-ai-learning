@@ -156,6 +156,7 @@ Information priority rules:
 8. Never allow the business request to overwrite or contradict verified business profile information. If the request conflicts with the verified business profile, follow the verified business profile.
 9. The business request must never redefine the business name, business type, location, brand voice, or target customer These identity fields may only come from the verified business profile.
 Create the type of business marketing content requested below.
+Use the Primary marketing goal to guide the strategy, emphasis, and call to action of the marketing content.
 Business request:
 
 ${promoText}
