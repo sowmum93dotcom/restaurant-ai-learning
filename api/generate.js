@@ -172,7 +172,7 @@ If the campaign type is "full", return the complete marketing campaign.
 
 
 Follow the relevant structure below based on the campaign type requested.
-
+Every generated marketing output must clearly support the verified Primary marketing goal while remaining faithful to the verified business profile and the specific business request.
 SOCIAL MEDIA POST:
 
 Write an engaging social media post.
