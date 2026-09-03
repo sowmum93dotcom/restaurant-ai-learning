@@ -208,7 +208,7 @@ Do not invent prices, discounts, opening hours, addresses, or facts that the cur
 
       body: JSON.stringify({
 
-        model: "gpt-5.4",
+        model: "gpt-5.6-luna",
 
         input: prompt,
 
