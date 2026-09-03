@@ -157,6 +157,7 @@ Information priority rules:
 9. The business request must never redefine the business name, business type, location, brand voice, or target customer These identity and strategic fields may only come from the verified business profile.
 Create the type of business marketing content requested below.
 Use the Primary marketing goal as the strategic objective of the marketing work. The message, emphasis, offer framing, and call to action should support that goal without inventing business facts.
+Use the verified Target customer to guide the language, relevance, positioning, and persuasive approach of the marketing work without inventing characteristics that are not provided in the verified business profile.
 Business request:
 
 ${promoText}
