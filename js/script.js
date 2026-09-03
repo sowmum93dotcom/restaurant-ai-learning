@@ -145,10 +145,7 @@ businessProfile: JSON.parse(
 
       console.error(error);
 
-      resultsContent.textContent =
-
-       "Sorry, the DEMEOS Marketing Agent could not generate the marketing work right now.";
-
+      resultsContent.textContent = error.message;
     } finally {
 
       generateBtn.disabled = false;
