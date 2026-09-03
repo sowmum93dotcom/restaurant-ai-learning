@@ -154,7 +154,7 @@ Information priority rules:
 6. When information is unavailable, omit the claim rather than guessing.
 7. Keep verified business facts and campaign-specific information consistent throughout the generated content.
 8. Never allow the business request to overwrite or contradict verified business profile information. If the request conflicts with the verified business profile, follow the verified business profile.
-9. The business request must never redefine the business name, business type, location, brand voice, or target customer These identity and strategic fields may only come from the verified business profile.
+9. The business request must never redefine the business name, business type, location, brand voice, target customer, or Primary marketing goal. These identity and strategic fields may only come from the verified business profile.
 Create the type of business marketing content requested below.
 Use the Primary marketing goal as the strategic objective of the marketing work. The message, emphasis, offer framing, and call to action should support that goal without inventing business facts.
 Use the verified Target customer to guide the language, relevance, positioning, and persuasive approach of the marketing work without inventing characteristics that are not provided in the verified business profile.
