@@ -166,26 +166,28 @@ main {
 
 }
 
-#save-business-profile-btn {
-
-  margin-top: 1.5rem;
-
+.demeos-primary-button {
   padding: 0.9rem 1.4rem;
-
   border: none;
-
   border-radius: 6px;
-
-  background: #0b57e3;
-
-  color: #ffffff;
-
+  background-color: #064cff;
+  color: #fff;
   font-size: 1rem;
-
   font-weight: 600;
-
   cursor: pointer;
+  transition: background-color 0.2s ease;
+}
 
+.demeos-primary-button:hover {
+  background-color: #0036c7;
+}
+
+.demeos-primary-button:active {
+  transform: translateY(1px);
+}
+
+#save-business-profile-btn {
+  margin-top: 1.5rem;
 }
 
 .assistant-section {
@@ -241,22 +243,6 @@ textarea:focus {
 #generate-btn {
   display: block;
   margin-top: 1rem;
-  padding: 0.75rem 1.5rem;
-  background-color: #064cff;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-#generate-btn:hover {
-  background-color: #0036c7;
-}
-
-#generate-btn:active {
-  transform: translateY(1px);
 }
 
 /* Results area */
@@ -336,22 +322,6 @@ textarea:focus {
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
 }
-
-.campaign-history-item button {
-  min-height: 44px;
-  padding: 0.75rem 1.5rem;
-  background-color: #064cff;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  font-size: 1rem;
-  cursor: pointer;
-}
-
-.campaign-history-item button:hover {
-  background-color: #0036c7;
-}
-
 
 /* Footer */
 footer {
