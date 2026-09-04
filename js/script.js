@@ -190,6 +190,9 @@ function saveCampaign(campaignText, promoText, selectedCampaignType, campaignTyp
     JSON.stringify(savedCampaigns.slice(0, maximumSavedCampaigns))
   );
 
+  // Saving is also the state transition to the newly created marketing work.
+  // Keep this here so every save path uses the saved record for the next action.
+  openCampaignId = campaignId;
   renderCampaignHistory();
 
   return campaignId;
@@ -345,7 +348,7 @@ businessProfile: businessProfile
       resultsContent.textContent = data.campaign;
       copyBtn.hidden = false;
 
-      openCampaignId = saveCampaign(
+      saveCampaign(
         data.campaign,
         promoText,
         campaignType.value,
@@ -381,11 +384,11 @@ businessProfile: businessProfile
 reviseBtn.addEventListener("click", async function () {
   const instruction = revisionInstruction.value.trim();
   const savedCampaigns = getCampaignHistory();
-  const originalCampaign = savedCampaigns.find(function (savedCampaign) {
+  const sourceCampaign = savedCampaigns.find(function (savedCampaign) {
     return savedCampaign.id === openCampaignId;
   });
 
-  if (!originalCampaign) {
+  if (!sourceCampaign) {
     alert("Please open a saved campaign before requesting a revision.");
     return;
   }
@@ -402,12 +405,12 @@ reviseBtn.addEventListener("click", async function () {
   }
 
   const businessProfile = JSON.parse(savedProfile);
-  const originalCampaignType = originalCampaign.campaignType;
-  const campaignTypeValue = originalCampaignType === "Social Media Post" ? "social"
-    : originalCampaignType === "Email Campaign" ? "email"
-      : originalCampaignType === "Full Marketing Campaign" ? "full"
-        : originalCampaignType;
-  const campaignTypeLabel = originalCampaign.campaignTypeLabel ||
+  const sourceCampaignType = sourceCampaign.campaignType;
+  const campaignTypeValue = sourceCampaignType === "Social Media Post" ? "social"
+    : sourceCampaignType === "Email Campaign" ? "email"
+      : sourceCampaignType === "Full Marketing Campaign" ? "full"
+        : sourceCampaignType;
+  const campaignTypeLabel = sourceCampaign.campaignTypeLabel ||
     (campaignTypeValue === "social" ? "Social Media Post"
       : campaignTypeValue === "email" ? "Email Campaign" : "Full Marketing Campaign");
 
@@ -419,7 +422,7 @@ reviseBtn.addEventListener("click", async function () {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        existingCampaign: originalCampaign.campaignText,
+        existingCampaign: sourceCampaign.campaignText,
         revisionInstruction: instruction,
         campaignType: campaignTypeValue,
         businessProfile: businessProfile
@@ -442,13 +445,13 @@ reviseBtn.addEventListener("click", async function () {
       throw new Error("DEMEOS returned no revised marketing content.");
     }
 
-    openCampaignId = saveCampaign(
+    saveCampaign(
       data.campaign,
-      originalCampaign.promoText || "",
+      sourceCampaign.promoText || "",
       campaignTypeValue,
       campaignTypeLabel,
       businessProfile,
-      originalCampaign.id
+      sourceCampaign.id
     );
     resultsContent.textContent = data.campaign;
     revisionInstruction.value = "";

@@ -1,5 +1,7 @@
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
 const test = require("node:test");
+const vm = require("node:vm");
 
 const {
   createCampaignContinuity,
@@ -55,4 +57,125 @@ test("a legacy campaign without continuity data opens as an Original", function 
   assert.equal(getCampaignContinuityLabel(legacyCampaign), "Original");
   assert.equal(legacyCampaign.campaignText, "Legacy campaign content");
   assert.equal(legacyCampaign.approvalStatus, "Approved");
+});
+
+test("the application makes each saved revision the source of the next revision", async function () {
+  class FakeElement {
+    constructor() {
+      this.listeners = {};
+      this.options = [{ text: "Social Media Post" }];
+      this.selectedIndex = 0;
+      this.value = "";
+      this.textContent = "";
+      this.hidden = false;
+      this.classList = { toggle() {} };
+    }
+
+    addEventListener(eventName, listener) {
+      this.listeners[eventName] = listener;
+    }
+
+    append() {}
+    appendChild() {}
+    prepend() {}
+    scrollIntoView() {}
+  }
+
+  const elements = new Map();
+  const createdElements = [];
+  const document = {
+    addEventListener(eventName, listener) {
+      if (eventName === "DOMContentLoaded") this.ready = listener;
+    },
+    createElement() {
+      const element = new FakeElement();
+      createdElements.push(element);
+      return element;
+    },
+    getElementById(id) {
+      if (!elements.has(id)) elements.set(id, new FakeElement());
+      return elements.get(id);
+    }
+  };
+  const original = {
+    id: "campaign-original",
+    campaignText: "Original content",
+    campaignType: "social",
+    campaignTypeLabel: "Social Media Post",
+    promoText: "Promotion",
+    approvalStatus: "Approved",
+    originalMarketingWorkId: "campaign-original",
+    revisionNumber: 0
+  };
+  const storage = new Map([
+    ["demeosBusinessProfile", JSON.stringify({ name: "Restaurant" })],
+    ["demeosCampaignHistory", JSON.stringify([original])]
+  ]);
+  const requestBodies = [];
+  const revisionTexts = ["Revision one content", "Revision two content", "Revision three content"];
+  let nextId = 1;
+  const context = {
+    alert() {},
+    console,
+    Date: class extends Date {
+      static now() {
+        return nextId++;
+      }
+    },
+    document,
+    fetch: async function (url, options) {
+      requestBodies.push(JSON.parse(options.body));
+      return {
+        ok: true,
+        status: 200,
+        async text() {
+          return JSON.stringify({ campaign: revisionTexts[requestBodies.length - 1] });
+        }
+      };
+    },
+    localStorage: {
+      getItem(key) {
+        return storage.has(key) ? storage.get(key) : null;
+      },
+      setItem(key, value) {
+        storage.set(key, value);
+      }
+    },
+    Math,
+    setTimeout
+  };
+
+  vm.runInNewContext(fs.readFileSync(require.resolve("../js/script.js"), "utf8"), context);
+  document.ready();
+
+  const revisionInstruction = document.getElementById("revision-instruction");
+  const revise = document.getElementById("revise-btn").listeners.click;
+
+  // Open the original through the real history UI before following the revision path.
+  const originalOpenButton = createdElements.find(function (element) {
+    return element.textContent === "Open" && element.listeners.click;
+  });
+  originalOpenButton.listeners.click();
+
+  for (let index = 0; index < revisionTexts.length; index += 1) {
+    revisionInstruction.value = `Change ${index + 1}`;
+    await revise();
+  }
+
+  const history = JSON.parse(storage.get("demeosCampaignHistory"));
+  assert.deepEqual(
+    Array.from(history, function (campaign) { return campaign.revisionNumber; }),
+    [3, 2, 1, 0]
+  );
+  assert.ok(history.every(function (campaign) {
+    return campaign.originalMarketingWorkId === original.id;
+  }));
+  assert.deepEqual(
+    Array.from(requestBodies, function (body) { return body.existingCampaign; }),
+    [original.campaignText, revisionTexts[0], revisionTexts[1]]
+  );
+  assert.equal(history[3].approvalStatus, "Approved");
+  assert.ok(history.slice(0, 3).every(function (campaign) {
+    return campaign.approvalStatus === "Unapproved";
+  }));
 });
