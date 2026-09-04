@@ -1,4 +1,44 @@
-document.addEventListener("DOMContentLoaded", function () {
+function getCampaignContinuity(campaign) {
+  const revisionNumber = Number.isInteger(campaign && campaign.revisionNumber) && campaign.revisionNumber >= 0
+    ? campaign.revisionNumber
+    : 0;
+
+  return {
+    originalMarketingWorkId: (campaign && campaign.originalMarketingWorkId) || (campaign && campaign.id) || null,
+    revisionNumber: revisionNumber
+  };
+}
+
+function createCampaignContinuity(campaignId, sourceCampaign) {
+  if (!sourceCampaign) {
+    return {
+      originalMarketingWorkId: campaignId,
+      revisionNumber: 0
+    };
+  }
+
+  const sourceContinuity = getCampaignContinuity(sourceCampaign);
+
+  return {
+    originalMarketingWorkId: sourceContinuity.originalMarketingWorkId || campaignId,
+    revisionNumber: sourceContinuity.revisionNumber + 1
+  };
+}
+
+function getCampaignContinuityLabel(campaign) {
+  const revisionNumber = getCampaignContinuity(campaign).revisionNumber;
+  return revisionNumber === 0 ? "Original" : `Revision ${revisionNumber}`;
+}
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = {
+    createCampaignContinuity,
+    getCampaignContinuity,
+    getCampaignContinuityLabel
+  };
+}
+
+if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", function () {
 
   const generateBtn = document.getElementById("generate-btn");
 
@@ -66,6 +106,11 @@ function renderCampaignHistory() {
     details.className = "campaign-history-details";
     details.textContent = `${savedCampaign.campaignTypeLabel || savedCampaign.campaignType || "Campaign"} · ${new Date(savedCampaign.createdAt).toLocaleString()}`;
 
+    const continuityLabel = document.createElement("span");
+    continuityLabel.className = "campaign-history-continuity";
+    continuityLabel.textContent = getCampaignContinuityLabel(savedCampaign);
+    details.prepend(continuityLabel, " · ");
+
     const preview = document.createElement("p");
     preview.className = "campaign-history-preview";
     preview.textContent = savedCampaign.campaignText || "";
@@ -110,6 +155,13 @@ function saveCampaign(campaignText, promoText, selectedCampaignType, campaignTyp
 
   const campaignId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
+  const sourceCampaign = sourceCampaignId
+    ? savedCampaigns.find(function (savedCampaign) {
+      return savedCampaign.id === sourceCampaignId;
+    })
+    : null;
+  const continuity = createCampaignContinuity(campaignId, sourceCampaign);
+
   savedCampaigns.unshift({
     id: campaignId,
     campaignText: campaignText,
@@ -118,7 +170,9 @@ function saveCampaign(campaignText, promoText, selectedCampaignType, campaignTyp
     promoText: promoText,
     businessName: profile.name,
     createdAt: new Date().toISOString(),
-    approvalStatus: "Unapproved"
+    approvalStatus: "Unapproved",
+    originalMarketingWorkId: continuity.originalMarketingWorkId,
+    revisionNumber: continuity.revisionNumber
   });
 
   if (savedCampaigns.length > maximumSavedCampaigns && sourceCampaignId) {
