@@ -439,6 +439,12 @@ textarea:focus {
   font-size: 0.9rem;
 }
 
+.campaign-history-continuity {
+  color: #29466f;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
 .campaign-history-status {
   grid-column: 1;
   color: #7a2e2e;
