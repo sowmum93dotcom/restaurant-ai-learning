@@ -9,10 +9,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
   const resultsContent = document.getElementById("results-content");
   const copyBtn = document.getElementById("copy-btn");
+  const approveBtn = document.getElementById("approve-btn");
+  const campaignApprovalStatus = document.getElementById("campaign-approval-status");
   const campaignHistoryList = document.getElementById("campaign-history-list");
   const campaignHistoryEmpty = document.getElementById("campaign-history-empty");
   const campaignHistoryKey = "demeosCampaignHistory";
   const maximumSavedCampaigns = 20;
+  let openCampaignId = null;
 const businessName = document.getElementById("business-name");
 
 const businessType = document.getElementById("business-type");
@@ -64,6 +67,10 @@ function renderCampaignHistory() {
     preview.className = "campaign-history-preview";
     preview.textContent = savedCampaign.campaignText || "";
 
+    const approvalStatus = document.createElement("p");
+    approvalStatus.className = `campaign-history-status ${savedCampaign.approvalStatus === "Approved" ? "is-approved" : ""}`;
+    approvalStatus.textContent = savedCampaign.approvalStatus === "Approved" ? "Approved" : "Unapproved";
+
     const openButton = document.createElement("button");
     openButton.type = "button";
     openButton.className = "demeos-primary-button";
@@ -77,13 +84,15 @@ function renderCampaignHistory() {
       }
 
       resultsContent.textContent = campaign.campaignText;
+      openCampaignId = campaign.id || null;
+      showApprovalStatus(campaign.approvalStatus);
       resultsArea.hidden = false;
       copyBtn.hidden = false;
       resultsArea.scrollIntoView({ behavior: "smooth", block: "start" });
 
     });
 
-    item.append(heading, details, preview, openButton);
+    item.append(heading, details, approvalStatus, preview, openButton);
     campaignHistoryList.appendChild(item);
 
   });
@@ -94,12 +103,16 @@ function saveCampaign(campaignText, promoText, selectedCampaignType, profile) {
 
   const savedCampaigns = getCampaignHistory();
 
+  const campaignId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
   savedCampaigns.unshift({
+    id: campaignId,
     campaignText: campaignText,
     campaignType: selectedCampaignType,
     promoText: promoText,
     businessName: profile.name,
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    approvalStatus: "Unapproved"
   });
 
   localStorage.setItem(
@@ -108,6 +121,19 @@ function saveCampaign(campaignText, promoText, selectedCampaignType, profile) {
   );
 
   renderCampaignHistory();
+
+  return campaignId;
+
+}
+
+function showApprovalStatus(approvalStatus) {
+
+  const isApproved = approvalStatus === "Approved";
+
+  campaignApprovalStatus.textContent = isApproved ? "Status: Approved" : "Status: Unapproved";
+  campaignApprovalStatus.classList.toggle("is-approved", isApproved);
+  campaignApprovalStatus.hidden = false;
+  approveBtn.hidden = isApproved;
 
 }
 
@@ -187,6 +213,9 @@ if (!localStorage.getItem("demeosBusinessProfile")) {
 
     resultsContent.textContent = "DEMEOS is creating your marketing work...";
     copyBtn.hidden = true;
+    approveBtn.hidden = true;
+    campaignApprovalStatus.hidden = true;
+    openCampaignId = null;
 
     try {
 
@@ -245,12 +274,13 @@ businessProfile: businessProfile
       resultsContent.textContent = data.campaign;
       copyBtn.hidden = false;
 
-      saveCampaign(
+      openCampaignId = saveCampaign(
         data.campaign,
         promoText,
         campaignType.options[campaignType.selectedIndex].text,
         businessProfile
       );
+      showApprovalStatus("Unapproved");
 
       resultsArea.scrollIntoView({
 
@@ -274,6 +304,28 @@ businessProfile: businessProfile
     }
 
   });
+
+approveBtn.addEventListener("click", function () {
+
+  if (!openCampaignId) {
+    return;
+  }
+
+  const savedCampaigns = getCampaignHistory();
+  const campaign = savedCampaigns.find(function (savedCampaign) {
+    return savedCampaign.id === openCampaignId;
+  });
+
+  if (!campaign) {
+    return;
+  }
+
+  campaign.approvalStatus = "Approved";
+  localStorage.setItem(campaignHistoryKey, JSON.stringify(savedCampaigns));
+  showApprovalStatus("Approved");
+  renderCampaignHistory();
+
+});
 
 copyBtn.addEventListener("click", async function () {
 
