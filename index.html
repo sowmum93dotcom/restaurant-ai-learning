@@ -151,31 +151,40 @@
       </button>
 
       <div id="results" class="results-area" hidden>
-        <h3>Your DEMEOS Marketing Campaign</h3>
+        <div class="workspace-heading">
+          <p class="workspace-eyebrow">Generated campaign</p>
+          <h3>Campaign Workspace</h3>
+        </div>
 
-        <div id="results-content"></div>
+        <div class="campaign-result-panel">
+          <h4>Campaign result</h4>
+          <div id="results-content"></div>
+        </div>
 
         <p id="campaign-approval-status" class="campaign-approval-status" hidden></p>
 
-        <div id="campaign-revision-controls" hidden>
+        <div id="campaign-revision-controls" class="campaign-revision-panel" hidden>
           <label for="revision-instruction">What would you like DEMEOS to change?</label>
           <textarea
             id="revision-instruction"
             rows="3"
             placeholder="Example: Make this shorter or make it more family-focused"
           ></textarea>
-          <button id="revise-btn" class="demeos-primary-button" type="button">
-            Revise Campaign
-          </button>
+
+          <div class="campaign-actions" aria-label="Campaign actions">
+            <button id="approve-btn" class="demeos-primary-button" type="button" hidden>
+              Approve Campaign
+            </button>
+
+            <button id="revise-btn" class="demeos-primary-button campaign-revise-button" type="button">
+              Revise Campaign
+            </button>
+
+            <button id="copy-btn" class="demeos-secondary-button" type="button" hidden>
+              Copy Campaign
+            </button>
+          </div>
         </div>
-
-        <button id="approve-btn" class="demeos-primary-button" type="button" hidden>
-          Approve Campaign
-        </button>
-
-        <button id="copy-btn" type="button" hidden>
-          Copy Campaign
-        </button>
       </div>
 
       <section class="campaign-history" aria-labelledby="campaign-history-heading">
