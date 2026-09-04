@@ -303,6 +303,53 @@ textarea:focus {
 
 }
 
+/* Campaign history */
+.campaign-history {
+  margin-top: 1.75rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #eee;
+}
+
+.campaign-history h3 {
+  color: #064cff;
+  margin-bottom: 0.75rem;
+}
+
+#campaign-history-empty {
+  color: #555;
+}
+
+.campaign-history-item {
+  padding: 1rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+.campaign-history-details {
+  color: #555;
+  font-size: 0.9rem;
+}
+
+.campaign-history-preview {
+  margin: 0.5rem 0;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.campaign-history-item button {
+  padding: 0.5rem 1rem;
+  background-color: #064cff;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.campaign-history-item button:hover {
+  background-color: #0036c7;
+}
+
 
 /* Footer */
 footer {

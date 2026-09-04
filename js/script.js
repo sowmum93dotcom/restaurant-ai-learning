@@ -9,6 +9,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
   const resultsContent = document.getElementById("results-content");
   const copyBtn = document.getElementById("copy-btn");
+  const campaignHistoryList = document.getElementById("campaign-history-list");
+  const campaignHistoryEmpty = document.getElementById("campaign-history-empty");
+  const campaignHistoryKey = "demeosCampaignHistory";
+  const maximumSavedCampaigns = 20;
 const businessName = document.getElementById("business-name");
 
 const businessType = document.getElementById("business-type");
@@ -19,6 +23,94 @@ const businessLocation = document.getElementById("business-location");
 const businessBrandVoice = document.getElementById("business-brand-voice");
 
 const saveBusinessProfileBtn = document.getElementById("save-business-profile-btn");
+
+function getCampaignHistory() {
+
+  try {
+
+    const savedCampaigns = JSON.parse(localStorage.getItem(campaignHistoryKey)) || [];
+
+    return Array.isArray(savedCampaigns) ? savedCampaigns : [];
+
+  } catch (error) {
+
+    console.error("Could not read campaign history:", error);
+    return [];
+
+  }
+
+}
+
+function renderCampaignHistory() {
+
+  const savedCampaigns = getCampaignHistory();
+
+  campaignHistoryList.textContent = "";
+  campaignHistoryEmpty.hidden = savedCampaigns.length > 0;
+
+  savedCampaigns.forEach(function (savedCampaign, index) {
+
+    const item = document.createElement("article");
+    item.className = "campaign-history-item";
+
+    const heading = document.createElement("h4");
+    heading.textContent = savedCampaign.businessName || "Business name unavailable";
+
+    const details = document.createElement("p");
+    details.className = "campaign-history-details";
+    details.textContent = `${savedCampaign.campaignType || "Campaign"} · ${new Date(savedCampaign.createdAt).toLocaleString()}`;
+
+    const preview = document.createElement("p");
+    preview.className = "campaign-history-preview";
+    preview.textContent = savedCampaign.campaignText || "";
+
+    const openButton = document.createElement("button");
+    openButton.type = "button";
+    openButton.textContent = "Open";
+    openButton.addEventListener("click", function () {
+
+      const campaign = getCampaignHistory()[index];
+
+      if (!campaign) {
+        return;
+      }
+
+      resultsContent.textContent = campaign.campaignText;
+      resultsArea.hidden = false;
+      copyBtn.hidden = false;
+      resultsArea.scrollIntoView({ behavior: "smooth", block: "start" });
+
+    });
+
+    item.append(heading, details, preview, openButton);
+    campaignHistoryList.appendChild(item);
+
+  });
+
+}
+
+function saveCampaign(campaignText, promoText, selectedCampaignType, profile) {
+
+  const savedCampaigns = getCampaignHistory();
+
+  savedCampaigns.unshift({
+    campaignText: campaignText,
+    campaignType: selectedCampaignType,
+    promoText: promoText,
+    businessName: profile.name,
+    createdAt: new Date().toISOString()
+  });
+
+  localStorage.setItem(
+    campaignHistoryKey,
+    JSON.stringify(savedCampaigns.slice(0, maximumSavedCampaigns))
+  );
+
+  renderCampaignHistory();
+
+}
+
+renderCampaignHistory();
 const savedBusinessProfile = localStorage.getItem("demeosBusinessProfile");
 
 if (savedBusinessProfile) {
@@ -97,6 +189,10 @@ if (!localStorage.getItem("demeosBusinessProfile")) {
 
     try {
 
+      const businessProfile = JSON.parse(
+        localStorage.getItem("demeosBusinessProfile")
+      );
+
       const response = await fetch("/api/generate", {
 
         method: "POST",
@@ -114,11 +210,7 @@ if (!localStorage.getItem("demeosBusinessProfile")) {
 
 campaignType: campaignType.value,
 
-businessProfile: JSON.parse(
-
-  localStorage.getItem("demeosBusinessProfile")
-
-)
+businessProfile: businessProfile
             })
 
     });
@@ -151,6 +243,13 @@ businessProfile: JSON.parse(
 
       resultsContent.textContent = data.campaign;
       copyBtn.hidden = false;
+
+      saveCampaign(
+        data.campaign,
+        promoText,
+        campaignType.options[campaignType.selectedIndex].text,
+        businessProfile
+      );
 
       resultsArea.scrollIntoView({
 
