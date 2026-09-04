@@ -51,7 +51,7 @@ targetCustomer: businessTargetCustomer.value.trim(),
 goal: businessGoal.value.trim()
   };
 
-  if (!businessProfile.name || !businessProfile.type || !businessProfile.location || !businessProfile.targetCustomer || !businessProfile.goal) {
+  if (!businessProfile.name || !businessProfile.type || !businessProfile.location || !businessProfile.brandVoice || !businessProfile.targetCustomer || !businessProfile.goal) {
 
   alert("Please complete all Business Manager Profile fields before saving.");
 
@@ -122,11 +122,25 @@ businessProfile: JSON.parse(
 
     });
 
-      const data = await response.json();
+      const responseText = await response.text();
+      let data = {};
+
+      try {
+        data = responseText ? JSON.parse(responseText) : {};
+      } catch (error) {
+        throw new Error(
+          `DEMEOS received an unreadable server response (HTTP ${response.status}).`
+        );
+      }
 
       if (!response.ok) {
 
-        throw new Error(data.error || "DEMEOS could not generate your marketing work.");
+        const details = data.details ? ` ${data.details}` : "";
+        const requestId = data.requestId ? ` Request ID: ${data.requestId}` : "";
+
+        throw new Error(
+          `${data.error || "DEMEOS could not generate your marketing work."}${details}${requestId}`
+        );
 
       }
 
