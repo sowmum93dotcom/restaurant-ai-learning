@@ -289,6 +289,21 @@ textarea:focus {
 
 }
 
+.campaign-approval-status {
+  margin-top: 1rem;
+  color: #7a2e2e;
+  font-weight: 700;
+}
+
+.campaign-approval-status.is-approved,
+.campaign-history-status.is-approved {
+  color: #18713c;
+}
+
+#approve-btn {
+  margin-top: 0.75rem;
+}
+
 /* Campaign history */
 .campaign-history {
   margin-top: 1.75rem;
@@ -328,6 +343,12 @@ textarea:focus {
 .campaign-history-details {
   color: #555;
   font-size: 0.9rem;
+}
+
+.campaign-history-status {
+  color: #7a2e2e;
+  font-size: 0.9rem;
+  font-weight: 700;
 }
 
 .campaign-history-preview {
