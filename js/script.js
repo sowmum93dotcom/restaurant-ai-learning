@@ -66,6 +66,7 @@ function renderCampaignHistory() {
 
     const openButton = document.createElement("button");
     openButton.type = "button";
+    openButton.className = "demeos-primary-button";
     openButton.textContent = "Open";
     openButton.addEventListener("click", function () {
 
