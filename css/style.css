@@ -338,11 +338,13 @@ textarea:focus {
 }
 
 .campaign-history-item button {
-  padding: 0.5rem 1rem;
+  min-height: 44px;
+  padding: 0.75rem 1.5rem;
   background-color: #064cff;
   color: #fff;
   border: none;
   border-radius: 6px;
+  font-size: 1rem;
   cursor: pointer;
 }
 
