@@ -149,17 +149,12 @@ function renderCampaignHistory() {
 
 }
 
-function saveCampaign(campaignText, promoText, selectedCampaignType, campaignTypeLabel, profile, sourceCampaignId) {
+function saveCampaign(campaignText, promoText, selectedCampaignType, campaignTypeLabel, profile, sourceCampaign) {
 
   const savedCampaigns = getCampaignHistory();
 
   const campaignId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-  const sourceCampaign = sourceCampaignId
-    ? savedCampaigns.find(function (savedCampaign) {
-      return savedCampaign.id === sourceCampaignId;
-    })
-    : null;
   const continuity = createCampaignContinuity(campaignId, sourceCampaign);
 
   savedCampaigns.unshift({
@@ -175,9 +170,9 @@ function saveCampaign(campaignText, promoText, selectedCampaignType, campaignTyp
     revisionNumber: continuity.revisionNumber
   });
 
-  if (savedCampaigns.length > maximumSavedCampaigns && sourceCampaignId) {
+  if (savedCampaigns.length > maximumSavedCampaigns && sourceCampaign) {
     const sourceIndex = savedCampaigns.findIndex(function (savedCampaign) {
-      return savedCampaign.id === sourceCampaignId;
+      return savedCampaign.id === sourceCampaign.id;
     });
 
     if (sourceIndex >= maximumSavedCampaigns) {
@@ -448,7 +443,7 @@ reviseBtn.addEventListener("click", async function () {
       campaignTypeValue,
       campaignTypeLabel,
       businessProfile,
-      originalCampaign.id
+      originalCampaign
     );
     resultsContent.textContent = data.campaign;
     revisionInstruction.value = "";
