@@ -310,6 +310,21 @@ textarea:focus {
   border-bottom: 1px solid #eee;
 }
 
+.campaign-history-item button {
+  min-width: 258px;
+  height: 56px;
+  padding: 0 28px;
+  background-color: #064cff;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 20px;
+  font-weight: 600;
+  font-family: inherit;
+  line-height: 1;
+  cursor: pointer;
+}
+
 .campaign-history-details {
   color: #555;
   font-size: 0.9rem;
