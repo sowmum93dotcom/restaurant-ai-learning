@@ -216,6 +216,7 @@ Do not invent prices, discounts, opening hours, addresses, or facts that the cur
 
     });
 
+    const requestId = response.headers.get("x-request-id");
     const responseText = await response.text();
     let data;
 
@@ -225,13 +226,11 @@ Do not invent prices, discounts, opening hours, addresses, or facts that the cur
       console.error("OpenAI returned an invalid JSON response:", responseText);
       return res.status(502).json({
         error: "The AI service returned an unreadable response.",
+        ...(requestId ? { requestId } : {}),
       });
     }
 
     if (!response.ok) {
-
-      const requestId = response.headers.get("x-request-id");
-      const details = data?.error?.message || "Unknown OpenAI API error";
 
       console.error("OpenAI API error:", {
         status: response.status,
@@ -242,8 +241,6 @@ Do not invent prices, discounts, opening hours, addresses, or facts that the cur
       return res.status(502).json({
 
         error: "The DEMEOS Marketing Agent could not generate the marketing work.",
-
-        details,
 
         ...(requestId ? { requestId } : {}),
 
@@ -272,6 +269,8 @@ Do not invent prices, discounts, opening hours, addresses, or facts that the cur
       return res.status(500).json({
 
         error: "The DEMEOS Marketing Agent returned no marketing content.",
+
+        ...(requestId ? { requestId } : {}),
 
       });
 

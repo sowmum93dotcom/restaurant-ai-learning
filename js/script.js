@@ -93,6 +93,7 @@ if (!localStorage.getItem("demeosBusinessProfile")) {
     resultsArea.hidden = false;
 
     resultsContent.textContent = "DEMEOS is creating your marketing work...";
+    copyBtn.hidden = true;
 
     try {
 
@@ -142,6 +143,10 @@ businessProfile: JSON.parse(
           `${data.error || "DEMEOS could not generate your marketing work."}${details}${requestId}`
         );
 
+      }
+
+      if (typeof data.campaign !== "string" || !data.campaign.trim()) {
+        throw new Error("DEMEOS returned no marketing content.");
       }
 
       resultsContent.textContent = data.campaign;
