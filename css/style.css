@@ -304,6 +304,20 @@ textarea:focus {
   margin-top: 0.75rem;
 }
 
+#campaign-revision-controls {
+  margin-top: 1rem;
+}
+
+#campaign-revision-controls label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-weight: 600;
+}
+
+#revise-btn {
+  margin-top: 0.75rem;
+}
+
 /* Campaign history */
 .campaign-history {
   margin-top: 1.75rem;
