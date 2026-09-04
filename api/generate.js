@@ -208,7 +208,7 @@ Do not invent prices, discounts, opening hours, addresses, or facts that the cur
 
       body: JSON.stringify({
 
-        model: "gpt-5.6-luna",
+        model: "gpt-4.1-mini",
 
         input: prompt,
 
@@ -216,15 +216,36 @@ Do not invent prices, discounts, opening hours, addresses, or facts that the cur
 
     });
 
-    const data = await response.json();
+    const responseText = await response.text();
+    let data;
+
+    try {
+      data = responseText ? JSON.parse(responseText) : {};
+    } catch (error) {
+      console.error("OpenAI returned an invalid JSON response:", responseText);
+      return res.status(502).json({
+        error: "The AI service returned an unreadable response.",
+      });
+    }
 
     if (!response.ok) {
 
-      console.error("OpenAI API error:", data);
+      const requestId = response.headers.get("x-request-id");
+      const details = data?.error?.message || "Unknown OpenAI API error";
 
-      return res.status(500).json({
+      console.error("OpenAI API error:", {
+        status: response.status,
+        requestId,
+        error: data?.error || data,
+      });
+
+      return res.status(502).json({
 
         error: "The DEMEOS Marketing Agent could not generate the marketing work.",
+
+        details,
+
+        ...(requestId ? { requestId } : {}),
 
       });
 
