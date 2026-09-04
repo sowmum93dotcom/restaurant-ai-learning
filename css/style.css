@@ -100,7 +100,7 @@ min-height: 100vh;
 
 /* Main content */
 main {
-  max-width: 700px;
+  max-width: 820px;
   margin: 2.5rem auto;
   padding: 0 1.5rem;
 }
@@ -219,7 +219,8 @@ textarea {
 
 textarea:focus {
   outline: none;
-  border-color: #7a2e2e;
+  border-color: #064cff;
+  box-shadow: 0 0 0 3px rgba(6, 76, 255, 0.12);
 }
 #campaign-type {
 
@@ -247,51 +248,62 @@ textarea:focus {
 
 /* Results area */
 .results-area {
-  margin-top: 1.75rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid #eee;
+  margin-top: 2rem;
+  padding: 1.5rem;
+  border: 1px solid #d8e2f2;
+  border-radius: 12px;
+  background: #f7f9fc;
+  box-shadow: 0 8px 24px rgba(7, 20, 38, 0.08);
 }
 
 .results-area h3 {
+  color: #102a52;
+  font-size: 1.5rem;
+  line-height: 1.25;
+}
+
+.workspace-heading {
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #d8e2f2;
+}
+
+.workspace-eyebrow {
+  margin-bottom: 0.2rem;
   color: #064cff;
-  margin-bottom: 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.campaign-result-panel h4 {
+  margin-bottom: 0.55rem;
+  color: #29466f;
+  font-size: 0.9rem;
+  letter-spacing: 0.02em;
 }
 
 #results-content {
-  background-color: #faf7f2;
-  border: 1px solid #eee;
-  border-radius: 6px;
-  padding: 1rem;
+  max-height: 34rem;
+  overflow-y: auto;
+  background-color: #fff;
+  border: 1px solid #d8e2f2;
+  border-radius: 8px;
+  padding: 1.15rem;
   white-space: pre-wrap;
-}
-#copy-btn {
-
-    margin-top: 1rem;
-
-    padding: 0.65rem 1.25rem;
-
-    background-color: #064cff;
-
-    color: #fff;
-
-    border: none;
-
-    border-radius: 6px;
-
-    font-size: 0.95rem;
-
-    cursor: pointer;
-
-}
-#copy-btn:hover {
-
-    background-color: #0036c7;
-
 }
 
 .campaign-approval-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
   margin-top: 1rem;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  background: #fff1f1;
   color: #7a2e2e;
+  font-size: 0.875rem;
   font-weight: 700;
 }
 
@@ -300,28 +312,74 @@ textarea:focus {
   color: #18713c;
 }
 
-#approve-btn {
-  margin-top: 0.75rem;
+.campaign-approval-status.is-approved {
+  background: #eaf7ef;
 }
 
 #campaign-revision-controls {
-  margin-top: 1rem;
+  margin-top: 1.25rem;
 }
 
 #campaign-revision-controls label {
   display: block;
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.55rem;
   font-weight: 600;
+  color: #102a52;
 }
 
-#revise-btn {
-  margin-top: 0.75rem;
+.campaign-revision-panel {
+  padding: 1.1rem;
+  border: 1px solid #d8e2f2;
+  border-radius: 8px;
+  background: #eef3fa;
+}
+
+#revision-instruction {
+  min-height: 108px;
+  background: #fff;
+}
+
+.campaign-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.campaign-actions button {
+  min-height: 44px;
+}
+
+.campaign-revise-button {
+  background-color: #17417d;
+}
+
+.campaign-revise-button:hover {
+  background-color: #102f5d;
+}
+
+.demeos-secondary-button {
+  padding: 0.75rem 1.15rem;
+  border: 1px solid #9db1cc;
+  border-radius: 6px;
+  background: #fff;
+  color: #17417d;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.demeos-secondary-button:hover {
+  border-color: #17417d;
+  background: #edf3fb;
 }
 
 /* Campaign history */
 .campaign-history {
-  margin-top: 1.75rem;
-  padding-top: 1.5rem;
+  margin-top: 2rem;
+  padding-top: 1.75rem;
   border-top: 1px solid #eee;
 }
 
@@ -335,38 +393,65 @@ textarea:focus {
 }
 
 .campaign-history-item {
-  padding: 1rem 0;
-  border-bottom: 1px solid #eee;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.25rem 1rem;
+  margin-top: 0.75rem;
+  padding: 1rem;
+  border: 1px solid #dfe5ee;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.campaign-history-item h4 {
+  min-width: 0;
+  color: #102a52;
+  line-height: 1.35;
 }
 
 .campaign-history-item button {
-  min-width: 258px;
-  height: 56px;
-  padding: 0 28px;
-  background-color: #064cff;
-  color: #fff;
-  border: none;
+  grid-column: 2;
+  grid-row: 1 / span 4;
+  align-self: center;
+  min-width: 76px;
+  min-height: 44px;
+  height: 44px;
+  padding: 0 1rem;
+  border: 1px solid #9db1cc;
   border-radius: 6px;
-  font-size: 20px;
+  background: #fff;
+  color: #17417d;
+  font-size: 0.9rem;
   font-weight: 600;
   font-family: inherit;
   line-height: 1;
   cursor: pointer;
 }
 
+.campaign-history-item button:hover {
+  border-color: #17417d;
+  background: #edf3fb;
+}
+
 .campaign-history-details {
+  grid-column: 1;
   color: #555;
   font-size: 0.9rem;
 }
 
 .campaign-history-status {
+  grid-column: 1;
   color: #7a2e2e;
   font-size: 0.9rem;
   font-weight: 700;
 }
 
 .campaign-history-preview {
-  margin: 0.5rem 0;
+  grid-column: 1;
+  margin-top: 0.25rem;
+  color: #394657;
+  font-size: 0.92rem;
+  line-height: 1.45;
   overflow: hidden;
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -389,5 +474,32 @@ footer {
 
   .assistant-section {
     padding: 1.25rem;
+  }
+
+  main {
+    margin: 1.25rem auto;
+    padding: 0 0.75rem;
+  }
+
+  .business-profile-section {
+    padding: 1.25rem;
+  }
+
+  .results-area {
+    padding: 1rem;
+  }
+
+  .campaign-revision-panel {
+    padding: 0.9rem;
+  }
+
+  .campaign-actions button {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  .campaign-history-item {
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 0.85rem;
   }
 }
