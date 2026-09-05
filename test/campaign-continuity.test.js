@@ -5,11 +5,37 @@ const vm = require("node:vm");
 
 const {
   addBusinessIdentity,
+  campaignBelongsToBusiness,
   createCampaignContinuity,
   getCampaignBusinessId,
+  getCampaignsForBusiness,
   getCampaignContinuity,
   getCampaignContinuityLabel
 } = require("../js/script.js");
+
+test("campaign history shows matching records and hides other businesses", function () {
+  const profile = { businessId: "business-current" };
+  const campaigns = [
+    { id: "matching", businessId: "business-current" },
+    { id: "different", businessId: "business-other" }
+  ];
+
+  assert.deepEqual(
+    getCampaignsForBusiness(campaigns, profile).map(function (campaign) { return campaign.id; }),
+    ["matching"]
+  );
+  assert.equal(campaignBelongsToBusiness(campaigns[1], profile), false);
+});
+
+test("legacy campaign records remain accessible to the current legacy profile", function () {
+  const migratedLegacyProfile = addBusinessIdentity({ name: "Legacy Restaurant" }, null);
+  const legacyCampaign = { id: "legacy-campaign", campaignText: "Existing history" };
+
+  assert.deepEqual(
+    getCampaignsForBusiness([legacyCampaign], migratedLegacyProfile),
+    [legacyCampaign]
+  );
+});
 
 test("a first profile save creates a business ID and later saves preserve it", function () {
   const firstSave = addBusinessIdentity({ name: "Restaurant" }, null);
@@ -283,4 +309,13 @@ test("the application makes each saved revision the source of the next revision"
   assert.ok(history.slice(0, 3).every(function (campaign) {
     return campaign.approvalStatus === "Unapproved";
   }));
+
+  document.getElementById("approve-btn").listeners.click();
+
+  const approvedHistory = JSON.parse(storage.get("demeosCampaignHistory"));
+  assert.equal(approvedHistory[0].revisionNumber, 3);
+  assert.equal(approvedHistory[0].approvalStatus, "Approved");
+  assert.equal(approvedHistory[1].approvalStatus, "Unapproved");
+  assert.equal(approvedHistory[2].approvalStatus, "Unapproved");
+  assert.equal(approvedHistory[3].approvalStatus, "Approved");
 });

@@ -49,11 +49,27 @@ function getCampaignBusinessId(profile, sourceCampaign) {
   return (sourceCampaign && sourceCampaign.businessId) || (profile && profile.businessId);
 }
 
+function campaignBelongsToBusiness(campaign, profile) {
+  if (!campaign || !profile || !profile.businessId) {
+    return false;
+  }
+
+  return !campaign.businessId || campaign.businessId === profile.businessId;
+}
+
+function getCampaignsForBusiness(campaigns, profile) {
+  return campaigns.filter(function (campaign) {
+    return campaignBelongsToBusiness(campaign, profile);
+  });
+}
+
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     addBusinessIdentity,
+    campaignBelongsToBusiness,
     createCampaignContinuity,
     getCampaignBusinessId,
+    getCampaignsForBusiness,
     getCampaignContinuity,
     getCampaignContinuityLabel
   };
@@ -128,12 +144,13 @@ function getCampaignHistory() {
 
 function renderCampaignHistory() {
 
-  const savedCampaigns = getCampaignHistory();
+  const businessProfile = getSavedBusinessProfile();
+  const savedCampaigns = getCampaignsForBusiness(getCampaignHistory(), businessProfile);
 
   campaignHistoryList.textContent = "";
   campaignHistoryEmpty.hidden = savedCampaigns.length > 0;
 
-  savedCampaigns.forEach(function (savedCampaign, index) {
+  savedCampaigns.forEach(function (savedCampaign) {
 
     const item = document.createElement("article");
     item.className = "campaign-history-item";
@@ -164,9 +181,12 @@ function renderCampaignHistory() {
     openButton.textContent = "Open";
     openButton.addEventListener("click", function () {
 
-      const campaign = getCampaignHistory()[index];
+      const currentProfile = getSavedBusinessProfile();
+      const campaign = getCampaignHistory().find(function (campaignRecord) {
+        return campaignRecord.id === savedCampaign.id;
+      });
 
-      if (!campaign) {
+      if (!campaignBelongsToBusiness(campaign, currentProfile)) {
         return;
       }
 
@@ -216,20 +236,17 @@ function saveCampaign(campaignText, promoText, selectedCampaignType, campaignTyp
     revisionNumber: continuity.revisionNumber
   });
 
-  if (savedCampaigns.length > maximumSavedCampaigns && sourceCampaignId) {
-    const sourceIndex = savedCampaigns.findIndex(function (savedCampaign) {
-      return savedCampaign.id === sourceCampaignId;
-    });
-
-    if (sourceIndex >= maximumSavedCampaigns) {
-      savedCampaigns.splice(maximumSavedCampaigns - 1, 1);
+  let currentBusinessCampaignCount = 0;
+  const retainedCampaigns = savedCampaigns.filter(function (savedCampaign) {
+    if (savedCampaign.businessId !== businessId) {
+      return true;
     }
-  }
 
-  localStorage.setItem(
-    campaignHistoryKey,
-    JSON.stringify(savedCampaigns.slice(0, maximumSavedCampaigns))
-  );
+    currentBusinessCampaignCount += 1;
+    return currentBusinessCampaignCount <= maximumSavedCampaigns;
+  });
+
+  localStorage.setItem(campaignHistoryKey, JSON.stringify(retainedCampaigns));
 
   // Saving is also the state transition to the newly created marketing work.
   // Keep this here so every save path uses the saved record for the next action.
@@ -251,8 +268,8 @@ function showApprovalStatus(approvalStatus) {
 
 }
 
-renderCampaignHistory();
 const businessProfile = getSavedBusinessProfile();
+renderCampaignHistory();
 
 if (businessProfile) {
 
@@ -428,7 +445,9 @@ reviseBtn.addEventListener("click", async function () {
     return savedCampaign.id === openCampaignId;
   });
 
-  if (!sourceCampaign) {
+  const currentProfile = getSavedBusinessProfile();
+
+  if (!campaignBelongsToBusiness(sourceCampaign, currentProfile)) {
     alert("Please open a saved campaign before requesting a revision.");
     return;
   }
@@ -443,7 +462,7 @@ reviseBtn.addEventListener("click", async function () {
     return;
   }
 
-  const businessProfile = getSavedBusinessProfile();
+  const businessProfile = currentProfile;
   const sourceCampaignType = sourceCampaign.campaignType;
   const campaignTypeValue = sourceCampaignType === "Social Media Post" ? "social"
     : sourceCampaignType === "Email Campaign" ? "email"
@@ -517,7 +536,7 @@ approveBtn.addEventListener("click", function () {
     return savedCampaign.id === openCampaignId;
   });
 
-  if (!campaign) {
+  if (!campaignBelongsToBusiness(campaign, getSavedBusinessProfile())) {
     return;
   }
 
