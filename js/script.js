@@ -49,10 +49,38 @@ function getCampaignBusinessId(profile, sourceCampaign) {
   return (sourceCampaign && sourceCampaign.businessId) || (profile && profile.businessId);
 }
 
+function getBusinessCampaigns(campaigns, businessId) {
+  return campaigns.filter(function (campaign) {
+    return campaign.businessId === businessId;
+  });
+}
+
+function applyBusinessCampaignLimit(campaigns, businessId, maximumSavedCampaigns, protectedCampaignIds) {
+  const protectedIds = new Set(protectedCampaignIds || []);
+  let businessCampaignCount = getBusinessCampaigns(campaigns, businessId).length;
+
+  for (let index = campaigns.length - 1;
+    businessCampaignCount > maximumSavedCampaigns && index >= 0;
+    index -= 1) {
+    const campaign = campaigns[index];
+
+    if (campaign.businessId !== businessId || protectedIds.has(campaign.id)) {
+      continue;
+    }
+
+    campaigns.splice(index, 1);
+    businessCampaignCount -= 1;
+  }
+
+  return campaigns;
+}
+
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     addBusinessIdentity,
+    applyBusinessCampaignLimit,
     createCampaignContinuity,
+    getBusinessCampaigns,
     getCampaignBusinessId,
     getCampaignContinuity,
     getCampaignContinuityLabel
@@ -128,7 +156,10 @@ function getCampaignHistory() {
 
 function renderCampaignHistory() {
 
-  const savedCampaigns = getCampaignHistory();
+  const savedProfile = getSavedBusinessProfile();
+  const savedCampaigns = savedProfile
+    ? getBusinessCampaigns(getCampaignHistory(), savedProfile.businessId)
+    : [];
 
   campaignHistoryList.textContent = "";
   campaignHistoryEmpty.hidden = savedCampaigns.length > 0;
@@ -164,7 +195,10 @@ function renderCampaignHistory() {
     openButton.textContent = "Open";
     openButton.addEventListener("click", function () {
 
-      const campaign = getCampaignHistory()[index];
+      const campaign = getBusinessCampaigns(
+        getCampaignHistory(),
+        getSavedBusinessProfile().businessId
+      )[index];
 
       if (!campaign) {
         return;
@@ -216,19 +250,16 @@ function saveCampaign(campaignText, promoText, selectedCampaignType, campaignTyp
     revisionNumber: continuity.revisionNumber
   });
 
-  if (savedCampaigns.length > maximumSavedCampaigns && sourceCampaignId) {
-    const sourceIndex = savedCampaigns.findIndex(function (savedCampaign) {
-      return savedCampaign.id === sourceCampaignId;
-    });
-
-    if (sourceIndex >= maximumSavedCampaigns) {
-      savedCampaigns.splice(maximumSavedCampaigns - 1, 1);
-    }
-  }
+  applyBusinessCampaignLimit(
+    savedCampaigns,
+    businessId,
+    maximumSavedCampaigns,
+    [campaignId, sourceCampaignId]
+  );
 
   localStorage.setItem(
     campaignHistoryKey,
-    JSON.stringify(savedCampaigns.slice(0, maximumSavedCampaigns))
+    JSON.stringify(savedCampaigns)
   );
 
   // Saving is also the state transition to the newly created marketing work.

@@ -5,11 +5,72 @@ const vm = require("node:vm");
 
 const {
   addBusinessIdentity,
+  applyBusinessCampaignLimit,
   createCampaignContinuity,
   getCampaignBusinessId,
+  getBusinessCampaigns,
   getCampaignContinuity,
   getCampaignContinuityLabel
 } = require("../js/script.js");
+
+test("campaign history is separated by business without including legacy records", function () {
+  const campaigns = [
+    { id: "a-1", businessId: "business-a" },
+    { id: "legacy" },
+    { id: "b-1", businessId: "business-b" },
+    { id: "a-2", businessId: "business-a" }
+  ];
+
+  assert.deepEqual(
+    getBusinessCampaigns(campaigns, "business-a").map(function (campaign) {
+      return campaign.id;
+    }),
+    ["a-1", "a-2"]
+  );
+});
+
+test("retention keeps a new revision and its exact source while limiting only that business", function () {
+  const sourceCampaign = {
+    id: "business-a-source",
+    businessId: "business-a"
+  };
+  const otherBusinessCampaigns = Array.from({ length: 24 }, function (_, index) {
+    return { id: `business-b-${index}`, businessId: "business-b" };
+  });
+  const businessCampaigns = Array.from({ length: 19 }, function (_, index) {
+    return { id: `business-a-${index}`, businessId: "business-a" };
+  });
+  const legacyCampaign = { id: "legacy" };
+  const newRevision = {
+    id: "business-a-new-revision",
+    businessId: "business-a"
+  };
+  const campaigns = [
+    newRevision,
+    ...otherBusinessCampaigns,
+    ...businessCampaigns,
+    legacyCampaign,
+    sourceCampaign
+  ];
+
+  applyBusinessCampaignLimit(
+    campaigns,
+    "business-a",
+    20,
+    [newRevision.id, sourceCampaign.id]
+  );
+
+  assert.equal(getBusinessCampaigns(campaigns, "business-a").length, 20);
+  assert.ok(campaigns.includes(newRevision));
+  assert.ok(campaigns.includes(sourceCampaign));
+  assert.equal(campaigns.some(function (campaign) {
+    return campaign.id === "business-a-18";
+  }), false);
+  assert.ok(otherBusinessCampaigns.every(function (campaign) {
+    return campaigns.includes(campaign);
+  }));
+  assert.ok(campaigns.includes(legacyCampaign));
+});
 
 test("a first profile save creates a business ID and later saves preserve it", function () {
   const firstSave = addBusinessIdentity({ name: "Restaurant" }, null);
