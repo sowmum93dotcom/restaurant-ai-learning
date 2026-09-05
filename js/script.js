@@ -103,10 +103,64 @@ function enforceBusinessCampaignLimit(campaigns, businessId, maximumCampaigns, p
   return retained;
 }
 
+function mergeKnownBusinessPersistence(profiles, campaigns, businessId, serverRecord) {
+  const serverProfile = serverRecord && serverRecord.businessProfile;
+  if (!businessId || !serverProfile || serverProfile.businessId !== businessId) {
+    throw new Error("The restored business did not match the requested business.");
+  }
+  const profileIndex = profiles.findIndex(function (profile) { return profile.businessId === businessId; });
+  if (profileIndex < 0) throw new Error("Only a locally known business can be restored.");
+
+  const nextProfiles = profiles.slice();
+  nextProfiles[profileIndex] = { ...profiles[profileIndex], ...serverProfile, businessId };
+  const serverCampaigns = Array.isArray(serverRecord.campaigns) ? serverRecord.campaigns : [];
+  const validServerCampaigns = serverCampaigns.filter(function (campaign) {
+    return campaign && typeof campaign.id === "string" && campaign.businessId === businessId;
+  });
+  const serverById = new Map(validServerCampaigns.map(function (campaign) { return [campaign.id, campaign]; }));
+  const mergedCampaigns = campaigns.map(function (campaign) {
+    const restored = campaign && serverById.get(campaign.id);
+    if (!restored) return campaign;
+    serverById.delete(campaign.id);
+    return { ...campaign, ...restored, id: restored.id, businessId };
+  });
+  validServerCampaigns.forEach(function (campaign) {
+    if (serverById.has(campaign.id)) {
+      mergedCampaigns.push({ ...campaign, id: campaign.id, businessId });
+      serverById.delete(campaign.id);
+    }
+  });
+  return { profiles: nextProfiles, campaigns: mergedCampaigns };
+}
+
+async function hydrateKnownBusiness(storage, businessId, fetchImpl) {
+  const profiles = parseStoredJson(storage, "demeosBusinessProfiles", []);
+  const campaigns = parseStoredJson(storage, "demeosCampaignHistory", []);
+  if (!Array.isArray(profiles) || !profiles.some(function (profile) { return profile.businessId === businessId; })) {
+    return { hydrated: false, reason: "unknown-business" };
+  }
+  try {
+    const response = await fetchImpl(`/api/businesses/${encodeURIComponent(businessId)}`);
+    if (!response.ok) return { hydrated: false, reason: "server-error" };
+    const merged = mergeKnownBusinessPersistence(
+      profiles,
+      Array.isArray(campaigns) ? campaigns : [],
+      businessId,
+      await response.json()
+    );
+    storage.setItem("demeosBusinessProfiles", JSON.stringify(merged.profiles));
+    storage.setItem("demeosCampaignHistory", JSON.stringify(merged.campaigns));
+    return { hydrated: true, ...merged };
+  } catch (error) {
+    console.error("Could not restore known business:", error);
+    return { hydrated: false, reason: "server-error" };
+  }
+}
+
 if (typeof module !== "undefined" && module.exports) module.exports = {
   addBusinessIdentity, canAccessCampaign, createCampaignContinuity, enforceBusinessCampaignLimit,
   getCampaignBusinessId, getCampaignContinuity, getCampaignContinuityLabel, getVisibleCampaigns,
-  migrateBusinessProfiles, updateBusinessProfile
+  hydrateKnownBusiness, mergeKnownBusinessPersistence, migrateBusinessProfiles, updateBusinessProfile
 };
 
 if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", function () {
@@ -135,6 +189,36 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   let state = migrateBusinessProfiles(localStorage);
   let openCampaignId = null;
   let addingBusiness = false;
+
+  async function hydrateActiveBusiness() {
+    const requestedBusinessId = state.activeBusinessId;
+    if (!requestedBusinessId || typeof window === "undefined" || typeof fetch !== "function") return;
+    const result = await hydrateKnownBusiness(localStorage, requestedBusinessId, fetch);
+    if (!result.hydrated || state.activeBusinessId !== requestedBusinessId) return;
+    state.profiles = result.profiles;
+    fillProfile(activeProfile()); renderSelector(); renderCampaignHistory();
+  }
+  async function persistBusiness(profile) {
+    if (!profile || typeof window === "undefined" || typeof fetch !== "function") return false;
+    try {
+      const response = await fetch(`/api/businesses/${encodeURIComponent(profile.businessId)}`, {
+        method: "PUT", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ businessProfile: profile })
+      });
+      return response.ok;
+    } catch (error) {
+      console.error("Could not persist business:", error); return false;
+    }
+  }
+  async function persistCampaign(profile, campaign) {
+    if (!await persistBusiness(profile)) return;
+    try {
+      const response = await fetch(`/api/businesses/${encodeURIComponent(profile.businessId)}/campaigns/${encodeURIComponent(campaign.id)}`, {
+        method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ campaign })
+      });
+      if (!response.ok) console.error("Could not persist campaign: server returned", response.status);
+    } catch (error) { console.error("Could not persist campaign:", error); }
+  }
 
   function activeProfile() {
     return state.profiles.find(function (profile) { return profile.businessId === state.activeBusinessId; }) || null;
@@ -205,20 +289,23 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     state.activeBusinessId = businessId; addingBusiness = false;
     localStorage.setItem("demeosActiveBusinessId", businessId);
     fillProfile(activeProfile()); renderSelector(); clearCampaignWorkspace(); renderCampaignHistory();
+    hydrateActiveBusiness();
   }
   function saveCampaign(text, promo, type, typeLabel, profile, sourceId) {
     const campaigns = getCampaignHistory();
     const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const source = sourceId ? campaigns.find(function (entry) { return entry.id === sourceId; }) : null;
     const continuity = createCampaignContinuity(id, source);
-    campaigns.unshift({ id, campaignText: text, campaignType: type, campaignTypeLabel: typeLabel, promoText: promo,
+    const campaign = { id, campaignText: text, campaignType: type, campaignTypeLabel: typeLabel, promoText: promo,
       businessName: profile.name, businessId: getCampaignBusinessId(profile, source), createdAt: new Date().toISOString(),
-      approvalStatus: "Unapproved", ...continuity });
+      approvalStatus: "Unapproved", ...continuity };
+    campaigns.unshift(campaign);
     const retained = enforceBusinessCampaignLimit(campaigns, profile.businessId, 20, [id, sourceId]);
-    localStorage.setItem(campaignHistoryKey, JSON.stringify(retained)); openCampaignId = id; renderCampaignHistory(); return id;
+    localStorage.setItem(campaignHistoryKey, JSON.stringify(retained)); openCampaignId = id; renderCampaignHistory();
+    persistCampaign(profile, campaign); return id;
   }
 
-  renderSelector(); fillProfile(activeProfile()); renderCampaignHistory();
+  renderSelector(); fillProfile(activeProfile()); renderCampaignHistory(); hydrateActiveBusiness();
   businessSelector.addEventListener("change", function () { switchBusiness(businessSelector.value); });
   addBusinessBtn.addEventListener("click", function () {
     addingBusiness = true; businessSelector.value = ""; fillProfile(null); clearCampaignWorkspace();
@@ -233,6 +320,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     state = { profiles: result.profiles, activeBusinessId: result.profile.businessId }; addingBusiness = false;
     localStorage.setItem("demeosBusinessProfiles", JSON.stringify(state.profiles));
     localStorage.setItem("demeosActiveBusinessId", state.activeBusinessId);
+    persistBusiness(result.profile);
     renderSelector(); fillProfile(result.profile); clearCampaignWorkspace(); renderCampaignHistory();
     alert("Business Profile saved successfully.");
   });
@@ -291,6 +379,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     if (!campaign) return;
     if (!canAccessCampaign(campaign, activeProfile())) { alert("This campaign belongs to a different business profile."); return; }
     campaign.approvalStatus = "Approved"; localStorage.setItem(campaignHistoryKey, JSON.stringify(campaigns));
+    persistCampaign(activeProfile(), campaign);
     showApprovalStatus("Approved"); renderCampaignHistory();
   });
   copyBtn.addEventListener("click", async function () {
