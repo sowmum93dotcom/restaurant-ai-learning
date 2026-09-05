@@ -216,19 +216,26 @@ function saveCampaign(campaignText, promoText, selectedCampaignType, campaignTyp
     revisionNumber: continuity.revisionNumber
   });
 
-  if (savedCampaigns.length > maximumSavedCampaigns && sourceCampaignId) {
-    const sourceIndex = savedCampaigns.findIndex(function (savedCampaign) {
-      return savedCampaign.id === sourceCampaignId;
-    });
+  while (savedCampaigns.length > maximumSavedCampaigns) {
+    let evictionIndex = savedCampaigns.length - 1;
 
-    if (sourceIndex >= maximumSavedCampaigns) {
-      savedCampaigns.splice(maximumSavedCampaigns - 1, 1);
+    while (
+      evictionIndex >= 0 &&
+      (savedCampaigns[evictionIndex].id === campaignId || savedCampaigns[evictionIndex].id === sourceCampaignId)
+    ) {
+      evictionIndex -= 1;
     }
+
+    if (evictionIndex === -1) {
+      break;
+    }
+
+    savedCampaigns.splice(evictionIndex, 1);
   }
 
   localStorage.setItem(
     campaignHistoryKey,
-    JSON.stringify(savedCampaigns.slice(0, maximumSavedCampaigns))
+    JSON.stringify(savedCampaigns)
   );
 
   // Saving is also the state transition to the newly created marketing work.

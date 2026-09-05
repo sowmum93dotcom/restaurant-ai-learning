@@ -284,3 +284,106 @@ test("the application makes each saved revision the source of the next revision"
     return campaign.approvalStatus === "Unapproved";
   }));
 });
+
+test("revising the oldest campaign at the retention limit preserves its continuity", async function () {
+  class FakeElement {
+    constructor() {
+      this.listeners = {};
+      this.options = [{ text: "Social Media Post" }];
+      this.selectedIndex = 0;
+      this.value = "";
+      this.textContent = "";
+      this.hidden = false;
+      this.classList = { toggle() {} };
+    }
+
+    addEventListener(eventName, listener) { this.listeners[eventName] = listener; }
+    append() {}
+    appendChild() {}
+    prepend() {}
+    scrollIntoView() {}
+  }
+
+  const elements = new Map();
+  const createdElements = [];
+  const document = {
+    addEventListener(eventName, listener) {
+      if (eventName === "DOMContentLoaded") this.ready = listener;
+    },
+    createElement() {
+      const element = new FakeElement();
+      createdElements.push(element);
+      return element;
+    },
+    getElementById(id) {
+      if (!elements.has(id)) elements.set(id, new FakeElement());
+      return elements.get(id);
+    }
+  };
+  const businessId = "business-at-limit";
+  const campaigns = Array.from({ length: 20 }, function (_, index) {
+    return {
+      id: `campaign-${index}`,
+      campaignText: `Campaign ${index}`,
+      campaignType: "social",
+      campaignTypeLabel: "Social Media Post",
+      promoText: "Promotion",
+      approvalStatus: index === 19 ? "Approved" : "Unapproved",
+      originalMarketingWorkId: `campaign-${index}`,
+      revisionNumber: 0,
+      businessId: businessId,
+      createdAt: new Date(20 - index).toISOString()
+    };
+  });
+  const source = campaigns[19];
+  const storage = new Map([
+    ["demeosBusinessProfile", JSON.stringify({ name: "Restaurant", businessId: businessId })],
+    ["demeosCampaignHistory", JSON.stringify(campaigns)]
+  ]);
+  const context = {
+    alert() {},
+    console,
+    Date,
+    document,
+    fetch: async function () {
+      return {
+        ok: true,
+        status: 200,
+        async text() { return JSON.stringify({ campaign: "Oldest campaign revised" }); }
+      };
+    },
+    localStorage: {
+      getItem(key) { return storage.has(key) ? storage.get(key) : null; },
+      setItem(key, value) { storage.set(key, value); }
+    },
+    Math,
+    setTimeout
+  };
+
+  vm.runInNewContext(fs.readFileSync(require.resolve("../js/script.js"), "utf8"), context);
+  document.ready();
+
+  const openButtons = createdElements.filter(function (element) {
+    return element.textContent === "Open" && element.listeners.click;
+  });
+  openButtons[openButtons.length - 1].listeners.click();
+  document.getElementById("revision-instruction").value = "Update the oldest campaign";
+  await document.getElementById("revise-btn").listeners.click();
+
+  const history = JSON.parse(storage.get("demeosCampaignHistory"));
+  const revision = history[0];
+
+  assert.equal(history.length, 20);
+  assert.equal(revision.campaignText, "Oldest campaign revised");
+  assert.equal(revision.originalMarketingWorkId, source.id);
+  assert.equal(revision.revisionNumber, 1);
+  assert.equal(revision.approvalStatus, "Unapproved");
+  assert.equal(revision.businessId, businessId);
+  assert.ok(history.some(function (campaign) { return campaign.id === source.id; }));
+  assert.equal(history.some(function (campaign) { return campaign.id === "campaign-18"; }), false);
+  assert.ok(history.filter(function (campaign) {
+    return campaign.originalMarketingWorkId === source.id;
+  }).every(function (campaign) {
+    return campaign.businessId === businessId;
+  }));
+});
