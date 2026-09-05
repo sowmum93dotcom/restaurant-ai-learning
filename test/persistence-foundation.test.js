@@ -93,6 +93,68 @@ test("hydration restores profile and complete campaign continuity fields", async
   assert.deepEqual(JSON.parse(storage.getItem("demeosCampaignHistory"))[0], campaign);
 });
 
+test("hydration merges into local changes made while the request is in flight", async function () {
+  const storage = memoryStorage([
+    ["demeosBusinessProfiles", JSON.stringify([{ businessId: "business-a", name: "Old A" }])],
+    ["demeosCampaignHistory", "[]"]
+  ]);
+  let resolveResponse;
+  const responsePending = new Promise(function (resolve) { resolveResponse = resolve; });
+  const hydration = hydrateKnownBusiness(storage, "business-a", async function () { return responsePending; });
+
+  storage.setItem("demeosBusinessProfiles", JSON.stringify([
+    { businessId: "business-a", name: "New local A", localNote: "Keep me" },
+    { businessId: "business-b", name: "New local B" }
+  ]));
+  storage.setItem("demeosCampaignHistory", JSON.stringify([
+    { id: "new-local", businessId: "business-a", campaignText: "Keep this campaign" }
+  ]));
+  resolveResponse({
+    ok: true,
+    async json() {
+      return { businessProfile: { businessId: "business-a", name: "Server A" }, campaigns: [] };
+    }
+  });
+  await hydration;
+
+  assert.deepEqual(JSON.parse(storage.getItem("demeosBusinessProfiles")), [
+    { businessId: "business-a", name: "Server A", localNote: "Keep me" },
+    { businessId: "business-b", name: "New local B" }
+  ]);
+  assert.deepEqual(JSON.parse(storage.getItem("demeosCampaignHistory")), [
+    { id: "new-local", businessId: "business-a", campaignText: "Keep this campaign" }
+  ]);
+});
+
+test("hydration does not write when the requested business is removed in flight", async function () {
+  const storage = memoryStorage([
+    ["demeosBusinessProfiles", JSON.stringify([{ businessId: "business-a", name: "Old A" }])],
+    ["demeosCampaignHistory", "[]"]
+  ]);
+  let resolveResponse;
+  const responsePending = new Promise(function (resolve) { resolveResponse = resolve; });
+  const hydration = hydrateKnownBusiness(storage, "business-a", async function () { return responsePending; });
+  const currentProfiles = JSON.stringify([{ businessId: "business-b", name: "Business B" }]);
+  const currentCampaigns = JSON.stringify([{ id: "business-b-work", businessId: "business-b" }]);
+  storage.setItem("demeosBusinessProfiles", currentProfiles);
+  storage.setItem("demeosCampaignHistory", currentCampaigns);
+  resolveResponse({
+    ok: true,
+    async json() {
+      return {
+        businessProfile: { businessId: "business-a", name: "Server A" },
+        campaigns: [{ id: "stale-a", businessId: "business-a" }]
+      };
+    }
+  });
+
+  const result = await hydration;
+
+  assert.deepEqual(result, { hydrated: false, reason: "unknown-business" });
+  assert.equal(storage.getItem("demeosBusinessProfiles"), currentProfiles);
+  assert.equal(storage.getItem("demeosCampaignHistory"), currentCampaigns);
+});
+
 test("Business A hydration ignores Business B records and preserves local legacy campaigns", function () {
   const legacy = { id: "legacy", campaignText: "Local-only legacy work", approvalStatus: "Approved" };
   const localA = { id: "same-a", businessId: "business-a", campaignText: "Old", approvalStatus: "Unapproved" };

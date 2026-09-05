@@ -135,18 +135,23 @@ function mergeKnownBusinessPersistence(profiles, campaigns, businessId, serverRe
 
 async function hydrateKnownBusiness(storage, businessId, fetchImpl) {
   const profiles = parseStoredJson(storage, "demeosBusinessProfiles", []);
-  const campaigns = parseStoredJson(storage, "demeosCampaignHistory", []);
   if (!Array.isArray(profiles) || !profiles.some(function (profile) { return profile.businessId === businessId; })) {
     return { hydrated: false, reason: "unknown-business" };
   }
   try {
     const response = await fetchImpl(`/api/businesses/${encodeURIComponent(businessId)}`);
     if (!response.ok) return { hydrated: false, reason: "server-error" };
+    const serverRecord = await response.json();
+    const currentProfiles = parseStoredJson(storage, "demeosBusinessProfiles", []);
+    const currentCampaigns = parseStoredJson(storage, "demeosCampaignHistory", []);
+    if (!Array.isArray(currentProfiles) || !currentProfiles.some(function (profile) { return profile.businessId === businessId; })) {
+      return { hydrated: false, reason: "unknown-business" };
+    }
     const merged = mergeKnownBusinessPersistence(
-      profiles,
-      Array.isArray(campaigns) ? campaigns : [],
+      currentProfiles,
+      Array.isArray(currentCampaigns) ? currentCampaigns : [],
       businessId,
-      await response.json()
+      serverRecord
     );
     storage.setItem("demeosBusinessProfiles", JSON.stringify(merged.profiles));
     storage.setItem("demeosCampaignHistory", JSON.stringify(merged.campaigns));
