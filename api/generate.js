@@ -79,7 +79,7 @@ if (
 
     }
 
-    if (!isRevision && (!promoText || typeof promoText !== "string")) {
+    if (!isRevision && (typeof promoText !== "string" || !promoText.trim())) {
 
       return res.status(400).json({
 
