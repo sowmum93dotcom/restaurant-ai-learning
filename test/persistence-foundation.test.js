@@ -1,7 +1,7 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 
-const { SCHEMA_STATEMENTS, createDatabase } = require("../api/_lib/database.js");
+const { SCHEMA_STATEMENTS, createDatabase, createPostgresDatabase } = require("../api/_lib/database.js");
 const { createPersistenceRepository } = require("../api/_lib/persistence.js");
 const { hydrateKnownBusiness, mergeKnownBusinessPersistence } = require("../js/script.js");
 
@@ -24,6 +24,29 @@ test("schema initialization is safe and idempotent", async function () {
 
   assert.equal(statements.length, SCHEMA_STATEMENTS.length);
   statements.forEach(function (statement) { assert.match(statement, /IF NOT EXISTS/); });
+});
+
+test("Vercel Postgres runtime uses a pool with the query text and values interface", async function () {
+  const calls = [];
+  const pool = {
+    async query(text, values) {
+      calls.push({ text, values });
+      return { rows: [] };
+    }
+  };
+  let poolsCreated = 0;
+  const database = createPostgresDatabase({
+    createPool() { poolsCreated += 1; return pool; }
+  });
+
+  const result = await database.query("SELECT profile FROM demeos_businesses WHERE business_id = $1", ["business-a"]);
+
+  assert.equal(poolsCreated, 1);
+  assert.deepEqual(calls, [{
+    text: "SELECT profile FROM demeos_businesses WHERE business_id = $1",
+    values: ["business-a"]
+  }]);
+  assert.deepEqual(result, { rows: [] });
 });
 
 test("repository restores an existing known business and only its campaigns", async function () {

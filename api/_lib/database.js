@@ -38,12 +38,15 @@ function createDatabase(client) {
 }
 
 let defaultDatabase;
+function createPostgresDatabase(postgres) {
+  return createDatabase(postgres.createPool());
+}
+
 function getDatabase() {
   if (!defaultDatabase) {
-    const { sql } = require("@vercel/postgres");
-    defaultDatabase = createDatabase(sql);
+    defaultDatabase = createPostgresDatabase(require("@vercel/postgres"));
   }
   return defaultDatabase;
 }
 
-module.exports = { SCHEMA_STATEMENTS, createDatabase, getDatabase };
+module.exports = { SCHEMA_STATEMENTS, createDatabase, createPostgresDatabase, getDatabase };
