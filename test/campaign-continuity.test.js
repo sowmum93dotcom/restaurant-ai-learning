@@ -553,3 +553,89 @@ test("Open, Revise, and Approve reject a campaign reassigned to another business
   ]);
   assert.equal(JSON.parse(storage.get("demeosCampaignHistory"))[0].approvalStatus, "Unapproved");
 });
+
+test("approval stays local and remains retryable when server persistence fails", async function () {
+  class FakeElement {
+    constructor() {
+      this.listeners = {};
+      this.options = [{ text: "Social Media Post" }];
+      this.selectedIndex = 0;
+      this.value = "";
+      this.textContent = "";
+      this.hidden = false;
+      this.disabled = false;
+      this.classList = { toggle() {} };
+    }
+
+    addEventListener(eventName, listener) { this.listeners[eventName] = listener; }
+    append() {}
+    appendChild() {}
+    prepend() {}
+    scrollIntoView() {}
+  }
+
+  const elements = new Map();
+  const createdElements = [];
+  const document = {
+    addEventListener(eventName, listener) {
+      if (eventName === "DOMContentLoaded") this.ready = listener;
+    },
+    createElement() {
+      const element = new FakeElement();
+      createdElements.push(element);
+      return element;
+    },
+    getElementById(id) {
+      if (!elements.has(id)) elements.set(id, new FakeElement());
+      return elements.get(id);
+    }
+  };
+  const campaign = {
+    id: "campaign",
+    businessId: "business",
+    campaignText: "Campaign content",
+    approvalStatus: "Unapproved"
+  };
+  const storage = memoryStorage([
+    ["demeosBusinessProfile", JSON.stringify({ name: "Restaurant", businessId: "business" })],
+    ["demeosCampaignHistory", JSON.stringify([campaign])]
+  ]);
+  const alerts = [];
+  let finishPersistence;
+  const persistenceResponse = new Promise(function (resolve) { finishPersistence = resolve; });
+
+  vm.runInNewContext(fs.readFileSync(require.resolve("../js/script.js"), "utf8"), {
+    alert(message) { alerts.push(message); },
+    console,
+    document,
+    fetch(url, options) {
+      if (!options) return Promise.resolve({ ok: false });
+      return persistenceResponse;
+    },
+    localStorage: storage,
+    Math,
+    setTimeout
+  });
+  document.ready();
+
+  createdElements.find(function (element) {
+    return element.textContent === "Open" && element.listeners.click;
+  }).listeners.click();
+  const approve = document.getElementById("approve-btn");
+  const approval = approve.listeners.click();
+
+  assert.equal(JSON.parse(storage.getItem("demeosCampaignHistory"))[0].approvalStatus, "Approved");
+  assert.equal(approve.disabled, true);
+  assert.equal(approve.textContent, "Saving Approval...");
+
+  finishPersistence({ ok: false });
+  await approval;
+
+  assert.equal(document.getElementById("campaign-approval-status").textContent, "Status: Approved");
+  assert.equal(approve.hidden, false);
+  assert.equal(approve.disabled, false);
+  assert.equal(approve.textContent, "Approve Campaign");
+  assert.deepEqual(alerts, [
+    "Approval saved on this device, but DEMEOS could not sync it to the server. Please try again."
+  ]);
+});
