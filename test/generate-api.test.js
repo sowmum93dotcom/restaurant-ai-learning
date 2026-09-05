@@ -99,6 +99,70 @@ test("an invalid campaignType is rejected for a revision", async function () {
   assert.equal(result.fetchCalls, 0);
 });
 
+test("a complete valid Business Manager Profile proceeds", async function () {
+  const result = await generate({ promoText: "Promote our Friday dinner." });
+
+  assert.equal(result.response.statusCode, 200);
+  assert.equal(result.fetchCalls, 1);
+});
+
+for (const [description, invalidBusinessProfile] of [
+  ["missing", undefined],
+  ["null", null],
+  ["string", "DEMEOS Kitchen"],
+  ["number", 42],
+  ["boolean", true],
+  ["array", []]
+]) {
+  test(`${description} businessProfile is rejected before fetch`, async function () {
+    const result = await generate({
+      promoText: "Promote our Friday dinner.",
+      businessProfile: invalidBusinessProfile
+    });
+
+    assert.equal(result.response.statusCode, 400);
+    assert.equal(
+      result.response.body.error,
+      "Please complete and save the Business Manager Profile before creating marketing work."
+    );
+    assert.equal(result.fetchCalls, 0);
+  });
+}
+
+for (const field of ["name", "type", "location", "brandVoice", "targetCustomer", "goal"]) {
+  test(`businessProfile requires ${field}`, async function () {
+    const invalidBusinessProfile = { ...businessProfile };
+    delete invalidBusinessProfile[field];
+    const result = await generate({
+      promoText: "Promote our Friday dinner.",
+      businessProfile: invalidBusinessProfile
+    });
+
+    assert.equal(result.response.statusCode, 400);
+    assert.equal(result.fetchCalls, 0);
+  });
+}
+
+test("a whitespace-only required businessProfile field is rejected", async function () {
+  const result = await generate({
+    promoText: "Promote our Friday dinner.",
+    businessProfile: { ...businessProfile, brandVoice: " \n\t " }
+  });
+
+  assert.equal(result.response.statusCode, 400);
+  assert.equal(result.fetchCalls, 0);
+});
+
+test("a non-string required businessProfile field is rejected", async function () {
+  const result = await generate({
+    promoText: "Promote our Friday dinner.",
+    businessProfile: { ...businessProfile, goal: 42 }
+  });
+
+  assert.equal(result.response.statusCode, 400);
+  assert.equal(result.fetchCalls, 0);
+});
+
 for (const [description, body] of [
   ["missing", {}],
   ["empty", { promoText: "" }],
@@ -122,4 +186,19 @@ test("a valid revision remains unaffected without promoText", async function () 
 
   assert.equal(result.response.statusCode, 200);
   assert.equal(result.fetchCalls, 1);
+});
+
+test("a revision with an invalid profile is rejected before fetch", async function () {
+  const result = await generate({
+    businessProfile: { ...businessProfile, targetCustomer: "" },
+    existingCampaign: "Original campaign",
+    revisionInstruction: "Make the call to action clearer."
+  });
+
+  assert.equal(result.response.statusCode, 400);
+  assert.equal(
+    result.response.body.error,
+    "Please complete and save the Business Manager Profile before creating marketing work."
+  );
+  assert.equal(result.fetchCalls, 0);
 });
