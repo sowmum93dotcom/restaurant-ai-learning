@@ -337,19 +337,29 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   addBusinessBtn.addEventListener("click", function () {
     addingBusiness = true; businessSelector.value = ""; fillProfile(null); clearCampaignWorkspace();
   });
-  saveBusinessProfileBtn.addEventListener("click", function () {
+  saveBusinessProfileBtn.addEventListener("click", async function () {
     const profileFields = {};
     Object.keys(fields).forEach(function (key) { profileFields[key] = fields[key].value.trim(); });
     if (Object.keys(profileFields).some(function (key) { return !profileFields[key]; })) {
       alert("Please complete all Business Manager Profile fields before saving."); return;
     }
-    const result = updateBusinessProfile(state.profiles, profileFields, addingBusiness ? null : state.activeBusinessId);
-    state = { profiles: result.profiles, activeBusinessId: result.profile.businessId }; addingBusiness = false;
-    localStorage.setItem("demeosBusinessProfiles", JSON.stringify(state.profiles));
-    localStorage.setItem("demeosActiveBusinessId", state.activeBusinessId);
-    persistBusiness(result.profile);
-    renderSelector(); fillProfile(result.profile); clearCampaignWorkspace(); renderCampaignHistory();
-    alert("Business Profile saved successfully.");
+
+    saveBusinessProfileBtn.disabled = true;
+    saveBusinessProfileBtn.textContent = "Saving Business Profile...";
+    try {
+      const result = updateBusinessProfile(state.profiles, profileFields, addingBusiness ? null : state.activeBusinessId);
+      state = { profiles: result.profiles, activeBusinessId: result.profile.businessId }; addingBusiness = false;
+      localStorage.setItem("demeosBusinessProfiles", JSON.stringify(state.profiles));
+      localStorage.setItem("demeosActiveBusinessId", state.activeBusinessId);
+      renderSelector(); fillProfile(result.profile); clearCampaignWorkspace(); renderCampaignHistory();
+
+      const persisted = await persistBusiness(result.profile);
+      if (persisted) alert("Business Profile saved successfully.");
+      else alert("Business Profile saved on this device, but DEMEOS could not sync it to the server. Please try saving again.");
+    } finally {
+      saveBusinessProfileBtn.disabled = false;
+      saveBusinessProfileBtn.textContent = "Save Business Profile";
+    }
   });
 
   async function requestCampaign(body) {
