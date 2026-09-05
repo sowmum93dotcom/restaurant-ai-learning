@@ -11,8 +11,129 @@ const {
   getCampaignBusinessId,
   getCampaignContinuity,
   getCampaignContinuityLabel,
-  getVisibleCampaigns
+  getVisibleCampaigns,
+  migrateBusinessProfiles,
+  updateBusinessProfile
 } = require("../js/script.js");
+
+function memoryStorage(entries) {
+  const values = new Map(entries || []);
+  return {
+    values,
+    getItem(key) { return values.has(key) ? values.get(key) : null; },
+    setItem(key, value) { values.set(key, value); },
+    removeItem(key) { values.delete(key); }
+  };
+}
+
+test("legacy single profile migrates once, preserves its ID, and becomes active", function () {
+  const legacy = { businessId: "business-legacy", name: "Legacy Restaurant", type: "Restaurant" };
+  const storage = memoryStorage([["demeosBusinessProfile", JSON.stringify(legacy)]]);
+
+  const first = migrateBusinessProfiles(storage);
+  const collectionAfterFirstMigration = storage.getItem("demeosBusinessProfiles");
+  const second = migrateBusinessProfiles(storage);
+
+  assert.equal(first.profiles.length, 1);
+  assert.equal(first.profiles[0].businessId, legacy.businessId);
+  assert.equal(first.activeBusinessId, legacy.businessId);
+  assert.equal(storage.getItem("demeosActiveBusinessId"), legacy.businessId);
+  assert.equal(storage.getItem("demeosBusinessProfiles"), collectionAfterFirstMigration);
+  assert.deepEqual(second, first);
+  assert.equal(storage.getItem("demeosBusinessProfile"), JSON.stringify(legacy));
+});
+
+test("a legacy profile without an ID receives one only once", function () {
+  const storage = memoryStorage([["demeosBusinessProfile", JSON.stringify({ name: "Legacy Cafe" })]]);
+  const first = migrateBusinessProfiles(storage);
+  const second = migrateBusinessProfiles(storage);
+
+  assert.ok(first.profiles[0].businessId);
+  assert.equal(second.profiles.length, 1);
+  assert.equal(second.profiles[0].businessId, first.profiles[0].businessId);
+  assert.equal(JSON.parse(storage.getItem("demeosBusinessProfile")).businessId, first.profiles[0].businessId);
+});
+
+test("adding a second business creates a different stable ID", function () {
+  const profiles = [{ businessId: "business-a", name: "Business A" }];
+  const result = updateBusinessProfile(profiles, { name: "Business B" }, null, function () { return "business-b"; });
+  const laterEdit = updateBusinessProfile(result.profiles, { name: "Business B Updated" }, "business-b");
+
+  assert.deepEqual(result.profiles.map(function (profile) { return profile.businessId; }), ["business-a", "business-b"]);
+  assert.equal(laterEdit.profile.businessId, "business-b");
+});
+
+test("editing Business A leaves Business B unchanged", function () {
+  const businessB = { businessId: "business-b", name: "Business B", goal: "Retain customers" };
+  const result = updateBusinessProfile([
+    { businessId: "business-a", name: "Business A", goal: "Old goal" },
+    businessB
+  ], { name: "Business A Updated", goal: "New goal" }, "business-a");
+
+  assert.deepEqual(result.profiles[0], { businessId: "business-a", name: "Business A Updated", goal: "New goal" });
+  assert.deepEqual(result.profiles[1], businessB);
+});
+
+test("switching businesses loads its fields, refreshes history, and clears the open workspace", function () {
+  class FakeElement {
+    constructor() {
+      this.listeners = {};
+      this.children = [];
+      this.options = [{ text: "Social Media Post" }];
+      this.selectedIndex = 0;
+      this.value = "";
+      this.textContent = "";
+      this.hidden = false;
+      this.classList = { toggle() {} };
+    }
+    addEventListener(name, listener) { this.listeners[name] = listener; }
+    append() {}
+    appendChild(child) { this.children.push(child); }
+    prepend() {}
+    scrollIntoView() {}
+  }
+  const elements = new Map();
+  const created = [];
+  const document = {
+    addEventListener(name, listener) { if (name === "DOMContentLoaded") this.ready = listener; },
+    createElement() { const element = new FakeElement(); created.push(element); return element; },
+    getElementById(id) {
+      if (!elements.has(id)) elements.set(id, new FakeElement());
+      return elements.get(id);
+    }
+  };
+  const profiles = [
+    { businessId: "a", name: "Business A", type: "Cafe", location: "A", brandVoice: "Warm", targetCustomer: "A", goal: "A" },
+    { businessId: "b", name: "Business B", type: "Bakery", location: "B", brandVoice: "Bold", targetCustomer: "B", goal: "B" }
+  ];
+  const storage = memoryStorage([
+    ["demeosBusinessProfiles", JSON.stringify(profiles)],
+    ["demeosActiveBusinessId", "a"],
+    ["demeosCampaignHistory", JSON.stringify([
+      { id: "a-campaign", businessId: "a", businessName: "Business A", campaignText: "A campaign", approvalStatus: "Unapproved" },
+      { id: "b-campaign", businessId: "b", businessName: "Business B", campaignText: "B campaign", approvalStatus: "Unapproved" }
+    ])]
+  ]);
+  vm.runInNewContext(fs.readFileSync(require.resolve("../js/script.js"), "utf8"), {
+    alert() {}, console, document, localStorage: storage, Math, setTimeout
+  });
+  document.ready();
+
+  created.find(function (element) { return element.textContent === "Open"; }).listeners.click();
+  assert.equal(document.getElementById("results-content").textContent, "A campaign");
+
+  const selector = document.getElementById("business-selector");
+  selector.value = "b";
+  selector.listeners.change();
+
+  assert.equal(document.getElementById("business-name").value, "Business B");
+  assert.equal(document.getElementById("business-type").value, "Bakery");
+  assert.equal(document.getElementById("results").hidden, true);
+  assert.equal(document.getElementById("results-content").textContent, "");
+  assert.equal(storage.getItem("demeosActiveBusinessId"), "b");
+  assert.equal(created.filter(function (element) { return element.textContent === "Open"; }).length, 2,
+    "each active business renders exactly its own campaign");
+});
 
 test("campaign history shows matching and legacy records but hides other businesses", function () {
   const profile = { businessId: "business-current" };
