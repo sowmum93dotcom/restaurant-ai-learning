@@ -70,6 +70,15 @@ test("different campaign IDs persist independently", async function () {
   await campaignA;
 });
 
+test("persistence result is returned to the caller", async function () {
+  const persistCampaign = createCampaignPersistenceQueue(async function (_, campaign) {
+    return campaign.id === "campaign-synced";
+  });
+
+  assert.equal(await persistCampaign({}, { id: "campaign-synced" }), true);
+  assert.equal(await persistCampaign({}, { id: "campaign-local-only" }), false);
+});
+
 test("a failed write does not block a later write for the same campaign", async function () {
   const calls = [];
   const persistCampaign = createCampaignPersistenceQueue(async function (_, campaign) {

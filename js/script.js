@@ -237,13 +237,14 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     }
   }
   async function persistCampaignWrite(profile, campaign) {
-    if (!await persistBusiness(profile)) return;
+    if (!await persistBusiness(profile)) return false;
     try {
       const response = await fetch(`/api/businesses/${encodeURIComponent(profile.businessId)}/campaigns/${encodeURIComponent(campaign.id)}`, {
         method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ campaign })
       });
       if (!response.ok) console.error("Could not persist campaign: server returned", response.status);
-    } catch (error) { console.error("Could not persist campaign:", error); }
+      return Boolean(response.ok);
+    } catch (error) { console.error("Could not persist campaign:", error); return false; }
   }
   const persistCampaign = createCampaignPersistenceQueue(persistCampaignWrite);
 
@@ -318,7 +319,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     fillProfile(activeProfile()); renderSelector(); clearCampaignWorkspace(); renderCampaignHistory();
     hydrateActiveBusiness();
   }
-  function saveCampaign(text, promo, type, typeLabel, profile, sourceId) {
+  async function saveCampaign(text, promo, type, typeLabel, profile, sourceId) {
     const campaigns = getCampaignHistory();
     const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const source = sourceId ? campaigns.find(function (entry) { return entry.id === sourceId; }) : null;
@@ -329,7 +330,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     campaigns.unshift(campaign);
     const retained = enforceBusinessCampaignLimit(campaigns, profile.businessId, 20, [id, sourceId]);
     localStorage.setItem(campaignHistoryKey, JSON.stringify(retained)); openCampaignId = id; renderCampaignHistory();
-    persistCampaign(profile, campaign); return id;
+    const persisted = await persistCampaign(profile, campaign); return { id, persisted };
   }
 
   renderSelector(); fillProfile(activeProfile()); renderCampaignHistory(); hydrateActiveBusiness();
@@ -382,9 +383,10 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     try {
       const text = await requestCampaign({ promoText: promo, campaignType: campaignType.value, businessProfile: profile });
       resultsContent.textContent = text; copyBtn.hidden = false;
-      saveCampaign(text, promo, campaignType.value, campaignType.options[campaignType.selectedIndex].text, profile);
+      const saved = await saveCampaign(text, promo, campaignType.value, campaignType.options[campaignType.selectedIndex].text, profile);
       showApprovalStatus("Unapproved"); revisionControls.hidden = false;
       resultsArea.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (!saved.persisted) alert("Campaign saved on this device, but DEMEOS could not sync it to the server. Please try again.");
     } catch (error) { console.error(error); resultsContent.textContent = error.message; }
     finally { generateBtn.disabled = false; generateBtn.textContent = "Create with DEMEOS"; }
   });
@@ -403,9 +405,10 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     reviseBtn.disabled = true; reviseBtn.textContent = "DEMEOS is revising...";
     try {
       const text = await requestCampaign({ existingCampaign: source.campaignText, revisionInstruction: instruction, campaignType: type, businessProfile: profile });
-      saveCampaign(text, source.promoText || "", type, label, profile, source.id);
+      const saved = await saveCampaign(text, source.promoText || "", type, label, profile, source.id);
       resultsContent.textContent = text; revisionInstruction.value = ""; copyBtn.hidden = false; showApprovalStatus("Unapproved");
       resultsArea.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (!saved.persisted) alert("Campaign saved on this device, but DEMEOS could not sync it to the server. Please try again.");
     } catch (error) { console.error(error); alert(error.message); }
     finally { reviseBtn.disabled = false; reviseBtn.textContent = "Revise Campaign"; }
   });
