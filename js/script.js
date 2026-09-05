@@ -162,8 +162,29 @@ async function hydrateKnownBusiness(storage, businessId, fetchImpl) {
   }
 }
 
+function createCampaignPersistenceQueue(persistWrite) {
+  const pendingByCampaignId = new Map();
+  return function (profile, campaign) {
+    const campaignId = campaign.id;
+    const queuedProfile = { ...profile };
+    const queuedCampaign = { ...campaign };
+    const previous = pendingByCampaignId.get(campaignId) || Promise.resolve();
+    const pending = previous.catch(function () {}).then(function () {
+      return persistWrite(queuedProfile, queuedCampaign);
+    });
+    pendingByCampaignId.set(campaignId, pending);
+    pending.then(function () {
+      if (pendingByCampaignId.get(campaignId) === pending) pendingByCampaignId.delete(campaignId);
+    }, function () {
+      if (pendingByCampaignId.get(campaignId) === pending) pendingByCampaignId.delete(campaignId);
+    });
+    return pending;
+  };
+}
+
 if (typeof module !== "undefined" && module.exports) module.exports = {
   addBusinessIdentity, canAccessCampaign, createCampaignContinuity, enforceBusinessCampaignLimit,
+  createCampaignPersistenceQueue,
   getCampaignBusinessId, getCampaignContinuity, getCampaignContinuityLabel, getVisibleCampaigns,
   hydrateKnownBusiness, mergeKnownBusinessPersistence, migrateBusinessProfiles, updateBusinessProfile
 };
@@ -215,7 +236,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       console.error("Could not persist business:", error); return false;
     }
   }
-  async function persistCampaign(profile, campaign) {
+  async function persistCampaignWrite(profile, campaign) {
     if (!await persistBusiness(profile)) return;
     try {
       const response = await fetch(`/api/businesses/${encodeURIComponent(profile.businessId)}/campaigns/${encodeURIComponent(campaign.id)}`, {
@@ -224,6 +245,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       if (!response.ok) console.error("Could not persist campaign: server returned", response.status);
     } catch (error) { console.error("Could not persist campaign:", error); }
   }
+  const persistCampaign = createCampaignPersistenceQueue(persistCampaignWrite);
 
   function activeProfile() {
     return state.profiles.find(function (profile) { return profile.businessId === state.activeBusinessId; }) || null;
