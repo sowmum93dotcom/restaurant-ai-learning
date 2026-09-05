@@ -103,7 +103,7 @@ function enforceBusinessCampaignLimit(campaigns, businessId, maximumCampaigns, p
   return retained;
 }
 
-function mergeKnownBusinessPersistence(profiles, campaigns, businessId, serverRecord) {
+function mergeKnownBusinessPersistence(profiles, campaigns, businessId, serverRecord, preserveLocalProfile) {
   const serverProfile = serverRecord && serverRecord.businessProfile;
   if (!businessId || !serverProfile || serverProfile.businessId !== businessId) {
     throw new Error("The restored business did not match the requested business.");
@@ -112,7 +112,9 @@ function mergeKnownBusinessPersistence(profiles, campaigns, businessId, serverRe
   if (profileIndex < 0) throw new Error("Only a locally known business can be restored.");
 
   const nextProfiles = profiles.slice();
-  nextProfiles[profileIndex] = { ...profiles[profileIndex], ...serverProfile, businessId };
+  if (!preserveLocalProfile) {
+    nextProfiles[profileIndex] = { ...profiles[profileIndex], ...serverProfile, businessId };
+  }
   const serverCampaigns = Array.isArray(serverRecord.campaigns) ? serverRecord.campaigns : [];
   const validServerCampaigns = serverCampaigns.filter(function (campaign) {
     return campaign && typeof campaign.id === "string" && campaign.businessId === businessId;
@@ -151,7 +153,8 @@ async function hydrateKnownBusiness(storage, businessId, fetchImpl) {
       currentProfiles,
       Array.isArray(currentCampaigns) ? currentCampaigns : [],
       businessId,
-      serverRecord
+      serverRecord,
+      storage.getItem("demeosPendingBusinessProfileSync") === businessId
     );
     storage.setItem("demeosBusinessProfiles", JSON.stringify(merged.profiles));
     storage.setItem("demeosCampaignHistory", JSON.stringify(merged.campaigns));
@@ -355,8 +358,15 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       renderSelector(); fillProfile(result.profile); clearCampaignWorkspace(); renderCampaignHistory();
 
       const persisted = await persistBusiness(result.profile);
-      if (persisted) alert("Business Profile saved successfully.");
-      else alert("Business Profile saved on this device, but DEMEOS could not sync it to the server. Please try saving again.");
+      if (persisted) {
+        if (localStorage.getItem("demeosPendingBusinessProfileSync") === result.profile.businessId) {
+          localStorage.removeItem("demeosPendingBusinessProfileSync");
+        }
+        alert("Business Profile saved successfully.");
+      } else {
+        localStorage.setItem("demeosPendingBusinessProfileSync", result.profile.businessId);
+        alert("Business Profile saved on this device, but DEMEOS could not sync it to the server. Please try saving again.");
+      }
     } finally {
       saveBusinessProfileBtn.disabled = false;
       saveBusinessProfileBtn.textContent = "Save Business Profile";

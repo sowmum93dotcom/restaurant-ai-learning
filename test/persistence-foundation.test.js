@@ -1,5 +1,7 @@
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
 const test = require("node:test");
+const vm = require("node:vm");
 
 const { SCHEMA_STATEMENTS, createDatabase, createPostgresDatabase } = require("../api/_lib/database.js");
 const { createPersistenceRepository } = require("../api/_lib/persistence.js");
@@ -151,6 +153,94 @@ test("hydration restores profile and complete campaign continuity fields", async
     businessId: "business-a", name: "Restored A"
   });
   assert.deepEqual(JSON.parse(storage.getItem("demeosCampaignHistory"))[0], campaign);
+});
+
+test("hydration preserves a profile with pending sync while restoring its campaigns", async function () {
+  const localProfile = { businessId: "business-a", name: "Latest local A", goal: "Local goal" };
+  const serverCampaign = { id: "campaign-a", businessId: "business-a", campaignText: "Server campaign" };
+  const storage = memoryStorage([
+    ["demeosBusinessProfiles", JSON.stringify([localProfile])],
+    ["demeosCampaignHistory", "[]"],
+    ["demeosPendingBusinessProfileSync", "business-a"]
+  ]);
+
+  const result = await hydrateKnownBusiness(storage, "business-a", async function () {
+    return {
+      ok: true,
+      async json() {
+        return {
+          businessProfile: { businessId: "business-a", name: "Older server A", goal: "Server goal" },
+          campaigns: [serverCampaign]
+        };
+      }
+    };
+  });
+
+  assert.equal(result.hydrated, true);
+  assert.deepEqual(JSON.parse(storage.getItem("demeosBusinessProfiles")), [localProfile]);
+  assert.deepEqual(JSON.parse(storage.getItem("demeosCampaignHistory")), [serverCampaign]);
+});
+
+test("Business Profile failed sync is marked and a successful retry clears the marker", async function () {
+  class FakeElement {
+    constructor() {
+      this.listeners = {};
+      this.value = "";
+      this.textContent = "";
+      this.hidden = false;
+      this.disabled = false;
+      this.classList = { toggle() {} };
+    }
+    addEventListener(eventName, listener) { this.listeners[eventName] = listener; }
+    append() {}
+    appendChild() {}
+    prepend() {}
+    scrollIntoView() {}
+  }
+  const elements = new Map();
+  const document = {
+    addEventListener(eventName, listener) {
+      if (eventName === "DOMContentLoaded") this.ready = listener;
+    },
+    createElement() { return new FakeElement(); },
+    getElementById(id) {
+      if (!elements.has(id)) elements.set(id, new FakeElement());
+      return elements.get(id);
+    }
+  };
+  const profile = {
+    businessId: "business-a", name: "Business A", type: "Cafe", location: "Cardiff",
+    brandVoice: "Warm", targetCustomer: "Neighbours", goal: "Grow"
+  };
+  const storage = memoryStorage([
+    ["demeosBusinessProfiles", JSON.stringify([profile])],
+    ["demeosActiveBusinessId", profile.businessId]
+  ]);
+  const persistenceResults = [false, true];
+  const persistenceCalls = [];
+
+  vm.runInNewContext(fs.readFileSync(require.resolve("../js/script.js"), "utf8"), {
+    alert() {}, console, document,
+    fetch(url, options) {
+      if (!options) return Promise.resolve({ ok: false });
+      const ok = persistenceResults.shift();
+      persistenceCalls.push({ url, ok });
+      return Promise.resolve({ ok });
+    },
+    localStorage: storage, Math, setTimeout, window: {}
+  });
+  document.ready();
+
+  const save = document.getElementById("save-business-profile-btn").listeners.click;
+  await save();
+  assert.equal(storage.getItem("demeosPendingBusinessProfileSync"), profile.businessId);
+
+  await save();
+  assert.deepEqual(persistenceCalls, [
+    { url: "/api/businesses/business-a", ok: false },
+    { url: "/api/businesses/business-a", ok: true }
+  ]);
+  assert.equal(storage.getItem("demeosPendingBusinessProfileSync"), null);
 });
 
 test("hydration merges into local changes made while the request is in flight", async function () {
