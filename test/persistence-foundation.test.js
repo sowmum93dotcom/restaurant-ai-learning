@@ -72,6 +72,66 @@ test("repository restores an existing known business and only its campaigns", as
   assert.match(queries[1].sql, /WHERE business_id = \$1/);
 });
 
+test("repository restores at most the newest 20 campaigns for the requested business", async function () {
+  const storedCampaigns = Array.from({ length: 25 }, function (_, index) {
+    return {
+      businessId: "business-a",
+      campaign: { id: `campaign-a-${index + 1}` },
+      createdAt: index + 1
+    };
+  }).concat([
+    { businessId: "business-b", campaign: { id: "campaign-b-26" }, createdAt: 26 }
+  ]);
+  const database = {
+    async ensureSchema() {},
+    async query(sql, values) {
+      if (sql.startsWith("SELECT profile")) {
+        return { rows: [{ profile: { name: "Business A" } }] };
+      }
+      assert.match(sql, /WHERE business_id = \$1 ORDER BY created_at DESC LIMIT 20/);
+      return {
+        rows: storedCampaigns
+          .filter(function (record) { return record.businessId === values[0]; })
+          .sort(function (left, right) { return right.createdAt - left.createdAt; })
+          .slice(0, 20)
+          .map(function (record) { return { campaign: record.campaign }; })
+      };
+    }
+  };
+
+  const restored = await createPersistenceRepository(database).getKnownBusiness("business-a");
+
+  assert.equal(restored.campaigns.length, 20);
+  assert.deepEqual(
+    restored.campaigns.map(function (campaign) { return campaign.id; }),
+    Array.from({ length: 20 }, function (_, index) { return `campaign-a-${25 - index}`; })
+  );
+  assert.equal(restored.campaigns.some(function (campaign) {
+    return campaign.id.startsWith("campaign-b-");
+  }), false);
+});
+
+test("repository restores every campaign when a business has fewer than 20", async function () {
+  const database = {
+    async ensureSchema() {},
+    async query(sql) {
+      if (sql.startsWith("SELECT profile")) return { rows: [{ profile: { name: "Business A" } }] };
+      return {
+        rows: [3, 2, 1].map(function (number) {
+          return { campaign: { id: `campaign-a-${number}` } };
+        })
+      };
+    }
+  };
+
+  const restored = await createPersistenceRepository(database).getKnownBusiness("business-a");
+
+  assert.deepEqual(
+    restored.campaigns.map(function (campaign) { return campaign.id; }),
+    ["campaign-a-3", "campaign-a-2", "campaign-a-1"]
+  );
+});
+
 test("hydration restores profile and complete campaign continuity fields", async function () {
   const storage = memoryStorage([
     ["demeosBusinessProfiles", JSON.stringify([{ businessId: "business-a", name: "Old A" }])],
