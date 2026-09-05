@@ -12,8 +12,18 @@ module.exports = async function handler(req, res) {
   try {
     if (req.method === "PUT") {
       const profile = req.body && req.body.businessProfile;
-      if (!profile || typeof profile !== "object") {
-        return res.status(400).json({ error: "A Business Manager Profile is required." });
+      const requiredFields = ["name", "type", "location", "brandVoice", "targetCustomer", "goal"];
+      if (
+        !profile ||
+        typeof profile !== "object" ||
+        Array.isArray(profile) ||
+        requiredFields.some(function (field) {
+          return typeof profile[field] !== "string" || !profile[field].trim();
+        })
+      ) {
+        return res.status(400).json({
+          error: "Please complete all Business Manager Profile fields before saving."
+        });
       }
       await getRepository().saveBusiness({ ...profile, businessId });
       return res.status(204).end();
