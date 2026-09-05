@@ -5,7 +5,10 @@ const vm = require("node:vm");
 
 const { SCHEMA_STATEMENTS, createDatabase, createPostgresDatabase } = require("../api/_lib/database.js");
 const { createPersistenceRepository } = require("../api/_lib/persistence.js");
-const { hydrateKnownBusiness, mergeKnownBusinessPersistence } = require("../js/script.js");
+const {
+  addPendingBusinessProfileSync, hydrateKnownBusiness, mergeKnownBusinessPersistence,
+  readPendingBusinessProfileSyncIds, removePendingBusinessProfileSync
+} = require("../js/script.js");
 
 function memoryStorage(entries) {
   const values = new Map(entries || []);
@@ -161,7 +164,7 @@ test("hydration preserves a profile with pending sync while restoring its campai
   const storage = memoryStorage([
     ["demeosBusinessProfiles", JSON.stringify([localProfile])],
     ["demeosCampaignHistory", "[]"],
-    ["demeosPendingBusinessProfileSync", "business-a"]
+    ["demeosPendingBusinessProfileSync", '["business-a"]']
   ]);
 
   const result = await hydrateKnownBusiness(storage, "business-a", async function () {
@@ -181,7 +184,49 @@ test("hydration preserves a profile with pending sync while restoring its campai
   assert.deepEqual(JSON.parse(storage.getItem("demeosCampaignHistory")), [serverCampaign]);
 });
 
-test("Business Profile failed sync is marked and a successful retry clears the marker", async function () {
+test("pending profile syncs support multiple businesses and remove only the successful business", function () {
+  const storage = memoryStorage();
+
+  addPendingBusinessProfileSync(storage, "business-a");
+  addPendingBusinessProfileSync(storage, "business-b");
+  addPendingBusinessProfileSync(storage, "business-a");
+  assert.equal(storage.getItem("demeosPendingBusinessProfileSync"), '["business-a","business-b"]');
+
+  removePendingBusinessProfileSync(storage, "business-a");
+  assert.deepEqual(readPendingBusinessProfileSyncIds(storage), ["business-b"]);
+  assert.equal(storage.getItem("demeosPendingBusinessProfileSync"), '["business-b"]');
+});
+
+test("pending profile sync reads missing, malformed, and non-array data as empty", function () {
+  const storage = memoryStorage();
+  assert.deepEqual(readPendingBusinessProfileSyncIds(storage), []);
+  storage.setItem("demeosPendingBusinessProfileSync", "[malformed");
+  assert.deepEqual(readPendingBusinessProfileSyncIds(storage), []);
+  storage.setItem("demeosPendingBusinessProfileSync", JSON.stringify({ businessId: "business-a" }));
+  assert.deepEqual(readPendingBusinessProfileSyncIds(storage), []);
+});
+
+test("legacy scalar pending sync protects its profile and migrates when updated", async function () {
+  const localProfile = { businessId: "business-a", name: "Latest local A" };
+  const storage = memoryStorage([
+    ["demeosBusinessProfiles", JSON.stringify([localProfile])],
+    ["demeosCampaignHistory", "[]"],
+    ["demeosPendingBusinessProfileSync", "business-a"]
+  ]);
+
+  await hydrateKnownBusiness(storage, "business-a", async function () {
+    return {
+      ok: true,
+      async json() { return { businessProfile: { businessId: "business-a", name: "Server A" }, campaigns: [] }; }
+    };
+  });
+  assert.deepEqual(JSON.parse(storage.getItem("demeosBusinessProfiles")), [localProfile]);
+
+  addPendingBusinessProfileSync(storage, "business-b");
+  assert.equal(storage.getItem("demeosPendingBusinessProfileSync"), '["business-a","business-b"]');
+});
+
+test("Business Profile is marked before persistence resolves and a successful retry clears only its marker", async function () {
   class FakeElement {
     constructor() {
       this.listeners = {};
@@ -216,31 +261,70 @@ test("Business Profile failed sync is marked and a successful retry clears the m
     ["demeosBusinessProfiles", JSON.stringify([profile])],
     ["demeosActiveBusinessId", profile.businessId]
   ]);
-  const persistenceResults = [false, true];
+  let resolveFirstPersistence;
+  const firstPersistence = new Promise(function (resolve) { resolveFirstPersistence = resolve; });
+  const persistenceResults = [firstPersistence, Promise.resolve(true)];
   const persistenceCalls = [];
 
   vm.runInNewContext(fs.readFileSync(require.resolve("../js/script.js"), "utf8"), {
     alert() {}, console, document,
     fetch(url, options) {
       if (!options) return Promise.resolve({ ok: false });
-      const ok = persistenceResults.shift();
-      persistenceCalls.push({ url, ok });
-      return Promise.resolve({ ok });
+      const result = persistenceResults.shift();
+      persistenceCalls.push(url);
+      return result.then(function (ok) { return { ok }; });
     },
     localStorage: storage, Math, setTimeout, window: {}
   });
   document.ready();
 
   const save = document.getElementById("save-business-profile-btn").listeners.click;
-  await save();
-  assert.equal(storage.getItem("demeosPendingBusinessProfileSync"), profile.businessId);
-
-  await save();
-  assert.deepEqual(persistenceCalls, [
-    { url: "/api/businesses/business-a", ok: false },
-    { url: "/api/businesses/business-a", ok: true }
+  document.getElementById("business-name").value = "New local A";
+  const firstSave = save();
+  assert.equal(storage.getItem("demeosPendingBusinessProfileSync"), '["business-a"]');
+  await hydrateKnownBusiness(storage, "business-a", async function () {
+    return {
+      ok: true,
+      async json() {
+        return {
+          businessProfile: { businessId: "business-a", name: "Older server A" },
+          campaigns: [{ id: "server-campaign", businessId: "business-a" }]
+        };
+      }
+    };
+  });
+  assert.equal(JSON.parse(storage.getItem("demeosBusinessProfiles"))[0].name, "New local A");
+  assert.deepEqual(JSON.parse(storage.getItem("demeosCampaignHistory")), [
+    { id: "server-campaign", businessId: "business-a" }
   ]);
-  assert.equal(storage.getItem("demeosPendingBusinessProfileSync"), null);
+  resolveFirstPersistence(false);
+  await firstSave;
+  assert.equal(storage.getItem("demeosPendingBusinessProfileSync"), '["business-a"]');
+
+  addPendingBusinessProfileSync(storage, "business-b");
+  await save();
+  assert.deepEqual(persistenceCalls, ["/api/businesses/business-a", "/api/businesses/business-a"]);
+  assert.equal(storage.getItem("demeosPendingBusinessProfileSync"), '["business-b"]');
+});
+
+test("hydration remains normal for a business outside the pending list", async function () {
+  const storage = memoryStorage([
+    ["demeosBusinessProfiles", JSON.stringify([
+      { businessId: "business-a", name: "Local A" },
+      { businessId: "business-b", name: "Local B" }
+    ])],
+    ["demeosCampaignHistory", "[]"],
+    ["demeosPendingBusinessProfileSync", '["business-a"]']
+  ]);
+
+  await hydrateKnownBusiness(storage, "business-b", async function () {
+    return {
+      ok: true,
+      async json() { return { businessProfile: { businessId: "business-b", name: "Server B" }, campaigns: [] }; }
+    };
+  });
+
+  assert.equal(JSON.parse(storage.getItem("demeosBusinessProfiles"))[1].name, "Server B");
 });
 
 test("hydration merges into local changes made while the request is in flight", async function () {
