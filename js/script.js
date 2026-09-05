@@ -40,6 +40,40 @@ function parseStoredJson(storage, key, fallback) {
   }
 }
 
+const pendingBusinessProfileSyncKey = "demeosPendingBusinessProfileSync";
+
+function readPendingBusinessProfileSyncIds(storage) {
+  const stored = storage.getItem(pendingBusinessProfileSyncKey);
+  if (!stored) return [];
+  try {
+    const parsed = JSON.parse(stored);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(function (businessId, index) {
+      return typeof businessId === "string" && businessId && parsed.indexOf(businessId) === index;
+    });
+  } catch (error) {
+    const legacyBusinessId = stored.trim();
+    return legacyBusinessId && !/^[\[{\"]/.test(legacyBusinessId) ? [legacyBusinessId] : [];
+  }
+}
+
+function writePendingBusinessProfileSyncIds(storage, businessIds) {
+  if (businessIds.length) storage.setItem(pendingBusinessProfileSyncKey, JSON.stringify(businessIds));
+  else storage.removeItem(pendingBusinessProfileSyncKey);
+}
+
+function addPendingBusinessProfileSync(storage, businessId) {
+  const businessIds = readPendingBusinessProfileSyncIds(storage);
+  if (!businessIds.includes(businessId)) businessIds.push(businessId);
+  writePendingBusinessProfileSyncIds(storage, businessIds);
+}
+
+function removePendingBusinessProfileSync(storage, businessId) {
+  writePendingBusinessProfileSyncIds(storage, readPendingBusinessProfileSyncIds(storage).filter(function (pendingId) {
+    return pendingId !== businessId;
+  }));
+}
+
 function migrateBusinessProfiles(storage) {
   const storedProfiles = parseStoredJson(storage, "demeosBusinessProfiles", []);
   const profiles = Array.isArray(storedProfiles) ? storedProfiles.slice() : [];
@@ -154,7 +188,7 @@ async function hydrateKnownBusiness(storage, businessId, fetchImpl) {
       Array.isArray(currentCampaigns) ? currentCampaigns : [],
       businessId,
       serverRecord,
-      storage.getItem("demeosPendingBusinessProfileSync") === businessId
+      readPendingBusinessProfileSyncIds(storage).includes(businessId)
     );
     storage.setItem("demeosBusinessProfiles", JSON.stringify(merged.profiles));
     storage.setItem("demeosCampaignHistory", JSON.stringify(merged.campaigns));
@@ -186,10 +220,11 @@ function createCampaignPersistenceQueue(persistWrite) {
 }
 
 if (typeof module !== "undefined" && module.exports) module.exports = {
-  addBusinessIdentity, canAccessCampaign, createCampaignContinuity, enforceBusinessCampaignLimit,
+  addBusinessIdentity, addPendingBusinessProfileSync, canAccessCampaign, createCampaignContinuity, enforceBusinessCampaignLimit,
   createCampaignPersistenceQueue,
   getCampaignBusinessId, getCampaignContinuity, getCampaignContinuityLabel, getVisibleCampaigns,
-  hydrateKnownBusiness, mergeKnownBusinessPersistence, migrateBusinessProfiles, updateBusinessProfile
+  hydrateKnownBusiness, mergeKnownBusinessPersistence, migrateBusinessProfiles, readPendingBusinessProfileSyncIds,
+  removePendingBusinessProfileSync, updateBusinessProfile
 };
 
 if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", function () {
@@ -357,14 +392,12 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       localStorage.setItem("demeosActiveBusinessId", state.activeBusinessId);
       renderSelector(); fillProfile(result.profile); clearCampaignWorkspace(); renderCampaignHistory();
 
+      addPendingBusinessProfileSync(localStorage, result.profile.businessId);
       const persisted = await persistBusiness(result.profile);
       if (persisted) {
-        if (localStorage.getItem("demeosPendingBusinessProfileSync") === result.profile.businessId) {
-          localStorage.removeItem("demeosPendingBusinessProfileSync");
-        }
+        removePendingBusinessProfileSync(localStorage, result.profile.businessId);
         alert("Business Profile saved successfully.");
       } else {
-        localStorage.setItem("demeosPendingBusinessProfileSync", result.profile.businessId);
         alert("Business Profile saved on this device, but DEMEOS could not sync it to the server. Please try saving again.");
       }
     } finally {
