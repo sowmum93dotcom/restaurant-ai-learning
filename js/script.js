@@ -103,10 +103,29 @@ function enforceBusinessCampaignLimit(campaigns, businessId, maximumCampaigns, p
   return retained;
 }
 
+async function persistKnownBusiness(profile, campaigns, request) {
+  if (!profile || !profile.businessId || typeof request !== "function") return false;
+  const ownedCampaigns = (Array.isArray(campaigns) ? campaigns : []).filter(function (campaign) {
+    return campaign && campaign.businessId === profile.businessId;
+  });
+  try {
+    const response = await request("/api/migrate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ businessId: profile.businessId, business: profile, campaigns: ownedCampaigns })
+    });
+    return Boolean(response && response.ok);
+  } catch (error) {
+    // Database persistence is optional. localStorage remains the source used by
+    // this browser whenever the API is unavailable.
+    return false;
+  }
+}
+
 if (typeof module !== "undefined" && module.exports) module.exports = {
   addBusinessIdentity, canAccessCampaign, createCampaignContinuity, enforceBusinessCampaignLimit,
   getCampaignBusinessId, getCampaignContinuity, getCampaignContinuityLabel, getVisibleCampaigns,
-  migrateBusinessProfiles, updateBusinessProfile
+  migrateBusinessProfiles, persistKnownBusiness, updateBusinessProfile
 };
 
 if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", function () {
@@ -142,6 +161,11 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   function getCampaignHistory() {
     const campaigns = parseStoredJson(localStorage, campaignHistoryKey, []);
     return Array.isArray(campaigns) ? campaigns : [];
+  }
+  function syncKnownBusiness(profile) {
+    const browserRequest = typeof window !== "undefined" && typeof window.fetch === "function"
+      ? window.fetch.bind(window) : null;
+    return persistKnownBusiness(profile, getCampaignHistory(), browserRequest);
   }
   function fillProfile(profile) {
     Object.keys(fields).forEach(function (key) { fields[key].value = (profile && profile[key]) || ""; });
@@ -219,6 +243,9 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   }
 
   renderSelector(); fillProfile(activeProfile()); renderCampaignHistory();
+  if (typeof window !== "undefined") {
+    state.profiles.forEach(function (profile) { syncKnownBusiness(profile); });
+  }
   businessSelector.addEventListener("change", function () { switchBusiness(businessSelector.value); });
   addBusinessBtn.addEventListener("click", function () {
     addingBusiness = true; businessSelector.value = ""; fillProfile(null); clearCampaignWorkspace();
@@ -234,6 +261,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     localStorage.setItem("demeosBusinessProfiles", JSON.stringify(state.profiles));
     localStorage.setItem("demeosActiveBusinessId", state.activeBusinessId);
     renderSelector(); fillProfile(result.profile); clearCampaignWorkspace(); renderCampaignHistory();
+    syncKnownBusiness(result.profile);
     alert("Business Profile saved successfully.");
   });
 
@@ -258,6 +286,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       const text = await requestCampaign({ promoText: promo, campaignType: campaignType.value, businessProfile: profile });
       resultsContent.textContent = text; copyBtn.hidden = false;
       saveCampaign(text, promo, campaignType.value, campaignType.options[campaignType.selectedIndex].text, profile);
+      syncKnownBusiness(profile);
       showApprovalStatus("Unapproved"); revisionControls.hidden = false;
       resultsArea.scrollIntoView({ behavior: "smooth", block: "start" });
     } catch (error) { console.error(error); resultsContent.textContent = error.message; }
@@ -279,6 +308,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     try {
       const text = await requestCampaign({ existingCampaign: source.campaignText, revisionInstruction: instruction, campaignType: type, businessProfile: profile });
       saveCampaign(text, source.promoText || "", type, label, profile, source.id);
+      syncKnownBusiness(profile);
       resultsContent.textContent = text; revisionInstruction.value = ""; copyBtn.hidden = false; showApprovalStatus("Unapproved");
       resultsArea.scrollIntoView({ behavior: "smooth", block: "start" });
     } catch (error) { console.error(error); alert(error.message); }
@@ -291,6 +321,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     if (!campaign) return;
     if (!canAccessCampaign(campaign, activeProfile())) { alert("This campaign belongs to a different business profile."); return; }
     campaign.approvalStatus = "Approved"; localStorage.setItem(campaignHistoryKey, JSON.stringify(campaigns));
+    syncKnownBusiness(activeProfile());
     showApprovalStatus("Approved"); renderCampaignHistory();
   });
   copyBtn.addEventListener("click", async function () {

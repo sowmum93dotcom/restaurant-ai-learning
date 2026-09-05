@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check js/script.js && node --check api/generate.js && node --check api/_persistence.js && node --check api/_repository.js && node --check api/businesses.js && node --check api/campaigns.js && node --check api/migrate.js"
+  },
+  "dependencies": {
+    "@vercel/postgres": "^0.10.0"
+  }
+}
