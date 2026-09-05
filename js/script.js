@@ -219,12 +219,49 @@ function createCampaignPersistenceQueue(persistWrite) {
   };
 }
 
+const fullCampaignSectionHeadings = [
+  "CAMPAIGN STRATEGY",
+  "SOCIAL MEDIA POST",
+  "EMAIL CAMPAIGN",
+  "SHORT AD COPY",
+  "CALL TO ACTION"
+];
+const fullCampaignSectionLabels = [
+  "Campaign Strategy", "Social Media Post", "Email Campaign", "Short Ad Copy", "Call to Action"
+];
+
+function parseFullCampaignSections(campaignText) {
+  if (typeof campaignText !== "string") return null;
+  const headingPattern = new RegExp(`^[\\t ]*(${fullCampaignSectionHeadings.join("|")})[\\t ]*\\r?$`, "gm");
+  const matches = Array.from(campaignText.matchAll(headingPattern));
+  if (matches.length !== fullCampaignSectionHeadings.length) return null;
+  if (campaignText.slice(0, matches[0].index).trim()) return null;
+  if (!matches.every(function (match, index) { return match[1] === fullCampaignSectionHeadings[index]; })) return null;
+
+  const sections = matches.map(function (match, index) {
+    const contentStart = match.index + match[0].length;
+    const contentEnd = index + 1 < matches.length ? matches[index + 1].index : campaignText.length;
+    return { heading: match[1], content: campaignText.slice(contentStart, contentEnd).trim() };
+  });
+  return sections.every(function (section) { return section.content; }) ? sections : null;
+}
+
+function getCampaignWorkspace(campaign) {
+  const campaignText = campaign && typeof campaign.campaignText === "string" ? campaign.campaignText : "";
+  const campaignType = campaign && campaign.campaignType;
+  const isFullCampaign = campaignType === "full" || campaignType === "Full Marketing Campaign";
+  return {
+    campaignText,
+    sections: isFullCampaign ? parseFullCampaignSections(campaignText) : null
+  };
+}
+
 if (typeof module !== "undefined" && module.exports) module.exports = {
   addBusinessIdentity, addPendingBusinessProfileSync, canAccessCampaign, createCampaignContinuity, enforceBusinessCampaignLimit,
   createCampaignPersistenceQueue,
   getCampaignBusinessId, getCampaignContinuity, getCampaignContinuityLabel, getVisibleCampaigns,
   hydrateKnownBusiness, mergeKnownBusinessPersistence, migrateBusinessProfiles, readPendingBusinessProfileSyncIds,
-  removePendingBusinessProfileSync, updateBusinessProfile
+  removePendingBusinessProfileSync, updateBusinessProfile, parseFullCampaignSections, getCampaignWorkspace
 };
 
 if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", function () {
@@ -252,7 +289,37 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   const campaignHistoryKey = "demeosCampaignHistory";
   let state = migrateBusinessProfiles(localStorage);
   let openCampaignId = null;
+  let currentCampaignText = "";
   let addingBusiness = false;
+
+  function copyText(text, button, defaultLabel) {
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(function () {
+      button.textContent = "Copied!";
+      setTimeout(function () { button.textContent = defaultLabel; }, 1500);
+    }).catch(function (error) { console.error("Could not copy campaign:", error); });
+  }
+
+  function renderCampaign(campaign) {
+    const workspace = getCampaignWorkspace(campaign);
+    currentCampaignText = workspace.campaignText;
+    resultsContent.textContent = "";
+    if (!workspace.sections) {
+      resultsContent.textContent = workspace.campaignText;
+      return;
+    }
+    workspace.sections.forEach(function (section, index) {
+      const panel = document.createElement("section"); panel.className = "campaign-workspace-section";
+      const header = document.createElement("div"); header.className = "campaign-workspace-section-header";
+      const heading = document.createElement("h5"); heading.textContent = fullCampaignSectionLabels[index];
+      const sectionCopy = document.createElement("button"); sectionCopy.type = "button";
+      sectionCopy.className = "campaign-section-copy"; sectionCopy.textContent = "Copy";
+      sectionCopy.setAttribute("aria-label", `Copy ${heading.textContent}`);
+      sectionCopy.addEventListener("click", function () { copyText(section.content, sectionCopy, "Copy"); });
+      const content = document.createElement("div"); content.className = "campaign-workspace-section-content"; content.textContent = section.content;
+      header.append(heading, sectionCopy); panel.append(header, content); resultsContent.appendChild(panel);
+    });
+  }
 
   async function hydrateActiveBusiness() {
     const requestedBusinessId = state.activeBusinessId;
@@ -309,6 +376,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   }
   function clearCampaignWorkspace() {
     openCampaignId = null;
+    currentCampaignText = "";
     resultsContent.textContent = "";
     resultsArea.hidden = true;
     copyBtn.hidden = true;
@@ -342,7 +410,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       open.addEventListener("click", function () {
         const campaign = getCampaignHistory().find(function (entry) { return entry.id === savedCampaign.id; });
         if (!canAccessCampaign(campaign, activeProfile())) { alert("This campaign belongs to a different business profile."); return; }
-        resultsContent.textContent = campaign.campaignText; openCampaignId = campaign.id || null;
+        renderCampaign(campaign); openCampaignId = campaign.id || null;
         showApprovalStatus(campaign.approvalStatus); resultsArea.hidden = false; copyBtn.hidden = false;
         revisionControls.hidden = false; revisionInstruction.value = "";
         resultsArea.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -421,11 +489,11 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     if (!profile) { alert("Please complete and save your Business Manager Profile before creating marketing work."); return; }
     if (!promo) { alert("Please tell DEMEOS what you would like to achieve first."); return; }
     generateBtn.disabled = true; generateBtn.textContent = "DEMEOS is working..."; resultsArea.hidden = false;
-    resultsContent.textContent = "DEMEOS is creating your marketing work..."; copyBtn.hidden = true; approveBtn.hidden = true;
+    currentCampaignText = ""; resultsContent.textContent = "DEMEOS is creating your marketing work..."; copyBtn.hidden = true; approveBtn.hidden = true;
     campaignApprovalStatus.hidden = true; revisionControls.hidden = true; openCampaignId = null;
     try {
       const text = await requestCampaign({ promoText: promo, campaignType: campaignType.value, businessProfile: profile });
-      resultsContent.textContent = text; copyBtn.hidden = false;
+      renderCampaign({ campaignText: text, campaignType: campaignType.value }); copyBtn.hidden = false;
       const saved = await saveCampaign(text, promo, campaignType.value, campaignType.options[campaignType.selectedIndex].text, profile);
       showApprovalStatus("Unapproved"); revisionControls.hidden = false;
       resultsArea.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -449,7 +517,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     try {
       const text = await requestCampaign({ existingCampaign: source.campaignText, revisionInstruction: instruction, campaignType: type, businessProfile: profile });
       const saved = await saveCampaign(text, source.promoText || "", type, label, profile, source.id);
-      resultsContent.textContent = text; revisionInstruction.value = ""; copyBtn.hidden = false; showApprovalStatus("Unapproved");
+      renderCampaign({ campaignText: text, campaignType: type }); revisionInstruction.value = ""; copyBtn.hidden = false; showApprovalStatus("Unapproved");
       resultsArea.scrollIntoView({ behavior: "smooth", block: "start" });
       if (!saved.persisted) alert("Campaign saved on this device, but DEMEOS could not sync it to the server. Please try again.");
     } catch (error) { console.error(error); alert(error.message); }
@@ -473,8 +541,6 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     } finally { approveBtn.disabled = false; approveBtn.textContent = "Approve Campaign"; }
   });
   copyBtn.addEventListener("click", async function () {
-    const text = resultsContent.textContent.trim(); if (!text) return;
-    try { await navigator.clipboard.writeText(text); copyBtn.textContent = "Copied!"; setTimeout(function () { copyBtn.textContent = "Copy Campaign"; }, 1500); }
-    catch (error) { console.error("Could not copy campaign:", error); }
+    copyText(currentCampaignText, copyBtn, "Copy Campaign");
   });
 });
