@@ -81,7 +81,7 @@ test("a legacy campaign without continuity data opens as an Original", function 
   assert.equal(legacyCampaign.approvalStatus, "Approved");
 });
 
-test("saving a profile gives a newly generated Original the same business ID", async function () {
+test("generating with a legacy saved profile persists its new business ID on the Original", async function () {
   class FakeElement {
     constructor() {
       this.listeners = {};
@@ -111,7 +111,18 @@ test("saving a profile gives a newly generated Original the same business ID", a
       return elements.get(id);
     }
   };
-  const storage = new Map();
+  const legacyProfile = {
+    name: "Restaurant",
+    type: "Cafe",
+    location: "Cardiff",
+    brandVoice: "Warm",
+    targetCustomer: "Neighbours",
+    goal: "Grow",
+    legacyField: { preserved: true }
+  };
+  const storage = new Map([
+    ["demeosBusinessProfile", JSON.stringify(legacyProfile)]
+  ]);
   const context = {
     alert() {},
     console,
@@ -134,31 +145,18 @@ test("saving a profile gives a newly generated Original the same business ID", a
   vm.runInNewContext(fs.readFileSync(require.resolve("../js/script.js"), "utf8"), context);
   document.ready();
 
-  const fields = {
-    "business-name": "Restaurant",
-    "business-type": "Cafe",
-    "business-location": "Cardiff",
-    "business-brand-voice": "Warm",
-    "business-target-customer": "Neighbours",
-    "business-goal": "Grow"
-  };
-  Object.entries(fields).forEach(function ([id, value]) {
-    document.getElementById(id).value = value;
-  });
-  document.getElementById("save-business-profile-btn").listeners.click();
-
-  const firstProfile = JSON.parse(storage.get("demeosBusinessProfile"));
-  document.getElementById("business-name").value = "Renamed Restaurant";
-  document.getElementById("save-business-profile-btn").listeners.click();
-  const secondProfile = JSON.parse(storage.get("demeosBusinessProfile"));
+  const migratedProfile = JSON.parse(storage.get("demeosBusinessProfile"));
   document.getElementById("promo-input").value = "Lunch offer";
   document.getElementById("campaign-type").value = "social";
   await document.getElementById("generate-btn").listeners.click();
 
   const history = JSON.parse(storage.get("demeosCampaignHistory"));
-  assert.ok(firstProfile.businessId);
-  assert.equal(secondProfile.businessId, firstProfile.businessId);
-  assert.equal(history[0].businessId, firstProfile.businessId);
+  assert.ok(migratedProfile.businessId);
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(migratedProfile)),
+    { ...legacyProfile, businessId: migratedProfile.businessId }
+  );
+  assert.equal(history[0].businessId, migratedProfile.businessId);
   assert.equal(history[0].revisionNumber, 0);
 });
 

@@ -91,6 +91,24 @@ const businessBrandVoice = document.getElementById("business-brand-voice");
 
 const saveBusinessProfileBtn = document.getElementById("save-business-profile-btn");
 
+function getSavedBusinessProfile() {
+  const savedProfile = localStorage.getItem("demeosBusinessProfile");
+
+  if (!savedProfile) {
+    return null;
+  }
+
+  const businessProfile = JSON.parse(savedProfile);
+
+  if (businessProfile.businessId) {
+    return businessProfile;
+  }
+
+  const profileWithIdentity = addBusinessIdentity(businessProfile);
+  localStorage.setItem("demeosBusinessProfile", JSON.stringify(profileWithIdentity));
+  return profileWithIdentity;
+}
+
 function getCampaignHistory() {
 
   try {
@@ -234,11 +252,9 @@ function showApprovalStatus(approvalStatus) {
 }
 
 renderCampaignHistory();
-const savedBusinessProfile = localStorage.getItem("demeosBusinessProfile");
+const businessProfile = getSavedBusinessProfile();
 
-if (savedBusinessProfile) {
-
-  const businessProfile = JSON.parse(savedBusinessProfile);
+if (businessProfile) {
 
   businessName.value = businessProfile.name || "";
 
@@ -273,7 +289,7 @@ goal: businessGoal.value.trim()
   return;
 
 }
-  const savedProfile = JSON.parse(localStorage.getItem("demeosBusinessProfile") || "null");
+  const savedProfile = getSavedBusinessProfile();
   const businessProfile = addBusinessIdentity(profileFields, savedProfile);
 
   localStorage.setItem(
@@ -319,9 +335,7 @@ if (!localStorage.getItem("demeosBusinessProfile")) {
 
     try {
 
-      const businessProfile = JSON.parse(
-        localStorage.getItem("demeosBusinessProfile")
-      );
+      const businessProfile = getSavedBusinessProfile();
 
       const response = await fetch("/api/generate", {
 
@@ -424,13 +438,12 @@ reviseBtn.addEventListener("click", async function () {
     return;
   }
 
-  const savedProfile = localStorage.getItem("demeosBusinessProfile");
-  if (!savedProfile) {
+  if (!localStorage.getItem("demeosBusinessProfile")) {
     alert("Please complete and save your Business Manager Profile before revising marketing work.");
     return;
   }
 
-  const businessProfile = JSON.parse(savedProfile);
+  const businessProfile = getSavedBusinessProfile();
   const sourceCampaignType = sourceCampaign.campaignType;
   const campaignTypeValue = sourceCampaignType === "Social Media Post" ? "social"
     : sourceCampaignType === "Email Campaign" ? "email"
