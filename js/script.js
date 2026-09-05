@@ -49,13 +49,50 @@ function getCampaignBusinessId(profile, sourceCampaign) {
   return (sourceCampaign && sourceCampaign.businessId) || (profile && profile.businessId);
 }
 
+function canAccessCampaign(campaign, profile) {
+  return Boolean(campaign) && (
+    !campaign.businessId ||
+    Boolean(profile && profile.businessId && campaign.businessId === profile.businessId)
+  );
+}
+
+function getVisibleCampaigns(campaigns, profile) {
+  return campaigns.filter(function (campaign) {
+    return canAccessCampaign(campaign, profile);
+  });
+}
+
+function enforceBusinessCampaignLimit(campaigns, businessId, maximumCampaigns, protectedCampaignIds) {
+  const retainedCampaigns = campaigns.slice();
+  const protectedIds = new Set(protectedCampaignIds.filter(Boolean));
+  let businessCampaignCount = retainedCampaigns.filter(function (campaign) {
+    return campaign.businessId === businessId;
+  }).length;
+
+  for (let index = retainedCampaigns.length - 1;
+    businessCampaignCount > maximumCampaigns && index >= 0;
+    index -= 1) {
+    const campaign = retainedCampaigns[index];
+
+    if (campaign.businessId === businessId && !protectedIds.has(campaign.id)) {
+      retainedCampaigns.splice(index, 1);
+      businessCampaignCount -= 1;
+    }
+  }
+
+  return retainedCampaigns;
+}
+
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     addBusinessIdentity,
+    canAccessCampaign,
     createCampaignContinuity,
+    enforceBusinessCampaignLimit,
     getCampaignBusinessId,
     getCampaignContinuity,
-    getCampaignContinuityLabel
+    getCampaignContinuityLabel,
+    getVisibleCampaigns
   };
 }
 
@@ -128,7 +165,7 @@ function getCampaignHistory() {
 
 function renderCampaignHistory() {
 
-  const savedCampaigns = getCampaignHistory();
+  const savedCampaigns = getVisibleCampaigns(getCampaignHistory(), getSavedBusinessProfile());
 
   campaignHistoryList.textContent = "";
   campaignHistoryEmpty.hidden = savedCampaigns.length > 0;
@@ -164,9 +201,12 @@ function renderCampaignHistory() {
     openButton.textContent = "Open";
     openButton.addEventListener("click", function () {
 
-      const campaign = getCampaignHistory()[index];
+      const campaign = getCampaignHistory().find(function (savedCampaign) {
+        return savedCampaign.id === savedCampaigns[index].id;
+      });
 
-      if (!campaign) {
+      if (!canAccessCampaign(campaign, getSavedBusinessProfile())) {
+        alert("This campaign belongs to a different business profile.");
         return;
       }
 
@@ -216,19 +256,16 @@ function saveCampaign(campaignText, promoText, selectedCampaignType, campaignTyp
     revisionNumber: continuity.revisionNumber
   });
 
-  if (savedCampaigns.length > maximumSavedCampaigns && sourceCampaignId) {
-    const sourceIndex = savedCampaigns.findIndex(function (savedCampaign) {
-      return savedCampaign.id === sourceCampaignId;
-    });
-
-    if (sourceIndex >= maximumSavedCampaigns) {
-      savedCampaigns.splice(maximumSavedCampaigns - 1, 1);
-    }
-  }
+  const retainedCampaigns = enforceBusinessCampaignLimit(
+    savedCampaigns,
+    businessId,
+    maximumSavedCampaigns,
+    [campaignId, sourceCampaignId]
+  );
 
   localStorage.setItem(
     campaignHistoryKey,
-    JSON.stringify(savedCampaigns.slice(0, maximumSavedCampaigns))
+    JSON.stringify(retainedCampaigns)
   );
 
   // Saving is also the state transition to the newly created marketing work.
@@ -433,6 +470,13 @@ reviseBtn.addEventListener("click", async function () {
     return;
   }
 
+  const businessProfile = getSavedBusinessProfile();
+
+  if (!canAccessCampaign(sourceCampaign, businessProfile)) {
+    alert("This campaign belongs to a different business profile.");
+    return;
+  }
+
   if (!instruction) {
     alert("Please tell DEMEOS what you would like to change.");
     return;
@@ -443,7 +487,6 @@ reviseBtn.addEventListener("click", async function () {
     return;
   }
 
-  const businessProfile = getSavedBusinessProfile();
   const sourceCampaignType = sourceCampaign.campaignType;
   const campaignTypeValue = sourceCampaignType === "Social Media Post" ? "social"
     : sourceCampaignType === "Email Campaign" ? "email"
@@ -518,6 +561,11 @@ approveBtn.addEventListener("click", function () {
   });
 
   if (!campaign) {
+    return;
+  }
+
+  if (!canAccessCampaign(campaign, getSavedBusinessProfile())) {
+    alert("This campaign belongs to a different business profile.");
     return;
   }
 
