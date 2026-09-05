@@ -413,14 +413,21 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     finally { reviseBtn.disabled = false; reviseBtn.textContent = "Revise Campaign"; }
   });
 
-  approveBtn.addEventListener("click", function () {
+  approveBtn.addEventListener("click", async function () {
     if (!openCampaignId) return;
     const campaigns = getCampaignHistory(); const campaign = campaigns.find(function (entry) { return entry.id === openCampaignId; });
     if (!campaign) return;
     if (!canAccessCampaign(campaign, activeProfile())) { alert("This campaign belongs to a different business profile."); return; }
     campaign.approvalStatus = "Approved"; localStorage.setItem(campaignHistoryKey, JSON.stringify(campaigns));
-    persistCampaign(activeProfile(), campaign);
-    showApprovalStatus("Approved"); renderCampaignHistory();
+    renderCampaignHistory(); approveBtn.disabled = true; approveBtn.textContent = "Saving Approval...";
+    try {
+      const persisted = await persistCampaign(activeProfile(), campaign);
+      showApprovalStatus("Approved");
+      if (!persisted) {
+        approveBtn.hidden = false;
+        alert("Approval saved on this device, but DEMEOS could not sync it to the server. Please try again.");
+      }
+    } finally { approveBtn.disabled = false; approveBtn.textContent = "Approve Campaign"; }
   });
   copyBtn.addEventListener("click", async function () {
     const text = resultsContent.textContent.trim(); if (!text) return;
