@@ -41,32 +41,22 @@ export default async function handler(req, res) {
 
     }
     const isRevision = typeof existingCampaign === "string" || typeof revisionInstruction === "string";
-const targetCustomer = businessProfile?.targetCustomer || "";
-const primaryGoal = businessProfile?.goal || "";
-  const currentBusinessProfile = businessProfile || {
-
-  name: "",
-
-  type: "",
-
-  location: "",
-
-  brandVoice: "Clear, professional, credible, and appropriate for customers.",
-
-};
-if (
-
-  !currentBusinessProfile.name ||
-
-  !currentBusinessProfile.type ||
-
-  !currentBusinessProfile.location ||
-
-  !currentBusinessProfile.brandVoice ||
-
-!targetCustomer ||
-!primaryGoal
-) {
+    const requiredBusinessProfileFields = [
+      "name",
+      "type",
+      "location",
+      "brandVoice",
+      "targetCustomer",
+      "goal",
+    ];
+    if (
+      businessProfile === null ||
+      typeof businessProfile !== "object" ||
+      Array.isArray(businessProfile) ||
+      requiredBusinessProfileFields.some((field) =>
+        typeof businessProfile[field] !== "string" || !businessProfile[field].trim()
+      )
+    ) {
 
   return res.status(400).json({
 
@@ -75,6 +65,9 @@ if (
   });
 
 }
+    const currentBusinessProfile = businessProfile;
+    const targetCustomer = businessProfile.targetCustomer;
+    const primaryGoal = businessProfile.goal;
     if (isRevision && (
       typeof existingCampaign !== "string" || !existingCampaign.trim() ||
       typeof revisionInstruction !== "string" || !revisionInstruction.trim()
