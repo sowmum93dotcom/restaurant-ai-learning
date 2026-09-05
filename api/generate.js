@@ -31,6 +31,15 @@ export default async function handler(req, res) {
       existingCampaign,
       revisionInstruction
     } = req.body || {};
+    if (!["full", "social", "email"].includes(campaignType)) {
+
+      return res.status(400).json({
+
+        error: "Please select a valid marketing campaign type.",
+
+      });
+
+    }
     const isRevision = typeof existingCampaign === "string" || typeof revisionInstruction === "string";
 const targetCustomer = businessProfile?.targetCustomer || "";
 const primaryGoal = businessProfile?.goal || "";

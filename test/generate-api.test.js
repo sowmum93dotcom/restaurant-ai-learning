@@ -34,12 +34,14 @@ function createResponse() {
 
 async function generate(body) {
   let fetchCalls = 0;
+  let fetchBody;
   const context = {
     module: { exports: {} },
     process: { env: { OPENAI_API_KEY: "test-key" } },
     console,
-    fetch: async function () {
+    fetch: async function (url, options) {
       fetchCalls += 1;
+      fetchBody = JSON.parse(options.body);
       return {
         ok: true,
         headers: { get() { return null; } },
@@ -52,14 +54,49 @@ async function generate(body) {
 
   await context.module.exports({ method: "POST", body: { businessProfile, ...body } }, response);
 
-  return { response, fetchCalls };
+  return { response, fetchCalls, fetchBody };
 }
 
-test("a non-empty marketing request proceeds to generation", async function () {
-  const result = await generate({ promoText: "Promote our Friday dinner." });
+for (const [description, body, expectedCampaignType] of [
+  ["omitted campaignType defaults to full", {}, "full"],
+  ["full campaignType", { campaignType: "full" }, "full"],
+  ["social campaignType", { campaignType: "social" }, "social"],
+  ["email campaignType", { campaignType: "email" }, "email"]
+]) {
+  test(`${description} proceeds to generation`, async function () {
+    const result = await generate({ promoText: "Promote our Friday dinner.", ...body });
 
-  assert.equal(result.response.statusCode, 200);
-  assert.equal(result.fetchCalls, 1);
+    assert.equal(result.response.statusCode, 200);
+    assert.equal(result.fetchCalls, 1);
+    assert.match(result.fetchBody.input, new RegExp(`Campaign type requested: ${expectedCampaignType}`));
+  });
+}
+
+for (const [description, campaignType] of [
+  ["unsupported string", "video"],
+  ["empty", ""],
+  ["whitespace-only", "   "],
+  ["non-string", 42]
+]) {
+  test(`${description} campaignType is rejected`, async function () {
+    const result = await generate({ promoText: "Promote our Friday dinner.", campaignType });
+
+    assert.equal(result.response.statusCode, 400);
+    assert.equal(result.response.body.error, "Please select a valid marketing campaign type.");
+    assert.equal(result.fetchCalls, 0);
+  });
+}
+
+test("an invalid campaignType is rejected for a revision", async function () {
+  const result = await generate({
+    campaignType: "video",
+    existingCampaign: "Original campaign",
+    revisionInstruction: "Make the call to action clearer."
+  });
+
+  assert.equal(result.response.statusCode, 400);
+  assert.equal(result.response.body.error, "Please select a valid marketing campaign type.");
+  assert.equal(result.fetchCalls, 0);
 });
 
 for (const [description, body] of [
