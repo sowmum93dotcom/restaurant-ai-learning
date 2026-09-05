@@ -11,7 +11,7 @@ function createPersistenceRepository(database) {
       if (!businessResult.rows.length) return null;
 
       const campaignResult = await database.query(
-        "SELECT campaign FROM demeos_campaigns WHERE business_id = $1 ORDER BY created_at DESC",
+        "SELECT campaign FROM demeos_campaigns WHERE business_id = $1 ORDER BY created_at DESC LIMIT 20",
         [businessId]
       );
       return {
