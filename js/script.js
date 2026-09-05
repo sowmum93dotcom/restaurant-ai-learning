@@ -30,9 +30,30 @@ function getCampaignContinuityLabel(campaign) {
   return revisionNumber === 0 ? "Original" : `Revision ${revisionNumber}`;
 }
 
+function createBusinessId() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+
+  return `business-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function addBusinessIdentity(profile, savedProfile) {
+  return {
+    ...profile,
+    businessId: (savedProfile && savedProfile.businessId) || profile.businessId || createBusinessId()
+  };
+}
+
+function getCampaignBusinessId(profile, sourceCampaign) {
+  return (sourceCampaign && sourceCampaign.businessId) || (profile && profile.businessId);
+}
+
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
+    addBusinessIdentity,
     createCampaignContinuity,
+    getCampaignBusinessId,
     getCampaignContinuity,
     getCampaignContinuityLabel
   };
@@ -161,6 +182,7 @@ function saveCampaign(campaignText, promoText, selectedCampaignType, campaignTyp
     })
     : null;
   const continuity = createCampaignContinuity(campaignId, sourceCampaign);
+  const businessId = getCampaignBusinessId(profile, sourceCampaign);
 
   savedCampaigns.unshift({
     id: campaignId,
@@ -169,6 +191,7 @@ function saveCampaign(campaignText, promoText, selectedCampaignType, campaignTyp
     campaignTypeLabel: campaignTypeLabel,
     promoText: promoText,
     businessName: profile.name,
+    businessId: businessId,
     createdAt: new Date().toISOString(),
     approvalStatus: "Unapproved",
     originalMarketingWorkId: continuity.originalMarketingWorkId,
@@ -229,7 +252,7 @@ businessGoal.value = businessProfile.goal || "";
 }
 saveBusinessProfileBtn.addEventListener("click", function () {
 
-  const businessProfile = {
+  const profileFields = {
 
     name: businessName.value.trim(),
 
@@ -243,13 +266,16 @@ targetCustomer: businessTargetCustomer.value.trim(),
 goal: businessGoal.value.trim()
   };
 
-  if (!businessProfile.name || !businessProfile.type || !businessProfile.location || !businessProfile.brandVoice || !businessProfile.targetCustomer || !businessProfile.goal) {
+  if (!profileFields.name || !profileFields.type || !profileFields.location || !profileFields.brandVoice || !profileFields.targetCustomer || !profileFields.goal) {
 
   alert("Please complete all Business Manager Profile fields before saving.");
 
   return;
 
 }
+  const savedProfile = JSON.parse(localStorage.getItem("demeosBusinessProfile") || "null");
+  const businessProfile = addBusinessIdentity(profileFields, savedProfile);
+
   localStorage.setItem(
 
     "demeosBusinessProfile",
