@@ -188,6 +188,48 @@ test("a valid revision remains unaffected without promoText", async function () 
   assert.equal(result.fetchCalls, 1);
 });
 
+test("a full campaign prompt requires all five sections in exact order", async function () {
+  const result = await generate({
+    promoText: "Promote our Friday dinner.",
+    campaignType: "full"
+  });
+  const input = result.fetchBody.input;
+
+  assert.match(input, /these exact section headings in this exact order:\s+CAMPAIGN STRATEGY\s+SOCIAL MEDIA POST\s+EMAIL CAMPAIGN\s+SHORT AD COPY\s+CALL TO ACTION/);
+  assert.match(input, /campaign objective, the verified Target customer, the core message and positioning, and how the campaign supports the verified Primary marketing goal/);
+});
+
+test("a social campaign prompt remains social-only", async function () {
+  const result = await generate({
+    promoText: "Promote our Friday dinner.",
+    campaignType: "social"
+  });
+
+  assert.match(result.fetchBody.input, /Return only the finished customer-facing SOCIAL MEDIA POST/);
+  assert.doesNotMatch(result.fetchBody.input, /Return one complete marketing campaign with these exact section headings/);
+});
+
+test("an email campaign prompt remains email-only", async function () {
+  const result = await generate({
+    promoText: "Promote our Friday dinner.",
+    campaignType: "email"
+  });
+
+  assert.match(result.fetchBody.input, /Return only the EMAIL CAMPAIGN, containing one email subject line followed by the finished email body/);
+  assert.doesNotMatch(result.fetchBody.input, /Return one complete marketing campaign with these exact section headings/);
+});
+
+test("a full campaign revision preserves the complete campaign structure", async function () {
+  const result = await generate({
+    campaignType: "full",
+    existingCampaign: "CAMPAIGN STRATEGY\nOriginal campaign",
+    revisionInstruction: "Make the call to action clearer."
+  });
+
+  assert.match(result.fetchBody.input, /Preserve the complete five-section campaign structure in the revised campaign/);
+  assert.match(result.fetchBody.input, /CAMPAIGN STRATEGY\s+SOCIAL MEDIA POST\s+EMAIL CAMPAIGN\s+SHORT AD COPY\s+CALL TO ACTION/);
+});
+
 test("a revision with an invalid profile is rejected before fetch", async function () {
   const result = await generate({
     businessProfile: { ...businessProfile, targetCustomer: "" },

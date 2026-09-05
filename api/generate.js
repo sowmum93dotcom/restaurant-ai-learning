@@ -125,6 +125,28 @@ Business request:
 ${promoText}
 `;
 
+    const campaignFormatRules = campaignType === "full" ? `
+Return one complete marketing campaign with these exact section headings in this exact order:
+
+CAMPAIGN STRATEGY
+SOCIAL MEDIA POST
+EMAIL CAMPAIGN
+SHORT AD COPY
+CALL TO ACTION
+
+CAMPAIGN STRATEGY must briefly explain the campaign objective, the verified Target customer, the core message and positioning, and how the campaign supports the verified Primary marketing goal.
+SOCIAL MEDIA POST must contain the finished customer-facing social post.
+EMAIL CAMPAIGN must contain one email subject line and the finished email body.
+SHORT AD COPY must contain concise promotional advertising copy.
+CALL TO ACTION must contain one clear customer-facing call to action.
+Ground every section in the verified Business Manager Profile and the user's specific business request. The verified Primary marketing goal must guide the strategy and messaging across the entire campaign. The verified Target customer must guide the language and positioning.
+${isRevision ? "Preserve the complete five-section campaign structure in the revised campaign. Make only the legitimate changes requested within the relevant section or sections." : ""}
+` : campaignType === "social" ? `
+Return only the finished customer-facing SOCIAL MEDIA POST. Do not include campaign strategy, an email campaign, short ad copy, or a separate call-to-action section.
+` : `
+Return only the EMAIL CAMPAIGN, containing one email subject line followed by the finished email body. Do not include campaign strategy, a social media post, short ad copy, or a separate call-to-action section.
+`;
+
     const prompt = `
 
 You are the DEMEOS Marketing Agent, a professional business marketing intelligence assistant.
@@ -205,32 +227,8 @@ Use the verified Target customer to guide the language, relevance, positioning, 
 ${campaignTask}
 
 Campaign type requested: ${campaignType}
-If the campaign type is "social", return only the SOCIAL MEDIA POST.
-
-
-
-If the campaign type is "email", return only the EMAIL CAMPAIGN.
-
-If the campaign type is "full", return the complete marketing campaign.
-
-
-Follow the relevant structure below based on the campaign type requested.
+${campaignFormatRules}
 Every generated marketing output must clearly support the verified Primary marketing goal while remaining faithful to the verified business profile and the specific business request.
-SOCIAL MEDIA POST:
-
-Write an engaging social media post.
-
-EMAIL CAMPAIGN:
-
-Write one compelling email subject line followed by a concise promotional email body.
-
-SHORT AD COPY:
-
-Write short promotional advertising copy.
-
-CALL TO ACTION:
-
-Write one clear call to action.
 
 Do not invent prices, discounts, opening hours, addresses, or facts that the current business did not provide.
 
