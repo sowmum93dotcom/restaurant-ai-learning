@@ -103,10 +103,51 @@ function enforceBusinessCampaignLimit(campaigns, businessId, maximumCampaigns, p
   return retained;
 }
 
+function mergeRecordsById(localRecords, serverRecords, idField) {
+  const merged = new Map();
+  (serverRecords || []).forEach(function (record) { merged.set(record[idField], record); });
+  (localRecords || []).forEach(function (record) { merged.set(record[idField], record); });
+  return Array.from(merged.values());
+}
+
+async function syncLocalPersistence(storage, request) {
+  const migrated = migrateBusinessProfiles(storage);
+  const localCampaigns = parseStoredJson(storage, "demeosCampaignHistory", []);
+  const campaigns = Array.isArray(localCampaigns) ? localCampaigns : [];
+
+  for (const profile of migrated.profiles) await request("/api/businesses", "POST", profile);
+  for (const saved of campaigns) {
+    const businessId = saved.businessId || migrated.activeBusinessId;
+    if (!businessId) continue;
+    const continuity = getCampaignContinuity(saved);
+    await request("/api/campaigns", "POST", {
+      ...saved, businessId, originalMarketingWorkId: continuity.originalMarketingWorkId,
+      revisionNumber: continuity.revisionNumber, campaignType: saved.campaignType || "full",
+      campaignTypeLabel: saved.campaignTypeLabel || saved.campaignType || "Campaign",
+      promoText: saved.promoText || "", businessName: saved.businessName || "Business name unavailable",
+      approvalStatus: saved.approvalStatus === "Approved" ? "Approved" : "Unapproved",
+      createdAt: saved.createdAt || new Date().toISOString()
+    });
+  }
+
+  const profileResponse = await request("/api/businesses", "GET");
+  const profiles = mergeRecordsById(migrated.profiles, profileResponse.profiles || [], "businessId");
+  const serverCampaigns = [];
+  for (const profile of profiles) {
+    const response = await request(`/api/campaigns?businessId=${encodeURIComponent(profile.businessId)}`, "GET");
+    serverCampaigns.push(...(response.campaigns || []));
+  }
+  const mergedCampaigns = mergeRecordsById(campaigns, serverCampaigns, "id")
+    .sort(function (a, b) { return new Date(b.createdAt) - new Date(a.createdAt); });
+  storage.setItem("demeosBusinessProfiles", JSON.stringify(profiles));
+  storage.setItem("demeosCampaignHistory", JSON.stringify(mergedCampaigns));
+  return { profiles, campaigns: mergedCampaigns, activeBusinessId: migrated.activeBusinessId };
+}
+
 if (typeof module !== "undefined" && module.exports) module.exports = {
   addBusinessIdentity, canAccessCampaign, createCampaignContinuity, enforceBusinessCampaignLimit,
   getCampaignBusinessId, getCampaignContinuity, getCampaignContinuityLabel, getVisibleCampaigns,
-  migrateBusinessProfiles, updateBusinessProfile
+  mergeRecordsById, migrateBusinessProfiles, syncLocalPersistence, updateBusinessProfile
 };
 
 if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", function () {
@@ -135,6 +176,21 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   let state = migrateBusinessProfiles(localStorage);
   let openCampaignId = null;
   let addingBusiness = false;
+  const serverPersistenceEnabled = typeof window !== "undefined";
+
+  async function persistenceRequest(url, method, body) {
+    const response = await fetch(url, { method, headers: { "Content-Type": "application/json" },
+      ...(body ? { body: JSON.stringify(body) } : {}) });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Online saving is temporarily unavailable.");
+    return data;
+  }
+  function persistInBackground(url, method, body) {
+    if (!serverPersistenceEnabled) return;
+    persistenceRequest(url, method, body).catch(function (error) {
+      console.warn("DEMEOS online saving is temporarily unavailable; local data remains safe.", error);
+    });
+  }
 
   function activeProfile() {
     return state.profiles.find(function (profile) { return profile.businessId === state.activeBusinessId; }) || null;
@@ -211,14 +267,23 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const source = sourceId ? campaigns.find(function (entry) { return entry.id === sourceId; }) : null;
     const continuity = createCampaignContinuity(id, source);
-    campaigns.unshift({ id, campaignText: text, campaignType: type, campaignTypeLabel: typeLabel, promoText: promo,
+    const savedCampaign = { id, campaignText: text, campaignType: type, campaignTypeLabel: typeLabel, promoText: promo,
       businessName: profile.name, businessId: getCampaignBusinessId(profile, source), createdAt: new Date().toISOString(),
-      approvalStatus: "Unapproved", ...continuity });
+      approvalStatus: "Unapproved", ...continuity };
+    campaigns.unshift(savedCampaign);
     const retained = enforceBusinessCampaignLimit(campaigns, profile.businessId, 20, [id, sourceId]);
-    localStorage.setItem(campaignHistoryKey, JSON.stringify(retained)); openCampaignId = id; renderCampaignHistory(); return id;
+    localStorage.setItem(campaignHistoryKey, JSON.stringify(retained));
+    persistInBackground("/api/campaigns", "POST", savedCampaign);
+    openCampaignId = id; renderCampaignHistory(); return id;
   }
 
   renderSelector(); fillProfile(activeProfile()); renderCampaignHistory();
+  if (serverPersistenceEnabled) syncLocalPersistence(localStorage, persistenceRequest).then(function (synced) {
+    state = { profiles: synced.profiles, activeBusinessId: synced.activeBusinessId || (synced.profiles[0] && synced.profiles[0].businessId) || null };
+    renderSelector(); fillProfile(activeProfile()); renderCampaignHistory();
+  }).catch(function (error) {
+    console.warn("DEMEOS online saving is temporarily unavailable; local data remains safe.", error);
+  });
   businessSelector.addEventListener("change", function () { switchBusiness(businessSelector.value); });
   addBusinessBtn.addEventListener("click", function () {
     addingBusiness = true; businessSelector.value = ""; fillProfile(null); clearCampaignWorkspace();
@@ -233,6 +298,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     state = { profiles: result.profiles, activeBusinessId: result.profile.businessId }; addingBusiness = false;
     localStorage.setItem("demeosBusinessProfiles", JSON.stringify(state.profiles));
     localStorage.setItem("demeosActiveBusinessId", state.activeBusinessId);
+    persistInBackground("/api/businesses", "POST", result.profile);
     renderSelector(); fillProfile(result.profile); clearCampaignWorkspace(); renderCampaignHistory();
     alert("Business Profile saved successfully.");
   });
@@ -291,6 +357,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     if (!campaign) return;
     if (!canAccessCampaign(campaign, activeProfile())) { alert("This campaign belongs to a different business profile."); return; }
     campaign.approvalStatus = "Approved"; localStorage.setItem(campaignHistoryKey, JSON.stringify(campaigns));
+    persistInBackground("/api/campaigns", "PATCH", { id: campaign.id, businessId: campaign.businessId, approvalStatus: "Approved" });
     showApprovalStatus("Approved"); renderCampaignHistory();
   });
   copyBtn.addEventListener("click", async function () {

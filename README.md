@@ -1,78 +1,46 @@
-# Restaurant AI Marketing — Learning Project
+# DEMEOS Marketing Agent
 
-A simple, beginner-friendly web app for a restaurant homepage with an
-"AI Marketing Assistant" section. This is the **first working version (MVP)**.
-
-## What's included
-
-- A clean homepage showing the restaurant's name, cuisine type, location,
-  and website address.
-- An "AI Marketing Assistant" section where a restaurant owner can type
-  what they want to promote (e.g. a new dish or event) and click
-  **Generate Marketing Campaign** to see sample marketing copy appear
-  below.
-
-## What's NOT included yet (on purpose)
-
-This version is intentionally simple, so it does **not** include:
-
-- Payments
-- User accounts / authentication
-- A database
-- Any external APIs
-- Real AI integration
-
-The "Generate Marketing Campaign" button currently uses a small JavaScript
-function that builds sample text locally in your browser — it does not
-call any AI service. This keeps the project easy to understand while we
-build up the basics. Real AI integration can be added later.
+A lightweight restaurant marketing application with Business Manager Profiles,
+AI-assisted campaign generation, revisions, version-specific approval, and
+business-scoped campaign history.
 
 ## Technology
 
-Just plain **HTML, CSS, and JavaScript** — no frameworks, no build tools,
-no installation required. This keeps the project simple and easy to read
-for anyone learning web development.
+The client uses plain HTML, CSS, and JavaScript. Vercel serverless functions
+provide AI generation and a minimal PostgreSQL persistence API. Business
+profiles and campaigns remain in `localStorage` as a compatibility and offline
+fallback; on startup, existing local records are idempotently copied to the
+server without replacing their IDs or campaign continuity metadata.
 
-## File structure
+## Database configuration
 
-```
-restaurant-ai-learning/
-├── index.html       # Page content and structure
-├── css/
-│   └── style.css     # Styling and responsive layout
-├── js/
-│   └── script.js      # Button logic (builds a sample campaign)
-└── README.md
-```
+Attach a PostgreSQL integration to the Vercel project and provide either
+`POSTGRES_URL` or `DATABASE_URL`. Tables and indexes are created automatically
+on the first persistence request. The persistence API is intentionally small:
 
-## How to run it
+- `GET`, `POST`, or `PUT /api/businesses`
+- `GET` or `POST /api/campaigns`
+- `PATCH /api/campaigns` for a business-scoped approval update
 
-You don't need to install anything. Just open the page in a browser:
+Authentication is deliberately not part of this foundation. The database
+module and business-scoped campaign queries provide a server-side boundary
+where tenant authorization can be added later.
 
-1. Download or clone this repository.
-2. Open the `index.html` file in any web browser (double-click it, or
-   right-click → "Open with" → your browser).
+## Local development
 
-That's it — the page will load and you can try the AI Marketing Assistant
-section right away.
-
-### Optional: run a local server
-
-Some browsers restrict certain features when opening files directly
-(this project doesn't currently need any, but it's a good habit). If you'd
-like to serve it locally instead:
+Install dependencies and run the tests:
 
 ```bash
-# From inside the restaurant-ai-learning folder:
+npm install
+npm test
+```
+
+To view the static interface, run:
+
+```bash
 python3 -m http.server 8000
 ```
 
-Then open `http://localhost:8000` in your browser.
-
-## Next steps (future versions)
-
-- Connect the "Generate Marketing Campaign" button to a real AI service.
-- Let the restaurant owner edit their own name/cuisine/location/website
-  instead of hard-coded values.
-- Add a database to save campaigns.
-- Add user accounts.
+Campaign generation requires `OPENAI_API_KEY`. Durable persistence requires a
+PostgreSQL connection string; without one, the browser workflow continues using
+its existing local data.
