@@ -37,6 +37,8 @@ function setup() {
     getElementById(id) { if (!elements.has(id)) elements.set(id, new Element()); return elements.get(id); } };
   let generateCalls = 0; const recommendBodies = [];
   const recommendations = { recommendations: ["First", "Second", "Third"].map((title, index) => ({ title, reason: `Why ${index}`,
+    targetCustomer: "Families", businessObjective: `Awareness objective ${index}`,
+    demeosCapability: ["Full Marketing Campaign", "Social Media Campaign", "Email Campaign"][index],
     suggestedRequest: `Do ${index}`, suggestedCampaignType: ["full", "social", "email"][index] })) };
   const context = { document, console, alert() {}, Math, setTimeout, crypto: { randomUUID() { return "new-id"; } },
     localStorage: { getItem(key) { return store.has(key) ? store.get(key) : null; }, setItem(key, value) { store.set(key, value); }, removeItem(key) { store.delete(key); } },
@@ -58,7 +60,12 @@ test("recommendations use the active profile, show loading, render three, and po
   assert.deepEqual(JSON.parse(JSON.stringify(app.recommendBodies[0].businessProfile)), app.profiles[0]);
   assert.equal(app.recommendBodies[0].businessSituation, "Tuesday evenings are quiet.");
   const list = app.document.getElementById("recommendations-list"); assert.equal(list.children.length, 3);
-  const useButton = list.children[1].children[2]; useButton.listeners.click();
+  const card = list.children[1];
+  assert.deepEqual(card.children.slice(1, 5).map((section) => [section.children[0].textContent, section.children[1].textContent]), [
+    ["Why this helps", "Why 1"], ["Target customer", "Families"],
+    ["Business objective", "Awareness objective 1"], ["DEMEOS will create", "Social Media Campaign"]
+  ]);
+  const useButton = card.children[5]; assert.equal(useButton.textContent, "Use This Recommendation"); useButton.listeners.click();
   assert.equal(app.document.getElementById("promo-input").value, "Do 1");
   assert.equal(app.document.getElementById("campaign-type").value, "social");
   assert.equal(app.getGenerateCalls(), 0);

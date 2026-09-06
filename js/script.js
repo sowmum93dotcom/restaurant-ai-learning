@@ -330,7 +330,16 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     recommendations.forEach(function (recommendation) {
       const card = document.createElement("article"); card.className = "recommendation-card";
       const title = document.createElement("h3"); title.textContent = recommendation.title;
-      const reason = document.createElement("p"); reason.textContent = recommendation.reason;
+      function detail(labelText, value) {
+        const section = document.createElement("div"); section.className = "recommendation-detail";
+        const label = document.createElement("h4"); label.textContent = labelText;
+        const content = document.createElement("p"); content.textContent = value;
+        section.append(label, content); return section;
+      }
+      const reason = detail("Why this helps", recommendation.reason);
+      const targetCustomer = detail("Target customer", recommendation.targetCustomer);
+      const businessObjective = detail("Business objective", recommendation.businessObjective);
+      const capability = detail("DEMEOS will create", recommendation.demeosCapability);
       const use = document.createElement("button"); use.type = "button"; use.className = "demeos-secondary-button";
       use.textContent = "Use This Recommendation";
       use.addEventListener("click", function () {
@@ -339,7 +348,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
         campaignType.value = recommendation.suggestedCampaignType;
         if (typeof promoInput.focus === "function") promoInput.focus();
       });
-      card.append(title, reason, use); recommendationsList.appendChild(card);
+      card.append(title, reason, targetCustomer, businessObjective, capability, use); recommendationsList.appendChild(card);
     });
   }
 

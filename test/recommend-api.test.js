@@ -8,6 +8,8 @@ const source = fs.readFileSync(require.resolve("../api/recommend.js"), "utf8")
 const profile = { name: "North Star", type: "Consultancy", location: "Leeds", brandVoice: "Clear and calm",
   targetCustomer: "Local small businesses", goal: "Build awareness" };
 const valid = { recommendations: ["One", "Two", "Three"].map((title, index) => ({ title, reason: `Reason ${index}`,
+  targetCustomer: profile.targetCustomer, businessObjective: `${profile.goal}: objective ${index}`,
+  demeosCapability: ["Full Marketing Campaign", "Social Media Campaign", "Email Campaign"][index],
   suggestedRequest: `Request ${index}`, suggestedCampaignType: ["full", "social", "email"][index] })) };
 
 async function call(businessProfile = profile, output = JSON.stringify(valid), businessSituation) {
@@ -67,13 +69,28 @@ test("exactly three recommendations are required", async () => {
   const result = await call(profile, JSON.stringify({ recommendations: valid.recommendations.slice(0, 2) })); assert.equal(result.response.statusCode, 502);
 });
 
-for (const field of ["title", "reason", "suggestedRequest"]) test(`each recommendation requires ${field}`, async () => {
+for (const field of ["title", "reason", "targetCustomer", "businessObjective", "demeosCapability", "suggestedRequest"]) test(`each recommendation requires ${field}`, async () => {
   const malformed = structuredClone(valid); delete malformed.recommendations[0][field];
   const result = await call(profile, JSON.stringify(malformed)); assert.equal(result.response.statusCode, 502);
 });
 
 test("suggestedCampaignType is limited to full, social, or email", async () => {
   const malformed = structuredClone(valid); malformed.recommendations[1].suggestedCampaignType = "video";
+  const result = await call(profile, JSON.stringify(malformed)); assert.equal(result.response.statusCode, 502);
+});
+
+test("target customers must exactly match the verified profile", async () => {
+  const malformed = structuredClone(valid); malformed.recommendations[0].targetCustomer = "Invented audience";
+  const result = await call(profile, JSON.stringify(malformed)); assert.equal(result.response.statusCode, 502);
+});
+
+test("business objectives must include the verified primary marketing goal", async () => {
+  const malformed = structuredClone(valid); malformed.recommendations[0].businessObjective = "Increase sales";
+  const result = await call(profile, JSON.stringify(malformed)); assert.equal(result.response.statusCode, 502);
+});
+
+test("DEMEOS capabilities must exactly correspond to campaign types", async () => {
+  const malformed = structuredClone(valid); malformed.recommendations[1].demeosCapability = "Email Campaign";
   const result = await call(profile, JSON.stringify(malformed)); assert.equal(result.response.statusCode, 502);
 });
 
@@ -86,6 +103,9 @@ test("the prompt limits recommendations to campaign types the application can cr
   for (const supported of ["Full Marketing Campaign (full)", "Social Media Post/Campaign (social)", "Email Campaign (email)"])
     assert.match(prompt, new RegExp(supported.replace(/[()]/g, "\\$&")));
   assert.match(prompt, /directly executable/);
+  assert.match(prompt, /full → "Full Marketing Campaign"; social → "Social Media Campaign"; email → "Email Campaign"/);
+  assert.match(prompt, /targetCustomer must be exactly "Local small businesses"/);
+  assert.match(prompt, /businessObjective must explicitly include the verified Primary marketing goal, "Build awareness"/);
   for (const unsupported of ["video production", "loyalty programmes", "paid advertising", "automatic publishing", "SMS",
     "websites", "events", "partnerships", "customer testimonial programmes", "booking systems", "CRM programmes"])
     assert.match(prompt, new RegExp(unsupported));
