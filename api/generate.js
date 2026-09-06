@@ -29,7 +29,8 @@ export default async function handler(req, res) {
       campaignType = "full",
       businessProfile,
       existingCampaign,
-      revisionInstruction
+      revisionInstruction,
+      revisionTarget
     } = req.body || {};
     if (!["full", "social", "email"].includes(campaignType)) {
 
@@ -41,6 +42,26 @@ export default async function handler(req, res) {
 
     }
     const isRevision = typeof existingCampaign === "string" || typeof revisionInstruction === "string";
+    const validRevisionTargets = [
+      "campaign_strategy",
+      "social_media_post",
+      "email_campaign",
+      "short_ad_copy",
+      "call_to_action",
+    ];
+    if (revisionTarget !== undefined && (
+      !isRevision ||
+      campaignType !== "full" ||
+      !validRevisionTargets.includes(revisionTarget)
+    )) {
+
+      return res.status(400).json({
+
+        error: "Please select a valid campaign section to revise.",
+
+      });
+
+    }
     const requiredBusinessProfileFields = [
       "name",
       "type",
@@ -103,6 +124,13 @@ export default async function handler(req, res) {
 
     }
 
+    const revisionTargetInstructions = revisionTarget ? `
+The selected revision target is ${revisionTarget}.
+Revise ONLY the selected ${revisionTarget} section according to the revision instruction. Preserve the other four sections unchanged in substance, including their existing campaign facts and meaning.
+Return the COMPLETE five-section Full Marketing Campaign. Keep the exact required section headings and order shown below.
+The selected section must remain faithful to the verified Business Manager Profile, Primary marketing goal, Target customer, Brand voice, and existing campaign facts. The revision instruction must not redefine any verified Business Manager Profile field.
+` : "";
+
     const campaignTask = isRevision ? `
 Revise the existing campaign below. This is an editing task, not a request to create an unrelated campaign.
 
@@ -119,6 +147,7 @@ ${existingCampaign.trim()}
 Revision instruction:
 
 ${revisionInstruction.trim()}
+${revisionTargetInstructions}
 ` : `
 Business request:
 
