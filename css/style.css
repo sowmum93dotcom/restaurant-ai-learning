@@ -566,13 +566,15 @@ textarea:focus {
   background: #edf3fb;
 }
 
-/* Campaign history */
+/* Active marketing work and campaign history */
+.active-marketing-work,
 .campaign-history {
   margin-top: 2rem;
   padding-top: 1.75rem;
   border-top: 1px solid #eee;
 }
 
+.active-marketing-work h3,
 .campaign-history h3 {
   color: #064cff;
   margin-bottom: 0.75rem;
@@ -581,6 +583,51 @@ textarea:focus {
 #campaign-history-empty {
   color: #555;
 }
+
+.active-marketing-work-helper,
+#active-marketing-work-empty {
+  color: #555;
+}
+
+.active-marketing-work-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.35rem 1rem;
+  margin-top: 0.75rem;
+  padding: 1rem;
+  border: 1px solid #cbd9ec;
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.active-marketing-work-item h4,
+.active-marketing-work-item p { grid-column: 1; }
+
+.active-marketing-work-purpose { color: #394657; }
+
+.active-marketing-work-status {
+  color: #17417d;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.active-marketing-work-item button {
+  grid-column: 2;
+  grid-row: 1 / span 3;
+  align-self: center;
+  min-height: 44px;
+  padding: 0 1rem;
+  border: 1px solid #17417d;
+  border-radius: 6px;
+  background: #17417d;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.active-marketing-work-item button:hover { background: #102f5c; }
 
 .campaign-history-item {
   display: grid;

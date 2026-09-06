@@ -152,6 +152,34 @@ function getCampaignVersions(campaigns, campaign, profile) {
     return revisionDifference || String(left.createdAt || "").localeCompare(String(right.createdAt || ""));
   });
 }
+function getActiveMarketingWork(campaigns, businessId) {
+  if (!businessId) return [];
+  const latestByChain = new Map();
+  campaigns.forEach(function (campaign) {
+    if (!campaign || campaign.businessId !== businessId) return;
+    const continuity = getCampaignContinuity(campaign);
+    const current = latestByChain.get(continuity.originalMarketingWorkId);
+    if (!current) {
+      latestByChain.set(continuity.originalMarketingWorkId, campaign);
+      return;
+    }
+    const currentContinuity = getCampaignContinuity(current);
+    if (continuity.revisionNumber > currentContinuity.revisionNumber ||
+      (continuity.revisionNumber === currentContinuity.revisionNumber &&
+        String(campaign.createdAt || "") > String(current.createdAt || ""))) {
+      latestByChain.set(continuity.originalMarketingWorkId, campaign);
+    }
+  });
+  return Array.from(latestByChain.values()).map(function (campaign) {
+    const approved = campaign.approvalStatus === "Approved";
+    const hasOutcome = approved && Boolean(campaign.outcome);
+    return {
+      campaign,
+      status: !approved ? "Draft — needs approval" : hasOutcome ? "Outcome recorded" : "Approved — outcome needed",
+      action: !approved ? "Review Campaign" : hasOutcome ? "View Campaign" : "Record Outcome"
+    };
+  });
+}
 function enforceBusinessCampaignLimit(campaigns, businessId, maximumCampaigns, protectedCampaignIds) {
   const retained = campaigns.slice();
   const protectedIds = new Set((protectedCampaignIds || []).filter(Boolean));
@@ -289,7 +317,7 @@ function getCampaignWorkspace(campaign) {
 if (typeof module !== "undefined" && module.exports) module.exports = {
   addBusinessIdentity, addPendingBusinessProfileSync, canAccessCampaign, createCampaignContinuity, enforceBusinessCampaignLimit,
   createCampaignPersistenceQueue,
-  getCampaignBusinessId, getCampaignContinuity, getCampaignContinuityLabel, getCampaignVersions, getVisibleCampaigns,
+  getActiveMarketingWork, getCampaignBusinessId, getCampaignContinuity, getCampaignContinuityLabel, getCampaignVersions, getVisibleCampaigns,
   hydrateKnownBusiness, mergeKnownBusinessPersistence, migrateBusinessProfiles, readPendingBusinessProfileSyncIds,
   removePendingBusinessProfileSync, updateBusinessProfile, parseFullCampaignSections, getCampaignWorkspace
 };
@@ -320,6 +348,8 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   const saveCampaignOutcomeBtn = byId("save-campaign-outcome");
   const campaignHistoryList = byId("campaign-history-list");
   const campaignHistoryEmpty = byId("campaign-history-empty");
+  const activeMarketingWorkList = byId("active-marketing-work-list");
+  const activeMarketingWorkEmpty = byId("active-marketing-work-empty");
   const businessSelector = byId("business-selector");
   const addBusinessBtn = byId("add-business-btn");
   const saveBusinessProfileBtn = byId("save-business-profile-btn");
@@ -489,7 +519,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     const result = await hydrateKnownBusiness(localStorage, requestedBusinessId, fetch);
     if (!result.hydrated || state.activeBusinessId !== requestedBusinessId) return;
     state.profiles = result.profiles;
-    fillProfile(activeProfile()); renderSelector(); renderCampaignHistory();
+    fillProfile(activeProfile()); renderSelector(); renderActiveMarketingWork(); renderCampaignHistory();
   }
   async function persistBusiness(profile) {
     if (!profile || typeof window === "undefined" || typeof fetch !== "function") return false;
@@ -585,11 +615,36 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       item.append(heading, details, status, preview, open); campaignHistoryList.appendChild(item);
     });
   }
+  function renderActiveMarketingWork() {
+    const work = addingBusiness ? [] : getActiveMarketingWork(getCampaignHistory(), state.activeBusinessId);
+    activeMarketingWorkList.textContent = "";
+    activeMarketingWorkEmpty.hidden = work.length > 0;
+    work.forEach(function (entry) {
+      const campaign = entry.campaign;
+      const item = document.createElement("article"); item.className = "active-marketing-work-item";
+      const type = document.createElement("h4");
+      type.textContent = campaign.campaignTypeLabel || campaign.campaignType || "Campaign";
+      const purpose = document.createElement("p"); purpose.className = "active-marketing-work-purpose";
+      purpose.textContent = typeof campaign.promoText === "string" && campaign.promoText.trim()
+        ? campaign.promoText : "Marketing request not stored.";
+      const status = document.createElement("p"); status.className = "active-marketing-work-status";
+      status.textContent = entry.status;
+      const action = document.createElement("button"); action.type = "button"; action.textContent = entry.action;
+      action.addEventListener("click", function () {
+        openCampaign(campaign.id);
+        if (entry.action === "Record Outcome") {
+          if (typeof campaignOutcome.scrollIntoView === "function") campaignOutcome.scrollIntoView({ behavior: "smooth", block: "center" });
+          if (typeof campaignOutcomeValue.focus === "function") campaignOutcomeValue.focus();
+        }
+      });
+      item.append(type, purpose, status, action); activeMarketingWorkList.appendChild(item);
+    });
+  }
   function switchBusiness(businessId) {
     if (!state.profiles.some(function (profile) { return profile.businessId === businessId; })) return;
     state.activeBusinessId = businessId; addingBusiness = false;
     localStorage.setItem("demeosActiveBusinessId", businessId);
-    clearRecommendations(); clearBusinessSituation(); fillProfile(activeProfile()); renderSelector(); clearCampaignWorkspace(); renderCampaignHistory();
+    clearRecommendations(); clearBusinessSituation(); fillProfile(activeProfile()); renderSelector(); clearCampaignWorkspace(); renderActiveMarketingWork(); renderCampaignHistory();
     hydrateActiveBusiness();
   }
   async function saveCampaign(text, promo, type, typeLabel, profile, sourceId) {
@@ -602,14 +657,14 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       approvalStatus: "Unapproved", ...continuity };
     campaigns.unshift(campaign);
     const retained = enforceBusinessCampaignLimit(campaigns, profile.businessId, 20, [id, sourceId]);
-    localStorage.setItem(campaignHistoryKey, JSON.stringify(retained)); openCampaignId = id; renderCampaignHistory(); renderCampaignVersions();
+    localStorage.setItem(campaignHistoryKey, JSON.stringify(retained)); openCampaignId = id; renderActiveMarketingWork(); renderCampaignHistory(); renderCampaignVersions();
     const persisted = await persistCampaign(profile, campaign); return { id, persisted };
   }
 
-  renderSelector(); fillProfile(activeProfile()); renderCampaignHistory(); hydrateActiveBusiness();
+  renderSelector(); fillProfile(activeProfile()); renderActiveMarketingWork(); renderCampaignHistory(); hydrateActiveBusiness();
   businessSelector.addEventListener("change", function () { switchBusiness(businessSelector.value); });
   addBusinessBtn.addEventListener("click", function () {
-    addingBusiness = true; businessSelector.value = ""; fillProfile(null); clearRecommendations(); clearBusinessSituation(); clearCampaignWorkspace();
+    addingBusiness = true; businessSelector.value = ""; fillProfile(null); clearRecommendations(); clearBusinessSituation(); clearCampaignWorkspace(); renderActiveMarketingWork();
   });
   saveBusinessProfileBtn.addEventListener("click", async function () {
     const profileFields = {};
@@ -625,7 +680,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       state = { profiles: result.profiles, activeBusinessId: result.profile.businessId }; addingBusiness = false;
       localStorage.setItem("demeosBusinessProfiles", JSON.stringify(state.profiles));
       localStorage.setItem("demeosActiveBusinessId", state.activeBusinessId);
-      renderSelector(); fillProfile(result.profile); clearRecommendations(); clearCampaignWorkspace(); renderCampaignHistory();
+      renderSelector(); fillProfile(result.profile); clearRecommendations(); clearCampaignWorkspace(); renderActiveMarketingWork(); renderCampaignHistory();
 
       addPendingBusinessProfileSync(localStorage, result.profile.businessId);
       const persisted = await persistBusiness(result.profile);
@@ -720,7 +775,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     if (!campaign) return;
     if (!canAccessCampaign(campaign, activeProfile())) { alert("This campaign belongs to a different business profile."); return; }
     campaign.approvalStatus = "Approved"; localStorage.setItem(campaignHistoryKey, JSON.stringify(campaigns));
-    renderCampaignHistory(); approveBtn.disabled = true; approveBtn.textContent = "Saving Approval...";
+    renderActiveMarketingWork(); renderCampaignHistory(); approveBtn.disabled = true; approveBtn.textContent = "Saving Approval...";
     try {
       const persisted = await persistCampaign(activeProfile(), campaign);
       showApprovalStatus("Approved");
@@ -747,7 +802,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       if (!response.ok || !data.outcome) throw new Error(data.error || "DEMEOS could not save this outcome.");
       campaign.outcome = data.outcome;
       localStorage.setItem(campaignHistoryKey, JSON.stringify(campaigns));
-      renderCampaignOutcome(campaign);
+      renderCampaignOutcome(campaign); renderActiveMarketingWork();
     } catch (error) { alert(error.message); }
     finally { saveCampaignOutcomeBtn.disabled = false; saveCampaignOutcomeBtn.textContent = "Save Outcome"; }
   });

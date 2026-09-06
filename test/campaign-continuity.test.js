@@ -83,12 +83,14 @@ test("switching businesses loads its fields, refreshes history, and clears the o
       this.options = [{ text: "Social Media Post" }];
       this.selectedIndex = 0;
       this.value = "";
-      this.textContent = "";
+      this._textContent = "";
       this.hidden = false;
       this.classList = { toggle() {} };
     }
+    get textContent() { return this._textContent; }
+    set textContent(value) { this._textContent = value; if (value === "") this.children = []; }
     addEventListener(name, listener) { this.listeners[name] = listener; }
-    append() {}
+    append(...children) { this.children.push(...children); }
     appendChild(child) { this.children.push(child); }
     prepend() {}
     scrollIntoView() {}
@@ -120,6 +122,11 @@ test("switching businesses loads its fields, refreshes history, and clears the o
   });
   document.ready();
 
+  let activeWork = document.getElementById("active-marketing-work-list").children;
+  assert.equal(activeWork.length, 1);
+  assert.equal(activeWork[0].children[0].textContent, "Campaign");
+  assert.equal(activeWork[0].children[1].textContent, "Marketing request not stored.");
+
   created.find(function (element) { return element.textContent === "Open"; }).listeners.click();
   assert.equal(document.getElementById("results-content").textContent, "A campaign");
 
@@ -134,6 +141,14 @@ test("switching businesses loads its fields, refreshes history, and clears the o
   assert.equal(storage.getItem("demeosActiveBusinessId"), "b");
   assert.equal(created.filter(function (element) { return element.textContent === "Open"; }).length, 2,
     "each active business renders exactly its own campaign");
+  activeWork = document.getElementById("active-marketing-work-list").children;
+  assert.equal(activeWork.length, 1);
+  activeWork[0].children[3].listeners.click();
+  assert.equal(document.getElementById("results-content").textContent, "B campaign");
+
+  document.getElementById("add-business-btn").listeners.click();
+  assert.equal(document.getElementById("active-marketing-work-list").children.length, 0);
+  assert.equal(document.getElementById("active-marketing-work-empty").hidden, false);
 });
 
 test("campaign history shows matching and legacy records but hides other businesses", function () {
