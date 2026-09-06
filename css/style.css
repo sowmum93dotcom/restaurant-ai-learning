@@ -283,6 +283,18 @@ textarea:focus {
   padding-bottom: 1.5rem;
   border-bottom: 1px solid #d8e2f2;
 }
+.recommendations-section label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-weight: 600;
+}
+.recommendations-helper {
+  margin-bottom: 0.75rem;
+  color: #555;
+}
+.recommendations-section textarea {
+  margin-bottom: 1rem;
+}
 .recommendations-status { color: #29466f; }
 .recommendations-list {
   display: grid;

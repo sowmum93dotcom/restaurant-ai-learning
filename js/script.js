@@ -285,6 +285,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   const recommendationsBtn = byId("recommendations-btn");
   const recommendationsStatus = byId("recommendations-status");
   const recommendationsList = byId("recommendations-list");
+  const businessSituation = byId("business-situation");
   const resultsArea = byId("results");
   const resultsContent = byId("results-content");
   const campaignVersions = byId("campaign-versions");
@@ -317,6 +318,10 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     recommendationBusinessId = null;
     recommendationsStatus.textContent = "";
     recommendationsList.textContent = "";
+  }
+
+  function clearBusinessSituation() {
+    businessSituation.value = "";
   }
 
   function renderRecommendations(recommendations, businessId) {
@@ -509,7 +514,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     if (!state.profiles.some(function (profile) { return profile.businessId === businessId; })) return;
     state.activeBusinessId = businessId; addingBusiness = false;
     localStorage.setItem("demeosActiveBusinessId", businessId);
-    clearRecommendations(); fillProfile(activeProfile()); renderSelector(); clearCampaignWorkspace(); renderCampaignHistory();
+    clearRecommendations(); clearBusinessSituation(); fillProfile(activeProfile()); renderSelector(); clearCampaignWorkspace(); renderCampaignHistory();
     hydrateActiveBusiness();
   }
   async function saveCampaign(text, promo, type, typeLabel, profile, sourceId) {
@@ -529,7 +534,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   renderSelector(); fillProfile(activeProfile()); renderCampaignHistory(); hydrateActiveBusiness();
   businessSelector.addEventListener("change", function () { switchBusiness(businessSelector.value); });
   addBusinessBtn.addEventListener("click", function () {
-    addingBusiness = true; businessSelector.value = ""; fillProfile(null); clearRecommendations(); clearCampaignWorkspace();
+    addingBusiness = true; businessSelector.value = ""; fillProfile(null); clearRecommendations(); clearBusinessSituation(); clearCampaignWorkspace();
   });
   saveBusinessProfileBtn.addEventListener("click", async function () {
     const profileFields = {};
@@ -578,7 +583,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     clearRecommendations(); recommendationsBtn.disabled = true;
     recommendationsStatus.textContent = "DEMEOS is reviewing your business...";
     try {
-      const response = await fetch("/api/recommend", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ businessProfile: profile }) });
+      const response = await fetch("/api/recommend", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ businessProfile: profile, businessSituation: businessSituation.value.trim() }) });
       const responseText = await response.text(); let data;
       try { data = responseText ? JSON.parse(responseText) : {}; } catch (error) { throw new Error("DEMEOS received an unreadable recommendation response."); }
       if (!response.ok) throw new Error(data.error || "DEMEOS could not create recommendations.");
