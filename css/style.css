@@ -469,6 +469,30 @@ textarea:focus {
   background: #eaf7ef;
 }
 
+.campaign-outcome {
+  max-width: 36rem;
+  margin-top: 1.25rem;
+  padding: 1rem;
+  border: 1px solid #d7e0ed;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.campaign-outcome h4,
+.campaign-outcome p { margin-top: 0; }
+
+.campaign-outcome label {
+  display: block;
+  margin: 0.75rem 0 0.35rem;
+  font-weight: 600;
+  color: #102a52;
+}
+
+.campaign-outcome select,
+.campaign-outcome textarea { width: 100%; }
+
+.campaign-outcome button { margin-top: 0.75rem; }
+
 #campaign-revision-controls {
   margin-top: 1.25rem;
 }

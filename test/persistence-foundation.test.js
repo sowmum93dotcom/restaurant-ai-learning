@@ -137,6 +137,28 @@ test("repository restores every campaign when a business has fewer than 20", asy
   );
 });
 
+test("campaign outcomes update only the approved campaign version for the requested business", async function () {
+  const original = { id: "version-a", campaignText: "Keep this", approvalStatus: "Approved" };
+  const database = {
+    async ensureSchema() {},
+    async query(sql, values) {
+      assert.match(sql, /campaign_id = \$1/);
+      assert.match(sql, /business_id = \$2/);
+      assert.match(sql, /campaign->>'approvalStatus' = 'Approved'/);
+      assert.match(sql, /jsonb_set\(campaign, '\{outcome\}'/);
+      assert.deepEqual(values.slice(0, 2), ["version-a", "business-a"]);
+      return { rows: [{ campaign: { ...original, outcome: JSON.parse(values[2]) } }] };
+    }
+  };
+  const outcome = { businessId: "business-a", campaignId: "version-a", outcome: "Mixed", ownerNote: "Some response", savedAt: "2026-09-06T12:00:00.000Z" };
+
+  const saved = await createPersistenceRepository(database).saveCampaignOutcome("business-a", "version-a", outcome);
+
+  assert.deepEqual(saved, { ...original, businessId: "business-a", outcome });
+  assert.equal(saved.campaignText, original.campaignText);
+  assert.equal(saved.approvalStatus, original.approvalStatus);
+});
+
 test("hydration restores profile and complete campaign continuity fields", async function () {
   const storage = memoryStorage([
     ["demeosBusinessProfiles", JSON.stringify([{ businessId: "business-a", name: "Old A" }])],
