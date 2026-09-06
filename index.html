@@ -131,6 +131,14 @@
     <section class="assistant-section">
       <section class="recommendations-section" aria-labelledby="recommendations-heading">
         <h2 id="recommendations-heading">DEMEOS Recommends</h2>
+        <label for="business-situation">What is happening in your business right now?</label>
+        <p id="business-situation-help" class="recommendations-helper">Tell DEMEOS about a current need, opportunity or change. This is optional.</p>
+        <textarea
+          id="business-situation"
+          rows="4"
+          aria-describedby="business-situation-help"
+          placeholder="Example: Tuesday evenings are quiet and I would like to attract more local customers."
+        ></textarea>
         <button id="recommendations-btn" class="demeos-secondary-button" type="button">Get Recommendations</button>
         <p id="recommendations-status" class="recommendations-status" aria-live="polite"></p>
         <div id="recommendations-list" class="recommendations-list"></div>
