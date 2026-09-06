@@ -53,10 +53,25 @@ test("malformed AI output is rejected", async () => {
   const result = await call(profile, "not JSON"); assert.equal(result.response.statusCode, 502);
 });
 
-test("the prompt is grounded in the verified profile and forbids unsupported facts", async () => {
+test("the prompt limits recommendations to campaign types the application can create", async () => {
+  const result = await call(); const prompt = result.requestBody.input;
+  for (const supported of ["Full Marketing Campaign (full)", "Social Media Post/Campaign (social)", "Email Campaign (email)"])
+    assert.match(prompt, new RegExp(supported.replace(/[()]/g, "\\$&")));
+  assert.match(prompt, /directly executable/);
+  for (const unsupported of ["video production", "loyalty programmes", "paid advertising", "automatic publishing", "SMS",
+    "websites", "events", "partnerships", "customer testimonial programmes", "booking systems", "CRM programmes"])
+    assert.match(prompt, new RegExp(unsupported));
+  assert.match(prompt, /Do not recommend or imply/);
+});
+
+test("the prompt grounds recommendations and suggested requests in verified facts only", async () => {
   const result = await call(); const prompt = result.requestBody.input;
   for (const value of Object.values(profile)) assert.match(prompt, new RegExp(value));
   assert.match(prompt, /ONLY source of business facts/);
-  for (const forbidden of ["prices", "discounts", "opening hours", "events", "products", "menu items", "services", "offers",
-    "customer statistics", "performance statistics", "booking levels", "sales numbers", "business problems"]) assert.match(prompt, new RegExp(forbidden));
+  assert.match(prompt, /facts explicitly supplied/);
+  for (const forbidden of ["offer", "discount", "promotion", "product or menu item", "service", "event", "loyalty programme",
+    "testimonial", "partnership", "customer list", "performance result", "booking level", "sales figure", "opening hour",
+    "other business asset or fact"]) assert.match(prompt, new RegExp(forbidden));
+  assert.match(prompt, /each suggestedRequest must contain only verified profile facts plus safe instructions/);
+  assert.match(prompt, /Never present an unsupported or unverified detail as an example, possibility, or proposed premise/);
 });
