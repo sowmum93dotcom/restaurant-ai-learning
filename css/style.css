@@ -309,6 +309,10 @@ textarea:focus {
 }
 .recommendation-card h3, .recommendation-card p { margin-top: 0; }
 
+.recommendation-card.is-rejected { opacity: 0.72; }
+
+.recommendation-decision { font-weight: 700; }
+
 .recommendation-detail { margin: 0 0 0.85rem; }
 .recommendation-detail h4 {
   margin: 0 0 0.2rem;

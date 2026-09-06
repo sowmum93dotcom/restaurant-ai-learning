@@ -13,7 +13,17 @@ const SCHEMA_STATEMENTS = [
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`,
   `CREATE INDEX IF NOT EXISTS demeos_campaigns_business_id_idx
-    ON demeos_campaigns (business_id)`
+    ON demeos_campaigns (business_id)`,
+  `CREATE TABLE IF NOT EXISTS demeos_recommendation_decisions (
+    decision_id BIGSERIAL PRIMARY KEY,
+    business_id TEXT NOT NULL REFERENCES demeos_businesses(business_id),
+    recommendation_title TEXT NOT NULL,
+    suggested_campaign_type TEXT NOT NULL,
+    decision TEXT NOT NULL CHECK (decision IN ('used', 'modified', 'rejected')),
+    decided_at TIMESTAMPTZ NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS demeos_recommendation_decisions_business_id_idx
+    ON demeos_recommendation_decisions (business_id)`
 ];
 
 function createDatabase(client) {
