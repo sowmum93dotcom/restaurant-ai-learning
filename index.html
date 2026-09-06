@@ -192,6 +192,22 @@
 
         <p id="campaign-approval-status" class="campaign-approval-status" hidden></p>
 
+        <section id="campaign-outcome" class="campaign-outcome" aria-labelledby="campaign-outcome-heading" hidden>
+          <h4 id="campaign-outcome-heading">Campaign Outcome</h4>
+          <p>Tell DEMEOS what happened after you used this campaign.</p>
+          <label for="campaign-outcome-value">Outcome</label>
+          <select id="campaign-outcome-value">
+            <option value="">Select an outcome</option>
+            <option value="Positive">Positive</option>
+            <option value="Mixed">Mixed</option>
+            <option value="No noticeable result">No noticeable result</option>
+            <option value="Not used yet">Not used yet</option>
+          </select>
+          <label for="campaign-outcome-note">What happened?</label>
+          <textarea id="campaign-outcome-note" rows="3"></textarea>
+          <button id="save-campaign-outcome" class="demeos-primary-button" type="button">Save Outcome</button>
+        </section>
+
         <div id="campaign-revision-controls" class="campaign-revision-panel" hidden>
           <p id="revision-target-indicator" class="revision-target-indicator" hidden></p>
           <label for="revision-instruction">What would you like DEMEOS to change?</label>

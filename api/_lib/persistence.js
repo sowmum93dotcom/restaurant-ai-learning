@@ -43,6 +43,20 @@ function createPersistenceRepository(database) {
          WHERE demeos_campaigns.business_id = EXCLUDED.business_id`,
         [campaign.id, campaign.businessId, JSON.stringify(campaign)]
       );
+    },
+
+    async saveCampaignOutcome(businessId, campaignId, outcome) {
+      await database.ensureSchema();
+      const result = await database.query(
+        `UPDATE demeos_campaigns
+         SET campaign = jsonb_set(campaign, '{outcome}', $3::jsonb, true), updated_at = NOW()
+         WHERE campaign_id = $1
+           AND business_id = $2
+           AND campaign->>'approvalStatus' = 'Approved'
+         RETURNING campaign`,
+        [campaignId, businessId, JSON.stringify(outcome)]
+      );
+      return result.rows.length ? { ...result.rows[0].campaign, id: campaignId, businessId } : null;
     }
   };
 }

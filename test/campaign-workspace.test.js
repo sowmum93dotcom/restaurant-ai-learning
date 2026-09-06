@@ -175,6 +175,47 @@ test("Campaign Versions marks the open version and switches to the exact stored 
   assert.equal(versionButtons[0].attributes["aria-current"], "true");
 });
 
+test("Campaign Outcome appears only for approved versions and restores that exact version's feedback", function () {
+  const campaigns = [
+    { id: "revision", businessId: "business-a", originalMarketingWorkId: "original", revisionNumber: 1,
+      campaignType: "social", campaignText: "Revised", approvalStatus: "Approved", createdAt: "2026-09-06",
+      outcome: { outcome: "Positive", ownerNote: "More regulars returned.", savedAt: "2026-09-06T12:00:00.000Z" } },
+    { id: "original", businessId: "business-a", originalMarketingWorkId: "original", revisionNumber: 0,
+      campaignType: "social", campaignText: "Original", approvalStatus: "Unapproved", createdAt: "2026-09-05" }
+  ];
+  const browser = createBrowser(campaigns);
+  browser.created.filter(function (element) { return element.textContent === "Open"; })[0].listeners.click();
+  assert.equal(browser.document.getElementById("campaign-outcome").hidden, false);
+  assert.equal(browser.document.getElementById("campaign-outcome-value").value, "Positive");
+  assert.equal(browser.document.getElementById("campaign-outcome-note").value, "More regulars returned.");
+
+  browser.document.getElementById("campaign-versions-list").children[0].listeners.click();
+  assert.equal(browser.document.getElementById("campaign-outcome").hidden, true);
+  assert.equal(browser.document.getElementById("campaign-outcome-value").value, "");
+  assert.equal(browser.document.getElementById("campaign-outcome-note").value, "");
+});
+
+test("saving an outcome updates only the open approved version and preserves campaign content and approval", async function () {
+  const campaign = { id: "approved-a", businessId: "business-a", campaignType: "social", campaignText: "Do not change",
+    approvalStatus: "Approved", createdAt: "2026-09-05" };
+  const browser = createBrowser(campaign, async function () {});
+  browser.context.fetch = async function (url, options) {
+    assert.equal(url, "/api/businesses/business-a/campaigns/approved-a/outcome");
+    assert.deepEqual(JSON.parse(options.body), { outcome: "Mixed", ownerNote: "A few guests mentioned it." });
+    return { ok: true, async json() { return { outcome: { outcome: "Mixed", ownerNote: "A few guests mentioned it.", savedAt: "2026-09-06T12:00:00.000Z" } }; } };
+  };
+  browser.created.find(function (element) { return element.textContent === "Open"; }).listeners.click();
+  browser.document.getElementById("campaign-outcome-value").value = "Mixed";
+  browser.document.getElementById("campaign-outcome-note").value = "A few guests mentioned it.";
+  await browser.document.getElementById("save-campaign-outcome").listeners.click();
+
+  const saved = JSON.parse(browser.localStorage.getItem("demeosCampaignHistory"))[0];
+  assert.equal(saved.campaignText, "Do not change");
+  assert.equal(saved.approvalStatus, "Approved");
+  assert.equal(saved.outcome.outcome, "Mixed");
+  assert.equal(browser.document.getElementById("campaign-outcome-value").value, "Mixed");
+});
+
 test("social and email campaigns expose their continuity chains in Campaign Versions", function () {
   ["social", "email"].forEach(function (type) {
     const campaigns = [
