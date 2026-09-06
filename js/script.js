@@ -142,6 +142,21 @@ function getCampaignOutcomes(campaigns, businessId) {
     return context;
   });
 }
+function getRecommendationDecisionContext(decisions, businessId) {
+  const allowedDecisions = new Set(["used", "modified", "rejected"]);
+  const allowedCampaignTypes = new Set(["full", "social", "email"]);
+  if (!businessId || !Array.isArray(decisions)) return [];
+  return decisions.filter(function (item) {
+    return item && item.businessId === businessId && typeof item.recommendationTitle === "string" &&
+      allowedCampaignTypes.has(item.suggestedCampaignType) && allowedDecisions.has(item.decision) &&
+      typeof item.timestamp === "string";
+  }).sort(function (left, right) {
+    return right.timestamp.localeCompare(left.timestamp);
+  }).slice(0, 20).map(function (item) {
+    return { recommendationTitle: item.recommendationTitle, suggestedCampaignType: item.suggestedCampaignType,
+      decision: item.decision, timestamp: item.timestamp };
+  });
+}
 function getCampaignVersions(campaigns, campaign, profile) {
   if (!campaign || !canAccessCampaign(campaign, profile)) return [];
   const chainId = getCampaignContinuity(campaign).originalMarketingWorkId;
@@ -192,7 +207,7 @@ function enforceBusinessCampaignLimit(campaigns, businessId, maximumCampaigns, p
   return retained;
 }
 
-function mergeKnownBusinessPersistence(profiles, campaigns, businessId, serverRecord, preserveLocalProfile) {
+function mergeKnownBusinessPersistence(profiles, campaigns, businessId, serverRecord, preserveLocalProfile, decisions) {
   const serverProfile = serverRecord && serverRecord.businessProfile;
   if (!businessId || !serverProfile || serverProfile.businessId !== businessId) {
     throw new Error("The restored business did not match the requested business.");
@@ -221,7 +236,13 @@ function mergeKnownBusinessPersistence(profiles, campaigns, businessId, serverRe
       serverById.delete(campaign.id);
     }
   });
-  return { profiles: nextProfiles, campaigns: mergedCampaigns };
+  const otherBusinessDecisions = (Array.isArray(decisions) ? decisions : []).filter(function (item) {
+    return item && item.businessId !== businessId;
+  });
+  const restoredDecisions = (Array.isArray(serverRecord.recommendationDecisions) ? serverRecord.recommendationDecisions : [])
+    .filter(function (item) { return item && item.businessId === businessId; });
+  return { profiles: nextProfiles, campaigns: mergedCampaigns,
+    recommendationDecisions: otherBusinessDecisions.concat(restoredDecisions) };
 }
 
 async function hydrateKnownBusiness(storage, businessId, fetchImpl) {
@@ -235,6 +256,7 @@ async function hydrateKnownBusiness(storage, businessId, fetchImpl) {
     const serverRecord = await response.json();
     const currentProfiles = parseStoredJson(storage, "demeosBusinessProfiles", []);
     const currentCampaigns = parseStoredJson(storage, "demeosCampaignHistory", []);
+    const currentDecisions = parseStoredJson(storage, "demeosRecommendationDecisions", []);
     if (!Array.isArray(currentProfiles) || !currentProfiles.some(function (profile) { return profile.businessId === businessId; })) {
       return { hydrated: false, reason: "unknown-business" };
     }
@@ -243,10 +265,11 @@ async function hydrateKnownBusiness(storage, businessId, fetchImpl) {
       Array.isArray(currentCampaigns) ? currentCampaigns : [],
       businessId,
       serverRecord,
-      readPendingBusinessProfileSyncIds(storage).includes(businessId)
+      readPendingBusinessProfileSyncIds(storage).includes(businessId), currentDecisions
     );
     storage.setItem("demeosBusinessProfiles", JSON.stringify(merged.profiles));
     storage.setItem("demeosCampaignHistory", JSON.stringify(merged.campaigns));
+    storage.setItem("demeosRecommendationDecisions", JSON.stringify(merged.recommendationDecisions));
     return { hydrated: true, ...merged };
   } catch (error) {
     console.error("Could not restore known business:", error);
@@ -358,6 +381,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     brandVoice: byId("business-brand-voice"), targetCustomer: byId("business-target-customer"), goal: byId("business-goal")
   };
   const campaignHistoryKey = "demeosCampaignHistory";
+  const recommendationDecisionsKey = "demeosRecommendationDecisions";
   let state = migrateBusinessProfiles(localStorage);
   let openCampaignId = null;
   let currentCampaignText = "";
@@ -404,6 +428,10 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
             })
           });
           if (!response.ok) throw new Error(`server returned ${response.status}`);
+          const decisions = parseStoredJson(localStorage, recommendationDecisionsKey, []);
+          decisions.push({ businessId, recommendationTitle: recommendation.title,
+            suggestedCampaignType: recommendation.suggestedCampaignType, decision, timestamp: new Date().toISOString() });
+          localStorage.setItem(recommendationDecisionsKey, JSON.stringify(decisions));
         } catch (error) {
           console.error("Could not persist recommendation decision:", error);
         }
@@ -714,7 +742,9 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     recommendationsStatus.textContent = "DEMEOS is reviewing your business...";
     try {
       const campaignOutcomes = getCampaignOutcomes(getCampaignHistory(), requestedBusinessId);
-      const response = await fetch("/api/recommend", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ businessProfile: profile, businessSituation: businessSituation.value.trim(), campaignOutcomes }) });
+      const recommendationDecisions = getRecommendationDecisionContext(
+        parseStoredJson(localStorage, recommendationDecisionsKey, []), requestedBusinessId);
+      const response = await fetch("/api/recommend", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ businessProfile: profile, businessSituation: businessSituation.value.trim(), campaignOutcomes, recommendationDecisions }) });
       const responseText = await response.text(); let data;
       try { data = responseText ? JSON.parse(responseText) : {}; } catch (error) { throw new Error("DEMEOS received an unreadable recommendation response."); }
       if (!response.ok) throw new Error(data.error || "DEMEOS could not create recommendations.");
