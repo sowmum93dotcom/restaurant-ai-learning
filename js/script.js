@@ -125,6 +125,23 @@ function canAccessCampaign(campaign, profile) {
 function getVisibleCampaigns(campaigns, profile) {
   return campaigns.filter(function (campaign) { return canAccessCampaign(campaign, profile); });
 }
+function getCampaignOutcomes(campaigns, businessId) {
+  const allowedOutcomes = new Set(["Positive", "Mixed", "No noticeable result", "Not used yet"]);
+  return campaigns.filter(function (campaign) {
+    return campaign && campaign.businessId === businessId && campaign.outcome &&
+      allowedOutcomes.has(campaign.outcome.outcome);
+  }).slice(0, 10).map(function (campaign) {
+    const context = {
+      campaignType: campaign.campaignType,
+      outcome: campaign.outcome.outcome,
+      ownerNote: typeof campaign.outcome.ownerNote === "string" ? campaign.outcome.ownerNote : ""
+    };
+    if (typeof campaign.promoText === "string" && campaign.promoText.trim()) {
+      context.marketingRequest = campaign.promoText;
+    }
+    return context;
+  });
+}
 function getCampaignVersions(campaigns, campaign, profile) {
   if (!campaign || !canAccessCampaign(campaign, profile)) return [];
   const chainId = getCampaignContinuity(campaign).originalMarketingWorkId;
@@ -605,7 +622,8 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     clearRecommendations(); recommendationsBtn.disabled = true;
     recommendationsStatus.textContent = "DEMEOS is reviewing your business...";
     try {
-      const response = await fetch("/api/recommend", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ businessProfile: profile, businessSituation: businessSituation.value.trim() }) });
+      const campaignOutcomes = getCampaignOutcomes(getCampaignHistory(), requestedBusinessId);
+      const response = await fetch("/api/recommend", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ businessProfile: profile, businessSituation: businessSituation.value.trim(), campaignOutcomes }) });
       const responseText = await response.text(); let data;
       try { data = responseText ? JSON.parse(responseText) : {}; } catch (error) { throw new Error("DEMEOS received an unreadable recommendation response."); }
       if (!response.ok) throw new Error(data.error || "DEMEOS could not create recommendations.");

@@ -25,12 +25,13 @@ class Element {
   setAttribute() {} focus() {} scrollIntoView() {}
 }
 
-function setup() {
+function setup(campaigns = []) {
   const profiles = [
     { businessId: "a", name: "Alpha", type: "Studio", location: "York", brandVoice: "Friendly", targetCustomer: "Families", goal: "Awareness" },
     { businessId: "b", name: "Beta", type: "Accountant", location: "Bath", brandVoice: "Formal", targetCustomer: "Founders", goal: "Enquiries" }
   ];
-  const store = new Map([["demeosBusinessProfiles", JSON.stringify(profiles)], ["demeosActiveBusinessId", "a"]]);
+  const store = new Map([["demeosBusinessProfiles", JSON.stringify(profiles)], ["demeosActiveBusinessId", "a"],
+    ["demeosCampaignHistory", JSON.stringify(campaigns)]]);
   const elements = new Map(); const created = [];
   const document = { addEventListener(name, fn) { if (name === "DOMContentLoaded") this.ready = fn; },
     createElement(tag) { const element = new Element(tag); created.push(element); return element; },
@@ -89,4 +90,29 @@ test("a blank situation is sent with the active profile", async () => {
   await app.document.getElementById("recommendations-btn").listeners.click();
   assert.equal(app.recommendBodies[0].businessSituation, "");
   assert.deepEqual(JSON.parse(JSON.stringify(app.recommendBodies[0].businessProfile)), app.profiles[0]);
+  assert.deepEqual(app.recommendBodies[0].campaignOutcomes, []);
+});
+
+test("only saved outcome history belonging to the active business is sent", async () => {
+  const app = setup([
+    { id: "a-used", businessId: "a", campaignType: "social", promoText: "Reach families", outcome: { outcome: "Positive", ownerNote: "Families mentioned it." } },
+    { id: "a-no-outcome", businessId: "a", campaignType: "email", promoText: "No feedback" },
+    { id: "b-used", businessId: "b", campaignType: "full", promoText: "Reach founders", outcome: { outcome: "Mixed", ownerNote: "Founders replied." } },
+    { id: "legacy", campaignType: "email", promoText: "Unscoped", outcome: { outcome: "Positive", ownerNote: "Must not leak." } }
+  ]);
+  await app.document.getElementById("recommendations-btn").listeners.click();
+  assert.deepEqual(JSON.parse(JSON.stringify(app.recommendBodies[0].campaignOutcomes)), [
+    { campaignType: "social", marketingRequest: "Reach families", outcome: "Positive", ownerNote: "Families mentioned it." }
+  ]);
+});
+
+test("business switching keeps each business outcome history isolated", async () => {
+  const app = setup([
+    { id: "a", businessId: "a", campaignType: "social", outcome: { outcome: "Not used yet", ownerNote: "Alpha note" } },
+    { id: "b", businessId: "b", campaignType: "email", outcome: { outcome: "No noticeable result", ownerNote: "Beta note" } }
+  ]);
+  await app.document.getElementById("recommendations-btn").listeners.click();
+  const selector = app.document.getElementById("business-selector"); selector.value = "b"; selector.listeners.change();
+  await app.document.getElementById("recommendations-btn").listeners.click();
+  assert.deepEqual(app.recommendBodies.map((body) => body.campaignOutcomes.map((item) => item.ownerNote)), [["Alpha note"], ["Beta note"]]);
 });
