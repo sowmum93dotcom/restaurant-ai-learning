@@ -282,6 +282,9 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   const generateBtn = byId("generate-btn");
   const promoInput = byId("promo-input");
   const campaignType = byId("campaign-type");
+  const recommendationsBtn = byId("recommendations-btn");
+  const recommendationsStatus = byId("recommendations-status");
+  const recommendationsList = byId("recommendations-list");
   const resultsArea = byId("results");
   const resultsContent = byId("results-content");
   const campaignVersions = byId("campaign-versions");
@@ -308,6 +311,32 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   let currentCampaignText = "";
   let addingBusiness = false;
   let selectedRevisionTarget = null;
+  let recommendationBusinessId = null;
+
+  function clearRecommendations() {
+    recommendationBusinessId = null;
+    recommendationsStatus.textContent = "";
+    recommendationsList.textContent = "";
+  }
+
+  function renderRecommendations(recommendations, businessId) {
+    clearRecommendations();
+    recommendationBusinessId = businessId;
+    recommendations.forEach(function (recommendation) {
+      const card = document.createElement("article"); card.className = "recommendation-card";
+      const title = document.createElement("h3"); title.textContent = recommendation.title;
+      const reason = document.createElement("p"); reason.textContent = recommendation.reason;
+      const use = document.createElement("button"); use.type = "button"; use.className = "demeos-secondary-button";
+      use.textContent = "Use This Recommendation";
+      use.addEventListener("click", function () {
+        if (recommendationBusinessId !== state.activeBusinessId || addingBusiness) return;
+        promoInput.value = recommendation.suggestedRequest;
+        campaignType.value = recommendation.suggestedCampaignType;
+        if (typeof promoInput.focus === "function") promoInput.focus();
+      });
+      card.append(title, reason, use); recommendationsList.appendChild(card);
+    });
+  }
 
   function clearRevisionTarget() {
     selectedRevisionTarget = null;
@@ -480,7 +509,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     if (!state.profiles.some(function (profile) { return profile.businessId === businessId; })) return;
     state.activeBusinessId = businessId; addingBusiness = false;
     localStorage.setItem("demeosActiveBusinessId", businessId);
-    fillProfile(activeProfile()); renderSelector(); clearCampaignWorkspace(); renderCampaignHistory();
+    clearRecommendations(); fillProfile(activeProfile()); renderSelector(); clearCampaignWorkspace(); renderCampaignHistory();
     hydrateActiveBusiness();
   }
   async function saveCampaign(text, promo, type, typeLabel, profile, sourceId) {
@@ -500,7 +529,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   renderSelector(); fillProfile(activeProfile()); renderCampaignHistory(); hydrateActiveBusiness();
   businessSelector.addEventListener("change", function () { switchBusiness(businessSelector.value); });
   addBusinessBtn.addEventListener("click", function () {
-    addingBusiness = true; businessSelector.value = ""; fillProfile(null); clearCampaignWorkspace();
+    addingBusiness = true; businessSelector.value = ""; fillProfile(null); clearRecommendations(); clearCampaignWorkspace();
   });
   saveBusinessProfileBtn.addEventListener("click", async function () {
     const profileFields = {};
@@ -516,7 +545,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       state = { profiles: result.profiles, activeBusinessId: result.profile.businessId }; addingBusiness = false;
       localStorage.setItem("demeosBusinessProfiles", JSON.stringify(state.profiles));
       localStorage.setItem("demeosActiveBusinessId", state.activeBusinessId);
-      renderSelector(); fillProfile(result.profile); clearCampaignWorkspace(); renderCampaignHistory();
+      renderSelector(); fillProfile(result.profile); clearRecommendations(); clearCampaignWorkspace(); renderCampaignHistory();
 
       addPendingBusinessProfileSync(localStorage, result.profile.businessId);
       const persisted = await persistBusiness(result.profile);
@@ -541,6 +570,24 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     if (typeof data.campaign !== "string" || !data.campaign.trim()) throw new Error("DEMEOS returned no marketing content.");
     return data.campaign;
   }
+
+  recommendationsBtn.addEventListener("click", async function () {
+    const profile = activeProfile();
+    if (!profile || addingBusiness) { alert("Please complete and save your Business Manager Profile before requesting recommendations."); return; }
+    const requestedBusinessId = profile.businessId;
+    clearRecommendations(); recommendationsBtn.disabled = true;
+    recommendationsStatus.textContent = "DEMEOS is reviewing your business...";
+    try {
+      const response = await fetch("/api/recommend", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ businessProfile: profile }) });
+      const responseText = await response.text(); let data;
+      try { data = responseText ? JSON.parse(responseText) : {}; } catch (error) { throw new Error("DEMEOS received an unreadable recommendation response."); }
+      if (!response.ok) throw new Error(data.error || "DEMEOS could not create recommendations.");
+      if (!Array.isArray(data.recommendations) || data.recommendations.length !== 3) throw new Error("DEMEOS returned invalid recommendations.");
+      if (state.activeBusinessId === requestedBusinessId && !addingBusiness) renderRecommendations(data.recommendations, requestedBusinessId);
+    } catch (error) {
+      if (state.activeBusinessId === requestedBusinessId && !addingBusiness) recommendationsStatus.textContent = error.message;
+    } finally { recommendationsBtn.disabled = false; }
+  });
 
   generateBtn.addEventListener("click", async function () {
     const profile = activeProfile(); const promo = promoInput.value.trim();
