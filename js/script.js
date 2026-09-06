@@ -361,6 +361,23 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       const targetCustomer = detail("Target customer", recommendation.targetCustomer);
       const businessObjective = detail("Business objective", recommendation.businessObjective);
       const capability = detail("DEMEOS will create", recommendation.demeosCapability);
+      const decisionStatus = document.createElement("p"); decisionStatus.className = "recommendation-decision";
+      decisionStatus.setAttribute("aria-live", "polite");
+      async function recordDecision(decision) {
+        try {
+          const response = await fetch(`/api/businesses/${encodeURIComponent(businessId)}/recommendation-decisions`, {
+            method: "PUT", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              recommendationTitle: recommendation.title,
+              suggestedCampaignType: recommendation.suggestedCampaignType,
+              decision
+            })
+          });
+          if (!response.ok) throw new Error(`server returned ${response.status}`);
+        } catch (error) {
+          console.error("Could not persist recommendation decision:", error);
+        }
+      }
       const use = document.createElement("button"); use.type = "button"; use.className = "demeos-secondary-button";
       use.textContent = "Use This Recommendation";
       use.addEventListener("click", function () {
@@ -368,8 +385,27 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
         promoInput.value = recommendation.suggestedRequest;
         campaignType.value = recommendation.suggestedCampaignType;
         if (typeof promoInput.focus === "function") promoInput.focus();
+        recordDecision("used");
       });
-      card.append(title, reason, targetCustomer, businessObjective, capability, use); recommendationsList.appendChild(card);
+      const modify = document.createElement("button"); modify.type = "button"; modify.className = "demeos-secondary-button";
+      modify.textContent = "Modify";
+      modify.addEventListener("click", function () {
+        if (recommendationBusinessId !== state.activeBusinessId || addingBusiness) return;
+        promoInput.value = recommendation.suggestedRequest;
+        campaignType.value = recommendation.suggestedCampaignType;
+        if (typeof promoInput.focus === "function") promoInput.focus();
+        recordDecision("modified");
+      });
+      const reject = document.createElement("button"); reject.type = "button"; reject.className = "demeos-secondary-button";
+      reject.textContent = "Not for me";
+      reject.addEventListener("click", function () {
+        if (recommendationBusinessId !== state.activeBusinessId || addingBusiness) return;
+        card.classList.toggle("is-rejected", true);
+        decisionStatus.textContent = "Not for me";
+        recordDecision("rejected");
+      });
+      card.append(title, reason, targetCustomer, businessObjective, capability, use, modify, reject, decisionStatus);
+      recommendationsList.appendChild(card);
     });
   }
 

@@ -15,14 +15,15 @@ test("DEMEOS Recommends presents the optional Business Situation field", () => {
 class Element {
   constructor(tag = "div") { this.tag = tag; this.listeners = {}; this.children = []; this.value = ""; this._text = "";
     this.hidden = false; this.disabled = false; this.options = [{ text: "Full Marketing Campaign" }]; this.selectedIndex = 0;
-    this.classList = { toggle() {} }; }
+    this.focusCount = 0; this.classes = new Set();
+    this.classList = { toggle: (name, enabled) => enabled ? this.classes.add(name) : this.classes.delete(name) }; }
   set textContent(value) { this._text = value; if (value === "") this.children = []; }
   get textContent() { return this._text; }
   addEventListener(name, listener) { this.listeners[name] = listener; }
   append(...children) { this.children.push(...children); }
   appendChild(child) { this.children.push(child); }
   prepend(...children) { this.children.unshift(...children); }
-  setAttribute() {} focus() {} scrollIntoView() {}
+  setAttribute() {} focus() { this.focusCount += 1; } scrollIntoView() {}
 }
 
 function setup(campaigns = []) {
@@ -36,7 +37,7 @@ function setup(campaigns = []) {
   const document = { addEventListener(name, fn) { if (name === "DOMContentLoaded") this.ready = fn; },
     createElement(tag) { const element = new Element(tag); created.push(element); return element; },
     getElementById(id) { if (!elements.has(id)) elements.set(id, new Element()); return elements.get(id); } };
-  let generateCalls = 0; const recommendBodies = [];
+  let generateCalls = 0; const recommendBodies = []; const decisionWrites = [];
   const recommendations = { recommendations: ["First", "Second", "Third"].map((title, index) => ({ title, reason: `Why ${index}`,
     targetCustomer: "Families", businessObjective: `Awareness objective ${index}`,
     demeosCapability: ["Full Marketing Campaign", "Social Media Campaign", "Email Campaign"][index],
@@ -46,10 +47,11 @@ function setup(campaigns = []) {
     fetch: async (url, options = {}) => {
       if (url === "/api/recommend") { recommendBodies.push(JSON.parse(options.body)); return { ok: true, status: 200, async text() { return JSON.stringify(recommendations); } }; }
       if (url === "/api/generate") { generateCalls += 1; return { ok: true, status: 200, async text() { return JSON.stringify({ campaign: "Campaign" }); } }; }
+      if (url.endsWith("/recommendation-decisions")) { decisionWrites.push({ url, body: JSON.parse(options.body) }); return { ok: true, status: 201 }; }
       return { ok: false, status: 404, async json() { return {}; }, async text() { return "{}"; } };
     } };
   vm.runInNewContext(fs.readFileSync(require.resolve("../js/script.js"), "utf8"), context); document.ready();
-  return { document, elements, created, profiles, recommendBodies, getGenerateCalls: () => generateCalls };
+  return { document, elements, created, profiles, recommendBodies, decisionWrites, getGenerateCalls: () => generateCalls };
 }
 
 test("recommendations use the active profile, show loading, render three, and populate controls without generating", async () => {
@@ -69,6 +71,34 @@ test("recommendations use the active profile, show loading, render three, and po
   const useButton = card.children[5]; assert.equal(useButton.textContent, "Use This Recommendation"); useButton.listeners.click();
   assert.equal(app.document.getElementById("promo-input").value, "Do 1");
   assert.equal(app.document.getElementById("campaign-type").value, "social");
+  assert.deepEqual(app.decisionWrites, [{ url: "/api/businesses/a/recommendation-decisions", body: {
+    recommendationTitle: "Second", suggestedCampaignType: "social", decision: "used"
+  } }]);
+  assert.equal(app.getGenerateCalls(), 0);
+});
+
+test("Modify records modified, fills editable controls, and does not generate", async () => {
+  const app = setup(); await app.document.getElementById("recommendations-btn").listeners.click();
+  const card = app.document.getElementById("recommendations-list").children[2];
+  card.children[6].listeners.click();
+  const input = app.document.getElementById("promo-input");
+  assert.equal(input.value, "Do 2");
+  assert.equal(app.document.getElementById("campaign-type").value, "email");
+  assert.equal(input.disabled, false); assert.equal(input.focusCount, 1);
+  assert.equal(app.decisionWrites[0].body.decision, "modified");
+  assert.equal(app.getGenerateCalls(), 0);
+});
+
+test("Not for me records rejected visibly without filling or generating and keeps other recommendations", async () => {
+  const app = setup(); await app.document.getElementById("recommendations-btn").listeners.click();
+  const list = app.document.getElementById("recommendations-list");
+  const request = app.document.getElementById("promo-input"); request.value = "Owner's existing request";
+  list.children[0].children[7].listeners.click();
+  assert.equal(request.value, "Owner's existing request");
+  assert.equal(list.children[0].children[8].textContent, "Not for me");
+  assert.equal(list.children[0].classes.has("is-rejected"), true);
+  assert.equal(list.children.length, 3);
+  assert.equal(app.decisionWrites[0].body.decision, "rejected");
   assert.equal(app.getGenerateCalls(), 0);
 });
 
@@ -83,6 +113,21 @@ test("switching businesses and Add Business clear recommendations", async () => 
   await app.document.getElementById("recommendations-btn").listeners.click(); assert.equal(list.children.length, 3);
   app.document.getElementById("add-business-btn").listeners.click(); assert.equal(list.children.length, 0);
   assert.equal(situation.value, "", "the previous business situation must not appear when adding a business");
+});
+
+test("switching businesses keeps recommendation decisions scoped to the active business", async () => {
+  const app = setup();
+  await app.document.getElementById("recommendations-btn").listeners.click();
+  app.document.getElementById("recommendations-list").children[0].children[7].listeners.click();
+  const selector = app.document.getElementById("business-selector"); selector.value = "b"; selector.listeners.change();
+  await app.document.getElementById("recommendations-btn").listeners.click();
+  app.document.getElementById("recommendations-list").children[1].children[5].listeners.click();
+  assert.deepEqual(app.decisionWrites.map((write) => [write.url, write.body.decision]), [
+    ["/api/businesses/a/recommendation-decisions", "rejected"],
+    ["/api/businesses/b/recommendation-decisions", "used"]
+  ]);
+  assert.equal(Object.hasOwn(app.recommendBodies[0], "recommendationDecisions"), false);
+  assert.equal(Object.hasOwn(app.recommendBodies[1], "recommendationDecisions"), false);
 });
 
 test("a blank situation is sent with the active profile", async () => {

@@ -63,6 +63,7 @@ test("repository restores an existing known business and only its campaigns", as
       if (sql.startsWith("SELECT profile")) {
         return { rows: [{ profile: { businessId: "tampered", name: "Business A", goal: "Grow" } }] };
       }
+      if (sql.includes("demeos_recommendation_decisions")) return { rows: [] };
       return { rows: [{ campaign: { id: "campaign-a", businessId: "tampered", campaignText: "A content" } }] };
     }
   };
@@ -73,7 +74,7 @@ test("repository restores an existing known business and only its campaigns", as
   assert.deepEqual(restored.campaigns, [
     { id: "campaign-a", businessId: "business-a", campaignText: "A content" }
   ]);
-  assert.deepEqual(queries.map(function (query) { return query.values; }), [["business-a"], ["business-a"]]);
+  assert.deepEqual(queries.map(function (query) { return query.values; }), [["business-a"], ["business-a"], ["business-a"]]);
   assert.match(queries[1].sql, /WHERE business_id = \$1/);
 });
 
@@ -93,6 +94,7 @@ test("repository restores at most the newest 20 campaigns for the requested busi
       if (sql.startsWith("SELECT profile")) {
         return { rows: [{ profile: { name: "Business A" } }] };
       }
+      if (sql.includes("demeos_recommendation_decisions")) return { rows: [] };
       assert.match(sql, /WHERE business_id = \$1 ORDER BY created_at DESC LIMIT 20/);
       return {
         rows: storedCampaigns
@@ -121,6 +123,7 @@ test("repository restores every campaign when a business has fewer than 20", asy
     async ensureSchema() {},
     async query(sql) {
       if (sql.startsWith("SELECT profile")) return { rows: [{ profile: { name: "Business A" } }] };
+      if (sql.includes("demeos_recommendation_decisions")) return { rows: [] };
       return {
         rows: [3, 2, 1].map(function (number) {
           return { campaign: { id: `campaign-a-${number}` } };
