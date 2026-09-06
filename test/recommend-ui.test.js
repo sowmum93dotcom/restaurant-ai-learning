@@ -26,13 +26,13 @@ class Element {
   setAttribute() {} focus() { this.focusCount += 1; } scrollIntoView() {}
 }
 
-function setup(campaigns = []) {
+function setup(campaigns = [], decisions = []) {
   const profiles = [
     { businessId: "a", name: "Alpha", type: "Studio", location: "York", brandVoice: "Friendly", targetCustomer: "Families", goal: "Awareness" },
     { businessId: "b", name: "Beta", type: "Accountant", location: "Bath", brandVoice: "Formal", targetCustomer: "Founders", goal: "Enquiries" }
   ];
   const store = new Map([["demeosBusinessProfiles", JSON.stringify(profiles)], ["demeosActiveBusinessId", "a"],
-    ["demeosCampaignHistory", JSON.stringify(campaigns)]]);
+    ["demeosCampaignHistory", JSON.stringify(campaigns)], ["demeosRecommendationDecisions", JSON.stringify(decisions)]]);
   const elements = new Map(); const created = [];
   const document = { addEventListener(name, fn) { if (name === "DOMContentLoaded") this.ready = fn; },
     createElement(tag) { const element = new Element(tag); created.push(element); return element; },
@@ -126,8 +126,27 @@ test("switching businesses keeps recommendation decisions scoped to the active b
     ["/api/businesses/a/recommendation-decisions", "rejected"],
     ["/api/businesses/b/recommendation-decisions", "used"]
   ]);
-  assert.equal(Object.hasOwn(app.recommendBodies[0], "recommendationDecisions"), false);
-  assert.equal(Object.hasOwn(app.recommendBodies[1], "recommendationDecisions"), false);
+  assert.deepEqual(app.recommendBodies[0].recommendationDecisions, []);
+  assert.deepEqual(app.recommendBodies[1].recommendationDecisions, []);
+});
+
+test("only the active business's 20 most recent decisions are sent and switching isolates them", async () => {
+  const alpha = Array.from({ length: 22 }, (_, index) => ({ businessId: "a", recommendationTitle: `Alpha ${index}`,
+    suggestedCampaignType: ["full", "social", "email"][index % 3], decision: ["used", "modified", "rejected"][index % 3],
+    timestamp: `2026-09-${String(index + 1).padStart(2, "0")}T10:00:00.000Z` }));
+  const beta = { businessId: "b", recommendationTitle: "Beta only", suggestedCampaignType: "email", decision: "rejected",
+    timestamp: "2026-09-30T10:00:00.000Z" };
+  const app = setup([], alpha.concat(beta));
+  await app.document.getElementById("recommendations-btn").listeners.click();
+  assert.equal(app.recommendBodies[0].recommendationDecisions.length, 20);
+  assert.equal(app.recommendBodies[0].recommendationDecisions[0].recommendationTitle, "Alpha 21");
+  assert.equal(app.recommendBodies[0].recommendationDecisions.some((item) => Object.hasOwn(item, "businessId")), false);
+  assert.deepEqual(new Set(app.recommendBodies[0].recommendationDecisions.map((item) => item.decision)), new Set(["used", "modified", "rejected"]));
+  const selector = app.document.getElementById("business-selector"); selector.value = "b"; selector.listeners.change();
+  await app.document.getElementById("recommendations-btn").listeners.click();
+  assert.deepEqual(JSON.parse(JSON.stringify(app.recommendBodies[1].recommendationDecisions)), [{
+    recommendationTitle: "Beta only", suggestedCampaignType: "email", decision: "rejected", timestamp: "2026-09-30T10:00:00.000Z"
+  }]);
 });
 
 test("a blank situation is sent with the active profile", async () => {
