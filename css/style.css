@@ -326,6 +326,47 @@ textarea:focus {
   white-space: pre-wrap;
 }
 
+.campaign-workspace-section + .campaign-workspace-section {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #d8e2f2;
+}
+
+.campaign-workspace-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.campaign-workspace-section-header h5 {
+  margin: 0;
+  color: #102a52;
+  font-size: 1rem;
+}
+
+.campaign-section-copy {
+  padding: 0.3rem 0.65rem;
+  border: 1px solid #9db1cc;
+  border-radius: 5px;
+  background: #fff;
+  color: #17417d;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.campaign-section-copy:hover {
+  border-color: #17417d;
+  background: #edf3fb;
+}
+
+.campaign-workspace-section-content {
+  white-space: pre-wrap;
+}
+
 .campaign-approval-status {
   display: inline-flex;
   align-items: center;
