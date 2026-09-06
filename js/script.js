@@ -125,6 +125,16 @@ function canAccessCampaign(campaign, profile) {
 function getVisibleCampaigns(campaigns, profile) {
   return campaigns.filter(function (campaign) { return canAccessCampaign(campaign, profile); });
 }
+function getCampaignVersions(campaigns, campaign, profile) {
+  if (!campaign || !canAccessCampaign(campaign, profile)) return [];
+  const chainId = getCampaignContinuity(campaign).originalMarketingWorkId;
+  return getVisibleCampaigns(campaigns, profile).filter(function (entry) {
+    return getCampaignContinuity(entry).originalMarketingWorkId === chainId;
+  }).sort(function (left, right) {
+    const revisionDifference = getCampaignContinuity(left).revisionNumber - getCampaignContinuity(right).revisionNumber;
+    return revisionDifference || String(left.createdAt || "").localeCompare(String(right.createdAt || ""));
+  });
+}
 function enforceBusinessCampaignLimit(campaigns, businessId, maximumCampaigns, protectedCampaignIds) {
   const retained = campaigns.slice();
   const protectedIds = new Set((protectedCampaignIds || []).filter(Boolean));
@@ -262,7 +272,7 @@ function getCampaignWorkspace(campaign) {
 if (typeof module !== "undefined" && module.exports) module.exports = {
   addBusinessIdentity, addPendingBusinessProfileSync, canAccessCampaign, createCampaignContinuity, enforceBusinessCampaignLimit,
   createCampaignPersistenceQueue,
-  getCampaignBusinessId, getCampaignContinuity, getCampaignContinuityLabel, getVisibleCampaigns,
+  getCampaignBusinessId, getCampaignContinuity, getCampaignContinuityLabel, getCampaignVersions, getVisibleCampaigns,
   hydrateKnownBusiness, mergeKnownBusinessPersistence, migrateBusinessProfiles, readPendingBusinessProfileSyncIds,
   removePendingBusinessProfileSync, updateBusinessProfile, parseFullCampaignSections, getCampaignWorkspace
 };
@@ -274,6 +284,8 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   const campaignType = byId("campaign-type");
   const resultsArea = byId("results");
   const resultsContent = byId("results-content");
+  const campaignVersions = byId("campaign-versions");
+  const campaignVersionsList = byId("campaign-versions-list");
   const copyBtn = byId("copy-btn");
   const approveBtn = byId("approve-btn");
   const revisionControls = byId("campaign-revision-controls");
@@ -343,6 +355,34 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     });
   }
 
+  function renderCampaignVersions() {
+    campaignVersionsList.textContent = "";
+    const current = getCampaignHistory().find(function (entry) { return entry.id === openCampaignId; });
+    const versions = getCampaignVersions(getCampaignHistory(), current, activeProfile());
+    campaignVersions.hidden = versions.length === 0;
+    versions.forEach(function (version) {
+      const button = document.createElement("button");
+      button.type = "button"; button.className = "campaign-version-button";
+      button.textContent = getCampaignContinuityLabel(version);
+      if (version.id === openCampaignId) {
+        button.className += " is-current";
+        button.ariaCurrent = "true";
+        if (typeof button.setAttribute === "function") button.setAttribute("aria-current", "true");
+      }
+      button.addEventListener("click", function () { openCampaign(version.id); });
+      campaignVersionsList.appendChild(button);
+    });
+  }
+
+  function openCampaign(campaignId) {
+    const campaign = getCampaignHistory().find(function (entry) { return entry.id === campaignId; });
+    if (!canAccessCampaign(campaign, activeProfile())) { alert("This campaign belongs to a different business profile."); return; }
+    clearRevisionTarget(); revisionInstruction.value = ""; openCampaignId = campaign.id || null;
+    renderCampaign(campaign); renderCampaignVersions(); showApprovalStatus(campaign.approvalStatus);
+    resultsArea.hidden = false; copyBtn.hidden = false; revisionControls.hidden = false;
+    resultsArea.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   async function hydrateActiveBusiness() {
     const requestedBusinessId = state.activeBusinessId;
     if (!requestedBusinessId || typeof window === "undefined" || typeof fetch !== "function") return;
@@ -407,6 +447,8 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     campaignApprovalStatus.hidden = true;
     revisionControls.hidden = true;
     revisionInstruction.value = "";
+    campaignVersionsList.textContent = "";
+    campaignVersions.hidden = true;
   }
   function showApprovalStatus(status) {
     const approved = status === "Approved";
@@ -430,14 +472,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       status.textContent = savedCampaign.approvalStatus === "Approved" ? "Approved" : "Unapproved";
       const preview = document.createElement("p"); preview.className = "campaign-history-preview"; preview.textContent = savedCampaign.campaignText || "";
       const open = document.createElement("button"); open.type = "button"; open.textContent = "Open";
-      open.addEventListener("click", function () {
-        const campaign = getCampaignHistory().find(function (entry) { return entry.id === savedCampaign.id; });
-        if (!canAccessCampaign(campaign, activeProfile())) { alert("This campaign belongs to a different business profile."); return; }
-        clearRevisionTarget(); renderCampaign(campaign); openCampaignId = campaign.id || null;
-        showApprovalStatus(campaign.approvalStatus); resultsArea.hidden = false; copyBtn.hidden = false;
-        revisionControls.hidden = false; revisionInstruction.value = "";
-        resultsArea.scrollIntoView({ behavior: "smooth", block: "start" });
-      });
+      open.addEventListener("click", function () { openCampaign(savedCampaign.id); });
       item.append(heading, details, status, preview, open); campaignHistoryList.appendChild(item);
     });
   }
@@ -458,7 +493,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       approvalStatus: "Unapproved", ...continuity };
     campaigns.unshift(campaign);
     const retained = enforceBusinessCampaignLimit(campaigns, profile.businessId, 20, [id, sourceId]);
-    localStorage.setItem(campaignHistoryKey, JSON.stringify(retained)); openCampaignId = id; renderCampaignHistory();
+    localStorage.setItem(campaignHistoryKey, JSON.stringify(retained)); openCampaignId = id; renderCampaignHistory(); renderCampaignVersions();
     const persisted = await persistCampaign(profile, campaign); return { id, persisted };
   }
 
@@ -514,6 +549,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     generateBtn.disabled = true; generateBtn.textContent = "DEMEOS is working..."; resultsArea.hidden = false;
     currentCampaignText = ""; resultsContent.textContent = "DEMEOS is creating your marketing work..."; copyBtn.hidden = true; approveBtn.hidden = true;
     campaignApprovalStatus.hidden = true; revisionControls.hidden = true; openCampaignId = null; clearRevisionTarget();
+    campaignVersionsList.textContent = ""; campaignVersions.hidden = true;
     try {
       const text = await requestCampaign({ promoText: promo, campaignType: campaignType.value, businessProfile: profile });
       renderCampaign({ campaignText: text, campaignType: campaignType.value }); copyBtn.hidden = false;
@@ -542,7 +578,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       if (selectedRevisionTarget) request.revisionTarget = selectedRevisionTarget;
       const text = await requestCampaign(request);
       const saved = await saveCampaign(text, source.promoText || "", type, label, profile, source.id);
-      clearRevisionTarget(); renderCampaign({ campaignText: text, campaignType: type }); revisionInstruction.value = ""; copyBtn.hidden = false; showApprovalStatus("Unapproved");
+      clearRevisionTarget(); renderCampaign({ campaignText: text, campaignType: type }); renderCampaignVersions(); revisionInstruction.value = ""; copyBtn.hidden = false; showApprovalStatus("Unapproved");
       resultsArea.scrollIntoView({ behavior: "smooth", block: "start" });
       if (!saved.persisted) alert("Campaign saved on this device, but DEMEOS could not sync it to the server. Please try again.");
     } catch (error) { console.error(error); alert(error.message); }

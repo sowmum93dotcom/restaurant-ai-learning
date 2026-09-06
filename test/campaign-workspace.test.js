@@ -139,10 +139,57 @@ test("opening another campaign and switching businesses clear the selected secti
   browser.document.getElementById("results-content").children[0].children[0].children[2].listeners.click();
   opens[1].listeners.click();
   assert.equal(browser.document.getElementById("revision-target-indicator").hidden, true);
+  assert.equal(browser.document.getElementById("revision-instruction").value, "");
   browser.document.getElementById("results-content").children[0].children[0].children[2].listeners.click();
   browser.document.getElementById("business-selector").value = "business-a";
   browser.document.getElementById("business-selector").listeners.change();
   assert.equal(browser.document.getElementById("revision-target-indicator").hidden, true);
+});
+
+test("Campaign Versions marks the open version and switches to the exact stored full campaign", function () {
+  const revisedText = fullCampaignText.replace("Saturday delicious", "Sunday delicious");
+  const campaigns = [
+    { id: "revision", businessId: "business-a", originalMarketingWorkId: "original", revisionNumber: 1,
+      campaignType: "full", campaignText: revisedText, approvalStatus: "Approved", createdAt: "2026-09-06T00:00:00.000Z" },
+    { id: "other-chain", businessId: "business-a", originalMarketingWorkId: "other-chain", revisionNumber: 0,
+      campaignType: "social", campaignText: "Unrelated", createdAt: "2026-09-07T00:00:00.000Z" },
+    { id: "original", businessId: "business-a", originalMarketingWorkId: "original", revisionNumber: 0,
+      campaignType: "full", campaignText: fullCampaignText, approvalStatus: "Unapproved", createdAt: "2026-09-05T00:00:00.000Z" }
+  ];
+  const browser = createBrowser(campaigns);
+  browser.created.filter(function (element) { return element.textContent === "Open"; })[0].listeners.click();
+  let versionButtons = browser.document.getElementById("campaign-versions-list").children;
+  assert.deepEqual(versionButtons.map(function (button) { return button.textContent; }), ["Original", "Revision 1"]);
+  assert.equal(versionButtons[1].attributes["aria-current"], "true");
+
+  browser.document.getElementById("results-content").children[0].children[0].children[2].listeners.click();
+  browser.document.getElementById("revision-instruction").value = "Discard this instruction";
+  versionButtons[0].listeners.click();
+
+  assert.equal(browser.document.getElementById("results-content").children.length, 5);
+  assert.equal(browser.document.getElementById("results-content").children[3].children[1].textContent, "Make Saturday delicious.");
+  assert.equal(browser.document.getElementById("campaign-approval-status").textContent, "Status: Unapproved");
+  assert.equal(browser.document.getElementById("revision-target-indicator").hidden, true);
+  assert.equal(browser.document.getElementById("revision-instruction").value, "");
+  versionButtons = browser.document.getElementById("campaign-versions-list").children;
+  assert.equal(versionButtons[0].attributes["aria-current"], "true");
+});
+
+test("social and email campaigns expose their continuity chains in Campaign Versions", function () {
+  ["social", "email"].forEach(function (type) {
+    const campaigns = [
+      { id: `${type}-revision`, businessId: "business-a", originalMarketingWorkId: `${type}-original`, revisionNumber: 1,
+        campaignType: type, campaignText: `${type} revised`, createdAt: "2026-09-06" },
+      { id: `${type}-original`, businessId: "business-a", originalMarketingWorkId: `${type}-original`, revisionNumber: 0,
+        campaignType: type, campaignText: `${type} original`, createdAt: "2026-09-05" }
+    ];
+    const browser = createBrowser(campaigns);
+    browser.created.filter(function (element) { return element.textContent === "Open"; })[0].listeners.click();
+    const buttons = browser.document.getElementById("campaign-versions-list").children;
+    assert.deepEqual(buttons.map(function (button) { return button.textContent; }), ["Original", "Revision 1"]);
+    buttons[0].listeners.click();
+    assert.equal(browser.document.getElementById("results-content").textContent, `${type} original`);
+  });
 });
 
 test("a successful section revision sends its target, saves continuity, and renders the complete campaign", async function () {
@@ -172,4 +219,7 @@ test("a successful section revision sends its target, saves continuity, and rend
   assert.equal(browser.document.getElementById("results-content").children.length, 5);
   assert.equal(browser.document.getElementById("revision-target-indicator").hidden, true);
   assert.equal(browser.document.getElementById("revision-instruction").value, "");
+  const versions = browser.document.getElementById("campaign-versions-list").children;
+  assert.deepEqual(versions.map(function (button) { return button.textContent; }), ["Original", "Revision 1"]);
+  assert.equal(versions[1].attributes["aria-current"], "true");
 });

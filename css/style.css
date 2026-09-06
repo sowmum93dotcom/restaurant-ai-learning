@@ -326,6 +326,45 @@ textarea:focus {
   white-space: pre-wrap;
 }
 
+.campaign-versions {
+  margin: 0 0 1rem;
+}
+
+.campaign-versions p {
+  margin: 0 0 0.45rem;
+  color: #5d5148;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.campaign-versions-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.campaign-version-button {
+  padding: 0.4rem 0.7rem;
+  border: 1px solid #cfc5bb;
+  border-radius: 999px;
+  background: #fff;
+  color: #493f38;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.82rem;
+}
+
+.campaign-version-button:hover,
+.campaign-version-button.is-current {
+  border-color: #744b2f;
+  background: #744b2f;
+  color: #fff;
+}
+
+.campaign-version-button.is-current {
+  font-weight: 700;
+}
+
 .campaign-workspace-section + .campaign-workspace-section {
   margin-top: 1rem;
   padding-top: 1rem;

@@ -11,6 +11,7 @@ const {
   getCampaignBusinessId,
   getCampaignContinuity,
   getCampaignContinuityLabel,
+  getCampaignVersions,
   getVisibleCampaigns,
   migrateBusinessProfiles,
   updateBusinessProfile
@@ -215,6 +216,21 @@ test("an original progresses through Revision 1 and Revision 2", function () {
   assert.equal(getCampaignContinuityLabel(revisionTwo), "Revision 2");
   assert.equal(revisionOne.originalMarketingWorkId, original.id);
   assert.equal(revisionTwo.originalMarketingWorkId, original.id);
+});
+
+test("campaign versions are isolated by continuity chain and business, then ordered by revision number", function () {
+  const original = { id: "original", businessId: "a", revisionNumber: 0, originalMarketingWorkId: "original", createdAt: "2026-01-01" };
+  const revisionTwo = { id: "revision-2", businessId: "a", revisionNumber: 2, originalMarketingWorkId: "original", createdAt: "2026-01-03" };
+  const revisionOne = { id: "revision-1", businessId: "a", revisionNumber: 1, originalMarketingWorkId: "original", createdAt: "2026-01-02" };
+  const unrelated = { id: "unrelated", businessId: "a", revisionNumber: 0, originalMarketingWorkId: "unrelated" };
+  const otherBusiness = { id: "other-business", businessId: "b", revisionNumber: 3, originalMarketingWorkId: "original" };
+
+  const versions = getCampaignVersions(
+    [revisionTwo, unrelated, otherBusiness, original, revisionOne], revisionOne, { businessId: "a" }
+  );
+
+  assert.deepEqual(versions.map(function (campaign) { return campaign.id; }), ["original", "revision-1", "revision-2"]);
+  assert.deepEqual(versions.map(getCampaignContinuityLabel), ["Original", "Revision 1", "Revision 2"]);
 });
 
 test("creating a revision does not change the source version approval", function () {
