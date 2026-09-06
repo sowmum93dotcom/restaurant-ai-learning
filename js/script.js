@@ -229,6 +229,9 @@ const fullCampaignSectionHeadings = [
 const fullCampaignSectionLabels = [
   "Campaign Strategy", "Social Media Post", "Email Campaign", "Short Ad Copy", "Call to Action"
 ];
+const fullCampaignRevisionTargets = [
+  "campaign_strategy", "social_media_post", "email_campaign", "short_ad_copy", "call_to_action"
+];
 
 function parseFullCampaignSections(campaignText) {
   if (typeof campaignText !== "string") return null;
@@ -275,6 +278,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   const approveBtn = byId("approve-btn");
   const revisionControls = byId("campaign-revision-controls");
   const revisionInstruction = byId("revision-instruction");
+  const revisionTargetIndicator = byId("revision-target-indicator");
   const reviseBtn = byId("revise-btn");
   const campaignApprovalStatus = byId("campaign-approval-status");
   const campaignHistoryList = byId("campaign-history-list");
@@ -291,6 +295,20 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   let openCampaignId = null;
   let currentCampaignText = "";
   let addingBusiness = false;
+  let selectedRevisionTarget = null;
+
+  function clearRevisionTarget() {
+    selectedRevisionTarget = null;
+    revisionTargetIndicator.textContent = "";
+    revisionTargetIndicator.hidden = true;
+  }
+
+  function selectRevisionTarget(index) {
+    selectedRevisionTarget = fullCampaignRevisionTargets[index];
+    revisionTargetIndicator.textContent = `Revising: ${fullCampaignSectionLabels[index]}`;
+    revisionTargetIndicator.hidden = false;
+    if (typeof revisionInstruction.focus === "function") revisionInstruction.focus();
+  }
 
   function copyText(text, button, defaultLabel) {
     if (!text) return;
@@ -316,8 +334,12 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       sectionCopy.className = "campaign-section-copy"; sectionCopy.textContent = "Copy";
       sectionCopy.setAttribute("aria-label", `Copy ${heading.textContent}`);
       sectionCopy.addEventListener("click", function () { copyText(section.content, sectionCopy, "Copy"); });
+      const sectionRevise = document.createElement("button"); sectionRevise.type = "button";
+      sectionRevise.className = "campaign-section-revise"; sectionRevise.textContent = "Revise";
+      sectionRevise.setAttribute("aria-label", `Revise ${heading.textContent}`);
+      sectionRevise.addEventListener("click", function () { selectRevisionTarget(index); });
       const content = document.createElement("div"); content.className = "campaign-workspace-section-content"; content.textContent = section.content;
-      header.append(heading, sectionCopy); panel.append(header, content); resultsContent.appendChild(panel);
+      header.append(heading, sectionCopy, sectionRevise); panel.append(header, content); resultsContent.appendChild(panel);
     });
   }
 
@@ -375,6 +397,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     businessSelector.disabled = state.profiles.length === 0;
   }
   function clearCampaignWorkspace() {
+    clearRevisionTarget();
     openCampaignId = null;
     currentCampaignText = "";
     resultsContent.textContent = "";
@@ -410,7 +433,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       open.addEventListener("click", function () {
         const campaign = getCampaignHistory().find(function (entry) { return entry.id === savedCampaign.id; });
         if (!canAccessCampaign(campaign, activeProfile())) { alert("This campaign belongs to a different business profile."); return; }
-        renderCampaign(campaign); openCampaignId = campaign.id || null;
+        clearRevisionTarget(); renderCampaign(campaign); openCampaignId = campaign.id || null;
         showApprovalStatus(campaign.approvalStatus); resultsArea.hidden = false; copyBtn.hidden = false;
         revisionControls.hidden = false; revisionInstruction.value = "";
         resultsArea.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -490,7 +513,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     if (!promo) { alert("Please tell DEMEOS what you would like to achieve first."); return; }
     generateBtn.disabled = true; generateBtn.textContent = "DEMEOS is working..."; resultsArea.hidden = false;
     currentCampaignText = ""; resultsContent.textContent = "DEMEOS is creating your marketing work..."; copyBtn.hidden = true; approveBtn.hidden = true;
-    campaignApprovalStatus.hidden = true; revisionControls.hidden = true; openCampaignId = null;
+    campaignApprovalStatus.hidden = true; revisionControls.hidden = true; openCampaignId = null; clearRevisionTarget();
     try {
       const text = await requestCampaign({ promoText: promo, campaignType: campaignType.value, businessProfile: profile });
       renderCampaign({ campaignText: text, campaignType: campaignType.value }); copyBtn.hidden = false;
@@ -515,9 +538,11 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     const label = source.campaignTypeLabel || (type === "social" ? "Social Media Post" : type === "email" ? "Email Campaign" : "Full Marketing Campaign");
     reviseBtn.disabled = true; reviseBtn.textContent = "DEMEOS is revising...";
     try {
-      const text = await requestCampaign({ existingCampaign: source.campaignText, revisionInstruction: instruction, campaignType: type, businessProfile: profile });
+      const request = { existingCampaign: source.campaignText, revisionInstruction: instruction, campaignType: type, businessProfile: profile };
+      if (selectedRevisionTarget) request.revisionTarget = selectedRevisionTarget;
+      const text = await requestCampaign(request);
       const saved = await saveCampaign(text, source.promoText || "", type, label, profile, source.id);
-      renderCampaign({ campaignText: text, campaignType: type }); revisionInstruction.value = ""; copyBtn.hidden = false; showApprovalStatus("Unapproved");
+      clearRevisionTarget(); renderCampaign({ campaignText: text, campaignType: type }); revisionInstruction.value = ""; copyBtn.hidden = false; showApprovalStatus("Unapproved");
       resultsArea.scrollIntoView({ behavior: "smooth", block: "start" });
       if (!saved.persisted) alert("Campaign saved on this device, but DEMEOS could not sync it to the server. Please try again.");
     } catch (error) { console.error(error); alert(error.message); }

@@ -230,6 +230,45 @@ test("a full campaign revision preserves the complete campaign structure", async
   assert.match(result.fetchBody.input, /CAMPAIGN STRATEGY\s+SOCIAL MEDIA POST\s+EMAIL CAMPAIGN\s+SHORT AD COPY\s+CALL TO ACTION/);
 });
 
+for (const revisionTarget of [
+  "campaign_strategy", "social_media_post", "email_campaign", "short_ad_copy", "call_to_action"
+]) {
+  test(`a full campaign revision accepts ${revisionTarget}`, async function () {
+    const result = await generate({
+      campaignType: "full", existingCampaign: "Complete existing campaign",
+      revisionInstruction: "Make it clearer.", revisionTarget
+    });
+
+    assert.equal(result.response.statusCode, 200);
+    assert.equal(result.fetchCalls, 1);
+    assert.match(result.fetchBody.input, new RegExp(`selected revision target is ${revisionTarget}`));
+    assert.match(result.fetchBody.input, /Revise ONLY the selected .* section/);
+    assert.match(result.fetchBody.input, /Preserve the other four sections unchanged in substance/);
+    assert.match(result.fetchBody.input, /Return the COMPLETE five-section Full Marketing Campaign/);
+  });
+}
+
+for (const [description, body] of [
+  ["invalid", { campaignType: "full", existingCampaign: "Existing", revisionInstruction: "Change it", revisionTarget: "menu" }],
+  ["new campaign", { campaignType: "full", promoText: "Promote dinner", revisionTarget: "campaign_strategy" }],
+  ["social revision", { campaignType: "social", existingCampaign: "Existing", revisionInstruction: "Change it", revisionTarget: "social_media_post" }],
+  ["email revision", { campaignType: "email", existingCampaign: "Existing", revisionInstruction: "Change it", revisionTarget: "email_campaign" }]
+]) {
+  test(`revisionTarget is rejected for ${description}`, async function () {
+    const result = await generate(body);
+    assert.equal(result.response.statusCode, 400);
+    assert.equal(result.response.body.error, "Please select a valid campaign section to revise.");
+    assert.equal(result.fetchCalls, 0);
+  });
+}
+
+test("omitting revisionTarget retains whole full-campaign revision behavior", async function () {
+  const result = await generate({ campaignType: "full", existingCampaign: "Existing", revisionInstruction: "Change it" });
+  assert.equal(result.response.statusCode, 200);
+  assert.doesNotMatch(result.fetchBody.input, /selected revision target/);
+  assert.match(result.fetchBody.input, /Make only the legitimate changes requested within the relevant section or sections/);
+});
+
 test("a revision with an invalid profile is rejected before fetch", async function () {
   const result = await generate({
     businessProfile: { ...businessProfile, targetCustomer: "" },
