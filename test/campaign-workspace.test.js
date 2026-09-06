@@ -3,7 +3,7 @@ const fs = require("node:fs");
 const test = require("node:test");
 const vm = require("node:vm");
 
-const { getCampaignWorkspace, parseFullCampaignSections } = require("../js/script.js");
+const { getActiveMarketingWork, getCampaignWorkspace, parseFullCampaignSections } = require("../js/script.js");
 
 const fullCampaignText = `CAMPAIGN STRATEGY
 Reach nearby families with a welcoming weekend offer.
@@ -64,7 +64,8 @@ function createBrowser(campaign, fetchImpl) {
     appendChild(child) { this.children.push(child); }
     prepend(...children) { this.children.unshift(...children); }
     setAttribute(name, value) { this.attributes[name] = value; }
-    scrollIntoView() {}
+    scrollIntoView(options) { this.scrollCalls = (this.scrollCalls || []).concat([options]); }
+    focus() { this.focusCalls = (this.focusCalls || 0) + 1; }
   }
   const elements = new Map(); const created = []; const clipboardWrites = [];
   const document = {
@@ -90,6 +91,59 @@ function createBrowser(campaign, fetchImpl) {
   document.ready();
   return { document, created, clipboardWrites, localStorage, context };
 }
+
+test("active marketing work selects one latest version per business continuity chain with the correct status and action", function () {
+  const campaigns = [
+    { id: "draft-old", businessId: "business-a", originalMarketingWorkId: "draft-old", revisionNumber: 0, approvalStatus: "Approved" },
+    { id: "draft-latest", businessId: "business-a", originalMarketingWorkId: "draft-old", revisionNumber: 2, approvalStatus: "Unapproved" },
+    { id: "approved", businessId: "business-a", originalMarketingWorkId: "approved", revisionNumber: 0, approvalStatus: "Approved" },
+    { id: "complete", businessId: "business-a", originalMarketingWorkId: "complete", revisionNumber: 0, approvalStatus: "Approved", outcome: { outcome: "Positive" } },
+    { id: "other", businessId: "business-b", originalMarketingWorkId: "draft-old", revisionNumber: 9, approvalStatus: "Approved" }
+  ];
+
+  const work = getActiveMarketingWork(campaigns, "business-a");
+
+  assert.deepEqual(work.map(function (entry) { return entry.campaign.id; }), ["draft-latest", "approved", "complete"]);
+  assert.deepEqual(work.map(function (entry) { return entry.status; }), [
+    "Draft — needs approval", "Approved — outcome needed", "Outcome recorded"
+  ]);
+  assert.deepEqual(work.map(function (entry) { return entry.action; }), [
+    "Review Campaign", "Record Outcome", "View Campaign"
+  ]);
+  assert.deepEqual(getActiveMarketingWork(campaigns, "business-b").map(function (entry) { return entry.campaign.id; }), ["other"]);
+  assert.deepEqual(getActiveMarketingWork(campaigns, null), []);
+});
+
+test("active-work actions open each exact latest stored version and Record Outcome brings its outcome controls into attention", function () {
+  const campaigns = [
+    { id: "draft-old", businessId: "business-a", originalMarketingWorkId: "draft-old", revisionNumber: 0,
+      campaignType: "social", campaignText: "Old draft", approvalStatus: "Unapproved", promoText: "Old purpose" },
+    { id: "draft-latest", businessId: "business-a", originalMarketingWorkId: "draft-old", revisionNumber: 1,
+      campaignType: "social", campaignText: "Latest draft", approvalStatus: "Unapproved", promoText: "Current purpose" },
+    { id: "approved", businessId: "business-a", originalMarketingWorkId: "approved", revisionNumber: 0,
+      campaignType: "email", campaignText: "Approved exact", approvalStatus: "Approved" },
+    { id: "complete", businessId: "business-a", originalMarketingWorkId: "complete", revisionNumber: 0,
+      campaignType: "full", campaignText: "Complete exact", approvalStatus: "Approved", outcome: { outcome: "Mixed" } }
+  ];
+  const browser = createBrowser(campaigns);
+  const actions = ["Review Campaign", "Record Outcome", "View Campaign"].map(function (label) {
+    return browser.created.find(function (element) { return element.textContent === label; });
+  });
+
+  actions[0].listeners.click();
+  assert.equal(browser.document.getElementById("results-content").textContent, "Latest draft");
+  actions[1].listeners.click();
+  assert.equal(browser.document.getElementById("results-content").textContent, "Approved exact");
+  assert.equal(browser.document.getElementById("campaign-outcome").hidden, false);
+  assert.equal(browser.document.getElementById("campaign-outcome").scrollCalls.length, 1);
+  assert.equal(browser.document.getElementById("campaign-outcome-value").focusCalls, 1);
+  actions[2].listeners.click();
+  assert.equal(browser.document.getElementById("results-content").textContent, "Complete exact");
+
+  browser.document.getElementById("add-business-btn").listeners.click();
+  assert.equal(browser.document.getElementById("active-marketing-work-list").children.length, 0);
+  assert.equal(browser.document.getElementById("active-marketing-work-empty").hidden, false);
+});
 
 test("opening a saved full campaign renders sections, copies the original, and clearing removes them", async function () {
   const campaign = { id: "full-1", businessId: "business-a", businessName: "Cafe", campaignType: "full",
