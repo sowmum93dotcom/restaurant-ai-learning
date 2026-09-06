@@ -278,6 +278,25 @@ textarea:focus {
   margin-top: 1rem;
 }
 
+.recommendations-section {
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #d8e2f2;
+}
+.recommendations-status { color: #29466f; }
+.recommendations-list {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+.recommendation-card {
+  padding: 1rem;
+  border: 1px solid #d8e2f2;
+  border-radius: 8px;
+  background: #f7f9fc;
+}
+.recommendation-card h3, .recommendation-card p { margin-top: 0; }
+
 /* Results area */
 .results-area {
   margin-top: 2rem;
