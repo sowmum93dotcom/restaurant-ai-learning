@@ -101,6 +101,20 @@ test("Mamma Pizza scenario rejects invented existing Tuesday specials or offers"
   assert.equal(response.body.recommendations, undefined);
 });
 
+test("a later unrelated create action cannot validate an earlier invented special", async () => {
+  const invented = recommendation(
+    "Engaging Tuesday Evening Social Posts",
+    "Use social media to highlight Tuesday evening specials and create community engagement with warm, welcoming content.",
+    "Create social posts about Tuesday evening visits for Mamma Pizza.",
+    "social",
+    "Social Media Campaign",
+    `This social campaign aims to support ${profile.goal} by encouraging customer interest in Tuesday evening visits.`
+  );
+  const response = await call(validThree(invented));
+  assert.equal(response.statusCode, 502);
+  assert.equal(response.body.recommendations, undefined);
+});
+
 test("a clearly proposed new offer remains allowed when it is not presented as existing", async () => {
   const proposed = recommendation(
     "Explore a Tuesday Evening Offer",
