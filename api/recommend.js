@@ -90,12 +90,30 @@ function validRequiredInput(requiredInput, capability, profile, situation) {
 }
 
 const unsupportedAssetPatterns = [
-  { name: "offer", re: /\b(?:offer|offers|special|specials|deal|deals|discount|discounts)\b/i },
+  { name: "offer", re: /\b(?:offer|offers|special|specials|deal|deals|discount|discounts|promotion|promotions)\b/i },
   { name: "product", re: /\b(?:product|products|menu item|menu items|dish|dishes)\b/i },
+  { name: "service", re: /\b(?:service|services)\b/i },
   { name: "event", re: /\b(?:event|events)\b/i },
-  { name: "programme", re: /\b(?:loyalty programme|loyalty program|testimonial programme|testimonial program|partnership|partnerships)\b/i }
+  { name: "programme", re: /\b(?:loyalty programme|loyalty program|testimonial programme|testimonial program|partnership|partnerships)\b/i },
+  { name: "testimonial", re: /\b(?:testimonial|testimonials)\b/i },
+  { name: "customerList", re: /\b(?:customer list|customer lists)\b/i },
+  { name: "performanceResult", re: /\b(?:performance result|performance results)\b/i },
+  { name: "bookingLevel", re: /\b(?:booking level|booking levels)\b/i },
+  { name: "salesFigure", re: /\b(?:sales figure|sales figures)\b/i },
+  { name: "openingHour", re: /\b(?:opening hour|opening hours)\b/i }
 ];
 const proposalPattern = /\b(?:create|created|creating|develop|developed|developing|introduce|introduced|introducing|propose|proposed|proposing|consider|considered|considering|test|tested|testing|explore|explored|exploring|design|designed|designing)\b/ig;
+const negationPattern = /\b(?:no|not|never|without|do not|does not|did not|don't|doesn't|didn't|is not|isn't|are not|aren't|has not|hasn't|have not|haven't)\b/i;
+const premiseStopWords = new Set([
+  "a", "an", "and", "as", "at", "be", "by", "campaign", "create", "creating", "created", "for", "from", "in", "is",
+  "it", "marketing", "new", "of", "on", "our", "promote", "promoting", "propose", "proposed", "that", "the", "their", "this",
+  "to", "use", "using", "we", "with", "existing", "already", "current", "currently"
+]);
+const assetWords = new Set(["offer", "offers", "special", "specials", "deal", "deals", "discount", "discounts", "promotion",
+  "promotions", "product", "products", "menu", "item", "items", "dish", "dishes", "service", "services", "event", "events",
+  "loyalty", "programme", "program", "testimonial", "testimonials", "partnership", "partnerships", "customer", "customers", "list",
+  "lists", "performance", "result", "results", "booking", "bookings", "level", "levels", "sales", "figure", "figures", "opening",
+  "hour", "hours"]);
 
 function suppliedContextText(profile, situation, outcomes) {
   return [Object.values(profile).join(" "), situation,
@@ -115,15 +133,47 @@ function explicitlyProposesAsset(text, assetIndex) {
   return true;
 }
 
+function mentionIsNegated(text, assetIndex, assetLength) {
+  const before = text.slice(Math.max(0, assetIndex - 70), assetIndex);
+  const after = text.slice(assetIndex + assetLength, Math.min(text.length, assetIndex + assetLength + 50));
+  const sentenceBefore = before.slice(Math.max(before.lastIndexOf("."), before.lastIndexOf("!"), before.lastIndexOf("?"), before.lastIndexOf(";"), before.lastIndexOf(":")) + 1);
+  const sentenceAfter = after.split(/[.!?;:\n]/, 1)[0];
+  return negationPattern.test(sentenceBefore) || /^(?:\W|\w+\s+){0,6}(?:does not|doesn't|do not|don't|is not|isn't|are not|aren't|has not|hasn't|have not|haven't|not)\b/i.test(sentenceAfter);
+}
+
+function normalisePremiseToken(token) {
+  return token.toLocaleLowerCase().replace(/[^a-z0-9%]+/g, "").replace(/^(tuesday|wednesday|thursday|friday|saturday|sunday|monday)s$/, "$1");
+}
+
+function premiseQualifiers(text) {
+  return String(text).toLocaleLowerCase().match(/[a-z0-9%]+/g)?.map(normalisePremiseToken)
+    .filter((token) => token && token.length > 2 && !premiseStopWords.has(token) && !assetWords.has(token)) || [];
+}
+
+function suppliedContextSupportsAsset(text, match, re, suppliedText) {
+  const start = match.index || 0;
+  const outputWindow = text.slice(Math.max(0, start - 55), Math.min(text.length, start + match[0].length + 55));
+  const qualifiers = premiseQualifiers(outputWindow);
+  const suppliedSegments = suppliedText.split(/[.!?;:\n]+/).map((segment) => segment.trim()).filter(Boolean);
+  return suppliedSegments.some((segment) => {
+    const assetMatches = Array.from(segment.matchAll(new RegExp(re.source, "ig")));
+    if (!assetMatches.length || assetMatches.every((assetMatch) => mentionIsNegated(segment, assetMatch.index || 0, assetMatch[0].length))) return false;
+    if (!qualifiers.length) return true;
+    const suppliedTokens = new Set(premiseQualifiers(segment));
+    return qualifiers.every((qualifier) => suppliedTokens.has(qualifier));
+  });
+}
+
 function containsUnsupportedBusinessPremise(text, suppliedText) {
   if (typeof text !== "string" || !text.trim()) return false;
   return unsupportedAssetPatterns.some(({ re }) => {
     const matches = Array.from(text.matchAll(new RegExp(re.source, "ig")));
     if (!matches.length) return false;
     return matches.some((match) => {
-      const value = match[0];
-      if (suppliedText.includes(value.toLocaleLowerCase())) return false;
-      return !explicitlyProposesAsset(text, match.index || 0);
+      const index = match.index || 0;
+      if (mentionIsNegated(text, index, match[0].length)) return false;
+      if (explicitlyProposesAsset(text, index)) return false;
+      return !suppliedContextSupportsAsset(text, match, re, suppliedText);
     });
   });
 }
