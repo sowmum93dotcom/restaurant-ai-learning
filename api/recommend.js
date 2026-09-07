@@ -102,30 +102,60 @@ function validRequiredInput(requiredInput, capability, profile, situation) {
 }
 
 function parseRecommendations(text, profile, situation, outcomes, decisions) {
-  if (typeof text !== "string" || !text.trim()) return null;
+  if (typeof text !== "string" || !text.trim()) {
+    return { recommendations: null, validationDiagnostic: [{ reason: "invalid-json", recommendationIndex: null }] };
+  }
   let parsed;
-  try { parsed = JSON.parse(text); } catch (error) { return null; }
+  try { parsed = JSON.parse(text); } catch (error) {
+    return { recommendations: null, validationDiagnostic: [{ reason: "invalid-json", recommendationIndex: null }] };
+  }
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed) ||
-      !Array.isArray(parsed.recommendations) || parsed.recommendations.length !== 3) return null;
+      !Array.isArray(parsed.recommendations) || parsed.recommendations.length !== 3) {
+    return { recommendations: null,
+      validationDiagnostic: [{ reason: "invalid-recommendation-count", recommendationIndex: null }] };
+  }
   const textFields = ["title", "reason", "targetCustomer", "businessObjective", "demeosCapability", "suggestedRequest"];
-  const valid = parsed.recommendations.every((item) => {
+  const validationDiagnostic = [];
+  parsed.recommendations.forEach((item, recommendationIndex) => {
     if (!item || typeof item !== "object" || Array.isArray(item) ||
         Object.keys(item).length !== recommendationFields.length ||
         !recommendationFields.every((field) => Object.hasOwn(item, field)) ||
         !textFields.every((field) => typeof item[field] === "string" && item[field].trim()) ||
         !Array.isArray(item.evidence) || !item.evidence.length || item.evidence.length > 10 ||
-        item.approvalState !== "pending") return false;
+        item.approvalState !== "pending") {
+      validationDiagnostic.push({ reason: "invalid-fields", recommendationIndex });
+      return;
+    }
     const capability = getCapabilityForRecommendationType(item.suggestedCampaignType);
-    return capability !== null && capability.available &&
-      item.targetCustomer.trim() === profile.targetCustomer &&
-      item.businessObjective.toLocaleLowerCase().includes(profile.goal.toLocaleLowerCase()) &&
-      item.demeosCapability.trim() === capability.ownerFacingName &&
-      item.evidence.every((evidence) => evidenceMatchesContext(evidence, profile, situation, outcomes, decisions)) &&
-      item.evidence.some((evidence) => evidence.source === "businessProfile" && evidence.field === "goal" &&
-        evidence.value.trim() === profile.goal) && validExpectedOutcome(item.expectedOutcome, profile) &&
-      validRequiredInput(item.requiredInput, capability, profile, situation);
+    if (capability === null || !capability.available) {
+      validationDiagnostic.push({ reason: "invalid-capability", recommendationIndex });
+      return;
+    }
+    if (item.targetCustomer.trim() !== profile.targetCustomer)
+      validationDiagnostic.push({ reason: "invalid-target-customer", recommendationIndex });
+    if (!item.businessObjective.toLocaleLowerCase().includes(profile.goal.toLocaleLowerCase()))
+      validationDiagnostic.push({ reason: "invalid-business-objective", recommendationIndex });
+    if (item.demeosCapability.trim() !== capability.ownerFacingName)
+      validationDiagnostic.push({ reason: "invalid-capability-name", recommendationIndex });
+    const validEvidence = item.evidence.filter((evidence) => evidence && typeof evidence === "object" &&
+      !Array.isArray(evidence) && Object.keys(evidence).length === 4 && typeof evidence.source === "string" &&
+      typeof evidence.field === "string" && typeof evidence.value === "string" && evidence.value.trim() &&
+      evidence.verificationState === evidenceStates[evidence.source]);
+    if (validEvidence.length !== item.evidence.length)
+      validationDiagnostic.push({ reason: "invalid-evidence", recommendationIndex });
+    else if (!item.evidence.every((evidence) =>
+      evidenceMatchesContext(evidence, profile, situation, outcomes, decisions)))
+      validationDiagnostic.push({ reason: "fact-integrity-failure", recommendationIndex });
+    if (!item.evidence.some((evidence) => evidence && evidence.source === "businessProfile" &&
+      evidence.field === "goal" && typeof evidence.value === "string" && evidence.value.trim() === profile.goal))
+      validationDiagnostic.push({ reason: "missing-goal-evidence", recommendationIndex });
+    if (!validExpectedOutcome(item.expectedOutcome, profile))
+      validationDiagnostic.push({ reason: "invalid-expected-outcome", recommendationIndex });
+    if (!validRequiredInput(item.requiredInput, capability, profile, situation))
+      validationDiagnostic.push({ reason: "invalid-required-input", recommendationIndex });
   });
-  return valid ? { recommendations: parsed.recommendations.map((item) => ({
+  return validationDiagnostic.length ? { recommendations: null, validationDiagnostic } : {
+    recommendations: parsed.recommendations.map((item) => ({
     title: item.title.trim(), reason: item.reason.trim(), targetCustomer: item.targetCustomer.trim(),
     businessObjective: item.businessObjective.trim(), demeosCapability: item.demeosCapability.trim(),
     suggestedRequest: item.suggestedRequest.trim(),
@@ -133,7 +163,7 @@ function parseRecommendations(text, profile, situation, outcomes, decisions) {
     evidence: item.evidence.map((evidence) => ({ ...evidence, value: evidence.value.trim() })),
     expectedOutcome: item.expectedOutcome.trim(), requiredInput: item.requiredInput.map((input) => input.trim()),
     approvalState: item.approvalState
-  })) } : null;
+    })) };
 }
 
 export default async function handler(req, res) {
@@ -253,9 +283,12 @@ The recommendations array must contain exactly three objects. Each object must c
     catch (error) { return res.status(502).json({ error: "The AI service returned an unreadable response.", ...(requestId ? { requestId } : {}) }); }
     if (!response.ok) return res.status(502).json({ error: "The DEMEOS Marketing Agent could not create recommendations.", ...(requestId ? { requestId } : {}) });
     const output = data.output_text || data.output?.flatMap((item) => item.content || []).map((item) => item.text || "").join("").trim();
-    const recommendations = parseRecommendations(output, profile, situation, outcomes, decisions);
-    if (!recommendations) return res.status(502).json({ error: "The DEMEOS Marketing Agent returned invalid recommendations.", ...(requestId ? { requestId } : {}) });
-    return res.status(200).json(recommendations);
+    const parsedRecommendations = parseRecommendations(output, profile, situation, outcomes, decisions);
+    if (!parsedRecommendations.recommendations) return res.status(502).json({
+      error: "The DEMEOS Marketing Agent returned invalid recommendations.",
+      validationDiagnostic: parsedRecommendations.validationDiagnostic, ...(requestId ? { requestId } : {})
+    });
+    return res.status(200).json({ recommendations: parsedRecommendations.recommendations });
   } catch (error) {
     console.error("Recommendation server error:", error);
     return res.status(500).json({ error: "Something went wrong while creating recommendations." });

@@ -182,7 +182,11 @@ test("unavailable and unregistered capabilities returned by AI are rejected", as
 
 test("target customers must exactly match the verified profile", async () => {
   const malformed = structuredClone(valid); malformed.recommendations[0].targetCustomer = "Invented audience";
-  const result = await call(profile, JSON.stringify(malformed)); assert.equal(result.response.statusCode, 502);
+  const result = await call(profile, JSON.stringify(malformed));
+  assert.equal(result.response.statusCode, 502);
+  assert.equal(JSON.stringify(result.response.body.validationDiagnostic),
+    JSON.stringify([{ reason: "invalid-target-customer", recommendationIndex: 0 }]));
+  assert.equal(result.response.body.error, "The DEMEOS Marketing Agent returned invalid recommendations.");
 });
 
 test("business objectives must include the verified primary marketing goal", async () => {
