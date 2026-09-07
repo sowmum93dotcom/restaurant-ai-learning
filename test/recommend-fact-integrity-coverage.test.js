@@ -111,6 +111,56 @@ test("forbidden premise classes are rejected when the owner never supplied them"
   }
 });
 
+test("the exact Mamma Pizza Tuesday failure wording is rejected", async () => {
+  const situation = "Tuesday evenings are quiet and I would like to attract more local customers.";
+  const failures = [
+    [
+      "Promote Tuesday Evening Special Offers to Local Customers",
+      "To address the quiet Tuesday evenings, create a campaign highlighting special offers or menu items specifically available on Tuesdays to attract local families and office workers in Lewisham.",
+      "Create a full marketing campaign highlighting Tuesday evening special offers or menu items."
+    ],
+    [
+      "Engage Locals with Tuesday Specials on Social Media",
+      "Use social media posts to create awareness and excitement about Tuesday night dining with special offerings.",
+      "Create social media content promoting Tuesday specials and special offerings."
+    ],
+    [
+      "Send Targeted Email Campaign Highlighting Tuesday Offers",
+      "Create personalized messages promoting Tuesday evening deals to boost weekday bookings and encourage repeat visits.",
+      "Create an email campaign highlighting Tuesday offers, deals and promotions."
+    ]
+  ];
+
+  for (const [title, reason, request] of failures) {
+    const response = await call(validThree(recommendation(title, reason, request, situation), situation), situation);
+    assert.equal(response.statusCode, 502, `expected live invented-asset wording to be rejected: ${title}`);
+  }
+});
+
+test("the Tuesday situation accepts marketing that uses only supplied facts", async () => {
+  const situation = "Tuesday evenings are quiet and I would like to attract more local customers.";
+  const grounded = recommendation(
+    "Reach Local Customers on Quiet Tuesday Evenings",
+    "Create a campaign inviting local customers to consider visiting on Tuesday evenings, using only the owner-provided fact that Tuesday evenings are quiet.",
+    "Create a full marketing campaign for local customers focused on Tuesday evenings and the verified business goal, without adding offers, products, events or other unsupplied business facts.",
+    situation
+  );
+  const response = await call(validThree(grounded, situation), situation);
+  assert.equal(response.statusCode, 200);
+});
+
+test("a clearly proposed new Tuesday offer can be suggested without claiming it already exists", async () => {
+  const situation = "Tuesday evenings are quiet and I would like to attract more local customers.";
+  const proposed = recommendation(
+    "Consider Creating a New Tuesday Offer",
+    "Consider creating a new Tuesday offer for owner approval rather than claiming an existing Tuesday offer.",
+    "Create a campaign concept that proposes creating a new Tuesday offer for owner approval.",
+    situation
+  );
+  const response = await call(validThree(proposed, situation), situation);
+  assert.equal(response.statusCode, 200);
+});
+
 test("a Friday deal does not authorize a recommendation claiming a Tuesday deal", async () => {
   const situation = "We have a family pizza deal on Fridays and Tuesday evenings are quiet.";
   const invented = recommendation(
