@@ -10,12 +10,13 @@ const profile = { name: "North Star", type: "Consultancy", location: "Leeds", br
 const valid = { recommendations: ["One", "Two", "Three"].map((title, index) => ({ title, reason: `Reason ${index}`,
   targetCustomer: profile.targetCustomer, businessObjective: `${profile.goal}: objective ${index}`,
   demeosCapability: ["Full Marketing Campaign", "Social Media Campaign", "Email Campaign"][index],
-  suggestedRequest: `Request ${index}`, suggestedCampaignType: ["full", "social", "email"][index] })) };
+  suggestedRequest: `Request ${index}`, requiredInput: [], suggestedCampaignType: ["full", "social", "email"][index] })) };
 
-async function call(businessProfile = profile, output = JSON.stringify(valid), businessSituation, campaignOutcomes, recommendationDecisions) {
+async function call(businessProfile = profile, output = JSON.stringify(valid), businessSituation, campaignOutcomes, recommendationDecisions,
+  capabilityRegistry = require("../api/_lib/capability-registry.js")) {
   let fetchCalls = 0; let requestBody;
   const context = { module: { exports: {} }, process: { env: { OPENAI_API_KEY: "key" } }, console,
-    require(id) { return id === "./_lib/capability-registry.js" ? require("../api/_lib/capability-registry.js") : require(id); },
+    require(id) { return id === "./_lib/capability-registry.js" ? capabilityRegistry : require(id); },
     fetch: async (url, options) => { fetchCalls += 1; requestBody = JSON.parse(options.body); return { ok: true,
       headers: { get() { return null; } }, async text() { return JSON.stringify({ output_text: output }); } }; } };
   vm.runInNewContext(source, context);
@@ -157,7 +158,63 @@ test("exactly three recommendations are required", async () => {
   const result = await call(profile, JSON.stringify({ recommendations: valid.recommendations.slice(0, 2) })); assert.equal(result.response.statusCode, 502);
 });
 
-for (const field of ["title", "reason", "targetCustomer", "businessObjective", "demeosCapability", "suggestedRequest"]) test(`each recommendation requires ${field}`, async () => {
+test("empty requiredInput remains valid", async () => {
+  const result = await call();
+  assert.equal(result.response.statusCode, 200);
+  assert.equal(JSON.stringify(result.response.body.recommendations.map((item) => item.requiredInput)), "[[],[],[]]");
+});
+
+test("requiredInput accepts a genuinely missing input registered for the selected capability", async () => {
+  const baseRegistry = require("../api/_lib/capability-registry.js");
+  const capabilities = baseRegistry.getRecommendationCapabilities().map((capability) => capability.supportedOutputType === "full"
+    ? { ...capability, requiredInputs: [...capability.requiredInputs, "campaignBudget"] } : capability);
+  const registry = {
+    getCapabilities: () => capabilities,
+    getRecommendationCapabilities: () => capabilities,
+    getCapabilityForRecommendationType: (type) => capabilities.find((capability) => capability.supportedOutputType === type) || null
+  };
+  const output = structuredClone(valid);
+  output.recommendations[0].requiredInput = ["Campaign budget"];
+  const result = await call(profile, JSON.stringify(output), "", [], [], registry);
+  assert.equal(result.response.statusCode, 200);
+  assert.equal(JSON.stringify(result.response.body.recommendations[0].requiredInput), '["Campaign budget"]');
+
+  const suppliedInSituation = await call(profile, JSON.stringify(output), "Our campaign budget is 500 pounds.", [], [], registry);
+  assert.equal(suppliedInSituation.response.statusCode, 502);
+
+  const profileCapabilities = capabilities.map((capability) => capability.supportedOutputType === "full"
+    ? { ...capability, requiredInputs: [...capability.requiredInputs, "location"] } : capability);
+  output.recommendations[0].requiredInput = ["Location"];
+  const suppliedInProfile = await call(profile, JSON.stringify(output), "", [], [], {
+    ...registry,
+    getRecommendationCapabilities: () => profileCapabilities,
+    getCapabilityForRecommendationType: (type) => profileCapabilities.find((capability) => capability.supportedOutputType === type) || null
+  });
+  assert.equal(suppliedInProfile.response.statusCode, 502);
+});
+
+test("requiredInput rejects values that are not missing registered capability inputs", async () => {
+  for (const [requested, situation] of [["Business profile", ""], ["Marketing request", ""],
+    ["Campaign budget", "The campaign budget is 500 pounds."], ["Publishing credentials", ""]]) {
+    const malformed = structuredClone(valid);
+    malformed.recommendations[0].requiredInput = [requested];
+    const result = await call(profile, JSON.stringify(malformed), situation);
+    assert.equal(result.response.statusCode, 502);
+  }
+});
+
+test("malformed, non-string, overlong, and excessive requiredInput values are rejected", async () => {
+  const invalidValues = [null, "Campaign budget", [""], [42], ["x".repeat(201)],
+    Array.from({ length: 6 }, () => "Campaign budget")];
+  for (const requiredInput of invalidValues) {
+    const malformed = structuredClone(valid);
+    malformed.recommendations[0].requiredInput = requiredInput;
+    const result = await call(profile, JSON.stringify(malformed));
+    assert.equal(result.response.statusCode, 502);
+  }
+});
+
+for (const field of ["title", "reason", "targetCustomer", "businessObjective", "demeosCapability", "suggestedRequest", "requiredInput"]) test(`each recommendation requires ${field}`, async () => {
   const malformed = structuredClone(valid); delete malformed.recommendations[0][field];
   const result = await call(profile, JSON.stringify(malformed)); assert.equal(result.response.statusCode, 502);
 });
@@ -217,6 +274,9 @@ test("the recommendation prompt gets names, restrictions, and constraints from t
     "Create Video", "Launch Loyalty Programme", "Automatic Publishing"]) assert.match(prompt, new RegExp(name));
   assert.match(prompt, /Does not publish automatically/);
   assert.match(prompt, /Does not send automatically/);
+  assert.match(prompt, /Return \[\] when nothing material is missing/);
+  assert.match(prompt, /generated suggestedRequest satisfies marketingRequest/);
+  assert.match(prompt, /Never ask for information already supplied/);
 });
 
 test("recommendation types are derived from the shared registry, not a duplicate literal list", () => {

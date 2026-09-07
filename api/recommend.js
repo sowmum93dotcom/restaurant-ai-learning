@@ -34,7 +34,30 @@ function validRecommendationDecisions(decisions) {
     typeof item.timestamp === "string" && item.timestamp.length <= 100 && !Number.isNaN(Date.parse(item.timestamp)));
 }
 
-function parseRecommendations(text, profile) {
+const maximumRequiredInputLength = 200;
+
+function normaliseInputName(value) {
+  return value.replace(/([a-z])([A-Z])/g, "$1 $2").toLocaleLowerCase()
+    .replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function requiredInputIsMissing(value, capability, profile, situation) {
+  const requestedInput = normaliseInputName(value);
+  if (!requestedInput) return false;
+  const registeredInput = capability.requiredInputs.find((input) => {
+    const normalised = normaliseInputName(input);
+    return !["business profile", "marketing request"].includes(normalised) &&
+      (requestedInput === normalised || requestedInput.includes(normalised) || normalised.includes(requestedInput));
+  });
+  if (!registeredInput) return false;
+  if (Object.prototype.hasOwnProperty.call(profile, registeredInput) &&
+      typeof profile[registeredInput] === "string" && profile[registeredInput].trim()) return false;
+  const inputWords = normaliseInputName(registeredInput).split(" ").filter((word) => word.length > 2);
+  const normalisedSituation = normaliseInputName(situation);
+  return !inputWords.length || !inputWords.every((word) => normalisedSituation.includes(word));
+}
+
+function parseRecommendations(text, profile, situation) {
   if (typeof text !== "string" || !text.trim()) return null;
   let parsed;
   try { parsed = JSON.parse(text); } catch (error) { return null; }
@@ -43,9 +66,13 @@ function parseRecommendations(text, profile) {
   const textFields = ["title", "reason", "targetCustomer", "businessObjective", "demeosCapability", "suggestedRequest"];
   const valid = parsed.recommendations.every((item) => {
     if (!item || typeof item !== "object" || Array.isArray(item) ||
-        !textFields.every((field) => typeof item[field] === "string" && item[field].trim())) return false;
+        !textFields.every((field) => typeof item[field] === "string" && item[field].trim()) ||
+        !Array.isArray(item.requiredInput) || item.requiredInput.length > 5 ||
+        !item.requiredInput.every((input) => typeof input === "string" && input.trim() &&
+          input.length <= maximumRequiredInputLength)) return false;
     const capability = getCapabilityForRecommendationType(item.suggestedCampaignType);
     return capability !== null && capability.available &&
+      item.requiredInput.every((input) => requiredInputIsMissing(input.trim(), capability, profile, situation)) &&
       item.targetCustomer.trim() === profile.targetCustomer &&
       item.businessObjective.toLocaleLowerCase().includes(profile.goal.toLocaleLowerCase()) &&
       item.demeosCapability.trim() === capability.ownerFacingName;
@@ -54,6 +81,7 @@ function parseRecommendations(text, profile) {
     title: item.title.trim(), reason: item.reason.trim(), targetCustomer: item.targetCustomer.trim(),
     businessObjective: item.businessObjective.trim(), demeosCapability: item.demeosCapability.trim(),
     suggestedRequest: item.suggestedRequest.trim(),
+    requiredInput: item.requiredInput.map((input) => input.trim()),
     suggestedCampaignType: item.suggestedCampaignType
   })) } : null;
 }
@@ -125,6 +153,8 @@ Use relevant decisions only as owner-preference evidence alongside the verified 
     `${capability.ownerFacingName} (${capability.supportedOutputType})`).join(", ");
   const capabilityNameRules = recommendationCapabilities.map((capability) =>
     `${capability.supportedOutputType} → ${JSON.stringify(capability.ownerFacingName)}`).join("; ");
+  const capabilityRequiredInputRules = recommendationCapabilities.map((capability) =>
+    `${capability.supportedOutputType} → ${JSON.stringify(capability.requiredInputs)}`).join("; ");
   const capabilityConstraints = recommendationCapabilities.flatMap((capability) => capability.constraints)
     .map((constraint) => `- ${constraint}`).join("\n");
   const unavailableCapabilities = getCapabilities().filter((capability) => !capability.available)
@@ -151,9 +181,11 @@ For every recommendation, targetCustomer must be exactly ${JSON.stringify(profil
 
 ${factGrounding} Do not invent, infer, presume, or imply the existence of any offer, discount, promotion, product or menu item, service, event, loyalty programme, testimonial, partnership, customer list, performance result, booking level, sales figure, opening hour, or any other business asset or fact that was not explicitly supplied. If a fact is not in the profile or, when provided, the situation, omit it. You may suggest messaging aimed at the verified Target customer and Primary marketing goal, but each suggestedRequest must contain only explicitly supplied profile or situation facts plus safe instructions for creating a full, social, or email campaign. Never present an unsupported or unverified detail as an example, possibility, or proposed premise.
 
+requiredInput must be an array with at most five concise strings. Return [] when nothing material is missing. Otherwise, return only genuinely required missing information for the selected registered capability, using these registry requiredInputs: ${capabilityRequiredInputRules}. The verified businessProfile is already satisfied, and the generated suggestedRequest satisfies marketingRequest. Never ask for information already supplied in the verified profile or current Business Situation, and never ask for unavailable capabilities or unsupported execution information.
+
 Return JSON only, with exactly this shape and no markdown:
-{"recommendations":[{"title":"non-empty title","reason":"non-empty reason grounded in the profile","targetCustomer":"exact verified target customer","businessObjective":"objective explicitly including the verified primary marketing goal","demeosCapability":"owner-facing capability name","suggestedRequest":"non-empty marketing request","suggestedCampaignType":${campaignTypeJson}}]}
-The recommendations array must contain exactly three objects. Each object must contain all seven fields shown above. suggestedCampaignType must be exactly ${campaignTypeOptions}.`;
+{"recommendations":[{"title":"non-empty title","reason":"non-empty reason grounded in the profile","targetCustomer":"exact verified target customer","businessObjective":"objective explicitly including the verified primary marketing goal","demeosCapability":"owner-facing capability name","suggestedRequest":"non-empty marketing request","requiredInput":[],"suggestedCampaignType":${campaignTypeJson}}]}
+The recommendations array must contain exactly three objects. Each object must contain all eight fields shown above. suggestedCampaignType must be exactly ${campaignTypeOptions}.`;
 
   try {
     const response = await fetch("https://api.openai.com/v1/responses", {
@@ -167,7 +199,7 @@ The recommendations array must contain exactly three objects. Each object must c
     catch (error) { return res.status(502).json({ error: "The AI service returned an unreadable response.", ...(requestId ? { requestId } : {}) }); }
     if (!response.ok) return res.status(502).json({ error: "The DEMEOS Marketing Agent could not create recommendations.", ...(requestId ? { requestId } : {}) });
     const output = data.output_text || data.output?.flatMap((item) => item.content || []).map((item) => item.text || "").join("").trim();
-    const recommendations = parseRecommendations(output, profile);
+    const recommendations = parseRecommendations(output, profile, situation);
     if (!recommendations) return res.status(502).json({ error: "The DEMEOS Marketing Agent returned invalid recommendations.", ...(requestId ? { requestId } : {}) });
     return res.status(200).json(recommendations);
   } catch (error) {
