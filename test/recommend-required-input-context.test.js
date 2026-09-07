@@ -9,14 +9,14 @@ const baseRegistry = require("../api/_lib/capability-registry.js");
 const profile = { name: "North Star", type: "Consultancy", location: "Leeds", brandVoice: "Clear and calm",
   targetCustomer: "Local small businesses", goal: "Build awareness" };
 
-function recommendations(requiredInput = []) {
+function recommendations(requiredInput = [], businessProfile = profile) {
   return { recommendations: ["One", "Two", "Three"].map((title, index) => ({
-    title, reason: `Reason ${index}`, targetCustomer: profile.targetCustomer,
-    businessObjective: `${profile.goal}: objective ${index}`,
+    title, reason: `Reason ${index}`, targetCustomer: businessProfile.targetCustomer,
+    businessObjective: `${businessProfile.goal}: objective ${index}`,
     demeosCapability: ["Full Marketing Campaign", "Social Media Campaign", "Email Campaign"][index],
     suggestedRequest: `Request ${index}`, suggestedCampaignType: ["full", "social", "email"][index],
-    evidence: [{ source: "businessProfile", field: "goal", value: profile.goal, verificationState: "verified" }],
-    expectedOutcome: `Aims to support ${profile.goal} by encouraging customer interest`,
+    evidence: [{ source: "businessProfile", field: "goal", value: businessProfile.goal, verificationState: "verified" }],
+    expectedOutcome: `Aims to support ${businessProfile.goal} by encouraging customer interest`,
     requiredInput: index === 0 ? requiredInput : [], approvalState: "pending"
   })) };
 }
@@ -34,7 +34,7 @@ function registryWithFullRequiredInputs(extraInputs) {
   };
 }
 
-async function call(output, businessSituation = "", registry = baseRegistry) {
+async function call(output, businessSituation = "", registry = baseRegistry, businessProfile = profile) {
   const context = { module: { exports: {} }, process: { env: { OPENAI_API_KEY: "key" } }, console,
     require(id) { return id === "./_lib/capability-registry.js" ? registry : require(id); },
     fetch: async () => ({ ok: true, headers: { get() { return null; } },
@@ -42,7 +42,7 @@ async function call(output, businessSituation = "", registry = baseRegistry) {
   vm.runInNewContext(source, context);
   const response = { statusCode: null, body: null, setHeader() {}, status(code) { this.statusCode = code; return this; },
     json(body) { this.body = body; return this; } };
-  await context.module.exports({ method: "POST", body: { businessProfile: profile, businessSituation } }, response);
+  await context.module.exports({ method: "POST", body: { businessProfile, businessSituation } }, response);
   return response;
 }
 
@@ -76,4 +76,12 @@ test("requiredInput remains bounded and string-only", async () => {
     const output = recommendations(); output.recommendations[0].requiredInput = value;
     assert.equal((await call(output, "", registry)).statusCode, 502);
   }
+});
+
+test("verified numeric goals are allowed without permitting invented metrics", async () => {
+  const numericProfile = { ...profile, goal: "Increase bookings by 20%" };
+  assert.equal((await call(recommendations([], numericProfile), "", baseRegistry, numericProfile)).statusCode, 200);
+  const invented = recommendations([], numericProfile);
+  invented.recommendations[0].expectedOutcome = "Aims to support Increase bookings by 20% with 30% more customer interest";
+  assert.equal((await call(invented, "", baseRegistry, numericProfile)).statusCode, 502);
 });
