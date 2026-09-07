@@ -10,6 +10,15 @@ const campaignTypes = recommendationCapabilities.map((capability) => capability.
 const allowedOutcomes = ["Positive", "Mixed", "No noticeable result", "Not used yet"];
 const outcomeTextFields = ["campaignType", "outcome", "ownerNote"];
 const allowedDecisions = ["used", "modified", "rejected"];
+const evidenceStates = Object.freeze({
+  businessProfile: "verified",
+  businessSituation: "ownerProvided",
+  campaignOutcome: "ownerProvidedResult",
+  recommendationDecision: "ownerPreference"
+});
+const recommendationFields = ["title", "reason", "targetCustomer", "businessObjective", "demeosCapability",
+  "suggestedRequest", "suggestedCampaignType", "evidence", "expectedOutcome", "requiredInput", "approvalState"];
+const maximumRequiredInputLength = 160;
 
 function validProfile(profile) {
   return profile !== null && typeof profile === "object" && !Array.isArray(profile) &&
@@ -34,7 +43,49 @@ function validRecommendationDecisions(decisions) {
     typeof item.timestamp === "string" && item.timestamp.length <= 100 && !Number.isNaN(Date.parse(item.timestamp)));
 }
 
-function parseRecommendations(text, profile) {
+function evidenceMatchesContext(evidence, profile, situation, outcomes, decisions) {
+  if (!evidence || typeof evidence !== "object" || Array.isArray(evidence) ||
+      Object.keys(evidence).length !== 4 || typeof evidence.source !== "string" ||
+      typeof evidence.field !== "string" || typeof evidence.value !== "string" || !evidence.value.trim() ||
+      evidence.verificationState !== evidenceStates[evidence.source]) return false;
+  const value = evidence.value.trim();
+  if (evidence.source === "businessProfile") {
+    return requiredBusinessProfileFields.includes(evidence.field) && profile[evidence.field] === value;
+  }
+  if (evidence.source === "businessSituation") {
+    return evidence.field === "businessSituation" && Boolean(situation) && situation === value;
+  }
+  if (evidence.source === "campaignOutcome") {
+    return outcomeTextFields.concat("marketingRequest").includes(evidence.field) && outcomes.some((outcome) =>
+      Object.hasOwn(outcome, evidence.field) && outcome[evidence.field] === value);
+  }
+  if (evidence.source === "recommendationDecision") {
+    return ["recommendationTitle", "suggestedCampaignType", "decision", "timestamp"].includes(evidence.field) &&
+      decisions.some((decision) => decision[evidence.field] === value);
+  }
+  return false;
+}
+
+function validExpectedOutcome(expectedOutcome, profile) {
+  if (typeof expectedOutcome !== "string" || !expectedOutcome.trim() || expectedOutcome.length > 500 ||
+      !expectedOutcome.toLocaleLowerCase().includes(profile.goal.toLocaleLowerCase())) return false;
+  const text = expectedOutcome.trim();
+  const expressesIntent = /\b(aim|aims|intended|seek|seeks|may|might|could|designed|help|support|encourage|invite)\b/i.test(text);
+  const inventedMetric = /\d|%|\b(percent|percentage|double|triple)\b/i.test(text);
+  const guarantee = /\b(guarantee(?:d|s)?|ensure(?:d|s)?|will|definitely|certainly|promise(?:d|s)?|result(?:s)? in)\b/i.test(text);
+  const intendedSignal = /\b(awareness|interest|response|replies|reply|enquiries|inquiries|consideration|attention|visits|bookings|sales|clicks|engagement|customers?|audience|business)\b/i.test(text);
+  return expressesIntent && intendedSignal && !inventedMetric && !guarantee;
+}
+
+function validRequiredInput(requiredInput, capability) {
+  if (!Array.isArray(requiredInput) || requiredInput.length > 5 || requiredInput.some((item) =>
+    typeof item !== "string" || !item.trim() || item.length > maximumRequiredInputLength)) return false;
+  const satisfied = new Set(["businessProfile", "marketingRequest"]);
+  const missing = capability.requiredInputs.filter((input) => !satisfied.has(input));
+  return requiredInput.length === missing.length && requiredInput.every((item, index) => item.trim() === missing[index]);
+}
+
+function parseRecommendations(text, profile, situation, outcomes, decisions) {
   if (typeof text !== "string" || !text.trim()) return null;
   let parsed;
   try { parsed = JSON.parse(text); } catch (error) { return null; }
@@ -43,18 +94,29 @@ function parseRecommendations(text, profile) {
   const textFields = ["title", "reason", "targetCustomer", "businessObjective", "demeosCapability", "suggestedRequest"];
   const valid = parsed.recommendations.every((item) => {
     if (!item || typeof item !== "object" || Array.isArray(item) ||
-        !textFields.every((field) => typeof item[field] === "string" && item[field].trim())) return false;
+        Object.keys(item).length !== recommendationFields.length ||
+        !recommendationFields.every((field) => Object.hasOwn(item, field)) ||
+        !textFields.every((field) => typeof item[field] === "string" && item[field].trim()) ||
+        !Array.isArray(item.evidence) || !item.evidence.length || item.evidence.length > 10 ||
+        item.approvalState !== "pending") return false;
     const capability = getCapabilityForRecommendationType(item.suggestedCampaignType);
     return capability !== null && capability.available &&
       item.targetCustomer.trim() === profile.targetCustomer &&
       item.businessObjective.toLocaleLowerCase().includes(profile.goal.toLocaleLowerCase()) &&
-      item.demeosCapability.trim() === capability.ownerFacingName;
+      item.demeosCapability.trim() === capability.ownerFacingName &&
+      item.evidence.every((evidence) => evidenceMatchesContext(evidence, profile, situation, outcomes, decisions)) &&
+      item.evidence.some((evidence) => evidence.source === "businessProfile" && evidence.field === "goal" &&
+        evidence.value.trim() === profile.goal) && validExpectedOutcome(item.expectedOutcome, profile) &&
+      validRequiredInput(item.requiredInput, capability);
   });
   return valid ? { recommendations: parsed.recommendations.map((item) => ({
     title: item.title.trim(), reason: item.reason.trim(), targetCustomer: item.targetCustomer.trim(),
     businessObjective: item.businessObjective.trim(), demeosCapability: item.demeosCapability.trim(),
     suggestedRequest: item.suggestedRequest.trim(),
-    suggestedCampaignType: item.suggestedCampaignType
+    suggestedCampaignType: item.suggestedCampaignType,
+    evidence: item.evidence.map((evidence) => ({ ...evidence, value: evidence.value.trim() })),
+    expectedOutcome: item.expectedOutcome.trim(), requiredInput: item.requiredInput.map((input) => input.trim()),
+    approvalState: item.approvalState
   })) } : null;
 }
 
@@ -127,6 +189,8 @@ Use relevant decisions only as owner-preference evidence alongside the verified 
     `${capability.supportedOutputType} → ${JSON.stringify(capability.ownerFacingName)}`).join("; ");
   const capabilityConstraints = recommendationCapabilities.flatMap((capability) => capability.constraints)
     .map((constraint) => `- ${constraint}`).join("\n");
+  const capabilityRequiredInputs = recommendationCapabilities.map((capability) =>
+    `${capability.supportedOutputType} requires ${JSON.stringify(capability.requiredInputs)}`).join("; ");
   const unavailableCapabilities = getCapabilities().filter((capability) => !capability.available)
     .map((capability) => capability.ownerFacingName).join(", ");
   const campaignTypeOptions = `${campaignTypes.slice(0, -1).join(", ")}, or ${campaignTypes.at(-1)}`;
@@ -149,11 +213,17 @@ The registry marks these capabilities unavailable: ${unavailableCapabilities}. D
 
 For every recommendation, targetCustomer must be exactly ${JSON.stringify(profile.targetCustomer)} from the verified profile. businessObjective must explicitly include the verified Primary marketing goal, ${JSON.stringify(profile.goal)}. It may also explain how the recommendation addresses the owner-provided Business Situation when one is present, but must not add facts. demeosCapability must match suggestedCampaignType exactly: ${capabilityNameRules}.
 
+For evidence, include only exact, unaltered values that appear in the current request context. Every evidence object must use exactly one of these source/state pairs: businessProfile/verified, businessSituation/ownerProvided, campaignOutcome/ownerProvidedResult, or recommendationDecision/ownerPreference. Use the exact source field name. Every recommendation must include the verified profile goal as businessProfile evidence. Campaign Outcomes are owner-provided result context, never verified facts. Recommendation Decisions are owner preference, never performance evidence.
+
+expectedOutcome must explicitly include ${JSON.stringify(profile.goal)} and describe only an intended business or customer signal using non-guaranteed language such as "aims to", "may", or "could". Do not include numbers or metrics and do not claim that sales, bookings, clicks, engagement, or any other result will definitely occur.
+
+requiredInput must be an array of no more than five concise strings and must be based only on the selected capability's registered requiredInputs: ${capabilityRequiredInputs}. businessProfile is already satisfied and the generated suggestedRequest satisfies marketingRequest. Do not request information already present in the profile or Business Situation, or unsupported execution information. Therefore, for the currently registered recommendation capabilities, requiredInput must be []. approvalState must be exactly "pending".
+
 ${factGrounding} Do not invent, infer, presume, or imply the existence of any offer, discount, promotion, product or menu item, service, event, loyalty programme, testimonial, partnership, customer list, performance result, booking level, sales figure, opening hour, or any other business asset or fact that was not explicitly supplied. If a fact is not in the profile or, when provided, the situation, omit it. You may suggest messaging aimed at the verified Target customer and Primary marketing goal, but each suggestedRequest must contain only explicitly supplied profile or situation facts plus safe instructions for creating a full, social, or email campaign. Never present an unsupported or unverified detail as an example, possibility, or proposed premise.
 
 Return JSON only, with exactly this shape and no markdown:
-{"recommendations":[{"title":"non-empty title","reason":"non-empty reason grounded in the profile","targetCustomer":"exact verified target customer","businessObjective":"objective explicitly including the verified primary marketing goal","demeosCapability":"owner-facing capability name","suggestedRequest":"non-empty marketing request","suggestedCampaignType":${campaignTypeJson}}]}
-The recommendations array must contain exactly three objects. Each object must contain all seven fields shown above. suggestedCampaignType must be exactly ${campaignTypeOptions}.`;
+{"recommendations":[{"title":"non-empty title","reason":"non-empty reason grounded in supplied context","targetCustomer":"exact verified target customer","businessObjective":"objective explicitly including the verified primary marketing goal","demeosCapability":"owner-facing capability name","suggestedRequest":"non-empty marketing request","suggestedCampaignType":${campaignTypeJson},"evidence":[{"source":"businessProfile","field":"goal","value":"exact supplied value","verificationState":"verified"}],"expectedOutcome":"non-guaranteed intended signal explicitly including the verified objective","requiredInput":[],"approvalState":"pending"}]}
+The recommendations array must contain exactly three objects. Each object must contain exactly all eleven fields shown above. suggestedCampaignType must be exactly ${campaignTypeOptions}.`;
 
   try {
     const response = await fetch("https://api.openai.com/v1/responses", {
@@ -167,7 +237,7 @@ The recommendations array must contain exactly three objects. Each object must c
     catch (error) { return res.status(502).json({ error: "The AI service returned an unreadable response.", ...(requestId ? { requestId } : {}) }); }
     if (!response.ok) return res.status(502).json({ error: "The DEMEOS Marketing Agent could not create recommendations.", ...(requestId ? { requestId } : {}) });
     const output = data.output_text || data.output?.flatMap((item) => item.content || []).map((item) => item.text || "").join("").trim();
-    const recommendations = parseRecommendations(output, profile);
+    const recommendations = parseRecommendations(output, profile, situation, outcomes, decisions);
     if (!recommendations) return res.status(502).json({ error: "The DEMEOS Marketing Agent returned invalid recommendations.", ...(requestId ? { requestId } : {}) });
     return res.status(200).json(recommendations);
   } catch (error) {
