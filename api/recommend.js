@@ -77,11 +77,26 @@ function validExpectedOutcome(expectedOutcome, profile) {
   return expressesIntent && intendedSignal && !inventedMetric && !guarantee;
 }
 
-function validRequiredInput(requiredInput, capability) {
+function normaliseInputName(value) {
+  return String(value).replace(/([a-z])([A-Z])/g, "$1 $2").toLocaleLowerCase()
+    .replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function registeredInputIsSatisfied(input, profile, situation) {
+  if (input === "businessProfile" || input === "marketingRequest") return true;
+  if (Object.prototype.hasOwnProperty.call(profile, input) && typeof profile[input] === "string" && profile[input].trim()) {
+    return true;
+  }
+  const words = normaliseInputName(input).split(" ").filter((word) => word.length > 2);
+  if (!words.length || !situation) return false;
+  const normalisedSituation = normaliseInputName(situation);
+  return words.every((word) => normalisedSituation.includes(word));
+}
+
+function validRequiredInput(requiredInput, capability, profile, situation) {
   if (!Array.isArray(requiredInput) || requiredInput.length > 5 || requiredInput.some((item) =>
     typeof item !== "string" || !item.trim() || item.length > maximumRequiredInputLength)) return false;
-  const satisfied = new Set(["businessProfile", "marketingRequest"]);
-  const missing = capability.requiredInputs.filter((input) => !satisfied.has(input));
+  const missing = capability.requiredInputs.filter((input) => !registeredInputIsSatisfied(input, profile, situation));
   return requiredInput.length === missing.length && requiredInput.every((item, index) => item.trim() === missing[index]);
 }
 
@@ -107,7 +122,7 @@ function parseRecommendations(text, profile, situation, outcomes, decisions) {
       item.evidence.every((evidence) => evidenceMatchesContext(evidence, profile, situation, outcomes, decisions)) &&
       item.evidence.some((evidence) => evidence.source === "businessProfile" && evidence.field === "goal" &&
         evidence.value.trim() === profile.goal) && validExpectedOutcome(item.expectedOutcome, profile) &&
-      validRequiredInput(item.requiredInput, capability);
+      validRequiredInput(item.requiredInput, capability, profile, situation);
   });
   return valid ? { recommendations: parsed.recommendations.map((item) => ({
     title: item.title.trim(), reason: item.reason.trim(), targetCustomer: item.targetCustomer.trim(),
@@ -217,7 +232,7 @@ For evidence, include only exact, unaltered values that appear in the current re
 
 expectedOutcome must explicitly include ${JSON.stringify(profile.goal)} and describe only an intended business or customer signal using non-guaranteed language such as "aims to", "may", or "could". Do not include numbers or metrics and do not claim that sales, bookings, clicks, engagement, or any other result will definitely occur.
 
-requiredInput must be an array of no more than five concise strings and must be based only on the selected capability's registered requiredInputs: ${capabilityRequiredInputs}. businessProfile is already satisfied and the generated suggestedRequest satisfies marketingRequest. Do not request information already present in the profile or Business Situation, or unsupported execution information. Therefore, for the currently registered recommendation capabilities, requiredInput must be []. approvalState must be exactly "pending".
+requiredInput must be an array of no more than five concise strings and must be based only on the selected capability's registered requiredInputs: ${capabilityRequiredInputs}. businessProfile is already satisfied and the generated suggestedRequest satisfies marketingRequest. Do not request information already present in the profile or explicitly supplied in the Business Situation. Return [] when every registered required input is already satisfied. If another registered required input is genuinely missing, return its exact registry input name. Never request unavailable capabilities or unsupported execution information. approvalState must be exactly "pending".
 
 ${factGrounding} Do not invent, infer, presume, or imply the existence of any offer, discount, promotion, product or menu item, service, event, loyalty programme, testimonial, partnership, customer list, performance result, booking level, sales figure, opening hour, or any other business asset or fact that was not explicitly supplied. If a fact is not in the profile or, when provided, the situation, omit it. You may suggest messaging aimed at the verified Target customer and Primary marketing goal, but each suggestedRequest must contain only explicitly supplied profile or situation facts plus safe instructions for creating a full, social, or email campaign. Never present an unsupported or unverified detail as an example, possibility, or proposed premise.
 
