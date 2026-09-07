@@ -23,7 +23,16 @@ const SCHEMA_STATEMENTS = [
     decided_at TIMESTAMPTZ NOT NULL
   )`,
   `CREATE INDEX IF NOT EXISTS demeos_recommendation_decisions_business_id_idx
-    ON demeos_recommendation_decisions (business_id)`
+    ON demeos_recommendation_decisions (business_id)`,
+  `CREATE TABLE IF NOT EXISTS demeos_customer_participations (
+    participation_id BIGSERIAL PRIMARY KEY,
+    business_id TEXT NOT NULL REFERENCES demeos_businesses(business_id),
+    campaign_id TEXT NOT NULL REFERENCES demeos_campaigns(campaign_id),
+    action TEXT NOT NULL CHECK (action IN ('Interested')),
+    participated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`,
+  `CREATE INDEX IF NOT EXISTS demeos_customer_participations_work_idx
+    ON demeos_customer_participations (business_id, campaign_id)`
 ];
 
 function createDatabase(client) {
