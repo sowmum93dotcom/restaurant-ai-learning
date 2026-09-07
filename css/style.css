@@ -197,7 +197,6 @@ main {
 #add-business-btn {
   white-space: nowrap;
 }
-
 .demeos-primary-button {
   padding: 0.9rem 1.4rem;
   border: none;
@@ -319,7 +318,10 @@ textarea:focus {
   color: #493f38;
   font-size: 0.82rem;
 }
-.recommendation-detail p { margin-bottom: 0; }
+.recommendation-detail p {
+  margin-bottom: 0;
+  white-space: pre-line;
+}
 
 /* Results area */
 .results-area {
