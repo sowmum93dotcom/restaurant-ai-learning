@@ -164,6 +164,16 @@ function suppliedContextSupportsAsset(text, match, re, suppliedText) {
   });
 }
 
+function unsupportedMentionIsAsserted(text, assetIndex, assetLength) {
+  const before = text.slice(Math.max(0, assetIndex - 90), assetIndex);
+  const after = text.slice(assetIndex + assetLength, Math.min(text.length, assetIndex + assetLength + 60));
+  const assertionBefore = /\b(?:existing|current|currently|already|our|their|has|have|offers?|provides?|promote|promoting|highlight|highlighting|feature|featuring|showcase|showcasing|use|using)\b[^.!?;:\n]{0,55}$/i.test(before);
+  const dayOrTimeBefore = /\b(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|morning|afternoon|evening|weekend)s?\b[^.!?;:\n]{0,45}$/i.test(before);
+  const dayOrTimeAfter = /^[^.!?;:\n]{0,35}\b(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|morning|afternoon|evening|weekend)s?\b/i.test(after);
+  const possessiveBefore = /(?:'s|’s)\s*$/i.test(before.trim());
+  return assertionBefore || dayOrTimeBefore || dayOrTimeAfter || possessiveBefore;
+}
+
 function containsUnsupportedBusinessPremise(text, suppliedText) {
   if (typeof text !== "string" || !text.trim()) return false;
   return unsupportedAssetPatterns.some(({ re }) => {
@@ -173,7 +183,8 @@ function containsUnsupportedBusinessPremise(text, suppliedText) {
       const index = match.index || 0;
       if (mentionIsNegated(text, index, match[0].length)) return false;
       if (explicitlyProposesAsset(text, index)) return false;
-      return !suppliedContextSupportsAsset(text, match, re, suppliedText);
+      if (suppliedContextSupportsAsset(text, match, re, suppliedText)) return false;
+      return unsupportedMentionIsAsserted(text, index, match[0].length);
     });
   });
 }
@@ -184,27 +195,43 @@ function validFactIntegrity(item, profile, situation, outcomes) {
     .some((text) => containsUnsupportedBusinessPremise(text, suppliedText));
 }
 
+function recommendationValidationReason(item, profile, situation, outcomes, decisions) {
+  const textFields = ["title", "reason", "targetCustomer", "businessObjective", "demeosCapability", "suggestedRequest"];
+  if (!item || typeof item !== "object" || Array.isArray(item) || Object.keys(item).length !== recommendationFields.length ||
+      !recommendationFields.every((field) => Object.hasOwn(item, field)) ||
+      !textFields.every((field) => typeof item[field] === "string" && item[field].trim()) || !Array.isArray(item.evidence) ||
+      !item.evidence.length || item.evidence.length > 10 || item.approvalState !== "pending") return "invalid-fields";
+  const capability = getCapabilityForRecommendationType(item.suggestedCampaignType);
+  if (capability === null || !capability.available) return "invalid-capability";
+  if (item.targetCustomer.trim() !== profile.targetCustomer) return "invalid-target-customer";
+  if (!item.businessObjective.toLocaleLowerCase().includes(profile.goal.toLocaleLowerCase())) return "invalid-business-objective";
+  if (item.demeosCapability.trim() !== capability.ownerFacingName) return "invalid-capability-name";
+  if (!item.evidence.every((evidence) => evidenceMatchesContext(evidence, profile, situation, outcomes, decisions))) return "invalid-evidence";
+  if (!item.evidence.some((evidence) => evidence.source === "businessProfile" && evidence.field === "goal" && evidence.value.trim() === profile.goal)) return "missing-goal-evidence";
+  if (!validExpectedOutcome(item.expectedOutcome, profile)) return "invalid-expected-outcome";
+  if (!validRequiredInput(item.requiredInput, capability, profile, situation)) return "invalid-required-input";
+  if (!validFactIntegrity(item, profile, situation, outcomes)) return "fact-integrity-failure";
+  return null;
+}
+
+function diagnoseRecommendations(text, profile, situation, outcomes, decisions) {
+  if (typeof text !== "string" || !text.trim()) return [{ recommendationIndex: null, reason: "invalid-json" }];
+  let parsed;
+  try { parsed = JSON.parse(text); } catch (error) { return [{ recommendationIndex: null, reason: "invalid-json" }]; }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed) || !Array.isArray(parsed.recommendations) || parsed.recommendations.length !== 3) {
+    return [{ recommendationIndex: null, reason: "invalid-recommendation-count" }];
+  }
+  return parsed.recommendations.map((item, index) => ({ recommendationIndex: index + 1,
+    reason: recommendationValidationReason(item, profile, situation, outcomes, decisions) })).filter((item) => item.reason);
+}
+
 function parseRecommendations(text, profile, situation, outcomes, decisions) {
   if (typeof text !== "string" || !text.trim()) return null;
   let parsed;
   try { parsed = JSON.parse(text); } catch (error) { return null; }
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed) || !Array.isArray(parsed.recommendations) ||
       parsed.recommendations.length !== 3) return null;
-  const textFields = ["title", "reason", "targetCustomer", "businessObjective", "demeosCapability", "suggestedRequest"];
-  const valid = parsed.recommendations.every((item) => {
-    if (!item || typeof item !== "object" || Array.isArray(item) || Object.keys(item).length !== recommendationFields.length ||
-        !recommendationFields.every((field) => Object.hasOwn(item, field)) ||
-        !textFields.every((field) => typeof item[field] === "string" && item[field].trim()) || !Array.isArray(item.evidence) ||
-        !item.evidence.length || item.evidence.length > 10 || item.approvalState !== "pending") return false;
-    const capability = getCapabilityForRecommendationType(item.suggestedCampaignType);
-    return capability !== null && capability.available && item.targetCustomer.trim() === profile.targetCustomer &&
-      item.businessObjective.toLocaleLowerCase().includes(profile.goal.toLocaleLowerCase()) &&
-      item.demeosCapability.trim() === capability.ownerFacingName &&
-      item.evidence.every((evidence) => evidenceMatchesContext(evidence, profile, situation, outcomes, decisions)) &&
-      item.evidence.some((evidence) => evidence.source === "businessProfile" && evidence.field === "goal" &&
-        evidence.value.trim() === profile.goal) && validExpectedOutcome(item.expectedOutcome, profile) &&
-      validRequiredInput(item.requiredInput, capability, profile, situation) && validFactIntegrity(item, profile, situation, outcomes);
-  });
+  const valid = parsed.recommendations.every((item) => recommendationValidationReason(item, profile, situation, outcomes, decisions) === null);
   return valid ? { recommendations: parsed.recommendations.map((item) => ({
     title: item.title.trim(), reason: item.reason.trim(), targetCustomer: item.targetCustomer.trim(),
     businessObjective: item.businessObjective.trim(), demeosCapability: item.demeosCapability.trim(),
@@ -280,16 +307,19 @@ export default async function handler(req, res) {
 
     let recommendations = parseRecommendations(first.output, profile, situation, outcomes, decisions);
     let requestId = first.requestId;
+    let lastOutput = first.output;
     if (!recommendations) {
       const repairPrompt = `${prompt}\n\nYour previous JSON response did not pass DEMEOS validation. Correct it without adding any new facts. Keep exactly three recommendations and exactly the required eleven fields per recommendation. Use only supplied facts and registered capabilities. Do not weaken, bypass, reinterpret, or contradict any rule above. Previous response to repair:\n${JSON.stringify(first.output)}`;
       const second = await requestRecommendations(repairPrompt);
       requestId = second.requestId || requestId;
       if (second.error === "unreadable") return res.status(502).json({ error: "The AI service returned an unreadable response.", ...(requestId ? { requestId } : {}) });
       if (second.error) return res.status(502).json({ error: "The DEMEOS Marketing Agent could not create recommendations.", ...(requestId ? { requestId } : {}) });
+      lastOutput = second.output;
       recommendations = parseRecommendations(second.output, profile, situation, outcomes, decisions);
     }
 
-    if (!recommendations) return res.status(502).json({ error: "The DEMEOS Marketing Agent returned invalid recommendations.", ...(requestId ? { requestId } : {}) });
+    if (!recommendations) return res.status(502).json({ error: "The DEMEOS Marketing Agent returned invalid recommendations.",
+      validationDiagnostic: diagnoseRecommendations(lastOutput, profile, situation, outcomes, decisions), ...(requestId ? { requestId } : {}) });
     return res.status(200).json(recommendations);
   } catch (error) {
     console.error("Recommendation server error:", error);
