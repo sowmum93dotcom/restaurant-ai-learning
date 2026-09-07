@@ -711,6 +711,16 @@ footer {
   font-size: 0.85rem;
 }
 
+footer a { color: #29466f; }
+
+.customer-main { max-width: 920px; }
+.customer-experience { background: #fff; border-radius: 18px; padding: 2rem; }
+.customer-work-list { display: grid; gap: 1rem; margin-top: 1rem; }
+.customer-work-card { border: 1px solid #d9e1eb; border-radius: 14px; padding: 1.25rem; }
+.customer-work-location { color: #526274; font-weight: 600; margin-bottom: 0.75rem; }
+.customer-work-content { margin-bottom: 1rem; white-space: pre-wrap; }
+.customer-participation-result, .customer-result-signal { color: #17603a; font-weight: 600; margin-top: 0.5rem; }
+
 /* Responsive tweaks */
 @media (max-width: 480px) {
   .business-selector {

@@ -676,6 +676,10 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
         ? campaign.promoText : "Marketing request not stored.";
       const status = document.createElement("p"); status.className = "active-marketing-work-status";
       status.textContent = entry.status;
+      const customerResult = document.createElement("p"); customerResult.className = "customer-result-signal";
+      customerResult.textContent = campaign.customerInterestCount > 0
+        ? `${campaign.customerInterestCount} customer${campaign.customerInterestCount === 1 ? "" : "s"} interested`
+        : "No customer participation yet";
       const action = document.createElement("button"); action.type = "button"; action.textContent = entry.action;
       action.addEventListener("click", function () {
         openCampaign(campaign.id);
@@ -684,7 +688,9 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
           if (typeof campaignOutcomeValue.focus === "function") campaignOutcomeValue.focus();
         }
       });
-      item.append(type, purpose, status, action); activeMarketingWorkList.appendChild(item);
+      item.append(type, purpose, status);
+      if (campaign.approvalStatus === "Approved") item.appendChild(customerResult);
+      item.appendChild(action); activeMarketingWorkList.appendChild(item);
     });
   }
   function switchBusiness(businessId) {
