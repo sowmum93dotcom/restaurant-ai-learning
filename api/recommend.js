@@ -214,6 +214,10 @@ function parseRecommendations(text, profile, situation, outcomes, decisions) {
   })) } : null;
 }
 
+function extractRecommendationOutput(data) {
+  return data.output_text || data.output?.flatMap((item) => item.content || []).map((item) => item.text || "").join("").trim();
+}
+
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
@@ -256,18 +260,35 @@ export default async function handler(req, res) {
   const campaignTypeJson = JSON.stringify(campaignTypes.join("|"));
   const prompt = `You are the DEMEOS Marketing Agent. Recommend exactly THREE relevant marketing actions for the verified Business Manager Profile below.\n\n${profileHeading}\nName: ${profile.name}\nBusiness type: ${profile.type}\nLocation: ${profile.location}\nBrand voice: ${profile.brandVoice}\nTarget customer: ${profile.targetCustomer}\nPrimary marketing goal: ${profile.goal}\n${situationContext}${outcomeContext}${decisionContext}\n\nEvery recommendation must support the verified Primary marketing goal, suit the verified Target customer, and use the Brand voice only to guide tone. Work for the stated business type without restaurant-specific assumptions.\nEvery recommendation must be directly executable as one of the campaign types this application can create: ${capabilityOptions}. Recommend only marketing work that can be created within those campaign types. Registry constraints for those capabilities are:\n${capabilityConstraints}\nThe registry marks these capabilities unavailable: ${unavailableCapabilities}. Do not recommend or imply that DEMEOS can create, launch, provide, or manage unsupported capabilities, including video production, loyalty programmes, paid advertising, automatic publishing, SMS, websites, events, partnerships, customer testimonial programmes, booking systems, CRM programmes, or any other tool or feature outside the available recommendation campaign types.\n\nFor every recommendation, targetCustomer must be exactly ${JSON.stringify(profile.targetCustomer)} from the verified profile. businessObjective must explicitly include the verified Primary marketing goal, ${JSON.stringify(profile.goal)}. It may also explain how the recommendation addresses the owner-provided Business Situation when one is present, but must not add facts. demeosCapability must match suggestedCampaignType exactly: ${capabilityNameRules}.\n\nFor evidence, include only exact, unaltered values that appear in the current request context. Every evidence object must use exactly one of these source/state pairs: businessProfile/verified, businessSituation/ownerProvided, campaignOutcome/ownerProvidedResult, or recommendationDecision/ownerPreference. Use the exact source field name. Every recommendation must include the verified profile goal as businessProfile evidence. Campaign Outcomes are owner-provided result context, never verified facts. Recommendation Decisions are owner preference, never performance evidence.\n\nexpectedOutcome must explicitly include ${JSON.stringify(profile.goal)} and describe only an intended business or customer signal using non-guaranteed language such as "aims to", "may", or "could". Do not include invented numbers or metrics; numeric text already present in the verified Primary marketing goal is allowed. Do not claim that sales, bookings, clicks, engagement, or any other result will definitely occur.\n\nrequiredInput must be an array of no more than five concise strings and must be based only on the selected capability's registered requiredInputs: ${capabilityRequiredInputs}. businessProfile is already satisfied and the generated suggestedRequest satisfies marketingRequest. Do not request information already present in the profile or explicitly supplied in the Business Situation. Return [] when every registered required input is already satisfied. If another registered required input is genuinely missing, return its exact registry input name. Never request unavailable capabilities or unsupported execution information. approvalState must be exactly "pending".\n\n${factGrounding} Do not invent, infer, presume, or imply the existence of any offer, discount, promotion, product or menu item, service, event, loyalty programme, testimonial, partnership, customer list, performance result, booking level, sales figure, opening hour, or any other business asset or fact that was not explicitly supplied. If a fact is not in the profile or, when provided, the situation, omit it. A new offer or similar idea may be recommended only when the language clearly says DEMEOS is proposing, creating, introducing, testing, or exploring it before naming that idea; never write as though it already exists. In particular, do not turn a quiet day or a desire for more customers into an unsupported claim that the business already has specials, offers, deals, discounts, promotions, menu items, or events. each suggestedRequest must contain only explicitly supplied profile or situation facts plus safe instructions for creating a full, social, or email campaign. Never present an unsupported or unverified detail as an existing fact. Never use a later unrelated action word to make an earlier unsupported business asset sound valid.\n\nReturn JSON only, with exactly this shape and no markdown:\n{"recommendations":[{"title":"non-empty title","reason":"non-empty reason grounded in supplied context","targetCustomer":"exact verified target customer","businessObjective":"objective explicitly including the verified primary marketing goal","demeosCapability":"owner-facing capability name","suggestedRequest":"non-empty marketing request","suggestedCampaignType":${campaignTypeJson},"evidence":[{"source":"businessProfile","field":"goal","value":"exact supplied value","verificationState":"verified"}],"expectedOutcome":"non-guaranteed intended signal explicitly including the verified objective","requiredInput":[],"approvalState":"pending"}]}\nThe recommendations array must contain exactly three objects. Each object must contain exactly all eleven fields shown above. suggestedCampaignType must be exactly ${campaignTypeOptions}.`;
 
-  try {
+  async function requestRecommendations(input) {
     const response = await fetch("https://api.openai.com/v1/responses", { method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({ model: "gpt-4.1-mini", input: prompt }) });
+      body: JSON.stringify({ model: "gpt-4.1-mini", input }) });
     const requestId = response.headers.get("x-request-id");
     const responseText = await response.text();
     let data;
     try { data = responseText ? JSON.parse(responseText) : {}; }
-    catch (error) { return res.status(502).json({ error: "The AI service returned an unreadable response.", ...(requestId ? { requestId } : {}) }); }
-    if (!response.ok) return res.status(502).json({ error: "The DEMEOS Marketing Agent could not create recommendations.", ...(requestId ? { requestId } : {}) });
-    const output = data.output_text || data.output?.flatMap((item) => item.content || []).map((item) => item.text || "").join("").trim();
-    const recommendations = parseRecommendations(output, profile, situation, outcomes, decisions);
+    catch (error) { return { error: "unreadable", requestId }; }
+    if (!response.ok) return { error: "service", requestId };
+    return { output: extractRecommendationOutput(data), requestId };
+  }
+
+  try {
+    const first = await requestRecommendations(prompt);
+    if (first.error === "unreadable") return res.status(502).json({ error: "The AI service returned an unreadable response.", ...(first.requestId ? { requestId: first.requestId } : {}) });
+    if (first.error) return res.status(502).json({ error: "The DEMEOS Marketing Agent could not create recommendations.", ...(first.requestId ? { requestId: first.requestId } : {}) });
+
+    let recommendations = parseRecommendations(first.output, profile, situation, outcomes, decisions);
+    let requestId = first.requestId;
+    if (!recommendations) {
+      const repairPrompt = `${prompt}\n\nYour previous JSON response did not pass DEMEOS validation. Correct it without adding any new facts. Keep exactly three recommendations and exactly the required eleven fields per recommendation. Use only supplied facts and registered capabilities. Do not weaken, bypass, reinterpret, or contradict any rule above. Previous response to repair:\n${JSON.stringify(first.output)}`;
+      const second = await requestRecommendations(repairPrompt);
+      requestId = second.requestId || requestId;
+      if (second.error === "unreadable") return res.status(502).json({ error: "The AI service returned an unreadable response.", ...(requestId ? { requestId } : {}) });
+      if (second.error) return res.status(502).json({ error: "The DEMEOS Marketing Agent could not create recommendations.", ...(requestId ? { requestId } : {}) });
+      recommendations = parseRecommendations(second.output, profile, situation, outcomes, decisions);
+    }
+
     if (!recommendations) return res.status(502).json({ error: "The DEMEOS Marketing Agent returned invalid recommendations.", ...(requestId ? { requestId } : {}) });
     return res.status(200).json(recommendations);
   } catch (error) {
