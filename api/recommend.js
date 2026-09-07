@@ -71,7 +71,8 @@ function validExpectedOutcome(expectedOutcome, profile) {
       !expectedOutcome.toLocaleLowerCase().includes(profile.goal.toLocaleLowerCase())) return false;
   const text = expectedOutcome.trim();
   const expressesIntent = /\b(aim|aims|intended|seek|seeks|may|might|could|designed|help|support|encourage|invite)\b/i.test(text);
-  const inventedMetric = /\d|%|\b(percent|percentage|double|triple)\b/i.test(text);
+  const metricCheckText = text.toLocaleLowerCase().split(profile.goal.toLocaleLowerCase()).join("");
+  const inventedMetric = /\d|%|\b(percent|percentage|double|triple)\b/i.test(metricCheckText);
   const guarantee = /\b(guarantee(?:d|s)?|ensure(?:d|s)?|will|definitely|certainly|promise(?:d|s)?|result(?:s)? in)\b/i.test(text);
   const intendedSignal = /\b(awareness|interest|response|replies|reply|enquiries|inquiries|consideration|attention|visits|bookings|sales|clicks|engagement|customers?|audience|business)\b/i.test(text);
   return expressesIntent && intendedSignal && !inventedMetric && !guarantee;
@@ -230,7 +231,7 @@ For every recommendation, targetCustomer must be exactly ${JSON.stringify(profil
 
 For evidence, include only exact, unaltered values that appear in the current request context. Every evidence object must use exactly one of these source/state pairs: businessProfile/verified, businessSituation/ownerProvided, campaignOutcome/ownerProvidedResult, or recommendationDecision/ownerPreference. Use the exact source field name. Every recommendation must include the verified profile goal as businessProfile evidence. Campaign Outcomes are owner-provided result context, never verified facts. Recommendation Decisions are owner preference, never performance evidence.
 
-expectedOutcome must explicitly include ${JSON.stringify(profile.goal)} and describe only an intended business or customer signal using non-guaranteed language such as "aims to", "may", or "could". Do not include numbers or metrics and do not claim that sales, bookings, clicks, engagement, or any other result will definitely occur.
+expectedOutcome must explicitly include ${JSON.stringify(profile.goal)} and describe only an intended business or customer signal using non-guaranteed language such as "aims to", "may", or "could". Do not include invented numbers or metrics; numeric text already present in the verified Primary marketing goal is allowed. Do not claim that sales, bookings, clicks, engagement, or any other result will definitely occur.
 
 requiredInput must be an array of no more than five concise strings and must be based only on the selected capability's registered requiredInputs: ${capabilityRequiredInputs}. businessProfile is already satisfied and the generated suggestedRequest satisfies marketingRequest. Do not request information already present in the profile or explicitly supplied in the Business Situation. Return [] when every registered required input is already satisfied. If another registered required input is genuinely missing, return its exact registry input name. Never request unavailable capabilities or unsupported execution information. approvalState must be exactly "pending".
 
