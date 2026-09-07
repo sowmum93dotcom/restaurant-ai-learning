@@ -15,6 +15,7 @@ const valid = { recommendations: ["One", "Two", "Three"].map((title, index) => (
 async function call(businessProfile = profile, output = JSON.stringify(valid), businessSituation, campaignOutcomes, recommendationDecisions) {
   let fetchCalls = 0; let requestBody;
   const context = { module: { exports: {} }, process: { env: { OPENAI_API_KEY: "key" } }, console,
+    require(id) { return id === "./_lib/capability-registry.js" ? require("../api/_lib/capability-registry.js") : require(id); },
     fetch: async (url, options) => { fetchCalls += 1; requestBody = JSON.parse(options.body); return { ok: true,
       headers: { get() { return null; } }, async text() { return JSON.stringify({ output_text: output }); } }; } };
   vm.runInNewContext(source, context);
@@ -166,6 +167,17 @@ test("suggestedCampaignType is limited to full, social, or email", async () => {
   const result = await call(profile, JSON.stringify(malformed)); assert.equal(result.response.statusCode, 502);
 });
 
+test("unavailable and unregistered capabilities returned by AI are rejected", async () => {
+  for (const type of ["video", "unknown-capability"]) {
+    const malformed = structuredClone(valid);
+    malformed.recommendations[0].suggestedCampaignType = type;
+    malformed.recommendations[0].demeosCapability = type === "video" ? "Create Video" : "Unknown Capability";
+    const result = await call(profile, JSON.stringify(malformed));
+    assert.equal(result.response.statusCode, 502);
+    assert.equal(result.response.body.recommendations, undefined);
+  }
+});
+
 test("target customers must exactly match the verified profile", async () => {
   const malformed = structuredClone(valid); malformed.recommendations[0].targetCustomer = "Invented audience";
   const result = await call(profile, JSON.stringify(malformed)); assert.equal(result.response.statusCode, 502);
@@ -187,7 +199,7 @@ test("malformed AI output is rejected", async () => {
 
 test("the prompt limits recommendations to campaign types the application can create", async () => {
   const result = await call(); const prompt = result.requestBody.input;
-  for (const supported of ["Full Marketing Campaign (full)", "Social Media Post/Campaign (social)", "Email Campaign (email)"])
+  for (const supported of ["Full Marketing Campaign (full)", "Social Media Campaign (social)", "Email Campaign (email)"])
     assert.match(prompt, new RegExp(supported.replace(/[()]/g, "\\$&")));
   assert.match(prompt, /directly executable/);
   assert.match(prompt, /full → "Full Marketing Campaign"; social → "Social Media Campaign"; email → "Email Campaign"/);
@@ -197,6 +209,20 @@ test("the prompt limits recommendations to campaign types the application can cr
     "websites", "events", "partnerships", "customer testimonial programmes", "booking systems", "CRM programmes"])
     assert.match(prompt, new RegExp(unsupported));
   assert.match(prompt, /Do not recommend or imply/);
+});
+
+test("the recommendation prompt gets names, restrictions, and constraints from the registry", async () => {
+  const result = await call(); const prompt = result.requestBody.input;
+  for (const name of ["Full Marketing Campaign", "Social Media Campaign", "Email Campaign",
+    "Create Video", "Launch Loyalty Programme", "Automatic Publishing"]) assert.match(prompt, new RegExp(name));
+  assert.match(prompt, /Does not publish automatically/);
+  assert.match(prompt, /Does not send automatically/);
+});
+
+test("recommendation types are derived from the shared registry, not a duplicate literal list", () => {
+  assert.match(source, /getRecommendationCapabilities\(\)/);
+  assert.match(source, /getCapabilityForRecommendationType\(item\.suggestedCampaignType\)/);
+  assert.doesNotMatch(source, /const campaignTypes = \["full", "social", "email"\]/);
 });
 
 test("the prompt grounds recommendations and suggested requests in verified facts only", async () => {
