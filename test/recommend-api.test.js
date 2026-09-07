@@ -10,7 +10,9 @@ const profile = { name: "North Star", type: "Consultancy", location: "Leeds", br
 const valid = { recommendations: ["One", "Two", "Three"].map((title, index) => ({ title, reason: `Reason ${index}`,
   targetCustomer: profile.targetCustomer, businessObjective: `${profile.goal}: objective ${index}`,
   demeosCapability: ["Full Marketing Campaign", "Social Media Campaign", "Email Campaign"][index],
-  suggestedRequest: `Request ${index}`, suggestedCampaignType: ["full", "social", "email"][index] })) };
+  suggestedRequest: `Request ${index}`, suggestedCampaignType: ["full", "social", "email"][index],
+  evidence: [{ source: "businessProfile", field: "goal", value: profile.goal, verificationState: "verified" }],
+  expectedOutcome: `${profile.goal} may become more visible to the target customer`, requiredInput: [], approvalState: "pending" })) };
 
 async function call(businessProfile = profile, output = JSON.stringify(valid), businessSituation, campaignOutcomes, recommendationDecisions) {
   let fetchCalls = 0; let requestBody;
@@ -235,4 +237,62 @@ test("the prompt grounds recommendations and suggested requests in verified fact
     "other business asset or fact"]) assert.match(prompt, new RegExp(forbidden));
   assert.match(prompt, /each suggestedRequest must contain only explicitly supplied profile or situation facts plus safe instructions/);
   assert.match(prompt, /Never present an unsupported or unverified detail as an example, possibility, or proposed premise/);
+});
+
+test("evidence is traceable to supplied context with source-specific verification", async () => {
+  const situation = "Tuesday evenings are quiet";
+  const outcomes = [{ campaignType: "social", outcome: "Mixed", ownerNote: "A few owners replied." }];
+  const decisions = [{ recommendationTitle: "Local introduction", suggestedCampaignType: "social", decision: "modified",
+    timestamp: "2026-09-06T10:00:00.000Z" }];
+  const supplied = structuredClone(valid);
+  supplied.recommendations[0].evidence = [
+    { source: "businessProfile", field: "goal", value: profile.goal, verificationState: "verified" },
+    { source: "businessSituation", field: "businessSituation", value: situation, verificationState: "ownerProvided" },
+    { source: "campaignOutcome", field: "ownerNote", value: outcomes[0].ownerNote, verificationState: "ownerProvidedResult" },
+    { source: "recommendationDecision", field: "decision", value: "modified", verificationState: "ownerPreference" }
+  ];
+  const result = await call(profile, JSON.stringify(supplied), situation, outcomes, decisions);
+  assert.equal(result.response.statusCode, 200);
+  assert.deepEqual(JSON.parse(JSON.stringify(result.response.body.recommendations[0].evidence)), supplied.recommendations[0].evidence);
+});
+
+test("evidence cannot cite absent, paraphrased, or wrongly classified context", async () => {
+  const invalidEvidence = [
+    { source: "businessSituation", field: "businessSituation", value: "Quiet weekends", verificationState: "ownerProvided" },
+    { source: "businessProfile", field: "goal", value: "More awareness", verificationState: "verified" },
+    { source: "campaignOutcome", field: "goal", value: profile.goal, verificationState: "ownerProvidedResult" },
+    { source: "businessProfile", field: "goal", value: profile.goal, verificationState: "ownerProvided" },
+    { source: "internet", field: "goal", value: profile.goal, verificationState: "verified" },
+    { source: "recommendationDecision", field: "decision", value: "used", verificationState: "ownerProvidedResult" }
+  ];
+  for (const evidence of invalidEvidence) {
+    const malformed = structuredClone(valid); malformed.recommendations[0].evidence = [evidence];
+    assert.equal((await call(profile, JSON.stringify(malformed))).response.statusCode, 502);
+  }
+});
+
+test("expected outcomes support the objective without guarantees or invented metrics", async () => {
+  for (const expectedOutcome of ["Build awareness will increase bookings", "Build awareness guarantees engagement",
+    "Build awareness may produce 25% more clicks"]) {
+    const malformed = structuredClone(valid); malformed.recommendations[0].expectedOutcome = expectedOutcome;
+    assert.equal((await call(profile, JSON.stringify(malformed))).response.statusCode, 502);
+  }
+  const unsupported = structuredClone(valid); unsupported.recommendations[0].expectedOutcome = "More enquiries may become visible";
+  assert.equal((await call(profile, JSON.stringify(unsupported))).response.statusCode, 502);
+});
+
+test("requiredInput must be an array and may be empty", async () => {
+  assert.equal((await call()).response.body.recommendations[0].requiredInput.length, 0);
+  for (const requiredInput of ["Offer details", ["Target customer"], [3]]) {
+    const malformed = structuredClone(valid); malformed.recommendations[0].requiredInput = requiredInput;
+    assert.equal((await call(profile, JSON.stringify(malformed))).response.statusCode, 502);
+  }
+});
+
+test("approvalState is server-enforced as pending", async () => {
+  assert.equal((await call()).response.body.recommendations[0].approvalState, "pending");
+  for (const approvalState of ["approved", "rejected", "Pending"]) {
+    const malformed = structuredClone(valid); malformed.recommendations[0].approvalState = approvalState;
+    assert.equal((await call(profile, JSON.stringify(malformed))).response.statusCode, 502);
+  }
 });

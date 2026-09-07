@@ -41,7 +41,9 @@ function setup(campaigns = [], decisions = []) {
   const recommendations = { recommendations: ["First", "Second", "Third"].map((title, index) => ({ title, reason: `Why ${index}`,
     targetCustomer: "Families", businessObjective: `Awareness objective ${index}`,
     demeosCapability: ["Full Marketing Campaign", "Social Media Campaign", "Email Campaign"][index],
-    suggestedRequest: `Do ${index}`, suggestedCampaignType: ["full", "social", "email"][index] })) };
+    suggestedRequest: `Do ${index}`, suggestedCampaignType: ["full", "social", "email"][index],
+    evidence: [{ source: "businessProfile", field: "goal", value: "Awareness", verificationState: "verified" }],
+    expectedOutcome: "Awareness may improve among the target customer", requiredInput: [], approvalState: "pending" })) };
   const context = { document, console, alert() {}, Math, setTimeout, crypto: { randomUUID() { return "new-id"; } },
     localStorage: { getItem(key) { return store.has(key) ? store.get(key) : null; }, setItem(key, value) { store.set(key, value); }, removeItem(key) { store.delete(key); } },
     fetch: async (url, options = {}) => {
@@ -68,7 +70,12 @@ test("recommendations use the active profile, show loading, render three, and po
     ["Why this helps", "Why 1"], ["Target customer", "Families"],
     ["Business objective", "Awareness objective 1"], ["DEMEOS will create", "Social Media Campaign"]
   ]);
-  const useButton = card.children[5]; assert.equal(useButton.textContent, "Use This Recommendation"); useButton.listeners.click();
+  assert.deepEqual(card.children.slice(5, 9).map((section) => [section.children[0].textContent, section.children[1].textContent]), [
+    ["Evidence", "Primary marketing goal — Awareness — Verified Business Profile"],
+    ["Expected outcome", "Awareness may improve among the target customer"],
+    ["Required information", "None"], ["Approval", "Pending"]
+  ]);
+  const useButton = card.children[9]; assert.equal(useButton.textContent, "Use This Recommendation"); useButton.listeners.click();
   assert.equal(app.document.getElementById("promo-input").value, "Do 1");
   assert.equal(app.document.getElementById("campaign-type").value, "social");
   assert.deepEqual(app.decisionWrites, [{ url: "/api/businesses/a/recommendation-decisions", body: {
@@ -80,7 +87,7 @@ test("recommendations use the active profile, show loading, render three, and po
 test("Modify records modified, fills editable controls, and does not generate", async () => {
   const app = setup(); await app.document.getElementById("recommendations-btn").listeners.click();
   const card = app.document.getElementById("recommendations-list").children[2];
-  card.children[6].listeners.click();
+  card.children[10].listeners.click();
   const input = app.document.getElementById("promo-input");
   assert.equal(input.value, "Do 2");
   assert.equal(app.document.getElementById("campaign-type").value, "email");
@@ -93,9 +100,9 @@ test("Not for me records rejected visibly without filling or generating and keep
   const app = setup(); await app.document.getElementById("recommendations-btn").listeners.click();
   const list = app.document.getElementById("recommendations-list");
   const request = app.document.getElementById("promo-input"); request.value = "Owner's existing request";
-  list.children[0].children[7].listeners.click();
+  list.children[0].children[11].listeners.click();
   assert.equal(request.value, "Owner's existing request");
-  assert.equal(list.children[0].children[8].textContent, "Not for me");
+  assert.equal(list.children[0].children[12].textContent, "Not for me");
   assert.equal(list.children[0].classes.has("is-rejected"), true);
   assert.equal(list.children.length, 3);
   assert.equal(app.decisionWrites[0].body.decision, "rejected");
@@ -118,10 +125,10 @@ test("switching businesses and Add Business clear recommendations", async () => 
 test("switching businesses keeps recommendation decisions scoped to the active business", async () => {
   const app = setup();
   await app.document.getElementById("recommendations-btn").listeners.click();
-  app.document.getElementById("recommendations-list").children[0].children[7].listeners.click();
+  app.document.getElementById("recommendations-list").children[0].children[11].listeners.click();
   const selector = app.document.getElementById("business-selector"); selector.value = "b"; selector.listeners.change();
   await app.document.getElementById("recommendations-btn").listeners.click();
-  app.document.getElementById("recommendations-list").children[1].children[5].listeners.click();
+  app.document.getElementById("recommendations-list").children[1].children[9].listeners.click();
   assert.deepEqual(app.decisionWrites.map((write) => [write.url, write.body.decision]), [
     ["/api/businesses/a/recommendation-decisions", "rejected"],
     ["/api/businesses/b/recommendation-decisions", "used"]

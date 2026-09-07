@@ -10,6 +10,12 @@ const campaignTypes = recommendationCapabilities.map((capability) => capability.
 const allowedOutcomes = ["Positive", "Mixed", "No noticeable result", "Not used yet"];
 const outcomeTextFields = ["campaignType", "outcome", "ownerNote"];
 const allowedDecisions = ["used", "modified", "rejected"];
+const evidenceVerificationStates = Object.freeze({
+  businessProfile: "verified",
+  businessSituation: "ownerProvided",
+  campaignOutcome: "ownerProvidedResult",
+  recommendationDecision: "ownerPreference"
+});
 
 function validProfile(profile) {
   return profile !== null && typeof profile === "object" && !Array.isArray(profile) &&
@@ -34,16 +40,50 @@ function validRecommendationDecisions(decisions) {
     typeof item.timestamp === "string" && item.timestamp.length <= 100 && !Number.isNaN(Date.parse(item.timestamp)));
 }
 
-function parseRecommendations(text, profile) {
+function evidenceMatchesContext(evidence, context) {
+  if (!evidence || typeof evidence !== "object" || Array.isArray(evidence) ||
+      typeof evidence.source !== "string" || typeof evidence.field !== "string" ||
+      typeof evidence.value !== "string" || !evidence.value.trim() ||
+      evidence.verificationState !== evidenceVerificationStates[evidence.source]) return false;
+  const sources = {
+    businessProfile: [context.profile],
+    businessSituation: context.situation ? [{ businessSituation: context.situation }] : [],
+    campaignOutcome: context.outcomes,
+    recommendationDecision: context.decisions
+  };
+  const records = sources[evidence.source];
+  return Array.isArray(records) && records.some((record) =>
+    Object.hasOwn(record, evidence.field) && String(record[evidence.field]) === evidence.value.trim());
+}
+
+function validExpectedOutcome(value, profile, contextValues) {
+  if (typeof value !== "string" || !value.trim() ||
+      !value.toLocaleLowerCase().includes(profile.goal.toLocaleLowerCase())) return false;
+  const normalized = value.trim();
+  const guaranteedResult = /\b(guarantee(?:d|s)?|definitely|certainly|ensure[sd]?|will)\b/i;
+  if (guaranteedResult.test(normalized)) return false;
+  const suppliedNumbers = new Set(contextValues.join(" ").match(/\b\d+(?:[.,]\d+)?%?\b/g) || []);
+  return (normalized.match(/\b\d+(?:[.,]\d+)?%?\b/g) || []).every((number) => suppliedNumbers.has(number));
+}
+
+function parseRecommendations(text, context) {
   if (typeof text !== "string" || !text.trim()) return null;
   let parsed;
   try { parsed = JSON.parse(text); } catch (error) { return null; }
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed) ||
       !Array.isArray(parsed.recommendations) || parsed.recommendations.length !== 3) return null;
+  const { profile, situation, outcomes, decisions } = context;
   const textFields = ["title", "reason", "targetCustomer", "businessObjective", "demeosCapability", "suggestedRequest"];
+  const contextValues = Object.values(profile).concat(situation,
+    outcomes.flatMap((item) => Object.values(item)), decisions.flatMap((item) => Object.values(item))).map(String);
   const valid = parsed.recommendations.every((item) => {
     if (!item || typeof item !== "object" || Array.isArray(item) ||
         !textFields.every((field) => typeof item[field] === "string" && item[field].trim())) return false;
+    if (!Array.isArray(item.evidence) || item.evidence.length === 0 ||
+        !item.evidence.every((evidence) => evidenceMatchesContext(evidence, context)) ||
+        !validExpectedOutcome(item.expectedOutcome, profile, contextValues) ||
+        !Array.isArray(item.requiredInput) || item.requiredInput.length !== 0 ||
+        item.approvalState !== "pending") return false;
     const capability = getCapabilityForRecommendationType(item.suggestedCampaignType);
     return capability !== null && capability.available &&
       item.targetCustomer.trim() === profile.targetCustomer &&
@@ -54,7 +94,11 @@ function parseRecommendations(text, profile) {
     title: item.title.trim(), reason: item.reason.trim(), targetCustomer: item.targetCustomer.trim(),
     businessObjective: item.businessObjective.trim(), demeosCapability: item.demeosCapability.trim(),
     suggestedRequest: item.suggestedRequest.trim(),
-    suggestedCampaignType: item.suggestedCampaignType
+    suggestedCampaignType: item.suggestedCampaignType,
+    evidence: item.evidence.map((evidence) => ({ source: evidence.source, field: evidence.field,
+      value: evidence.value.trim(), verificationState: evidence.verificationState })),
+    expectedOutcome: item.expectedOutcome.trim(), requiredInput: item.requiredInput.map((input) => input.trim()),
+    approvalState: "pending"
   })) } : null;
 }
 
@@ -151,9 +195,12 @@ For every recommendation, targetCustomer must be exactly ${JSON.stringify(profil
 
 ${factGrounding} Do not invent, infer, presume, or imply the existence of any offer, discount, promotion, product or menu item, service, event, loyalty programme, testimonial, partnership, customer list, performance result, booking level, sales figure, opening hour, or any other business asset or fact that was not explicitly supplied. If a fact is not in the profile or, when provided, the situation, omit it. You may suggest messaging aimed at the verified Target customer and Primary marketing goal, but each suggestedRequest must contain only explicitly supplied profile or situation facts plus safe instructions for creating a full, social, or email campaign. Never present an unsupported or unverified detail as an example, possibility, or proposed premise.
 
+Evidence must be traceable to an exact supplied field and value. Use only these source/state pairs: businessProfile/verified, businessSituation/ownerProvided, campaignOutcome/ownerProvidedResult, recommendationDecision/ownerPreference. Never cite context that is absent and never invent or paraphrase an evidence value. Each recommendation needs at least one evidence item.
+expectedOutcome must explicitly support and include the verified Primary marketing goal. Describe an intended signal realistically, without guarantees, certainty words (including "will"), or invented numbers or metrics. The Capability Registry's required businessProfile and marketingRequest inputs are already satisfied by this request and each suggestedRequest, so requiredInput must be []. Do not request facts already supplied or inputs the registered capability does not require. approvalState must be exactly "pending" and can never be approved by you.
+
 Return JSON only, with exactly this shape and no markdown:
-{"recommendations":[{"title":"non-empty title","reason":"non-empty reason grounded in the profile","targetCustomer":"exact verified target customer","businessObjective":"objective explicitly including the verified primary marketing goal","demeosCapability":"owner-facing capability name","suggestedRequest":"non-empty marketing request","suggestedCampaignType":${campaignTypeJson}}]}
-The recommendations array must contain exactly three objects. Each object must contain all seven fields shown above. suggestedCampaignType must be exactly ${campaignTypeOptions}.`;
+{"recommendations":[{"title":"non-empty title","reason":"non-empty reason grounded in the profile","targetCustomer":"exact verified target customer","businessObjective":"objective explicitly including the verified primary marketing goal","demeosCapability":"owner-facing capability name","suggestedRequest":"non-empty marketing request","suggestedCampaignType":${campaignTypeJson},"evidence":[{"source":"businessProfile","field":"goal","value":"exact supplied value","verificationState":"verified"}],"expectedOutcome":"realistic, non-guaranteed intended signal that includes the primary goal","requiredInput":[],"approvalState":"pending"}]}
+The recommendations array must contain exactly three objects. Each object must contain all eleven fields shown above. suggestedCampaignType must be exactly ${campaignTypeOptions}.`;
 
   try {
     const response = await fetch("https://api.openai.com/v1/responses", {
@@ -167,7 +214,7 @@ The recommendations array must contain exactly three objects. Each object must c
     catch (error) { return res.status(502).json({ error: "The AI service returned an unreadable response.", ...(requestId ? { requestId } : {}) }); }
     if (!response.ok) return res.status(502).json({ error: "The DEMEOS Marketing Agent could not create recommendations.", ...(requestId ? { requestId } : {}) });
     const output = data.output_text || data.output?.flatMap((item) => item.content || []).map((item) => item.text || "").join("").trim();
-    const recommendations = parseRecommendations(output, profile);
+    const recommendations = parseRecommendations(output, { profile, situation, outcomes, decisions });
     if (!recommendations) return res.status(502).json({ error: "The DEMEOS Marketing Agent returned invalid recommendations.", ...(requestId ? { requestId } : {}) });
     return res.status(200).json(recommendations);
   } catch (error) {

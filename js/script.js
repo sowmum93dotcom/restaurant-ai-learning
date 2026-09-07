@@ -415,6 +415,18 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       const targetCustomer = detail("Target customer", recommendation.targetCustomer);
       const businessObjective = detail("Business objective", recommendation.businessObjective);
       const capability = detail("DEMEOS will create", recommendation.demeosCapability);
+      const evidenceLabels = { businessProfile: "Verified Business Profile", businessSituation: "Owner-provided Business Situation",
+        campaignOutcome: "Owner-provided Campaign Result", recommendationDecision: "Owner Preference" };
+      const fieldLabels = { name: "Business name", type: "Business type", location: "Location", brandVoice: "Brand voice",
+        targetCustomer: "Target customer", goal: "Primary marketing goal", businessSituation: "Business situation",
+        campaignType: "Campaign type", marketingRequest: "Marketing request", outcome: "Campaign outcome",
+        ownerNote: "Owner note", recommendationTitle: "Recommendation", decision: "Owner decision", timestamp: "Decision date" };
+      const evidence = detail("Evidence", recommendation.evidence.map(function (item) {
+        return `${fieldLabels[item.field] || item.field} — ${item.value} — ${evidenceLabels[item.source]}`;
+      }).join("; "));
+      const expectedOutcome = detail("Expected outcome", recommendation.expectedOutcome);
+      const requiredInput = detail("Required information", recommendation.requiredInput.length ? recommendation.requiredInput.join("; ") : "None");
+      const approval = detail("Approval", recommendation.approvalState === "pending" ? "Pending" : recommendation.approvalState);
       const decisionStatus = document.createElement("p"); decisionStatus.className = "recommendation-decision";
       decisionStatus.setAttribute("aria-live", "polite");
       async function recordDecision(decision) {
@@ -462,7 +474,8 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
         decisionStatus.textContent = "Not for me";
         recordDecision("rejected");
       });
-      card.append(title, reason, targetCustomer, businessObjective, capability, use, modify, reject, decisionStatus);
+      card.append(title, reason, targetCustomer, businessObjective, capability, evidence, expectedOutcome, requiredInput, approval,
+        use, modify, reject, decisionStatus);
       recommendationsList.appendChild(card);
     });
   }
