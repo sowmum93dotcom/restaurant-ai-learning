@@ -4,19 +4,22 @@ const test = require("node:test");
 
 const html = fs.readFileSync(require.resolve("../index.html"), "utf8");
 
-test("Marketing Agent navigation exposes the six requested workspace views in order", function () {
+test("Marketing Agent exposes its six workspace views and keeps Business Results separate", function () {
   const labels = Array.from(html.matchAll(/data-workspace-view="[^"]+"[^>]*>([^<]+)<\/button>/g), function (match) {
     return match[1];
   });
   assert.deepEqual(labels, [
     "Overview", "DEMEOS Recommends", "Create Marketing", "Campaigns", "Results", "Business Profile"
   ]);
+  assert.match(html, /href="business-results\.html">View Business Results<\/a>/);
+  assert.match(html, /id="results-view"/);
 });
 
-test("Overview is the only default workspace panel and profile, recommendations, and creation are separated", function () {
+test("Overview is the only default workspace panel and profile, recommendations, creation, and results are separated", function () {
   assert.match(html, /id="overview" class="workspace-view is-active" data-workspace-panel(?! hidden)/);
   assert.match(html, /id="recommends" class="workspace-view" data-workspace-panel hidden/);
   assert.match(html, /id="create" class="workspace-view" data-workspace-panel hidden/);
+  assert.match(html, /id="results-view" class="workspace-view" data-workspace-panel hidden/);
   assert.match(html, /id="business-profile" class="workspace-view" data-workspace-panel hidden/);
   assert.equal((html.match(/id="save-business-profile-btn"/g) || []).length, 1);
   assert.equal((html.match(/id="recommendations-btn"/g) || []).length, 1);
@@ -28,6 +31,13 @@ test("Overview quick create contains only supported campaign capabilities", func
   assert.deepEqual(capabilities, ["full", "social", "email"]);
   assert.doesNotMatch(html, /Explore approved DEMEOS work/);
   assert.doesNotMatch(html, />Customer Participation Results</);
+});
+
+test("Marketing Results retains campaign outcomes and participation signals", function () {
+  assert.match(html, /id="campaign-results-list"/);
+  assert.match(html, /id="customer-participation-results-list"/);
+  assert.match(html, />Campaign Outcomes</);
+  assert.match(html, />Participation Signals</);
 });
 
 test("Campaign Workspace is contained inside Create Marketing", function () {

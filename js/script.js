@@ -804,8 +804,8 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   }
   function renderCustomerParticipationResults() {
     const results = addingBusiness ? [] : getCustomerParticipationResults(customerParticipationResults, state.activeBusinessId);
-    customerParticipationResultsList.textContent = "";
-    customerParticipationResultsEmpty.hidden = results.length > 0;
+    if (customerParticipationResultsList) customerParticipationResultsList.textContent = "";
+    if (customerParticipationResultsEmpty) customerParticipationResultsEmpty.hidden = results.length > 0;
     results.forEach(function (result) {
       const item = document.createElement("article"); item.className = "customer-participation-result";
       const name = document.createElement("h4"); name.textContent = result.name;
@@ -815,7 +815,8 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       latest.textContent = result.latestParticipationAt
         ? `Latest participation: ${new Date(result.latestParticipationAt).toLocaleString()}`
         : "No participation recorded yet.";
-      item.append(name, count, latest); customerParticipationResultsList.appendChild(item);
+      item.append(name, count, latest);
+      if (customerParticipationResultsList) customerParticipationResultsList.appendChild(item);
     });
     const overviewList = byId("overview-results-list");
     const overviewEmpty = byId("overview-results-empty");
