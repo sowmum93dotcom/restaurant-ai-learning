@@ -62,6 +62,21 @@ test("approved participation stays associated with its campaign", function () {
   assert.equal(results.find(function (result) { return result.campaignId === "campaign-c"; }).customerInterestCount, 1);
 });
 
+test("approved campaign with zero participation remains visible", function () {
+  const record = storedRecord();
+  record.campaigns.push({ id: "campaign-zero", businessId: "business-a", promoText: "Quiet campaign",
+    campaignType: "email", approvalStatus: "Approved" });
+  record.customerParticipationResults.push({ workItemId: "campaign-zero", businessId: "business-a",
+    customerInterestCount: 0, latestParticipationAt: null });
+  const zero = getBusinessResults(record, "business-a").find(function (result) {
+    return result.campaignId === "campaign-zero";
+  });
+  assert.ok(zero);
+  assert.equal(zero.customerInterestCount, 0);
+  assert.equal(zero.latestParticipationAt, null);
+  assert.equal(zero.outcome, null);
+});
+
 test("the interface contains no invented performance metrics", function () {
   const source = `${html}\n${script}`;
   assert.doesNotMatch(source, /\b(?:KPI|conversion rate|revenue|ROI|forecast|performance claim|customer identity|chart)\b/i);
