@@ -12,8 +12,7 @@ function getBusinessResults(record, activeBusinessId) {
   return campaigns.filter(function (campaign) {
     if (!campaign || campaign.businessId !== activeBusinessId) return false;
     const signal = participationByCampaign.get(campaign.id);
-    return Boolean(campaign.outcome && typeof campaign.outcome.outcome === "string") ||
-      Boolean(signal && signal.customerInterestCount > 0);
+    return Boolean(campaign.outcome && typeof campaign.outcome.outcome === "string") || Boolean(signal);
   }).map(function (campaign) {
     const signal = participationByCampaign.get(campaign.id);
     return {
