@@ -227,7 +227,7 @@ test("recommendation types are derived from the shared registry, not a duplicate
   assert.doesNotMatch(source, /const campaignTypes = \["full", "social", "email"\]/);
 });
 
-test("the prompt grounds recommendations and suggested requests in verified facts only", async () => {
+test("the prompt distinguishes supplied facts from explicitly proposed ideas", async () => {
   const result = await call(); const prompt = result.requestBody.input;
   for (const value of Object.values(profile)) assert.match(prompt, new RegExp(value));
   assert.match(prompt, /ONLY source of business facts/);
@@ -235,8 +235,22 @@ test("the prompt grounds recommendations and suggested requests in verified fact
   for (const forbidden of ["offer", "discount", "promotion", "product or menu item", "service", "event", "loyalty programme",
     "testimonial", "partnership", "customer list", "performance result", "booking level", "sales figure", "opening hour",
     "other business asset or fact"]) assert.match(prompt, new RegExp(forbidden));
-  assert.match(prompt, /each suggestedRequest must contain only explicitly supplied profile or situation facts plus safe instructions/);
-  assert.match(prompt, /Never present an unsupported or unverified detail as an example, possibility, or proposed premise/);
+  assert.match(prompt, /Each suggestedRequest must contain only explicitly supplied profile or situation facts plus safe instructions/);
+  assert.match(prompt, /A new offer or similar idea may be recommended only when the language directly says DEMEOS is creating/);
+  assert.match(prompt, /Never present an unsupported or unverified detail as an existing fact/);
+});
+
+test("proposed ideas cannot grant DEMEOS unavailable execution capabilities", async () => {
+  for (const request of [
+    "Create a video for North Star.", "Launch a loyalty programme for North Star.",
+    "Set up a booking system for North Star.", "Manage bookings for North Star.", "Build a CRM for North Star.",
+    "Send SMS messages for North Star.", "Run paid advertising for North Star.",
+    "Build a website for North Star.", "Publish the campaign automatically."
+  ]) {
+    const malformed = structuredClone(valid);
+    malformed.recommendations[0].suggestedRequest = request;
+    assert.equal((await call(profile, JSON.stringify(malformed))).response.statusCode, 502, request);
+  }
 });
 
 test("evidence must exactly match supplied context and its source verification state", async () => {
