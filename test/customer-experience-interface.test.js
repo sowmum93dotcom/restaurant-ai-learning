@@ -59,9 +59,27 @@ test("empty approved feed has a professional empty state", function () {
   assert.equal(document.elements["customer-work-list"].children.length, 0);
 });
 
+test("journey anchors target the first work item without duplicate ids", function () {
+  const document = fakeDocument();
+  const work = ["a", "b"].map(function (id) {
+    return { workItemId: id, businessId: "business-a", businessName: `Business ${id}`,
+      content: `Approved ${id}`, participationAction: "Interested" };
+  });
+  renderCustomerWork(document, work, async function () {});
+  const first = document.elements["customer-work-list"].children[0];
+  const second = document.elements["customer-work-list"].children[1];
+  assert.equal(first.children[0].id, "understand");
+  assert.equal(first.children[2].id, "choose");
+  assert.equal(first.children[3].id, "participate");
+  assert.equal(second.children[0].id, undefined);
+  assert.equal(second.children[2].id, undefined);
+  assert.equal(second.children[3].id, undefined);
+});
+
 test("page presents the four-step customer journey and no owner interface", function () {
   const html = fs.readFileSync(path.join(__dirname, "..", "customer.html"), "utf8");
   for (const step of ["Discover", "Understand", "Choose", "Participate"]) assert.match(html, new RegExp(step));
+  for (const anchor of ["discover", "understand", "choose", "participate"]) assert.match(html, new RegExp(`href="#${anchor}"`));
   assert.match(html, /images\/demeos-logo\.png/);
   assert.doesNotMatch(html, /business profile|recommendation|campaign strategy|email strategy|approval controls|capability registry|dashboard|ratings|prices|discounts|opening hours/i);
 });
