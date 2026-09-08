@@ -3,24 +3,41 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Discover with DEMEOS</title>
+  <meta name="description" content="Discover approved customer-facing work from businesses using DEMEOS." />
+  <title>Customer Experience | DEMEOS</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
-<body>
-  <header class="hero customer-hero">
-    <div class="demeos-brand"><img src="images/demeos-logo.png" alt="DEMEOS logo" class="demeos-logo" /></div>
-    <p class="agent-label">DEMEOS</p>
-    <h1 class="restaurant-name">Discover local businesses</h1>
-    <p class="cuisine-type">Approved work from businesses using DEMEOS</p>
+<body class="customer-body">
+  <header class="customer-header">
+    <div class="customer-header-inner">
+      <a class="customer-brand" href="#discover" aria-label="DEMEOS customer experience home">
+        <img src="images/demeos-logo.png" alt="DEMEOS" class="demeos-logo" />
+      </a>
+      <nav class="customer-journey-nav" aria-label="Customer journey">
+        <a href="#discover">Discover</a><a href="#understand">Understand</a>
+        <a href="#choose">Choose</a><a href="#participate">Participate</a>
+      </nav>
+    </div>
   </header>
+
   <main class="customer-main">
-    <section class="customer-experience" aria-labelledby="customer-work-heading">
-      <h2 id="customer-work-heading">From DEMEOS businesses</h2>
-      <p id="customer-work-status" aria-live="polite">Loading approved work…</p>
+    <section class="customer-introduction" aria-labelledby="customer-title">
+      <p class="customer-eyebrow">DEMEOS Customer Experience</p>
+      <h1 id="customer-title">Discover something worth knowing</h1>
+      <p>Explore messages that businesses have chosen to share with their customers. Read what matters, choose what interests you, and participate when you are ready.</p>
+      <a class="customer-intro-action" href="#discover">Explore approved work <span aria-hidden="true">↓</span></a>
+    </section>
+
+    <section id="discover" class="customer-experience" aria-labelledby="customer-work-heading">
+      <div class="customer-section-heading">
+        <div><p class="customer-step">01 · Discover</p><h2 id="customer-work-heading">Shared by DEMEOS businesses</h2></div>
+        <p>Only work approved for customers appears here.</p>
+      </div>
+      <p id="customer-work-status" class="customer-work-status" aria-live="polite">Loading approved work…</p>
       <div id="customer-work-list" class="customer-work-list"></div>
     </section>
   </main>
-  <footer><p>&copy; 2026 DEMEOS — One System. Real Value. Shared Future.</p></footer>
+  <footer class="customer-footer"><img src="images/demeos-logo.png" alt="" /><p>&copy; 2026 DEMEOS — One System. Real Value. Shared Future.</p></footer>
   <script src="js/customer.js"></script>
 </body>
 </html>

@@ -883,3 +883,68 @@ footer { background: #081f3d; color: #c4cfdb; text-align: center; }
 @media (max-width: 480px) {
   .workspace-shell .workspace-main { margin: 0; padding: 1.4rem .9rem 3rem; }
 }
+
+/* DEMEOS Customer Experience */
+.customer-body { min-height: 100vh; background: #f4f1e9; color: #11243f; }
+.customer-header { position: relative; z-index: 2; border-bottom: 1px solid rgba(210,173,88,.45); background: #071b35; }
+.customer-header-inner { width: min(1180px, calc(100% - 3rem)); min-height: 88px; margin: auto; display: flex; align-items: center; justify-content: space-between; gap: 2rem; }
+.customer-brand { display: block; }
+.customer-brand .demeos-logo { width: 116px; max-width: none; border-radius: 12px; }
+.customer-journey-nav { display: flex; align-items: center; gap: clamp(1rem, 3vw, 2.5rem); }
+.customer-journey-nav a { color: #d7e0e9; font-size: .82rem; font-weight: 700; letter-spacing: .04em; text-decoration: none; }
+.customer-journey-nav a:hover, .customer-journey-nav a:focus { color: #e5c777; }
+.customer-main { max-width: none; margin: 0; padding: 0; }
+.customer-introduction { min-height: 490px; padding: clamp(5rem, 10vw, 8rem) max(1.5rem, calc((100vw - 1180px) / 2)); color: #fff; background: linear-gradient(90deg, rgba(4,20,40,.98) 0%, rgba(6,28,55,.91) 48%, rgba(7,25,48,.54) 100%), url("../images/demeos-marketing-background.png") center/cover; }
+.customer-eyebrow, .customer-step, .customer-message-label { color: #a77d27; font-size: .72rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+.customer-introduction .customer-eyebrow { color: #e0c16f; }
+.customer-introduction h1 { max-width: 700px; margin: .7rem 0 1.2rem; font-family: Georgia, serif; font-size: clamp(2.6rem, 6vw, 5rem); font-weight: 500; letter-spacing: -.035em; line-height: 1.03; }
+.customer-introduction > p:not(.customer-eyebrow) { max-width: 650px; color: #cfdae6; font-size: clamp(1rem, 2vw, 1.2rem); }
+.customer-intro-action { display: inline-block; margin-top: 2rem; padding-bottom: .3rem; border-bottom: 1px solid #d5b45e; color: #f2da99; font-weight: 700; text-decoration: none; }
+.customer-experience { width: min(1180px, calc(100% - 3rem)); margin: -54px auto 5rem; padding: clamp(1.5rem, 4vw, 3rem); border-radius: 3px; background: #fff; box-shadow: 0 20px 55px rgba(6,25,48,.13); }
+.customer-section-heading { display: flex; justify-content: space-between; align-items: end; gap: 2rem; padding-bottom: 1.6rem; border-bottom: 1px solid #dde2e8; }
+.customer-section-heading h2 { margin-top: .3rem; color: #102a52; font-family: Georgia, serif; font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 500; }
+.customer-section-heading > p { max-width: 300px; color: #667284; text-align: right; }
+.customer-work-status { color: #687689; }
+.customer-work-list { display: grid; gap: 1.5rem; margin-top: 1.75rem; }
+.customer-work-card { overflow: hidden; border: 1px solid #d9dfe7; border-top: 4px solid #c8a24a; border-radius: 2px; background: #fff; box-shadow: 0 8px 25px rgba(16,42,82,.06); }
+.customer-work-context { display: flex; justify-content: space-between; gap: 1.5rem; padding: 1.5rem 1.75rem; background: #f7f8fa; }
+.customer-business-name { margin: .25rem 0 0; color: #102a52; font-family: Georgia, serif; font-size: 1.55rem; font-weight: 500; }
+.customer-work-location { margin: .15rem 0 0; color: #637185; font-size: .9rem; }
+.customer-approved-mark { align-self: center; padding: .35rem .65rem; border: 1px solid #d5bd7e; color: #73591c; font-size: .7rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.customer-message { padding: clamp(1.5rem, 4vw, 2.25rem) 1.75rem; }
+.customer-message-label { margin-bottom: .75rem; }
+.customer-work-content { max-width: 790px; margin: 0; color: #28384d; font-size: 1.05rem; line-height: 1.8; white-space: pre-wrap; }
+.customer-choice { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; padding: 1.25rem 1.75rem; border-top: 1px solid #e1e5ea; background: #0b274b; }
+.customer-choice .customer-step { color: #d6b761; }
+.customer-choice-copy { margin-top: .2rem; color: #e4ebf2; }
+.customer-participation-button { min-width: 145px; padding: .85rem 1.25rem; border: 1px solid #e0c16c; border-radius: 2px; background: #d2ad58; color: #0a2343; font: inherit; font-weight: 800; cursor: pointer; }
+.customer-participation-button:hover { background: #edcf7a; }
+.customer-participation-button:disabled { cursor: default; opacity: .8; }
+.customer-participation-confirmation { min-height: 0; margin: 0; padding: 0 1.75rem; color: #17603a; font-weight: 700; }
+.customer-participation-confirmation:not(:empty) { padding-top: 1rem; padding-bottom: 1rem; background: #edf7f1; }
+.customer-empty-state { display: flex; min-height: 210px; margin-top: 1.75rem; padding: 2rem; border: 1px dashed #b9c3cf; align-items: center; justify-content: center; flex-direction: column; background: #faf9f5; color: #667284; text-align: center; }
+.customer-empty-state strong { color: #102a52; font-family: Georgia, serif; font-size: 1.45rem; font-weight: 500; }
+.customer-empty-state span { margin-top: .35rem; }
+.customer-load-error { color: #783636; }
+.customer-footer { display: flex; align-items: center; justify-content: center; gap: 1rem; background: #071b35; color: #aebbc9; }
+.customer-footer img { width: 66px; border-radius: 7px; }
+
+@media (max-width: 700px) {
+  .customer-header-inner { width: calc(100% - 2rem); min-height: 72px; }
+  .customer-brand .demeos-logo { width: 92px; }
+  .customer-journey-nav { gap: .8rem; }
+  .customer-journey-nav a { font-size: .68rem; }
+  .customer-introduction { min-height: 420px; padding: 4.5rem 1.25rem; }
+  .customer-experience { width: calc(100% - 1.5rem); margin-top: -35px; padding: 1.25rem; }
+  .customer-section-heading, .customer-work-context { align-items: flex-start; flex-direction: column; }
+  .customer-section-heading > p { text-align: left; }
+  .customer-approved-mark { align-self: flex-start; }
+  .customer-message, .customer-work-context { padding: 1.25rem; }
+  .customer-choice { align-items: stretch; flex-direction: column; padding: 1.25rem; }
+  .customer-participation-button { width: 100%; }
+  .customer-footer { flex-direction: column; }
+}
+
+@media (max-width: 440px) {
+  .customer-journey-nav a:nth-child(2), .customer-journey-nav a:nth-child(3) { display: none; }
+}
