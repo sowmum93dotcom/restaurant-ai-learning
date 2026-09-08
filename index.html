@@ -26,7 +26,7 @@
         <button class="workspace-nav-item" type="button" data-workspace-view="recommends">DEMEOS Recommends</button>
         <button class="workspace-nav-item" type="button" data-workspace-view="create">Create Marketing</button>
         <button class="workspace-nav-item" type="button" data-workspace-view="campaigns">Campaigns</button>
-        <button class="workspace-nav-item" type="button" data-workspace-view="results-view">Results</button>
+        <a class="workspace-nav-item workspace-nav-link" href="business-results.html">Business Results</a>
         <button class="workspace-nav-item" type="button" data-workspace-view="business-profile">Business Profile</button>
       </nav>
     </aside>
@@ -56,7 +56,7 @@
           <section class="dashboard-card" aria-labelledby="overview-results-heading">
             <p class="card-kicker">Stored outcomes</p><h3 id="overview-results-heading">Recent Marketing Results</h3>
             <p id="overview-results-empty">No marketing results recorded yet.</p><div id="overview-results-list" class="compact-list"></div>
-            <button class="text-button workspace-link" type="button" data-open-view="results-view">View all results</button>
+            <a class="text-button workspace-link" href="business-results.html">View Business Results</a>
           </section>
           <section class="dashboard-card" aria-labelledby="overview-campaigns-heading">
             <p class="card-kicker">Latest work</p><h3 id="overview-campaigns-heading">Recent Campaigns</h3>
@@ -101,12 +101,6 @@
         <div class="view-heading"><p class="workspace-eyebrow">Marketing work</p><h2 id="campaigns-heading">Campaigns</h2><p>Review active work and manage saved campaign history.</p></div>
         <section class="active-marketing-work content-card" aria-labelledby="active-marketing-work-heading"><h3 id="active-marketing-work-heading">Active Marketing Work</h3><p class="active-marketing-work-helper">See what DEMEOS has created and what needs your attention next.</p><p id="active-marketing-work-empty">No active marketing work yet.</p><div id="active-marketing-work-list"></div></section>
         <section class="campaign-history content-card" aria-labelledby="campaign-history-heading"><h3 id="campaign-history-heading">Campaign History</h3><p id="campaign-history-empty">No saved campaigns yet.</p><div id="campaign-history-list"></div></section>
-      </section>
-
-      <section id="results-view" class="workspace-view" data-workspace-panel hidden aria-labelledby="marketing-results-heading">
-        <div class="view-heading"><p class="workspace-eyebrow">Recorded information</p><h2 id="marketing-results-heading">Results</h2><p>Review real outcomes and participation signals stored for your marketing work.</p></div>
-        <section class="content-card campaign-results" aria-labelledby="campaign-results-heading"><h3 id="campaign-results-heading">Campaign Outcomes</h3><p id="campaign-results-empty">No campaign outcomes recorded yet.</p><div id="campaign-results-list"></div></section>
-        <section class="content-card customer-participation-results" aria-labelledby="customer-participation-results-heading"><h3 id="customer-participation-results-heading">Participation Signals</h3><p class="customer-participation-results-helper">Interest recorded from approved customer-facing work.</p><p id="customer-participation-results-empty">No approved customer-facing work has participation results yet.</p><div id="customer-participation-results-list"></div></section>
       </section>
 
       <section id="business-profile" class="workspace-view" data-workspace-panel hidden aria-labelledby="business-profile-heading">

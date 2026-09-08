@@ -4,13 +4,15 @@ const test = require("node:test");
 
 const html = fs.readFileSync(require.resolve("../index.html"), "utf8");
 
-test("Marketing Agent navigation exposes the six requested workspace views in order", function () {
+test("Marketing Agent keeps its workspace views and links separately to Business Results", function () {
   const labels = Array.from(html.matchAll(/data-workspace-view="[^"]+"[^>]*>([^<]+)<\/button>/g), function (match) {
     return match[1];
   });
   assert.deepEqual(labels, [
-    "Overview", "DEMEOS Recommends", "Create Marketing", "Campaigns", "Results", "Business Profile"
+    "Overview", "DEMEOS Recommends", "Create Marketing", "Campaigns", "Business Profile"
   ]);
+  assert.match(html, /<a class="workspace-nav-item workspace-nav-link" href="business-results\.html">Business Results<\/a>/);
+  assert.doesNotMatch(html, /id="results-view"/);
 });
 
 test("Overview is the only default workspace panel and profile, recommendations, and creation are separated", function () {
