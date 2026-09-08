@@ -6,12 +6,13 @@ function addText(document, parent, tag, className, text) {
   return element;
 }
 
-function createCustomerWorkCard(document, work, recordParticipation) {
+function createCustomerWorkCard(document, work, recordParticipation, anchorJourney) {
   const card = document.createElement("article");
   card.className = "customer-work-card";
 
   const context = document.createElement("header");
   context.className = "customer-work-context";
+  if (anchorJourney) context.id = "understand";
   const identity = document.createElement("div");
   addText(document, identity, "p", "customer-step", "02 · Understand");
   addText(document, identity, "h3", "customer-business-name", work.businessName);
@@ -27,7 +28,7 @@ function createCustomerWorkCard(document, work, recordParticipation) {
 
   const choice = document.createElement("section");
   choice.className = "customer-choice";
-  choice.id = "choose";
+  if (anchorJourney) choice.id = "choose";
   const choiceCopy = document.createElement("div");
   addText(document, choiceCopy, "p", "customer-step", "03 · Choose");
   addText(document, choiceCopy, "p", "customer-choice-copy", "Does this interest you?");
@@ -37,7 +38,7 @@ function createCustomerWorkCard(document, work, recordParticipation) {
 
   const result = document.createElement("p");
   result.className = "customer-participation-confirmation";
-  result.id = "participate";
+  if (anchorJourney) result.id = "participate";
   result.setAttribute("aria-live", "polite");
   action.addEventListener("click", async function () {
     action.disabled = true;
@@ -76,7 +77,9 @@ function renderCustomerWork(document, work, participationRecorder) {
   }
   status.textContent = "";
   status.className = "customer-work-status";
-  work.forEach(function (item) { list.appendChild(createCustomerWorkCard(document, item, participationRecorder)); });
+  work.forEach(function (item, index) {
+    list.appendChild(createCustomerWorkCard(document, item, participationRecorder, index === 0));
+  });
 }
 
 async function loadCustomerWork(document, fetcher) {
