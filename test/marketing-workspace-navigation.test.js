@@ -29,3 +29,15 @@ test("Overview quick create contains only supported campaign capabilities", func
   assert.doesNotMatch(html, /Explore approved DEMEOS work/);
   assert.doesNotMatch(html, />Customer Participation Results</);
 });
+
+test("Campaign Workspace is contained inside Create Marketing", function () {
+  const createStart = html.indexOf('<section id="create"');
+  const campaignsStart = html.indexOf('<section id="campaigns"');
+  const workspaceStart = html.indexOf('<section id="results"');
+
+  assert.ok(createStart >= 0, "Create Marketing view should exist");
+  assert.ok(campaignsStart > createStart, "Campaigns view should follow Create Marketing");
+  assert.ok(workspaceStart > createStart && workspaceStart < campaignsStart,
+    "Campaign Workspace must be inside the Create Marketing view, not below all workspace panels");
+  assert.equal((html.match(/id="results"/g) || []).length, 1);
+});
