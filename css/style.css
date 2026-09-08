@@ -570,6 +570,7 @@ textarea:focus {
 
 /* Active marketing work and campaign history */
 .active-marketing-work,
+.customer-participation-results,
 .campaign-history {
   margin-top: 2rem;
   padding-top: 1.75rem;
@@ -577,6 +578,7 @@ textarea:focus {
 }
 
 .active-marketing-work h3,
+.customer-participation-results h3,
 .campaign-history h3 {
   color: #064cff;
   margin-bottom: 0.75rem;
@@ -587,6 +589,8 @@ textarea:focus {
 }
 
 .active-marketing-work-helper,
+#customer-participation-results-empty,
+.customer-participation-results-helper,
 #active-marketing-work-empty {
   color: #555;
 }
@@ -630,6 +634,19 @@ textarea:focus {
 }
 
 .active-marketing-work-item button:hover { background: #102f5c; }
+
+#customer-participation-results-list { display: grid; gap: 0.75rem; }
+
+.customer-participation-result {
+  padding: 1rem;
+  border: 1px solid #cbd9ec;
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.customer-participation-result h4 { color: #102a52; }
+.customer-participation-count { margin-top: 0.4rem; color: #17417d; font-weight: 700; }
+.customer-participation-latest { margin-top: 0.25rem; color: #526274; font-size: 0.9rem; }
 
 .campaign-history-item {
   display: grid;

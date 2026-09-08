@@ -35,11 +35,15 @@ function createPersistenceRepository(database) {
       if (!businessResult.rows.length) return null;
 
       const campaignResult = await database.query(
-        `SELECT campaign,
+        `SELECT campaign_id, campaign,
            (SELECT COUNT(*)::integer FROM demeos_customer_participations p
             WHERE p.business_id = demeos_campaigns.business_id
               AND p.campaign_id = demeos_campaigns.campaign_id
               AND p.action = 'Interested') AS customer_interest_count
+           ,(SELECT MAX(p.participated_at) FROM demeos_customer_participations p
+             WHERE p.business_id = demeos_campaigns.business_id
+               AND p.campaign_id = demeos_campaigns.campaign_id
+               AND p.action = 'Interested') AS latest_participation_at
          FROM demeos_campaigns WHERE business_id = $1 ORDER BY created_at DESC LIMIT 20`,
         [businessId]
       );
@@ -49,15 +53,30 @@ function createPersistenceRepository(database) {
          WHERE business_id = $1 ORDER BY decided_at DESC LIMIT 100`,
         [businessId]
       );
+      const campaigns = campaignResult.rows.map(function (row) {
+        const campaign = { ...row.campaign, businessId };
+        if (row.customer_interest_count !== undefined) {
+          campaign.customerInterestCount = Number(row.customer_interest_count || 0);
+        }
+        return campaign;
+      });
+      const customerParticipationResults = campaignResult.rows.map(function (row) {
+        const campaign = row.campaign;
+        if (!campaign || campaign.approvalStatus !== "Approved" || !getCustomerFacingContent(campaign)) return null;
+        const latest = row.latest_participation_at;
+        return {
+          workItemId: row.campaign_id,
+          businessId,
+          name: (typeof campaign.promoText === "string" && campaign.promoText.trim()) ||
+            campaign.campaignTypeLabel || campaign.campaignType || "Approved work",
+          customerInterestCount: Number(row.customer_interest_count || 0),
+          latestParticipationAt: latest instanceof Date ? latest.toISOString() : latest || null
+        };
+      }).filter(Boolean);
       return {
         businessProfile: { ...businessResult.rows[0].profile, businessId },
-        campaigns: campaignResult.rows.map(function (row) {
-          const campaign = { ...row.campaign, businessId };
-          if (row.customer_interest_count !== undefined) {
-            campaign.customerInterestCount = Number(row.customer_interest_count || 0);
-          }
-          return campaign;
-        }),
+        campaigns,
+        customerParticipationResults,
         recommendationDecisions: decisionResult.rows.map(function (row) {
           return {
             businessId,
