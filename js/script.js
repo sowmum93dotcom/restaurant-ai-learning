@@ -195,6 +195,15 @@ function getActiveMarketingWork(campaigns, businessId) {
     };
   });
 }
+function getCustomerParticipationResults(results, businessId) {
+  if (!businessId || !Array.isArray(results)) return [];
+  return results.filter(function (result) {
+    return result && result.businessId === businessId && typeof result.workItemId === "string" &&
+      typeof result.name === "string" && Number.isInteger(result.customerInterestCount) &&
+      result.customerInterestCount >= 0 && (result.latestParticipationAt === null ||
+        typeof result.latestParticipationAt === "string");
+  });
+}
 function enforceBusinessCampaignLimit(campaigns, businessId, maximumCampaigns, protectedCampaignIds) {
   const retained = campaigns.slice();
   const protectedIds = new Set((protectedCampaignIds || []).filter(Boolean));
@@ -241,8 +250,10 @@ function mergeKnownBusinessPersistence(profiles, campaigns, businessId, serverRe
   });
   const restoredDecisions = (Array.isArray(serverRecord.recommendationDecisions) ? serverRecord.recommendationDecisions : [])
     .filter(function (item) { return item && item.businessId === businessId; });
+  const customerParticipationResults = getCustomerParticipationResults(
+    serverRecord.customerParticipationResults, businessId);
   return { profiles: nextProfiles, campaigns: mergedCampaigns,
-    recommendationDecisions: otherBusinessDecisions.concat(restoredDecisions) };
+    recommendationDecisions: otherBusinessDecisions.concat(restoredDecisions), customerParticipationResults };
 }
 
 async function hydrateKnownBusiness(storage, businessId, fetchImpl) {
@@ -340,7 +351,7 @@ function getCampaignWorkspace(campaign) {
 if (typeof module !== "undefined" && module.exports) module.exports = {
   addBusinessIdentity, addPendingBusinessProfileSync, canAccessCampaign, createCampaignContinuity, enforceBusinessCampaignLimit,
   createCampaignPersistenceQueue,
-  getActiveMarketingWork, getCampaignBusinessId, getCampaignContinuity, getCampaignContinuityLabel, getCampaignVersions, getVisibleCampaigns,
+  getActiveMarketingWork, getCustomerParticipationResults, getCampaignBusinessId, getCampaignContinuity, getCampaignContinuityLabel, getCampaignVersions, getVisibleCampaigns,
   hydrateKnownBusiness, mergeKnownBusinessPersistence, migrateBusinessProfiles, readPendingBusinessProfileSyncIds,
   removePendingBusinessProfileSync, updateBusinessProfile, parseFullCampaignSections, getCampaignWorkspace
 };
@@ -373,6 +384,8 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   const campaignHistoryEmpty = byId("campaign-history-empty");
   const activeMarketingWorkList = byId("active-marketing-work-list");
   const activeMarketingWorkEmpty = byId("active-marketing-work-empty");
+  const customerParticipationResultsList = byId("customer-participation-results-list");
+  const customerParticipationResultsEmpty = byId("customer-participation-results-empty");
   const businessSelector = byId("business-selector");
   const addBusinessBtn = byId("add-business-btn");
   const saveBusinessProfileBtn = byId("save-business-profile-btn");
@@ -388,6 +401,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   let addingBusiness = false;
   let selectedRevisionTarget = null;
   let recommendationBusinessId = null;
+  let customerParticipationResults = [];
 
   function clearRecommendations() {
     recommendationBusinessId = null;
@@ -566,7 +580,8 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     const result = await hydrateKnownBusiness(localStorage, requestedBusinessId, fetch);
     if (!result.hydrated || state.activeBusinessId !== requestedBusinessId) return;
     state.profiles = result.profiles;
-    fillProfile(activeProfile()); renderSelector(); renderActiveMarketingWork(); renderCampaignHistory();
+    customerParticipationResults = getCustomerParticipationResults(result.customerParticipationResults, requestedBusinessId);
+    fillProfile(activeProfile()); renderSelector(); renderActiveMarketingWork(); renderCustomerParticipationResults(); renderCampaignHistory();
   }
   async function persistBusiness(profile) {
     if (!profile || typeof window === "undefined" || typeof fetch !== "function") return false;
@@ -676,10 +691,6 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
         ? campaign.promoText : "Marketing request not stored.";
       const status = document.createElement("p"); status.className = "active-marketing-work-status";
       status.textContent = entry.status;
-      const customerResult = document.createElement("p"); customerResult.className = "customer-result-signal";
-      customerResult.textContent = campaign.customerInterestCount > 0
-        ? `${campaign.customerInterestCount} customer${campaign.customerInterestCount === 1 ? "" : "s"} interested`
-        : "No customer participation yet";
       const action = document.createElement("button"); action.type = "button"; action.textContent = entry.action;
       action.addEventListener("click", function () {
         openCampaign(campaign.id);
@@ -689,15 +700,31 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
         }
       });
       item.append(type, purpose, status);
-      if (campaign.approvalStatus === "Approved") item.appendChild(customerResult);
       item.appendChild(action); activeMarketingWorkList.appendChild(item);
+    });
+  }
+  function renderCustomerParticipationResults() {
+    const results = addingBusiness ? [] : getCustomerParticipationResults(customerParticipationResults, state.activeBusinessId);
+    customerParticipationResultsList.textContent = "";
+    customerParticipationResultsEmpty.hidden = results.length > 0;
+    results.forEach(function (result) {
+      const item = document.createElement("article"); item.className = "customer-participation-result";
+      const name = document.createElement("h4"); name.textContent = result.name;
+      const count = document.createElement("p"); count.className = "customer-participation-count";
+      count.textContent = `${result.customerInterestCount} customer${result.customerInterestCount === 1 ? "" : "s"} interested`;
+      const latest = document.createElement("p"); latest.className = "customer-participation-latest";
+      latest.textContent = result.latestParticipationAt
+        ? `Latest participation: ${new Date(result.latestParticipationAt).toLocaleString()}`
+        : "No participation recorded yet.";
+      item.append(name, count, latest); customerParticipationResultsList.appendChild(item);
     });
   }
   function switchBusiness(businessId) {
     if (!state.profiles.some(function (profile) { return profile.businessId === businessId; })) return;
     state.activeBusinessId = businessId; addingBusiness = false;
     localStorage.setItem("demeosActiveBusinessId", businessId);
-    clearRecommendations(); clearBusinessSituation(); fillProfile(activeProfile()); renderSelector(); clearCampaignWorkspace(); renderActiveMarketingWork(); renderCampaignHistory();
+    customerParticipationResults = [];
+    clearRecommendations(); clearBusinessSituation(); fillProfile(activeProfile()); renderSelector(); clearCampaignWorkspace(); renderActiveMarketingWork(); renderCustomerParticipationResults(); renderCampaignHistory();
     hydrateActiveBusiness();
   }
   async function saveCampaign(text, promo, type, typeLabel, profile, sourceId) {
@@ -714,10 +741,10 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     const persisted = await persistCampaign(profile, campaign); return { id, persisted };
   }
 
-  renderSelector(); fillProfile(activeProfile()); renderActiveMarketingWork(); renderCampaignHistory(); hydrateActiveBusiness();
+  renderSelector(); fillProfile(activeProfile()); renderActiveMarketingWork(); renderCustomerParticipationResults(); renderCampaignHistory(); hydrateActiveBusiness();
   businessSelector.addEventListener("change", function () { switchBusiness(businessSelector.value); });
   addBusinessBtn.addEventListener("click", function () {
-    addingBusiness = true; businessSelector.value = ""; fillProfile(null); clearRecommendations(); clearBusinessSituation(); clearCampaignWorkspace(); renderActiveMarketingWork();
+    addingBusiness = true; customerParticipationResults = []; businessSelector.value = ""; fillProfile(null); clearRecommendations(); clearBusinessSituation(); clearCampaignWorkspace(); renderActiveMarketingWork(); renderCustomerParticipationResults();
   });
   saveBusinessProfileBtn.addEventListener("click", async function () {
     const profileFields = {};
