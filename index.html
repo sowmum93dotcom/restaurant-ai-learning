@@ -7,261 +7,127 @@
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-
-  <header class="hero">
-    <div class="demeos-brand">
-
-  <img src="images/demeos-logo.png" alt="DEMEOS logo" class="demeos-logo" />
-
-</div>
-    <p class="agent-label">DEMEOS</p>
-
-    <h1 class="restaurant-name">Marketing Agent</h1>
-
-    <p class="cuisine-type">Business Marketing Intelligence</p>
-
-    <div class="details">
-     <p>Restaurant Business Category</p>
+  <header class="workspace-header">
+    <a class="demeos-brand" href="#overview" aria-label="DEMEOS Marketing Agent home">
+      <img src="images/demeos-logo.png" alt="DEMEOS logo" class="demeos-logo" />
+    </a>
+    <div class="workspace-identity">
+      <p class="agent-label">DEMEOS</p>
+      <h1 class="restaurant-name">Marketing Agent</h1>
+      <p class="cuisine-type">Business Marketing Intelligence</p>
     </div>
   </header>
 
-  <main>
-    <section class="business-profile-section">
+  <div class="workspace-shell">
+    <aside class="workspace-sidebar">
+      <button id="workspace-menu-toggle" class="workspace-menu-toggle" type="button" aria-expanded="false" aria-controls="workspace-navigation">Menu</button>
+      <nav id="workspace-navigation" class="workspace-navigation" aria-label="Marketing Agent workspace">
+        <button class="workspace-nav-item is-active" type="button" data-workspace-view="overview" aria-current="page">Overview</button>
+        <button class="workspace-nav-item" type="button" data-workspace-view="recommends">DEMEOS Recommends</button>
+        <button class="workspace-nav-item" type="button" data-workspace-view="create">Create Marketing</button>
+        <button class="workspace-nav-item" type="button" data-workspace-view="campaigns">Campaigns</button>
+        <button class="workspace-nav-item" type="button" data-workspace-view="results-view">Results</button>
+        <button class="workspace-nav-item" type="button" data-workspace-view="business-profile">Business Profile</button>
+      </nav>
+    </aside>
 
-  <h2>Business Manager Profile</h2>
-
-  <p class="business-profile-intro">
-
-    Tell DEMEOS about your business so your marketing work is created for your business.
-
-  </p>
-  <div class="business-selector" aria-label="Business selection">
-    <div class="business-selector-field">
-      <label for="business-selector">Active Business</label>
-      <select id="business-selector"></select>
-    </div>
-    <button id="add-business-btn" class="demeos-secondary-button" type="button">
-      Add Business
-    </button>
-  </div>
-<label for="business-name">Business Name</label>
-
-<input
-
-  type="text"
-
-  id="business-name"
-
-  name="business-name"
-
-  placeholder="Enter your business name"
-
-/>
-<label for="business-type">Business Type</label>
-
-<input
-
-  type="text"
-
-  id="business-type"
-
-  name="business-type"
-
-  placeholder="Example: Restaurant"
-
-/>
-<label for="business-location">Business Location</label>
-
-<input
-
-  type="text"
-
-  id="business-location"
-
-  name="business-location"
-
-  placeholder="Example: London, United Kingdom"
-
-/>
-<label for="business-brand-voice">Brand Voice</label>
-
-<input
-
-  type="text"
-
-  id="business-brand-voice"
-
-  name="business-brand-voice"
-
-  placeholder="Example: Warm, welcoming and professional"
-
-/>
-
-<label for="business-target-customer">Target Customer</label>
-
-<input
-
-  type="text"
-
-  id="business-target-customer"
-
-  name="business-target-customer"
-
-  placeholder="Example: Local families, office workers, students"
-
-/>
-<label for="business-goal">Primary Marketing Goal</label>
-
-<input
-
-  type="text"
-
-  id="business-goal"
-
-  name="business-goal"
-
-  placeholder="Example: Increase local customers, promote new products, increase repeat visits"
-
-/>
-<button id="save-business-profile-btn" class="demeos-primary-button" type="button">
-  Save Business Profile
-
-</button>
-</section>
-    <section class="assistant-section">
-      <section class="recommendations-section" aria-labelledby="recommendations-heading">
-        <h2 id="recommendations-heading">DEMEOS Recommends</h2>
-        <label for="business-situation">What is happening in your business right now?</label>
-        <p id="business-situation-help" class="recommendations-helper">Tell DEMEOS about a current need, opportunity or change. This is optional.</p>
-        <textarea
-          id="business-situation"
-          rows="4"
-          aria-describedby="business-situation-help"
-          placeholder="Example: Tuesday evenings are quiet and I would like to attract more local customers."
-        ></textarea>
-        <button id="recommendations-btn" class="demeos-secondary-button" type="button">Get Recommendations</button>
-        <p id="recommendations-status" class="recommendations-status" aria-live="polite"></p>
-        <div id="recommendations-list" class="recommendations-list"></div>
+    <main class="workspace-main">
+      <section id="overview" class="workspace-view is-active" data-workspace-panel aria-labelledby="overview-heading">
+        <div class="view-heading"><p class="workspace-eyebrow">Marketing workspace</p><h2 id="overview-heading">Overview</h2><p>Your current marketing priorities and recent work in one place.</p></div>
+        <div class="overview-grid">
+          <section class="dashboard-card recommendation-summary" aria-labelledby="overview-recommendation-heading">
+            <p class="card-kicker">Next marketing action</p><h3 id="overview-recommendation-heading">DEMEOS Recommendation</h3>
+            <div id="overview-recommendation"><p>Ask DEMEOS for a recommendation based on your saved business information and marketing history.</p></div>
+            <button class="demeos-secondary-button workspace-link" type="button" data-open-view="recommends">View recommendations</button>
+          </section>
+          <section class="dashboard-card" aria-labelledby="overview-active-heading">
+            <p class="card-kicker">In progress</p><h3 id="overview-active-heading">Active Marketing Work</h3>
+            <p id="overview-active-empty">No active marketing work yet.</p><div id="overview-active-list" class="compact-list"></div>
+            <button class="text-button workspace-link" type="button" data-open-view="campaigns">Manage campaigns</button>
+          </section>
+          <section class="dashboard-card dashboard-card-wide" aria-labelledby="quick-create-heading">
+            <p class="card-kicker">Start supported work</p><h3 id="quick-create-heading">Quick Create</h3>
+            <div class="quick-create-actions">
+              <button type="button" data-quick-create="full"><strong>Full Marketing Campaign</strong><span>Create a complete campaign workspace.</span></button>
+              <button type="button" data-quick-create="social"><strong>Social Media Campaign</strong><span>Create social campaign content.</span></button>
+              <button type="button" data-quick-create="email"><strong>Email Campaign</strong><span>Create an email campaign.</span></button>
+            </div>
+          </section>
+          <section class="dashboard-card" aria-labelledby="overview-results-heading">
+            <p class="card-kicker">Stored outcomes</p><h3 id="overview-results-heading">Recent Marketing Results</h3>
+            <p id="overview-results-empty">No marketing results recorded yet.</p><div id="overview-results-list" class="compact-list"></div>
+            <button class="text-button workspace-link" type="button" data-open-view="results-view">View all results</button>
+          </section>
+          <section class="dashboard-card" aria-labelledby="overview-campaigns-heading">
+            <p class="card-kicker">Latest work</p><h3 id="overview-campaigns-heading">Recent Campaigns</h3>
+            <p id="overview-campaigns-empty">No saved campaigns yet.</p><div id="overview-campaigns-list" class="compact-list"></div>
+            <button class="text-button workspace-link" type="button" data-open-view="campaigns">View campaign history</button>
+          </section>
+        </div>
       </section>
 
-      <h2>What would you like DEMEOS to help you achieve?</h2>
-
-      <p class="assistant-intro">
-        Tell DEMEOS what is happening in your business and what you would like to promote.
-      </p>
-
-      <label for="promo-input" class="visually-hidden">
-        Tell DEMEOS what you would like to promote
-      </label>
-
-      <textarea
-        id="promo-input"
-        rows="5"
-        placeholder="Example: We are introducing a new chicken pasta this weekend and want more local customers to know about it."
-      ></textarea>
-
-      <label for="campaign-type">
-        What would you like DEMEOS to create?
-      </label>
-
-      <select id="campaign-type">
-        <option value="full">Full Marketing Campaign</option>
-        <option value="social">Social Media Post</option>
-        <option value="email">Email Campaign</option>
-      </select>
-
-      <button id="generate-btn" class="demeos-primary-button" type="button">
-        Create with DEMEOS
-      </button>
-
-      <div id="results" class="results-area" hidden>
-        <div class="workspace-heading">
-          <p class="workspace-eyebrow">Generated campaign</p>
-          <h3>Campaign Workspace</h3>
-        </div>
-
-        <nav id="campaign-versions" class="campaign-versions" aria-label="Campaign Versions" hidden>
-          <p>Campaign Versions</p>
-          <div id="campaign-versions-list" class="campaign-versions-list"></div>
-        </nav>
-
-        <div class="campaign-result-panel">
-          <h4>Campaign result</h4>
-          <div id="results-content"></div>
-        </div>
-
-        <p id="campaign-approval-status" class="campaign-approval-status" hidden></p>
-
-        <section id="campaign-outcome" class="campaign-outcome" aria-labelledby="campaign-outcome-heading" hidden>
-          <h4 id="campaign-outcome-heading">Campaign Outcome</h4>
-          <p>Tell DEMEOS what happened after you used this campaign.</p>
-          <label for="campaign-outcome-value">Outcome</label>
-          <select id="campaign-outcome-value">
-            <option value="">Select an outcome</option>
-            <option value="Positive">Positive</option>
-            <option value="Mixed">Mixed</option>
-            <option value="No noticeable result">No noticeable result</option>
-            <option value="Not used yet">Not used yet</option>
-          </select>
-          <label for="campaign-outcome-note">What happened?</label>
-          <textarea id="campaign-outcome-note" rows="3"></textarea>
-          <button id="save-campaign-outcome" class="demeos-primary-button" type="button">Save Outcome</button>
+      <section id="recommends" class="workspace-view" data-workspace-panel hidden aria-labelledby="recommendations-heading">
+        <div class="view-heading"><p class="workspace-eyebrow">Recommendation Engine</p><h2 id="recommendations-heading">DEMEOS Recommends</h2><p>Get a next action grounded in your business profile and stored marketing history.</p></div>
+        <section class="content-card recommendations-section">
+          <label for="business-situation">What is happening in your business right now?</label>
+          <p id="business-situation-help" class="recommendations-helper">Tell DEMEOS about a current need, opportunity or change. This is optional.</p>
+          <textarea id="business-situation" rows="4" aria-describedby="business-situation-help" placeholder="Example: Tuesday evenings are quiet and I would like to attract more local customers."></textarea>
+          <button id="recommendations-btn" class="demeos-secondary-button" type="button">Get Recommendations</button>
+          <p id="recommendations-status" class="recommendations-status" aria-live="polite"></p><div id="recommendations-list" class="recommendations-list"></div>
         </section>
+      </section>
 
-        <div id="campaign-revision-controls" class="campaign-revision-panel" hidden>
-          <p id="revision-target-indicator" class="revision-target-indicator" hidden></p>
-          <label for="revision-instruction">What would you like DEMEOS to change?</label>
-          <textarea
-            id="revision-instruction"
-            rows="3"
-            placeholder="Example: Make this shorter or make it more family-focused"
-          ></textarea>
+      <section id="create" class="workspace-view" data-workspace-panel hidden aria-labelledby="create-heading">
+        <div class="view-heading"><p class="workspace-eyebrow">Campaign creation</p><h2 id="create-heading">Create Marketing</h2><p>Create only the marketing formats currently supported by DEMEOS.</p></div>
+        <section class="content-card assistant-section">
+          <label for="promo-input">What would you like DEMEOS to help you achieve?</label>
+          <p class="assistant-intro">Tell DEMEOS what is happening in your business and what you would like to promote.</p>
+          <textarea id="promo-input" rows="5" placeholder="Example: We are introducing a new chicken pasta this weekend and want more local customers to know about it."></textarea>
+          <label for="campaign-type">What would you like DEMEOS to create?</label>
+          <select id="campaign-type"><option value="full">Full Marketing Campaign</option><option value="social">Social Media Campaign</option><option value="email">Email Campaign</option></select>
+          <button id="generate-btn" class="demeos-primary-button" type="button">Create with DEMEOS</button>
+        </section>
+        <section id="results" class="results-area campaign-workspace-overlay" hidden aria-labelledby="generated-campaign-heading">
+          <div class="workspace-heading"><p class="workspace-eyebrow">Generated campaign</p><h3 id="generated-campaign-heading">Campaign Workspace</h3></div>
+          <nav id="campaign-versions" class="campaign-versions" aria-label="Campaign Versions" hidden><p>Campaign Versions</p><div id="campaign-versions-list" class="campaign-versions-list"></div></nav>
+          <div class="campaign-result-panel"><h4>Campaign result</h4><div id="results-content"></div></div>
+          <p id="campaign-approval-status" class="campaign-approval-status" hidden></p>
+          <section id="campaign-outcome" class="campaign-outcome" aria-labelledby="campaign-outcome-heading" hidden><h4 id="campaign-outcome-heading">Campaign Outcome</h4><p>Tell DEMEOS what happened after you used this campaign.</p><label for="campaign-outcome-value">Outcome</label><select id="campaign-outcome-value"><option value="">Select an outcome</option><option value="Positive">Positive</option><option value="Mixed">Mixed</option><option value="No noticeable result">No noticeable result</option><option value="Not used yet">Not used yet</option></select><label for="campaign-outcome-note">What happened?</label><textarea id="campaign-outcome-note" rows="3"></textarea><button id="save-campaign-outcome" class="demeos-primary-button" type="button">Save Outcome</button></section>
+          <div id="campaign-revision-controls" class="campaign-revision-panel" hidden><p id="revision-target-indicator" class="revision-target-indicator" hidden></p><label for="revision-instruction">What would you like DEMEOS to change?</label><textarea id="revision-instruction" rows="3" placeholder="Example: Make this shorter or make it more family-focused"></textarea><div class="campaign-actions" aria-label="Campaign actions"><button id="approve-btn" class="demeos-primary-button" type="button" hidden>Approve Campaign</button><button id="revise-btn" class="demeos-primary-button campaign-revise-button" type="button">Revise Campaign</button><button id="copy-btn" class="demeos-secondary-button" type="button" hidden>Copy Campaign</button></div></div>
+        </section>
+      </section>
 
-          <div class="campaign-actions" aria-label="Campaign actions">
-            <button id="approve-btn" class="demeos-primary-button" type="button" hidden>
-              Approve Campaign
-            </button>
+      <section id="campaigns" class="workspace-view" data-workspace-panel hidden aria-labelledby="campaigns-heading">
+        <div class="view-heading"><p class="workspace-eyebrow">Marketing work</p><h2 id="campaigns-heading">Campaigns</h2><p>Review active work and manage saved campaign history.</p></div>
+        <section class="active-marketing-work content-card" aria-labelledby="active-marketing-work-heading"><h3 id="active-marketing-work-heading">Active Marketing Work</h3><p class="active-marketing-work-helper">See what DEMEOS has created and what needs your attention next.</p><p id="active-marketing-work-empty">No active marketing work yet.</p><div id="active-marketing-work-list"></div></section>
+        <section class="campaign-history content-card" aria-labelledby="campaign-history-heading"><h3 id="campaign-history-heading">Campaign History</h3><p id="campaign-history-empty">No saved campaigns yet.</p><div id="campaign-history-list"></div></section>
+      </section>
 
-            <button id="revise-btn" class="demeos-primary-button campaign-revise-button" type="button">
-              Revise Campaign
-            </button>
+      <section id="results-view" class="workspace-view" data-workspace-panel hidden aria-labelledby="marketing-results-heading">
+        <div class="view-heading"><p class="workspace-eyebrow">Recorded information</p><h2 id="marketing-results-heading">Results</h2><p>Review real outcomes and participation signals stored for your marketing work.</p></div>
+        <section class="content-card campaign-results" aria-labelledby="campaign-results-heading"><h3 id="campaign-results-heading">Campaign Outcomes</h3><p id="campaign-results-empty">No campaign outcomes recorded yet.</p><div id="campaign-results-list"></div></section>
+        <section class="content-card customer-participation-results" aria-labelledby="customer-participation-results-heading"><h3 id="customer-participation-results-heading">Participation Signals</h3><p class="customer-participation-results-helper">Interest recorded from approved customer-facing work.</p><p id="customer-participation-results-empty">No approved customer-facing work has participation results yet.</p><div id="customer-participation-results-list"></div></section>
+      </section>
 
-            <button id="copy-btn" class="demeos-secondary-button" type="button" hidden>
-              Copy Campaign
-            </button>
+      <section id="business-profile" class="workspace-view" data-workspace-panel hidden aria-labelledby="business-profile-heading">
+        <div class="view-heading"><p class="workspace-eyebrow">Workspace settings</p><h2 id="business-profile-heading">Business Profile</h2><p>Manage the business information DEMEOS uses when creating marketing work.</p></div>
+        <section class="business-profile-section content-card">
+          <h3>Business Manager Profile</h3><p class="business-profile-intro">Tell DEMEOS about your business so your marketing work is created for your business.</p>
+          <div class="business-selector" aria-label="Business selection"><div class="business-selector-field"><label for="business-selector">Active Business</label><select id="business-selector"></select></div><button id="add-business-btn" class="demeos-secondary-button" type="button">Add Business</button></div>
+          <div class="profile-fields">
+            <div><label for="business-name">Business Name</label><input type="text" id="business-name" name="business-name" placeholder="Enter your business name" /></div>
+            <div><label for="business-type">Business Type</label><input type="text" id="business-type" name="business-type" placeholder="Example: Restaurant" /></div>
+            <div><label for="business-location">Business Location</label><input type="text" id="business-location" name="business-location" placeholder="Example: London, United Kingdom" /></div>
+            <div><label for="business-brand-voice">Brand Voice</label><input type="text" id="business-brand-voice" name="business-brand-voice" placeholder="Example: Warm, welcoming and professional" /></div>
+            <div><label for="business-target-customer">Target Customer</label><input type="text" id="business-target-customer" name="business-target-customer" placeholder="Example: Local families, office workers, students" /></div>
+            <div><label for="business-goal">Primary Marketing Goal</label><input type="text" id="business-goal" name="business-goal" placeholder="Example: Increase local customers" /></div>
           </div>
-        </div>
-      </div>
-
-      <section class="active-marketing-work" aria-labelledby="active-marketing-work-heading">
-        <h3 id="active-marketing-work-heading">Active Marketing Work</h3>
-        <p class="active-marketing-work-helper">See what DEMEOS has created and what needs your attention next.</p>
-        <p id="active-marketing-work-empty">No active marketing work yet.</p>
-        <div id="active-marketing-work-list"></div>
+          <button id="save-business-profile-btn" class="demeos-primary-button" type="button">Save Business Profile</button>
+        </section>
       </section>
-
-      <section class="customer-participation-results" aria-labelledby="customer-participation-results-heading">
-        <h3 id="customer-participation-results-heading">Customer Participation Results</h3>
-        <p class="customer-participation-results-helper">Interest recorded from approved customer-facing work.</p>
-        <p id="customer-participation-results-empty">No approved customer-facing work has participation results yet.</p>
-        <div id="customer-participation-results-list"></div>
-      </section>
-
-      <section class="campaign-history" aria-labelledby="campaign-history-heading">
-        <h3 id="campaign-history-heading">Campaign History</h3>
-        <p id="campaign-history-empty">No saved campaigns yet.</p>
-        <div id="campaign-history-list"></div>
-      </section>
-    </section>
-  </main>
-
-  <footer>
-    <p>
-      &copy; 2026 DEMEOS — One System. Real Value. Shared Future.
-    </p>
-    <p><a href="customer.html">Explore approved DEMEOS work</a></p>
-  </footer>
-
+    </main>
+  </div>
+  <footer><p>&copy; 2026 DEMEOS — One System. Real Value. Shared Future.</p></footer>
   <script src="js/script.js"></script>
 </body>
 </html>

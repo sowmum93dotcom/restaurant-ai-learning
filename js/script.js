@@ -403,6 +403,48 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   let recommendationBusinessId = null;
   let customerParticipationResults = [];
 
+  function showWorkspaceView(viewId) {
+    if (typeof document.querySelectorAll !== "function") return;
+    document.querySelectorAll("[data-workspace-panel]").forEach(function (panel) {
+      const active = panel.id === viewId;
+      panel.hidden = !active;
+      panel.classList.toggle("is-active", active);
+    });
+    document.querySelectorAll("[data-workspace-view]").forEach(function (button) {
+      const active = button.getAttribute("data-workspace-view") === viewId;
+      button.classList.toggle("is-active", active);
+      if (active) button.setAttribute("aria-current", "page");
+      else button.removeAttribute("aria-current");
+    });
+    const navigation = byId("workspace-navigation");
+    const menuToggle = byId("workspace-menu-toggle");
+    if (navigation) navigation.classList.remove("is-open");
+    if (menuToggle) menuToggle.setAttribute("aria-expanded", "false");
+  }
+
+  if (typeof document.querySelectorAll === "function") {
+    document.querySelectorAll("[data-workspace-view]").forEach(function (button) {
+      button.addEventListener("click", function () { showWorkspaceView(button.getAttribute("data-workspace-view")); });
+    });
+    document.querySelectorAll("[data-open-view]").forEach(function (button) {
+      button.addEventListener("click", function () { showWorkspaceView(button.getAttribute("data-open-view")); });
+    });
+    document.querySelectorAll("[data-quick-create]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        campaignType.value = button.getAttribute("data-quick-create");
+        showWorkspaceView("create");
+        if (typeof promoInput.focus === "function") promoInput.focus();
+      });
+    });
+    const menuToggle = byId("workspace-menu-toggle");
+    const navigation = byId("workspace-navigation");
+    if (menuToggle && navigation) menuToggle.addEventListener("click", function () {
+      const open = menuToggle.getAttribute("aria-expanded") !== "true";
+      menuToggle.setAttribute("aria-expanded", String(open));
+      navigation.classList.toggle("is-open", open);
+    });
+  }
+
   function clearRecommendations() {
     recommendationBusinessId = null;
     recommendationsStatus.textContent = "";
@@ -416,6 +458,13 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   function renderRecommendations(recommendations, businessId) {
     clearRecommendations();
     recommendationBusinessId = businessId;
+    const overviewRecommendation = byId("overview-recommendation");
+    if (overviewRecommendation && recommendations[0]) {
+      overviewRecommendation.textContent = "";
+      const title = document.createElement("strong"); title.textContent = recommendations[0].title;
+      const reason = document.createElement("p"); reason.textContent = recommendations[0].reason;
+      overviewRecommendation.append(title, reason);
+    }
     recommendations.forEach(function (recommendation) {
       const card = document.createElement("article"); card.className = "recommendation-card";
       const title = document.createElement("h3"); title.textContent = recommendation.title;
@@ -474,6 +523,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
         if (recommendationBusinessId !== state.activeBusinessId || addingBusiness) return;
         promoInput.value = recommendation.suggestedRequest;
         campaignType.value = recommendation.suggestedCampaignType;
+        showWorkspaceView("create");
         if (typeof promoInput.focus === "function") promoInput.focus();
         recordDecision("used");
       });
@@ -483,6 +533,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
         if (recommendationBusinessId !== state.activeBusinessId || addingBusiness) return;
         promoInput.value = recommendation.suggestedRequest;
         campaignType.value = recommendation.suggestedCampaignType;
+        showWorkspaceView("create");
         if (typeof promoInput.focus === "function") promoInput.focus();
         recordDecision("modified");
       });
@@ -676,6 +727,43 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       open.addEventListener("click", function () { openCampaign(savedCampaign.id); });
       item.append(heading, details, status, preview, open); campaignHistoryList.appendChild(item);
     });
+    const overviewList = byId("overview-campaigns-list");
+    const overviewEmpty = byId("overview-campaigns-empty");
+    if (overviewList && overviewEmpty) {
+      overviewList.textContent = ""; overviewEmpty.hidden = visible.length > 0;
+      visible.slice(0, 3).forEach(function (campaign) {
+        const item = document.createElement("div"); item.className = "compact-list-item";
+        const name = document.createElement("strong"); name.textContent = campaign.campaignTypeLabel || campaign.campaignType || "Campaign";
+        const status = document.createElement("span"); status.textContent = campaign.approvalStatus === "Approved" ? "Approved" : "Unapproved";
+        item.append(name, status); overviewList.appendChild(item);
+      });
+    }
+    renderCampaignResults();
+    renderCustomerParticipationResults();
+  }
+  function renderCampaignResults() {
+    const outcomes = addingBusiness ? [] : getVisibleCampaigns(getCampaignHistory(), activeProfile()).filter(function (campaign) {
+      return campaign && campaign.outcome && campaign.outcome.outcome;
+    });
+    const resultsList = byId("campaign-results-list");
+    const resultsEmpty = byId("campaign-results-empty");
+    const overviewList = byId("overview-results-list");
+    const overviewEmpty = byId("overview-results-empty");
+    if (resultsList && resultsEmpty) { resultsList.textContent = ""; resultsEmpty.hidden = outcomes.length > 0; }
+    if (overviewList && overviewEmpty) { overviewList.textContent = ""; overviewEmpty.hidden = outcomes.length > 0; }
+    outcomes.forEach(function (campaign, index) {
+      const item = document.createElement("article"); item.className = "result-record";
+      const heading = document.createElement("h4"); heading.textContent = campaign.campaignTypeLabel || campaign.campaignType || "Campaign";
+      const outcome = document.createElement("strong"); outcome.textContent = campaign.outcome.outcome;
+      const note = document.createElement("p"); note.textContent = campaign.outcome.ownerNote || "No note recorded.";
+      item.append(heading, outcome, note); if (resultsList) resultsList.appendChild(item);
+      if (overviewList && index < 3) {
+        const summary = document.createElement("div"); summary.className = "compact-list-item";
+        const label = document.createElement("strong"); label.textContent = heading.textContent;
+        const value = document.createElement("span"); value.textContent = campaign.outcome.outcome;
+        summary.append(label, value); overviewList.appendChild(summary);
+      }
+    });
   }
   function renderActiveMarketingWork() {
     const work = addingBusiness ? [] : getActiveMarketingWork(getCampaignHistory(), state.activeBusinessId);
@@ -702,6 +790,17 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       item.append(type, purpose, status);
       item.appendChild(action); activeMarketingWorkList.appendChild(item);
     });
+    const overviewList = byId("overview-active-list");
+    const overviewEmpty = byId("overview-active-empty");
+    if (overviewList && overviewEmpty) {
+      overviewList.textContent = ""; overviewEmpty.hidden = work.length > 0;
+      work.slice(0, 3).forEach(function (entry) {
+        const item = document.createElement("div"); item.className = "compact-list-item";
+        const type = document.createElement("strong"); type.textContent = entry.campaign.campaignTypeLabel || entry.campaign.campaignType || "Campaign";
+        const status = document.createElement("span"); status.textContent = entry.status;
+        item.append(type, status); overviewList.appendChild(item);
+      });
+    }
   }
   function renderCustomerParticipationResults() {
     const results = addingBusiness ? [] : getCustomerParticipationResults(customerParticipationResults, state.activeBusinessId);
@@ -718,6 +817,17 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
         : "No participation recorded yet.";
       item.append(name, count, latest); customerParticipationResultsList.appendChild(item);
     });
+    const overviewList = byId("overview-results-list");
+    const overviewEmpty = byId("overview-results-empty");
+    if (overviewList && overviewEmpty && results.length) {
+      overviewEmpty.hidden = true;
+      results.slice(0, 3).forEach(function (result) {
+        const item = document.createElement("div"); item.className = "compact-list-item";
+        const name = document.createElement("strong"); name.textContent = result.name;
+        const count = document.createElement("span"); count.textContent = `${result.customerInterestCount} customer${result.customerInterestCount === 1 ? "" : "s"} interested`;
+        item.append(name, count); overviewList.appendChild(item);
+      });
+    }
   }
   function switchBusiness(businessId) {
     if (!state.profiles.some(function (profile) { return profile.businessId === businessId; })) return;
