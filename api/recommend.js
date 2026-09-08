@@ -105,9 +105,11 @@ const unsupportedAssetPatterns = [
 const proposalPattern = /\b(?:create|created|creating|develop|developed|developing|introduce|introduced|introducing|propose|proposed|proposing|consider|considered|considering|test|tested|testing|explore|explored|exploring|design|designed|designing)\b/ig;
 const negationPattern = /\b(?:no|not|never|without|do not|does not|did not|don't|doesn't|didn't|is not|isn't|are not|aren't|has not|hasn't|have not|haven't)\b/i;
 const premiseStopWords = new Set([
-  "a", "an", "and", "as", "at", "be", "by", "campaign", "create", "creating", "created", "for", "from", "in", "is",
-  "it", "marketing", "new", "of", "on", "our", "promote", "promoting", "propose", "proposed", "that", "the", "their", "this",
-  "to", "use", "using", "we", "with", "existing", "already", "current", "currently"
+  "a", "about", "an", "and", "as", "at", "be", "by", "campaign", "concept", "create", "creating", "created", "customer", "customers",
+  "encourage", "encouraging", "for", "from", "in", "interest", "is", "it", "local", "marketing", "messaging", "new", "of", "on",
+  "email", "explicitly", "full", "our", "owner", "promote", "promoting", "propose", "proposed", "provided", "reference", "referenced",
+  "social", "state", "stated", "supplied", "support", "that", "the", "their", "this", "to", "use", "using", "verified", "we", "with",
+  "existing", "already", "current", "currently"
 ]);
 const assetWords = new Set(["offer", "offers", "offering", "offerings", "special", "specials", "deal", "deals", "discount", "discounts", "promotion",
   "promotions", "product", "products", "menu", "item", "items", "dish", "dishes", "service", "services", "event", "events",
@@ -139,7 +141,8 @@ function mentionIsNegated(text, assetIndex, assetLength) {
   const after = text.slice(assetIndex + assetLength, Math.min(text.length, assetIndex + assetLength + 50));
   const sentenceBefore = before.slice(Math.max(before.lastIndexOf("."), before.lastIndexOf("!"), before.lastIndexOf("?"), before.lastIndexOf(";"), before.lastIndexOf(":")) + 1);
   const sentenceAfter = after.split(/[.!?;:\n]/, 1)[0];
-  return negationPattern.test(sentenceBefore) || /^(?:\W|\w+\s+){0,6}(?:does not|doesn't|do not|don't|is not|isn't|are not|aren't|has not|hasn't|have not|haven't|not)\b/i.test(sentenceAfter);
+  return negationPattern.test(sentenceBefore) || /\b(?:rather than|instead of)\s+(?:\w+\s+){0,3}(?:claiming|presenting|stating)\b/i.test(sentenceBefore) ||
+    /^(?:\W|\w+\s+){0,6}(?:does not|doesn't|do not|don't|is not|isn't|are not|aren't|has not|hasn't|have not|haven't|not)\b/i.test(sentenceAfter);
 }
 
 function normalisePremiseToken(token) {
@@ -151,11 +154,26 @@ function premiseQualifiers(text) {
     .filter((token) => token && token.length > 2 && !premiseStopWords.has(token) && !assetWords.has(token)) || [];
 }
 
+function completeWordWindow(text, start, end) {
+  let safeStart = Math.max(0, start);
+  let safeEnd = Math.min(text.length, end);
+  if (safeStart > 0 && /[a-z0-9]/i.test(text[safeStart - 1]) && /[a-z0-9]/i.test(text[safeStart])) {
+    const nextBoundary = text.slice(safeStart).search(/[^a-z0-9]/i);
+    safeStart += nextBoundary < 0 ? text.length - safeStart : nextBoundary;
+  }
+  if (safeEnd < text.length && /[a-z0-9]/i.test(text[safeEnd - 1]) && /[a-z0-9]/i.test(text[safeEnd])) {
+    const previousBoundary = text.slice(0, safeEnd).search(/[^a-z0-9][a-z0-9]*$/i);
+    if (previousBoundary >= 0) safeEnd = previousBoundary + 1;
+  }
+  return text.slice(safeStart, safeEnd);
+}
+
 function suppliedContextSupportsAsset(text, match, re, suppliedText) {
   const start = match.index || 0;
-  const outputWindow = text.slice(Math.max(0, start - 55), Math.min(text.length, start + match[0].length + 55));
+  const outputWindow = completeWordWindow(text, start - 55, start + match[0].length + 55);
   const qualifiers = premiseQualifiers(outputWindow);
-  const suppliedSegments = suppliedText.split(/[.!?;:\n]+/).map((segment) => segment.trim()).filter(Boolean);
+  const suppliedSegments = suppliedText.split(/[.!?;:\n]+|\b(?:and|but|while|whereas)\b/i)
+    .map((segment) => segment.trim()).filter(Boolean);
   return suppliedSegments.some((segment) => {
     const assetMatches = Array.from(segment.matchAll(new RegExp(re.source, "ig")));
     if (!assetMatches.length || assetMatches.every((assetMatch) => mentionIsNegated(segment, assetMatch.index || 0, assetMatch[0].length))) return false;
@@ -163,6 +181,13 @@ function suppliedContextSupportsAsset(text, match, re, suppliedText) {
     const suppliedTokens = new Set(premiseQualifiers(segment));
     return qualifiers.every((qualifier) => suppliedTokens.has(qualifier));
   });
+}
+
+const unavailableExecutionPattern = /(?:\b(?:create|make|produce|record|film|launch|build|provide|manage|run|set up|implement|integrate|send|place)\b[^.!?;\n]{0,70}\b(?:videos?|loyalty (?:programme|program|infrastructure)|booking (?:system|infrastructure)|crm|sms|text messages?|paid (?:ads?|advertising)|advertising spend|websites?|automatic(?:ally)? publish(?:ing)?|publish(?:ing)? automatically)\b|\b(?:manage|take|automate)\b[^.!?;\n]{0,30}\bbookings?\b|\bpublish\b[^.!?;\n]{0,70}\bautomatically\b)/i;
+
+function claimsUnavailableExecution(item) {
+  return [item.title, item.reason, item.businessObjective, item.suggestedRequest]
+    .some((text) => unavailableExecutionPattern.test(text));
 }
 
 function containsUnsupportedBusinessPremise(text, suppliedText) {
@@ -201,6 +226,7 @@ function recommendationValidationReason(item, profile, situation, outcomes, deci
   if (!item.evidence.some((evidence) => evidence.source === "businessProfile" && evidence.field === "goal" && evidence.value.trim() === profile.goal)) return "missing-goal-evidence";
   if (!validExpectedOutcome(item.expectedOutcome, profile)) return "invalid-expected-outcome";
   if (!validRequiredInput(item.requiredInput, capability, profile, situation)) return "invalid-required-input";
+  if (claimsUnavailableExecution(item)) return "unavailable-execution-capability";
   if (!validFactIntegrity(item, profile, situation, outcomes)) return "fact-integrity-failure";
   return null;
 }
