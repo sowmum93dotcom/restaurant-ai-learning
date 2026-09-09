@@ -52,12 +52,8 @@ function getOwnerWorkspaceContext(storage) {
   const profiles = migrated.profiles;
   const campaigns = parseWorkspaceValue(storage, "demeosCampaignHistory", []);
   if (!activeBusinessId || !Array.isArray(profiles)) return { profile: null, currentWork: [] };
-
-  const profile = profiles.find(function (item) {
-    return item && item.businessId === activeBusinessId;
-  }) || null;
+  const profile = profiles.find(function (item) { return item && item.businessId === activeBusinessId; }) || null;
   if (!profile) return { profile: null, currentWork: [] };
-
   const currentWork = (Array.isArray(campaigns) ? campaigns : []).filter(function (campaign) {
     return campaign && campaign.businessId === activeBusinessId;
   }).slice(0, 3).map(function (campaign) {
@@ -70,44 +66,121 @@ function getOwnerWorkspaceContext(storage) {
   return { profile, currentWork };
 }
 
-if (typeof module !== "undefined" && module.exports) {
-  module.exports = { getOwnerWorkspaceContext, migrateWorkspaceBusinessContext };
+function getOwnerAuthenticationElements(documentObject) {
+  return {
+    loading: documentObject.getElementById("owner-auth-loading"),
+    signedOut: documentObject.getElementById("owner-auth-signed-out"),
+    signedIn: documentObject.getElementById("owner-authenticated-workspace"),
+    error: documentObject.getElementById("owner-auth-error"),
+    account: documentObject.getElementById("owner-account-control"),
+    signIn: documentObject.getElementById("owner-sign-in"),
+    signOut: documentObject.getElementById("owner-sign-out")
+  };
 }
 
-if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", function () {
-  const context = getOwnerWorkspaceContext(localStorage);
-  const identity = document.getElementById("workspace-business-identity");
-  const work = document.getElementById("workspace-current-work");
+function showOwnerAuthenticationState(elements, state) {
+  elements.loading.hidden = state !== "loading";
+  elements.signedOut.hidden = state !== "signed-out";
+  elements.signedIn.hidden = state !== "signed-in";
+  elements.error.hidden = state !== "error";
+  elements.account.hidden = state !== "signed-in";
+}
+
+function renderOwnerWorkspace(documentObject, storage) {
+  // Browser business selection is presentation state only. Server-side ownership authorization is authoritative.
+  const context = getOwnerWorkspaceContext(storage);
+  const identity = documentObject.getElementById("workspace-business-identity");
+  const work = documentObject.getElementById("workspace-current-work");
+  identity.replaceChildren();
+  work.replaceChildren();
   if (!context.profile) {
     identity.textContent = "No saved business is selected.";
     work.textContent = "Save a Business Profile before starting work in DEMEOS.";
     return;
   }
-
   const name = context.profile.name || "Saved business";
-  document.getElementById("workspace-header-business").textContent = name;
-  const heading = document.createElement("strong");
+  documentObject.getElementById("workspace-header-business").textContent = name;
+  const heading = documentObject.createElement("strong");
   heading.textContent = name;
   identity.appendChild(heading);
   [context.profile.type, context.profile.location].filter(function (value) {
     return typeof value === "string" && value.trim();
   }).forEach(function (value) {
-    const detail = document.createElement("span");
+    const detail = documentObject.createElement("span");
     detail.textContent = value;
     identity.appendChild(detail);
   });
-
   if (!context.currentWork.length) {
     work.textContent = "No marketing work is stored for this business yet.";
     return;
   }
   context.currentWork.forEach(function (item) {
-    const row = document.createElement("article");
-    const title = document.createElement("strong");
-    const status = document.createElement("span");
+    const row = documentObject.createElement("article");
+    const title = documentObject.createElement("strong");
+    const status = documentObject.createElement("span");
     title.textContent = item.name;
     status.textContent = item.status;
     row.append(title, status);
     work.appendChild(row);
   });
+}
+
+function loadClerkBrowserSdk(documentObject, publishableKey) {
+  return new Promise(function (resolve, reject) {
+    const script = documentObject.createElement("script");
+    script.async = true;
+    script.crossOrigin = "anonymous";
+    script.dataset.clerkPublishableKey = publishableKey;
+    script.src = "https://cdn.jsdelivr.net/npm/@clerk/clerk-js@5/dist/clerk.browser.js";
+    script.addEventListener("load", resolve);
+    script.addEventListener("error", reject);
+    documentObject.head.appendChild(script);
+  });
+}
+
+async function initialiseOwnerAuthentication(windowObject, documentObject, storage, fetchFunction) {
+  const elements = getOwnerAuthenticationElements(documentObject);
+  showOwnerAuthenticationState(elements, "loading");
+  try {
+    const response = await fetchFunction("/api/public-config", { credentials: "same-origin" });
+    if (!response.ok) throw new Error("Public authentication configuration unavailable");
+    const config = await response.json();
+    if (!config || typeof config.clerkPublishableKey !== "string" || !config.clerkPublishableKey.trim()) {
+      throw new Error("Invalid public authentication configuration");
+    }
+    await loadClerkBrowserSdk(documentObject, config.clerkPublishableKey);
+    const clerk = windowObject.Clerk;
+    if (!clerk || typeof clerk.load !== "function") throw new Error("Clerk did not load");
+    await clerk.load();
+
+    const update = function (auth) {
+      if (auth && auth.user) {
+        renderOwnerWorkspace(documentObject, storage);
+        showOwnerAuthenticationState(elements, "signed-in");
+      } else {
+        showOwnerAuthenticationState(elements, "signed-out");
+      }
+    };
+    elements.signIn.addEventListener("click", function () { clerk.openSignIn(); });
+    elements.signOut.addEventListener("click", async function () {
+      await clerk.signOut();
+      showOwnerAuthenticationState(elements, "signed-out");
+    });
+    clerk.addListener(update);
+    update({ user: clerk.user });
+    // Clerk's browser SDK manages its same-origin session; DEMEOS never copies or stores its tokens.
+  } catch (error) {
+    showOwnerAuthenticationState(elements, "error");
+  }
+}
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = {
+    getOwnerWorkspaceContext, migrateWorkspaceBusinessContext, showOwnerAuthenticationState,
+    renderOwnerWorkspace, initialiseOwnerAuthentication
+  };
+}
+
+if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", function () {
+  initialiseOwnerAuthentication(window, document, localStorage, window.fetch.bind(window));
 });

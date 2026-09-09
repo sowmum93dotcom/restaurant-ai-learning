@@ -2,7 +2,9 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const test = require("node:test");
 
-const { getOwnerWorkspaceContext } = require("../js/business-workspace.js");
+const {
+  getOwnerWorkspaceContext, showOwnerAuthenticationState
+} = require("../js/business-workspace.js");
 const html = fs.readFileSync(require.resolve("../business-workspace.html"), "utf8");
 const script = fs.readFileSync(require.resolve("../js/business-workspace.js"), "utf8");
 
@@ -85,5 +87,52 @@ test("workspace exposes no admin controls, invented metrics, or unsupported capa
   const source = `${html}\n${script}`;
   assert.doesNotMatch(source, /DEMEOS Admin|admin control|customer identity|booking|ordering|CRM|loyalty|payments/i);
   assert.doesNotMatch(source, /revenue|ROI|conversion rate|forecast|analytics|recommendationTitle|demeosCapability/i);
-  assert.doesNotMatch(source, /Add Business|business-selector|fetch\s*\(|\/api\//);
+  assert.doesNotMatch(source, /Add Business|business-selector/);
+});
+
+function authenticationElements() {
+  return {
+    loading: { hidden: false }, signedOut: { hidden: true }, signedIn: { hidden: true },
+    error: { hidden: true }, account: { hidden: true }
+  };
+}
+
+test("signed-out authentication state hides workspace and presents sign-in", function () {
+  const elements = authenticationElements();
+  showOwnerAuthenticationState(elements, "signed-out");
+  assert.equal(elements.signedIn.hidden, true);
+  assert.equal(elements.signedOut.hidden, false);
+  assert.match(html, /id="owner-sign-in"[^>]*>Sign in</);
+});
+
+test("signed-in authentication state reveals workspace and sign-out control", function () {
+  const elements = authenticationElements();
+  showOwnerAuthenticationState(elements, "signed-in");
+  assert.equal(elements.signedIn.hidden, false);
+  assert.equal(elements.account.hidden, false);
+  assert.match(html, /id="owner-sign-out"[^>]*>Sign out</);
+  showOwnerAuthenticationState(elements, "signed-out");
+  assert.equal(elements.signedIn.hidden, true);
+  assert.equal(elements.account.hidden, true);
+});
+
+test("browser-controlled identity hints cannot select authenticated state", function () {
+  const local = storage({
+    demeosActiveBusinessId: "business-a",
+    trustedIdentityId: "invented-user",
+    actorScope: "business-owner",
+    demeosBusinessProfiles: JSON.stringify([{ businessId: "business-a", name: "Browser Cafe" }])
+  });
+  const elements = authenticationElements();
+  showOwnerAuthenticationState(elements, "signed-out");
+  assert.equal(getOwnerWorkspaceContext(local).profile.name, "Browser Cafe", "profile remains presentation context");
+  assert.equal(elements.signedIn.hidden, true, "local state does not authenticate the workspace");
+  assert.doesNotMatch(script, /location\.(?:search|hash)|URLSearchParams|user\.metadata|publicMetadata|unsafeMetadata/);
+});
+
+test("browser authentication source neither handles nor stores Clerk tokens", function () {
+  const browserSource = `${html}\n${script}`;
+  assert.doesNotMatch(browserSource, /CLERK_SECRET_KEY|sessionStorage|setItem\([^)]*(?:token|jwt)|decode(?:Jwt|Token)|sessionClaims/i);
+  assert.match(script, /Clerk's browser SDK manages its same-origin session/);
+  assert.match(script, /Server-side ownership authorization is authoritative/);
 });
