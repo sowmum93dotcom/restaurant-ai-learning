@@ -1,28 +1,8 @@
 const { getDatabase } = require("./database.js");
-
-const fullCampaignCustomerSections = ["SOCIAL MEDIA POST", "SHORT AD COPY", "CALL TO ACTION"];
-
-function getCustomerFacingContent(campaign) {
-  if (!campaign || typeof campaign.campaignText !== "string" || !campaign.campaignText.trim()) return null;
-  if (campaign.campaignType !== "full") return campaign.campaignText.trim();
-
-  const headings = ["CAMPAIGN STRATEGY", "SOCIAL MEDIA POST", "EMAIL CAMPAIGN", "SHORT AD COPY", "CALL TO ACTION"];
-  const headingPattern = new RegExp(`^[\\t ]*(${headings.join("|")})[\\t ]*\\r?$`, "gm");
-  const matches = Array.from(campaign.campaignText.matchAll(headingPattern));
-  if (matches.length !== headings.length || !matches.every(function (match, index) { return match[1] === headings[index]; })) {
-    return null;
-  }
-
-  const sections = matches.map(function (match, index) {
-    const contentStart = match.index + match[0].length;
-    const contentEnd = index + 1 < matches.length ? matches[index + 1].index : campaign.campaignText.length;
-    return { heading: match[1], content: campaign.campaignText.slice(contentStart, contentEnd).trim() };
-  });
-  if (sections.some(function (section) { return !section.content; })) return null;
-
-  return sections.filter(function (section) { return fullCampaignCustomerSections.includes(section.heading); })
-    .map(function (section) { return section.content; }).join("\n\n");
-}
+const {
+  canPublishToDemeosCustomerExperience,
+  getCustomerFacingContent
+} = require("./customer-publication-rules.js");
 
 function createPersistenceRepository(database) {
   return {
@@ -62,7 +42,7 @@ function createPersistenceRepository(database) {
       });
       const customerParticipationResults = campaignResult.rows.map(function (row) {
         const campaign = row.campaign;
-        if (!campaign || campaign.approvalStatus !== "Approved" || !getCustomerFacingContent(campaign)) return null;
+        if (!canPublishToDemeosCustomerExperience(campaign)) return null;
         const latest = row.latest_participation_at;
         return {
           workItemId: row.campaign_id,
@@ -151,14 +131,13 @@ function createPersistenceRepository(database) {
          ORDER BY c.updated_at DESC LIMIT 20`
       );
       return result.rows.map(function (row) {
-        const content = getCustomerFacingContent(row.campaign);
-        if (!content) return null;
+        if (!canPublishToDemeosCustomerExperience(row.campaign)) return null;
         return {
           workItemId: row.campaign_id,
           businessId: row.business_id,
           businessName: row.profile.name,
           location: row.profile.location,
-          content,
+          content: getCustomerFacingContent(row.campaign),
           participationAction: "Interested"
         };
       }).filter(Boolean);
@@ -166,14 +145,23 @@ function createPersistenceRepository(database) {
 
     async recordCustomerParticipation(businessId, campaignId, action) {
       await database.ensureSchema();
+      const campaignResult = await database.query(
+        `SELECT campaign FROM demeos_campaigns
+         WHERE business_id = $1 AND campaign_id = $2`,
+        [businessId, campaignId]
+      );
+      if (!campaignResult.rows.length ||
+          !canPublishToDemeosCustomerExperience(campaignResult.rows[0].campaign)) return null;
+
       const result = await database.query(
         `INSERT INTO demeos_customer_participations (business_id, campaign_id, action)
          SELECT c.business_id, c.campaign_id, $3
          FROM demeos_campaigns c
          WHERE c.business_id = $1 AND c.campaign_id = $2
            AND c.campaign->>'approvalStatus' = 'Approved'
+           AND c.campaign = $4::jsonb
          RETURNING business_id, campaign_id, action, participated_at`,
-        [businessId, campaignId, action]
+        [businessId, campaignId, action, JSON.stringify(campaignResult.rows[0].campaign)]
       );
       return result.rows.length ? result.rows[0] : null;
     }

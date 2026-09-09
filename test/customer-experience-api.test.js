@@ -74,7 +74,7 @@ test("repository customer work query gates on approval and selects existing iden
     async query(statement) {
       sql = statement;
       return { rows: [{ campaign_id: "campaign-a", business_id: "business-a",
-        campaign: { campaignText: "Hello", approvalStatus: "Approved", evidence: "private" },
+        campaign: { campaignType: "social", campaignText: "Hello", approvalStatus: "Approved", evidence: "private" },
         profile: { name: "North Star", location: "Leeds", goal: "private" } }] };
     }
   });
