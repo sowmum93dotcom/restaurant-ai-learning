@@ -145,17 +145,44 @@ function bindOwnerClerkSession(clerk, documentObject, storage, elements) {
   update({ user: clerk.user });
 }
 
-function loadClerkBrowserSdk(documentObject, publishableKey) {
+function getClerkFrontendApiDomain(publishableKey) {
+  if (typeof publishableKey !== "string" || typeof atob !== "function") return null;
+  const encodedDomain = publishableKey.split("_")[2];
+  if (!encodedDomain) return null;
+  try {
+    const decodedDomain = atob(encodedDomain);
+    return decodedDomain.length > 1 ? decodedDomain.slice(0, -1) : null;
+  } catch (_error) {
+    return null;
+  }
+}
+
+function appendClerkScript(documentObject, source, publishableKey) {
   return new Promise(function (resolve, reject) {
     const script = documentObject.createElement("script");
     script.async = true;
     script.crossOrigin = "anonymous";
-    script.dataset.clerkPublishableKey = publishableKey;
-    script.src = "https://cdn.jsdelivr.net/npm/@clerk/clerk-js@5/dist/clerk.browser.js";
+    if (publishableKey) script.dataset.clerkPublishableKey = publishableKey;
+    script.src = source;
     script.addEventListener("load", resolve);
     script.addEventListener("error", reject);
     documentObject.head.appendChild(script);
   });
+}
+
+async function loadClerkBrowserSdk(documentObject, publishableKey) {
+  const clerkDomain = getClerkFrontendApiDomain(publishableKey);
+  if (!clerkDomain) throw new Error("Invalid Clerk publishable key");
+
+  await appendClerkScript(
+    documentObject,
+    `https://${clerkDomain}/npm/@clerk/ui@1/dist/ui.browser.js`
+  );
+  await appendClerkScript(
+    documentObject,
+    `https://${clerkDomain}/npm/@clerk/clerk-js@6/dist/clerk.browser.js`,
+    publishableKey
+  );
 }
 
 async function initialiseOwnerAuthentication(windowObject, documentObject, storage, fetchFunction) {
@@ -170,11 +197,13 @@ async function initialiseOwnerAuthentication(windowObject, documentObject, stora
     }
     await loadClerkBrowserSdk(documentObject, config.clerkPublishableKey);
     const clerk = windowObject.Clerk;
-    if (!clerk || typeof clerk.load !== "function") throw new Error("Clerk did not load");
-    await clerk.load();
+    if (!clerk || typeof clerk.load !== "function" || !windowObject.__internal_ClerkUICtor) {
+      throw new Error("Clerk did not load");
+    }
+    await clerk.load({ ui: { ClerkUI: windowObject.__internal_ClerkUICtor } });
 
     bindOwnerClerkSession(clerk, documentObject, storage, elements);
-    // Clerk's browser SDK manages its same-origin session; DEMEOS never copies or stores its tokens.
+    // Clerk's browser SDK manages its session; DEMEOS never copies or stores its tokens.
   } catch (error) {
     showOwnerAuthenticationState(elements, "error");
   }
