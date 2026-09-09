@@ -36,9 +36,9 @@ test("participation results remain isolated to the requested business", async fu
 
 test("results include approved customer-facing work only", async function () {
   const rows = [
-    { campaign_id: "approved", campaign: { id: "approved", campaignText: "Welcome", promoText: "Weekend welcome",
+    { campaign_id: "approved", campaign: { id: "approved", campaignType: "social", campaignText: "Welcome", promoText: "Weekend welcome",
       approvalStatus: "Approved" }, customer_interest_count: 1 },
-    { campaign_id: "draft", campaign: { id: "draft", campaignText: "Draft", approvalStatus: "Unapproved" }, customer_interest_count: 9 },
+    { campaign_id: "draft", campaign: { id: "draft", campaignType: "social", campaignText: "Draft", approvalStatus: "Unapproved" }, customer_interest_count: 9 },
     { campaign_id: "invalid-full", campaign: { id: "invalid-full", campaignType: "full", campaignText: "CAMPAIGN STRATEGY\nPrivate only",
       approvalStatus: "Approved" }, customer_interest_count: 4 }
   ];
@@ -51,7 +51,7 @@ test("results include approved customer-facing work only", async function () {
 test("approved work with zero participation has an explicit zero state and no latest time", async function () {
   const record = await resultsRepository([{
     campaign_id: "quiet-work",
-    campaign: { id: "quiet-work", campaignTypeLabel: "Email Campaign", campaignText: "Hello",
+    campaign: { id: "quiet-work", campaignType: "email", campaignTypeLabel: "Email Campaign", campaignText: "Hello",
       approvalStatus: "Approved" }, customer_interest_count: 0, latest_participation_at: null
   }]).getKnownBusiness("business-a");
 
@@ -65,7 +65,7 @@ test("results use real participation counts and latest participation timestamps"
   const latest = new Date("2026-09-07T12:30:00.000Z");
   const record = await resultsRepository([{
     campaign_id: "popular-work",
-    campaign: { id: "popular-work", campaignText: "Join us", approvalStatus: "Approved" },
+    campaign: { id: "popular-work", campaignType: "social", campaignText: "Join us", approvalStatus: "Approved" },
     customer_interest_count: "3", latest_participation_at: latest
   }]).getKnownBusiness("business-a");
 
