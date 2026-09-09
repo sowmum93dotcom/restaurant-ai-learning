@@ -125,6 +125,26 @@ function renderOwnerWorkspace(documentObject, storage) {
   });
 }
 
+function bindOwnerClerkSession(clerk, documentObject, storage, elements) {
+  const update = function (auth) {
+    if (auth && auth.user) {
+      renderOwnerWorkspace(documentObject, storage);
+      showOwnerAuthenticationState(elements, "signed-in");
+      return;
+    }
+    showOwnerAuthenticationState(elements, "signed-out");
+  };
+
+  elements.signIn.addEventListener("click", function () { clerk.openSignIn(); });
+  elements.signOut.addEventListener("click", function () {
+    // Hide owner presentation immediately; Clerk remains the only session authority.
+    showOwnerAuthenticationState(elements, "signed-out");
+    return clerk.signOut();
+  });
+  clerk.addListener(update);
+  update({ user: clerk.user });
+}
+
 function loadClerkBrowserSdk(documentObject, publishableKey) {
   return new Promise(function (resolve, reject) {
     const script = documentObject.createElement("script");
@@ -153,21 +173,7 @@ async function initialiseOwnerAuthentication(windowObject, documentObject, stora
     if (!clerk || typeof clerk.load !== "function") throw new Error("Clerk did not load");
     await clerk.load();
 
-    const update = function (auth) {
-      if (auth && auth.user) {
-        renderOwnerWorkspace(documentObject, storage);
-        showOwnerAuthenticationState(elements, "signed-in");
-      } else {
-        showOwnerAuthenticationState(elements, "signed-out");
-      }
-    };
-    elements.signIn.addEventListener("click", function () { clerk.openSignIn(); });
-    elements.signOut.addEventListener("click", async function () {
-      await clerk.signOut();
-      showOwnerAuthenticationState(elements, "signed-out");
-    });
-    clerk.addListener(update);
-    update({ user: clerk.user });
+    bindOwnerClerkSession(clerk, documentObject, storage, elements);
     // Clerk's browser SDK manages its same-origin session; DEMEOS never copies or stores its tokens.
   } catch (error) {
     showOwnerAuthenticationState(elements, "error");
@@ -177,7 +183,7 @@ async function initialiseOwnerAuthentication(windowObject, documentObject, stora
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     getOwnerWorkspaceContext, migrateWorkspaceBusinessContext, showOwnerAuthenticationState,
-    renderOwnerWorkspace, initialiseOwnerAuthentication
+    renderOwnerWorkspace, bindOwnerClerkSession, initialiseOwnerAuthentication
   };
 }
 
