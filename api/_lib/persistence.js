@@ -5,7 +5,73 @@ const {
 } = require("./customer-publication-rules.js");
 
 function createPersistenceRepository(database) {
+  function isNonEmptyString(value) {
+    return typeof value === "string" && value.trim().length > 0;
+  }
+
   return {
+    async getOwnedBusinessIds(trustedIdentityId) {
+      if (!isNonEmptyString(trustedIdentityId)) return [];
+
+      await database.ensureSchema();
+      const result = await database.query(
+        `SELECT business_id FROM demeos_business_owners
+         WHERE trusted_identity_id = $1
+         ORDER BY business_id`,
+        [trustedIdentityId]
+      );
+      return result.rows.map(function (row) { return row.business_id; });
+    },
+
+    async isBusinessOwnedByIdentity(trustedIdentityId, businessId) {
+      if (!isNonEmptyString(trustedIdentityId) || !isNonEmptyString(businessId)) return false;
+
+      await database.ensureSchema();
+      const result = await database.query(
+        `SELECT 1 FROM demeos_business_owners
+         WHERE trusted_identity_id = $1 AND business_id = $2
+         LIMIT 1`,
+        [trustedIdentityId, businessId]
+      );
+      return result.rows.length > 0;
+    },
+
+    async assignBusinessOwner(trustedIdentityId, businessId) {
+      if (!isNonEmptyString(trustedIdentityId) || !isNonEmptyString(businessId)) return null;
+
+      await database.ensureSchema();
+      const result = await database.query(
+        `INSERT INTO demeos_business_owners (trusted_identity_id, business_id)
+         SELECT $1, $2
+         WHERE EXISTS (SELECT 1 FROM demeos_businesses WHERE business_id = $2)
+         ON CONFLICT (trusted_identity_id, business_id) DO NOTHING
+         RETURNING trusted_identity_id, business_id, created_at`,
+        [trustedIdentityId, businessId]
+      );
+      if (result.rows.length) {
+        const row = result.rows[0];
+        return {
+          trustedIdentityId: row.trusted_identity_id,
+          businessId: row.business_id,
+          createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at
+        };
+      }
+
+      const stored = await database.query(
+        `SELECT trusted_identity_id, business_id, created_at
+         FROM demeos_business_owners
+         WHERE trusted_identity_id = $1 AND business_id = $2`,
+        [trustedIdentityId, businessId]
+      );
+      if (!stored.rows.length) return null;
+      const row = stored.rows[0];
+      return {
+        trustedIdentityId: row.trusted_identity_id,
+        businessId: row.business_id,
+        createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at
+      };
+    },
+
     async getKnownBusiness(businessId) {
       await database.ensureSchema();
       const businessResult = await database.query(

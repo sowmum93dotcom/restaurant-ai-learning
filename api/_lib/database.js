@@ -5,6 +5,12 @@ const SCHEMA_STATEMENTS = [
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`,
+  `CREATE TABLE IF NOT EXISTS demeos_business_owners (
+    trusted_identity_id TEXT NOT NULL,
+    business_id TEXT NOT NULL REFERENCES demeos_businesses(business_id),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (trusted_identity_id, business_id)
+  )`,
   `CREATE TABLE IF NOT EXISTS demeos_campaigns (
     campaign_id TEXT PRIMARY KEY,
     business_id TEXT NOT NULL REFERENCES demeos_businesses(business_id),
