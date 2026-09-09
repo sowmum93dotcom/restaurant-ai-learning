@@ -952,7 +952,17 @@ footer { background: #081f3d; color: #c4cfdb; text-align: center; }
 /* DEMEOS Business Owner Workspace */
 .owner-workspace-body { background: #f4f1e9; color: #11243f; }
 .owner-workspace-header { min-height: 104px; }
+.owner-account-control { margin-left: auto; display: flex; align-items: center; gap: .8rem; color: #dbe5ef; font-size: .82rem; font-weight: 700; }
+.owner-account-control[hidden] { display: none; }
+.owner-account-button { padding: .55rem .8rem; border: 1px solid #d2ad58; border-radius: 3px; background: transparent; color: #f3d98e; font: inherit; cursor: pointer; }
+.owner-account-button:hover, .owner-account-button:focus { background: rgba(210,173,88,.12); color: #fff; }
+.owner-auth-panel { width: min(680px, calc(100% - 2rem)); min-height: calc(100vh - 240px); margin: 0 auto; padding: clamp(4rem, 10vw, 7rem) 1rem; text-align: center; }
+.owner-auth-panel[hidden] { display: none; }
+.owner-auth-panel h2 { margin: .45rem 0 .7rem; color: #102a52; font-family: Georgia, serif; font-size: clamp(2rem, 5vw, 3rem); font-weight: 500; }
+.owner-auth-panel p:not(.workspace-eyebrow) { margin: 0 auto 1.6rem; color: #657286; }
+.owner-auth-error h2 { color: #783636; }
 .owner-workspace-shell { width: min(1440px, 100%); min-height: calc(100vh - 176px); margin: auto; display: grid; grid-template-columns: 270px minmax(0, 1fr); background: #fff; }
+.owner-workspace-shell[hidden] { display: none; }
 .owner-workspace-sidebar { padding: 2.25rem 1.25rem; background: #0c2b52; }
 .owner-workspace-navigation { position: sticky; top: 1.5rem; display: grid; gap: .45rem; }
 .owner-workspace-navigation a { padding: .9rem 1rem; border-left: 3px solid transparent; color: #cbd6e2; font-size: .92rem; font-weight: 700; text-decoration: none; }

@@ -16,9 +16,32 @@
       <h1 class="restaurant-name">Business Owner Workspace</h1>
       <p id="workspace-header-business" class="cuisine-type">Selected business context</p>
     </div>
+    <div id="owner-account-control" class="owner-account-control" hidden>
+      <span>Signed in</span>
+      <button id="owner-sign-out" class="owner-account-button" type="button">Sign out</button>
+    </div>
   </header>
 
-  <div class="owner-workspace-shell">
+  <main id="owner-auth-loading" class="owner-auth-panel" aria-live="polite">
+    <p class="workspace-eyebrow">Business owner access</p>
+    <h2>Loading authentication&hellip;</h2>
+    <p>Checking your DEMEOS sign-in securely.</p>
+  </main>
+
+  <main id="owner-auth-signed-out" class="owner-auth-panel" hidden>
+    <p class="workspace-eyebrow">Business owner access</p>
+    <h2>Sign in to your workspace</h2>
+    <p>Use your DEMEOS account to continue to the Business Owner Workspace.</p>
+    <button id="owner-sign-in" class="demeos-primary-button" type="button">Sign in</button>
+  </main>
+
+  <main id="owner-auth-error" class="owner-auth-panel owner-auth-error" role="alert" hidden>
+    <p class="workspace-eyebrow">Business owner access</p>
+    <h2>Authentication is unavailable</h2>
+    <p>We could not load secure sign-in. Please refresh the page or try again later.</p>
+  </main>
+
+  <div id="owner-authenticated-workspace" class="owner-workspace-shell" hidden>
     <aside class="owner-workspace-sidebar">
       <nav class="owner-workspace-navigation" aria-label="Business Owner Workspace">
         <a class="is-active" href="business-workspace.html" aria-current="page">Overview</a>
@@ -37,7 +60,7 @@
             <h2 id="owner-overview-heading">Your DEMEOS workspace</h2>
             <p>Continue your work using the information already stored for your selected business.</p>
           </div>
-          <span class="owner-private-mark">Selected business context</span>
+          <span class="owner-private-mark">Selected business context only</span>
         </div>
 
         <section class="owner-identity-card" aria-labelledby="selected-business-heading">
