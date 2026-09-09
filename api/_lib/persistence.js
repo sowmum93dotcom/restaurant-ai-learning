@@ -42,7 +42,7 @@ function createPersistenceRepository(database) {
       });
       const customerParticipationResults = campaignResult.rows.map(function (row) {
         const campaign = row.campaign;
-        if (!campaign || campaign.approvalStatus !== "Approved" || !getCustomerFacingContent(campaign)) return null;
+        if (!canPublishToDemeosCustomerExperience(campaign)) return null;
         const latest = row.latest_participation_at;
         return {
           workItemId: row.campaign_id,
