@@ -7,9 +7,49 @@ function parseWorkspaceValue(storage, key, fallback) {
   }
 }
 
+function createWorkspaceBusinessId() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  return `business-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function migrateWorkspaceBusinessContext(storage) {
+  const storedProfiles = parseWorkspaceValue(storage, "demeosBusinessProfiles", []);
+  const profiles = Array.isArray(storedProfiles) ? storedProfiles.slice() : [];
+  let legacyProfile = parseWorkspaceValue(storage, "demeosBusinessProfile", null);
+  let activeBusinessId = storage.getItem("demeosActiveBusinessId");
+  let changed = !Array.isArray(storedProfiles);
+
+  if (legacyProfile && typeof legacyProfile === "object" && !Array.isArray(legacyProfile)) {
+    if (!legacyProfile.businessId) {
+      legacyProfile = { ...legacyProfile, businessId: createWorkspaceBusinessId() };
+      if (typeof storage.setItem === "function") storage.setItem("demeosBusinessProfile", JSON.stringify(legacyProfile));
+    }
+    if (!profiles.some(function (profile) { return profile && profile.businessId === legacyProfile.businessId; })) {
+      profiles.push(legacyProfile);
+      activeBusinessId = legacyProfile.businessId;
+      changed = true;
+    }
+  }
+
+  if (!profiles.some(function (profile) { return profile && profile.businessId === activeBusinessId; })) {
+    activeBusinessId = profiles.length ? profiles[0].businessId : null;
+  }
+
+  if (typeof storage.setItem === "function") {
+    if (changed || storage.getItem("demeosBusinessProfiles") === null) {
+      storage.setItem("demeosBusinessProfiles", JSON.stringify(profiles));
+    }
+    if (activeBusinessId) storage.setItem("demeosActiveBusinessId", activeBusinessId);
+    else if (typeof storage.removeItem === "function") storage.removeItem("demeosActiveBusinessId");
+  }
+
+  return { profiles, activeBusinessId };
+}
+
 function getOwnerWorkspaceContext(storage) {
-  const activeBusinessId = storage.getItem("demeosActiveBusinessId");
-  const profiles = parseWorkspaceValue(storage, "demeosBusinessProfiles", []);
+  const migrated = migrateWorkspaceBusinessContext(storage);
+  const activeBusinessId = migrated.activeBusinessId;
+  const profiles = migrated.profiles;
   const campaigns = parseWorkspaceValue(storage, "demeosCampaignHistory", []);
   if (!activeBusinessId || !Array.isArray(profiles)) return { profile: null, currentWork: [] };
 
@@ -20,7 +60,7 @@ function getOwnerWorkspaceContext(storage) {
 
   const currentWork = (Array.isArray(campaigns) ? campaigns : []).filter(function (campaign) {
     return campaign && campaign.businessId === activeBusinessId;
-  }).slice(-3).reverse().map(function (campaign) {
+  }).slice(0, 3).map(function (campaign) {
     return {
       name: (typeof campaign.promoText === "string" && campaign.promoText.trim()) ||
         campaign.campaignTypeLabel || campaign.campaignType || "Marketing work",
@@ -30,7 +70,9 @@ function getOwnerWorkspaceContext(storage) {
   return { profile, currentWork };
 }
 
-if (typeof module !== "undefined" && module.exports) module.exports = { getOwnerWorkspaceContext };
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = { getOwnerWorkspaceContext, migrateWorkspaceBusinessContext };
+}
 
 if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", function () {
   const context = getOwnerWorkspaceContext(localStorage);
