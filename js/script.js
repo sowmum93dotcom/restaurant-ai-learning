@@ -443,6 +443,11 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       menuToggle.setAttribute("aria-expanded", String(open));
       navigation.classList.toggle("is-open", open);
     });
+    const requestedView = window.location.hash.slice(1);
+    if (document.getElementById(requestedView) &&
+        document.getElementById(requestedView).hasAttribute("data-workspace-panel")) {
+      showWorkspaceView(requestedView);
+    }
   }
 
   function clearRecommendations() {

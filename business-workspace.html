@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DEMEOS Business Owner Workspace</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body class="owner-workspace-body">
+  <header class="workspace-header owner-workspace-header">
+    <a class="demeos-brand" href="business-workspace.html" aria-label="DEMEOS Business Owner Workspace home">
+      <img src="images/demeos-logo.png" alt="DEMEOS logo" class="demeos-logo" />
+    </a>
+    <div class="workspace-identity">
+      <p class="agent-label">Business owner workspace</p>
+      <h1 class="restaurant-name">Business Owner Workspace</h1>
+      <p id="workspace-header-business" class="cuisine-type">Selected business context</p>
+    </div>
+  </header>
+
+  <div class="owner-workspace-shell">
+    <aside class="owner-workspace-sidebar">
+      <nav class="owner-workspace-navigation" aria-label="Business Owner Workspace">
+        <a class="is-active" href="business-workspace.html" aria-current="page">Overview</a>
+        <a href="index.html#business-profile">Business Profile</a>
+        <a href="index.html#recommends">DEMEOS Recommends</a>
+        <a href="index.html">Marketing</a>
+        <a href="business-results.html">Results</a>
+      </nav>
+    </aside>
+
+    <main class="owner-workspace-main">
+      <section aria-labelledby="owner-overview-heading">
+        <div class="owner-overview-heading">
+          <div>
+            <p class="workspace-eyebrow">Overview</p>
+            <h2 id="owner-overview-heading">Your DEMEOS workspace</h2>
+            <p>Continue your work using the information already stored for your selected business.</p>
+          </div>
+          <span class="owner-private-mark">Selected business context</span>
+        </div>
+
+        <section class="owner-identity-card" aria-labelledby="selected-business-heading">
+          <p class="card-kicker">Selected business</p>
+          <h3 id="selected-business-heading">Business identity</h3>
+          <div id="workspace-business-identity" class="owner-business-identity" aria-live="polite"></div>
+          <a class="demeos-secondary-button owner-card-action" href="index.html#business-profile">Manage Business Profile</a>
+        </section>
+
+        <section class="owner-current-work" aria-labelledby="current-work-heading">
+          <div>
+            <p class="card-kicker">Stored work</p>
+            <h3 id="current-work-heading">Current work</h3>
+          </div>
+          <div id="workspace-current-work" class="owner-work-list" aria-live="polite"></div>
+          <a class="demeos-primary-button owner-card-action" href="index.html">Open Marketing Agent</a>
+        </section>
+      </section>
+    </main>
+  </div>
+  <footer><p>&copy; 2026 DEMEOS — One System. Real Value. Shared Future.</p></footer>
+  <script src="js/business-workspace.js"></script>
+</body>
+</html>
