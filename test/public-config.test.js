@@ -7,6 +7,8 @@ function response() {
   return {
     statusCode: null,
     body: null,
+    headers: {},
+    setHeader(name, value) { this.headers[name] = value; },
     status(code) { this.statusCode = code; return this; },
     json(value) { this.body = value; return this; }
   };
@@ -28,6 +30,7 @@ test("public config exposes only the Clerk publishable key", function () {
     publicConfig({}, res);
     assert.equal(res.statusCode, 200);
     assert.deepEqual(res.body, { clerkPublishableKey: "pk_test_public" });
+    assert.equal(res.headers["Cache-Control"], "no-store");
     assert.doesNotMatch(JSON.stringify(res.body), /sk_test_secret|CLERK_SECRET_KEY/);
   });
 });

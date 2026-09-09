@@ -1,4 +1,5 @@
 function publicConfig(req, res) {
+  res.setHeader("Cache-Control", "no-store");
   const clerkPublishableKey = process.env.CLERK_PUBLISHABLE_KEY;
   if (typeof clerkPublishableKey !== "string" || !clerkPublishableKey.trim()) {
     return res.status(503).json({ error: "Authentication configuration is unavailable." });

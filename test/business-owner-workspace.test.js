@@ -3,7 +3,7 @@ const fs = require("node:fs");
 const test = require("node:test");
 
 const {
-  getOwnerWorkspaceContext, showOwnerAuthenticationState
+  getOwnerWorkspaceContext, showOwnerAuthenticationState, bindOwnerClerkSession
 } = require("../js/business-workspace.js");
 const html = fs.readFileSync(require.resolve("../business-workspace.html"), "utf8");
 const script = fs.readFileSync(require.resolve("../js/business-workspace.js"), "utf8");
@@ -135,4 +135,38 @@ test("browser authentication source neither handles nor stores Clerk tokens", fu
   assert.doesNotMatch(browserSource, /CLERK_SECRET_KEY|sessionStorage|setItem\([^)]*(?:token|jwt)|decode(?:Jwt|Token)|sessionClaims/i);
   assert.match(script, /Clerk's browser SDK manages its same-origin session/);
   assert.match(script, /Server-side ownership authorization is authoritative/);
+});
+
+test("Clerk session changes alone control workspace visibility and sign-out", async function () {
+  const elements = authenticationElements();
+  elements.signIn = { addEventListener: function () {} };
+  elements.signOut = {
+    addEventListener: function (_name, handler) { this.click = handler; }
+  };
+  const clerk = {
+    user: null,
+    addListener: function (listener) { this.listener = listener; },
+    openSignIn: function () {},
+    signOut: function () { this.user = null; return Promise.resolve(); }
+  };
+  const documentObject = {
+    getElementById: function () {
+      return { replaceChildren: function () {}, appendChild: function () {}, textContent: "" };
+    },
+    createElement: function () { return { textContent: "", append: function () {} }; }
+  };
+  const local = storage({
+    demeosActiveBusinessId: "browser-business",
+    trustedIdentityId: "browser-identity",
+    actorScope: "business-owner",
+    demeosBusinessProfiles: JSON.stringify([{ businessId: "browser-business", name: "Browser profile" }])
+  });
+
+  bindOwnerClerkSession(clerk, documentObject, local, elements);
+  assert.equal(elements.signedIn.hidden, true, "browser state cannot authenticate");
+  clerk.user = { publicMetadata: { businessId: "metadata-business" } };
+  clerk.listener({ user: clerk.user });
+  assert.equal(elements.signedIn.hidden, false, "a Clerk user reveals the workspace");
+  await elements.signOut.click();
+  assert.equal(elements.signedIn.hidden, true, "sign-out immediately conceals the workspace");
 });
