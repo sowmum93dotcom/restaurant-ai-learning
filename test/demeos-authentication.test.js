@@ -5,7 +5,11 @@ const {
   resolveTrustedIdentityFromRequest
 } = require("../api/_lib/demeos-authentication.js");
 
-const request = { headers: {} };
+const request = {
+  method: "GET",
+  url: "/api/test",
+  headers: { host: "demeos.test" }
+};
 const configuredEnvironment = {
   CLERK_SECRET_KEY: "sk_test_server_only",
   CLERK_PUBLISHABLE_KEY: "pk_test_public"
@@ -35,7 +39,7 @@ async function withClerkEnvironment(environment, callback) {
 function verifiedAs(userId, extraAuthentication = {}) {
   return async function authenticateRequest() {
     return {
-      isSignedIn: true,
+      isAuthenticated: true,
       toAuth() {
         return { userId, ...extraAuthentication };
       }
@@ -62,6 +66,32 @@ test("verified Clerk user ID becomes the exact immutable trusted identity", asyn
   });
 });
 
+test("Node-style Vercel requests are converted to the Web Request Clerk requires", async function () {
+  let received;
+  const identity = await resolve({
+    method: "POST",
+    url: "/api/businesses/business-a",
+    headers: {
+      host: "demeos.test",
+      authorization: "Bearer verified-session-token",
+      cookie: "__session=verified-session-token"
+    }
+  }, async function authenticateRequest(clerkRequest) {
+    received = clerkRequest;
+    return {
+      isAuthenticated: true,
+      toAuth() { return { userId: "user_1" }; }
+    };
+  });
+
+  assert.equal(identity.trustedIdentityId, "user_1");
+  assert.equal(received instanceof Request, true);
+  assert.equal(received.method, "POST");
+  assert.equal(received.url, "https://demeos.test/api/businesses/business-a");
+  assert.equal(received.headers.get("authorization"), "Bearer verified-session-token");
+  assert.equal(received.headers.get("cookie"), "__session=verified-session-token");
+});
+
 test("successful result exposes only identity and provider, not Clerk session details", async function () {
   const identity = await resolve(request, verifiedAs("user_1", {
     sessionId: "sess_secret",
@@ -75,7 +105,7 @@ test("successful result exposes only identity and provider, not Clerk session de
 
 test("unauthenticated Clerk result returns null", async function () {
   const identity = await resolve(request, async function () {
-    return { isSignedIn: false, toAuth: () => ({ userId: "unverified" }) };
+    return { isAuthenticated: false, toAuth: () => ({ userId: "unverified" }) };
   });
   assert.equal(identity, null);
 });
@@ -107,15 +137,15 @@ test("Clerk authentication exceptions fail closed", async function () {
 });
 
 test("client-controlled identity fields cannot create trusted identity", async function () {
-  const unauthenticated = async () => ({ isSignedIn: false });
+  const unauthenticated = async () => ({ isAuthenticated: false });
   const clientRequests = [
-    { headers: {}, body: { trustedIdentityId: "body-user" } },
-    { headers: {}, query: { trustedIdentityId: "query-user" } },
-    { headers: { "x-user-id": "header-user", "x-identity-id": "header-identity" } },
-    { headers: {}, businessId: "business-as-user" },
-    { headers: {}, actorScope: "demeos-admin" },
-    { headers: {}, localStorage: { trustedIdentityId: "browser-user" } },
-    { headers: {}, browser: { userId: "browser-user" } }
+    { ...request, body: { trustedIdentityId: "body-user" } },
+    { ...request, query: { trustedIdentityId: "query-user" } },
+    { ...request, headers: { host: "demeos.test", "x-user-id": "header-user", "x-identity-id": "header-identity" } },
+    { ...request, businessId: "business-as-user" },
+    { ...request, actorScope: "demeos-admin" },
+    { ...request, localStorage: { trustedIdentityId: "browser-user" } },
+    { ...request, browser: { userId: "browser-user" } }
   ];
 
   for (const clientRequest of clientRequests) {
@@ -130,7 +160,7 @@ test("malformed requests cannot authenticate", async function () {
     return verifiedAs("user_1")();
   };
 
-  for (const malformedRequest of [null, undefined, "request", {}, { headers: null }]) {
+  for (const malformedRequest of [null, undefined, "request", {}, { headers: null }, { headers: {} }]) {
     assert.equal(await resolve(malformedRequest, authenticateRequest), null);
   }
   assert.equal(calls, 0);
@@ -140,11 +170,13 @@ test("raw bearer token and unverified JWT payload are never identity evidence", 
   const bearerValue = "attacker-selected-bearer-identity";
   const unverifiedUserId = "attacker-selected-jwt-subject";
   const attackerRequest = {
-    headers: { authorization: `Bearer ${bearerValue}` },
+    method: "GET",
+    url: "/api/test",
+    headers: { host: "demeos.test", authorization: `Bearer ${bearerValue}` },
     jwt: { payload: { sub: unverifiedUserId, userId: unverifiedUserId } }
   };
 
-  const identity = await resolve(attackerRequest, async () => ({ isSignedIn: false }));
+  const identity = await resolve(attackerRequest, async () => ({ isAuthenticated: false }));
   assert.equal(identity, null);
   assert.notEqual(identity, bearerValue);
   assert.notEqual(identity, unverifiedUserId);
