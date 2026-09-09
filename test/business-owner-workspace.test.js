@@ -7,7 +7,13 @@ const html = fs.readFileSync(require.resolve("../business-workspace.html"), "utf
 const script = fs.readFileSync(require.resolve("../js/business-workspace.js"), "utf8");
 
 function storage(values) {
-  return { getItem: function (key) { return Object.hasOwn(values, key) ? values[key] : null; } };
+  const state = { ...values };
+  return {
+    getItem: function (key) { return Object.hasOwn(state, key) ? state[key] : null; },
+    setItem: function (key, value) { state[key] = String(value); },
+    removeItem: function (key) { delete state[key]; },
+    state
+  };
 }
 
 test("workspace navigation contains the five owner-facing sections", function () {
@@ -41,6 +47,32 @@ test("workspace limits overview rendering to the selected browser business conte
   assert.equal(context.profile.name, "Cafe A");
   assert.deepEqual(context.currentWork, [{ name: "Autumn menu", status: "Approved" }]);
   assert.doesNotMatch(JSON.stringify(context), /Private Rival|Rival plans/);
+});
+
+test("workspace shows the newest three stored campaigns", function () {
+  const context = getOwnerWorkspaceContext(storage({
+    demeosActiveBusinessId: "business-a",
+    demeosBusinessProfiles: JSON.stringify([{ businessId: "business-a", name: "Cafe A" }]),
+    demeosCampaignHistory: JSON.stringify([
+      { businessId: "business-a", promoText: "Newest", approvalStatus: "Approved" },
+      { businessId: "business-a", promoText: "Second", approvalStatus: "Draft" },
+      { businessId: "business-a", promoText: "Third", approvalStatus: "Approved" },
+      { businessId: "business-a", promoText: "Oldest", approvalStatus: "Approved" }
+    ])
+  }));
+  assert.deepEqual(context.currentWork.map(function (item) { return item.name; }), ["Newest", "Second", "Third"]);
+});
+
+test("workspace migrates a legacy single business profile before rendering", function () {
+  const local = storage({
+    demeosBusinessProfile: JSON.stringify({ businessId: "legacy-a", name: "Legacy Cafe", type: "Cafe" }),
+    demeosCampaignHistory: JSON.stringify([{ businessId: "legacy-a", promoText: "Legacy campaign", approvalStatus: "Approved" }])
+  });
+  const context = getOwnerWorkspaceContext(local);
+  assert.equal(context.profile.name, "Legacy Cafe");
+  assert.equal(context.currentWork[0].name, "Legacy campaign");
+  assert.equal(local.getItem("demeosActiveBusinessId"), "legacy-a");
+  assert.equal(JSON.parse(local.getItem("demeosBusinessProfiles"))[0].businessId, "legacy-a");
 });
 
 test("workspace shell does not claim browser filtering is authorization", function () {
