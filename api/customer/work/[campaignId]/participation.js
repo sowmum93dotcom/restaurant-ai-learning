@@ -1,9 +1,20 @@
 const { getRepository } = require("../../../_lib/persistence.js");
+const {
+  DEMEOS_ACTOR_SCOPES,
+  DEMEOS_ACTIONS,
+  canPerformDemeosAction
+} = require("../../../_lib/demeos-rules.js");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return res.status(405).json({ error: "Method not allowed" });
+  }
+  if (!canPerformDemeosAction({
+    actorScope: DEMEOS_ACTOR_SCOPES.PUBLIC_CUSTOMER,
+    action: DEMEOS_ACTIONS.RECORD_CUSTOMER_PARTICIPATION
+  })) {
+    return res.status(403).json({ error: "DEMEOS permission denied." });
   }
   const campaignId = typeof req.query.campaignId === "string" ? req.query.campaignId.trim() : "";
   const businessId = req.body && typeof req.body.businessId === "string" ? req.body.businessId.trim() : "";
