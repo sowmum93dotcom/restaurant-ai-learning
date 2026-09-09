@@ -133,7 +133,7 @@ test("browser-controlled identity hints cannot select authenticated state", func
 test("browser authentication source neither handles nor stores Clerk tokens", function () {
   const browserSource = `${html}\n${script}`;
   assert.doesNotMatch(browserSource, /CLERK_SECRET_KEY|sessionStorage|setItem\([^)]*(?:token|jwt)|decode(?:Jwt|Token)|sessionClaims/i);
-  assert.match(script, /Clerk's browser SDK manages its same-origin session/);
+  assert.match(script, /Clerk's browser SDK manages its session/);
   assert.match(script, /Server-side ownership authorization is authoritative/);
 });
 
@@ -169,4 +169,12 @@ test("Clerk session changes alone control workspace visibility and sign-out", as
   assert.equal(elements.signedIn.hidden, false, "a Clerk user reveals the workspace");
   await elements.signOut.click();
   assert.equal(elements.signedIn.hidden, true, "sign-out immediately conceals the workspace");
+});
+
+test("Clerk browser SDK uses current v6 bundle with Clerk UI support", function () {
+  assert.match(script, /@clerk\/ui@1\/dist\/ui\.browser\.js/);
+  assert.match(script, /@clerk\/clerk-js@6\/dist\/clerk\.browser\.js/);
+  assert.match(script, /ClerkUI: windowObject\.__internal_ClerkUICtor/);
+  assert.doesNotMatch(script, /@clerk\/clerk-js@5/);
+  assert.doesNotMatch(script, /cdn\.jsdelivr\.net\/npm\/@clerk\/clerk-js/);
 });
