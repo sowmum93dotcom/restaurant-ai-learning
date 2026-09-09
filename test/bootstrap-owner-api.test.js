@@ -24,14 +24,23 @@ function createResponse() {
   };
 }
 
+function restoreEnvironment(name, previousValue) {
+  if (previousValue === undefined) delete process.env[name];
+  else process.env[name] = previousValue;
+}
+
 async function invoke({
   enabled,
+  configuredIdentityId = "clerk-user",
+  configuredBusinessId = "business-a",
   method = "POST",
   body = { businessId: "business-a" },
   identity = { trustedIdentityId: "clerk-user" },
   assignment = { businessId: "business-a" }
 } = {}) {
-  const previousFlag = process.env.DEMEOS_OWNER_BOOTSTRAP_ENABLED;
+  const previousEnabled = process.env.DEMEOS_OWNER_BOOTSTRAP_ENABLED;
+  const previousIdentity = process.env.DEMEOS_OWNER_BOOTSTRAP_IDENTITY_ID;
+  const previousBusiness = process.env.DEMEOS_OWNER_BOOTSTRAP_BUSINESS_ID;
   const authentication = require(authenticationPath);
   const persistence = require(persistencePath);
   const originalResolve = authentication.resolveTrustedIdentityFromRequest;
@@ -41,6 +50,12 @@ async function invoke({
 
   if (enabled === undefined) delete process.env.DEMEOS_OWNER_BOOTSTRAP_ENABLED;
   else process.env.DEMEOS_OWNER_BOOTSTRAP_ENABLED = enabled;
+
+  if (configuredIdentityId === null) delete process.env.DEMEOS_OWNER_BOOTSTRAP_IDENTITY_ID;
+  else process.env.DEMEOS_OWNER_BOOTSTRAP_IDENTITY_ID = configuredIdentityId;
+
+  if (configuredBusinessId === null) delete process.env.DEMEOS_OWNER_BOOTSTRAP_BUSINESS_ID;
+  else process.env.DEMEOS_OWNER_BOOTSTRAP_BUSINESS_ID = configuredBusinessId;
 
   authentication.resolveTrustedIdentityFromRequest = async function (request) {
     authenticationCalls.push(request);
@@ -70,8 +85,9 @@ async function invoke({
     authentication.resolveTrustedIdentityFromRequest = originalResolve;
     persistence.getRepository = originalGetRepository;
     delete require.cache[handlerPath];
-    if (previousFlag === undefined) delete process.env.DEMEOS_OWNER_BOOTSTRAP_ENABLED;
-    else process.env.DEMEOS_OWNER_BOOTSTRAP_ENABLED = previousFlag;
+    restoreEnvironment("DEMEOS_OWNER_BOOTSTRAP_ENABLED", previousEnabled);
+    restoreEnvironment("DEMEOS_OWNER_BOOTSTRAP_IDENTITY_ID", previousIdentity);
+    restoreEnvironment("DEMEOS_OWNER_BOOTSTRAP_BUSINESS_ID", previousBusiness);
   }
 
   return { response, request, authenticationCalls, assignmentCalls };
@@ -98,6 +114,21 @@ test("only the exact enabled value opens the bootstrap", async function () {
   for (const enabled of ["TRUE", "1", " true ", "false"]) {
     const result = await invoke({ enabled });
     assert.equal(result.response.statusCode, 404);
+    assert.deepEqual(result.authenticationCalls, []);
+    assert.deepEqual(result.assignmentCalls, []);
+  }
+});
+
+test("bootstrap target configuration is required", async function () {
+  for (const options of [
+    { configuredIdentityId: null },
+    { configuredIdentityId: "   " },
+    { configuredBusinessId: null },
+    { configuredBusinessId: "   " }
+  ]) {
+    const result = await invoke({ enabled: "true", ...options });
+    assert.equal(result.response.statusCode, 404);
+    assert.deepEqual(result.authenticationCalls, []);
     assert.deepEqual(result.assignmentCalls, []);
   }
 });
@@ -106,6 +137,17 @@ test("an unauthenticated request cannot assign ownership", async function () {
   const result = await invoke({ enabled: "true", identity: null });
 
   assert.equal(result.response.statusCode, 401);
+  assert.deepEqual(result.assignmentCalls, []);
+});
+
+test("a different authenticated Clerk user cannot claim the bootstrap business", async function () {
+  const result = await invoke({
+    enabled: "true",
+    configuredIdentityId: "allowed-clerk-user",
+    identity: { trustedIdentityId: "different-clerk-user" }
+  });
+
+  assert.equal(result.response.statusCode, 403);
   assert.deepEqual(result.assignmentCalls, []);
 });
 
@@ -133,16 +175,29 @@ test("missing and invalid business IDs fail without an assignment", async functi
   }
 });
 
-test("a nonexistent business returns a generic not-found response", async function () {
+test("an authenticated user cannot bootstrap a different business", async function () {
+  const result = await invoke({
+    enabled: "true",
+    configuredBusinessId: "business-a",
+    body: { businessId: "business-b" }
+  });
+
+  assert.equal(result.response.statusCode, 403);
+  assert.deepEqual(result.assignmentCalls, []);
+});
+
+test("a nonexistent configured business returns a generic not-found response", async function () {
   const result = await invoke({ enabled: "true", assignment: null });
 
   assert.equal(result.response.statusCode, 404);
   assert.deepEqual(result.response.body, { error: "Business not found." });
 });
 
-test("the authenticated Clerk identity is assigned to an existing business", async function () {
+test("the configured authenticated Clerk identity is assigned only to the configured business", async function () {
   const result = await invoke({
     enabled: "true",
+    configuredIdentityId: "clerk-user-verified",
+    configuredBusinessId: "business-a",
     identity: {
       trustedIdentityId: "clerk-user-verified",
       provider: "clerk",
