@@ -3,6 +3,18 @@ const {
   resolveTrustedIdentityFromRequest
 } = require("../_lib/demeos-authentication.js");
 
+function readRequiredBootstrapTarget() {
+  const trustedIdentityId = typeof process.env.DEMEOS_OWNER_BOOTSTRAP_IDENTITY_ID === "string"
+    ? process.env.DEMEOS_OWNER_BOOTSTRAP_IDENTITY_ID.trim()
+    : "";
+  const businessId = typeof process.env.DEMEOS_OWNER_BOOTSTRAP_BUSINESS_ID === "string"
+    ? process.env.DEMEOS_OWNER_BOOTSTRAP_BUSINESS_ID.trim()
+    : "";
+
+  if (!trustedIdentityId || !businessId) return null;
+  return { trustedIdentityId, businessId };
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -13,16 +25,30 @@ module.exports = async function handler(req, res) {
     return res.status(404).json({ error: "Not found." });
   }
 
+  const bootstrapTarget = readRequiredBootstrapTarget();
+  if (!bootstrapTarget) {
+    return res.status(404).json({ error: "Not found." });
+  }
+
   const authenticatedIdentity = await resolveTrustedIdentityFromRequest(req);
   if (!authenticatedIdentity) {
     return res.status(401).json({ error: "Authentication required." });
   }
-  const { trustedIdentityId } = authenticatedIdentity;
+
+  const trustedIdentityId = typeof authenticatedIdentity.trustedIdentityId === "string"
+    ? authenticatedIdentity.trustedIdentityId.trim()
+    : "";
+  if (!trustedIdentityId || trustedIdentityId !== bootstrapTarget.trustedIdentityId) {
+    return res.status(403).json({ error: "Ownership bootstrap is not authorized." });
+  }
 
   const businessId = req.body && typeof req.body.businessId === "string"
     ? req.body.businessId.trim()
     : "";
   if (!businessId) return res.status(400).json({ error: "A businessId is required." });
+  if (businessId !== bootstrapTarget.businessId) {
+    return res.status(403).json({ error: "Ownership bootstrap is not authorized." });
+  }
 
   try {
     const assignment = await persistence.getRepository().assignBusinessOwner(
