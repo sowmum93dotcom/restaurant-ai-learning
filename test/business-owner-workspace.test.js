@@ -10,9 +10,11 @@ function storage(values) {
   return { getItem: function (key) { return Object.hasOwn(values, key) ? values[key] : null; } };
 }
 
-test("workspace contains exactly the five owner-facing sections", function () {
-  const labels = Array.from(html.matchAll(/<a[^>]*>([^<]+)<\/a>/g), function (match) { return match[1]; });
-  assert.deepEqual(labels, ["Overview", "Business Profile", "DEMEOS Recommends", "Marketing", "Results", "Manage Business Profile", "Open Marketing Agent"]);
+test("workspace navigation contains the five owner-facing sections", function () {
+  const navigation = html.match(/<nav class="owner-workspace-navigation"[\s\S]*?<\/nav>/);
+  assert.ok(navigation, "Owner workspace navigation should exist");
+  const labels = Array.from(navigation[0].matchAll(/<a[^>]*>([^<]+)<\/a>/g), function (match) { return match[1]; });
+  assert.deepEqual(labels, ["Overview", "Business Profile", "DEMEOS Recommends", "Marketing", "Results"]);
   assert.match(html, /aria-label="Business Owner Workspace"/);
 });
 
@@ -24,7 +26,7 @@ test("owner navigation reuses existing owner functionality", function () {
   assert.doesNotMatch(html, /iframe|data-workspace-view|id="recommendations-btn"|id="generate-btn"/);
 });
 
-test("workspace isolates overview data to the selected business", function () {
+test("workspace limits overview rendering to the selected browser business context", function () {
   const context = getOwnerWorkspaceContext(storage({
     demeosActiveBusinessId: "business-a",
     demeosBusinessProfiles: JSON.stringify([
@@ -39,6 +41,12 @@ test("workspace isolates overview data to the selected business", function () {
   assert.equal(context.profile.name, "Cafe A");
   assert.deepEqual(context.currentWork, [{ name: "Autumn menu", status: "Approved" }]);
   assert.doesNotMatch(JSON.stringify(context), /Private Rival|Rival plans/);
+});
+
+test("workspace shell does not claim browser filtering is authorization", function () {
+  assert.doesNotMatch(html, /Private business workspace|Private business context/);
+  assert.match(html, /Business owner workspace/);
+  assert.match(html, /Selected business context/);
 });
 
 test("workspace exposes no admin controls, invented metrics, or unsupported capabilities", function () {
