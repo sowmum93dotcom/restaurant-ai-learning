@@ -24,14 +24,29 @@ async function withEnvironment(values, callback) {
   }
 }
 
-test("public config exposes only the Clerk publishable key", function () {
+test("public config exposes only browser-safe Clerk and diagnostic configuration", function () {
   return withEnvironment({ CLERK_PUBLISHABLE_KEY: "pk_test_public", CLERK_SECRET_KEY: "sk_test_secret" }, function () {
     const res = response();
     publicConfig({}, res);
     assert.equal(res.statusCode, 200);
-    assert.deepEqual(res.body, { clerkPublishableKey: "pk_test_public" });
+    assert.deepEqual(res.body, {
+      clerkPublishableKey: "pk_test_public",
+      businessIdDiagnosticEnabled: false
+    });
     assert.equal(res.headers["Cache-Control"], "no-store");
     assert.doesNotMatch(JSON.stringify(res.body), /sk_test_secret|CLERK_SECRET_KEY/);
+  });
+});
+
+test("public config enables the business ID diagnostic only for exact true", function () {
+  return withEnvironment({
+    CLERK_PUBLISHABLE_KEY: "pk_test_public",
+    DEMEOS_BUSINESS_ID_DIAGNOSTIC_ENABLED: "true"
+  }, function () {
+    const res = response();
+    publicConfig({}, res);
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.businessIdDiagnosticEnabled, true);
   });
 });
 
