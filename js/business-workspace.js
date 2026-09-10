@@ -86,6 +86,40 @@ function showOwnerAuthenticationState(elements, state) {
   elements.account.hidden = state !== "signed-in";
 }
 
+function configureOwnershipConfirmation(documentObject, businessId, options = {}) {
+  const control = documentObject.getElementById("owner-ownership-confirmation");
+  const button = documentObject.getElementById("owner-confirm-ownership");
+  const status = documentObject.getElementById("owner-ownership-confirmation-status");
+  if (!control || !button || !status) return;
+
+  control.hidden = !(options.businessIdDiagnosticEnabled === true && businessId);
+  status.textContent = "";
+  button.disabled = false;
+  button.onclick = null;
+  if (control.hidden) return;
+
+  button.onclick = async function () {
+    button.disabled = true;
+    status.textContent = "";
+    try {
+      const response = await options.fetchFunction("/api/businesses/bootstrap-owner", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ businessId })
+      });
+      const result = response.status === 200 ? await response.json() : null;
+      status.textContent = result && result.ownershipAssigned === true
+        ? "Business ownership confirmed."
+        : "DEMEOS could not confirm business ownership.";
+    } catch (_error) {
+      status.textContent = "DEMEOS could not confirm business ownership.";
+    } finally {
+      button.disabled = false;
+    }
+  };
+}
+
 function renderOwnerWorkspace(documentObject, storage, options = {}) {
   // Browser business selection is presentation state only. Server-side ownership authorization is authoritative.
   const context = getOwnerWorkspaceContext(storage);
@@ -94,11 +128,13 @@ function renderOwnerWorkspace(documentObject, storage, options = {}) {
   identity.replaceChildren();
   work.replaceChildren();
   if (!context.profile) {
+    configureOwnershipConfirmation(documentObject, null, options);
     identity.textContent = "No saved business is selected.";
     work.textContent = "Save a Business Profile before starting work in DEMEOS.";
     return;
   }
   const name = context.profile.name || "Saved business";
+  configureOwnershipConfirmation(documentObject, context.profile.businessId, options);
   documentObject.getElementById("workspace-header-business").textContent = name;
   const heading = documentObject.createElement("strong");
   heading.textContent = name;
@@ -208,7 +244,8 @@ async function initialiseOwnerAuthentication(windowObject, documentObject, stora
     await clerk.load({ ui: { ClerkUI: windowObject.__internal_ClerkUICtor } });
 
     bindOwnerClerkSession(clerk, documentObject, storage, elements, {
-      businessIdDiagnosticEnabled: config.businessIdDiagnosticEnabled === true
+      businessIdDiagnosticEnabled: config.businessIdDiagnosticEnabled === true,
+      fetchFunction
     });
     // Clerk's browser SDK manages its session; DEMEOS never copies or stores its tokens.
   } catch (error) {
@@ -219,7 +256,7 @@ async function initialiseOwnerAuthentication(windowObject, documentObject, stora
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     getOwnerWorkspaceContext, migrateWorkspaceBusinessContext, showOwnerAuthenticationState,
-    renderOwnerWorkspace, bindOwnerClerkSession, initialiseOwnerAuthentication
+    configureOwnershipConfirmation, renderOwnerWorkspace, bindOwnerClerkSession, initialiseOwnerAuthentication
   };
 }
 
