@@ -103,6 +103,11 @@ function renderOwnerWorkspace(documentObject, storage) {
   const heading = documentObject.createElement("strong");
   heading.textContent = name;
   identity.appendChild(heading);
+  if (context.profile.businessId) {
+    const businessIdDiagnostic = documentObject.createElement("small");
+    businessIdDiagnostic.textContent = `Business ID: ${context.profile.businessId}`;
+    identity.appendChild(businessIdDiagnostic);
+  }
   [context.profile.type, context.profile.location].filter(function (value) {
     return typeof value === "string" && value.trim();
   }).forEach(function (value) {
