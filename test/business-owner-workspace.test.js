@@ -116,7 +116,7 @@ function createRenderDocument() {
   };
 }
 
-test("workspace renders the exact selected business ID when present", function () {
+test("workspace renders the exact selected business ID only when diagnostic config is enabled", function () {
   const documentObject = createRenderDocument();
   const local = storage({
     demeosActiveBusinessId: "business-exact-123",
@@ -125,7 +125,7 @@ test("workspace renders the exact selected business ID when present", function (
     ])
   });
 
-  renderOwnerWorkspace(documentObject, local);
+  renderOwnerWorkspace(documentObject, local, { businessIdDiagnosticEnabled: true });
 
   const diagnostic = documentObject.elements["workspace-business-identity"].children.find(function (child) {
     return child.tagName === "SMALL";
@@ -134,13 +134,29 @@ test("workspace renders the exact selected business ID when present", function (
   assert.equal(diagnostic.textContent, "Business ID: business-exact-123");
 });
 
+test("workspace hides the business ID diagnostic by default", function () {
+  const documentObject = createRenderDocument();
+  const local = storage({
+    demeosActiveBusinessId: "business-secret-123",
+    demeosBusinessProfiles: JSON.stringify([
+      { businessId: "business-secret-123", name: "Test Kitchen London" }
+    ])
+  });
+
+  renderOwnerWorkspace(documentObject, local);
+
+  assert.equal(documentObject.elements["workspace-business-identity"].children.some(function (child) {
+    return child.tagName === "SMALL" && child.textContent.startsWith("Business ID:");
+  }), false);
+});
+
 test("workspace omits the business ID diagnostic when the selected profile has no business ID", function () {
   const documentObject = createRenderDocument();
   const local = storage({
     demeosBusinessProfile: JSON.stringify({ name: "Legacy without ID" })
   });
 
-  renderOwnerWorkspace(documentObject, local);
+  renderOwnerWorkspace(documentObject, local, { businessIdDiagnosticEnabled: true });
 
   const diagnostics = documentObject.elements["workspace-business-identity"].children.filter(function (child) {
     return child.tagName === "SMALL" && child.textContent.startsWith("Business ID:");
