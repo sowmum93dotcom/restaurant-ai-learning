@@ -6,7 +6,10 @@ function publicConfig(req, res) {
   }
 
   // This endpoint is intentionally restricted to configuration safe for any browser.
-  return res.status(200).json({ clerkPublishableKey: clerkPublishableKey.trim() });
+  return res.status(200).json({
+    clerkPublishableKey: clerkPublishableKey.trim(),
+    businessIdDiagnosticEnabled: process.env.DEMEOS_BUSINESS_ID_DIAGNOSTIC_ENABLED === "true"
+  });
 }
 
 module.exports = publicConfig;

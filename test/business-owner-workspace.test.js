@@ -3,7 +3,7 @@ const fs = require("node:fs");
 const test = require("node:test");
 
 const {
-  getOwnerWorkspaceContext, showOwnerAuthenticationState, bindOwnerClerkSession
+  getOwnerWorkspaceContext, showOwnerAuthenticationState, bindOwnerClerkSession, renderOwnerWorkspace
 } = require("../js/business-workspace.js");
 const html = fs.readFileSync(require.resolve("../business-workspace.html"), "utf8");
 const script = fs.readFileSync(require.resolve("../js/business-workspace.js"), "utf8");
@@ -88,6 +88,80 @@ test("workspace exposes no admin controls, invented metrics, or unsupported capa
   assert.doesNotMatch(source, /DEMEOS Admin|admin control|customer identity|booking|ordering|CRM|loyalty|payments/i);
   assert.doesNotMatch(source, /revenue|ROI|conversion rate|forecast|analytics|recommendationTitle|demeosCapability/i);
   assert.doesNotMatch(source, /Add Business|business-selector/);
+});
+
+function createRenderDocument() {
+  const elements = {
+    "workspace-business-identity": {
+      children: [], textContent: "",
+      replaceChildren: function () { this.children = []; this.textContent = ""; },
+      appendChild: function (child) { this.children.push(child); }
+    },
+    "workspace-current-work": {
+      children: [], textContent: "",
+      replaceChildren: function () { this.children = []; this.textContent = ""; },
+      appendChild: function (child) { this.children.push(child); }
+    },
+    "workspace-header-business": { textContent: "" }
+  };
+  return {
+    elements,
+    getElementById: function (id) { return elements[id]; },
+    createElement: function (tagName) {
+      return {
+        tagName: tagName.toUpperCase(), textContent: "", children: [],
+        append: function (...children) { this.children.push(...children); }
+      };
+    }
+  };
+}
+
+test("workspace renders the exact selected business ID only when diagnostic config is enabled", function () {
+  const documentObject = createRenderDocument();
+  const local = storage({
+    demeosActiveBusinessId: "business-exact-123",
+    demeosBusinessProfiles: JSON.stringify([
+      { businessId: "business-exact-123", name: "Test Kitchen London", type: "Restaurant", location: "Greenwich, London" }
+    ])
+  });
+
+  renderOwnerWorkspace(documentObject, local, { businessIdDiagnosticEnabled: true });
+
+  const diagnostic = documentObject.elements["workspace-business-identity"].children.find(function (child) {
+    return child.tagName === "SMALL";
+  });
+  assert.ok(diagnostic);
+  assert.equal(diagnostic.textContent, "Business ID: business-exact-123");
+});
+
+test("workspace hides the business ID diagnostic by default", function () {
+  const documentObject = createRenderDocument();
+  const local = storage({
+    demeosActiveBusinessId: "business-secret-123",
+    demeosBusinessProfiles: JSON.stringify([
+      { businessId: "business-secret-123", name: "Test Kitchen London" }
+    ])
+  });
+
+  renderOwnerWorkspace(documentObject, local);
+
+  assert.equal(documentObject.elements["workspace-business-identity"].children.some(function (child) {
+    return child.tagName === "SMALL" && child.textContent.startsWith("Business ID:");
+  }), false);
+});
+
+test("workspace omits the business ID diagnostic when the selected profile has no business ID", function () {
+  const documentObject = createRenderDocument();
+  const local = storage({
+    demeosBusinessProfile: JSON.stringify({ name: "Legacy without ID" })
+  });
+
+  renderOwnerWorkspace(documentObject, local, { businessIdDiagnosticEnabled: true });
+
+  const diagnostics = documentObject.elements["workspace-business-identity"].children.filter(function (child) {
+    return child.tagName === "SMALL" && child.textContent.startsWith("Business ID:");
+  });
+  assert.equal(diagnostics.length, 0);
 });
 
 function authenticationElements() {

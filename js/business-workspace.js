@@ -86,7 +86,7 @@ function showOwnerAuthenticationState(elements, state) {
   elements.account.hidden = state !== "signed-in";
 }
 
-function renderOwnerWorkspace(documentObject, storage) {
+function renderOwnerWorkspace(documentObject, storage, options = {}) {
   // Browser business selection is presentation state only. Server-side ownership authorization is authoritative.
   const context = getOwnerWorkspaceContext(storage);
   const identity = documentObject.getElementById("workspace-business-identity");
@@ -103,6 +103,11 @@ function renderOwnerWorkspace(documentObject, storage) {
   const heading = documentObject.createElement("strong");
   heading.textContent = name;
   identity.appendChild(heading);
+  if (options.businessIdDiagnosticEnabled === true && context.profile.businessId) {
+    const businessIdDiagnostic = documentObject.createElement("small");
+    businessIdDiagnostic.textContent = `Business ID: ${context.profile.businessId}`;
+    identity.appendChild(businessIdDiagnostic);
+  }
   [context.profile.type, context.profile.location].filter(function (value) {
     return typeof value === "string" && value.trim();
   }).forEach(function (value) {
@@ -125,10 +130,10 @@ function renderOwnerWorkspace(documentObject, storage) {
   });
 }
 
-function bindOwnerClerkSession(clerk, documentObject, storage, elements) {
+function bindOwnerClerkSession(clerk, documentObject, storage, elements, options = {}) {
   const update = function (auth) {
     if (auth && auth.user) {
-      renderOwnerWorkspace(documentObject, storage);
+      renderOwnerWorkspace(documentObject, storage, options);
       showOwnerAuthenticationState(elements, "signed-in");
       return;
     }
@@ -202,7 +207,9 @@ async function initialiseOwnerAuthentication(windowObject, documentObject, stora
     }
     await clerk.load({ ui: { ClerkUI: windowObject.__internal_ClerkUICtor } });
 
-    bindOwnerClerkSession(clerk, documentObject, storage, elements);
+    bindOwnerClerkSession(clerk, documentObject, storage, elements, {
+      businessIdDiagnosticEnabled: config.businessIdDiagnosticEnabled === true
+    });
     // Clerk's browser SDK manages its session; DEMEOS never copies or stores its tokens.
   } catch (error) {
     showOwnerAuthenticationState(elements, "error");
