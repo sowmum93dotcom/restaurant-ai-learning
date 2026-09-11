@@ -1,4 +1,8 @@
 const { getRepository } = require("../../../../_lib/persistence.js");
+const {
+  authorizeBusinessOwnerRequest
+} = require("../../../../_lib/demeos-business-owner-authorization.js");
+const { DEMEOS_ACTIONS } = require("../../../../_lib/demeos-rules.js");
 
 const allowedOutcomes = ["Positive", "Mixed", "No noticeable result", "Not used yet"];
 
@@ -10,24 +14,42 @@ module.exports = async function handler(req, res) {
 
   const businessId = typeof req.query.businessId === "string" ? req.query.businessId.trim() : "";
   const campaignId = typeof req.query.campaignId === "string" ? req.query.campaignId.trim() : "";
-  const selectedOutcome = req.body && req.body.outcome;
-  const ownerNote = req.body && req.body.ownerNote;
-  if (
-    !businessId || !campaignId || !allowedOutcomes.includes(selectedOutcome) ||
-    (ownerNote !== undefined && typeof ownerNote !== "string")
-  ) {
+  if (!businessId || !campaignId) {
     return res.status(400).json({ error: "DEMEOS received invalid campaign outcome data." });
   }
 
-  const outcome = {
-    businessId,
-    campaignId,
-    outcome: selectedOutcome,
-    ownerNote: typeof ownerNote === "string" ? ownerNote.trim() : "",
-    savedAt: new Date().toISOString()
-  };
   try {
-    const campaign = await getRepository().saveCampaignOutcome(businessId, campaignId, outcome);
+    const repository = getRepository();
+    const access = await authorizeBusinessOwnerRequest({
+      req,
+      businessId,
+      action: DEMEOS_ACTIONS.RECORD_CAMPAIGN_OUTCOME,
+      repository
+    });
+    if (!access.authenticated) {
+      return res.status(401).json({ error: "Authentication required." });
+    }
+    if (!access.allowed) {
+      return res.status(403).json({ error: "Forbidden." });
+    }
+
+    const selectedOutcome = req.body && req.body.outcome;
+    const ownerNote = req.body && req.body.ownerNote;
+    if (
+      !allowedOutcomes.includes(selectedOutcome) ||
+      (ownerNote !== undefined && typeof ownerNote !== "string")
+    ) {
+      return res.status(400).json({ error: "DEMEOS received invalid campaign outcome data." });
+    }
+
+    const outcome = {
+      businessId,
+      campaignId,
+      outcome: selectedOutcome,
+      ownerNote: typeof ownerNote === "string" ? ownerNote.trim() : "",
+      savedAt: new Date().toISOString()
+    };
+    const campaign = await repository.saveCampaignOutcome(businessId, campaignId, outcome);
     if (!campaign) {
       return res.status(409).json({ error: "Only an approved campaign belonging to this business can receive an outcome." });
     }
