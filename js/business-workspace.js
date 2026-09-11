@@ -91,6 +91,11 @@ function renderOwnerWorkspace(documentObject, storage) {
   const context = getOwnerWorkspaceContext(storage);
   const identity = documentObject.getElementById("workspace-business-identity");
   const work = documentObject.getElementById("workspace-current-work");
+  const headerBusiness = documentObject.getElementById("workspace-header-business");
+
+  // Marketing and Results reuse this authentication boundary without duplicating Overview-only rendering.
+  if (!identity || !work) return;
+
   identity.replaceChildren();
   work.replaceChildren();
   if (!context.profile) {
@@ -99,7 +104,7 @@ function renderOwnerWorkspace(documentObject, storage) {
     return;
   }
   const name = context.profile.name || "Saved business";
-  documentObject.getElementById("workspace-header-business").textContent = name;
+  if (headerBusiness) headerBusiness.textContent = name;
   const heading = documentObject.createElement("strong");
   heading.textContent = name;
   identity.appendChild(heading);
@@ -125,10 +130,10 @@ function renderOwnerWorkspace(documentObject, storage) {
   });
 }
 
-function bindOwnerClerkSession(clerk, documentObject, storage, elements, options = {}) {
+function bindOwnerClerkSession(clerk, documentObject, storage, elements) {
   const update = function (auth) {
     if (auth && auth.user) {
-      renderOwnerWorkspace(documentObject, storage, options);
+      renderOwnerWorkspace(documentObject, storage);
       showOwnerAuthenticationState(elements, "signed-in");
       return;
     }
@@ -137,7 +142,6 @@ function bindOwnerClerkSession(clerk, documentObject, storage, elements, options
 
   elements.signIn.addEventListener("click", function () { clerk.openSignIn(); });
   elements.signOut.addEventListener("click", function () {
-    // Hide owner presentation immediately; Clerk remains the only session authority.
     showOwnerAuthenticationState(elements, "signed-out");
     return clerk.signOut();
   });
@@ -174,15 +178,8 @@ async function loadClerkBrowserSdk(documentObject, publishableKey) {
   const clerkDomain = getClerkFrontendApiDomain(publishableKey);
   if (!clerkDomain) throw new Error("Invalid Clerk publishable key");
 
-  await appendClerkScript(
-    documentObject,
-    `https://${clerkDomain}/npm/@clerk/ui@1/dist/ui.browser.js`
-  );
-  await appendClerkScript(
-    documentObject,
-    `https://${clerkDomain}/npm/@clerk/clerk-js@6/dist/clerk.browser.js`,
-    publishableKey
-  );
+  await appendClerkScript(documentObject, `https://${clerkDomain}/npm/@clerk/ui@1/dist/ui.browser.js`);
+  await appendClerkScript(documentObject, `https://${clerkDomain}/npm/@clerk/clerk-js@6/dist/clerk.browser.js`, publishableKey);
 }
 
 async function initialiseOwnerAuthentication(windowObject, documentObject, storage, fetchFunction) {
@@ -201,9 +198,7 @@ async function initialiseOwnerAuthentication(windowObject, documentObject, stora
       throw new Error("Clerk did not load");
     }
     await clerk.load({ ui: { ClerkUI: windowObject.__internal_ClerkUICtor } });
-
     bindOwnerClerkSession(clerk, documentObject, storage, elements);
-    // Clerk's browser SDK manages its session; DEMEOS never copies or stores its tokens.
   } catch (error) {
     showOwnerAuthenticationState(elements, "error");
   }
