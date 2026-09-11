@@ -3,36 +3,71 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DEMEOS Business Results</title>
+  <title>Results | DEMEOS Business Owner Workspace</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
-<body class="business-results-body">
-  <header class="workspace-header business-results-header">
-    <a class="demeos-brand" href="business-results.html" aria-label="DEMEOS Business Results home">
+<body class="owner-workspace-body business-results-body">
+  <header class="workspace-header owner-workspace-header">
+    <a class="demeos-brand" href="business-workspace.html" aria-label="DEMEOS Business Owner Workspace home">
       <img src="images/demeos-logo.png" alt="DEMEOS logo" class="demeos-logo" />
     </a>
-    <div class="workspace-identity business-results-title">
-      <p class="agent-label">DEMEOS</p>
-      <h1 class="restaurant-name">Business Results</h1>
-      <p id="business-results-business-name" class="cuisine-type">Owner workspace</p>
+    <div class="workspace-identity">
+      <p class="agent-label">Business owner workspace</p>
+      <h1 class="restaurant-name">Business Owner Workspace</h1>
+      <p id="business-results-business-name" class="cuisine-type">Results</p>
     </div>
-    <a class="back-to-agent" href="index.html">Back to Marketing Agent</a>
+    <div id="owner-account-control" class="owner-account-control" hidden>
+      <span>Signed in</span>
+      <button id="owner-sign-out" class="owner-account-button" type="button">Sign out</button>
+    </div>
   </header>
 
-  <main class="business-results-main">
-    <section class="business-results-intro" aria-labelledby="business-results-heading">
-      <p class="workspace-eyebrow">Recorded business information</p>
-      <h2 id="business-results-heading">Campaign results</h2>
-      <p>See owner-recorded outcomes and stored customer participation together with the campaign they belong to.</p>
-    </section>
-    <p id="business-results-status" class="business-results-status" role="status">Loading stored results…</p>
-    <section id="business-results-zero" class="business-results-zero" hidden>
-      <h3>No business results yet</h3>
-      <p>Recorded campaign outcomes and customer participation will appear here when they are available.</p>
-    </section>
-    <section id="business-results-list" class="business-results-list" aria-label="Campaign results"></section>
+  <main id="owner-auth-loading" class="owner-auth-panel" aria-live="polite">
+    <p class="workspace-eyebrow">Business owner access</p>
+    <h2>Loading authentication&hellip;</h2>
+    <p>Checking your DEMEOS sign-in securely.</p>
   </main>
+
+  <main id="owner-auth-signed-out" class="owner-auth-panel" hidden>
+    <p class="workspace-eyebrow">Business owner access</p>
+    <h2>Sign in to your workspace</h2>
+    <p>Use your DEMEOS account to continue to Results.</p>
+    <button id="owner-sign-in" class="demeos-primary-button" type="button">Sign in</button>
+  </main>
+
+  <main id="owner-auth-error" class="owner-auth-panel owner-auth-error" role="alert" hidden>
+    <p class="workspace-eyebrow">Business owner access</p>
+    <h2>Authentication is unavailable</h2>
+    <p>We could not load secure sign-in. Please refresh the page or try again later.</p>
+  </main>
+
+  <div id="owner-authenticated-workspace" class="owner-workspace-shell" hidden>
+    <aside class="owner-workspace-sidebar">
+      <nav class="owner-workspace-navigation" aria-label="Business Owner Workspace">
+        <a href="business-workspace.html">Overview</a>
+        <a href="index.html#business-profile">Business Profile</a>
+        <a href="index.html#recommends">DEMEOS Recommends</a>
+        <a href="index.html">Marketing</a>
+        <a class="is-active" href="business-results.html" aria-current="page">Results</a>
+      </nav>
+    </aside>
+
+    <main class="owner-workspace-main business-results-main">
+      <section class="business-results-intro" aria-labelledby="business-results-heading">
+        <p class="workspace-eyebrow">Recorded business information</p>
+        <h2 id="business-results-heading">Business Results</h2>
+        <p>See owner-recorded outcomes and stored customer participation together with the campaign they belong to.</p>
+      </section>
+      <p id="business-results-status" class="business-results-status" role="status">Loading stored results…</p>
+      <section id="business-results-zero" class="business-results-zero" hidden>
+        <h3>No business results yet</h3>
+        <p>Recorded campaign outcomes and customer participation will appear here when they are available.</p>
+      </section>
+      <section id="business-results-list" class="business-results-list" aria-label="Campaign results"></section>
+    </main>
+  </div>
   <footer><p>&copy; 2026 DEMEOS — One System. Real Value. Shared Future.</p></footer>
+  <script src="js/business-workspace.js"></script>
   <script src="js/business-results.js"></script>
 </body>
 </html>
