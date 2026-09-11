@@ -420,6 +420,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     const menuToggle = byId("workspace-menu-toggle");
     if (navigation) navigation.classList.remove("is-open");
     if (menuToggle) menuToggle.setAttribute("aria-expanded", "false");
+    if (typeof updateOwnerNavigation === "function") updateOwnerNavigation(document, window.location, viewId);
   }
 
   if (typeof document.querySelectorAll === "function") {
@@ -448,6 +449,11 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
         document.getElementById(requestedView).hasAttribute("data-workspace-panel")) {
       showWorkspaceView(requestedView);
     }
+    window.addEventListener("hashchange", function () {
+      const hashView = window.location.hash.slice(1);
+      const panel = document.getElementById(hashView);
+      if (panel && panel.hasAttribute("data-workspace-panel")) showWorkspaceView(hashView);
+    });
   }
 
   function clearRecommendations() {
