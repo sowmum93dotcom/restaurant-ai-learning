@@ -178,24 +178,12 @@ function renderOwnerWorkspace(documentObject, storage) {
 }
 
 function bindOwnerClerkSession(clerk, documentObject, storage, elements) {
-  let signedIn = Boolean(clerk && clerk.user);
   const update = function (auth) {
-    const nextSignedIn = Boolean(auth && auth.user);
-    if (nextSignedIn) {
+    if (auth && auth.user) {
       renderOwnerWorkspace(documentObject, storage);
       showOwnerAuthenticationState(elements, "signed-in");
-      if (!signedIn) {
-        signedIn = true;
-        const windowObject = documentObject && documentObject.defaultView;
-        if (windowObject && windowObject.location && typeof windowObject.location.reload === "function") {
-          windowObject.location.reload();
-          return;
-        }
-      }
-      signedIn = true;
       return;
     }
-    signedIn = false;
     showOwnerAuthenticationState(elements, "signed-out");
   };
 
@@ -263,13 +251,167 @@ async function initialiseOwnerAuthentication(windowObject, documentObject, stora
   }
 }
 
+const ownerBusinessPendingSyncKey = "demeosPendingBusinessProfileSync";
+const ownerNewBusinessAttemptKey = "demeosPendingNewBusinessId";
+
+function readOwnerPendingSyncIds(storage) {
+  if (!storage || typeof storage.getItem !== "function") return [];
+  const raw = storage.getItem(ownerBusinessPendingSyncKey);
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter(function (id) { return typeof id === "string" && id; }) : [];
+  } catch (_error) {
+    return typeof raw === "string" && raw.trim() ? [raw.trim()] : [];
+  }
+}
+
+function mergeServerAuthorizedProfiles(cachedProfiles, serverBusinesses, selectedBusinessId, pendingIds) {
+  const pending = new Set(Array.isArray(pendingIds) ? pendingIds : []);
+  const cachedById = new Map((Array.isArray(cachedProfiles) ? cachedProfiles : []).filter(function (profile) {
+    return profile && typeof profile.businessId === "string" && profile.businessId;
+  }).map(function (profile) { return [profile.businessId, profile]; }));
+  const profiles = (Array.isArray(serverBusinesses) ? serverBusinesses : []).filter(function (profile) {
+    return profile && typeof profile.businessId === "string" && profile.businessId;
+  }).map(function (serverProfile) {
+    const cached = cachedById.get(serverProfile.businessId) || {};
+    return pending.has(serverProfile.businessId)
+      ? { ...serverProfile, ...cached, businessId: serverProfile.businessId }
+      : { ...cached, ...serverProfile, businessId: serverProfile.businessId };
+  });
+  const activeBusinessId = profiles.some(function (profile) { return profile.businessId === selectedBusinessId; })
+    ? selectedBusinessId : (profiles[0] ? profiles[0].businessId : null);
+  return { profiles, activeBusinessId };
+}
+
+function getStickyNewBusinessId(storage, createId) {
+  if (!storage || typeof storage.getItem !== "function" || typeof storage.setItem !== "function") return createId();
+  const existing = storage.getItem(ownerNewBusinessAttemptKey);
+  if (typeof existing === "string" && existing) return existing;
+  const businessId = createId();
+  storage.setItem(ownerNewBusinessAttemptKey, businessId);
+  return businessId;
+}
+
+function clearStickyNewBusinessId(storage) {
+  if (storage && typeof storage.removeItem === "function") storage.removeItem(ownerNewBusinessAttemptKey);
+}
+
+function getRequestUrl(input) {
+  if (typeof input === "string") return input;
+  return input && typeof input.url === "string" ? input.url : "";
+}
+
+function getRequestMethod(input, init) {
+  if (init && typeof init.method === "string") return init.method.toUpperCase();
+  if (input && typeof input.method === "string") return input.method.toUpperCase();
+  return "GET";
+}
+
+function installOwnerBusinessSecurity(windowObject, documentObject, localStorageObject, sessionStorageObject) {
+  if (!windowObject || !documentObject || typeof windowObject.fetch !== "function") return;
+
+  let resolveOwnerAuthReady;
+  const ownerAuthReady = new Promise(function (resolve) { resolveOwnerAuthReady = resolve; });
+  let authenticatedOnThisPage = false;
+  let currentIdentityId = null;
+  const originalFetch = windowObject.fetch.bind(windowObject);
+
+  windowObject.fetch = async function (input, init) {
+    const url = getRequestUrl(input);
+    const method = getRequestMethod(input, init);
+    if (url === "/api/businesses" && method === "GET") await ownerAuthReady;
+    try {
+      const response = await originalFetch(input, init);
+      const match = method === "PUT" && typeof url === "string"
+        ? url.match(/^\/api\/businesses\/([^/?]+)$/) : null;
+      if (match && sessionStorageObject) {
+        const attemptedId = sessionStorageObject.getItem(ownerNewBusinessAttemptKey);
+        if (attemptedId && decodeURIComponent(match[1]) === attemptedId && response.ok) {
+          clearStickyNewBusinessId(sessionStorageObject);
+        } else if (attemptedId && decodeURIComponent(match[1]) === attemptedId &&
+          [400, 403, 409].includes(response.status)) {
+          clearStickyNewBusinessId(sessionStorageObject);
+        }
+      }
+      return response;
+    } catch (error) {
+      // Preserve the attempted ID after ambiguous network failure so a retry cannot create a duplicate.
+      throw error;
+    }
+  };
+
+  const originalBindOwnerClerkSession = windowObject.bindOwnerClerkSession;
+  if (typeof originalBindOwnerClerkSession === "function") {
+    windowObject.bindOwnerClerkSession = function (clerk, ownerDocument, storage, elements) {
+      const handleTrustedSessionChange = function (auth) {
+        const user = auth && auth.user;
+        const identityId = user && typeof user.id === "string" ? user.id : null;
+        const selector = ownerDocument.getElementById("business-selector");
+
+        if (!identityId) {
+          if (selector) {
+            selector.textContent = "";
+            selector.disabled = true;
+          }
+          if (authenticatedOnThisPage) currentIdentityId = null;
+          return;
+        }
+
+        if (authenticatedOnThisPage && (currentIdentityId === null || currentIdentityId !== identityId)) {
+          if (selector) {
+            selector.textContent = "";
+            selector.disabled = true;
+          }
+          windowObject.location.reload();
+          return;
+        }
+
+        currentIdentityId = identityId;
+        authenticatedOnThisPage = true;
+        resolveOwnerAuthReady();
+      };
+
+      clerk.addListener(handleTrustedSessionChange);
+      handleTrustedSessionChange({ user: clerk.user });
+      return originalBindOwnerClerkSession(clerk, ownerDocument, storage, elements);
+    };
+  }
+
+  if (typeof windowObject.applyAuthorizedBusinessProfiles === "function") {
+    windowObject.applyAuthorizedBusinessProfiles = function (cachedProfiles, serverBusinesses, selectedBusinessId) {
+      return mergeServerAuthorizedProfiles(cachedProfiles, serverBusinesses, selectedBusinessId,
+        readOwnerPendingSyncIds(localStorageObject));
+    };
+  }
+
+  const originalCreateBusinessId = windowObject.createBusinessId;
+  if (typeof originalCreateBusinessId === "function") {
+    windowObject.createBusinessId = function () {
+      return getStickyNewBusinessId(sessionStorageObject, originalCreateBusinessId);
+    };
+  }
+
+  const addBusinessButton = documentObject.getElementById("add-business-btn");
+  if (addBusinessButton && typeof addBusinessButton.addEventListener === "function") {
+    addBusinessButton.addEventListener("click", function () {
+      clearStickyNewBusinessId(sessionStorageObject);
+    }, true);
+  }
+}
+
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     getOwnerWorkspaceContext, migrateWorkspaceBusinessContext, showOwnerAuthenticationState,
     renderOwnerWorkspace, bindOwnerClerkSession, initialiseOwnerAuthentication,
-    getOwnerNavigationSection, updateOwnerNavigation, syncOwnerWorkspaceFromLocation
+    getOwnerNavigationSection, updateOwnerNavigation, syncOwnerWorkspaceFromLocation,
+    readOwnerPendingSyncIds, mergeServerAuthorizedProfiles, getStickyNewBusinessId, clearStickyNewBusinessId
   };
 }
+
+if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", function () {
+  installOwnerBusinessSecurity(window, document, localStorage, sessionStorage);
+});
 
 if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", function () {
   updateOwnerNavigation(document, window.location);
