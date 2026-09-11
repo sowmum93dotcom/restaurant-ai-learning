@@ -61,8 +61,12 @@ test("verified identity owning the exact business is authorized", async () => {
 });
 
 test("valid authentication is denied for a wrong or differently owned business", async () => {
-  assert.equal((await authorize({ businessId: "business-b" })).allowed, false);
-  assert.equal((await authorize({ authenticationOptions: authentication("identity-b") })).allowed, false);
+  const wrongBusiness = await authorize({ businessId: "business-b" });
+  const wrongOwner = await authorize({ authenticationOptions: authentication("identity-b") });
+  assert.equal(wrongBusiness.allowed, false);
+  assert.equal(wrongBusiness.authenticated, true);
+  assert.equal(wrongOwner.allowed, false);
+  assert.equal(wrongOwner.authenticated, true);
 });
 
 test("unauthenticated requests fail closed", async () => {
@@ -111,16 +115,22 @@ test("client claims cannot substitute for verified authentication", async () => 
       authenticationOptions: { authenticateRequest: async () => ({ isAuthenticated: false }) }
     });
     assert.equal(result.allowed, false);
+    assert.equal(result.authenticated, false);
   }
 });
 
-test("authentication and ownership exceptions fail closed", async () => {
-  assert.equal((await authorize({
+test("authentication exceptions remain unauthenticated while ownership exceptions remain authenticated", async () => {
+  const authenticationFailure = await authorize({
     authenticationOptions: { authenticateRequest: async () => { throw new Error("secret auth error"); } }
-  })).allowed, false);
-  assert.equal((await authorize({
+  });
+  assert.equal(authenticationFailure.allowed, false);
+  assert.equal(authenticationFailure.authenticated, false);
+
+  const ownershipFailure = await authorize({
     repository: { isBusinessOwnedByIdentity: async () => { throw new Error("secret database error"); } }
-  })).allowed, false);
+  });
+  assert.equal(ownershipFailure.allowed, false);
+  assert.equal(ownershipFailure.authenticated, true);
 });
 
 test("the exact requested business is used throughout the authorization chain", async () => {
