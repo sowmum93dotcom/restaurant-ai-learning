@@ -119,6 +119,13 @@ function createRenderDocument() {
   };
 }
 
+function completeWorkspaceProfile(overrides = {}) {
+  return {
+    businessId: "business-selected", name: "Selected Cafe", type: "Cafe", location: "London",
+    brandVoice: "Friendly", targetCustomer: "Local diners", goal: "Increase reservations", ...overrides
+  };
+}
+
 test("workspace renders the exact selected business ID only when diagnostic config is enabled", function () {
   const documentObject = createRenderDocument();
   const local = storage({
@@ -198,34 +205,41 @@ test("ownership confirmation control is shown in diagnostic mode for a selected 
   assert.match(html, />Confirm Business Ownership<\/button>/);
 });
 
-test("ownership confirmation sends only the selected business ID and shows success", async function () {
+test("ownership confirmation persists only the complete selected profile before bootstrapping ownership", async function () {
   const documentObject = createRenderDocument();
   const requests = [];
   const local = storage({
     demeosActiveBusinessId: "business-selected",
-    demeosBusinessProfiles: JSON.stringify([{ businessId: "business-selected", name: "Selected Cafe" }])
+    demeosBusinessProfiles: JSON.stringify([completeWorkspaceProfile({
+      clerkUserId: "profile_user_private", token: "profile_token_private", actorScope: "profile_actor_private"
+    })])
   });
   renderOwnerWorkspace(documentObject, local, {
     businessIdDiagnosticEnabled: true,
     fetchFunction: async function (url, options) {
       requests.push({ url, options });
       assert.equal(documentObject.elements["owner-confirm-ownership"].disabled, true);
+      if (url === "/api/businesses/business-selected") return { status: 204 };
       return { status: 200, json: async function () { return { ownershipAssigned: true }; } };
     }
   });
 
   await documentObject.elements["owner-confirm-ownership"].onclick();
 
-  assert.deepEqual(requests, [{
-    url: "/api/businesses/bootstrap-owner",
-    options: {
-      method: "POST",
-      credentials: "same-origin",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ businessId: "business-selected" })
-    }
-  }]);
-  assert.equal(Object.keys(JSON.parse(requests[0].options.body)).length, 1);
+  assert.deepEqual(requests.map(function (request) { return request.url; }), [
+    "/api/businesses/business-selected", "/api/businesses/bootstrap-owner"
+  ]);
+  assert.deepEqual(requests.map(function (request) { return request.options.method; }), ["PUT", "POST"]);
+  assert.deepEqual(JSON.parse(requests[0].options.body), { businessProfile: {
+    name: "Selected Cafe", type: "Cafe", location: "London", brandVoice: "Friendly",
+    targetCustomer: "Local diners", goal: "Increase reservations"
+  } });
+  assert.deepEqual(JSON.parse(requests[1].options.body), { businessId: "business-selected" });
+  requests.forEach(function (request) {
+    assert.equal(request.options.credentials, "same-origin");
+    assert.deepEqual(request.options.headers, { "Content-Type": "application/json" });
+  });
+  assert.doesNotMatch(JSON.stringify(requests), /profile_user_private|profile_token_private|profile_actor_private/);
   assert.equal(documentObject.elements["owner-ownership-confirmation-status"].textContent, "Business ownership confirmed.");
   assert.equal(documentObject.elements["owner-confirm-ownership"].disabled, false);
 });
@@ -234,7 +248,7 @@ test("ownership confirmation shows the server error for a non-200 response", asy
   const documentObject = createRenderDocument();
   const local = storage({
     demeosActiveBusinessId: "business-selected",
-    demeosBusinessProfiles: JSON.stringify([{ businessId: "business-selected", name: "Selected Cafe" }])
+    demeosBusinessProfiles: JSON.stringify([completeWorkspaceProfile()])
   });
   renderOwnerWorkspace(documentObject, local, {
     businessIdDiagnosticEnabled: true,
@@ -252,11 +266,32 @@ test("ownership confirmation shows the server error for a non-200 response", asy
   assert.equal(documentObject.elements["owner-confirm-ownership"].disabled, false);
 });
 
+test("ownership confirmation does not bootstrap when business persistence fails", async function () {
+  const documentObject = createRenderDocument();
+  const requests = [];
+  const local = storage({
+    demeosActiveBusinessId: "business-selected",
+    demeosBusinessProfiles: JSON.stringify([completeWorkspaceProfile()])
+  });
+  renderOwnerWorkspace(documentObject, local, {
+    businessIdDiagnosticEnabled: true,
+    fetchFunction: async function (url) {
+      requests.push(url);
+      return { status: 503, json: async function () { return { error: "DEMEOS could not save this business." }; } };
+    }
+  });
+
+  await documentObject.elements["owner-confirm-ownership"].onclick();
+
+  assert.deepEqual(requests, ["/api/businesses/business-selected"]);
+  assert.equal(documentObject.elements["owner-ownership-confirmation-status"].textContent, "DEMEOS could not save this business.");
+});
+
 test("ownership confirmation uses the generic message for a network failure", async function () {
   const documentObject = createRenderDocument();
   const local = storage({
     demeosActiveBusinessId: "business-selected",
-    demeosBusinessProfiles: JSON.stringify([{ businessId: "business-selected", name: "Selected Cafe" }])
+    demeosBusinessProfiles: JSON.stringify([completeWorkspaceProfile()])
   });
   renderOwnerWorkspace(documentObject, local, {
     businessIdDiagnosticEnabled: true,
@@ -272,10 +307,10 @@ test("ownership confirmation uses the generic message for a network failure", as
 
 test("ownership confirmation neither renders nor sends Clerk identity or auth details", async function () {
   const documentObject = createRenderDocument();
-  let serializedRequest = "";
+  const requests = [];
   const local = storage({
     demeosActiveBusinessId: "business-selected",
-    demeosBusinessProfiles: JSON.stringify([{ businessId: "business-selected", name: "Selected Cafe" }]),
+    demeosBusinessProfiles: JSON.stringify([completeWorkspaceProfile()]),
     clerkUserId: "user_private",
     token: "token_private",
     session: "session_private",
@@ -284,7 +319,8 @@ test("ownership confirmation neither renders nor sends Clerk identity or auth de
   renderOwnerWorkspace(documentObject, local, {
     businessIdDiagnosticEnabled: true,
     fetchFunction: async function (url, options) {
-      serializedRequest = JSON.stringify({ url, options });
+      requests.push({ url, options });
+      if (url === "/api/businesses/business-selected") return { status: 204 };
       return { status: 200, json: async function () { return { ownershipAssigned: true }; } };
     }
   });
@@ -292,8 +328,8 @@ test("ownership confirmation neither renders nor sends Clerk identity or auth de
   await documentObject.elements["owner-confirm-ownership"].onclick();
 
   const rendered = JSON.stringify(documentObject.elements);
-  assert.doesNotMatch(`${serializedRequest}\n${rendered}`, /user_private|token_private|session_private|owner_private/);
-  assert.deepEqual(JSON.parse(JSON.parse(serializedRequest).options.body), { businessId: "business-selected" });
+  assert.doesNotMatch(`${JSON.stringify(requests)}\n${rendered}`, /user_private|token_private|session_private|owner_private/);
+  assert.deepEqual(JSON.parse(requests[1].options.body), { businessId: "business-selected" });
 });
 
 function authenticationElements() {
