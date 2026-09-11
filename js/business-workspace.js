@@ -308,7 +308,7 @@ function getRequestMethod(input, init) {
   return "GET";
 }
 
-function installOwnerBusinessSecurity(windowObject, documentObject, localStorageObject, sessionStorageObject) {
+function installOwnerBusinessSecurity(windowObject, documentObject, localStorageObject, attemptStorageObject) {
   if (!windowObject || !documentObject || typeof windowObject.fetch !== "function") return;
 
   let resolveOwnerAuthReady;
@@ -325,13 +325,13 @@ function installOwnerBusinessSecurity(windowObject, documentObject, localStorage
       const response = await originalFetch(input, init);
       const match = method === "PUT" && typeof url === "string"
         ? url.match(/^\/api\/businesses\/([^/?]+)$/) : null;
-      if (match && sessionStorageObject) {
-        const attemptedId = sessionStorageObject.getItem(ownerNewBusinessAttemptKey);
+      if (match && attemptStorageObject) {
+        const attemptedId = attemptStorageObject.getItem(ownerNewBusinessAttemptKey);
         if (attemptedId && decodeURIComponent(match[1]) === attemptedId && response.ok) {
-          clearStickyNewBusinessId(sessionStorageObject);
+          clearStickyNewBusinessId(attemptStorageObject);
         } else if (attemptedId && decodeURIComponent(match[1]) === attemptedId &&
           [400, 403, 409].includes(response.status)) {
-          clearStickyNewBusinessId(sessionStorageObject);
+          clearStickyNewBusinessId(attemptStorageObject);
         }
       }
       return response;
@@ -388,14 +388,14 @@ function installOwnerBusinessSecurity(windowObject, documentObject, localStorage
   const originalCreateBusinessId = windowObject.createBusinessId;
   if (typeof originalCreateBusinessId === "function") {
     windowObject.createBusinessId = function () {
-      return getStickyNewBusinessId(sessionStorageObject, originalCreateBusinessId);
+      return getStickyNewBusinessId(attemptStorageObject, originalCreateBusinessId);
     };
   }
 
   const addBusinessButton = documentObject.getElementById("add-business-btn");
   if (addBusinessButton && typeof addBusinessButton.addEventListener === "function") {
     addBusinessButton.addEventListener("click", function () {
-      clearStickyNewBusinessId(sessionStorageObject);
+      clearStickyNewBusinessId(attemptStorageObject);
     }, true);
   }
 }
@@ -410,7 +410,7 @@ if (typeof module !== "undefined" && module.exports) {
 }
 
 if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", function () {
-  installOwnerBusinessSecurity(window, document, localStorage, sessionStorage);
+  installOwnerBusinessSecurity(window, document, localStorage, localStorage);
 });
 
 if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", function () {
