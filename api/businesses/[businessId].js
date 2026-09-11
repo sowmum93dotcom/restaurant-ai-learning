@@ -2,7 +2,24 @@ const { getRepository } = require("../_lib/persistence.js");
 const {
   authorizeBusinessOwnerRequest
 } = require("../_lib/demeos-business-owner-authorization.js");
+const {
+  resolveTrustedIdentityFromRequest
+} = require("../_lib/demeos-authentication.js");
 const { DEMEOS_ACTIONS } = require("../_lib/demeos-rules.js");
+
+function getValidatedProfile(req) {
+  const profile = req.body && req.body.businessProfile;
+  const requiredFields = ["name", "type", "location", "brandVoice", "targetCustomer", "goal"];
+  if (
+    !profile ||
+    typeof profile !== "object" ||
+    Array.isArray(profile) ||
+    requiredFields.some(function (field) {
+      return typeof profile[field] !== "string" || !profile[field].trim();
+    })
+  ) return null;
+  return profile;
+}
 
 module.exports = async function handler(req, res) {
   if (req.method !== "GET" && req.method !== "PUT") {
@@ -24,27 +41,36 @@ module.exports = async function handler(req, res) {
     if (!access.authenticated) {
       return res.status(401).json({ error: "Authentication required." });
     }
-    if (!access.allowed) {
-      return res.status(403).json({ error: "Forbidden." });
-    }
 
     if (req.method === "PUT") {
-      const profile = req.body && req.body.businessProfile;
-      const requiredFields = ["name", "type", "location", "brandVoice", "targetCustomer", "goal"];
-      if (
-        !profile ||
-        typeof profile !== "object" ||
-        Array.isArray(profile) ||
-        requiredFields.some(function (field) {
-          return typeof profile[field] !== "string" || !profile[field].trim();
-        })
-      ) {
+      const profile = getValidatedProfile(req);
+      if (!profile) {
         return res.status(400).json({
           error: "Please complete all Business Manager Profile fields before saving."
         });
       }
-      await repository.saveBusiness({ ...profile, businessId });
+
+      if (access.allowed) {
+        await repository.saveBusiness({ ...profile, businessId });
+        return res.status(204).end();
+      }
+
+      // A signed-in user may create a brand-new business and become its first owner,
+      // but may never claim or overwrite an existing business they do not own.
+      const trustedIdentity = await resolveTrustedIdentityFromRequest(req);
+      if (!trustedIdentity) {
+        return res.status(401).json({ error: "Authentication required." });
+      }
+      const created = await repository.createBusinessForOwner(
+        trustedIdentity.trustedIdentityId,
+        { ...profile, businessId }
+      );
+      if (!created) return res.status(403).json({ error: "Forbidden." });
       return res.status(204).end();
+    }
+
+    if (!access.allowed) {
+      return res.status(403).json({ error: "Forbidden." });
     }
     const record = await repository.getKnownBusiness(businessId);
     if (!record) return res.status(404).json({ error: "Business not found." });
