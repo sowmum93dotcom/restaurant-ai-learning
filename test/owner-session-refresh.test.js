@@ -33,19 +33,19 @@ function documentWithReload(counter) {
   };
 }
 
-test("a fresh Clerk sign-in refreshes once so authorized businesses are loaded", function () {
+test("a fresh Clerk sign-in reveals the workspace without an unconditional reload", function () {
   const counter = { count: 0 };
+  const authElements = elements();
   const clerk = {
     user: null,
     addListener: function (listener) { this.listener = listener; },
     openSignIn: function () {},
     signOut: function () {}
   };
-  bindOwnerClerkSession(clerk, documentWithReload(counter), storage(), elements());
+  bindOwnerClerkSession(clerk, documentWithReload(counter), storage(), authElements);
   clerk.listener({ user: { id: "owner" } });
-  assert.equal(counter.count, 1);
-  clerk.listener({ user: { id: "owner" } });
-  assert.equal(counter.count, 1);
+  assert.equal(authElements.signedIn.hidden, false);
+  assert.equal(counter.count, 0, "authorization refresh is coordinated by the owner business security boundary");
 });
 
 test("an already signed-in Clerk session does not reload on initial binding", function () {
