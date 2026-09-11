@@ -86,11 +86,13 @@ function showOwnerAuthenticationState(elements, state) {
   elements.account.hidden = state !== "signed-in";
 }
 
-function configureOwnershipConfirmation(documentObject, businessId, options = {}) {
+function configureOwnershipConfirmation(documentObject, selectedProfile, options = {}) {
   const control = documentObject.getElementById("owner-ownership-confirmation");
   const button = documentObject.getElementById("owner-confirm-ownership");
   const status = documentObject.getElementById("owner-ownership-confirmation-status");
   if (!control || !button || !status) return;
+
+  const businessId = selectedProfile && selectedProfile.businessId;
 
   control.hidden = !(options.businessIdDiagnosticEnabled === true && businessId);
   status.textContent = "";
@@ -102,6 +104,35 @@ function configureOwnershipConfirmation(documentObject, businessId, options = {}
     button.disabled = true;
     status.textContent = "";
     try {
+      const requiredFields = ["name", "type", "location", "brandVoice", "targetCustomer", "goal"];
+      const businessProfile = {};
+      const profileIsComplete = requiredFields.every(function (field) {
+        const value = selectedProfile[field];
+        if (typeof value !== "string" || !value.trim()) return false;
+        businessProfile[field] = value;
+        return true;
+      });
+      if (!profileIsComplete) {
+        status.textContent = "DEMEOS could not confirm business ownership.";
+        return;
+      }
+
+      const persistenceResponse = await options.fetchFunction(`/api/businesses/${encodeURIComponent(businessId)}`, {
+        method: "PUT",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ businessProfile })
+      });
+      if (persistenceResponse.status < 200 || persistenceResponse.status >= 300) {
+        const persistenceResult = await persistenceResponse.json().catch(function () { return null; });
+        if (persistenceResult && typeof persistenceResult.error === "string" && persistenceResult.error.trim()) {
+          status.textContent = persistenceResult.error;
+        } else {
+          status.textContent = "DEMEOS could not confirm business ownership.";
+        }
+        return;
+      }
+
       const response = await options.fetchFunction("/api/businesses/bootstrap-owner", {
         method: "POST",
         credentials: "same-origin",
@@ -138,7 +169,7 @@ function renderOwnerWorkspace(documentObject, storage, options = {}) {
     return;
   }
   const name = context.profile.name || "Saved business";
-  configureOwnershipConfirmation(documentObject, context.profile.businessId, options);
+  configureOwnershipConfirmation(documentObject, context.profile, options);
   documentObject.getElementById("workspace-header-business").textContent = name;
   const heading = documentObject.createElement("strong");
   heading.textContent = name;
