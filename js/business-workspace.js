@@ -12,6 +12,53 @@ function createWorkspaceBusinessId() {
   return `business-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
+function getOwnerNavigationSection(locationObject, workspaceView) {
+  const pathname = locationObject && typeof locationObject.pathname === "string"
+    ? locationObject.pathname : "";
+  const page = pathname.split("/").pop() || "index.html";
+  if (page === "business-workspace.html") return "overview";
+  if (page === "business-results.html") return "results";
+
+  const view = workspaceView || (locationObject && typeof locationObject.hash === "string"
+    ? locationObject.hash.slice(1) : "");
+  if (view === "business-profile") return "business-profile";
+  if (view === "recommends") return "recommends";
+  return "marketing";
+}
+
+function updateOwnerNavigation(documentObject, locationObject, workspaceView) {
+  const activeSection = getOwnerNavigationSection(locationObject, workspaceView);
+  documentObject.querySelectorAll(".owner-workspace-navigation [data-owner-section]").forEach(function (link) {
+    const active = link.getAttribute("data-owner-section") === activeSection;
+    link.classList.toggle("is-active", active);
+    if (active) link.setAttribute("aria-current", "page");
+    else link.removeAttribute("aria-current");
+  });
+  return activeSection;
+}
+
+function syncOwnerWorkspaceFromLocation(documentObject, locationObject) {
+  const pathname = locationObject && typeof locationObject.pathname === "string"
+    ? locationObject.pathname : "";
+  const page = pathname.split("/").pop() || "index.html";
+  const hash = locationObject && typeof locationObject.hash === "string" ? locationObject.hash : "";
+  if (page !== "index.html" || hash) return false;
+
+  documentObject.querySelectorAll("[data-workspace-panel]").forEach(function (panel) {
+    const active = panel.id === "overview";
+    panel.hidden = !active;
+    panel.classList.toggle("is-active", active);
+  });
+  documentObject.querySelectorAll("[data-workspace-view]").forEach(function (button) {
+    const active = button.getAttribute("data-workspace-view") === "overview";
+    button.classList.toggle("is-active", active);
+    if (active) button.setAttribute("aria-current", "page");
+    else button.removeAttribute("aria-current");
+  });
+  updateOwnerNavigation(documentObject, locationObject, "overview");
+  return true;
+}
+
 function migrateWorkspaceBusinessContext(storage) {
   const storedProfiles = parseWorkspaceValue(storage, "demeosBusinessProfiles", []);
   const profiles = Array.isArray(storedProfiles) ? storedProfiles.slice() : [];
@@ -207,10 +254,16 @@ async function initialiseOwnerAuthentication(windowObject, documentObject, stora
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     getOwnerWorkspaceContext, migrateWorkspaceBusinessContext, showOwnerAuthenticationState,
-    renderOwnerWorkspace, bindOwnerClerkSession, initialiseOwnerAuthentication
+    renderOwnerWorkspace, bindOwnerClerkSession, initialiseOwnerAuthentication,
+    getOwnerNavigationSection, updateOwnerNavigation, syncOwnerWorkspaceFromLocation
   };
 }
 
 if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", function () {
+  updateOwnerNavigation(document, window.location);
+  syncOwnerWorkspaceFromLocation(document, window.location);
+  window.addEventListener("hashchange", function () {
+    syncOwnerWorkspaceFromLocation(document, window.location);
+  });
   initialiseOwnerAuthentication(window, document, localStorage, window.fetch.bind(window));
 });
