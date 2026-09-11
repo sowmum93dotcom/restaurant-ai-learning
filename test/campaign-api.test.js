@@ -1,6 +1,7 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 
+const authorizationPath = require.resolve("../api/_lib/demeos-business-owner-authorization.js");
 const persistencePath = require.resolve("../api/_lib/persistence.js");
 const handlerPath = require.resolve("../api/businesses/[businessId]/campaigns/[campaignId].js");
 
@@ -9,18 +10,11 @@ function createResponse() {
     statusCode: null,
     body: null,
     ended: false,
-    status(statusCode) {
-      this.statusCode = statusCode;
-      return this;
-    },
-    json(body) {
-      this.body = body;
-      return this;
-    },
-    end() {
-      this.ended = true;
-      return this;
-    }
+    headers: {},
+    status(statusCode) { this.statusCode = statusCode; return this; },
+    json(body) { this.body = body; return this; },
+    end() { this.ended = true; return this; },
+    setHeader(name, value) { this.headers[name] = value; }
   };
 }
 
@@ -36,76 +30,150 @@ function completeCampaign(overrides) {
   };
 }
 
-async function putCampaign(businessId, campaignId, campaign) {
+async function invoke({
+  method = "PUT", businessId = "business-a", campaignId = "campaign-a",
+  campaign = completeCampaign(), authenticated = true, allowed = true
+} = {}) {
+  const authorization = require(authorizationPath);
+  const persistence = require(persistencePath);
+  const originalAuthorize = authorization.authorizeBusinessOwnerRequest;
+  const originalGetRepository = persistence.getRepository;
+  const authorizationCalls = [];
   const savedCampaigns = [];
-  const originalGetRepository = require(persistencePath).getRepository;
-  require(persistencePath).getRepository = function () {
-    return {
-      async saveCampaign(savedCampaign) {
-        savedCampaigns.push(savedCampaign);
-      }
-    };
+  const repository = {
+    async saveCampaign(savedCampaign) { savedCampaigns.push(savedCampaign); }
   };
+  authorization.authorizeBusinessOwnerRequest = async function (input) {
+    authorizationCalls.push(input);
+    return { authenticated, allowed };
+  };
+  persistence.getRepository = function () { return repository; };
   delete require.cache[handlerPath];
   const handler = require(handlerPath);
+  const request = {
+    method,
+    query: {
+      businessId,
+      campaignId,
+      trustedIdentityId: "query-attacker",
+      userId: "query-attacker"
+    },
+    body: {
+      campaign,
+      trustedIdentityId: "body-attacker",
+      userId: "body-attacker",
+      actorScope: "business-owner"
+    },
+    headers: {
+      host: "demeos.test",
+      "x-user-id": "header-attacker",
+      "x-identity-id": "header-attacker",
+      "x-actor-scope": "business-owner"
+    },
+    localStorage: { selectedBusiness: businessId, trustedIdentityId: "browser-attacker" }
+  };
   const response = createResponse();
 
   try {
-    await handler({ method: "PUT", query: { businessId, campaignId }, body: { campaign } }, response);
+    await handler(request, response);
   } finally {
-    require(persistencePath).getRepository = originalGetRepository;
+    authorization.authorizeBusinessOwnerRequest = originalAuthorize;
+    persistence.getRepository = originalGetRepository;
     delete require.cache[handlerPath];
   }
 
-  return { response, savedCampaigns };
+  return { response, request, repository, authorizationCalls, savedCampaigns };
 }
 
-test("a complete valid campaign is accepted", async function () {
+test("unauthenticated campaign creation returns 401", async function () {
+  const result = await invoke({ authenticated: false, allowed: false });
+  assert.equal(result.response.statusCode, 401);
+  assert.deepEqual(result.response.body, { error: "Authentication required." });
+  assert.deepEqual(result.savedCampaigns, []);
+});
+
+test("an authenticated non-owner cannot create marketing", async function () {
+  const result = await invoke({ authenticated: true, allowed: false });
+  assert.equal(result.response.statusCode, 403);
+  assert.deepEqual(result.response.body, { error: "Forbidden." });
+  assert.deepEqual(result.savedCampaigns, []);
+});
+
+test("an authenticated owner can create marketing for their own business", async function () {
   const campaign = completeCampaign();
-  const result = await putCampaign("business-a", "campaign-a", campaign);
+  const result = await invoke({ campaign });
 
   assert.equal(result.response.statusCode, 204);
   assert.equal(result.response.ended, true);
   assert.deepEqual(result.savedCampaigns, [{ ...campaign, id: "campaign-a", businessId: "business-a" }]);
+  assert.equal(result.authorizationCalls.length, 1);
+  assert.equal(result.authorizationCalls[0].req, result.request);
+  assert.equal(result.authorizationCalls[0].businessId, "business-a");
+  assert.equal(result.authorizationCalls[0].action, "create-marketing");
+  assert.equal(result.authorizationCalls[0].repository, result.repository);
 });
 
-test("a campaign with a missing required field is rejected", async function () {
-  const campaign = completeCampaign();
-  delete campaign.campaignTypeLabel;
-
-  const result = await putCampaign("business-a", "campaign-a", campaign);
-
-  assert.equal(result.response.statusCode, 400);
-  assert.deepEqual(result.response.body, { error: "DEMEOS received invalid campaign data." });
+test("an owner cannot create marketing for another business", async function () {
+  const result = await invoke({ businessId: "business-b", allowed: false });
+  assert.equal(result.response.statusCode, 403);
+  assert.equal(result.authorizationCalls[0].businessId, "business-b");
   assert.deepEqual(result.savedCampaigns, []);
 });
 
-test("a campaign with a whitespace-only required field is rejected", async function () {
-  const result = await putCampaign("business-a", "campaign-a", completeCampaign({ campaignText: " \n\t " }));
-
-  assert.equal(result.response.statusCode, 400);
-  assert.deepEqual(result.response.body, { error: "DEMEOS received invalid campaign data." });
+test("spoofed identity and actor scope claims are not passed as trusted authorization inputs", async function () {
+  const result = await invoke({ allowed: false });
+  assert.equal(result.response.statusCode, 403);
+  assert.equal(result.authorizationCalls.length, 1);
+  assert.equal(result.authorizationCalls[0].req, result.request);
+  assert.deepEqual(Object.keys(result.authorizationCalls[0]).sort(), ["action", "businessId", "repository", "req"]);
+  assert.equal(Object.hasOwn(result.authorizationCalls[0], "trustedIdentityId"), false);
+  assert.equal(Object.hasOwn(result.authorizationCalls[0], "actorScope"), false);
   assert.deepEqual(result.savedCampaigns, []);
 });
 
-test("a campaign with an invalid approvalStatus is rejected", async function () {
-  const result = await putCampaign("business-a", "campaign-a", completeCampaign({ approvalStatus: "Pending" }));
+test("campaign validation still runs after authorization", async function () {
+  const invalidCampaigns = [
+    completeCampaign({ campaignText: " \n\t " }),
+    completeCampaign({ approvalStatus: "Pending" }),
+    { ...completeCampaign(), campaignTypeLabel: undefined }
+  ];
 
-  assert.equal(result.response.statusCode, 400);
-  assert.deepEqual(result.response.body, { error: "DEMEOS received invalid campaign data." });
-  assert.deepEqual(result.savedCampaigns, []);
+  for (const campaign of invalidCampaigns) {
+    const result = await invoke({ campaign });
+    assert.equal(result.response.statusCode, 400);
+    assert.deepEqual(result.response.body, { error: "DEMEOS received invalid campaign data." });
+    assert.equal(result.authorizationCalls.length, 1);
+    assert.deepEqual(result.savedCampaigns, []);
+  }
 });
 
-test("the URL campaignId remains authoritative", async function () {
-  const result = await putCampaign("business-a", "url-campaign", completeCampaign({ id: "body-campaign" }));
+test("the URL campaign and business IDs remain authoritative", async function () {
+  const result = await invoke({
+    businessId: "url-business",
+    campaignId: "url-campaign",
+    campaign: completeCampaign({ id: "body-campaign", businessId: "body-business" })
+  });
 
   assert.equal(result.response.statusCode, 204);
+  assert.equal(result.authorizationCalls[0].businessId, "url-business");
   assert.equal(result.savedCampaigns[0].id, "url-campaign");
+  assert.equal(result.savedCampaigns[0].businessId, "url-business");
 });
 
-test("the URL businessId remains authoritative", async function () {
-  const result = await putCampaign("url-business", "campaign-a", completeCampaign({ businessId: "body-business" }));
+test("unsupported methods and missing route identifiers preserve existing responses", async function () {
+  const unsupported = await invoke({ method: "POST" });
+  assert.equal(unsupported.response.statusCode, 405);
+  assert.deepEqual(unsupported.response.body, { error: "Method not allowed" });
+  assert.equal(unsupported.response.headers.Allow, "PUT");
+  assert.deepEqual(unsupported.authorizationCalls, []);
 
-  assert.equal(result.response.statusCode, 204);
-  assert.equal(result.savedCampaigns[0].businessId, "url-business");
+  for (const identifiers of [{ businessId: "" }, { campaignId: "" }]) {
+    const invalid = await invoke(identifiers);
+    assert.equal(invalid.response.statusCode, 400);
+    assert.deepEqual(invalid.response.body, {
+      error: "A businessId, campaignId, and campaign are required."
+    });
+    assert.deepEqual(invalid.authorizationCalls, []);
+    assert.deepEqual(invalid.savedCampaigns, []);
+  }
 });

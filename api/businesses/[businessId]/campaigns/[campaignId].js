@@ -1,4 +1,8 @@
 const { getRepository } = require("../../../_lib/persistence.js");
+const {
+  authorizeBusinessOwnerRequest
+} = require("../../../_lib/demeos-business-owner-authorization.js");
+const { DEMEOS_ACTIONS } = require("../../../_lib/demeos-rules.js");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "PUT") {
@@ -11,26 +15,42 @@ module.exports = async function handler(req, res) {
   if (!businessId || !campaignId) {
     return res.status(400).json({ error: "A businessId, campaignId, and campaign are required." });
   }
-  const requiredCampaignFields = [
-    "campaignText",
-    "campaignType",
-    "campaignTypeLabel",
-    "businessName",
-    "createdAt",
-    "approvalStatus"
-  ];
-  const isCampaignObject = campaign && typeof campaign === "object" && !Array.isArray(campaign);
-  const hasInvalidCampaignField = !isCampaignObject || requiredCampaignFields.some(function (field) {
-    return typeof campaign[field] !== "string" || !campaign[field].trim();
-  });
-  if (
-    hasInvalidCampaignField ||
-    !["Unapproved", "Approved"].includes(campaign.approvalStatus)
-  ) {
-    return res.status(400).json({ error: "DEMEOS received invalid campaign data." });
-  }
+
   try {
-    await getRepository().saveCampaign({ ...campaign, id: campaignId, businessId });
+    const repository = getRepository();
+    const access = await authorizeBusinessOwnerRequest({
+      req,
+      businessId,
+      action: DEMEOS_ACTIONS.CREATE_MARKETING,
+      repository
+    });
+    if (!access.authenticated) {
+      return res.status(401).json({ error: "Authentication required." });
+    }
+    if (!access.allowed) {
+      return res.status(403).json({ error: "Forbidden." });
+    }
+
+    const requiredCampaignFields = [
+      "campaignText",
+      "campaignType",
+      "campaignTypeLabel",
+      "businessName",
+      "createdAt",
+      "approvalStatus"
+    ];
+    const isCampaignObject = campaign && typeof campaign === "object" && !Array.isArray(campaign);
+    const hasInvalidCampaignField = !isCampaignObject || requiredCampaignFields.some(function (field) {
+      return typeof campaign[field] !== "string" || !campaign[field].trim();
+    });
+    if (
+      hasInvalidCampaignField ||
+      !["Unapproved", "Approved"].includes(campaign.approvalStatus)
+    ) {
+      return res.status(400).json({ error: "DEMEOS received invalid campaign data." });
+    }
+
+    await repository.saveCampaign({ ...campaign, id: campaignId, businessId });
     return res.status(204).end();
   } catch (error) {
     console.error("Could not persist campaign:", error);

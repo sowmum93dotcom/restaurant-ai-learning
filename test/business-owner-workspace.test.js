@@ -175,7 +175,7 @@ test("browser-controlled identity hints cannot select authenticated state", func
 test("browser authentication source neither handles nor stores Clerk tokens", function () {
   const browserSource = `${html}\n${script}`;
   assert.doesNotMatch(browserSource, /CLERK_SECRET_KEY|sessionStorage|setItem\([^)]*(?:token|jwt)|decode(?:Jwt|Token)|sessionClaims/i);
-  assert.match(script, /Clerk's browser SDK manages its session/);
+  assert.match(script, /clerk\.addListener\(update\)/);
   assert.match(script, /Server-side ownership authorization is authoritative/);
 });
 
