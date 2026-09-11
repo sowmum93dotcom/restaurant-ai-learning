@@ -37,6 +37,28 @@ function updateOwnerNavigation(documentObject, locationObject, workspaceView) {
   return activeSection;
 }
 
+function syncOwnerWorkspaceFromLocation(documentObject, locationObject) {
+  const pathname = locationObject && typeof locationObject.pathname === "string"
+    ? locationObject.pathname : "";
+  const page = pathname.split("/").pop() || "index.html";
+  const hash = locationObject && typeof locationObject.hash === "string" ? locationObject.hash : "";
+  if (page !== "index.html" || hash) return false;
+
+  documentObject.querySelectorAll("[data-workspace-panel]").forEach(function (panel) {
+    const active = panel.id === "overview";
+    panel.hidden = !active;
+    panel.classList.toggle("is-active", active);
+  });
+  documentObject.querySelectorAll("[data-workspace-view]").forEach(function (button) {
+    const active = button.getAttribute("data-workspace-view") === "overview";
+    button.classList.toggle("is-active", active);
+    if (active) button.setAttribute("aria-current", "page");
+    else button.removeAttribute("aria-current");
+  });
+  updateOwnerNavigation(documentObject, locationObject, "overview");
+  return true;
+}
+
 function migrateWorkspaceBusinessContext(storage) {
   const storedProfiles = parseWorkspaceValue(storage, "demeosBusinessProfiles", []);
   const profiles = Array.isArray(storedProfiles) ? storedProfiles.slice() : [];
@@ -233,11 +255,15 @@ if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     getOwnerWorkspaceContext, migrateWorkspaceBusinessContext, showOwnerAuthenticationState,
     renderOwnerWorkspace, bindOwnerClerkSession, initialiseOwnerAuthentication,
-    getOwnerNavigationSection, updateOwnerNavigation
+    getOwnerNavigationSection, updateOwnerNavigation, syncOwnerWorkspaceFromLocation
   };
 }
 
 if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", function () {
   updateOwnerNavigation(document, window.location);
+  syncOwnerWorkspaceFromLocation(document, window.location);
+  window.addEventListener("hashchange", function () {
+    syncOwnerWorkspaceFromLocation(document, window.location);
+  });
   initialiseOwnerAuthentication(window, document, localStorage, window.fetch.bind(window));
 });
