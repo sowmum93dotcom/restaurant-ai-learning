@@ -116,6 +116,20 @@ function updateBusinessProfile(profiles, profileFields, activeBusinessId, makeId
   return { profiles: nextProfiles, profile: updated };
 }
 
+function applyAuthorizedBusinessProfiles(cachedProfiles, serverBusinesses, selectedBusinessId) {
+  const cachedById = new Map((Array.isArray(cachedProfiles) ? cachedProfiles : []).filter(function (profile) {
+    return profile && typeof profile.businessId === "string";
+  }).map(function (profile) { return [profile.businessId, profile]; }));
+  const profiles = (Array.isArray(serverBusinesses) ? serverBusinesses : []).filter(function (profile) {
+    return profile && typeof profile.businessId === "string" && profile.businessId;
+  }).map(function (profile) {
+    return { ...(cachedById.get(profile.businessId) || {}), ...profile, businessId: profile.businessId };
+  });
+  const activeBusinessId = profiles.some(function (profile) { return profile.businessId === selectedBusinessId; })
+    ? selectedBusinessId : (profiles[0] ? profiles[0].businessId : null);
+  return { profiles, activeBusinessId };
+}
+
 function getCampaignBusinessId(profile, sourceCampaign) {
   return (sourceCampaign && sourceCampaign.businessId) || (profile && profile.businessId);
 }
@@ -353,7 +367,8 @@ if (typeof module !== "undefined" && module.exports) module.exports = {
   createCampaignPersistenceQueue,
   getActiveMarketingWork, getCustomerParticipationResults, getCampaignBusinessId, getCampaignContinuity, getCampaignContinuityLabel, getCampaignVersions, getVisibleCampaigns,
   hydrateKnownBusiness, mergeKnownBusinessPersistence, migrateBusinessProfiles, readPendingBusinessProfileSyncIds,
-  removePendingBusinessProfileSync, updateBusinessProfile, parseFullCampaignSections, getCampaignWorkspace
+  removePendingBusinessProfileSync, updateBusinessProfile, parseFullCampaignSections, getCampaignWorkspace,
+  applyAuthorizedBusinessProfiles
 };
 
 if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", function () {
@@ -395,7 +410,9 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   };
   const campaignHistoryKey = "demeosCampaignHistory";
   const recommendationDecisionsKey = "demeosRecommendationDecisions";
-  let state = migrateBusinessProfiles(localStorage);
+  const cachedBusinessState = migrateBusinessProfiles(localStorage);
+  const serverAuthorizationRequired = typeof window !== "undefined" && window.document === document;
+  let state = serverAuthorizationRequired ? { profiles: [], activeBusinessId: null } : cachedBusinessState;
   let openCampaignId = null;
   let currentCampaignText = "";
   let addingBusiness = false;
@@ -690,6 +707,24 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     businessSelector.value = state.activeBusinessId || "";
     businessSelector.disabled = state.profiles.length === 0;
   }
+
+  async function loadAuthorizedBusinesses() {
+    if (!serverAuthorizationRequired) return;
+    try {
+      const response = await fetch("/api/businesses", { credentials: "same-origin" });
+      const payload = response.ok ? await response.json() : { businesses: [] };
+      state = applyAuthorizedBusinessProfiles(cachedBusinessState.profiles, payload.businesses,
+        localStorage.getItem("demeosActiveBusinessId"));
+    } catch (_error) {
+      state = { profiles: [], activeBusinessId: null };
+    }
+    localStorage.setItem("demeosBusinessProfiles", JSON.stringify(state.profiles));
+    if (state.activeBusinessId) localStorage.setItem("demeosActiveBusinessId", state.activeBusinessId);
+    else localStorage.removeItem("demeosActiveBusinessId");
+    renderSelector(); fillProfile(activeProfile()); renderActiveMarketingWork();
+    renderCustomerParticipationResults(); renderCampaignHistory();
+    if (state.activeBusinessId) hydrateActiveBusiness();
+  }
   function clearCampaignWorkspace() {
     clearRevisionTarget();
     openCampaignId = null;
@@ -863,7 +898,9 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     const persisted = await persistCampaign(profile, campaign); return { id, persisted };
   }
 
-  renderSelector(); fillProfile(activeProfile()); renderActiveMarketingWork(); renderCustomerParticipationResults(); renderCampaignHistory(); hydrateActiveBusiness();
+  renderSelector(); fillProfile(activeProfile()); renderActiveMarketingWork(); renderCustomerParticipationResults(); renderCampaignHistory();
+  if (serverAuthorizationRequired) loadAuthorizedBusinesses();
+  else hydrateActiveBusiness();
   businessSelector.addEventListener("change", function () { switchBusiness(businessSelector.value); });
   addBusinessBtn.addEventListener("click", function () {
     addingBusiness = true; customerParticipationResults = []; businessSelector.value = ""; fillProfile(null); clearRecommendations(); clearBusinessSituation(); clearCampaignWorkspace(); renderActiveMarketingWork(); renderCustomerParticipationResults();
@@ -878,19 +915,35 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     saveBusinessProfileBtn.disabled = true;
     saveBusinessProfileBtn.textContent = "Saving Business Profile...";
     try {
-      const result = updateBusinessProfile(state.profiles, profileFields, addingBusiness ? null : state.activeBusinessId);
-      state = { profiles: result.profiles, activeBusinessId: result.profile.businessId }; addingBusiness = false;
-      localStorage.setItem("demeosBusinessProfiles", JSON.stringify(state.profiles));
-      localStorage.setItem("demeosActiveBusinessId", state.activeBusinessId);
-      renderSelector(); fillProfile(result.profile); clearRecommendations(); clearCampaignWorkspace(); renderActiveMarketingWork(); renderCampaignHistory();
-
+      const wasAddingBusiness = addingBusiness;
+      const result = updateBusinessProfile(state.profiles, profileFields, wasAddingBusiness ? null : state.activeBusinessId);
+      if (!wasAddingBusiness) {
+        state = { profiles: result.profiles, activeBusinessId: result.profile.businessId };
+        localStorage.setItem("demeosBusinessProfiles", JSON.stringify(state.profiles));
+        localStorage.setItem("demeosActiveBusinessId", state.activeBusinessId);
+        renderSelector(); fillProfile(result.profile); clearRecommendations(); clearCampaignWorkspace();
+        renderActiveMarketingWork(); renderCampaignHistory();
+      }
       addPendingBusinessProfileSync(localStorage, result.profile.businessId);
       const persisted = await persistBusiness(result.profile);
       if (persisted) {
+        if (wasAddingBusiness) {
+          state = { profiles: result.profiles, activeBusinessId: result.profile.businessId };
+          localStorage.setItem("demeosBusinessProfiles", JSON.stringify(state.profiles));
+          localStorage.setItem("demeosActiveBusinessId", state.activeBusinessId);
+          renderSelector(); fillProfile(result.profile); clearRecommendations(); clearCampaignWorkspace();
+          renderActiveMarketingWork(); renderCampaignHistory();
+        }
+        addingBusiness = false;
         removePendingBusinessProfileSync(localStorage, result.profile.businessId);
         alert("Business Profile saved successfully.");
       } else {
-        alert("Business Profile saved on this device, but DEMEOS could not sync it to the server. Please try saving again.");
+        // Failed edits retain their existing retry marker. Failed creations are not
+        // cached as owned businesses and therefore must not become selectable.
+        if (wasAddingBusiness) removePendingBusinessProfileSync(localStorage, result.profile.businessId);
+        alert(wasAddingBusiness
+          ? "DEMEOS could not create this business. It was not added to your businesses."
+          : "DEMEOS could not save this Business Profile. Please try again.");
       }
     } finally {
       saveBusinessProfileBtn.disabled = false;

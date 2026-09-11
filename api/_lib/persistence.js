@@ -20,6 +20,19 @@ function createPersistenceRepository(database) {
       return result.rows.map(function (row) { return row.business_id; });
     },
 
+    async getOwnedBusinessProfiles(trustedIdentityId) {
+      if (!isNonEmptyString(trustedIdentityId)) return [];
+      await database.ensureSchema();
+      const result = await database.query(
+        `SELECT b.business_id, b.profile FROM demeos_business_owners o
+         JOIN demeos_businesses b ON b.business_id = o.business_id
+         WHERE o.trusted_identity_id = $1
+         ORDER BY b.business_id`, [trustedIdentityId]);
+      return result.rows.map(function (row) {
+        return { ...row.profile, businessId: row.business_id };
+      });
+    },
+
     async isBusinessOwnedByIdentity(trustedIdentityId, businessId) {
       if (!isNonEmptyString(trustedIdentityId) || !isNonEmptyString(businessId)) return false;
       await database.ensureSchema();
