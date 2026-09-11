@@ -24,10 +24,11 @@ function deniedAuthorization(actorContext, action, businessId) {
   }
 }
 
-function deniedResult(action, businessId) {
+function deniedResult(action, businessId, authenticated = false) {
   const actorContext = createUnresolvedActorContext();
   return Object.freeze({
     allowed: false,
+    authenticated,
     actorContext,
     authorization: deniedAuthorization(actorContext, action, businessId)
   });
@@ -44,27 +45,33 @@ async function authorizeBusinessOwnerRequest({
     return deniedResult(action, businessId);
   }
 
+  let trustedIdentity;
   try {
-    const trustedIdentity = await resolveTrustedIdentityFromRequest(req, authenticationOptions);
-    if (!trustedIdentity) return deniedResult(action, businessId);
+    trustedIdentity = await resolveTrustedIdentityFromRequest(req, authenticationOptions);
+  } catch (_error) {
+    return deniedResult(action, businessId);
+  }
+  if (!trustedIdentity) return deniedResult(action, businessId);
 
+  try {
     const actorContext = await resolveBusinessOwnerContext({
       trustedIdentityId: trustedIdentity.trustedIdentityId,
       businessId,
       repository
     });
     if (!actorContext || actorContext.authenticated !== true) {
-      return deniedResult(action, businessId);
+      return deniedResult(action, businessId, true);
     }
 
     const authorization = authorizeDemeosAction({ actorContext, action, businessId });
     return Object.freeze({
       allowed: authorization.allowed === true,
+      authenticated: true,
       actorContext,
       authorization
     });
   } catch (_error) {
-    return deniedResult(action, businessId);
+    return deniedResult(action, businessId, true);
   }
 }
 
