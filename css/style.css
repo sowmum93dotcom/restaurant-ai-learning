@@ -992,3 +992,26 @@ footer { background: #081f3d; color: #c4cfdb; text-align: center; }
   .owner-overview-heading { align-items: flex-start; flex-direction: column; }
   .owner-work-list article { align-items: flex-start; flex-direction: column; }
 }
+
+/* Marketing capability within the Business Owner Workspace shell */
+.marketing-capability-main { padding: clamp(1.5rem, 3vw, 2.75rem); }
+.marketing-capability-heading { margin-bottom: 1.5rem; }
+.marketing-capability-heading h2 { margin: .2rem 0 .4rem; color: #102a52; font-family: Georgia, serif; font-size: clamp(2rem, 4vw, 3rem); font-weight: 500; }
+.marketing-capability-heading > p:last-child { margin: 0; color: #657286; }
+.marketing-secondary-sidebar { padding: .65rem; border-radius: 8px 8px 0 0; background: #e9edf2; }
+.marketing-secondary-sidebar .workspace-navigation { position: static; display: flex; flex-wrap: wrap; gap: .25rem; }
+.marketing-secondary-sidebar .workspace-nav-item { padding: .7rem .8rem; border: 0; border-bottom: 3px solid transparent; color: #40516a; font-size: .86rem; }
+.marketing-secondary-sidebar .workspace-nav-item:hover { background: #fff; color: #102a52; }
+.marketing-secondary-sidebar .workspace-nav-item.is-active { border-bottom-color: #b18a32; background: #fff; color: #102a52; }
+.marketing-workspace-main { padding: 1.75rem 0 2rem; }
+
+@media (max-width: 900px) {
+  .marketing-secondary-sidebar .workspace-menu-toggle { border-color: #aab5c2; color: #102a52; }
+  .marketing-secondary-sidebar .workspace-navigation { display: none; }
+  .marketing-secondary-sidebar .workspace-navigation.is-open { display: grid; }
+}
+
+@media (max-width: 650px) {
+  .marketing-capability-main { padding: 1.25rem .9rem 2.5rem; }
+  .marketing-workspace-main { padding-top: 1.25rem; }
+}
