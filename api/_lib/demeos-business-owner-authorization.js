@@ -24,10 +24,11 @@ function deniedAuthorization(actorContext, action, businessId) {
   }
 }
 
-function deniedResult(action, businessId) {
+function deniedResult(action, businessId, authenticated = false) {
   const actorContext = createUnresolvedActorContext();
   return Object.freeze({
     allowed: false,
+    authenticated,
     actorContext,
     authorization: deniedAuthorization(actorContext, action, businessId)
   });
@@ -54,17 +55,18 @@ async function authorizeBusinessOwnerRequest({
       repository
     });
     if (!actorContext || actorContext.authenticated !== true) {
-      return deniedResult(action, businessId);
+      return deniedResult(action, businessId, true);
     }
 
     const authorization = authorizeDemeosAction({ actorContext, action, businessId });
     return Object.freeze({
       allowed: authorization.allowed === true,
+      authenticated: true,
       actorContext,
       authorization
     });
   } catch (_error) {
-    return deniedResult(action, businessId);
+    return deniedResult(action, businessId, true);
   }
 }
 

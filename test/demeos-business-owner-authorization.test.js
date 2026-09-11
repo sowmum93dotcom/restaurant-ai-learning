@@ -54,6 +54,7 @@ async function authorize(overrides = {}) {
 test("verified identity owning the exact business is authorized", async () => {
   const result = await authorize();
   assert.equal(result.allowed, true);
+  assert.equal(result.authenticated, true);
   assert.equal(result.authorization.allowed, true);
   assert.equal(result.actorContext.trustedIdentityId, "identity-a");
   assert.equal(result.actorContext.businessId, "business-a");
@@ -69,6 +70,7 @@ test("unauthenticated requests fail closed", async () => {
     authenticationOptions: { authenticateRequest: async () => ({ isAuthenticated: false }) }
   });
   assert.equal(result.allowed, false);
+  assert.equal(result.authenticated, false);
   assert.equal(result.actorContext.state, "unresolved");
 });
 
@@ -143,7 +145,7 @@ test("results are immutable and expose only the gateway contract", async () => {
     })
   });
   assert.equal(Object.isFrozen(result), true);
-  assert.deepEqual(Object.keys(result).sort(), ["actorContext", "allowed", "authorization"]);
+  assert.deepEqual(Object.keys(result).sort(), ["actorContext", "allowed", "authenticated", "authorization"]);
   assert.equal(JSON.stringify(result).includes("secret"), false);
   assert.throws(() => Object.defineProperty(result, "allowed", { value: false }));
 });
