@@ -10,9 +10,23 @@ function ownershipDatabase(businessIds) {
   let initialized = 0;
   return {
     owners,
+    businesses,
     get initialized() { return initialized; },
     async ensureSchema() { initialized += 1; },
     async query(sql, values) {
+      if (sql.startsWith("WITH inserted_business")) {
+        const businessId = values[0];
+        const identity = values[2];
+        if (businesses.has(businessId)) return { rows: [] };
+        businesses.add(businessId);
+        const key = `${identity}\u0000${businessId}`;
+        const row = {
+          trusted_identity_id: identity, business_id: businessId,
+          created_at: "2026-09-09T00:00:00.000Z"
+        };
+        owners.set(key, row);
+        return { rows: [row] };
+      }
       const key = `${values[0]}\u0000${values[1] || ""}`;
       if (sql.startsWith("INSERT INTO demeos_business_owners")) {
         if (!businesses.has(values[1]) || owners.has(key)) return { rows: [] };
@@ -53,10 +67,8 @@ test("ownership schema uses the existing initializer with a composite key and bu
 test("assignBusinessOwner stores an existing business and duplicate assignment is idempotent", async function () {
   const database = ownershipDatabase(["business-a"]);
   const repository = createPersistenceRepository(database);
-
   const first = await repository.assignBusinessOwner("identity-a", "business-a");
   const duplicate = await repository.assignBusinessOwner("identity-a", "business-a");
-
   assert.deepEqual(first, {
     trustedIdentityId: "identity-a", businessId: "business-a",
     createdAt: "2026-09-09T00:00:00.000Z"
@@ -68,11 +80,30 @@ test("assignBusinessOwner stores an existing business and duplicate assignment i
 test("assignment rejects nonexistent businesses and missing identifiers", async function () {
   const database = ownershipDatabase(["business-a"]);
   const repository = createPersistenceRepository(database);
-
   assert.equal(await repository.assignBusinessOwner("identity-a", "missing-business"), null);
   assert.equal(await repository.assignBusinessOwner("", "business-a"), null);
   assert.equal(await repository.assignBusinessOwner("identity-a", "  "), null);
   assert.equal(database.owners.size, 0);
+});
+
+test("createBusinessForOwner atomically creates only a new business and its first owner", async function () {
+  const database = ownershipDatabase(["existing-business"]);
+  const repository = createPersistenceRepository(database);
+  const created = await repository.createBusinessForOwner("identity-a", {
+    businessId: "new-business", name: "New Business"
+  });
+  assert.deepEqual(created, {
+    trustedIdentityId: "identity-a", businessId: "new-business",
+    createdAt: "2026-09-09T00:00:00.000Z"
+  });
+  assert.equal(database.businesses.has("new-business"), true);
+  assert.equal(await repository.isBusinessOwnedByIdentity("identity-a", "new-business"), true);
+
+  const claimExisting = await repository.createBusinessForOwner("identity-b", {
+    businessId: "existing-business", name: "Attempted overwrite"
+  });
+  assert.equal(claimExisting, null);
+  assert.equal(await repository.isBusinessOwnedByIdentity("identity-b", "existing-business"), false);
 });
 
 test("owned business lookup is isolated to the exact trusted identity", async function () {
@@ -81,7 +112,6 @@ test("owned business lookup is isolated to the exact trusted identity", async fu
   await repository.assignBusinessOwner("identity-a", "business-b");
   await repository.assignBusinessOwner("identity-a", "business-a");
   await repository.assignBusinessOwner("identity-b", "business-c");
-
   assert.deepEqual(await repository.getOwnedBusinessIds("identity-a"), ["business-a", "business-b"]);
   assert.deepEqual(await repository.getOwnedBusinessIds("identity-b"), ["business-c"]);
   assert.deepEqual(await repository.getOwnedBusinessIds("identity-c"), []);
@@ -91,7 +121,6 @@ test("owned business lookup is isolated to the exact trusted identity", async fu
 test("ownership check requires an exact identity and business mapping", async function () {
   const repository = createPersistenceRepository(ownershipDatabase(["business-a", "business-b"]));
   await repository.assignBusinessOwner("identity-a", "business-a");
-
   assert.equal(await repository.isBusinessOwnedByIdentity("identity-a", "business-a"), true);
   assert.equal(await repository.isBusinessOwnedByIdentity("identity-a", "business-b"), false);
   assert.equal(await repository.isBusinessOwnedByIdentity("identity-b", "business-a"), false);
@@ -106,9 +135,9 @@ test("business and browser-controlled claims never create ownership", async func
     businessId: "business-a", localStorage: "identity-a", actorScope: "owner",
     body: "identity-a", query: "identity-a", header: "identity-a", cookie: "identity-a"
   };
-
   assert.equal(await repository.isBusinessOwnedByIdentity(undefined, browserClaims.businessId), false);
   assert.deepEqual(await repository.getOwnedBusinessIds(browserClaims), []);
   assert.equal(await repository.assignBusinessOwner(browserClaims, browserClaims.businessId), null);
+  assert.equal(await repository.createBusinessForOwner(browserClaims, { businessId: "new-business" }), null);
   assert.equal(database.owners.size, 0);
 });
