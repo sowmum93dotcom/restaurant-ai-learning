@@ -230,24 +230,44 @@ test("ownership confirmation sends only the selected business ID and shows succe
   assert.equal(documentObject.elements["owner-confirm-ownership"].disabled, false);
 });
 
-test("ownership confirmation failures show only the generic message", async function () {
-  for (const fetchFunction of [
-    async function () { return { status: 403, json: async function () { return { error: "private server detail" }; } }; },
-    async function () { throw new Error("private network detail"); }
-  ]) {
-    const documentObject = createRenderDocument();
-    const local = storage({
-      demeosActiveBusinessId: "business-selected",
-      demeosBusinessProfiles: JSON.stringify([{ businessId: "business-selected", name: "Selected Cafe" }])
-    });
-    renderOwnerWorkspace(documentObject, local, { businessIdDiagnosticEnabled: true, fetchFunction });
+test("ownership confirmation shows the server error for a non-200 response", async function () {
+  const documentObject = createRenderDocument();
+  const local = storage({
+    demeosActiveBusinessId: "business-selected",
+    demeosBusinessProfiles: JSON.stringify([{ businessId: "business-selected", name: "Selected Cafe" }])
+  });
+  renderOwnerWorkspace(documentObject, local, {
+    businessIdDiagnosticEnabled: true,
+    fetchFunction: async function () {
+      return { status: 403, json: async function () { return { error: "Ownership bootstrap is not authorized." }; } };
+    }
+  });
 
-    await documentObject.elements["owner-confirm-ownership"].onclick();
+  await documentObject.elements["owner-confirm-ownership"].onclick();
 
-    const message = documentObject.elements["owner-ownership-confirmation-status"].textContent;
-    assert.equal(message, "DEMEOS could not confirm business ownership.");
-    assert.doesNotMatch(message, /private|403|network|server detail/i);
-  }
+  assert.equal(
+    documentObject.elements["owner-ownership-confirmation-status"].textContent,
+    "Ownership bootstrap is not authorized."
+  );
+  assert.equal(documentObject.elements["owner-confirm-ownership"].disabled, false);
+});
+
+test("ownership confirmation uses the generic message for a network failure", async function () {
+  const documentObject = createRenderDocument();
+  const local = storage({
+    demeosActiveBusinessId: "business-selected",
+    demeosBusinessProfiles: JSON.stringify([{ businessId: "business-selected", name: "Selected Cafe" }])
+  });
+  renderOwnerWorkspace(documentObject, local, {
+    businessIdDiagnosticEnabled: true,
+    fetchFunction: async function () { throw new Error("private network detail"); }
+  });
+
+  await documentObject.elements["owner-confirm-ownership"].onclick();
+
+  const message = documentObject.elements["owner-ownership-confirmation-status"].textContent;
+  assert.equal(message, "DEMEOS could not confirm business ownership.");
+  assert.doesNotMatch(message, /private|network|detail/i);
 });
 
 test("ownership confirmation neither renders nor sends Clerk identity or auth details", async function () {

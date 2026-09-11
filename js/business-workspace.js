@@ -108,10 +108,14 @@ function configureOwnershipConfirmation(documentObject, businessId, options = {}
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ businessId })
       });
-      const result = response.status === 200 ? await response.json() : null;
-      status.textContent = result && result.ownershipAssigned === true
-        ? "Business ownership confirmed."
-        : "DEMEOS could not confirm business ownership.";
+      const result = await response.json();
+      if (response.status === 200 && result && result.ownershipAssigned === true) {
+        status.textContent = "Business ownership confirmed.";
+      } else if (response.status !== 200 && result && typeof result.error === "string" && result.error.trim()) {
+        status.textContent = result.error;
+      } else {
+        status.textContent = "DEMEOS could not confirm business ownership.";
+      }
     } catch (_error) {
       status.textContent = "DEMEOS could not confirm business ownership.";
     } finally {
