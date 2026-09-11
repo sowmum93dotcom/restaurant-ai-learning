@@ -77,10 +77,10 @@ test("workspace migrates a legacy single business profile before rendering", fun
   assert.equal(JSON.parse(local.getItem("demeosBusinessProfiles"))[0].businessId, "legacy-a");
 });
 
-test("workspace shell does not claim browser filtering is authorization", function () {
-  assert.doesNotMatch(html, /Private business workspace|Private business context/);
-  assert.match(html, /Business owner workspace/);
-  assert.match(html, /Selected business context/);
+test("finished workspace contains no temporary ownership diagnostics", function () {
+  const source = `${html}\n${script}`;
+  assert.doesNotMatch(source, /Selected business context only|Business ID:|Confirm Business Ownership|owner-ownership-confirmation/);
+  assert.doesNotMatch(script, /businessIdDiagnosticEnabled|bootstrap-owner/);
 });
 
 test("workspace exposes no admin controls, invented metrics, or unsupported capabilities", function () {
@@ -102,10 +102,7 @@ function createRenderDocument() {
       replaceChildren: function () { this.children = []; this.textContent = ""; },
       appendChild: function (child) { this.children.push(child); }
     },
-    "workspace-header-business": { textContent: "" },
-    "owner-ownership-confirmation": { hidden: true },
-    "owner-confirm-ownership": { disabled: false, onclick: null },
-    "owner-ownership-confirmation-status": { textContent: "" }
+    "workspace-header-business": { textContent: "" }
   };
   return {
     elements,
@@ -119,217 +116,20 @@ function createRenderDocument() {
   };
 }
 
-function completeWorkspaceProfile(overrides = {}) {
-  return {
-    businessId: "business-selected", name: "Selected Cafe", type: "Cafe", location: "London",
-    brandVoice: "Friendly", targetCustomer: "Local diners", goal: "Increase reservations", ...overrides
-  };
-}
-
-test("workspace renders the exact selected business ID only when diagnostic config is enabled", function () {
-  const documentObject = createRenderDocument();
-  const local = storage({
-    demeosActiveBusinessId: "business-exact-123",
-    demeosBusinessProfiles: JSON.stringify([
-      { businessId: "business-exact-123", name: "Test Kitchen London", type: "Restaurant", location: "Greenwich, London" }
-    ])
-  });
-
-  renderOwnerWorkspace(documentObject, local, { businessIdDiagnosticEnabled: true });
-
-  const diagnostic = documentObject.elements["workspace-business-identity"].children.find(function (child) {
-    return child.tagName === "SMALL";
-  });
-  assert.ok(diagnostic);
-  assert.equal(diagnostic.textContent, "Business ID: business-exact-123");
-});
-
-test("workspace hides the business ID diagnostic by default", function () {
+test("workspace renders selected business details without exposing its identifier", function () {
   const documentObject = createRenderDocument();
   const local = storage({
     demeosActiveBusinessId: "business-secret-123",
-    demeosBusinessProfiles: JSON.stringify([
-      { businessId: "business-secret-123", name: "Test Kitchen London" }
-    ])
+    demeosBusinessProfiles: JSON.stringify([{
+      businessId: "business-secret-123", name: "Test Kitchen London", type: "Restaurant", location: "Greenwich"
+    }])
   });
 
   renderOwnerWorkspace(documentObject, local);
 
-  assert.equal(documentObject.elements["workspace-business-identity"].children.some(function (child) {
-    return child.tagName === "SMALL" && child.textContent.startsWith("Business ID:");
-  }), false);
-});
-
-test("workspace omits the business ID diagnostic when the selected profile has no business ID", function () {
-  const documentObject = createRenderDocument();
-  const local = storage({
-    demeosActiveBusinessId: "",
-    demeosBusinessProfiles: JSON.stringify([{ name: "Profile without ID" }])
-  });
-
-  renderOwnerWorkspace(documentObject, local, { businessIdDiagnosticEnabled: true });
-
-  const diagnostics = documentObject.elements["workspace-business-identity"].children.filter(function (child) {
-    return child.tagName === "SMALL" && child.textContent.startsWith("Business ID:");
-  });
-  assert.equal(diagnostics.length, 0);
-});
-
-test("ownership confirmation control is hidden when diagnostic mode is off", function () {
-  const documentObject = createRenderDocument();
-  const local = storage({
-    demeosActiveBusinessId: "business-selected",
-    demeosBusinessProfiles: JSON.stringify([{ businessId: "business-selected", name: "Selected Cafe" }])
-  });
-
-  renderOwnerWorkspace(documentObject, local, { businessIdDiagnosticEnabled: false });
-
-  assert.equal(documentObject.elements["owner-ownership-confirmation"].hidden, true);
-  assert.equal(documentObject.elements["owner-confirm-ownership"].onclick, null);
-});
-
-test("ownership confirmation control is shown in diagnostic mode for a selected business ID", function () {
-  const documentObject = createRenderDocument();
-  const local = storage({
-    demeosActiveBusinessId: "business-selected",
-    demeosBusinessProfiles: JSON.stringify([{ businessId: "business-selected", name: "Selected Cafe" }])
-  });
-
-  renderOwnerWorkspace(documentObject, local, {
-    businessIdDiagnosticEnabled: true,
-    fetchFunction: async function () {}
-  });
-
-  assert.equal(documentObject.elements["owner-ownership-confirmation"].hidden, false);
-  assert.equal(typeof documentObject.elements["owner-confirm-ownership"].onclick, "function");
-  assert.match(html, />Confirm Business Ownership<\/button>/);
-});
-
-test("ownership confirmation persists only the complete selected profile before bootstrapping ownership", async function () {
-  const documentObject = createRenderDocument();
-  const requests = [];
-  const local = storage({
-    demeosActiveBusinessId: "business-selected",
-    demeosBusinessProfiles: JSON.stringify([completeWorkspaceProfile({
-      clerkUserId: "profile_user_private", token: "profile_token_private", actorScope: "profile_actor_private"
-    })])
-  });
-  renderOwnerWorkspace(documentObject, local, {
-    businessIdDiagnosticEnabled: true,
-    fetchFunction: async function (url, options) {
-      requests.push({ url, options });
-      assert.equal(documentObject.elements["owner-confirm-ownership"].disabled, true);
-      if (url === "/api/businesses/business-selected") return { status: 204 };
-      return { status: 200, json: async function () { return { ownershipAssigned: true }; } };
-    }
-  });
-
-  await documentObject.elements["owner-confirm-ownership"].onclick();
-
-  assert.deepEqual(requests.map(function (request) { return request.url; }), [
-    "/api/businesses/business-selected", "/api/businesses/bootstrap-owner"
-  ]);
-  assert.deepEqual(requests.map(function (request) { return request.options.method; }), ["PUT", "POST"]);
-  assert.deepEqual(JSON.parse(requests[0].options.body), { businessProfile: {
-    name: "Selected Cafe", type: "Cafe", location: "London", brandVoice: "Friendly",
-    targetCustomer: "Local diners", goal: "Increase reservations"
-  } });
-  assert.deepEqual(JSON.parse(requests[1].options.body), { businessId: "business-selected" });
-  requests.forEach(function (request) {
-    assert.equal(request.options.credentials, "same-origin");
-    assert.deepEqual(request.options.headers, { "Content-Type": "application/json" });
-  });
-  assert.doesNotMatch(JSON.stringify(requests), /profile_user_private|profile_token_private|profile_actor_private/);
-  assert.equal(documentObject.elements["owner-ownership-confirmation-status"].textContent, "Business ownership confirmed.");
-  assert.equal(documentObject.elements["owner-confirm-ownership"].disabled, false);
-});
-
-test("ownership confirmation shows the server error for a non-200 response", async function () {
-  const documentObject = createRenderDocument();
-  const local = storage({
-    demeosActiveBusinessId: "business-selected",
-    demeosBusinessProfiles: JSON.stringify([completeWorkspaceProfile()])
-  });
-  renderOwnerWorkspace(documentObject, local, {
-    businessIdDiagnosticEnabled: true,
-    fetchFunction: async function () {
-      return { status: 403, json: async function () { return { error: "Ownership bootstrap is not authorized." }; } };
-    }
-  });
-
-  await documentObject.elements["owner-confirm-ownership"].onclick();
-
-  assert.equal(
-    documentObject.elements["owner-ownership-confirmation-status"].textContent,
-    "Ownership bootstrap is not authorized."
-  );
-  assert.equal(documentObject.elements["owner-confirm-ownership"].disabled, false);
-});
-
-test("ownership confirmation does not bootstrap when business persistence fails", async function () {
-  const documentObject = createRenderDocument();
-  const requests = [];
-  const local = storage({
-    demeosActiveBusinessId: "business-selected",
-    demeosBusinessProfiles: JSON.stringify([completeWorkspaceProfile()])
-  });
-  renderOwnerWorkspace(documentObject, local, {
-    businessIdDiagnosticEnabled: true,
-    fetchFunction: async function (url) {
-      requests.push(url);
-      return { status: 503, json: async function () { return { error: "DEMEOS could not save this business." }; } };
-    }
-  });
-
-  await documentObject.elements["owner-confirm-ownership"].onclick();
-
-  assert.deepEqual(requests, ["/api/businesses/business-selected"]);
-  assert.equal(documentObject.elements["owner-ownership-confirmation-status"].textContent, "DEMEOS could not save this business.");
-});
-
-test("ownership confirmation uses the generic message for a network failure", async function () {
-  const documentObject = createRenderDocument();
-  const local = storage({
-    demeosActiveBusinessId: "business-selected",
-    demeosBusinessProfiles: JSON.stringify([completeWorkspaceProfile()])
-  });
-  renderOwnerWorkspace(documentObject, local, {
-    businessIdDiagnosticEnabled: true,
-    fetchFunction: async function () { throw new Error("private network detail"); }
-  });
-
-  await documentObject.elements["owner-confirm-ownership"].onclick();
-
-  const message = documentObject.elements["owner-ownership-confirmation-status"].textContent;
-  assert.equal(message, "DEMEOS could not confirm business ownership.");
-  assert.doesNotMatch(message, /private|network|detail/i);
-});
-
-test("ownership confirmation neither renders nor sends Clerk identity or auth details", async function () {
-  const documentObject = createRenderDocument();
-  const requests = [];
-  const local = storage({
-    demeosActiveBusinessId: "business-selected",
-    demeosBusinessProfiles: JSON.stringify([completeWorkspaceProfile()]),
-    clerkUserId: "user_private",
-    token: "token_private",
-    session: "session_private",
-    actorScope: "owner_private"
-  });
-  renderOwnerWorkspace(documentObject, local, {
-    businessIdDiagnosticEnabled: true,
-    fetchFunction: async function (url, options) {
-      requests.push({ url, options });
-      if (url === "/api/businesses/business-selected") return { status: 204 };
-      return { status: 200, json: async function () { return { ownershipAssigned: true }; } };
-    }
-  });
-
-  await documentObject.elements["owner-confirm-ownership"].onclick();
-
   const rendered = JSON.stringify(documentObject.elements);
-  assert.doesNotMatch(`${JSON.stringify(requests)}\n${rendered}`, /user_private|token_private|session_private|owner_private/);
-  assert.deepEqual(JSON.parse(requests[1].options.body), { businessId: "business-selected" });
+  assert.match(rendered, /Test Kitchen London|Restaurant|Greenwich/);
+  assert.doesNotMatch(rendered, /business-secret-123|Business ID/);
 });
 
 function authenticationElements() {

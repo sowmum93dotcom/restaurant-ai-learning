@@ -86,76 +86,7 @@ function showOwnerAuthenticationState(elements, state) {
   elements.account.hidden = state !== "signed-in";
 }
 
-function configureOwnershipConfirmation(documentObject, selectedProfile, options = {}) {
-  const control = documentObject.getElementById("owner-ownership-confirmation");
-  const button = documentObject.getElementById("owner-confirm-ownership");
-  const status = documentObject.getElementById("owner-ownership-confirmation-status");
-  if (!control || !button || !status) return;
-
-  const businessId = selectedProfile && selectedProfile.businessId;
-
-  control.hidden = !(options.businessIdDiagnosticEnabled === true && businessId);
-  status.textContent = "";
-  button.disabled = false;
-  button.onclick = null;
-  if (control.hidden) return;
-
-  button.onclick = async function () {
-    button.disabled = true;
-    status.textContent = "";
-    try {
-      const requiredFields = ["name", "type", "location", "brandVoice", "targetCustomer", "goal"];
-      const businessProfile = {};
-      const profileIsComplete = requiredFields.every(function (field) {
-        const value = selectedProfile[field];
-        if (typeof value !== "string" || !value.trim()) return false;
-        businessProfile[field] = value;
-        return true;
-      });
-      if (!profileIsComplete) {
-        status.textContent = "DEMEOS could not confirm business ownership.";
-        return;
-      }
-
-      const persistenceResponse = await options.fetchFunction(`/api/businesses/${encodeURIComponent(businessId)}`, {
-        method: "PUT",
-        credentials: "same-origin",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ businessProfile })
-      });
-      if (persistenceResponse.status < 200 || persistenceResponse.status >= 300) {
-        const persistenceResult = await persistenceResponse.json().catch(function () { return null; });
-        if (persistenceResult && typeof persistenceResult.error === "string" && persistenceResult.error.trim()) {
-          status.textContent = persistenceResult.error;
-        } else {
-          status.textContent = "DEMEOS could not confirm business ownership.";
-        }
-        return;
-      }
-
-      const response = await options.fetchFunction("/api/businesses/bootstrap-owner", {
-        method: "POST",
-        credentials: "same-origin",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ businessId })
-      });
-      const result = await response.json();
-      if (response.status === 200 && result && result.ownershipAssigned === true) {
-        status.textContent = "Business ownership confirmed.";
-      } else if (response.status !== 200 && result && typeof result.error === "string" && result.error.trim()) {
-        status.textContent = result.error;
-      } else {
-        status.textContent = "DEMEOS could not confirm business ownership.";
-      }
-    } catch (_error) {
-      status.textContent = "DEMEOS could not confirm business ownership.";
-    } finally {
-      button.disabled = false;
-    }
-  };
-}
-
-function renderOwnerWorkspace(documentObject, storage, options = {}) {
+function renderOwnerWorkspace(documentObject, storage) {
   // Browser business selection is presentation state only. Server-side ownership authorization is authoritative.
   const context = getOwnerWorkspaceContext(storage);
   const identity = documentObject.getElementById("workspace-business-identity");
@@ -163,22 +94,15 @@ function renderOwnerWorkspace(documentObject, storage, options = {}) {
   identity.replaceChildren();
   work.replaceChildren();
   if (!context.profile) {
-    configureOwnershipConfirmation(documentObject, null, options);
     identity.textContent = "No saved business is selected.";
     work.textContent = "Save a Business Profile before starting work in DEMEOS.";
     return;
   }
   const name = context.profile.name || "Saved business";
-  configureOwnershipConfirmation(documentObject, context.profile, options);
   documentObject.getElementById("workspace-header-business").textContent = name;
   const heading = documentObject.createElement("strong");
   heading.textContent = name;
   identity.appendChild(heading);
-  if (options.businessIdDiagnosticEnabled === true && context.profile.businessId) {
-    const businessIdDiagnostic = documentObject.createElement("small");
-    businessIdDiagnostic.textContent = `Business ID: ${context.profile.businessId}`;
-    identity.appendChild(businessIdDiagnostic);
-  }
   [context.profile.type, context.profile.location].filter(function (value) {
     return typeof value === "string" && value.trim();
   }).forEach(function (value) {
@@ -278,10 +202,7 @@ async function initialiseOwnerAuthentication(windowObject, documentObject, stora
     }
     await clerk.load({ ui: { ClerkUI: windowObject.__internal_ClerkUICtor } });
 
-    bindOwnerClerkSession(clerk, documentObject, storage, elements, {
-      businessIdDiagnosticEnabled: config.businessIdDiagnosticEnabled === true,
-      fetchFunction
-    });
+    bindOwnerClerkSession(clerk, documentObject, storage, elements);
     // Clerk's browser SDK manages its session; DEMEOS never copies or stores its tokens.
   } catch (error) {
     showOwnerAuthenticationState(elements, "error");
@@ -291,7 +212,7 @@ async function initialiseOwnerAuthentication(windowObject, documentObject, stora
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     getOwnerWorkspaceContext, migrateWorkspaceBusinessContext, showOwnerAuthenticationState,
-    configureOwnershipConfirmation, renderOwnerWorkspace, bindOwnerClerkSession, initialiseOwnerAuthentication
+    renderOwnerWorkspace, bindOwnerClerkSession, initialiseOwnerAuthentication
   };
 }
 

@@ -15,6 +15,22 @@ test("Marketing Agent exposes its six workspace views and keeps Business Results
   assert.match(html, /id="results-view"/);
 });
 
+test("Marketing shares the Business Owner Workspace shell and primary navigation", function () {
+  assert.match(html, /<body class="owner-workspace-body marketing-capability-body">/);
+  assert.match(html, /<h1 class="restaurant-name">Business Owner Workspace<\/h1>/);
+  assert.match(html, /<h2>Marketing Agent<\/h2>/);
+  const primary = html.match(/<nav class="owner-workspace-navigation"[\s\S]*?<\/nav>/);
+  assert.ok(primary);
+  const labels = Array.from(primary[0].matchAll(/<a[^>]*>([^<]+)<\/a>/g), (match) => match[1]);
+  assert.deepEqual(labels, ["Overview", "Business Profile", "DEMEOS Recommends", "Marketing", "Results"]);
+  assert.match(primary[0], /class="is-active" href="index.html" aria-current="page">Marketing/);
+  assert.doesNotMatch(html, /Business Marketing Intelligence|<p class="agent-label">DEMEOS<\/p>/);
+});
+
+test("owner surfaces expose no customer or admin controls", function () {
+  assert.doesNotMatch(html, /DEMEOS Admin|admin control|customer navigation|customer login/i);
+});
+
 test("Overview is the only default workspace panel and profile, recommendations, creation, and results are separated", function () {
   assert.match(html, /id="overview" class="workspace-view is-active" data-workspace-panel(?! hidden)/);
   assert.match(html, /id="recommends" class="workspace-view" data-workspace-panel hidden/);

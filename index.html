@@ -3,35 +3,51 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DEMEOS Marketing Agent</title>
+  <title>Marketing | DEMEOS Business Owner Workspace</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
-<body>
-  <header class="workspace-header">
-    <a class="demeos-brand" href="#overview" aria-label="DEMEOS Marketing Agent home">
+<body class="owner-workspace-body marketing-capability-body">
+  <header class="workspace-header owner-workspace-header">
+    <a class="demeos-brand" href="business-workspace.html" aria-label="DEMEOS Business Owner Workspace home">
       <img src="images/demeos-logo.png" alt="DEMEOS logo" class="demeos-logo" />
     </a>
     <div class="workspace-identity">
-      <p class="agent-label">DEMEOS</p>
-      <h1 class="restaurant-name">Marketing Agent</h1>
-      <p class="cuisine-type">Business Marketing Intelligence</p>
+      <p class="agent-label">Business owner workspace</p>
+      <h1 class="restaurant-name">Business Owner Workspace</h1>
+      <p class="cuisine-type">Marketing</p>
     </div>
   </header>
 
-  <div class="workspace-shell">
-    <aside class="workspace-sidebar">
-      <button id="workspace-menu-toggle" class="workspace-menu-toggle" type="button" aria-expanded="false" aria-controls="workspace-navigation">Menu</button>
-      <nav id="workspace-navigation" class="workspace-navigation" aria-label="Marketing Agent workspace">
+  <div class="owner-workspace-shell marketing-owner-shell">
+    <aside class="owner-workspace-sidebar">
+      <nav class="owner-workspace-navigation" aria-label="Business Owner Workspace">
+        <a href="business-workspace.html">Overview</a>
+        <a href="index.html#business-profile">Business Profile</a>
+        <a href="index.html#recommends">DEMEOS Recommends</a>
+        <a class="is-active" href="index.html" aria-current="page">Marketing</a>
+        <a href="business-results.html">Results</a>
+      </nav>
+    </aside>
+
+    <main class="owner-workspace-main marketing-capability-main">
+      <div class="marketing-capability-heading">
+        <p class="workspace-eyebrow">Marketing capability</p>
+        <h2>Marketing Agent</h2>
+        <p>Business marketing intelligence within your DEMEOS workspace.</p>
+      </div>
+      <aside class="workspace-sidebar marketing-secondary-sidebar">
+        <button id="workspace-menu-toggle" class="workspace-menu-toggle" type="button" aria-expanded="false" aria-controls="workspace-navigation">Marketing menu</button>
+        <nav id="workspace-navigation" class="workspace-navigation" aria-label="Marketing tools">
         <button class="workspace-nav-item is-active" type="button" data-workspace-view="overview" aria-current="page">Overview</button>
         <button class="workspace-nav-item" type="button" data-workspace-view="recommends">DEMEOS Recommends</button>
         <button class="workspace-nav-item" type="button" data-workspace-view="create">Create Marketing</button>
         <button class="workspace-nav-item" type="button" data-workspace-view="campaigns">Campaigns</button>
         <button class="workspace-nav-item" type="button" data-workspace-view="results-view">Results</button>
         <button class="workspace-nav-item" type="button" data-workspace-view="business-profile">Business Profile</button>
-      </nav>
-    </aside>
+        </nav>
+      </aside>
 
-    <main class="workspace-main">
+      <div class="workspace-main marketing-workspace-main">
       <section id="overview" class="workspace-view is-active" data-workspace-panel aria-labelledby="overview-heading">
         <div class="view-heading"><p class="workspace-eyebrow">Marketing workspace</p><h2 id="overview-heading">Overview</h2><p>Your current marketing priorities and recent work in one place.</p></div>
         <div class="overview-grid">
@@ -127,6 +143,7 @@
           <button id="save-business-profile-btn" class="demeos-primary-button" type="button">Save Business Profile</button>
         </section>
       </section>
+      </div>
     </main>
   </div>
   <footer><p>&copy; 2026 DEMEOS — One System. Real Value. Shared Future.</p></footer>
