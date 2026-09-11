@@ -3,6 +3,13 @@ const fs = require("node:fs");
 const test = require("node:test");
 
 const html = fs.readFileSync(require.resolve("../index.html"), "utf8");
+const resultsHtml = fs.readFileSync(require.resolve("../business-results.html"), "utf8");
+
+function primaryNavigationLabels(source) {
+  const primary = source.match(/<nav class="owner-workspace-navigation"[\s\S]*?<\/nav>/);
+  assert.ok(primary);
+  return Array.from(primary[0].matchAll(/<a[^>]*>([^<]+)<\/a>/g), (match) => match[1]);
+}
 
 test("Marketing Agent exposes its six workspace views and keeps Business Results separate", function () {
   const labels = Array.from(html.matchAll(/data-workspace-view="[^"]+"[^>]*>([^<]+)<\/button>/g), function (match) {
@@ -19,19 +26,46 @@ test("Marketing shares the Business Owner Workspace shell and primary navigation
   assert.match(html, /<body class="owner-workspace-body marketing-capability-body">/);
   assert.match(html, /<h1 class="restaurant-name">Business Owner Workspace<\/h1>/);
   assert.match(html, /<h2>Marketing Agent<\/h2>/);
-  const primary = html.match(/<nav class="owner-workspace-navigation"[\s\S]*?<\/nav>/);
-  assert.ok(primary);
-  const labels = Array.from(primary[0].matchAll(/<a[^>]*>([^<]+)<\/a>/g), (match) => match[1]);
-  assert.deepEqual(labels, ["Overview", "Business Profile", "DEMEOS Recommends", "Marketing", "Results"]);
-  assert.match(primary[0], /class="is-active" href="index.html" aria-current="page">Marketing/);
+  assert.deepEqual(primaryNavigationLabels(html), ["Overview", "Business Profile", "DEMEOS Recommends", "Marketing", "Results"]);
+  assert.match(html, /class="is-active" href="index.html" aria-current="page">Marketing/);
   assert.doesNotMatch(html, /Business Marketing Intelligence|<p class="agent-label">DEMEOS<\/p>/);
 });
 
-test("owner surfaces expose no customer or admin controls", function () {
-  assert.doesNotMatch(html, /DEMEOS Admin|admin control|customer navigation|customer login/i);
+test("Marketing uses the owner authentication presentation boundary", function () {
+  assert.match(html, /id="owner-auth-loading"/);
+  assert.match(html, /id="owner-auth-signed-out"[^>]*hidden/);
+  assert.match(html, /id="owner-auth-error"[^>]*hidden/);
+  assert.match(html, /id="owner-authenticated-workspace"[^>]*hidden/);
+  assert.match(html, /id="owner-sign-in"/);
+  assert.match(html, /id="owner-sign-out"/);
+  assert.match(html, /<script src="js\/business-workspace\.js"><\/script>/);
 });
 
-test("Overview is the only default workspace panel and profile, recommendations, creation, and results are separated", function () {
+test("Business Results shares the same owner shell, navigation and authentication boundary", function () {
+  assert.match(resultsHtml, /<h1 class="restaurant-name">Business Owner Workspace<\/h1>/);
+  assert.deepEqual(primaryNavigationLabels(resultsHtml), ["Overview", "Business Profile", "DEMEOS Recommends", "Marketing", "Results"]);
+  assert.match(resultsHtml, /class="is-active" href="business-results.html" aria-current="page">Results/);
+  assert.doesNotMatch(resultsHtml, /Back to Marketing Agent|<h1 class="restaurant-name">Business Results<\/h1>/);
+  assert.match(resultsHtml, /id="owner-auth-loading"/);
+  assert.match(resultsHtml, /id="owner-auth-signed-out"[^>]*hidden/);
+  assert.match(resultsHtml, /id="owner-authenticated-workspace"[^>]*hidden/);
+  assert.match(resultsHtml, /<script src="js\/business-workspace\.js"><\/script>/);
+});
+
+test("Business Results preserves its functional result IDs", function () {
+  assert.match(resultsHtml, /id="business-results-business-name"/);
+  assert.match(resultsHtml, /id="business-results-status"/);
+  assert.match(resultsHtml, /id="business-results-zero"/);
+  assert.match(resultsHtml, /id="business-results-list"/);
+  assert.match(resultsHtml, /<script src="js\/business-results\.js"><\/script>/);
+});
+
+test("owner surfaces expose no customer or admin controls", function () {
+  const source = `${html}\n${resultsHtml}`;
+  assert.doesNotMatch(source, /DEMEOS Admin|admin control|customer navigation|customer login/i);
+});
+
+test("Overview is the only default Marketing workspace panel and profile, recommendations, creation, and results are separated", function () {
   assert.match(html, /id="overview" class="workspace-view is-active" data-workspace-panel(?! hidden)/);
   assert.match(html, /id="recommends" class="workspace-view" data-workspace-panel hidden/);
   assert.match(html, /id="create" class="workspace-view" data-workspace-panel hidden/);
