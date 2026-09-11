@@ -178,12 +178,24 @@ function renderOwnerWorkspace(documentObject, storage) {
 }
 
 function bindOwnerClerkSession(clerk, documentObject, storage, elements) {
+  let signedIn = Boolean(clerk && clerk.user);
   const update = function (auth) {
-    if (auth && auth.user) {
+    const nextSignedIn = Boolean(auth && auth.user);
+    if (nextSignedIn) {
       renderOwnerWorkspace(documentObject, storage);
       showOwnerAuthenticationState(elements, "signed-in");
+      if (!signedIn) {
+        signedIn = true;
+        const windowObject = documentObject && documentObject.defaultView;
+        if (windowObject && windowObject.location && typeof windowObject.location.reload === "function") {
+          windowObject.location.reload();
+          return;
+        }
+      }
+      signedIn = true;
       return;
     }
+    signedIn = false;
     showOwnerAuthenticationState(elements, "signed-out");
   };
 
