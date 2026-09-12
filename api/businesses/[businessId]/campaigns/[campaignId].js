@@ -3,6 +3,9 @@ const {
   authorizeBusinessOwnerRequest
 } = require("../../../_lib/demeos-business-owner-authorization.js");
 const { DEMEOS_ACTIONS } = require("../../../_lib/demeos-rules.js");
+const {
+  getCapabilityForRecommendationType
+} = require("../../../_lib/capability-registry.js");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "PUT") {
@@ -46,9 +49,15 @@ module.exports = async function handler(req, res) {
     const hasInvalidCampaignField = !isCampaignObject || requiredCampaignFields.some(function (field) {
       return typeof campaign[field] !== "string" || !campaign[field].trim();
     });
+    const campaignCapability = isCampaignObject
+      ? getCapabilityForRecommendationType(campaign.campaignType)
+      : null;
     if (
       hasInvalidCampaignField ||
-      !["Unapproved", "Approved"].includes(campaign.approvalStatus)
+      !["Unapproved", "Approved"].includes(campaign.approvalStatus) ||
+      !campaignCapability ||
+      !campaignCapability.available ||
+      campaignCapability.supportedOutputType !== campaign.campaignType
     ) {
       return res.status(400).json({ error: "DEMEOS received invalid campaign data." });
     }
