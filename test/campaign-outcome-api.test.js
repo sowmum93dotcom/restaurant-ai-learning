@@ -84,6 +84,26 @@ test("authenticated non-owner cannot record an outcome", async function () {
   assert.deepEqual(result.persistenceCalls, []);
 });
 
+test("outcome validation cannot reveal information before owner authorization", async function () {
+  const unauthenticated = await save({
+    authenticated: false,
+    allowed: false,
+    body: { outcome: "not-a-valid-outcome", ownerNote: {} }
+  });
+  assert.equal(unauthenticated.res.statusCode, 401);
+  assert.deepEqual(unauthenticated.res.body, { error: "Authentication required." });
+  assert.deepEqual(unauthenticated.persistenceCalls, []);
+
+  const nonOwner = await save({
+    authenticated: true,
+    allowed: false,
+    body: { outcome: "not-a-valid-outcome", ownerNote: {} }
+  });
+  assert.equal(nonOwner.res.statusCode, 403);
+  assert.deepEqual(nonOwner.res.body, { error: "Forbidden." });
+  assert.deepEqual(nonOwner.persistenceCalls, []);
+});
+
 test("owner can record an outcome for their own approved campaign", async function () {
   const result = await save();
   assert.equal(result.res.statusCode, 200);
