@@ -8,14 +8,15 @@
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body class="customer-body">
+  <a class="customer-skip-link" href="#customer-work-heading">Skip to customer work</a>
   <header class="customer-header">
     <div class="customer-header-inner">
       <a class="customer-brand" href="#discover" aria-label="DEMEOS customer experience home">
         <img src="images/demeos-logo.png" alt="DEMEOS" class="demeos-logo" />
       </a>
       <nav class="customer-journey-nav" aria-label="Customer journey">
-        <a href="#discover">Discover</a><a href="#understand">Understand</a>
-        <a href="#choose">Choose</a><a href="#participate">Participate</a>
+        <a href="#discover"><span>01</span>Discover</a><a href="#understand"><span>02</span>Understand</a>
+        <a href="#choose"><span>03</span>Choose</a><a href="#participate"><span>04</span>Participate</a>
       </nav>
     </div>
   </header>
@@ -26,18 +27,23 @@
       <h1 id="customer-title">Discover something worth knowing</h1>
       <p>Explore messages that businesses have chosen to share with their customers. Read what matters, choose what interests you, and participate when you are ready.</p>
       <a class="customer-intro-action" href="#discover">Explore approved work <span aria-hidden="true">↓</span></a>
+      <div class="customer-intro-assurance" aria-label="About this experience">
+        <span>Business-approved messages</span>
+        <span>Your choice, always</span>
+        <span>No account required</span>
+      </div>
     </section>
 
     <section id="discover" class="customer-experience" aria-labelledby="customer-work-heading">
       <div class="customer-section-heading">
-        <div><p class="customer-step">01 · Discover</p><h2 id="customer-work-heading">Shared by DEMEOS businesses</h2></div>
-        <p>Only work approved for customers appears here.</p>
+        <div><p class="customer-step">01 · Discover</p><h2 id="customer-work-heading" tabindex="-1">Shared by DEMEOS businesses</h2></div>
+        <p><span class="customer-approved-dot" aria-hidden="true"></span>Only work approved for customers appears here.</p>
       </div>
       <p id="customer-work-status" class="customer-work-status" aria-live="polite">Loading approved work…</p>
       <div id="customer-work-list" class="customer-work-list"></div>
     </section>
   </main>
-  <footer class="customer-footer"><img src="images/demeos-logo.png" alt="" /><p>&copy; 2026 DEMEOS — One System. Real Value. Shared Future.</p></footer>
+  <footer class="customer-footer"><img src="images/demeos-logo.png" alt="" /><div><p>One System. Real Value. Shared Future.</p><small>&copy; 2026 DEMEOS</small></div></footer>
   <script src="js/customer.js"></script>
 </body>
 </html>

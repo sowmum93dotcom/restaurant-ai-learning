@@ -886,12 +886,15 @@ footer { background: #081f3d; color: #c4cfdb; text-align: center; }
 
 /* DEMEOS Customer Experience */
 .customer-body { min-height: 100vh; background: #f4f1e9; color: #11243f; }
+.customer-skip-link { position: fixed; z-index: 10; top: .75rem; left: 1rem; padding: .7rem 1rem; transform: translateY(-150%); background: #fff; color: #102a52; font-weight: 800; text-decoration: none; box-shadow: 0 4px 16px rgba(0,0,0,.2); transition: transform .2s ease; }
+.customer-skip-link:focus { transform: translateY(0); }
 .customer-header { position: relative; z-index: 2; border-bottom: 1px solid rgba(210,173,88,.45); background: #071b35; }
 .customer-header-inner { width: min(1180px, calc(100% - 3rem)); min-height: 88px; margin: auto; display: flex; align-items: center; justify-content: space-between; gap: 2rem; }
 .customer-brand { display: block; }
 .customer-brand .demeos-logo { width: 116px; max-width: none; border-radius: 12px; }
 .customer-journey-nav { display: flex; align-items: center; gap: clamp(1rem, 3vw, 2.5rem); }
-.customer-journey-nav a { color: #d7e0e9; font-size: .82rem; font-weight: 700; letter-spacing: .04em; text-decoration: none; }
+.customer-journey-nav a { display: grid; grid-template-columns: auto 1fr; gap: .35rem; color: #d7e0e9; font-size: .82rem; font-weight: 700; letter-spacing: .04em; text-decoration: none; }
+.customer-journey-nav a span { color: #d6b761; font-size: .62rem; letter-spacing: .08em; }
 .customer-journey-nav a:hover, .customer-journey-nav a:focus { color: #e5c777; }
 .customer-main { max-width: none; margin: 0; padding: 0; }
 .customer-introduction { min-height: 490px; padding: clamp(5rem, 10vw, 8rem) max(1.5rem, calc((100vw - 1180px) / 2)); color: #fff; background: linear-gradient(90deg, rgba(4,20,40,.98) 0%, rgba(6,28,55,.91) 48%, rgba(7,25,48,.54) 100%), url("../images/demeos-marketing-background.png") center/cover; }
@@ -900,13 +903,19 @@ footer { background: #081f3d; color: #c4cfdb; text-align: center; }
 .customer-introduction h1 { max-width: 700px; margin: .7rem 0 1.2rem; font-family: Georgia, serif; font-size: clamp(2.6rem, 6vw, 5rem); font-weight: 500; letter-spacing: -.035em; line-height: 1.03; }
 .customer-introduction > p:not(.customer-eyebrow) { max-width: 650px; color: #cfdae6; font-size: clamp(1rem, 2vw, 1.2rem); }
 .customer-intro-action { display: inline-block; margin-top: 2rem; padding-bottom: .3rem; border-bottom: 1px solid #d5b45e; color: #f2da99; font-weight: 700; text-decoration: none; }
+.customer-intro-action span { display: inline-block; margin-left: .45rem; transition: transform .2s ease; }
+.customer-intro-action:hover span { transform: translateY(.2rem); }
+.customer-intro-assurance { display: flex; flex-wrap: wrap; gap: .75rem 1.75rem; max-width: 760px; margin-top: 3.25rem; padding-top: 1.25rem; border-top: 1px solid rgba(213,180,94,.35); color: #cdd7e1; font-size: .78rem; font-weight: 700; letter-spacing: .025em; }
+.customer-intro-assurance span::before { content: "✓"; margin-right: .45rem; color: #e0c16f; }
 .customer-experience { width: min(1180px, calc(100% - 3rem)); margin: -54px auto 5rem; padding: clamp(1.5rem, 4vw, 3rem); border-radius: 3px; background: #fff; box-shadow: 0 20px 55px rgba(6,25,48,.13); }
 .customer-section-heading { display: flex; justify-content: space-between; align-items: end; gap: 2rem; padding-bottom: 1.6rem; border-bottom: 1px solid #dde2e8; }
 .customer-section-heading h2 { margin-top: .3rem; color: #102a52; font-family: Georgia, serif; font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 500; }
 .customer-section-heading > p { max-width: 300px; color: #667284; text-align: right; }
+.customer-approved-dot { display: inline-block; width: .5rem; height: .5rem; margin-right: .55rem; border-radius: 50%; background: #3d8b60; box-shadow: 0 0 0 4px #e5f2e9; vertical-align: .05rem; }
 .customer-work-status { color: #687689; }
 .customer-work-list { display: grid; gap: 1.5rem; margin-top: 1.75rem; }
-.customer-work-card { overflow: hidden; border: 1px solid #d9dfe7; border-top: 4px solid #c8a24a; border-radius: 2px; background: #fff; box-shadow: 0 8px 25px rgba(16,42,82,.06); }
+.customer-work-card { overflow: hidden; border: 1px solid #d9dfe7; border-top: 4px solid #c8a24a; border-radius: 2px; background: #fff; box-shadow: 0 8px 25px rgba(16,42,82,.06); transition: box-shadow .2s ease, transform .2s ease; }
+.customer-work-card:hover { transform: translateY(-2px); box-shadow: 0 14px 32px rgba(16,42,82,.11); }
 .customer-work-context { display: flex; justify-content: space-between; gap: 1.5rem; padding: 1.5rem 1.75rem; background: #f7f8fa; }
 .customer-business-name { margin: .25rem 0 0; color: #102a52; font-family: Georgia, serif; font-size: 1.55rem; font-weight: 500; }
 .customer-work-location { margin: .15rem 0 0; color: #637185; font-size: .9rem; }
@@ -926,8 +935,15 @@ footer { background: #081f3d; color: #c4cfdb; text-align: center; }
 .customer-empty-state strong { color: #102a52; font-family: Georgia, serif; font-size: 1.45rem; font-weight: 500; }
 .customer-empty-state span { margin-top: .35rem; }
 .customer-load-error { color: #783636; }
-.customer-footer { display: flex; align-items: center; justify-content: center; gap: 1rem; background: #071b35; color: #aebbc9; }
+.customer-footer { display: flex; align-items: center; justify-content: center; gap: 1rem; padding: 2rem; background: #071b35; color: #aebbc9; }
 .customer-footer img { width: 66px; border-radius: 7px; }
+.customer-footer p { color: #dbe3eb; font-family: Georgia, serif; }
+.customer-footer small { display: block; margin-top: .2rem; color: #8999aa; }
+
+@media (prefers-reduced-motion: reduce) {
+  .customer-skip-link, .customer-intro-action span, .customer-work-card { transition: none; }
+  .customer-work-card:hover { transform: none; }
+}
 
 @media (max-width: 700px) {
   .customer-header-inner { width: calc(100% - 2rem); min-height: 72px; }
@@ -935,6 +951,7 @@ footer { background: #081f3d; color: #c4cfdb; text-align: center; }
   .customer-journey-nav { gap: .8rem; }
   .customer-journey-nav a { font-size: .68rem; }
   .customer-introduction { min-height: 420px; padding: 4.5rem 1.25rem; }
+  .customer-intro-assurance { margin-top: 2.5rem; }
   .customer-experience { width: calc(100% - 1.5rem); margin-top: -35px; padding: 1.25rem; }
   .customer-section-heading, .customer-work-context { align-items: flex-start; flex-direction: column; }
   .customer-section-heading > p { text-align: left; }
