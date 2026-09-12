@@ -440,7 +440,7 @@ function installOwnerBusinessSecurity(windowObject, documentObject, localStorage
 
   const originalBindOwnerClerkSession = windowObject.bindOwnerClerkSession;
   if (typeof originalBindOwnerClerkSession === "function") {
-    windowObject.bindOwnerClerkSession = function (clerk, ownerDocument, storage, elements) {
+    windowObject.bindOwnerClerkSession = function (clerk, ownerDocument, storage, elements, fetchFunction) {
       const handleTrustedSessionChange = function (auth) {
         const user = auth && auth.user;
         const identityId = user && typeof user.id === "string" ? user.id : null;
@@ -471,7 +471,7 @@ function installOwnerBusinessSecurity(windowObject, documentObject, localStorage
 
       clerk.addListener(handleTrustedSessionChange);
       handleTrustedSessionChange({ user: clerk.user });
-      return originalBindOwnerClerkSession(clerk, ownerDocument, storage, elements);
+      return originalBindOwnerClerkSession(clerk, ownerDocument, storage, elements, fetchFunction);
     };
   }
 
