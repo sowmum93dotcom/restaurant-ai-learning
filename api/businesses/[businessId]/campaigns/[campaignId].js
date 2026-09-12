@@ -54,7 +54,29 @@ module.exports = async function handler(req, res) {
     }
 
     if (isApprovalRequest) {
-      const approvedCampaign = await repository.approveCampaign(businessId, campaignId);
+      let approvedCampaign = await repository.approveCampaign(businessId, campaignId);
+      if (!approvedCampaign) {
+        const createAccess = await authorizeBusinessOwnerRequest({
+          req,
+          businessId,
+          action: DEMEOS_ACTIONS.CREATE_MARKETING,
+          repository
+        });
+        if (!createAccess.authenticated) {
+          return res.status(401).json({ error: "Authentication required." });
+        }
+        if (!createAccess.allowed) {
+          return res.status(403).json({ error: "Forbidden." });
+        }
+
+        await repository.saveCampaign({
+          ...campaign,
+          id: campaignId,
+          businessId,
+          approvalStatus: "Unapproved"
+        });
+        approvedCampaign = await repository.approveCampaign(businessId, campaignId);
+      }
       if (!approvedCampaign) {
         return res.status(404).json({ error: "Campaign was not found for this business." });
       }
