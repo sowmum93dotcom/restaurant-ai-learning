@@ -1,0 +1,97 @@
+/* DEMEOS Business Owner sign-in artwork.
+   This layer is active only while the authenticated workspace is hidden. */
+.owner-workspace-body:has(#owner-authenticated-workspace[hidden]) {
+  min-height: 100vh;
+  background-color: #06172d;
+  background-image: url("../images/54017379-F4D1-4881-A27E-E59CAFD4661C.png");
+  background-position: center top;
+  background-repeat: no-repeat;
+  background-size: contain;
+  color: #ffffff;
+}
+
+.owner-workspace-body:has(#owner-authenticated-workspace[hidden]) > .owner-workspace-header,
+.owner-workspace-body:has(#owner-authenticated-workspace[hidden]) > footer {
+  display: none;
+}
+
+.owner-workspace-body:has(#owner-authenticated-workspace[hidden]) .owner-auth-panel {
+  position: absolute;
+  z-index: 2;
+  top: 42%;
+  left: 50%;
+  width: min(450px, calc(100% - 2rem));
+  min-height: 0;
+  margin: 0;
+  padding: clamp(1.8rem, 4vw, 2.6rem);
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(218, 177, 82, 0.72);
+  border-radius: 18px;
+  background: linear-gradient(160deg, rgba(5, 24, 48, 0.94), rgba(8, 32, 61, 0.88));
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  text-align: center;
+}
+
+.owner-workspace-body:has(#owner-authenticated-workspace[hidden]) .owner-auth-panel[hidden] {
+  display: none;
+}
+
+.owner-workspace-body:has(#owner-authenticated-workspace[hidden]) .owner-auth-panel .workspace-eyebrow {
+  color: #e5bd59;
+  letter-spacing: 0.22em;
+}
+
+.owner-workspace-body:has(#owner-authenticated-workspace[hidden]) .owner-auth-panel h2 {
+  margin: 0.65rem 0 0.8rem;
+  color: #ffffff;
+  font-family: Georgia, serif;
+  font-size: clamp(2.15rem, 5vw, 3.5rem);
+  font-weight: 500;
+  line-height: 1.05;
+}
+
+.owner-workspace-body:has(#owner-authenticated-workspace[hidden]) .owner-auth-panel p:not(.workspace-eyebrow) {
+  max-width: 35rem;
+  margin: 0 auto 1.6rem;
+  color: #d6e0ec;
+  line-height: 1.65;
+}
+
+.owner-workspace-body:has(#owner-authenticated-workspace[hidden]) .owner-auth-panel .demeos-primary-button {
+  min-width: 128px;
+  padding: 0.95rem 1.7rem;
+  border-radius: 7px;
+  box-shadow: 0 10px 30px rgba(6, 76, 255, 0.28);
+}
+
+.owner-workspace-body:has(#owner-authenticated-workspace[hidden]) .owner-auth-error h2 {
+  color: #ffe4e4;
+}
+
+@media (max-width: 700px) {
+  .owner-workspace-body:has(#owner-authenticated-workspace[hidden]) {
+    background-position: center center;
+    background-size: cover;
+  }
+
+  .owner-workspace-body:has(#owner-authenticated-workspace[hidden]) .owner-auth-panel {
+    top: 46%;
+    width: min(420px, calc(100% - 1.5rem));
+    padding: 1.55rem 1.25rem;
+    border-radius: 14px;
+  }
+
+  .owner-workspace-body:has(#owner-authenticated-workspace[hidden]) .owner-auth-panel h2 {
+    font-size: clamp(1.9rem, 9vw, 2.8rem);
+  }
+}
+
+@media (max-height: 620px) {
+  .owner-workspace-body:has(#owner-authenticated-workspace[hidden]) .owner-auth-panel {
+    top: 50%;
+    padding-top: 1.25rem;
+    padding-bottom: 1.25rem;
+  }
+}
