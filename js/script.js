@@ -399,6 +399,8 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   const campaignHistoryEmpty = byId("campaign-history-empty");
   const activeMarketingWorkList = byId("active-marketing-work-list");
   const activeMarketingWorkEmpty = byId("active-marketing-work-empty");
+  const recommendationDecisionsResultsList = byId("recommendation-decisions-results-list");
+  const recommendationDecisionsResultsEmpty = byId("recommendation-decisions-results-empty");
   const customerParticipationResultsList = byId("customer-participation-results-list");
   const customerParticipationResultsEmpty = byId("customer-participation-results-empty");
   const businessSelector = byId("business-selector");
@@ -541,6 +543,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
           decisions.push({ businessId, recommendationTitle: recommendation.title,
             suggestedCampaignType: recommendation.suggestedCampaignType, decision, timestamp: new Date().toISOString() });
           localStorage.setItem(recommendationDecisionsKey, JSON.stringify(decisions));
+          renderRecommendationDecisionResults();
         } catch (error) {
           console.error("Could not persist recommendation decision:", error);
         }
@@ -553,7 +556,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
         campaignType.value = recommendation.suggestedCampaignType;
         showWorkspaceView("create");
         if (typeof promoInput.focus === "function") promoInput.focus();
-        recordDecision("used");
+        return recordDecision("used");
       });
       const modify = document.createElement("button"); modify.type = "button"; modify.className = "demeos-secondary-button";
       modify.textContent = "Modify";
@@ -563,7 +566,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
         campaignType.value = recommendation.suggestedCampaignType;
         showWorkspaceView("create");
         if (typeof promoInput.focus === "function") promoInput.focus();
-        recordDecision("modified");
+        return recordDecision("modified");
       });
       const reject = document.createElement("button"); reject.type = "button"; reject.className = "demeos-secondary-button";
       reject.textContent = "Not for me";
@@ -571,7 +574,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
         if (recommendationBusinessId !== state.activeBusinessId || addingBusiness) return;
         card.classList.toggle("is-rejected", true);
         decisionStatus.textContent = "Not for me";
-        recordDecision("rejected");
+        return recordDecision("rejected");
       });
       card.append(title, reason, targetCustomer, businessObjective, capability, evidence, expectedOutcome, requiredInput,
         approval, use, modify, reject, decisionStatus);
@@ -785,6 +788,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       });
     }
     renderCampaignResults();
+    renderRecommendationDecisionResults();
     renderCustomerParticipationResults();
   }
   function renderCampaignResults() {
@@ -809,6 +813,29 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
         const value = document.createElement("span"); value.textContent = campaign.outcome.outcome;
         summary.append(label, value); overviewList.appendChild(summary);
       }
+    });
+  }
+  function renderRecommendationDecisionResults() {
+    const campaignLabels = { full: "Full Marketing Campaign", social: "Social Media Campaign", email: "Email Campaign" };
+    const decisionLabels = { used: "Used", modified: "Modified", rejected: "Not for me" };
+    const stored = parseStoredJson(localStorage, recommendationDecisionsKey, []);
+    const decisions = addingBusiness || !Array.isArray(stored) ? [] : stored.filter(function (decision) {
+      return decision && decision.businessId === state.activeBusinessId &&
+        typeof decision.recommendationTitle === "string" && Boolean(decision.recommendationTitle.trim()) &&
+        Object.hasOwn(campaignLabels, decision.suggestedCampaignType) &&
+        Object.hasOwn(decisionLabels, decision.decision) && typeof decision.timestamp === "string" &&
+        Number.isFinite(Date.parse(decision.timestamp));
+    }).sort(function (left, right) { return Date.parse(right.timestamp) - Date.parse(left.timestamp); });
+    if (recommendationDecisionsResultsList) recommendationDecisionsResultsList.textContent = "";
+    if (recommendationDecisionsResultsEmpty) recommendationDecisionsResultsEmpty.hidden = decisions.length > 0;
+    decisions.forEach(function (decision) {
+      const item = document.createElement("article"); item.className = "result-record recommendation-decision-result";
+      const title = document.createElement("h4"); title.textContent = decision.recommendationTitle.trim();
+      const campaign = document.createElement("p"); campaign.textContent = `Campaign type: ${campaignLabels[decision.suggestedCampaignType]}`;
+      const ownerDecision = document.createElement("p"); ownerDecision.textContent = `Owner decision: ${decisionLabels[decision.decision]}`;
+      const timestamp = document.createElement("p"); timestamp.textContent = `Decision date: ${new Date(decision.timestamp).toLocaleString()}`;
+      item.append(title, campaign, ownerDecision, timestamp);
+      if (recommendationDecisionsResultsList) recommendationDecisionsResultsList.appendChild(item);
     });
   }
   function renderActiveMarketingWork() {
@@ -903,7 +930,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   else hydrateActiveBusiness();
   businessSelector.addEventListener("change", function () { switchBusiness(businessSelector.value); });
   addBusinessBtn.addEventListener("click", function () {
-    addingBusiness = true; customerParticipationResults = []; businessSelector.value = ""; fillProfile(null); clearRecommendations(); clearBusinessSituation(); clearCampaignWorkspace(); renderActiveMarketingWork(); renderCustomerParticipationResults();
+    addingBusiness = true; customerParticipationResults = []; businessSelector.value = ""; fillProfile(null); clearRecommendations(); clearBusinessSituation(); clearCampaignWorkspace(); renderActiveMarketingWork(); renderCustomerParticipationResults(); renderRecommendationDecisionResults();
   });
   saveBusinessProfileBtn.addEventListener("click", async function () {
     const profileFields = {};
