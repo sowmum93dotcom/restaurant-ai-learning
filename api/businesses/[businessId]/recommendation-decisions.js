@@ -3,9 +3,11 @@ const {
   authorizeBusinessOwnerRequest
 } = require("../../_lib/demeos-business-owner-authorization.js");
 const { DEMEOS_ACTIONS } = require("../../_lib/demeos-rules.js");
+const {
+  getCapabilityForRecommendationType
+} = require("../../_lib/capability-registry.js");
 
 const allowedDecisions = ["used", "modified", "rejected"];
-const allowedCampaignTypes = ["full", "social", "email"];
 
 module.exports = async function handler(req, res) {
   if (req.method !== "PUT") {
@@ -36,9 +38,13 @@ module.exports = async function handler(req, res) {
     const recommendationTitle = req.body && req.body.recommendationTitle;
     const suggestedCampaignType = req.body && req.body.suggestedCampaignType;
     const decision = req.body && req.body.decision;
+    const campaignCapability = typeof suggestedCampaignType === "string"
+      ? getCapabilityForRecommendationType(suggestedCampaignType)
+      : null;
     if (
       typeof recommendationTitle !== "string" || !recommendationTitle.trim() ||
-      recommendationTitle.length > 500 || !allowedCampaignTypes.includes(suggestedCampaignType) ||
+      recommendationTitle.length > 500 || !campaignCapability ||
+      !campaignCapability.available || campaignCapability.supportedOutputType !== suggestedCampaignType ||
       !allowedDecisions.includes(decision)
     ) {
       return res.status(400).json({ error: "DEMEOS received invalid recommendation decision data." });

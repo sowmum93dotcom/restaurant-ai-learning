@@ -108,6 +108,35 @@ test("authenticated owner can record a valid decision for their own business", a
   assert.equal(result.authorizationCalls[0].repository, result.repository);
 });
 
+test("supported recommendation campaign types are accepted through the capability registry", async () => {
+  for (const suggestedCampaignType of ["full", "social", "email"]) {
+    const result = await request({
+      body: { recommendationTitle: "Seasonal campaign", suggestedCampaignType, decision: "used" }
+    });
+    assert.equal(result.res.statusCode, 201);
+    assert.equal(result.persistenceCalls[0].suggestedCampaignType, suggestedCampaignType);
+  }
+});
+
+test("unsupported recommendation campaign types cannot be persisted", async () => {
+  for (const suggestedCampaignType of ["video", "push", "loyalty", "unknown", "browser-supplied-value", 42]) {
+    const result = await request({
+      body: { recommendationTitle: "Seasonal campaign", suggestedCampaignType, decision: "used" }
+    });
+    assert.equal(result.res.statusCode, 400);
+    assert.deepEqual(result.res.body, { error: "DEMEOS received invalid recommendation decision data." });
+    assert.deepEqual(result.persistenceCalls, []);
+  }
+});
+
+test("recommendation campaign type validation uses the shared capability registry without a duplicate type list", () => {
+  const source = require("node:fs").readFileSync(handlerPath, "utf8");
+
+  assert.match(source, /require\("\.\.\/\.\.\/_lib\/capability-registry\.js"\)/);
+  assert.match(source, /getCapabilityForRecommendationType\(suggestedCampaignType\)/);
+  assert.doesNotMatch(source, /\[\s*["']full["']\s*,\s*["']social["']\s*,\s*["']email["']\s*\]/);
+});
+
 test("owner cannot record a recommendation decision for another business", async () => {
   const result = await request({ businessId: "business-b", allowed: false });
   assert.equal(result.res.statusCode, 403);
@@ -146,6 +175,7 @@ test("recommendation decisions accept only used, modified, or rejected after aut
 test("existing recommendation field validation remains enforced after authorization", async () => {
   for (const body of [
     { recommendationTitle: "", suggestedCampaignType: "email", decision: "used" },
+    { recommendationTitle: "   ", suggestedCampaignType: "email", decision: "used" },
     { recommendationTitle: "x".repeat(501), suggestedCampaignType: "email", decision: "used" },
     { recommendationTitle: "Valid", suggestedCampaignType: "push", decision: "used" }
   ]) {
@@ -154,6 +184,15 @@ test("existing recommendation field validation remains enforced after authorizat
     assert.deepEqual(result.res.body, { error: "DEMEOS received invalid recommendation decision data." });
     assert.deepEqual(result.persistenceCalls, []);
   }
+});
+
+test("recommendation titles are trimmed before persistence", async () => {
+  const result = await request({
+    body: { recommendationTitle: "  Seasonal email  ", suggestedCampaignType: "email", decision: "modified" }
+  });
+
+  assert.equal(result.res.statusCode, 201);
+  assert.equal(result.persistenceCalls[0].recommendationTitle, "Seasonal email");
 });
 
 test("nonexistent business persistence result remains 404", async () => {
