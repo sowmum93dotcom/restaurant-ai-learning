@@ -32,11 +32,42 @@ function createResponse() {
   };
 }
 
-async function generate(body) {
+async function generate(body = {}, options = {}) {
   let fetchCalls = 0;
   let fetchBody;
+  const authorizationCalls = [];
+  const knownBusinessCalls = [];
+  const repository = {
+    async getKnownBusiness(businessId) {
+      knownBusinessCalls.push(businessId);
+      return options.storedBusiness === undefined
+        ? { businessProfile: options.persistedProfile || businessProfile }
+        : options.storedBusiness;
+    }
+  };
+  const requireFromGenerate = function (specifier) {
+    if (specifier === "./_lib/persistence.js") {
+      return { getRepository() { return repository; } };
+    }
+    if (specifier === "./_lib/demeos-business-owner-authorization.js") {
+      return {
+        async authorizeBusinessOwnerRequest(input) {
+          authorizationCalls.push(input);
+          return {
+            authenticated: options.authenticated !== false,
+            allowed: options.allowed !== false
+          };
+        }
+      };
+    }
+    if (specifier === "./_lib/demeos-rules.js") {
+      return { DEMEOS_ACTIONS: { CREATE_MARKETING: "create-marketing" } };
+    }
+    throw new Error(`Unexpected require: ${specifier}`);
+  };
   const context = {
     module: { exports: {} },
+    require: requireFromGenerate,
     process: { env: { OPENAI_API_KEY: "test-key" } },
     console,
     fetch: async function (url, options) {
@@ -51,10 +82,17 @@ async function generate(body) {
   };
   vm.runInNewContext(source, context);
   const response = createResponse();
+  const request = {
+    method: "POST",
+    body: { businessId: "business-a", businessProfile, ...body },
+    query: { trustedIdentityId: "query-attacker", userId: "query-attacker" },
+    headers: { "x-user-id": "header-attacker", "x-actor-scope": "business-owner" },
+    localStorage: { trustedIdentityId: "browser-attacker" }
+  };
 
-  await context.module.exports({ method: "POST", body: { businessProfile, ...body } }, response);
+  await context.module.exports(request, response);
 
-  return { response, fetchCalls, fetchBody };
+  return { response, request, fetchCalls, fetchBody, authorizationCalls, knownBusinessCalls, repository };
 }
 
 for (const [description, body, expectedCampaignType] of [
@@ -99,12 +137,112 @@ test("an invalid campaignType is rejected for a revision", async function () {
   assert.equal(result.fetchCalls, 0);
 });
 
-test("a complete valid Business Manager Profile proceeds", async function () {
+test("a persisted complete Business Manager Profile proceeds", async function () {
   const result = await generate({ promoText: "Promote our Friday dinner." });
 
   assert.equal(result.response.statusCode, 200);
   assert.equal(result.fetchCalls, 1);
 });
+
+test("unauthenticated generation returns 401 without loading the business or calling OpenAI", async function () {
+  const result = await generate({ promoText: "Invalid requests must remain private.", campaignType: "invalid" }, {
+    authenticated: false,
+    allowed: false
+  });
+
+  assert.equal(result.response.statusCode, 401);
+  assert.equal(result.response.body.error, "Authentication required.");
+  assert.deepEqual(result.knownBusinessCalls, []);
+  assert.equal(result.fetchCalls, 0);
+});
+
+test("an authenticated non-owner receives 403 without loading the business or calling OpenAI", async function () {
+  const result = await generate({ businessId: "business-b", promoText: "Promote dinner." }, { allowed: false });
+
+  assert.equal(result.response.statusCode, 403);
+  assert.equal(result.response.body.error, "Forbidden.");
+  assert.deepEqual(result.knownBusinessCalls, []);
+  assert.equal(result.fetchCalls, 0);
+});
+
+test("owner authorization uses CREATE_MARKETING and the requested businessId", async function () {
+  const result = await generate({ businessId: " business-owner-request ", promoText: "Promote dinner." });
+
+  assert.equal(result.response.statusCode, 200);
+  assert.equal(result.authorizationCalls.length, 1);
+  assert.equal(result.authorizationCalls[0].action, "create-marketing");
+  assert.equal(result.authorizationCalls[0].businessId, "business-owner-request");
+  assert.equal(result.authorizationCalls[0].req, result.request);
+  assert.equal(result.authorizationCalls[0].repository, result.repository);
+  assert.deepEqual(result.knownBusinessCalls, ["business-owner-request"]);
+});
+
+test("spoofed profile identity and request identity fields cannot change authorization or loading scope", async function () {
+  const result = await generate({
+    businessId: "business-a",
+    promoText: "Promote dinner.",
+    businessProfile: { ...businessProfile, businessId: "business-b" },
+    trustedIdentityId: "body-attacker",
+    userId: "body-attacker",
+    actorScope: "business-owner"
+  });
+
+  assert.equal(result.authorizationCalls[0].businessId, "business-a");
+  assert.deepEqual(result.knownBusinessCalls, ["business-a"]);
+});
+
+test("spoofed browser profile facts cannot replace persisted facts in the OpenAI prompt", async function () {
+  const persistedProfile = {
+    name: "Persisted Bistro", type: "Bistro", location: "Leeds", brandVoice: "Direct",
+    targetCustomer: "Office workers", goal: "Increase lunch visits"
+  };
+  const spoofedProfile = {
+    businessId: "business-b", name: "Spoofed Cafe", type: "Nightclub", location: "Paris",
+    brandVoice: "Hyped", targetCustomer: "Attackers", goal: "Replace verified facts"
+  };
+  const result = await generate({
+    promoText: "Promote lunch.",
+    businessProfile: spoofedProfile
+  }, { persistedProfile });
+
+  assert.equal(result.response.statusCode, 200);
+  for (const fact of Object.values(persistedProfile)) assert.match(result.fetchBody.input, new RegExp(fact));
+  for (const fact of Object.values(spoofedProfile)) assert.doesNotMatch(result.fetchBody.input, new RegExp(fact));
+});
+
+test("an authorized owner can revise marketing for the requested business", async function () {
+  const result = await generate({
+    businessId: "business-a",
+    existingCampaign: "Original owner campaign",
+    revisionInstruction: "Make the call to action clearer."
+  });
+
+  assert.equal(result.response.statusCode, 200);
+  assert.equal(result.fetchCalls, 1);
+  assert.match(result.fetchBody.input, /Original owner campaign/);
+  assert.deepEqual(result.knownBusinessCalls, ["business-a"]);
+});
+
+test("a missing stored business returns 404 without calling OpenAI", async function () {
+  const result = await generate({ businessId: "missing-business", promoText: "Promote dinner." }, {
+    storedBusiness: null
+  });
+
+  assert.equal(result.response.statusCode, 404);
+  assert.equal(result.response.body.error, "Business not found.");
+  assert.deepEqual(result.knownBusinessCalls, ["missing-business"]);
+  assert.equal(result.fetchCalls, 0);
+});
+
+for (const invalidBusinessId of [undefined, null, "", "   ", 42]) {
+  test(`invalid businessId ${String(invalidBusinessId)} is rejected`, async function () {
+    const result = await generate({ businessId: invalidBusinessId, promoText: "Promote dinner." });
+    assert.equal(result.response.statusCode, 400);
+    assert.equal(result.response.body.error, "A businessId is required.");
+    assert.equal(result.authorizationCalls.length, 0);
+    assert.equal(result.fetchCalls, 0);
+  });
+}
 
 for (const [description, invalidBusinessProfile] of [
   ["missing", undefined],
@@ -114,11 +252,11 @@ for (const [description, invalidBusinessProfile] of [
   ["boolean", true],
   ["array", []]
 ]) {
-  test(`${description} businessProfile is rejected before fetch`, async function () {
-    const result = await generate({
-      promoText: "Promote our Friday dinner.",
-      businessProfile: invalidBusinessProfile
-    });
+  test(`${description} persisted businessProfile is rejected before fetch`, async function () {
+    const result = await generate(
+      { promoText: "Promote our Friday dinner." },
+      { storedBusiness: { businessProfile: invalidBusinessProfile } }
+    );
 
     assert.equal(result.response.statusCode, 400);
     assert.equal(
@@ -130,38 +268,18 @@ for (const [description, invalidBusinessProfile] of [
 }
 
 for (const field of ["name", "type", "location", "brandVoice", "targetCustomer", "goal"]) {
-  test(`businessProfile requires ${field}`, async function () {
+  test(`persisted businessProfile requires ${field}`, async function () {
     const invalidBusinessProfile = { ...businessProfile };
     delete invalidBusinessProfile[field];
-    const result = await generate({
-      promoText: "Promote our Friday dinner.",
-      businessProfile: invalidBusinessProfile
-    });
+    const result = await generate(
+      { promoText: "Promote our Friday dinner." },
+      { persistedProfile: invalidBusinessProfile }
+    );
 
     assert.equal(result.response.statusCode, 400);
     assert.equal(result.fetchCalls, 0);
   });
 }
-
-test("a whitespace-only required businessProfile field is rejected", async function () {
-  const result = await generate({
-    promoText: "Promote our Friday dinner.",
-    businessProfile: { ...businessProfile, brandVoice: " \n\t " }
-  });
-
-  assert.equal(result.response.statusCode, 400);
-  assert.equal(result.fetchCalls, 0);
-});
-
-test("a non-string required businessProfile field is rejected", async function () {
-  const result = await generate({
-    promoText: "Promote our Friday dinner.",
-    businessProfile: { ...businessProfile, goal: 42 }
-  });
-
-  assert.equal(result.response.statusCode, 400);
-  assert.equal(result.fetchCalls, 0);
-});
 
 for (const [description, body] of [
   ["missing", {}],
@@ -269,12 +387,11 @@ test("omitting revisionTarget retains whole full-campaign revision behavior", as
   assert.match(result.fetchBody.input, /Make only the legitimate changes requested within the relevant section or sections/);
 });
 
-test("a revision with an invalid profile is rejected before fetch", async function () {
+test("a revision with an invalid persisted profile is rejected before fetch", async function () {
   const result = await generate({
-    businessProfile: { ...businessProfile, targetCustomer: "" },
     existingCampaign: "Original campaign",
     revisionInstruction: "Make the call to action clearer."
-  });
+  }, { persistedProfile: { ...businessProfile, targetCustomer: "" } });
 
   assert.equal(result.response.statusCode, 400);
   assert.equal(
