@@ -61,11 +61,11 @@ test("participation is not recorded when the campaign fails the publication rule
     }
   });
 
-  const participation = await repository.recordCustomerParticipation("business-a", "campaign-a", "Interested");
+  const participation = await repository.recordCustomerParticipation("campaign-a", "Interested");
 
   assert.equal(participation, null);
   assert.equal(statements.length, 1);
-  assert.match(statements[0], /^SELECT campaign/);
+  assert.match(statements[0], /^SELECT business_id, campaign/);
 });
 
 test("internal publication does not make automatic or external publishing available", function () {

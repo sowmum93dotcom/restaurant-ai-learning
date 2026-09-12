@@ -195,17 +195,17 @@ function createPersistenceRepository(database) {
       }).filter(Boolean);
     },
 
-    async recordCustomerParticipation(businessId, campaignId, action) {
+    async recordCustomerParticipation(campaignId, action) {
       await database.ensureSchema();
       const campaignResult = await database.query(
-        `SELECT campaign FROM demeos_campaigns WHERE business_id = $1 AND campaign_id = $2`, [businessId, campaignId]);
+        `SELECT business_id, campaign FROM demeos_campaigns WHERE campaign_id = $1`, [campaignId]);
       if (!campaignResult.rows.length || !canPublishToDemeosCustomerExperience(campaignResult.rows[0].campaign)) return null;
       const result = await database.query(
         `INSERT INTO demeos_customer_participations (business_id, campaign_id, action)
-         SELECT c.business_id, c.campaign_id, $3 FROM demeos_campaigns c
-         WHERE c.business_id = $1 AND c.campaign_id = $2 AND c.campaign->>'approvalStatus' = 'Approved'
-           AND c.campaign = $4::jsonb RETURNING business_id, campaign_id, action, participated_at`,
-        [businessId, campaignId, action, JSON.stringify(campaignResult.rows[0].campaign)]);
+         SELECT c.business_id, c.campaign_id, $2 FROM demeos_campaigns c
+         WHERE c.campaign_id = $1 AND c.campaign->>'approvalStatus' = 'Approved'
+           AND c.campaign = $3::jsonb RETURNING business_id, campaign_id, action, participated_at`,
+        [campaignId, action, JSON.stringify(campaignResult.rows[0].campaign)]);
       return result.rows.length ? result.rows[0] : null;
     }
   };

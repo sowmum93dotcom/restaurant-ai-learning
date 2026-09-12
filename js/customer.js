@@ -61,7 +61,7 @@ async function recordParticipation(work) {
   const response = await fetch(`/api/customer/work/${encodeURIComponent(work.workItemId)}/participation`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ businessId: work.businessId, action: work.participationAction })
+    body: JSON.stringify({ action: work.participationAction })
   });
   if (!response.ok) throw new Error("DEMEOS could not share your interest. Please try again.");
 }
