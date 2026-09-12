@@ -7,6 +7,7 @@ const {
 } = require("../js/business-workspace.js");
 const html = fs.readFileSync(require.resolve("../business-workspace.html"), "utf8");
 const script = fs.readFileSync(require.resolve("../js/business-workspace.js"), "utf8");
+const { applyAuthorizedBusinessProfiles } = require("../js/script.js");
 
 function storage(values) {
   const state = { ...values };
@@ -219,4 +220,22 @@ test("Clerk browser SDK uses current v6 bundle with Clerk UI support", function 
   assert.match(script, /ClerkUI: windowObject\.__internal_ClerkUICtor/);
   assert.doesNotMatch(script, /@clerk\/clerk-js@5/);
   assert.doesNotMatch(script, /cdn\.jsdelivr\.net\/npm\/@clerk\/clerk-js/);
+});
+
+test("Active Business options are restricted to server-authorized profiles", function () {
+  const cached = [
+    { businessId: "owned-a", name: "Stale Alpha" },
+    { businessId: "local-only", name: "Injected Local Business" },
+    { businessId: "other-owner", name: "Another Owner's Business" }
+  ];
+  const one = applyAuthorizedBusinessProfiles(cached, [{ businessId: "owned-a", name: "Alpha" }], "local-only");
+  assert.deepEqual(one, { profiles: [{ businessId: "owned-a", name: "Alpha" }], activeBusinessId: "owned-a" });
+  assert.doesNotMatch(JSON.stringify(one), /Injected Local|Another Owner/);
+
+  const multiple = applyAuthorizedBusinessProfiles(cached, [
+    { businessId: "owned-a", name: "Alpha" }, { businessId: "owned-b", name: "Beta" }
+  ], "owned-b");
+  assert.deepEqual(multiple.profiles.map(function (profile) { return profile.businessId; }), ["owned-a", "owned-b"]);
+  assert.equal(multiple.activeBusinessId, "owned-b", "switching is retained only for an authorized business");
+  assert.equal(applyAuthorizedBusinessProfiles(cached, [], "local-only").activeBusinessId, null);
 });
