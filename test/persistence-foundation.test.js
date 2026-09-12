@@ -162,6 +162,42 @@ test("campaign outcomes update only the approved campaign version for the reques
   assert.equal(saved.approvalStatus, original.approvalStatus);
 });
 
+test("campaign approval atomically updates only the requested unapproved business version", async function () {
+  const stored = { id: "body-id", businessId: "body-business", campaignText: "Stored exact version", approvalStatus: "Approved" };
+  const database = {
+    async ensureSchema() {},
+    async query(sql, values) {
+      assert.match(sql, /UPDATE demeos_campaigns/);
+      assert.match(sql, /campaign_id = \$1 AND business_id = \$2/);
+      assert.match(sql, /campaign->>'approvalStatus' = 'Unapproved'/);
+      assert.match(sql, /jsonb_set\(campaign, '\{approvalStatus\}'/);
+      assert.deepEqual(values, ["version-a", "business-a"]);
+      return { rows: [{ campaign: stored }] };
+    }
+  };
+
+  const approved = await createPersistenceRepository(database).approveCampaign("business-a", "version-a");
+
+  assert.deepEqual(approved, {
+    ...stored, id: "version-a", businessId: "business-a"
+  });
+  assert.equal(approved.campaignText, "Stored exact version");
+});
+
+test("campaign approval safely returns null when the campaign does not belong to the business", async function () {
+  const database = {
+    async ensureSchema() {},
+    async query(_sql, values) {
+      assert.deepEqual(values, ["campaign-b", "business-a"]);
+      return { rows: [] };
+    }
+  };
+
+  const approved = await createPersistenceRepository(database).approveCampaign("business-a", "campaign-b");
+
+  assert.equal(approved, null);
+});
+
 test("hydration restores profile and complete campaign continuity fields", async function () {
   const storage = memoryStorage([
     ["demeosBusinessProfiles", JSON.stringify([{ businessId: "business-a", name: "Old A" }])],

@@ -146,6 +146,21 @@ function createPersistenceRepository(database) {
         [campaign.id, campaign.businessId, JSON.stringify(campaign)]);
     },
 
+    async approveCampaign(businessId, campaignId) {
+      if (!isNonEmptyString(businessId) || !isNonEmptyString(campaignId)) return null;
+      await database.ensureSchema();
+      const result = await database.query(
+        `UPDATE demeos_campaigns
+         SET campaign = jsonb_set(campaign, '{approvalStatus}', '"Approved"'::jsonb), updated_at = NOW()
+         WHERE campaign_id = $1 AND business_id = $2
+           AND campaign->>'approvalStatus' = 'Unapproved'
+         RETURNING campaign`,
+        [campaignId, businessId]);
+      return result.rows.length
+        ? { ...result.rows[0].campaign, id: campaignId, businessId }
+        : null;
+    },
+
     async saveCampaignOutcome(businessId, campaignId, outcome) {
       await database.ensureSchema();
       const result = await database.query(

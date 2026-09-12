@@ -32,7 +32,8 @@ function completeCampaign(overrides) {
 
 async function invoke({
   method = "PUT", businessId = "business-a", campaignId = "campaign-a",
-  campaign = completeCampaign(), authenticated = true, allowed = true
+  campaign = completeCampaign(), authenticated = true, allowed = true,
+  approvedCampaign = { approvalStatus: "Approved" }
 } = {}) {
   const authorization = require(authorizationPath);
   const persistence = require(persistencePath);
@@ -40,8 +41,13 @@ async function invoke({
   const originalGetRepository = persistence.getRepository;
   const authorizationCalls = [];
   const savedCampaigns = [];
+  const approvalCalls = [];
   const repository = {
-    async saveCampaign(savedCampaign) { savedCampaigns.push(savedCampaign); }
+    async saveCampaign(savedCampaign) { savedCampaigns.push(savedCampaign); },
+    async approveCampaign(approvedBusinessId, approvedCampaignId) {
+      approvalCalls.push([approvedBusinessId, approvedCampaignId]);
+      return approvedCampaign;
+    }
   };
   authorization.authorizeBusinessOwnerRequest = async function (input) {
     authorizationCalls.push(input);
@@ -82,8 +88,77 @@ async function invoke({
     delete require.cache[handlerPath];
   }
 
-  return { response, request, repository, authorizationCalls, savedCampaigns };
+  return { response, request, repository, authorizationCalls, savedCampaigns, approvalCalls };
 }
+
+test("unauthenticated campaign approval returns 401", async function () {
+  const result = await invoke({
+    campaign: completeCampaign({ approvalStatus: "Approved" }), authenticated: false, allowed: false
+  });
+  assert.equal(result.response.statusCode, 401);
+  assert.deepEqual(result.approvalCalls, []);
+});
+
+test("an authenticated non-owner cannot approve marketing", async function () {
+  const result = await invoke({
+    campaign: completeCampaign({ approvalStatus: "Approved" }), allowed: false
+  });
+  assert.equal(result.response.statusCode, 403);
+  assert.deepEqual(result.approvalCalls, []);
+});
+
+test("an owner can approve their own stored campaign version", async function () {
+  const result = await invoke({
+    campaign: completeCampaign({
+      approvalStatus: "Approved", id: "spoofed-id", businessId: "spoofed-business",
+      originalMarketingWorkId: "spoofed-version"
+    })
+  });
+  assert.equal(result.response.statusCode, 204);
+  assert.equal(result.authorizationCalls[0].action, "approve-own-marketing");
+  assert.equal(result.authorizationCalls[0].businessId, "business-a");
+  assert.deepEqual(result.approvalCalls, [["business-a", "campaign-a"]]);
+  assert.deepEqual(result.savedCampaigns, []);
+});
+
+test("an owner cannot approve another business's campaign", async function () {
+  const result = await invoke({
+    businessId: "business-b", campaign: completeCampaign({ approvalStatus: "Approved" }), allowed: false
+  });
+  assert.equal(result.response.statusCode, 403);
+  assert.equal(result.authorizationCalls[0].businessId, "business-b");
+  assert.deepEqual(result.approvalCalls, []);
+});
+
+test("a wrong campaign and business combination fails without approving anything", async function () {
+  const result = await invoke({
+    businessId: "business-a", campaignId: "campaign-from-business-b",
+    campaign: completeCampaign({ approvalStatus: "Approved" }), approvedCampaign: null
+  });
+  assert.equal(result.response.statusCode, 404);
+  assert.deepEqual(result.approvalCalls, [["business-a", "campaign-from-business-b"]]);
+  assert.deepEqual(result.response.body, { error: "Campaign was not found for this business." });
+});
+
+test("spoofed approval identity and actorScope cannot bypass authorization", async function () {
+  const result = await invoke({
+    campaign: completeCampaign({ approvalStatus: "Approved" }), allowed: false
+  });
+  assert.equal(result.response.statusCode, 403);
+  assert.deepEqual(Object.keys(result.authorizationCalls[0]).sort(), ["action", "businessId", "repository", "req"]);
+  assert.equal(Object.hasOwn(result.authorizationCalls[0], "trustedIdentityId"), false);
+  assert.equal(Object.hasOwn(result.authorizationCalls[0], "actorScope"), false);
+  assert.deepEqual(result.approvalCalls, []);
+});
+
+test("campaign validation remains enforced before a stored version is approved", async function () {
+  const result = await invoke({
+    campaign: completeCampaign({ approvalStatus: "Approved", campaignText: " " })
+  });
+  assert.equal(result.response.statusCode, 400);
+  assert.equal(result.authorizationCalls[0].action, "approve-own-marketing");
+  assert.deepEqual(result.approvalCalls, []);
+});
 
 test("unauthenticated campaign creation returns 401", async function () {
   const result = await invoke({ authenticated: false, allowed: false });
