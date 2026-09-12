@@ -61,6 +61,10 @@ module.exports = async function handler(req, res) {
     ) {
       return res.status(400).json({ error: "DEMEOS received invalid campaign data." });
     }
+    const campaignForPersistence = {
+      ...campaign,
+      campaignTypeLabel: campaignCapability.ownerFacingName
+    };
 
     if (isApprovalRequest) {
       let approvedCampaign = await repository.approveCampaign(businessId, campaignId);
@@ -79,7 +83,7 @@ module.exports = async function handler(req, res) {
         }
 
         const restoredCampaign = await repository.saveCampaign({
-          ...campaign,
+          ...campaignForPersistence,
           id: campaignId,
           businessId,
           approvalStatus: "Unapproved"
@@ -92,7 +96,11 @@ module.exports = async function handler(req, res) {
         return res.status(404).json({ error: "Campaign was not found for this business." });
       }
     } else {
-      const savedCampaign = await repository.saveCampaign({ ...campaign, id: campaignId, businessId });
+      const savedCampaign = await repository.saveCampaign({
+        ...campaignForPersistence,
+        id: campaignId,
+        businessId
+      });
       if (!savedCampaign) {
         return res.status(409).json({ error: "Campaign could not be saved for this business." });
       }
