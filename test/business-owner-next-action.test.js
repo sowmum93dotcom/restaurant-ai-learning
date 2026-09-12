@@ -6,6 +6,7 @@ const {
   getTrustedOwnerNextAction, loadOwnerNextAction
 } = require("../js/business-workspace.js");
 const html = fs.readFileSync(require.resolve("../business-workspace.html"), "utf8");
+const workspaceScript = fs.readFileSync(require.resolve("../js/business-workspace.js"), "utf8");
 
 function record(campaigns, businessId = "business-a") {
   return { businessProfile: { businessId }, campaigns };
@@ -125,6 +126,13 @@ test("failed protected load stays unavailable and never infers from browser cach
     destination: "index.html"
   });
   assert.equal(documentObject.container.children[0].textContent, "Next action unavailable");
+});
+
+test("owner security wrapper forwards fetch to the signed-in Next Action loader", function () {
+  assert.match(workspaceScript,
+    /windowObject\.bindOwnerClerkSession = function \(clerk, ownerDocument, storage, elements, fetchFunction\)/);
+  assert.match(workspaceScript,
+    /originalBindOwnerClerkSession\(clerk, ownerDocument, storage, elements, fetchFunction\)/);
 });
 
 test("Next Action links preserve owner control and perform no workflow mutations", function () {
