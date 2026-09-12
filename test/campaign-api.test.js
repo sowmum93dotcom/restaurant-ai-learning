@@ -33,7 +33,7 @@ function completeCampaign(overrides) {
 async function invoke({
   method = "PUT", businessId = "business-a", campaignId = "campaign-a",
   campaign = completeCampaign(), authenticated = true, allowed = true,
-  approvedCampaign = { approvalStatus: "Approved" }
+  createAllowed = allowed, approvedCampaign = { approvalStatus: "Approved" }
 } = {}) {
   const authorization = require(authorizationPath);
   const persistence = require(persistencePath);
@@ -46,12 +46,16 @@ async function invoke({
     async saveCampaign(savedCampaign) { savedCampaigns.push(savedCampaign); },
     async approveCampaign(approvedBusinessId, approvedCampaignId) {
       approvalCalls.push([approvedBusinessId, approvedCampaignId]);
+      if (Array.isArray(approvedCampaign)) {
+        return approvedCampaign[Math.min(approvalCalls.length - 1, approvedCampaign.length - 1)];
+      }
       return approvedCampaign;
     }
   };
   authorization.authorizeBusinessOwnerRequest = async function (input) {
     authorizationCalls.push(input);
-    return { authenticated, allowed };
+    const actionAllowed = input.action === "create-marketing" ? createAllowed : allowed;
+    return { authenticated, allowed: actionAllowed };
   };
   persistence.getRepository = function () { return repository; };
   delete require.cache[handlerPath];
@@ -121,6 +125,46 @@ test("an owner can approve their own stored campaign version", async function ()
   assert.deepEqual(result.savedCampaigns, []);
 });
 
+test("approval retry restores a missing draft only through create-marketing permission", async function () {
+  const campaign = completeCampaign({ approvalStatus: "Approved", id: "body-id", businessId: "body-business" });
+  const result = await invoke({
+    businessId: "business-a",
+    campaignId: "campaign-a",
+    campaign,
+    approvedCampaign: [null, { approvalStatus: "Approved" }]
+  });
+
+  assert.equal(result.response.statusCode, 204);
+  assert.deepEqual(result.authorizationCalls.map(function (call) { return call.action; }), [
+    "approve-own-marketing", "create-marketing"
+  ]);
+  assert.deepEqual(result.approvalCalls, [
+    ["business-a", "campaign-a"], ["business-a", "campaign-a"]
+  ]);
+  assert.deepEqual(result.savedCampaigns, [{
+    ...campaign,
+    id: "campaign-a",
+    businessId: "business-a",
+    approvalStatus: "Unapproved"
+  }]);
+});
+
+test("approval retry cannot create a missing draft without create-marketing permission", async function () {
+  const result = await invoke({
+    campaign: completeCampaign({ approvalStatus: "Approved" }),
+    approvedCampaign: null,
+    allowed: true,
+    createAllowed: false
+  });
+
+  assert.equal(result.response.statusCode, 403);
+  assert.deepEqual(result.authorizationCalls.map(function (call) { return call.action; }), [
+    "approve-own-marketing", "create-marketing"
+  ]);
+  assert.deepEqual(result.approvalCalls, [["business-a", "campaign-a"]]);
+  assert.deepEqual(result.savedCampaigns, []);
+});
+
 test("an owner cannot approve another business's campaign", async function () {
   const result = await invoke({
     businessId: "business-b", campaign: completeCampaign({ approvalStatus: "Approved" }), allowed: false
@@ -130,13 +174,20 @@ test("an owner cannot approve another business's campaign", async function () {
   assert.deepEqual(result.approvalCalls, []);
 });
 
-test("a wrong campaign and business combination fails without approving anything", async function () {
+test("a wrong campaign and business combination fails safely", async function () {
+  const campaign = completeCampaign({ approvalStatus: "Approved" });
   const result = await invoke({
     businessId: "business-a", campaignId: "campaign-from-business-b",
-    campaign: completeCampaign({ approvalStatus: "Approved" }), approvedCampaign: null
+    campaign, approvedCampaign: null
   });
   assert.equal(result.response.statusCode, 404);
-  assert.deepEqual(result.approvalCalls, [["business-a", "campaign-from-business-b"]]);
+  assert.deepEqual(result.approvalCalls, [
+    ["business-a", "campaign-from-business-b"],
+    ["business-a", "campaign-from-business-b"]
+  ]);
+  assert.equal(result.savedCampaigns[0].businessId, "business-a");
+  assert.equal(result.savedCampaigns[0].id, "campaign-from-business-b");
+  assert.equal(result.savedCampaigns[0].approvalStatus, "Unapproved");
   assert.deepEqual(result.response.body, { error: "Campaign was not found for this business." });
 });
 
