@@ -18,10 +18,13 @@ module.exports = async function handler(req, res) {
 
   try {
     const repository = getRepository();
+    const isApprovalRequest = campaign && campaign.approvalStatus === "Approved";
     const access = await authorizeBusinessOwnerRequest({
       req,
       businessId,
-      action: DEMEOS_ACTIONS.CREATE_MARKETING,
+      action: isApprovalRequest
+        ? DEMEOS_ACTIONS.APPROVE_OWN_MARKETING
+        : DEMEOS_ACTIONS.CREATE_MARKETING,
       repository
     });
     if (!access.authenticated) {
@@ -50,7 +53,36 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: "DEMEOS received invalid campaign data." });
     }
 
-    await repository.saveCampaign({ ...campaign, id: campaignId, businessId });
+    if (isApprovalRequest) {
+      let approvedCampaign = await repository.approveCampaign(businessId, campaignId);
+      if (!approvedCampaign) {
+        const createAccess = await authorizeBusinessOwnerRequest({
+          req,
+          businessId,
+          action: DEMEOS_ACTIONS.CREATE_MARKETING,
+          repository
+        });
+        if (!createAccess.authenticated) {
+          return res.status(401).json({ error: "Authentication required." });
+        }
+        if (!createAccess.allowed) {
+          return res.status(403).json({ error: "Forbidden." });
+        }
+
+        await repository.saveCampaign({
+          ...campaign,
+          id: campaignId,
+          businessId,
+          approvalStatus: "Unapproved"
+        });
+        approvedCampaign = await repository.approveCampaign(businessId, campaignId);
+      }
+      if (!approvedCampaign) {
+        return res.status(404).json({ error: "Campaign was not found for this business." });
+      }
+    } else {
+      await repository.saveCampaign({ ...campaign, id: campaignId, businessId });
+    }
     return res.status(204).end();
   } catch (error) {
     console.error("Could not persist campaign:", error);
