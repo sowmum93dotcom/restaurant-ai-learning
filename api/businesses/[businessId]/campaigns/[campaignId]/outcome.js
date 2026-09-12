@@ -3,8 +3,8 @@ const {
   authorizeBusinessOwnerRequest
 } = require("../../../../_lib/demeos-business-owner-authorization.js");
 const { DEMEOS_ACTIONS } = require("../../../../_lib/demeos-rules.js");
+const { ALLOWED_CAMPAIGN_OUTCOMES } = require("../../../../_lib/campaign-outcome-contract.js");
 
-const allowedOutcomes = ["Positive", "Mixed", "No noticeable result", "Not used yet"];
 const ownerNoteMaximumLength = 1000;
 
 module.exports = async function handler(req, res) {
@@ -37,7 +37,7 @@ module.exports = async function handler(req, res) {
     const selectedOutcome = req.body && req.body.outcome;
     const ownerNote = req.body && req.body.ownerNote;
     if (
-      !allowedOutcomes.includes(selectedOutcome) ||
+      !ALLOWED_CAMPAIGN_OUTCOMES.includes(selectedOutcome) ||
       (ownerNote !== undefined && (
         typeof ownerNote !== "string" || ownerNote.length > ownerNoteMaximumLength
       ))
@@ -63,4 +63,4 @@ module.exports = async function handler(req, res) {
   }
 };
 
-module.exports.allowedOutcomes = allowedOutcomes;
+module.exports.allowedOutcomes = ALLOWED_CAMPAIGN_OUTCOMES;

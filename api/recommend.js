@@ -6,11 +6,11 @@ const {
   authorizeBusinessOwnerRequest
 } = require("../api/_lib/demeos-business-owner-authorization.js");
 const { DEMEOS_ACTIONS } = require("../api/_lib/demeos-rules.js");
+const { ALLOWED_CAMPAIGN_OUTCOMES } = require("./_lib/campaign-outcome-contract.js");
 
 const requiredBusinessProfileFields = ["name", "type", "location", "brandVoice", "targetCustomer", "goal"];
 const recommendationCapabilities = getRecommendationCapabilities();
 const campaignTypes = recommendationCapabilities.map((capability) => capability.supportedOutputType);
-const allowedOutcomes = ["Positive", "Mixed", "No noticeable result", "Not used yet"];
 const outcomeTextFields = ["campaignType", "outcome", "ownerNote"];
 const allowedDecisions = ["used", "modified", "rejected"];
 const evidenceStates = Object.freeze({ businessProfile: "verified", businessSituation: "ownerProvided",
@@ -27,7 +27,7 @@ function validProfile(profile) {
 function validCampaignOutcomes(items) {
   return Array.isArray(items) && items.length <= 10 && items.every((item) => item && typeof item === "object" &&
     !Array.isArray(item) && outcomeTextFields.every((field) => typeof item[field] === "string") && item.campaignType.trim() &&
-    allowedOutcomes.includes(item.outcome) && (item.marketingRequest === undefined || typeof item.marketingRequest === "string") &&
+    ALLOWED_CAMPAIGN_OUTCOMES.includes(item.outcome) && (item.marketingRequest === undefined || typeof item.marketingRequest === "string") &&
     item.campaignType.length <= 100 && item.ownerNote.length <= 1000 &&
     (item.marketingRequest === undefined || item.marketingRequest.length <= 1000));
 }
