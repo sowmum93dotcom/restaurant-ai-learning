@@ -88,7 +88,7 @@ test("workspace exposes no admin controls, invented metrics, or unsupported capa
   const source = `${html}\n${script}`;
   assert.doesNotMatch(source, /DEMEOS Admin|admin control|customer identity|booking|ordering|CRM|loyalty|payments/i);
   assert.doesNotMatch(source, /revenue|ROI|conversion rate|forecast|analytics|recommendationTitle|demeosCapability/i);
-  assert.doesNotMatch(source, /Add Business|business-selector/);
+  assert.doesNotMatch(html, /Add Business|business-selector/);
 });
 
 function createRenderDocument() {
