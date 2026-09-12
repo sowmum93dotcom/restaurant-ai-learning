@@ -62,6 +62,7 @@ test("recommendations use the active profile, show loading, render three, and po
   const pending = button.listeners.click();
   assert.equal(app.document.getElementById("recommendations-status").textContent, "DEMEOS is reviewing your business...");
   await pending;
+  assert.equal(app.recommendBodies[0].businessId, "a");
   assert.deepEqual(JSON.parse(JSON.stringify(app.recommendBodies[0].businessProfile)), app.profiles[0]);
   assert.equal(app.recommendBodies[0].businessSituation, "Tuesday evenings are quiet.");
   const list = app.document.getElementById("recommendations-list"); assert.equal(list.children.length, 3);

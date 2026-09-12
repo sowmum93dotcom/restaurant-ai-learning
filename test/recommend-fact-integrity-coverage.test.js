@@ -64,6 +64,9 @@ async function call(output, businessSituation) {
     process: { env: { OPENAI_API_KEY: "key" } },
     console,
     require(id) {
+      if (id === "../api/_lib/persistence.js") return { getRepository: () => ({ getKnownBusiness: async (businessId) => ({ businessProfile: { ...profile, businessId }, campaigns: [], recommendationDecisions: [] }) }) };
+      if (id === "../api/_lib/demeos-business-owner-authorization.js") return { authorizeBusinessOwnerRequest: async () => ({ authenticated: true, allowed: true }) };
+      if (id === "../api/_lib/demeos-rules.js") return require("../api/_lib/demeos-rules.js");
       return id === "./_lib/capability-registry.js"
         ? require("../api/_lib/capability-registry.js")
         : require(id);
@@ -82,7 +85,7 @@ async function call(output, businessSituation) {
     status(code) { this.statusCode = code; return this; },
     json(body) { this.body = body; return this; }
   };
-  await context.module.exports({ method: "POST", body: { businessProfile: profile, businessSituation } }, response);
+  await context.module.exports({ method: "POST", body: { businessId: "business-a", businessProfile: profile, businessSituation } }, response);
   return response;
 }
 
