@@ -120,6 +120,42 @@ test("owner can record an outcome for their own approved campaign", async functi
   assert.equal(result.authorizationCalls[0].repository, result.repository);
 });
 
+test("ownerNote remains optional and is persisted as an empty string when omitted", async function () {
+  const result = await save({ body: { outcome: "Positive" } });
+  assert.equal(result.res.statusCode, 200);
+  assert.equal(result.persistenceCalls[0].outcome.ownerNote, "");
+});
+
+test("valid ownerNote values are trimmed when persisted", async function () {
+  const result = await save({ body: { outcome: "Mixed", ownerNote: "  Useful result.  " } });
+  assert.equal(result.res.statusCode, 200);
+  assert.equal(result.persistenceCalls[0].outcome.ownerNote, "Useful result.");
+});
+
+test("ownerNote accepts exactly 1,000 characters", async function () {
+  const ownerNote = "a".repeat(1000);
+  const result = await save({ body: { outcome: "No noticeable result", ownerNote } });
+  assert.equal(result.res.statusCode, 200);
+  assert.equal(result.persistenceCalls[0].outcome.ownerNote, ownerNote);
+});
+
+test("ownerNote rejects 1,001 characters without persisting", async function () {
+  const result = await save({
+    body: { outcome: "Not used yet", ownerNote: "a".repeat(1001) }
+  });
+  assert.equal(result.res.statusCode, 400);
+  assert.deepEqual(result.res.body, { error: "DEMEOS received invalid campaign outcome data." });
+  assert.deepEqual(result.persistenceCalls, []);
+});
+
+test("all existing campaign outcome values remain accepted", async function () {
+  for (const outcome of ["Positive", "Mixed", "No noticeable result", "Not used yet"]) {
+    const result = await save({ body: { outcome, ownerNote: "Valid note" } });
+    assert.equal(result.res.statusCode, 200);
+    assert.equal(result.persistenceCalls[0].outcome.outcome, outcome);
+  }
+});
+
 test("owner cannot record an outcome for another business", async function () {
   const result = await save({ businessId: "business-b", allowed: false });
   assert.equal(result.res.statusCode, 403);
@@ -158,6 +194,27 @@ test("existing outcome validation still runs after authorization", async functio
     assert.equal(result.authorizationCalls.length, 1);
     assert.deepEqual(result.persistenceCalls, []);
   }
+});
+
+test("ownerNote validation runs only after authorization", async function () {
+  const oversizedNote = "a".repeat(1001);
+  const unauthenticated = await save({
+    authenticated: false,
+    allowed: false,
+    body: { outcome: "Positive", ownerNote: oversizedNote }
+  });
+  assert.equal(unauthenticated.res.statusCode, 401);
+  assert.equal(unauthenticated.authorizationCalls.length, 1);
+  assert.deepEqual(unauthenticated.persistenceCalls, []);
+
+  const nonOwner = await save({
+    authenticated: true,
+    allowed: false,
+    body: { outcome: "Positive", ownerNote: oversizedNote }
+  });
+  assert.equal(nonOwner.res.statusCode, 403);
+  assert.equal(nonOwner.authorizationCalls.length, 1);
+  assert.deepEqual(nonOwner.persistenceCalls, []);
 });
 
 test("existing approved-campaign requirement remains enforced", async function () {
