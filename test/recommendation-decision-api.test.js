@@ -1,54 +1,165 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 
+const authorizationPath = require.resolve("../api/_lib/demeos-business-owner-authorization.js");
 const persistencePath = require.resolve("../api/_lib/persistence.js");
 const handlerPath = require.resolve("../api/businesses/[businessId]/recommendation-decisions.js");
 
 function response() {
-  return { statusCode: null, body: null, status(code) { this.statusCode = code; return this; }, json(body) { this.body = body; return this; }, setHeader() {} };
+  return {
+    statusCode: null, body: null, headers: {},
+    setHeader(name, value) { this.headers[name] = value; },
+    status(code) { this.statusCode = code; return this; },
+    json(body) { this.body = body; return this; }
+  };
 }
 
-async function request(businessId, body, save) {
-  const original = require(persistencePath).getRepository;
-  require(persistencePath).getRepository = function () { return { saveRecommendationDecision: save }; };
+async function request({
+  businessId = "business-a",
+  body = { recommendationTitle: "Seasonal email", suggestedCampaignType: "email", decision: "used" },
+  authenticated = true,
+  allowed = true,
+  saveRecommendationDecision
+} = {}) {
+  const authorization = require(authorizationPath);
+  const persistence = require(persistencePath);
+  const originalAuthorize = authorization.authorizeBusinessOwnerRequest;
+  const originalGetRepository = persistence.getRepository;
+  const authorizationCalls = [];
+  const persistenceCalls = [];
+  const repository = {
+    async saveRecommendationDecision(record) {
+      persistenceCalls.push(record);
+      if (saveRecommendationDecision) return saveRecommendationDecision(record);
+      return record;
+    }
+  };
+  authorization.authorizeBusinessOwnerRequest = async function (input) {
+    authorizationCalls.push(input);
+    return { authenticated, allowed };
+  };
+  persistence.getRepository = function () { return repository; };
   delete require.cache[handlerPath];
+  const handler = require(handlerPath);
+  const req = {
+    method: "PUT",
+    query: {
+      businessId, trustedIdentityId: "query-attacker", userId: "query-attacker",
+      actorScope: "demeos-admin"
+    },
+    body: {
+      ...body, businessId: "body-business", ownerId: "body-owner",
+      trustedIdentityId: "body-attacker", userId: "body-attacker", actorScope: "demeos-admin"
+    },
+    headers: {
+      host: "demeos.test", "x-user-id": "header-attacker",
+      "x-identity-id": "header-attacker", "x-actor-scope": "demeos-admin"
+    },
+    localStorage: { trustedIdentityId: "browser-attacker", actorScope: "demeos-admin" }
+  };
   const res = response();
   try {
-    await require(handlerPath)({ method: "PUT", query: { businessId }, body }, res);
+    await handler(req, res);
   } finally {
-    require(persistencePath).getRepository = original; delete require.cache[handlerPath];
+    authorization.authorizeBusinessOwnerRequest = originalAuthorize;
+    persistence.getRepository = originalGetRepository;
+    delete require.cache[handlerPath];
   }
-  return res;
+  return { res, req, repository, authorizationCalls, persistenceCalls };
 }
 
-test("recommendation decisions accept only used, modified, or rejected", async () => {
+test("unauthenticated recommendation decision request returns 401 without writing", async () => {
+  const result = await request({ authenticated: false, allowed: false });
+  assert.equal(result.res.statusCode, 401);
+  assert.deepEqual(result.res.body, { error: "Authentication required." });
+  assert.deepEqual(result.persistenceCalls, []);
+});
+
+test("authenticated non-owner cannot record a recommendation decision", async () => {
+  const result = await request({ authenticated: true, allowed: false });
+  assert.equal(result.res.statusCode, 403);
+  assert.deepEqual(result.res.body, { error: "Forbidden." });
+  assert.deepEqual(result.persistenceCalls, []);
+});
+
+test("recommendation decision validation cannot reveal behavior before authorization", async () => {
+  const body = { recommendationTitle: "", suggestedCampaignType: "invalid", decision: "accepted" };
+  const unauthenticated = await request({ body, authenticated: false, allowed: false });
+  assert.equal(unauthenticated.res.statusCode, 401);
+  assert.deepEqual(unauthenticated.res.body, { error: "Authentication required." });
+  assert.deepEqual(unauthenticated.persistenceCalls, []);
+
+  const nonOwner = await request({ body, authenticated: true, allowed: false });
+  assert.equal(nonOwner.res.statusCode, 403);
+  assert.deepEqual(nonOwner.res.body, { error: "Forbidden." });
+  assert.deepEqual(nonOwner.persistenceCalls, []);
+});
+
+test("authenticated owner can record a valid decision for their own business", async () => {
+  const result = await request();
+  assert.equal(result.res.statusCode, 201);
+  assert.equal(result.persistenceCalls.length, 1);
+  assert.equal(result.persistenceCalls[0].businessId, "business-a");
+  assert.equal(result.res.body.recommendationDecision.decision, "used");
+  assert.equal(result.authorizationCalls.length, 1);
+  assert.equal(result.authorizationCalls[0].req, result.req);
+  assert.equal(result.authorizationCalls[0].businessId, "business-a");
+  assert.equal(result.authorizationCalls[0].action, "record-recommendation-decision");
+  assert.equal(result.authorizationCalls[0].repository, result.repository);
+});
+
+test("owner cannot record a recommendation decision for another business", async () => {
+  const result = await request({ businessId: "business-b", allowed: false });
+  assert.equal(result.res.statusCode, 403);
+  assert.equal(result.authorizationCalls[0].businessId, "business-b");
+  assert.deepEqual(result.persistenceCalls, []);
+});
+
+test("URL business identity is authoritative and spoofed body identity cannot bypass ownership", async () => {
+  const denied = await request({ businessId: "business-b", allowed: false });
+  assert.equal(denied.res.statusCode, 403);
+  assert.deepEqual(Object.keys(denied.authorizationCalls[0]).sort(), ["action", "businessId", "repository", "req"]);
+  assert.equal(denied.authorizationCalls[0].businessId, "business-b");
+  assert.deepEqual(denied.persistenceCalls, []);
+
+  const allowed = await request({ businessId: "url-business" });
+  assert.equal(allowed.res.statusCode, 201);
+  assert.equal(allowed.authorizationCalls[0].businessId, "url-business");
+  assert.equal(allowed.persistenceCalls[0].businessId, "url-business");
+  assert.notEqual(allowed.persistenceCalls[0].businessId, "body-business");
+});
+
+test("recommendation decisions accept only used, modified, or rejected after authorization", async () => {
   for (const decision of ["used", "modified", "rejected"]) {
-    const res = await request("business-a", { recommendationTitle: "Seasonal email", suggestedCampaignType: "email", decision }, async (record) => record);
-    assert.equal(res.statusCode, 201);
-    assert.equal(res.body.recommendationDecision.decision, decision);
+    const result = await request({ body: { recommendationTitle: "Seasonal email", suggestedCampaignType: "email", decision } });
+    assert.equal(result.res.statusCode, 201);
+    assert.equal(result.res.body.recommendationDecision.decision, decision);
   }
   for (const decision of ["accepted", "", null, undefined]) {
-    let writes = 0;
-    const res = await request("business-a", { recommendationTitle: "Seasonal email", suggestedCampaignType: "email", decision }, async () => { writes += 1; });
-    assert.equal(res.statusCode, 400); assert.equal(writes, 0);
+    const result = await request({ body: { recommendationTitle: "Seasonal email", suggestedCampaignType: "email", decision } });
+    assert.equal(result.res.statusCode, 400);
+    assert.deepEqual(result.persistenceCalls, []);
+    assert.equal(result.authorizationCalls.length, 1);
   }
 });
 
-test("the URL business identity is authoritative for recommendation decisions", async () => {
-  let saved;
-  const res = await request("business-a", {
-    businessId: "business-b", recommendationTitle: "Local post", suggestedCampaignType: "social", decision: "used"
-  }, async (record) => { saved = record; return record; });
-  assert.equal(res.statusCode, 201);
-  assert.equal(saved.businessId, "business-a");
-  assert.notEqual(saved.businessId, "business-b");
+test("existing recommendation field validation remains enforced after authorization", async () => {
+  for (const body of [
+    { recommendationTitle: "", suggestedCampaignType: "email", decision: "used" },
+    { recommendationTitle: "x".repeat(501), suggestedCampaignType: "email", decision: "used" },
+    { recommendationTitle: "Valid", suggestedCampaignType: "push", decision: "used" }
+  ]) {
+    const result = await request({ body });
+    assert.equal(result.res.statusCode, 400);
+    assert.deepEqual(result.res.body, { error: "DEMEOS received invalid recommendation decision data." });
+    assert.deepEqual(result.persistenceCalls, []);
+  }
 });
 
-test("a business cannot write a recommendation decision when its URL identity does not exist", async () => {
-  const res = await request("business-b", {
-    recommendationTitle: "Local post", suggestedCampaignType: "social", decision: "rejected"
-  }, async () => null);
-  assert.equal(res.statusCode, 404);
+test("nonexistent business persistence result remains 404", async () => {
+  const result = await request({ saveRecommendationDecision: async () => null });
+  assert.equal(result.res.statusCode, 404);
+  assert.deepEqual(result.res.body, { error: "Business not found." });
 });
 
 test("repository scopes restored decisions and writes to one business", async () => {
