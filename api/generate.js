@@ -1,3 +1,9 @@
+const { getRepository } = require("./_lib/persistence.js");
+const {
+  authorizeBusinessOwnerRequest
+} = require("./_lib/demeos-business-owner-authorization.js");
+const { DEMEOS_ACTIONS } = require("./_lib/demeos-rules.js");
+
 export default async function handler(req, res) {
 
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -25,13 +31,38 @@ export default async function handler(req, res) {
   try {
 
     const {
+      businessId,
       promoText,
       campaignType = "full",
-      businessProfile,
       existingCampaign,
       revisionInstruction,
       revisionTarget
     } = req.body || {};
+    const requestedBusinessId = typeof businessId === "string" ? businessId.trim() : "";
+    if (!requestedBusinessId) {
+      return res.status(400).json({ error: "A businessId is required." });
+    }
+
+    const repository = getRepository();
+    const access = await authorizeBusinessOwnerRequest({
+      req,
+      businessId: requestedBusinessId,
+      action: DEMEOS_ACTIONS.CREATE_MARKETING,
+      repository
+    });
+    if (!access.authenticated) {
+      return res.status(401).json({ error: "Authentication required." });
+    }
+    if (!access.allowed) {
+      return res.status(403).json({ error: "Forbidden." });
+    }
+
+    const storedBusiness = await repository.getKnownBusiness(requestedBusinessId);
+    if (!storedBusiness) {
+      return res.status(404).json({ error: "Business not found." });
+    }
+    const businessProfile = storedBusiness.businessProfile;
+
     if (!["full", "social", "email"].includes(campaignType)) {
 
       return res.status(400).json({

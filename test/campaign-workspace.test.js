@@ -306,6 +306,7 @@ test("a successful section revision sends its target, saves continuity, and rend
   await browser.document.getElementById("revise-btn").listeners.click();
 
   assert.equal(requests[0].body.revisionTarget, "social_media_post");
+  assert.equal(requests[0].body.businessId, "business-a");
   assert.equal(requests[0].body.existingCampaign, fullCampaignText);
   const history = JSON.parse(browser.localStorage.getItem("demeosCampaignHistory"));
   assert.equal(history[0].campaignText, revised);
@@ -317,4 +318,22 @@ test("a successful section revision sends its target, saves continuity, and rend
   const versions = browser.document.getElementById("campaign-versions-list").children;
   assert.deepEqual(versions.map(function (button) { return button.textContent; }), ["Original", "Revision 1"]);
   assert.equal(versions[1].attributes["aria-current"], "true");
+});
+
+test("new campaign generation sends the active businessId", async function () {
+  const browser = createBrowser([]);
+  const requests = [];
+  browser.context.fetch = async function (url, options) {
+    requests.push({ url, body: options.body ? JSON.parse(options.body) : null });
+    return { ok: true, status: 200, async text() {
+      return url === "/api/generate" ? JSON.stringify({ campaign: "Generated campaign" }) : "{}";
+    } };
+  };
+  browser.document.getElementById("promo-input").value = "Promote lunch.";
+  browser.document.getElementById("campaign-type").value = "social";
+
+  await browser.document.getElementById("generate-btn").listeners.click();
+
+  assert.equal(requests[0].url, "/api/generate");
+  assert.equal(requests[0].body.businessId, "business-a");
 });

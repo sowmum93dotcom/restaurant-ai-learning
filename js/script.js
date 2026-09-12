@@ -992,7 +992,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     campaignOutcome.hidden = true;
     campaignVersionsList.textContent = ""; campaignVersions.hidden = true;
     try {
-      const text = await requestCampaign({ promoText: promo, campaignType: campaignType.value, businessProfile: profile });
+      const text = await requestCampaign({ businessId: profile.businessId, promoText: promo, campaignType: campaignType.value, businessProfile: profile });
       renderCampaign({ campaignText: text, campaignType: campaignType.value }); copyBtn.hidden = false;
       const saved = await saveCampaign(text, promo, campaignType.value, campaignType.options[campaignType.selectedIndex].text, profile);
       showApprovalStatus("Unapproved"); revisionControls.hidden = false;
@@ -1015,7 +1015,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     const label = source.campaignTypeLabel || (type === "social" ? "Social Media Post" : type === "email" ? "Email Campaign" : "Full Marketing Campaign");
     reviseBtn.disabled = true; reviseBtn.textContent = "DEMEOS is revising...";
     try {
-      const request = { existingCampaign: source.campaignText, revisionInstruction: instruction, campaignType: type, businessProfile: profile };
+      const request = { businessId: profile.businessId, existingCampaign: source.campaignText, revisionInstruction: instruction, campaignType: type, businessProfile: profile };
       if (selectedRevisionTarget) request.revisionTarget = selectedRevisionTarget;
       const text = await requestCampaign(request);
       const saved = await saveCampaign(text, source.promoText || "", type, label, profile, source.id);
