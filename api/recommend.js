@@ -1,6 +1,11 @@
 const {
   getCapabilities, getRecommendationCapabilities, getCapabilityForRecommendationType
 } = require("./_lib/capability-registry.js");
+const { getRepository } = require("../api/_lib/persistence.js");
+const {
+  authorizeBusinessOwnerRequest
+} = require("../api/_lib/demeos-business-owner-authorization.js");
+const { DEMEOS_ACTIONS } = require("../api/_lib/demeos-rules.js");
 
 const requiredBusinessProfileFields = ["name", "type", "location", "brandVoice", "targetCustomer", "goal"];
 const recommendationCapabilities = getRecommendationCapabilities();
@@ -268,7 +273,37 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
-  const { businessProfile, businessSituation = "", campaignOutcomes = [], recommendationDecisions = [] } = req.body || {};
+  const { businessId, businessSituation = "" } = req.body || {};
+  const requestedBusinessId = typeof businessId === "string" ? businessId.trim() : "";
+  if (!requestedBusinessId) return res.status(400).json({ error: "A businessId is required." });
+
+  const repository = getRepository();
+  const access = await authorizeBusinessOwnerRequest({
+    req,
+    businessId: requestedBusinessId,
+    action: DEMEOS_ACTIONS.VIEW_OWN_BUSINESS_RESULTS,
+    repository
+  });
+  if (!access.authenticated) return res.status(401).json({ error: "Authentication required." });
+  if (!access.allowed) return res.status(403).json({ error: "Forbidden." });
+
+  const storedBusiness = await repository.getKnownBusiness(requestedBusinessId);
+  if (!storedBusiness) return res.status(404).json({ error: "Business not found." });
+  const businessProfile = storedBusiness.businessProfile;
+  const campaignOutcomes = (Array.isArray(storedBusiness.campaigns) ? storedBusiness.campaigns : [])
+    .filter((campaign) => campaign && campaign.businessId === requestedBusinessId && campaign.outcome)
+    .slice(0, 10).map((campaign) => ({
+      campaignType: campaign.campaignType,
+      ...(typeof campaign.promoText === "string" && campaign.promoText.trim()
+        ? { marketingRequest: campaign.promoText } : {}),
+      outcome: campaign.outcome.outcome,
+      ownerNote: typeof campaign.outcome.ownerNote === "string" ? campaign.outcome.ownerNote : ""
+    }));
+  const recommendationDecisions = (Array.isArray(storedBusiness.recommendationDecisions)
+    ? storedBusiness.recommendationDecisions : [])
+    .filter((decision) => decision && decision.businessId === requestedBusinessId)
+    .slice(0, 20).map((decision) => ({ recommendationTitle: decision.recommendationTitle,
+      suggestedCampaignType: decision.suggestedCampaignType, decision: decision.decision, timestamp: decision.timestamp }));
   if (!validProfile(businessProfile)) return res.status(400).json({ error: "Please complete and save the Business Manager Profile before requesting recommendations." });
   if (typeof businessSituation !== "string") return res.status(400).json({ error: "Business Situation must be text." });
   if (!validCampaignOutcomes(campaignOutcomes)) return res.status(400).json({ error: "Campaign Outcomes must contain valid saved outcome context." });

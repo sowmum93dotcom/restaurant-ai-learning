@@ -41,6 +41,9 @@ async function call(output) {
     process: { env: { OPENAI_API_KEY: "key" } },
     console,
     require(id) {
+      if (id === "../api/_lib/persistence.js") return { getRepository: () => ({ getKnownBusiness: async (businessId) => ({ businessProfile: { ...profile, businessId }, campaigns: [], recommendationDecisions: [] }) }) };
+      if (id === "../api/_lib/demeos-business-owner-authorization.js") return { authorizeBusinessOwnerRequest: async () => ({ authenticated: true, allowed: true }) };
+      if (id === "../api/_lib/demeos-rules.js") return require("../api/_lib/demeos-rules.js");
       return id === "./_lib/capability-registry.js"
         ? require("../api/_lib/capability-registry.js")
         : require(id);
@@ -59,7 +62,7 @@ async function call(output) {
     status(code) { this.statusCode = code; return this; },
     json(body) { this.body = body; return this; }
   };
-  await context.module.exports({ method: "POST", body: { businessProfile: profile, businessSituation: situation } }, response);
+  await context.module.exports({ method: "POST", body: { businessId: "business-a", businessProfile: profile, businessSituation: situation } }, response);
   return response;
 }
 
@@ -180,7 +183,12 @@ test("an explicitly supplied owner offer can be referenced as an existing fact",
 
   const context = {
     module: { exports: {} }, process: { env: { OPENAI_API_KEY: "key" } }, console,
-    require(id) { return id === "./_lib/capability-registry.js" ? require("../api/_lib/capability-registry.js") : require(id); },
+    require(id) {
+      if (id === "../api/_lib/persistence.js") return { getRepository: () => ({ getKnownBusiness: async (businessId) => ({ businessProfile: { ...profile, businessId }, campaigns: [], recommendationDecisions: [] }) }) };
+      if (id === "../api/_lib/demeos-business-owner-authorization.js") return { authorizeBusinessOwnerRequest: async () => ({ authenticated: true, allowed: true }) };
+      if (id === "../api/_lib/demeos-rules.js") return require("../api/_lib/demeos-rules.js");
+      return id === "./_lib/capability-registry.js" ? require("../api/_lib/capability-registry.js") : require(id);
+    },
     fetch: async () => ({ ok: true, headers: { get() { return null; } }, async text() {
       return JSON.stringify({ output_text: JSON.stringify(output) });
     } })
@@ -188,6 +196,6 @@ test("an explicitly supplied owner offer can be referenced as an existing fact",
   vm.runInNewContext(source, context);
   const response = { statusCode: null, body: null, setHeader() {}, status(code) { this.statusCode = code; return this; },
     json(body) { this.body = body; return this; } };
-  await context.module.exports({ method: "POST", body: { businessProfile: profile, businessSituation: ownerSituation } }, response);
+  await context.module.exports({ method: "POST", body: { businessId: "business-a", businessProfile: profile, businessSituation: ownerSituation } }, response);
   assert.equal(response.statusCode, 200);
 });

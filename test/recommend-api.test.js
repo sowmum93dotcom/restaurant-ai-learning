@@ -14,20 +14,113 @@ const valid = { recommendations: ["One", "Two", "Three"].map((title, index) => (
   evidence: [{ source: "businessProfile", field: "goal", value: profile.goal, verificationState: "verified" }],
   expectedOutcome: `Aims to support ${profile.goal} by encouraging customer interest`, requiredInput: [], approvalState: "pending" })) };
 
-async function call(businessProfile = profile, output = JSON.stringify(valid), businessSituation, campaignOutcomes, recommendationDecisions) {
-  let fetchCalls = 0; let requestBody;
+async function call(businessProfile = profile, output = JSON.stringify(valid), businessSituation, campaignOutcomes, recommendationDecisions,
+  options = {}) {
+  let fetchCalls = 0; let requestBody; let authorizationArgs; let getKnownBusinessCalls = 0;
+  const businessId = options.businessId === undefined ? "business-a" : options.businessId;
+  const storedProfile = options.storedProfile === undefined ? businessProfile : options.storedProfile;
+  const storedCampaigns = (options.storedCampaigns === undefined ? (campaignOutcomes || []).map((item, index) => ({
+    id: `campaign-${index}`, businessId, campaignType: item.campaignType,
+    promoText: item.marketingRequest, outcome: { outcome: item.outcome, ownerNote: item.ownerNote }
+  })) : options.storedCampaigns);
+  const storedDecisions = (options.storedDecisions === undefined ? (recommendationDecisions || []).map((item) => ({
+    businessId, ...item
+  })) : options.storedDecisions);
+  const repository = { async getKnownBusiness(id) { getKnownBusinessCalls += 1;
+    return options.missingBusiness ? null : { businessProfile: { ...storedProfile, businessId: id },
+      campaigns: storedCampaigns, recommendationDecisions: storedDecisions }; } };
   const context = { module: { exports: {} }, process: { env: { OPENAI_API_KEY: "key" } }, console,
-    require(id) { return id === "./_lib/capability-registry.js" ? require("../api/_lib/capability-registry.js") : require(id); },
+    require(id) {
+      if (id === "./_lib/capability-registry.js") return require("../api/_lib/capability-registry.js");
+      if (id === "../api/_lib/persistence.js") return { getRepository() { return repository; } };
+      if (id === "../api/_lib/demeos-business-owner-authorization.js") return { async authorizeBusinessOwnerRequest(args) {
+        authorizationArgs = args; return options.access || { authenticated: true, allowed: true };
+      } };
+      if (id === "../api/_lib/demeos-rules.js") return require("../api/_lib/demeos-rules.js");
+      return require(id);
+    },
     fetch: async (url, options) => { fetchCalls += 1; requestBody = JSON.parse(options.body); return { ok: true,
       headers: { get() { return null; } }, async text() { return JSON.stringify({ output_text: output }); } }; } };
   vm.runInNewContext(source, context);
   const response = { statusCode: null, body: null, setHeader() {}, status(code) { this.statusCode = code; return this; },
     json(body) { this.body = body; return this; } };
-  await context.module.exports({ method: "POST", body: { businessProfile, ...(businessSituation === undefined ? {} : { businessSituation }),
+  await context.module.exports({ method: "POST", body: { businessId, businessProfile, ...(businessSituation === undefined ? {} : { businessSituation }),
     ...(campaignOutcomes === undefined ? {} : { campaignOutcomes }),
-    ...(recommendationDecisions === undefined ? {} : { recommendationDecisions }) } }, response);
-  return { response, fetchCalls, requestBody };
+    ...(recommendationDecisions === undefined ? {} : { recommendationDecisions }), ...(options.spoofedBody || {}) } }, response);
+  return { response, fetchCalls, requestBody, authorizationArgs, getKnownBusinessCalls };
 }
+
+test("missing businessId is rejected before authorization and OpenAI", async () => {
+  const result = await call(profile, JSON.stringify(valid), "", [], [], { businessId: "" });
+  assert.equal(result.response.statusCode, 400); assert.equal(result.authorizationArgs, undefined); assert.equal(result.fetchCalls, 0);
+});
+
+test("unauthenticated and non-owner requests are denied before business loading and OpenAI", async () => {
+  for (const [access, statusCode, error] of [[{ authenticated: false, allowed: false }, 401, "Authentication required."],
+    [{ authenticated: true, allowed: false }, 403, "Forbidden."]]) {
+    const result = await call(profile, JSON.stringify(valid), "", [], [], { access });
+    assert.equal(result.response.statusCode, statusCode); assert.equal(result.response.body.error, error);
+    assert.equal(result.getKnownBusinessCalls, 0); assert.equal(result.fetchCalls, 0);
+  }
+});
+
+test("owner authorization uses the requested business and results-view action", async () => {
+  const result = await call(profile, JSON.stringify(valid), "", [], [], { businessId: "owned-business" });
+  assert.equal(result.response.statusCode, 200);
+  assert.equal(result.authorizationArgs.businessId, "owned-business");
+  assert.equal(result.authorizationArgs.action, require("../api/_lib/demeos-rules.js").DEMEOS_ACTIONS.VIEW_OWN_BUSINESS_RESULTS);
+});
+
+test("a missing persisted business returns 404 without OpenAI", async () => {
+  const result = await call(profile, JSON.stringify(valid), "", [], [], { missingBusiness: true });
+  assert.equal(result.response.statusCode, 404); assert.equal(result.fetchCalls, 0);
+});
+
+test("browser identity and nested business spoofing cannot change authorization scope", async () => {
+  const result = await call(profile, JSON.stringify(valid), "", [], [], { businessId: "business-a", spoofedBody: {
+    businessProfile: { ...profile, businessId: "business-b" }, trustedIdentityId: "spoofed", userId: "spoofed",
+    actorScope: "owner"
+  } });
+  assert.equal(result.response.statusCode, 200);
+  assert.equal(result.authorizationArgs.businessId, "business-a");
+});
+
+test("browser profile evidence cannot replace persisted profile facts", async () => {
+  const spoofedProfile = { name: "Spoofed", type: "Casino", location: "Elsewhere", brandVoice: "Loud",
+    targetCustomer: "Everyone", goal: "Invented sales" };
+  const result = await call(spoofedProfile, JSON.stringify(valid), "", [], [], {
+    storedProfile: profile, spoofedBody: { businessProfile: spoofedProfile }
+  });
+  assert.equal(result.response.statusCode, 200);
+  assert.match(result.requestBody.input, /Name: North Star/);
+  assert.doesNotMatch(result.requestBody.input, /Spoofed|Invented sales|Casino/);
+});
+
+test("browser outcome and decision evidence cannot replace persisted evidence", async () => {
+  const storedOutcome = { campaignType: "social", outcome: "Positive", ownerNote: "Stored outcome only" };
+  const storedDecision = { recommendationTitle: "Stored decision only", suggestedCampaignType: "email", decision: "rejected",
+    timestamp: "2026-09-06T10:00:00.000Z" };
+  const result = await call(profile, JSON.stringify(valid), "", [storedOutcome], [storedDecision], { spoofedBody: {
+    campaignOutcomes: [{ campaignType: "email", outcome: "Positive", ownerNote: "Spoofed outcome" }],
+    recommendationDecisions: [{ recommendationTitle: "Spoofed decision", suggestedCampaignType: "full", decision: "used",
+      timestamp: "2026-09-07T10:00:00.000Z" }]
+  } });
+  assert.equal(result.response.statusCode, 200);
+  assert.match(result.requestBody.input, /Stored outcome only/); assert.doesNotMatch(result.requestBody.input, /Spoofed outcome/);
+  assert.match(result.requestBody.input, /Stored decision only/); assert.doesNotMatch(result.requestBody.input, /Spoofed decision/);
+});
+
+test("persisted evidence tagged for another business cannot enter the prompt", async () => {
+  const result = await call(profile, JSON.stringify(valid), "", [], [], { storedCampaigns: [
+    { businessId: "business-b", campaignType: "social", promoText: "Other request",
+      outcome: { outcome: "Positive", ownerNote: "Other outcome" } }
+  ], storedDecisions: [
+    { businessId: "business-b", recommendationTitle: "Other decision", suggestedCampaignType: "email", decision: "used",
+      timestamp: "2026-09-06T10:00:00.000Z" }
+  ] });
+  assert.equal(result.response.statusCode, 200);
+  assert.doesNotMatch(result.requestBody.input, /Other request|Other outcome|Other decision/);
+});
 
 test("a complete Business Manager Profile is accepted", async () => {
   const result = await call(); assert.equal(result.response.statusCode, 200); assert.equal(result.fetchCalls, 1);
@@ -129,12 +222,10 @@ test("decision context cannot override capability, verified facts, or output rul
   assert.match(prompt, /suggestedCampaignType must be exactly full, social, or email/);
 });
 
-test("malformed or excessive decision context is rejected before OpenAI", async () => {
-  for (const decisions of [[{ recommendationTitle: "Idea", suggestedCampaignType: "video", decision: "used", timestamp: "today" }],
-    Array.from({ length: 21 }, (_, index) => ({ recommendationTitle: `Idea ${index}`, suggestedCampaignType: "email", decision: "rejected", timestamp: "2026-09-06T10:00:00.000Z" }))]) {
-    const result = await call(profile, JSON.stringify(valid), "", [], decisions);
-    assert.equal(result.response.statusCode, 400); assert.equal(result.fetchCalls, 0);
-  }
+test("malformed persisted decision context is rejected before OpenAI", async () => {
+  const decisions = [{ recommendationTitle: "Idea", suggestedCampaignType: "video", decision: "used", timestamp: "today" }];
+  const result = await call(profile, JSON.stringify(valid), "", [], decisions);
+  assert.equal(result.response.statusCode, 400); assert.equal(result.fetchCalls, 0);
 });
 
 test("a situation cannot override output and supported capability restrictions", async () => {

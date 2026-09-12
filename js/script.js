@@ -971,7 +971,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       const campaignOutcomes = getCampaignOutcomes(getCampaignHistory(), requestedBusinessId);
       const recommendationDecisions = getRecommendationDecisionContext(
         parseStoredJson(localStorage, recommendationDecisionsKey, []), requestedBusinessId);
-      const response = await fetch("/api/recommend", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ businessProfile: profile, businessSituation: businessSituation.value.trim(), campaignOutcomes, recommendationDecisions }) });
+      const response = await fetch("/api/recommend", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ businessId: profile.businessId, businessProfile: profile, businessSituation: businessSituation.value.trim(), campaignOutcomes, recommendationDecisions }) });
       const responseText = await response.text(); let data;
       try { data = responseText ? JSON.parse(responseText) : {}; } catch (error) { throw new Error("DEMEOS received an unreadable recommendation response."); }
       if (!response.ok) throw new Error(data.error || "DEMEOS could not create recommendations.");

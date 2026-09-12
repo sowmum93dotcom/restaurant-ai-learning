@@ -50,6 +50,9 @@ test("invalid first model output is repaired once and valid recommendations are 
     process: { env: { OPENAI_API_KEY: "key" } },
     console,
     require(id) {
+      if (id === "../api/_lib/persistence.js") return { getRepository: () => ({ getKnownBusiness: async (businessId) => ({ businessProfile: { ...profile, businessId }, campaigns: [], recommendationDecisions: [] }) }) };
+      if (id === "../api/_lib/demeos-business-owner-authorization.js") return { authorizeBusinessOwnerRequest: async () => ({ authenticated: true, allowed: true }) };
+      if (id === "../api/_lib/demeos-rules.js") return require("../api/_lib/demeos-rules.js");
       return id === "./_lib/capability-registry.js"
         ? require("../api/_lib/capability-registry.js")
         : require(id);
@@ -75,7 +78,7 @@ test("invalid first model output is repaired once and valid recommendations are 
 
   await context.module.exports({
     method: "POST",
-    body: { businessProfile: profile, businessSituation: situation }
+    body: { businessId: "business-a", businessProfile: profile, businessSituation: situation }
   }, response);
 
   assert.equal(calls, 2);

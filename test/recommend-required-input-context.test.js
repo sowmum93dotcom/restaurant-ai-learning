@@ -36,13 +36,18 @@ function registryWithFullRequiredInputs(extraInputs) {
 
 async function call(output, businessSituation = "", registry = baseRegistry, businessProfile = profile) {
   const context = { module: { exports: {} }, process: { env: { OPENAI_API_KEY: "key" } }, console,
-    require(id) { return id === "./_lib/capability-registry.js" ? registry : require(id); },
+    require(id) {
+      if (id === "../api/_lib/persistence.js") return { getRepository: () => ({ getKnownBusiness: async (businessId) => ({ businessProfile: { ...businessProfile, businessId }, campaigns: [], recommendationDecisions: [] }) }) };
+      if (id === "../api/_lib/demeos-business-owner-authorization.js") return { authorizeBusinessOwnerRequest: async () => ({ authenticated: true, allowed: true }) };
+      if (id === "../api/_lib/demeos-rules.js") return require("../api/_lib/demeos-rules.js");
+      return id === "./_lib/capability-registry.js" ? registry : require(id);
+    },
     fetch: async () => ({ ok: true, headers: { get() { return null; } },
       async text() { return JSON.stringify({ output_text: JSON.stringify(output) }); } }) };
   vm.runInNewContext(source, context);
   const response = { statusCode: null, body: null, setHeader() {}, status(code) { this.statusCode = code; return this; },
     json(body) { this.body = body; return this; } };
-  await context.module.exports({ method: "POST", body: { businessProfile, businessSituation } }, response);
+  await context.module.exports({ method: "POST", body: { businessId: "business-a", businessProfile, businessSituation } }, response);
   return response;
 }
 
