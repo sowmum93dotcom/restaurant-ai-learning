@@ -58,7 +58,7 @@ test("customer routes use only their server-defined public permissions", async f
     method: "POST",
     ...hostileInput,
     query: { ...hostileInput.query, campaignId: "campaign-a" },
-    body: { ...hostileInput.body, businessId: "business-a", action: "Interested" }
+    body: { ...hostileInput.body, action: "Interested" }
   }, permissionCheck);
 
   assert.equal(getResponse.statusCode, 200);
@@ -104,19 +104,20 @@ test("customer feed returns only the deliberately public work shape", async func
   ]);
 });
 
-test("Interested is recorded against the exact business and approved work item", async function () {
+test("Interested uses the route campaign identity and exposes only the safe action", async function () {
   let received;
   const repository = {
-    async recordCustomerParticipation(businessId, campaignId, action) {
-      received = { businessId, campaignId, action };
+    async recordCustomerParticipation(campaignId, action) {
+      received = { campaignId, action };
       return { ...received };
     }
   };
   const res = await runHandler("../api/customer/work/[campaignId]/participation.js", repository, {
-    method: "POST", query: { campaignId: "campaign-a" }, body: { businessId: "business-a", action: "Interested" }
+    method: "POST", query: { campaignId: "campaign-a" },
+    body: { businessId: "spoofed-business", campaign: { businessId: "nested-spoof" }, action: "Interested" }
   });
   assert.equal(res.statusCode, 201);
-  assert.deepEqual(received, { businessId: "business-a", campaignId: "campaign-a", action: "Interested" });
+  assert.deepEqual(received, { campaignId: "campaign-a", action: "Interested" });
   assert.deepEqual(res.body, { participation: { action: "Interested" } });
 });
 
@@ -124,14 +125,15 @@ test("unsupported actions and work that is not approved are rejected", async fun
   let called = false;
   const invalid = await runHandler("../api/customer/work/[campaignId]/participation.js", {
     async recordCustomerParticipation() { called = true; }
-  }, { method: "POST", query: { campaignId: "campaign-a" }, body: { businessId: "business-a", action: "Pay" } });
+  }, { method: "POST", query: { campaignId: "campaign-a" }, body: { action: "Pay" } });
   assert.equal(invalid.statusCode, 400);
   assert.equal(called, false);
 
   const unavailable = await runHandler("../api/customer/work/[campaignId]/participation.js", {
     async recordCustomerParticipation() { return null; }
-  }, { method: "POST", query: { campaignId: "campaign-a" }, body: { businessId: "business-a", action: "Interested" } });
+  }, { method: "POST", query: { campaignId: "campaign-a" }, body: { action: "Interested" } });
   assert.equal(unavailable.statusCode, 404);
+  assert.deepEqual(unavailable.body, { error: "Approved DEMEOS work was not found." });
 });
 
 test("customer routes retain their method contracts", async function () {
@@ -163,4 +165,57 @@ test("repository customer work query gates on approval and selects existing iden
   assert.match(sql, /approvalStatus.*Approved/);
   assert.deepEqual(work[0], { workItemId: "campaign-a", businessId: "business-a", businessName: "North Star",
     location: "Leeds", content: "Hello", participationAction: "Interested" });
+});
+
+test("repository resolves participation business identity from the approved stored campaign", async function () {
+  const queries = [];
+  const storedCampaign = {
+    campaignType: "social", campaignText: "Join us this weekend", approvalStatus: "Approved"
+  };
+  const repository = require("../api/_lib/persistence.js").createPersistenceRepository({
+    async ensureSchema() {},
+    async query(statement, parameters) {
+      queries.push({ statement, parameters });
+      if (queries.length === 1) {
+        return { rows: [{ business_id: "stored-business", campaign: storedCampaign }] };
+      }
+      return { rows: [{ business_id: "stored-business", campaign_id: "campaign-a",
+        action: "Interested", participated_at: new Date() }] };
+    }
+  });
+
+  const participation = await repository.recordCustomerParticipation("campaign-a", "Interested");
+
+  assert.equal(participation.business_id, "stored-business");
+  assert.match(queries[0].statement, /WHERE campaign_id = \$1/);
+  assert.deepEqual(queries[0].parameters, ["campaign-a"]);
+  assert.match(queries[1].statement, /SELECT c\.business_id, c\.campaign_id/);
+  assert.doesNotMatch(queries[1].statement, /c\.business_id = \$/);
+  assert.deepEqual(queries[1].parameters, ["campaign-a", "Interested", JSON.stringify(storedCampaign)]);
+});
+
+test("repository returns not found for unknown, unapproved, and non-publishable campaigns", async function () {
+  const campaigns = [
+    undefined,
+    { business_id: "business-a", campaign: {
+      campaignType: "social", campaignText: "Draft", approvalStatus: "Unapproved"
+    } },
+    { business_id: "business-a", campaign: {
+      campaignType: "video", campaignText: "Unsupported", approvalStatus: "Approved"
+    } }
+  ];
+
+  for (const stored of campaigns) {
+    let queryCount = 0;
+    const repository = require("../api/_lib/persistence.js").createPersistenceRepository({
+      async ensureSchema() {},
+      async query() {
+        queryCount += 1;
+        return { rows: stored ? [stored] : [] };
+      }
+    });
+    const participation = await repository.recordCustomerParticipation("campaign-a", "Interested");
+    assert.equal(participation, null);
+    assert.equal(queryCount, 1);
+  }
 });

@@ -31,7 +31,7 @@ test("customer journey renders approved public content without internal controls
   assert.doesNotMatch(output, /private strategy|private email|ownerRecommendation|approval control|customer count|rating|price|discount|opening hours/i);
 });
 
-test("participation uses the existing endpoint and request contract", async function () {
+test("participation sends only the action and no browser-provided business identity", async function () {
   const originalFetch = global.fetch;
   let request;
   global.fetch = async function (url, options) { request = { url, options }; return { ok: true }; };
@@ -39,7 +39,7 @@ test("participation uses the existing endpoint and request contract", async func
   finally { global.fetch = originalFetch; }
   assert.equal(request.url, "/api/customer/work/work%2Fa/participation");
   assert.equal(request.options.method, "POST");
-  assert.deepEqual(JSON.parse(request.options.body), { businessId: "business-a", action: "Interested" });
+  assert.deepEqual(JSON.parse(request.options.body), { action: "Interested" });
 });
 
 test("participation gives accurate signal confirmation", async function () {

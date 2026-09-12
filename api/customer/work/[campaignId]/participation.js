@@ -17,13 +17,12 @@ module.exports = async function handler(req, res) {
     return res.status(403).json({ error: "DEMEOS permission denied." });
   }
   const campaignId = typeof req.query.campaignId === "string" ? req.query.campaignId.trim() : "";
-  const businessId = req.body && typeof req.body.businessId === "string" ? req.body.businessId.trim() : "";
   const action = req.body && req.body.action;
-  if (!campaignId || !businessId || action !== "Interested") {
+  if (!campaignId || action !== "Interested") {
     return res.status(400).json({ error: "Valid DEMEOS work and participation are required." });
   }
   try {
-    const participation = await getRepository().recordCustomerParticipation(businessId, campaignId, action);
+    const participation = await getRepository().recordCustomerParticipation(campaignId, action);
     if (!participation) return res.status(404).json({ error: "Approved DEMEOS work was not found." });
     return res.status(201).json({ participation: { action: participation.action } });
   } catch (error) {
