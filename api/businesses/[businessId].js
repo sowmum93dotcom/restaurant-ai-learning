@@ -35,7 +35,9 @@ module.exports = async function handler(req, res) {
     const access = await authorizeBusinessOwnerRequest({
       req,
       businessId,
-      action: DEMEOS_ACTIONS.MANAGE_BUSINESS_PROFILE,
+      action: req.method === "GET"
+        ? DEMEOS_ACTIONS.VIEW_OWN_BUSINESS_RESULTS
+        : DEMEOS_ACTIONS.MANAGE_BUSINESS_PROFILE,
       repository
     });
     if (!access.authenticated) {
