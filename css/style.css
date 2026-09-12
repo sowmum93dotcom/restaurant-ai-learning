@@ -805,6 +805,8 @@ footer { background: #081f3d; color: #c4cfdb; text-align: center; }
 .business-results-intro h2 { margin: .2rem 0 .5rem; color: #102a52; font-size: clamp(1.9rem, 4vw, 2.7rem); }
 .business-results-intro p:last-child { max-width: 720px; color: #566579; }
 .business-results-status { margin: 1.5rem 0; color: #566579; }
+.business-results-evidence { margin-top: 1.75rem; }
+.business-results-evidence > h3 { margin: 0 0 .4rem; color: #102a52; font-size: 1.35rem; }
 .business-results-list { display: grid; gap: 1.25rem; }
 .business-result-card { padding: 1.5rem; border: 1px solid #d8e0e9; border-top: 4px solid #c9a44c; border-radius: 12px; background: #fff; box-shadow: 0 7px 22px rgba(13,37,68,.06); }
 .business-result-card h3 { margin: 0; color: #102a52; }
@@ -816,6 +818,13 @@ footer { background: #081f3d; color: #c4cfdb; text-align: center; }
 .business-results-zero { margin-top: 1.5rem; padding: 2.5rem; border: 1px dashed #bdc9d8; border-radius: 12px; background: #fff; text-align: center; }
 .business-results-zero h3 { color: #102a52; }
 .business-results-zero p { margin-top: .5rem; color: #647184; }
+.recommendation-decisions { padding-top: 1.75rem; border-top: 1px solid #d6dde7; }
+.recommendation-decisions-helper { margin: 0 0 1rem; max-width: 720px; color: #566579; }
+.recommendation-decisions-empty { padding: 1.25rem; border: 1px dashed #bdc9d8; border-radius: 12px; background: #fff; color: #647184; text-align: center; }
+.recommendation-decisions-list { display: grid; gap: 1rem; }
+.recommendation-decision-card { padding: 1.25rem; border: 1px solid #d8e0e9; border-left: 4px solid #29466f; border-radius: 10px; background: #fff; }
+.recommendation-decision-card h4 { margin: 0 0 .65rem; color: #102a52; }
+.recommendation-decision-card p { margin: .3rem 0; color: #354356; }
 
 @media (max-width: 900px) {
   .workspace-shell { grid-template-columns: 1fr; }

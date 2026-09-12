@@ -30,13 +30,47 @@ function getBusinessResults(record, activeBusinessId) {
   });
 }
 
-if (typeof module !== "undefined" && module.exports) module.exports = { getBusinessResults };
+function getRecommendationDecisions(record, activeBusinessId) {
+  if (!record || !activeBusinessId || !record.businessProfile ||
+      record.businessProfile.businessId !== activeBusinessId) return [];
+
+  const decisionLabels = { used: "Used", modified: "Modified", rejected: "Not for me" };
+  const campaignLabels = {
+    full: "Full Marketing Campaign",
+    social: "Social Media Campaign",
+    email: "Email Campaign"
+  };
+  const decisions = Array.isArray(record.recommendationDecisions) ? record.recommendationDecisions : [];
+
+  return decisions.filter(function (item) {
+    if (!item || item.businessId !== activeBusinessId ||
+        typeof item.recommendationTitle !== "string" || !item.recommendationTitle.trim() ||
+        !Object.hasOwn(campaignLabels, item.suggestedCampaignType) ||
+        !Object.hasOwn(decisionLabels, item.decision) || typeof item.timestamp !== "string") return false;
+    return Number.isFinite(Date.parse(item.timestamp));
+  }).map(function (item) {
+    return {
+      recommendationTitle: item.recommendationTitle.trim(),
+      campaignType: campaignLabels[item.suggestedCampaignType],
+      ownerDecision: decisionLabels[item.decision],
+      timestamp: item.timestamp
+    };
+  }).sort(function (left, right) {
+    return Date.parse(right.timestamp) - Date.parse(left.timestamp);
+  });
+}
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = { getBusinessResults, getRecommendationDecisions };
+}
 
 if (typeof document !== "undefined") {
   const byId = function (id) { return document.getElementById(id); };
   const status = byId("business-results-status");
   const zero = byId("business-results-zero");
   const list = byId("business-results-list");
+  const decisionsEmpty = byId("recommendation-decisions-empty");
+  const decisionsList = byId("recommendation-decisions-list");
 
   function addText(parent, tag, text, className) {
     const element = document.createElement(tag);
@@ -68,6 +102,20 @@ if (typeof document !== "undefined") {
     });
   }
 
+  function renderRecommendationDecisions(decisions) {
+    decisionsList.textContent = "";
+    decisionsEmpty.hidden = decisions.length > 0;
+    decisions.forEach(function (decision) {
+      const card = document.createElement("article");
+      card.className = "recommendation-decision-card";
+      addText(card, "h4", decision.recommendationTitle);
+      addText(card, "p", `Campaign type: ${decision.campaignType}`);
+      addText(card, "p", `Owner decision: ${decision.ownerDecision}`);
+      addText(card, "p", `Decision date: ${new Date(decision.timestamp).toLocaleString()}`);
+      decisionsList.appendChild(card);
+    });
+  }
+
   async function load() {
     const businessId = localStorage.getItem("demeosActiveBusinessId");
     if (!businessId) { status.textContent = "No active business selected."; zero.hidden = false; return; }
@@ -76,10 +124,12 @@ if (typeof document !== "undefined") {
       if (!response.ok) throw new Error("Stored business results could not be loaded.");
       const record = await response.json();
       const results = getBusinessResults(record, businessId);
+      const decisions = getRecommendationDecisions(record, businessId);
       const name = record.businessProfile && record.businessProfile.name;
       if (name) byId("business-results-business-name").textContent = name;
       status.textContent = results.length ? `${results.length} campaign result${results.length === 1 ? "" : "s"}` : "";
       render(results);
+      renderRecommendationDecisions(decisions);
     } catch (error) {
       status.textContent = error.message;
       zero.hidden = false;
