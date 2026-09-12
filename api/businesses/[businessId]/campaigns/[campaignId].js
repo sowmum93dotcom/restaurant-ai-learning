@@ -68,6 +68,21 @@ module.exports = async function handler(req, res) {
 
     if (isApprovalRequest) {
       let approvedCampaign = await repository.approveCampaign(businessId, campaignId);
+      if (approvedCampaign) {
+        const approvedCapability = getCapabilityForRecommendationType(approvedCampaign.campaignType);
+        if (approvedCapability && approvedCampaign.campaignTypeLabel !== approvedCapability.ownerFacingName) {
+          const normalizedCampaign = await repository.saveCampaign({
+            ...approvedCampaign,
+            id: campaignId,
+            businessId,
+            campaignTypeLabel: approvedCapability.ownerFacingName
+          });
+          if (!normalizedCampaign) {
+            throw new Error("Could not normalize approved campaign label.");
+          }
+          approvedCampaign = normalizedCampaign;
+        }
+      }
       if (!approvedCampaign) {
         const createAccess = await authorizeBusinessOwnerRequest({
           req,
