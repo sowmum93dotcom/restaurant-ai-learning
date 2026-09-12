@@ -198,6 +198,54 @@ test("campaign approval safely returns null when the campaign does not belong to
   assert.equal(approved, null);
 });
 
+test("campaign persistence returns the inserted campaign with authoritative IDs", async function () {
+  const campaign = { id: "campaign-a", businessId: "business-a", campaignText: "New" };
+  const database = {
+    async ensureSchema() {},
+    async query(sql, values) {
+      assert.match(sql, /ON CONFLICT \(campaign_id\) DO UPDATE/);
+      assert.match(sql, /WHERE demeos_campaigns\.business_id = EXCLUDED\.business_id/);
+      assert.match(sql, /RETURNING campaign/);
+      assert.deepEqual(values, ["campaign-a", "business-a", JSON.stringify(campaign)]);
+      return { rows: [{ campaign: { ...campaign, id: "stored-id", businessId: "stored-business" } }] };
+    }
+  };
+
+  const saved = await createPersistenceRepository(database).saveCampaign(campaign);
+
+  assert.deepEqual(saved, campaign);
+});
+
+test("campaign persistence returns the same-business updated campaign", async function () {
+  const campaign = { id: "campaign-a", businessId: "business-a", campaignText: "Updated" };
+  const database = {
+    async ensureSchema() {},
+    async query() { return { rows: [{ campaign: { ...campaign } }] }; }
+  };
+
+  const saved = await createPersistenceRepository(database).saveCampaign(campaign);
+
+  assert.deepEqual(saved, campaign);
+});
+
+test("campaign persistence returns null and preserves stored data on a cross-business ID collision", async function () {
+  const stored = { campaignText: "Other business original", businessId: "business-b" };
+  const database = {
+    async ensureSchema() {},
+    async query(sql) {
+      assert.match(sql, /WHERE demeos_campaigns\.business_id = EXCLUDED\.business_id/);
+      return { rows: [] };
+    }
+  };
+
+  const saved = await createPersistenceRepository(database).saveCampaign({
+    id: "shared-campaign", businessId: "business-a", campaignText: "Overwrite attempt"
+  });
+
+  assert.equal(saved, null);
+  assert.deepEqual(stored, { campaignText: "Other business original", businessId: "business-b" });
+});
+
 test("hydration restores profile and complete campaign continuity fields", async function () {
   const storage = memoryStorage([
     ["demeosBusinessProfiles", JSON.stringify([{ businessId: "business-a", name: "Old A" }])],

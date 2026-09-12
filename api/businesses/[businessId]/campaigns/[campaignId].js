@@ -78,19 +78,24 @@ module.exports = async function handler(req, res) {
           return res.status(403).json({ error: "Forbidden." });
         }
 
-        await repository.saveCampaign({
+        const restoredCampaign = await repository.saveCampaign({
           ...campaign,
           id: campaignId,
           businessId,
           approvalStatus: "Unapproved"
         });
-        approvedCampaign = await repository.approveCampaign(businessId, campaignId);
+        if (restoredCampaign) {
+          approvedCampaign = await repository.approveCampaign(businessId, campaignId);
+        }
       }
       if (!approvedCampaign) {
         return res.status(404).json({ error: "Campaign was not found for this business." });
       }
     } else {
-      await repository.saveCampaign({ ...campaign, id: campaignId, businessId });
+      const savedCampaign = await repository.saveCampaign({ ...campaign, id: campaignId, businessId });
+      if (!savedCampaign) {
+        return res.status(409).json({ error: "Campaign could not be saved for this business." });
+      }
     }
     return res.status(204).end();
   } catch (error) {
