@@ -5,6 +5,70 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Marketing | DEMEOS Business Owner Workspace</title>
   <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .profile-long-field {
+      grid-column: 1 / -1;
+      padding: 1rem;
+      border: 1px solid transparent;
+      border-radius: 12px;
+    }
+    .profile-long-field label {
+      margin-top: 0;
+    }
+    .profile-long-field textarea {
+      width: 100%;
+      min-height: 9rem;
+      margin-top: 0.25rem;
+      padding: 1rem;
+      border-radius: 10px;
+      background: #fff;
+      line-height: 1.55;
+      resize: vertical;
+      overflow: auto;
+    }
+    .profile-long-field p {
+      margin-top: 0.45rem;
+      font-size: 0.9rem;
+      line-height: 1.45;
+    }
+    .profile-long-field.brand-voice-field {
+      background: #faf5ff;
+      border-color: #d9b8ff;
+    }
+    .profile-long-field.brand-voice-field label,
+    .profile-long-field.brand-voice-field p {
+      color: #63328f;
+    }
+    .profile-long-field.brand-voice-field textarea {
+      border-color: #bb86e8;
+      box-shadow: inset 0 0 0 1px rgba(99, 50, 143, 0.04);
+    }
+    .profile-long-field.brand-voice-field textarea:focus {
+      border-color: #7c3fb2;
+      box-shadow: 0 0 0 3px rgba(124, 63, 178, 0.14);
+    }
+    .profile-long-field.target-customer-field {
+      background: #f2fbf6;
+      border-color: #a9dfbf;
+    }
+    .profile-long-field.target-customer-field label,
+    .profile-long-field.target-customer-field p {
+      color: #247044;
+    }
+    .profile-long-field.target-customer-field textarea {
+      border-color: #83caa2;
+      box-shadow: inset 0 0 0 1px rgba(36, 112, 68, 0.04);
+    }
+    .profile-long-field.target-customer-field textarea:focus {
+      border-color: #2f8a55;
+      box-shadow: 0 0 0 3px rgba(47, 138, 85, 0.14);
+    }
+    @media (max-width: 700px) {
+      .profile-long-field textarea {
+        min-height: 10rem;
+      }
+    }
+  </style>
 </head>
 <body class="owner-workspace-body marketing-capability-body">
   <header class="workspace-header owner-workspace-header">
@@ -159,8 +223,8 @@
               <div><label for="business-name">Business Name</label><input type="text" id="business-name" name="business-name" placeholder="Enter your business name" /></div>
               <div><label for="business-type">Business Type</label><input type="text" id="business-type" name="business-type" placeholder="Example: Restaurant" /></div>
               <div><label for="business-location">Business Location</label><input type="text" id="business-location" name="business-location" placeholder="Example: London, United Kingdom" /></div>
-              <div><label for="business-brand-voice">Brand Voice</label><input type="text" id="business-brand-voice" name="business-brand-voice" placeholder="Example: Warm, welcoming and professional" /></div>
-              <div><label for="business-target-customer">Target Customer</label><input type="text" id="business-target-customer" name="business-target-customer" placeholder="Example: Local families, office workers, students" /></div>
+              <div class="profile-long-field brand-voice-field"><label for="business-brand-voice">Brand Voice</label><textarea id="business-brand-voice" name="business-brand-voice" rows="4" placeholder="Example: Friendly, modern and professional. Describe how your business should sound when DEMEOS creates customer-facing content."></textarea><p>Describe how your business communicates so DEMEOS can keep the tone consistent.</p></div>
+              <div class="profile-long-field target-customer-field"><label for="business-target-customer">Target Customer</label><textarea id="business-target-customer" name="business-target-customer" rows="4" placeholder="Example: Local families, professionals, weekend visitors and other customer groups you want to reach."></textarea><p>Describe the customer groups you want DEMEOS to understand and reach.</p></div>
               <div><label for="business-goal">Primary Marketing Goal</label><input type="text" id="business-goal" name="business-goal" placeholder="Example: Increase local customers" /></div>
             </div>
             <button id="save-business-profile-btn" class="demeos-primary-button" type="button">Save Business Profile</button>
