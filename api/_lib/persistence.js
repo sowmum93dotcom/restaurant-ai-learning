@@ -194,7 +194,7 @@ function createPersistenceRepository(database) {
          WHERE c.campaign->>'approvalStatus' = 'Approved' ORDER BY c.updated_at DESC LIMIT 20`);
       return result.rows.map(function (row) {
         if (!canPublishToDemeosCustomerExperience(row.campaign)) return null;
-        return { workItemId: row.campaign_id, businessId: row.business_id, businessName: row.profile.name,
+        return { workItemId: row.campaign_id, businessName: row.profile.name,
           location: row.profile.location, content: getCustomerFacingContent(row.campaign), participationAction: "Interested" };
       }).filter(Boolean);
     },

@@ -22,7 +22,7 @@ function fakeDocument() {
 
 test("customer journey renders approved public content without internal controls or invented facts", function () {
   const document = fakeDocument();
-  const work = { workItemId: "approved-a", businessId: "business-a", businessName: "North Star",
+  const work = { workItemId: "approved-a", businessName: "North Star",
     location: "Leeds", content: "The exact approved customer message.", participationAction: "Interested",
     campaignStrategy: "private strategy", emailCampaign: "private email", ownerRecommendation: "private" };
   renderCustomerWork(document, [work], async function () {});
@@ -35,7 +35,7 @@ test("participation sends only the action and no browser-provided business ident
   const originalFetch = global.fetch;
   let request;
   global.fetch = async function (url, options) { request = { url, options }; return { ok: true }; };
-  try { await recordParticipation({ workItemId: "work/a", businessId: "business-a", participationAction: "Interested" }); }
+  try { await recordParticipation({ workItemId: "work/a", participationAction: "Interested" }); }
   finally { global.fetch = originalFetch; }
   assert.equal(request.url, "/api/customer/work/work%2Fa/participation");
   assert.equal(request.options.method, "POST");
@@ -44,7 +44,7 @@ test("participation sends only the action and no browser-provided business ident
 
 test("participation gives accurate signal confirmation", async function () {
   const document = fakeDocument();
-  const card = createCustomerWorkCard(document, { workItemId: "a", businessId: "b", businessName: "North Star",
+  const card = createCustomerWorkCard(document, { workItemId: "a", businessName: "North Star",
     location: "Leeds", content: "Approved message", participationAction: "Interested" }, async function () {});
   const button = card.children[2].children[1];
   await button.listeners.click();
@@ -62,7 +62,7 @@ test("empty approved feed has a professional empty state", function () {
 test("journey anchors target the first work item without duplicate ids", function () {
   const document = fakeDocument();
   const work = ["a", "b"].map(function (id) {
-    return { workItemId: id, businessId: "business-a", businessName: `Business ${id}`,
+    return { workItemId: id, businessName: `Business ${id}`,
       content: `Approved ${id}`, participationAction: "Interested" };
   });
   renderCustomerWork(document, work, async function () {});

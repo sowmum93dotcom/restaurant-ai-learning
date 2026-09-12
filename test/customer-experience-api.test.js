@@ -93,15 +93,17 @@ test("customer routes fail closed before accessing persistence", async function 
 
 test("customer feed returns only the deliberately public work shape", async function () {
   const work = [{
-    workItemId: "campaign-a", businessId: "business-a", businessName: "North Star",
+    workItemId: "campaign-a", businessName: "North Star",
     location: "Leeds", content: "Come and see us.", participationAction: "Interested"
   }];
   const res = await runHandler("../api/customer/work.js", { async getCustomerWork() { return work; } }, { method: "GET" });
   assert.equal(res.statusCode, 200);
   assert.deepEqual(res.body, { work });
   assert.deepEqual(Object.keys(res.body.work[0]).sort(), [
-    "businessId", "businessName", "content", "location", "participationAction", "workItemId"
+    "businessName", "content", "location", "participationAction", "workItemId"
   ]);
+  assert.equal("businessId" in res.body.work[0], false);
+  assert.doesNotMatch(JSON.stringify(res.body), /businessId/);
 });
 
 test("Interested uses the route campaign identity and exposes only the safe action", async function () {
@@ -149,22 +151,31 @@ test("customer routes retain their method contracts", async function () {
   assert.deepEqual(participationRoute.body, { error: "Method not allowed" });
 });
 
-test("repository customer work query gates on approval and selects existing identity", async function () {
+test("repository customer work query returns only approved publishable work without public business identity", async function () {
   let sql;
   const repository = require("../api/_lib/persistence.js").createPersistenceRepository({
     async ensureSchema() {},
     async query(statement) {
       sql = statement;
-      return { rows: [{ campaign_id: "campaign-a", business_id: "business-a",
-        campaign: { campaignType: "social", campaignText: "Hello", approvalStatus: "Approved", evidence: "private" },
-        profile: { name: "North Star", location: "Leeds", goal: "private" } }] };
+      return { rows: [
+        { campaign_id: "campaign-a", business_id: "business-a",
+          campaign: { campaignType: "social", campaignText: "Hello", approvalStatus: "Approved", evidence: "private" },
+          profile: { name: "North Star", location: "Leeds", goal: "private" } },
+        { campaign_id: "campaign-draft", business_id: "business-a",
+          campaign: { campaignType: "social", campaignText: "Draft", approvalStatus: "Unapproved" },
+          profile: { name: "North Star", location: "Leeds" } },
+        { campaign_id: "campaign-unsupported", business_id: "business-a",
+          campaign: { campaignType: "video", campaignText: "Video", approvalStatus: "Approved" },
+          profile: { name: "North Star", location: "Leeds" } }
+      ] };
     }
   });
   const work = await repository.getCustomerWork();
   assert.match(sql, /JOIN demeos_businesses/);
   assert.match(sql, /approvalStatus.*Approved/);
-  assert.deepEqual(work[0], { workItemId: "campaign-a", businessId: "business-a", businessName: "North Star",
-    location: "Leeds", content: "Hello", participationAction: "Interested" });
+  assert.deepEqual(work, [{ workItemId: "campaign-a", businessName: "North Star",
+    location: "Leeds", content: "Hello", participationAction: "Interested" }]);
+  assert.equal("businessId" in work[0], false);
 });
 
 test("repository resolves participation business identity from the approved stored campaign", async function () {
