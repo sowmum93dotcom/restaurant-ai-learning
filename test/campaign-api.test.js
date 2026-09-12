@@ -148,6 +148,7 @@ test("approval retry restores a missing draft only through create-marketing perm
   ]);
   assert.deepEqual(result.savedCampaigns, [{
     ...campaign,
+    campaignTypeLabel: "Social Media Campaign",
     id: "campaign-a",
     businessId: "business-a",
     approvalStatus: "Unapproved"
@@ -236,7 +237,12 @@ test("an authenticated owner can create marketing for their own business", async
 
   assert.equal(result.response.statusCode, 204);
   assert.equal(result.response.ended, true);
-  assert.deepEqual(result.savedCampaigns, [{ ...campaign, id: "campaign-a", businessId: "business-a" }]);
+  assert.deepEqual(result.savedCampaigns, [{
+    ...campaign,
+    campaignTypeLabel: "Social Media Campaign",
+    id: "campaign-a",
+    businessId: "business-a"
+  }]);
   assert.equal(result.authorizationCalls.length, 1);
   assert.equal(result.authorizationCalls[0].req, result.request);
   assert.equal(result.authorizationCalls[0].businessId, "business-a");
@@ -273,7 +279,7 @@ test("approval recovery fails safely without retrying approval when persistence 
   assert.deepEqual(result.approvalCalls, [["business-a", "campaign-a"]]);
 });
 
-test("all campaign types currently available from the capability registry can be persisted", async function () {
+test("campaign types persist their registry-authoritative owner-facing labels", async function () {
   const campaignTypes = require(capabilityRegistryPath).getRecommendationCapabilities().map(function (capability) {
     return capability.supportedOutputType;
   });
@@ -281,12 +287,22 @@ test("all campaign types currently available from the capability registry can be
   assert.equal(campaignTypes.includes("social"), true);
   assert.equal(campaignTypes.includes("email"), true);
 
+  const expectedLabels = {
+    full: "Full Marketing Campaign",
+    social: "Social Media Campaign",
+    email: "Email Campaign"
+  };
   for (const campaignType of campaignTypes) {
-    const campaign = completeCampaign({ campaignType });
+    const campaign = completeCampaign({ campaignType, campaignTypeLabel: "Spoofed browser label" });
     const result = await invoke({ campaign });
 
     assert.equal(result.response.statusCode, 204);
-    assert.deepEqual(result.savedCampaigns, [{ ...campaign, id: "campaign-a", businessId: "business-a" }]);
+    assert.deepEqual(result.savedCampaigns, [{
+      ...campaign,
+      campaignTypeLabel: expectedLabels[campaignType],
+      id: "campaign-a",
+      businessId: "business-a"
+    }]);
   }
 });
 
