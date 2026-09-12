@@ -1,5 +1,10 @@
 const { resolveTrustedIdentityFromRequest } = require("./_lib/demeos-authentication.js");
 const { getRepository } = require("./_lib/persistence.js");
+const {
+  DEMEOS_ACTOR_SCOPES,
+  DEMEOS_ACTIONS,
+  canPerformDemeosAction
+} = require("./_lib/demeos-rules.js");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "GET") {
@@ -9,6 +14,12 @@ module.exports = async function handler(req, res) {
 
   const identity = await resolveTrustedIdentityFromRequest(req);
   if (!identity) return res.status(401).json({ error: "Authentication required." });
+
+  const allowed = canPerformDemeosAction({
+    actorScope: DEMEOS_ACTOR_SCOPES.BUSINESS_OWNER,
+    action: DEMEOS_ACTIONS.VIEW_OWN_BUSINESS_RESULTS
+  });
+  if (!allowed) return res.status(403).json({ error: "Forbidden." });
 
   try {
     const businesses = await getRepository().getOwnedBusinessProfiles(identity.trustedIdentityId);
