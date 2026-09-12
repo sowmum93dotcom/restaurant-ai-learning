@@ -5,6 +5,7 @@ const {
 const { DEMEOS_ACTIONS } = require("../../../../_lib/demeos-rules.js");
 
 const allowedOutcomes = ["Positive", "Mixed", "No noticeable result", "Not used yet"];
+const ownerNoteMaximumLength = 1000;
 
 module.exports = async function handler(req, res) {
   if (req.method !== "PUT") {
@@ -37,7 +38,9 @@ module.exports = async function handler(req, res) {
     const ownerNote = req.body && req.body.ownerNote;
     if (
       !allowedOutcomes.includes(selectedOutcome) ||
-      (ownerNote !== undefined && typeof ownerNote !== "string")
+      (ownerNote !== undefined && (
+        typeof ownerNote !== "string" || ownerNote.length > ownerNoteMaximumLength
+      ))
     ) {
       return res.status(400).json({ error: "DEMEOS received invalid campaign outcome data." });
     }
