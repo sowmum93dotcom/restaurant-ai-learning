@@ -26,7 +26,7 @@ class Element {
   setAttribute() {} focus() { this.focusCount += 1; } scrollIntoView() {}
 }
 
-function setup(campaigns = [], decisions = []) {
+function setup(campaigns = [], decisions = [], decisionResponseOk = true) {
   const profiles = [
     { businessId: "a", name: "Alpha", type: "Studio", location: "York", brandVoice: "Friendly", targetCustomer: "Families", goal: "Awareness" },
     { businessId: "b", name: "Beta", type: "Accountant", location: "Bath", brandVoice: "Formal", targetCustomer: "Founders", goal: "Enquiries" }
@@ -49,12 +49,64 @@ function setup(campaigns = [], decisions = []) {
     fetch: async (url, options = {}) => {
       if (url === "/api/recommend") { recommendBodies.push(JSON.parse(options.body)); return { ok: true, status: 200, async text() { return JSON.stringify(recommendations); } }; }
       if (url === "/api/generate") { generateCalls += 1; return { ok: true, status: 200, async text() { return JSON.stringify({ campaign: "Campaign" }); } }; }
-      if (url.endsWith("/recommendation-decisions")) { decisionWrites.push({ url, body: JSON.parse(options.body) }); return { ok: true, status: 201 }; }
+      if (url.endsWith("/recommendation-decisions")) { decisionWrites.push({ url, body: JSON.parse(options.body) }); return { ok: decisionResponseOk, status: decisionResponseOk ? 201 : 500 }; }
       return { ok: false, status: 404, async json() { return {}; }, async text() { return "{}"; } };
     } };
   vm.runInNewContext(fs.readFileSync(require.resolve("../js/script.js"), "utf8"), context); document.ready();
-  return { document, elements, created, profiles, recommendBodies, decisionWrites, getGenerateCalls: () => generateCalls };
+  return { document, elements, created, profiles, recommendBodies, decisionWrites, store, getGenerateCalls: () => generateCalls };
 }
+
+test("Marketing Results includes Recommendation Decisions with its owner-choice explanation and empty state", () => {
+  assert.match(html, /<h3 id="recommendation-decisions-results-heading">Recommendation Decisions<\/h3>/);
+  assert.match(html, /Your recorded choices about DEMEOS recommendations\. These are owner decisions, not campaign performance results\./);
+  assert.match(html, /id="recommendation-decisions-results-empty">No recommendation decisions recorded yet\./);
+  assert.match(html, /id="recommendation-decisions-results-list"/);
+  assert.ok(html.indexOf("Campaign Outcomes") < html.indexOf("Recommendation Decisions"));
+  assert.ok(html.indexOf("Recommendation Decisions") < html.indexOf("Participation Signals"));
+  const app = setup();
+  assert.equal(app.document.getElementById("recommendation-decisions-results-empty").hidden, false);
+  assert.equal(app.document.getElementById("recommendation-decisions-results-list").children.length, 0);
+});
+
+test("Recommendation Decisions renders only valid active-business owner choices with friendly labels", () => {
+  const decisions = [
+    { businessId: "a", recommendationTitle: "Welcome families", suggestedCampaignType: "full", decision: "used", timestamp: "2026-09-10T10:00:00.000Z" },
+    { businessId: "a", recommendationTitle: "Share lunch news", suggestedCampaignType: "social", decision: "modified", timestamp: "2026-09-11T11:00:00.000Z" },
+    { businessId: "a", recommendationTitle: "Email regulars", suggestedCampaignType: "email", decision: "rejected", timestamp: "2026-09-12T12:00:00.000Z" },
+    { businessId: "b", recommendationTitle: "Other business", suggestedCampaignType: "email", decision: "used", timestamp: "2026-09-12T13:00:00.000Z" },
+    { businessId: "a", recommendationTitle: "Bad campaign", suggestedCampaignType: "video", decision: "used", timestamp: "2026-09-12T14:00:00.000Z" },
+    { businessId: "a", recommendationTitle: "Bad decision", suggestedCampaignType: "email", decision: "successful", timestamp: "2026-09-12T15:00:00.000Z" },
+    { businessId: "a", recommendationTitle: "Bad date", suggestedCampaignType: "email", decision: "used", timestamp: "today" },
+    { businessId: "a", recommendationTitle: "   ", suggestedCampaignType: "email", decision: "used", timestamp: "2026-09-12T16:00:00.000Z" }
+  ];
+  const app = setup([], decisions);
+  const list = app.document.getElementById("recommendation-decisions-results-list");
+  assert.equal(app.document.getElementById("recommendation-decisions-results-empty").hidden, true);
+  assert.equal(list.children.length, 3);
+  assert.deepEqual(list.children.map((item) => item.children.slice(0, 3).map((child) => child.textContent)), [
+    ["Email regulars", "Campaign type: Email Campaign", "Owner decision: Not for me"],
+    ["Share lunch news", "Campaign type: Social Media Campaign", "Owner decision: Modified"],
+    ["Welcome families", "Campaign type: Full Marketing Campaign", "Owner decision: Used"]
+  ]);
+  assert.equal(list.children[0].children[3].textContent,
+    `Decision date: ${new Date("2026-09-12T12:00:00.000Z").toLocaleString()}`);
+});
+
+test("persisted recommendation decisions appear immediately and failed writes do not appear", async () => {
+  const app = setup();
+  await app.document.getElementById("recommendations-btn").listeners.click();
+  await app.document.getElementById("recommendations-list").children[0].children[9].listeners.click();
+  const list = app.document.getElementById("recommendation-decisions-results-list");
+  assert.equal(list.children.length, 1);
+  assert.equal(list.children[0].children[0].textContent, "First");
+  assert.equal(list.children[0].children[2].textContent, "Owner decision: Used");
+
+  const failed = setup([], [], false);
+  await failed.document.getElementById("recommendations-btn").listeners.click();
+  await failed.document.getElementById("recommendations-list").children[0].children[9].listeners.click();
+  assert.equal(failed.document.getElementById("recommendation-decisions-results-list").children.length, 0);
+  assert.deepEqual(JSON.parse(failed.store.get("demeosRecommendationDecisions")), []);
+});
 
 test("recommendations use the active profile, show loading, render three, and populate controls without generating", async () => {
   const app = setup(); const button = app.document.getElementById("recommendations-btn");
