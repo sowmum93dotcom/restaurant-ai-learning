@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 
 const authorizationPath = require.resolve("../api/_lib/demeos-business-owner-authorization.js");
+const capabilityRegistryPath = require.resolve("../api/_lib/capability-registry.js");
 const persistencePath = require.resolve("../api/_lib/persistence.js");
 const handlerPath = require.resolve("../api/businesses/[businessId]/campaigns/[campaignId].js");
 
@@ -237,6 +238,78 @@ test("an authenticated owner can create marketing for their own business", async
   assert.equal(result.authorizationCalls[0].businessId, "business-a");
   assert.equal(result.authorizationCalls[0].action, "create-marketing");
   assert.equal(result.authorizationCalls[0].repository, result.repository);
+});
+
+test("all campaign types currently available from the capability registry can be persisted", async function () {
+  const campaignTypes = require(capabilityRegistryPath).getRecommendationCapabilities().map(function (capability) {
+    return capability.supportedOutputType;
+  });
+  assert.equal(campaignTypes.includes("full"), true);
+  assert.equal(campaignTypes.includes("social"), true);
+  assert.equal(campaignTypes.includes("email"), true);
+
+  for (const campaignType of campaignTypes) {
+    const campaign = completeCampaign({ campaignType });
+    const result = await invoke({ campaign });
+
+    assert.equal(result.response.statusCode, 204);
+    assert.deepEqual(result.savedCampaigns, [{ ...campaign, id: "campaign-a", businessId: "business-a" }]);
+  }
+});
+
+test("unsupported campaign types cannot be persisted", async function () {
+  for (const campaignType of ["video", "unknown", "loyalty", "browser-supplied-value"]) {
+    const result = await invoke({ campaign: completeCampaign({ campaignType }) });
+
+    assert.equal(result.response.statusCode, 400);
+    assert.deepEqual(result.response.body, { error: "DEMEOS received invalid campaign data." });
+    assert.deepEqual(result.savedCampaigns, []);
+    assert.deepEqual(result.approvalCalls, []);
+  }
+});
+
+test("unsupported approved campaign types are rejected before approval or recovery", async function () {
+  const result = await invoke({
+    campaign: completeCampaign({ campaignType: "video", approvalStatus: "Approved" }),
+    approvedCampaign: [null, { approvalStatus: "Approved" }]
+  });
+
+  assert.equal(result.response.statusCode, 400);
+  assert.deepEqual(result.response.body, { error: "DEMEOS received invalid campaign data." });
+  assert.deepEqual(result.approvalCalls, []);
+  assert.deepEqual(result.savedCampaigns, []);
+  assert.deepEqual(result.authorizationCalls.map(function (call) { return call.action; }), [
+    "approve-own-marketing"
+  ]);
+});
+
+test("valid campaign approval continues to use the stored campaign", async function () {
+  const result = await invoke({ campaign: completeCampaign({ campaignType: "email", approvalStatus: "Approved" }) });
+
+  assert.equal(result.response.statusCode, 204);
+  assert.deepEqual(result.approvalCalls, [["business-a", "campaign-a"]]);
+  assert.deepEqual(result.savedCampaigns, []);
+});
+
+test("authorization still precedes campaign type validation", async function () {
+  const result = await invoke({
+    campaign: completeCampaign({ campaignType: "unknown" }),
+    authenticated: true,
+    allowed: false
+  });
+
+  assert.equal(result.response.statusCode, 403);
+  assert.deepEqual(result.response.body, { error: "Forbidden." });
+  assert.equal(result.authorizationCalls.length, 1);
+  assert.deepEqual(result.savedCampaigns, []);
+});
+
+test("campaign type validation uses the shared capability registry without a duplicate type list", function () {
+  const source = require("node:fs").readFileSync(handlerPath, "utf8");
+
+  assert.match(source, /require\("\.\.\/\.\.\/\.\.\/_lib\/capability-registry\.js"\)/);
+  assert.match(source, /getCapabilityForRecommendationType\(campaign\.campaignType\)/);
+  assert.doesNotMatch(source, /\[\s*["']full["']\s*,\s*["']social["']\s*,\s*["']email["']\s*\]/);
 });
 
 test("an owner cannot create marketing for another business", async function () {
