@@ -177,10 +177,107 @@ function renderOwnerWorkspace(documentObject, storage) {
   });
 }
 
-function bindOwnerClerkSession(clerk, documentObject, storage, elements) {
+const unavailableOwnerNextAction = {
+  title: "Next action unavailable",
+  explanation: "DEMEOS could not confirm your current marketing state.",
+  action: "Open Marketing",
+  destination: "index.html"
+};
+
+function getTrustedOwnerNextAction(record, activeBusinessId) {
+  if (!record || typeof record !== "object" || Array.isArray(record) ||
+    !record.businessProfile || record.businessProfile.businessId !== activeBusinessId ||
+    !Array.isArray(record.campaigns)) return unavailableOwnerNextAction;
+
+  const campaigns = record.campaigns.filter(function (campaign) {
+    return campaign && typeof campaign === "object" && !Array.isArray(campaign) &&
+      campaign.businessId === activeBusinessId;
+  });
+  if (campaigns.some(function (campaign) { return campaign.approvalStatus === "Unapproved"; })) {
+    return {
+      title: "Review your campaign",
+      explanation: "Marketing work is waiting for your approval or revision.",
+      action: "Review Campaign",
+      destination: "index.html#campaigns"
+    };
+  }
+  if (campaigns.some(function (campaign) {
+    return campaign.approvalStatus === "Approved" &&
+      (!campaign.outcome || typeof campaign.outcome.outcome !== "string" ||
+        !campaign.outcome.outcome.trim() || campaign.outcome.outcome === "Not used yet");
+  })) {
+    return {
+      title: "Record what happened",
+      explanation: "Approved marketing is waiting for your real-world outcome before DEMEOS can learn from it.",
+      action: "Record Outcome",
+      destination: "index.html#campaigns"
+    };
+  }
+  const meaningfulOutcomes = new Set(["Positive", "Mixed", "No noticeable result"]);
+  if (campaigns.some(function (campaign) {
+    return campaign.outcome && meaningfulOutcomes.has(campaign.outcome.outcome);
+  })) {
+    return {
+      title: "Ask DEMEOS what to do next",
+      explanation: "DEMEOS can use your Business Profile, recorded outcomes and previous owner decisions to recommend the next marketing action.",
+      action: "Get Recommendations",
+      destination: "index.html#recommends"
+    };
+  }
+  if (!campaigns.length) {
+    return {
+      title: "Create your first marketing work",
+      explanation: "Your Business Profile is ready. Start supported marketing when you are ready.",
+      action: "Create Marketing",
+      destination: "index.html#create"
+    };
+  }
+  return unavailableOwnerNextAction;
+}
+
+function renderOwnerNextAction(documentObject, nextAction) {
+  const container = documentObject.getElementById("workspace-next-action");
+  if (!container) return;
+  container.replaceChildren();
+  const title = documentObject.createElement("strong");
+  const explanation = documentObject.createElement("p");
+  const action = documentObject.createElement("a");
+  title.textContent = nextAction.title;
+  explanation.textContent = nextAction.explanation;
+  action.textContent = nextAction.action;
+  action.href = nextAction.destination;
+  action.className = "demeos-primary-button owner-card-action";
+  container.append(title, explanation, action);
+}
+
+async function loadOwnerNextAction(documentObject, storage, fetchFunction) {
+  const activeBusinessId = storage && typeof storage.getItem === "function"
+    ? storage.getItem("demeosActiveBusinessId") : null;
+  if (!activeBusinessId || typeof fetchFunction !== "function") {
+    renderOwnerNextAction(documentObject, unavailableOwnerNextAction);
+    return unavailableOwnerNextAction;
+  }
+  try {
+    const response = await fetchFunction(`/api/businesses/${encodeURIComponent(activeBusinessId)}`, {
+      method: "GET", credentials: "same-origin"
+    });
+    if (!response.ok) throw new Error("Business record unavailable");
+    const nextAction = getTrustedOwnerNextAction(await response.json(), activeBusinessId);
+    renderOwnerNextAction(documentObject, nextAction);
+    return nextAction;
+  } catch (_error) {
+    renderOwnerNextAction(documentObject, unavailableOwnerNextAction);
+    return unavailableOwnerNextAction;
+  }
+}
+
+function bindOwnerClerkSession(clerk, documentObject, storage, elements, fetchFunction) {
   const update = function (auth) {
     if (auth && auth.user) {
       renderOwnerWorkspace(documentObject, storage);
+      if (typeof fetchFunction === "function") {
+        loadOwnerNextAction(documentObject, storage, fetchFunction);
+      }
       showOwnerAuthenticationState(elements, "signed-in");
       return;
     }
@@ -245,7 +342,7 @@ async function initialiseOwnerAuthentication(windowObject, documentObject, stora
       throw new Error("Clerk did not load");
     }
     await clerk.load({ ui: { ClerkUI: windowObject.__internal_ClerkUICtor } });
-    bindOwnerClerkSession(clerk, documentObject, storage, elements);
+    bindOwnerClerkSession(clerk, documentObject, storage, elements, fetchFunction);
   } catch (error) {
     showOwnerAuthenticationState(elements, "error");
   }
@@ -343,7 +440,7 @@ function installOwnerBusinessSecurity(windowObject, documentObject, localStorage
 
   const originalBindOwnerClerkSession = windowObject.bindOwnerClerkSession;
   if (typeof originalBindOwnerClerkSession === "function") {
-    windowObject.bindOwnerClerkSession = function (clerk, ownerDocument, storage, elements) {
+    windowObject.bindOwnerClerkSession = function (clerk, ownerDocument, storage, elements, fetchFunction) {
       const handleTrustedSessionChange = function (auth) {
         const user = auth && auth.user;
         const identityId = user && typeof user.id === "string" ? user.id : null;
@@ -374,7 +471,7 @@ function installOwnerBusinessSecurity(windowObject, documentObject, localStorage
 
       clerk.addListener(handleTrustedSessionChange);
       handleTrustedSessionChange({ user: clerk.user });
-      return originalBindOwnerClerkSession(clerk, ownerDocument, storage, elements);
+      return originalBindOwnerClerkSession(clerk, ownerDocument, storage, elements, fetchFunction);
     };
   }
 
@@ -404,6 +501,7 @@ if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     getOwnerWorkspaceContext, migrateWorkspaceBusinessContext, showOwnerAuthenticationState,
     renderOwnerWorkspace, bindOwnerClerkSession, initialiseOwnerAuthentication,
+    getTrustedOwnerNextAction, renderOwnerNextAction, loadOwnerNextAction,
     getOwnerNavigationSection, updateOwnerNavigation, syncOwnerWorkspaceFromLocation,
     readOwnerPendingSyncIds, mergeServerAuthorizedProfiles, getStickyNewBusinessId, clearStickyNewBusinessId
   };
