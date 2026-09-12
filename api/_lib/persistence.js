@@ -138,12 +138,16 @@ function createPersistenceRepository(database) {
 
     async saveCampaign(campaign) {
       await database.ensureSchema();
-      await database.query(
+      const result = await database.query(
         `INSERT INTO demeos_campaigns (campaign_id, business_id, campaign)
          VALUES ($1, $2, $3::jsonb)
          ON CONFLICT (campaign_id) DO UPDATE SET campaign = EXCLUDED.campaign, updated_at = NOW()
-         WHERE demeos_campaigns.business_id = EXCLUDED.business_id`,
+         WHERE demeos_campaigns.business_id = EXCLUDED.business_id
+         RETURNING campaign`,
         [campaign.id, campaign.businessId, JSON.stringify(campaign)]);
+      return result.rows.length
+        ? { ...result.rows[0].campaign, id: campaign.id, businessId: campaign.businessId }
+        : null;
     },
 
     async approveCampaign(businessId, campaignId) {

@@ -34,7 +34,8 @@ function completeCampaign(overrides) {
 async function invoke({
   method = "PUT", businessId = "business-a", campaignId = "campaign-a",
   campaign = completeCampaign(), authenticated = true, allowed = true,
-  createAllowed = allowed, approvedCampaign = { approvalStatus: "Approved" }
+  createAllowed = allowed, approvedCampaign = { approvalStatus: "Approved" },
+  saveCampaignResult
 } = {}) {
   const authorization = require(authorizationPath);
   const persistence = require(persistencePath);
@@ -44,7 +45,10 @@ async function invoke({
   const savedCampaigns = [];
   const approvalCalls = [];
   const repository = {
-    async saveCampaign(savedCampaign) { savedCampaigns.push(savedCampaign); },
+    async saveCampaign(savedCampaign) {
+      savedCampaigns.push(savedCampaign);
+      return saveCampaignResult === undefined ? savedCampaign : saveCampaignResult;
+    },
     async approveCampaign(approvedBusinessId, approvedCampaignId) {
       approvalCalls.push([approvedBusinessId, approvedCampaignId]);
       if (Array.isArray(approvedCampaign)) {
@@ -238,6 +242,35 @@ test("an authenticated owner can create marketing for their own business", async
   assert.equal(result.authorizationCalls[0].businessId, "business-a");
   assert.equal(result.authorizationCalls[0].action, "create-marketing");
   assert.equal(result.authorizationCalls[0].repository, result.repository);
+});
+
+test("campaign creation reports a conflict when persistence rejects the business", async function () {
+  const result = await invoke({ saveCampaignResult: null });
+
+  assert.equal(result.response.statusCode, 409);
+  assert.equal(result.response.ended, false);
+  assert.deepEqual(result.response.body, {
+    error: "Campaign could not be saved for this business."
+  });
+  assert.equal(result.savedCampaigns.length, 1);
+});
+
+test("approval recovery fails safely without retrying approval when persistence is rejected", async function () {
+  const result = await invoke({
+    campaign: completeCampaign({ approvalStatus: "Approved" }),
+    approvedCampaign: null,
+    saveCampaignResult: null
+  });
+
+  assert.equal(result.response.statusCode, 404);
+  assert.deepEqual(result.response.body, {
+    error: "Campaign was not found for this business."
+  });
+  assert.deepEqual(result.authorizationCalls.map(function (call) { return call.action; }), [
+    "approve-own-marketing", "create-marketing"
+  ]);
+  assert.equal(result.savedCampaigns.length, 1);
+  assert.deepEqual(result.approvalCalls, [["business-a", "campaign-a"]]);
 });
 
 test("all campaign types currently available from the capability registry can be persisted", async function () {
