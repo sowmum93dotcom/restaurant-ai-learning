@@ -5,6 +5,7 @@ const authorizationPath = require.resolve("../api/_lib/demeos-business-owner-aut
 const authenticationPath = require.resolve("../api/_lib/demeos-authentication.js");
 const persistencePath = require.resolve("../api/_lib/persistence.js");
 const handlerPath = require.resolve("../api/businesses/[businessId].js");
+const { DEMEOS_ACTIONS } = require("../api/_lib/demeos-rules.js");
 
 function createResponse() {
   return {
@@ -37,9 +38,13 @@ async function invoke({
   const identityCalls = [];
   const savedProfiles = [];
   const createdBusinesses = [];
+  const knownBusinessReads = [];
   const repository = {
     async isBusinessOwnedByIdentity() { throw new Error("gateway should own the lookup"); },
-    async getKnownBusiness(id) { return knownBusiness && { ...knownBusiness, businessId: id }; },
+    async getKnownBusiness(id) {
+      knownBusinessReads.push(id);
+      return knownBusiness && { ...knownBusiness, businessId: id };
+    },
     async saveBusiness(profile) { savedProfiles.push(profile); },
     async createBusinessForOwner(identity, profile) {
       createdBusinesses.push({ identity, profile });
@@ -73,15 +78,20 @@ async function invoke({
     persistence.getRepository = originalGetRepository;
     delete require.cache[handlerPath];
   }
-  return { response, request, repository, authorizationCalls, identityCalls, savedProfiles, createdBusinesses };
+  return {
+    response, request, repository, authorizationCalls, identityCalls, savedProfiles,
+    createdBusinesses, knownBusinessReads
+  };
 }
 
 test("unauthenticated profile GET and PUT requests return 401", async function () {
   for (const method of ["GET", "PUT"]) {
     const result = await invoke({ method, body: { businessProfile: completeProfile() }, authenticated: false, allowed: false });
     assert.equal(result.response.statusCode, 401);
+    assert.deepEqual(result.response.body, { error: "Authentication required." });
     assert.deepEqual(result.savedProfiles, []);
     assert.deepEqual(result.createdBusinesses, []);
+    assert.deepEqual(result.knownBusinessReads, []);
   }
 });
 
@@ -89,7 +99,9 @@ test("an authenticated non-owner cannot GET or overwrite an existing business pr
   for (const method of ["GET", "PUT"]) {
     const result = await invoke({ method, body: { businessProfile: completeProfile() }, allowed: false, createAllowed: false });
     assert.equal(result.response.statusCode, 403);
+    assert.deepEqual(result.response.body, { error: "Forbidden." });
     assert.deepEqual(result.savedProfiles, []);
+    assert.deepEqual(result.knownBusinessReads, []);
   }
 });
 
@@ -99,8 +111,9 @@ test("an authenticated owner can GET their own business profile", async function
   assert.equal(result.response.body.businessId, "business-a");
   assert.equal(result.authorizationCalls[0].businessId, "business-a");
   assert.equal(result.authorizationCalls[0].repository, result.repository);
-  assert.equal(result.authorizationCalls[0].action, "manage-business-profile");
+  assert.equal(result.authorizationCalls[0].action, DEMEOS_ACTIONS.VIEW_OWN_BUSINESS_RESULTS);
   assert.equal(result.authorizationCalls[0].req, result.request);
+  assert.deepEqual(result.knownBusinessReads, ["business-a"]);
 });
 
 test("an authenticated owner can PUT their own valid profile", async function () {
@@ -110,6 +123,7 @@ test("an authenticated owner can PUT their own valid profile", async function ()
   assert.equal(result.response.ended, true);
   assert.deepEqual(result.savedProfiles, [{ ...profile, businessId: "business-a" }]);
   assert.deepEqual(result.createdBusinesses, []);
+  assert.equal(result.authorizationCalls[0].action, DEMEOS_ACTIONS.MANAGE_BUSINESS_PROFILE);
 });
 
 test("a signed-in user can create a brand-new business and receive first ownership atomically", async function () {
@@ -131,6 +145,23 @@ test("an owner cannot access another business", async function () {
   const result = await invoke({ businessId: "business-b", allowed: false });
   assert.equal(result.response.statusCode, 403);
   assert.equal(result.authorizationCalls[0].businessId, "business-b");
+  assert.deepEqual(result.knownBusinessReads, []);
+});
+
+test("spoofed GET identities cannot bypass ownership of the route business", async function () {
+  const result = await invoke({
+    businessId: "business-b",
+    allowed: false,
+    body: { trustedIdentityId: "owner-b", userId: "owner-b", actorScope: "business-owner" }
+  });
+
+  assert.equal(result.response.statusCode, 403);
+  assert.deepEqual(result.response.body, { error: "Forbidden." });
+  assert.equal(result.authorizationCalls[0].businessId, "business-b");
+  assert.equal(result.authorizationCalls[0].req, result.request);
+  assert.equal(Object.hasOwn(result.authorizationCalls[0], "trustedIdentityId"), false);
+  assert.equal(Object.hasOwn(result.authorizationCalls[0], "actorScope"), false);
+  assert.deepEqual(result.knownBusinessReads, []);
 });
 
 test("spoofed identity, actor scope, and browser state cannot claim an existing business", async function () {
