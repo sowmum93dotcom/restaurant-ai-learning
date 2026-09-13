@@ -46,9 +46,9 @@ test("Business Owner Overview provides a privacy-safe public-entry action below 
 
 test("Customer Experience has its clear public identity without an owner authentication boundary", function () {
   const html = read("customer.html");
-  assert.match(html, /<p class="customer-eyebrow">DEMEOS Customer Experience<\/p>/);
-  assert.match(html, /<h1 id="customer-title">Discover approved work from DEMEOS businesses<\/h1>/);
-  assert.match(html, /Explore customer-facing work businesses have chosen to publish through DEMEOS\./);
+  assert.match(html, /<p class="customer-eyebrow">DEMEOS Customer Interface<\/p>/);
+  assert.match(html, /<h1 id="customer-title">A clearer way to discover what businesses share<\/h1>/);
+  assert.match(html, /Explore approved public work, understand its context/);
   assert.doesNotMatch(html, /owner-auth|owner-sign-in|business-workspace\.js|clerk/i);
   assert.match(html, /<script src="js\/customer\.js"><\/script>/);
 });
@@ -56,9 +56,11 @@ test("Customer Experience has its clear public identity without an owner authent
 test("public customer requests retain the minimized server-authoritative contract", function () {
   const source = read("js/customer.js");
   assert.match(source, /fetcher\("\/api\/customer\/work"\)/);
+  assert.match(source, /Array\.isArray\(data\.customerPackages\)/);
   assert.match(source, /`\/api\/customer\/work\/\$\{encodeURIComponent\(work\.workItemId\)\}\/participation`/);
   assert.match(source, /body: JSON\.stringify\(\{ action: work\.participationAction \}\)/);
   assert.doesNotMatch(source, /businessId|ownerId|campaignId|localStorage/);
   assert.match(source, /Nothing to discover just yet/);
   assert.match(source, /DEMEOS could not load approved work\. Please try again\./);
+  assert.doesNotMatch(source, /localStorage|URLSearchParams|location\.search/);
 });
