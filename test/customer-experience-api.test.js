@@ -151,31 +151,55 @@ test("customer routes retain their method contracts", async function () {
   assert.deepEqual(participationRoute.body, { error: "Method not allowed" });
 });
 
-test("repository customer work query returns only approved publishable work without public business identity", async function () {
+test("repository customer work fills public slots with the newest publishable approved campaigns", async function () {
   let sql;
+  const row = function (campaignId, campaign) {
+    return { campaign_id: campaignId, business_id: "business-a", campaign,
+      profile: { name: "North Star", location: "Leeds", goal: "private" } };
+  };
+  const approvedSocial = function (campaignId) {
+    return row(campaignId, { campaignType: "social", campaignText: `Content for ${campaignId}`,
+      approvalStatus: "Approved", evidence: "private" });
+  };
+  const storedRows = [
+    row("campaign-draft", { campaignType: "social", campaignText: "Draft", approvalStatus: "Unapproved" }),
+    approvedSocial("campaign-newest-publishable"),
+    ...Array.from({ length: 18 }, function (_, index) {
+      return row(`campaign-unsupported-${index}`, {
+        campaignType: "video", campaignText: "Video", approvalStatus: "Approved"
+      });
+    }),
+    ...Array.from({ length: 20 }, function (_, index) {
+      return approvedSocial(`campaign-publishable-${index + 1}`);
+    })
+  ];
   const repository = require("../api/_lib/persistence.js").createPersistenceRepository({
     async ensureSchema() {},
     async query(statement) {
       sql = statement;
-      return { rows: [
-        { campaign_id: "campaign-a", business_id: "business-a",
-          campaign: { campaignType: "social", campaignText: "Hello", approvalStatus: "Approved", evidence: "private" },
-          profile: { name: "North Star", location: "Leeds", goal: "private" } },
-        { campaign_id: "campaign-draft", business_id: "business-a",
-          campaign: { campaignType: "social", campaignText: "Draft", approvalStatus: "Unapproved" },
-          profile: { name: "North Star", location: "Leeds" } },
-        { campaign_id: "campaign-unsupported", business_id: "business-a",
-          campaign: { campaignType: "video", campaignText: "Video", approvalStatus: "Approved" },
-          profile: { name: "North Star", location: "Leeds" } }
-      ] };
+      const approvedRows = storedRows.filter(function (storedRow) {
+        return storedRow.campaign.approvalStatus === "Approved";
+      });
+      return { rows: /LIMIT 20/.test(statement) ? approvedRows.slice(0, 20) : approvedRows };
     }
   });
   const work = await repository.getCustomerWork();
   assert.match(sql, /JOIN demeos_businesses/);
   assert.match(sql, /approvalStatus.*Approved/);
-  assert.deepEqual(work, [{ workItemId: "campaign-a", businessName: "North Star",
-    location: "Leeds", content: "Hello", participationAction: "Interested" }]);
-  assert.equal("businessId" in work[0], false);
+  assert.match(sql, /ORDER BY c\.updated_at DESC/);
+  assert.doesNotMatch(sql, /LIMIT 20/);
+  assert.equal(work.length, 20);
+  assert.deepEqual(work.map(function (item) { return item.workItemId; }), [
+    "campaign-newest-publishable",
+    ...Array.from({ length: 19 }, function (_, index) { return `campaign-publishable-${index + 1}`; })
+  ]);
+  assert.equal(work.some(function (item) { return item.workItemId === "campaign-draft"; }), false);
+  work.forEach(function (item) {
+    assert.deepEqual(Object.keys(item).sort(), [
+      "businessName", "content", "location", "participationAction", "workItemId"
+    ]);
+    assert.equal("businessId" in item, false);
+  });
 });
 
 test("repository resolves participation business identity from the approved stored campaign", async function () {
