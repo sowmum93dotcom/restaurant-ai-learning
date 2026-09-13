@@ -191,12 +191,12 @@ function createPersistenceRepository(database) {
       const result = await database.query(
         `SELECT c.campaign_id, c.business_id, c.campaign, b.profile FROM demeos_campaigns c
          JOIN demeos_businesses b ON b.business_id = c.business_id
-         WHERE c.campaign->>'approvalStatus' = 'Approved' ORDER BY c.updated_at DESC LIMIT 20`);
+         WHERE c.campaign->>'approvalStatus' = 'Approved' ORDER BY c.updated_at DESC`);
       return result.rows.map(function (row) {
         if (!canPublishToDemeosCustomerExperience(row.campaign)) return null;
         return { workItemId: row.campaign_id, businessName: row.profile.name,
           location: row.profile.location, content: getCustomerFacingContent(row.campaign), participationAction: "Interested" };
-      }).filter(Boolean);
+      }).filter(Boolean).slice(0, 20);
     },
 
     async recordCustomerParticipation(campaignId, action) {
