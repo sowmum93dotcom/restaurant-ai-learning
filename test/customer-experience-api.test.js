@@ -106,6 +106,41 @@ test("customer feed returns only the deliberately public work shape", async func
   assert.doesNotMatch(JSON.stringify(res.body), /businessId/);
 });
 
+test("customer feed excludes malformed repository items and minimizes every returned item", async function () {
+  const valid = { workItemId: " campaign-a ", businessName: " North Star ", location: "  Leeds  ",
+    content: " Come and see us. ", participationAction: "Interested", businessId: "private",
+    evidence: "private", recommendation: "private" };
+  const malformed = [
+    { ...valid, workItemId: "" },
+    { ...valid, businessName: undefined },
+    { ...valid, content: null },
+    { ...valid, content: ["not public text"] },
+    { ...valid, businessName: { name: "not public text" } },
+    { ...valid, participationAction: "Purchase" }
+  ];
+  const res = await runHandler("../api/customer/work.js", {
+    async getCustomerWork() { return [valid, ...malformed]; }
+  }, { method: "GET" });
+
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(res.body, { work: [{ workItemId: "campaign-a", businessName: "North Star",
+    location: "Leeds", content: "Come and see us.", participationAction: "Interested" }], customerPackages: [] });
+  assert.doesNotMatch(JSON.stringify(res.body), /private|Purchase|not public text/);
+});
+
+test("one malformed repository item does not fail the customer response and blank location is omitted", async function () {
+  const res = await runHandler("../api/customer/work.js", {
+    async getCustomerWork() {
+      return [null, { workItemId: "campaign-a", businessName: "North Star", location: "  ",
+        content: "Public content", participationAction: "Interested" }];
+    }
+  }, { method: "GET" });
+
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(res.body.work, [{ workItemId: "campaign-a", businessName: "North Star",
+    content: "Public content", participationAction: "Interested" }]);
+});
+
 test("customer package availability has an explicit server-owned empty boundary", async function () {
   const res = await runHandler("../api/customer/work.js", {
     async getCustomerWork() { return []; }

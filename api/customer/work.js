@@ -4,6 +4,7 @@ const {
   DEMEOS_ACTIONS,
   canPerformDemeosAction
 } = require("../_lib/demeos-rules.js");
+const { getValidPublicCustomerWork } = require("../_lib/customer-public-work-contract.js");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "GET") {
@@ -17,8 +18,9 @@ module.exports = async function handler(req, res) {
     return res.status(403).json({ error: "DEMEOS permission denied." });
   }
   try {
+    const work = await getRepository().getCustomerWork();
     return res.status(200).json({
-      work: await getRepository().getCustomerWork(),
+      work: getValidPublicCustomerWork(work),
       // Customer package availability is server-owned. No package definitions exist yet.
       customerPackages: []
     });

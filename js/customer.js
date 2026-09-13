@@ -6,6 +6,29 @@ function addText(document, parent, tag, className, text) {
   return element;
 }
 
+function normalizedRequiredString(value) {
+  if (typeof value !== "string") return null;
+  const normalized = value.trim();
+  return normalized || null;
+}
+
+function toCustomerWorkItem(item) {
+  if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+  const workItemId = normalizedRequiredString(item.workItemId);
+  const businessName = normalizedRequiredString(item.businessName);
+  const content = normalizedRequiredString(item.content);
+  if (!workItemId || !businessName || !content || item.participationAction !== "Interested") return null;
+
+  const publicItem = { workItemId, businessName, content, participationAction: "Interested" };
+  if (typeof item.location === "string" && item.location.trim()) publicItem.location = item.location.trim();
+  return publicItem;
+}
+
+function getValidCustomerWork(work) {
+  if (!Array.isArray(work)) return [];
+  return work.map(toCustomerWorkItem).filter(Boolean);
+}
+
 function createCustomerWorkCard(document, work, customerPackages, recordParticipation, anchorJourney) {
   const card = document.createElement("article");
   card.className = "customer-work-card";
@@ -73,10 +96,14 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
 }
 
 async function recordParticipation(work) {
-  const response = await fetch(`/api/customer/work/${encodeURIComponent(work.workItemId)}/participation`, {
+  const workItemId = work && normalizedRequiredString(work.workItemId);
+  if (!workItemId || work.participationAction !== "Interested") {
+    throw new Error("DEMEOS could not share your interest. Please try again.");
+  }
+  const response = await fetch(`/api/customer/work/${encodeURIComponent(workItemId)}/participation`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action: work.participationAction })
+    body: JSON.stringify({ action: "Interested" })
   });
   if (!response.ok) throw new Error("DEMEOS could not share your interest. Please try again.");
 }
@@ -85,15 +112,17 @@ function renderCustomerWork(document, work, customerPackages, participationRecor
   const status = document.getElementById("customer-work-status");
   const list = document.getElementById("customer-work-list");
   list.textContent = "";
-  if (!work.length) {
+  const validWork = getValidCustomerWork(work);
+  const validPackages = Array.isArray(customerPackages) ? customerPackages : [];
+  if (!validWork.length) {
     status.className = "customer-empty-state";
     status.innerHTML = "<strong>Nothing to discover just yet</strong><span>No approved customer work is available. Please check back soon.</span>";
     return;
   }
   status.textContent = "";
   status.className = "customer-work-status";
-  work.forEach(function (item, index) {
-    list.appendChild(createCustomerWorkCard(document, item, customerPackages, participationRecorder, index === 0));
+  validWork.forEach(function (item, index) {
+    list.appendChild(createCustomerWorkCard(document, item, validPackages, participationRecorder, index === 0));
   });
 }
 
@@ -106,7 +135,7 @@ async function loadCustomerWork(document, fetcher) {
   try {
     const response = await fetcher("/api/customer/work");
     const data = await response.json();
-    if (!response.ok || !Array.isArray(data.work) || !Array.isArray(data.customerPackages)) throw new Error();
+    if (!response.ok || !data || !Array.isArray(data.work)) throw new Error();
     renderCustomerWork(document, data.work, getServerCustomerPackages(data), recordParticipation);
   } catch (error) {
     status.className = "customer-empty-state customer-load-error";
@@ -115,7 +144,8 @@ async function loadCustomerWork(document, fetcher) {
 }
 
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { createCustomerWorkCard, getServerCustomerPackages, loadCustomerWork, recordParticipation, renderCustomerWork };
+  module.exports = { createCustomerWorkCard, getServerCustomerPackages, getValidCustomerWork, loadCustomerWork,
+    recordParticipation, renderCustomerWork, toCustomerWorkItem };
 }
 
 if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", function () {

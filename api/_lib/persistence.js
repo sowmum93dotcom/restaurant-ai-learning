@@ -3,6 +3,7 @@ const {
   canPublishToDemeosCustomerExperience,
   getCustomerFacingContent
 } = require("./customer-publication-rules.js");
+const { toPublicCustomerWorkItem } = require("./customer-public-work-contract.js");
 
 function createPersistenceRepository(database) {
   function isNonEmptyString(value) {
@@ -202,8 +203,15 @@ function createPersistenceRepository(database) {
            LIMIT $1 OFFSET $2`, [pageSize, offset]);
         for (const row of result.rows) {
           if (!canPublishToDemeosCustomerExperience(row.campaign)) continue;
-          publicWork.push({ workItemId: row.campaign_id, businessName: row.profile.name,
-            location: row.profile.location, content: getCustomerFacingContent(row.campaign), participationAction: "Interested" });
+          const publicItem = toPublicCustomerWorkItem({
+            workItemId: row.campaign_id,
+            businessName: row.profile && row.profile.name,
+            location: row.profile && row.profile.location,
+            content: getCustomerFacingContent(row.campaign),
+            participationAction: "Interested"
+          });
+          if (!publicItem) continue;
+          publicWork.push(publicItem);
           if (publicWork.length === 20) break;
         }
         if (result.rows.length < pageSize) break;

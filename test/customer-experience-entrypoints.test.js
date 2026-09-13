@@ -57,8 +57,8 @@ test("public customer requests retain the minimized server-authoritative contrac
   const source = read("js/customer.js");
   assert.match(source, /fetcher\("\/api\/customer\/work"\)/);
   assert.match(source, /Array\.isArray\(data\.customerPackages\)/);
-  assert.match(source, /`\/api\/customer\/work\/\$\{encodeURIComponent\(work\.workItemId\)\}\/participation`/);
-  assert.match(source, /body: JSON\.stringify\(\{ action: work\.participationAction \}\)/);
+  assert.match(source, /`\/api\/customer\/work\/\$\{encodeURIComponent\(workItemId\)\}\/participation`/);
+  assert.match(source, /body: JSON\.stringify\(\{ action: "Interested" \}\)/);
   assert.doesNotMatch(source, /businessId|ownerId|campaignId|localStorage/);
   assert.match(source, /Nothing to discover just yet/);
   assert.match(source, /DEMEOS could not load approved work\. Please try again\./);
