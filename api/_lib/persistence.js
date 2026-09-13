@@ -188,15 +188,28 @@ function createPersistenceRepository(database) {
 
     async getCustomerWork() {
       await database.ensureSchema();
-      const result = await database.query(
-        `SELECT c.campaign_id, c.business_id, c.campaign, b.profile FROM demeos_campaigns c
-         JOIN demeos_businesses b ON b.business_id = c.business_id
-         WHERE c.campaign->>'approvalStatus' = 'Approved' ORDER BY c.updated_at DESC`);
-      return result.rows.map(function (row) {
-        if (!canPublishToDemeosCustomerExperience(row.campaign)) return null;
-        return { workItemId: row.campaign_id, businessName: row.profile.name,
-          location: row.profile.location, content: getCustomerFacingContent(row.campaign), participationAction: "Interested" };
-      }).filter(Boolean).slice(0, 20);
+      const pageSize = 50;
+      const publicWork = [];
+      let offset = 0;
+      while (publicWork.length < 20) {
+        const result = await database.query(
+          `SELECT c.campaign_id, c.business_id, c.campaign, b.profile FROM demeos_campaigns c
+           JOIN demeos_businesses b ON b.business_id = c.business_id
+           WHERE c.campaign->>'approvalStatus' = 'Approved'
+             AND c.campaign->>'campaignType' IN ('full', 'social', 'email')
+             AND COALESCE(BTRIM(c.campaign->>'campaignText'), '') <> ''
+           ORDER BY c.updated_at DESC, c.campaign_id DESC
+           LIMIT $1 OFFSET $2`, [pageSize, offset]);
+        for (const row of result.rows) {
+          if (!canPublishToDemeosCustomerExperience(row.campaign)) continue;
+          publicWork.push({ workItemId: row.campaign_id, businessName: row.profile.name,
+            location: row.profile.location, content: getCustomerFacingContent(row.campaign), participationAction: "Interested" });
+          if (publicWork.length === 20) break;
+        }
+        if (result.rows.length < pageSize) break;
+        offset += pageSize;
+      }
+      return publicWork;
     },
 
     async recordCustomerParticipation(campaignId, action) {
