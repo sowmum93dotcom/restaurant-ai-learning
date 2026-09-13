@@ -977,12 +977,17 @@ footer { background: #081f3d; color: #c4cfdb; text-align: center; }
 .owner-workspace-navigation a { padding: .9rem 1rem; border-left: 3px solid transparent; color: #cbd6e2; font-size: .92rem; font-weight: 700; text-decoration: none; }
 .owner-workspace-navigation a:hover, .owner-workspace-navigation a:focus { color: #fff; background: rgba(255,255,255,.07); }
 .owner-workspace-navigation a.is-active { border-left-color: #d2ad58; background: rgba(210,173,88,.12); color: #f3d98e; }
+.owner-workspace-navigation .owner-public-destination { margin-top: .8rem; padding-top: 1.15rem; border-top: 1px solid rgba(255,255,255,.2); color: #f3d98e; }
+.owner-workspace-navigation .owner-public-destination:hover, .owner-workspace-navigation .owner-public-destination:focus { background: rgba(210,173,88,.12); color: #fff; }
 .owner-workspace-main { max-width: none; width: 100%; margin: 0; padding: clamp(2rem, 5vw, 4.5rem); background: #f7f8fa; }
 .owner-overview-heading { display: flex; justify-content: space-between; align-items: end; gap: 2rem; margin-bottom: 2rem; }
 .owner-overview-heading h2 { margin: .2rem 0 .45rem; color: #102a52; font-family: Georgia, serif; font-size: clamp(2rem, 4vw, 3.2rem); font-weight: 500; }
 .owner-overview-heading > div > p:last-child { max-width: 650px; color: #657286; }
 .owner-private-mark { flex: none; padding: .45rem .7rem; border: 1px solid #d7c28b; color: #72591f; font-size: .7rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
 .owner-identity-card, .owner-next-action, .owner-current-work { padding: clamp(1.5rem, 3vw, 2.25rem); border: 1px solid #dbe1e8; border-top: 4px solid #c8a24a; background: #fff; box-shadow: 0 10px 30px rgba(16,42,82,.07); }
+.owner-customer-experience-card { margin-top: 1.5rem; padding: 1.5rem; border: 1px solid #cad5e1; background: #eef3f8; }
+.owner-customer-experience-card h3 { margin: .15rem 0 .55rem; color: #102a52; font-family: Georgia, serif; font-size: 1.45rem; font-weight: 500; }
+.owner-customer-experience-card > p:not(.card-kicker) { max-width: 680px; margin: 0 0 1rem; color: #526274; }
 .owner-identity-card, .owner-next-action { margin-bottom: 1.5rem; }
 .owner-identity-card h3, .owner-next-action h3, .owner-current-work h3 { color: #102a52; font-family: Georgia, serif; font-size: 1.55rem; font-weight: 500; }
 .owner-next-action-content { display: grid; justify-items: start; gap: .75rem; margin-top: 1.25rem; }
@@ -1001,6 +1006,7 @@ footer { background: #081f3d; color: #c4cfdb; text-align: center; }
   .owner-workspace-navigation { position: static; display: flex; min-width: max-content; }
   .owner-workspace-navigation a { border-bottom: 3px solid transparent; border-left: 0; }
   .owner-workspace-navigation a.is-active { border-bottom-color: #d2ad58; }
+  .owner-workspace-navigation .owner-public-destination { margin-top: 0; margin-left: .45rem; padding-top: .9rem; border-top: 0; border-left: 1px solid rgba(255,255,255,.2); }
   .owner-overview-heading { align-items: flex-start; flex-direction: column; }
   .owner-work-list article { align-items: flex-start; flex-direction: column; }
 }
