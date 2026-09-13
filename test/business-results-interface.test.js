@@ -3,7 +3,7 @@ const fs = require("node:fs");
 const test = require("node:test");
 const vm = require("node:vm");
 
-const { getBusinessResults, getRecommendationDecisions } = require("../js/business-results.js");
+const { getBusinessResults, getRecommendationDecisions, getDemeosUnderstanding } = require("../js/business-results.js");
 const html = fs.readFileSync(require.resolve("../business-results.html"), "utf8");
 const script = fs.readFileSync(require.resolve("../js/business-results.js"), "utf8");
 
@@ -45,6 +45,57 @@ test("Recommendation Decisions is separate from campaign evidence and has an emp
   assert.ok(html.indexOf("Campaign Outcomes") < html.indexOf("Recommendation Decisions"));
   assert.ok(html.indexOf("business-results-list") < html.indexOf("recommendation-decisions-list"));
   assert.deepEqual(getRecommendationDecisions({ businessProfile: { businessId: "business-a" } }, "business-a"), []);
+});
+
+test("DEMEOS Understanding is placed between outcomes and decisions with explicit trust language", function () {
+  assert.match(html, /<h3 id="demeos-understanding-heading">DEMEOS Understanding<\/h3>/);
+  assert.ok(html.indexOf("Campaign Outcomes") < html.indexOf("DEMEOS Understanding"));
+  assert.ok(html.indexOf("DEMEOS Understanding") < html.indexOf("Recommendation Decisions"));
+  assert.match(html, /Customer interest is an interest signal only — not a sale, conversion or proof that a campaign succeeded\./);
+  assert.match(html, /owner-recorded outcomes and your recommendation decisions are kept separate/);
+});
+
+test("understanding deterministically summarizes only active-business trusted evidence", function () {
+  const record = storedRecord();
+  record.campaigns.push({ id: "campaign-a-2", businessId: "business-a", outcome: { outcome: "No noticeable result" } });
+  record.customerParticipationResults.push({ workItemId: "campaign-a-2", businessId: "business-a", customerInterestCount: 4 });
+  record.recommendationDecisions = [
+    { businessId: "business-a", decision: "used" }, { businessId: "business-a", decision: "modified" },
+    { businessId: "business-a", decision: "rejected" }, { businessId: "business-b", decision: "used" }
+  ];
+  const snapshot = JSON.stringify(record);
+  assert.deepEqual(getDemeosUnderstanding(record, "business-a"), {
+    campaignOutcomeCount: 2, customerInterestCount: 7, campaignsWithCustomerParticipation: 2,
+    recommendationDecisions: { used: 1, modified: 1, rejected: 1 }, evidenceAvailable: true
+  });
+  assert.equal(JSON.stringify(record), snapshot);
+  assert.deepEqual(getDemeosUnderstanding(record, "business-b"), {
+    campaignOutcomeCount: 0, customerInterestCount: 0, campaignsWithCustomerParticipation: 0,
+    recommendationDecisions: { used: 0, modified: 0, rejected: 0 }, evidenceAvailable: false
+  });
+});
+
+test("understanding preserves explicit zero participation and does not invent missing participation", function () {
+  const record = { businessProfile: { businessId: "business-a" }, campaigns: [
+    { id: "zero", businessId: "business-a", outcome: { outcome: "Mixed" } },
+    { id: "missing", businessId: "business-a" }
+  ], customerParticipationResults: [
+    { workItemId: "zero", businessId: "business-a", customerInterestCount: 0 },
+    { workItemId: "private", businessId: "business-b", customerInterestCount: 99 }
+  ] };
+  assert.deepEqual(getDemeosUnderstanding(record, "business-a"), {
+    campaignOutcomeCount: 1, customerInterestCount: 0, campaignsWithCustomerParticipation: 1,
+    recommendationDecisions: { used: 0, modified: 0, rejected: 0 }, evidenceAvailable: true
+  });
+});
+
+test("understanding fails closed and exposes no identity or synthetic scoring fields", function () {
+  const empty = { campaignOutcomeCount: 0, customerInterestCount: 0, campaignsWithCustomerParticipation: 0,
+    recommendationDecisions: { used: 0, modified: 0, rejected: 0 }, evidenceAvailable: false };
+  assert.deepEqual(getDemeosUnderstanding(null, "business-a"), empty);
+  assert.deepEqual(getDemeosUnderstanding(storedRecord(), "wrong-business"), empty);
+  const serialized = JSON.stringify(getDemeosUnderstanding(storedRecord(), "business-a"));
+  assert.doesNotMatch(serialized, /identity|customerName|email|confidence|success|score|rank|percentage/i);
 });
 
 test("valid server decisions use owner-facing labels, active-business isolation, and newest-first order", function () {
@@ -107,6 +158,10 @@ test("the page renders server-returned decisions and ignores browser decision st
   assert.equal(document.getElementById("recommendation-decisions-empty").hidden, true);
   assert.equal(document.getElementById("business-results-list").children.length, 1);
   assert.equal(document.getElementById("business-results-list").children[0].children[2].children.length, 2);
+  assert.equal(document.getElementById("demeos-understanding-state").textContent, "Understanding is growing");
+  assert.equal(document.getElementById("demeos-understanding-outcomes").textContent, 1);
+  assert.equal(document.getElementById("demeos-understanding-interest").textContent, 3);
+  assert.equal(document.getElementById("demeos-understanding-participation-campaigns").textContent, 1);
 });
 
 test("results are isolated to the active business", function () {

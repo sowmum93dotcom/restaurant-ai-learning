@@ -60,8 +60,43 @@ function getRecommendationDecisions(record, activeBusinessId) {
   });
 }
 
+function getDemeosUnderstanding(record, activeBusinessId) {
+  const empty = { campaignOutcomeCount: 0, customerInterestCount: 0,
+    campaignsWithCustomerParticipation: 0,
+    recommendationDecisions: { used: 0, modified: 0, rejected: 0 }, evidenceAvailable: false };
+  if (!record || !activeBusinessId || !record.businessProfile ||
+      record.businessProfile.businessId !== activeBusinessId) return empty;
+
+  const campaigns = Array.isArray(record.campaigns) ? record.campaigns : [];
+  const activeCampaignIds = new Set(campaigns.filter(function (campaign) {
+    return campaign && campaign.businessId === activeBusinessId && typeof campaign.id === "string";
+  }).map(function (campaign) { return campaign.id; }));
+  const campaignOutcomeCount = campaigns.filter(function (campaign) {
+    return campaign && campaign.businessId === activeBusinessId && campaign.outcome &&
+      typeof campaign.outcome.outcome === "string";
+  }).length;
+  const participation = (Array.isArray(record.customerParticipationResults)
+    ? record.customerParticipationResults : []).filter(function (result) {
+    return result && result.businessId === activeBusinessId && activeCampaignIds.has(result.workItemId) &&
+      Number.isFinite(Number(result.customerInterestCount)) && Number(result.customerInterestCount) >= 0;
+  });
+  const customerInterestCount = participation.reduce(function (total, result) {
+    return total + Number(result.customerInterestCount);
+  }, 0);
+  const recommendationDecisions = { used: 0, modified: 0, rejected: 0 };
+  (Array.isArray(record.recommendationDecisions) ? record.recommendationDecisions : []).forEach(function (item) {
+    if (item && item.businessId === activeBusinessId &&
+        Object.hasOwn(recommendationDecisions, item.decision)) recommendationDecisions[item.decision] += 1;
+  });
+  const decisionCount = recommendationDecisions.used + recommendationDecisions.modified + recommendationDecisions.rejected;
+  return { campaignOutcomeCount, customerInterestCount,
+    campaignsWithCustomerParticipation: new Set(participation.map(function (result) { return result.workItemId; })).size,
+    recommendationDecisions,
+    evidenceAvailable: campaignOutcomeCount > 0 || participation.length > 0 || decisionCount > 0 };
+}
+
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { getBusinessResults, getRecommendationDecisions };
+  module.exports = { getBusinessResults, getRecommendationDecisions, getDemeosUnderstanding };
 }
 
 if (typeof document !== "undefined") {
@@ -116,6 +151,17 @@ if (typeof document !== "undefined") {
     });
   }
 
+  function renderDemeosUnderstanding(understanding) {
+    byId("demeos-understanding-state").textContent = understanding.evidenceAvailable
+      ? "Understanding is growing" : "Building understanding";
+    byId("demeos-understanding-outcomes").textContent = understanding.campaignOutcomeCount;
+    byId("demeos-understanding-interest").textContent = understanding.customerInterestCount;
+    byId("demeos-understanding-participation-campaigns").textContent = understanding.campaignsWithCustomerParticipation;
+    byId("demeos-understanding-used").textContent = understanding.recommendationDecisions.used;
+    byId("demeos-understanding-modified").textContent = understanding.recommendationDecisions.modified;
+    byId("demeos-understanding-rejected").textContent = understanding.recommendationDecisions.rejected;
+  }
+
   async function load() {
     const businessId = localStorage.getItem("demeosActiveBusinessId");
     if (!businessId) { status.textContent = "No active business selected."; zero.hidden = false; return; }
@@ -125,10 +171,12 @@ if (typeof document !== "undefined") {
       const record = await response.json();
       const results = getBusinessResults(record, businessId);
       const decisions = getRecommendationDecisions(record, businessId);
+      const understanding = getDemeosUnderstanding(record, businessId);
       const name = record.businessProfile && record.businessProfile.name;
       if (name) byId("business-results-business-name").textContent = name;
       status.textContent = results.length ? `${results.length} campaign result${results.length === 1 ? "" : "s"}` : "";
       render(results);
+      renderDemeosUnderstanding(understanding);
       renderRecommendationDecisions(decisions);
     } catch (error) {
       status.textContent = error.message;
