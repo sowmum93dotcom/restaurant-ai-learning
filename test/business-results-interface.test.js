@@ -65,12 +65,12 @@ test("understanding deterministically summarizes only active-business trusted ev
   ];
   const snapshot = JSON.stringify(record);
   assert.deepEqual(getDemeosUnderstanding(record, "business-a"), {
-    campaignOutcomeCount: 2, customerInterestCount: 7, campaignsWithCustomerParticipation: 2,
+    verifiedBusinessProfile: false, campaignOutcomeCount: 2, customerInterestCount: 7, campaignsWithCustomerParticipation: 2,
     recommendationDecisions: { used: 1, modified: 1, rejected: 1 }, evidenceAvailable: true
   });
   assert.equal(JSON.stringify(record), snapshot);
   assert.deepEqual(getDemeosUnderstanding(record, "business-b"), {
-    campaignOutcomeCount: 0, customerInterestCount: 0, campaignsWithCustomerParticipation: 0,
+    verifiedBusinessProfile: false, campaignOutcomeCount: 0, customerInterestCount: 0, campaignsWithCustomerParticipation: 0,
     recommendationDecisions: { used: 0, modified: 0, rejected: 0 }, evidenceAvailable: false
   });
 });
@@ -84,13 +84,13 @@ test("understanding preserves explicit zero participation and does not invent mi
     { workItemId: "private", businessId: "business-b", customerInterestCount: 99 }
   ] };
   assert.deepEqual(getDemeosUnderstanding(record, "business-a"), {
-    campaignOutcomeCount: 1, customerInterestCount: 0, campaignsWithCustomerParticipation: 1,
+    verifiedBusinessProfile: false, campaignOutcomeCount: 1, customerInterestCount: 0, campaignsWithCustomerParticipation: 1,
     recommendationDecisions: { used: 0, modified: 0, rejected: 0 }, evidenceAvailable: true
   });
 });
 
 test("understanding fails closed and exposes no identity or synthetic scoring fields", function () {
-  const empty = { campaignOutcomeCount: 0, customerInterestCount: 0, campaignsWithCustomerParticipation: 0,
+  const empty = { verifiedBusinessProfile: false, campaignOutcomeCount: 0, customerInterestCount: 0, campaignsWithCustomerParticipation: 0,
     recommendationDecisions: { used: 0, modified: 0, rejected: 0 }, evidenceAvailable: false };
   assert.deepEqual(getDemeosUnderstanding(null, "business-a"), empty);
   assert.deepEqual(getDemeosUnderstanding(storedRecord(), "wrong-business"), empty);
@@ -142,7 +142,8 @@ test("the page renders server-returned decisions and ignores browser decision st
   serverRecord.recommendationDecisions = [{ businessId: "business-a", recommendationTitle: "Trusted server idea",
     suggestedCampaignType: "email", decision: "rejected", timestamp: "2026-09-12T12:00:00.000Z" }];
   const reads = [];
-  const context = { document, module: undefined, console, localStorage: { getItem(key) {
+  const context = { document, module: undefined, console,
+    DemeosUnderstanding: require("../js/demeos-understanding.js"), localStorage: { getItem(key) {
     reads.push(key);
     if (key === "demeosActiveBusinessId") return "business-a";
     if (key === "demeosRecommendationDecisions") return JSON.stringify([{ recommendationTitle: "Browser spoof" }]);

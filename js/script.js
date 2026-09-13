@@ -295,7 +295,7 @@ async function hydrateKnownBusiness(storage, businessId, fetchImpl) {
     storage.setItem("demeosBusinessProfiles", JSON.stringify(merged.profiles));
     storage.setItem("demeosCampaignHistory", JSON.stringify(merged.campaigns));
     storage.setItem("demeosRecommendationDecisions", JSON.stringify(merged.recommendationDecisions));
-    return { hydrated: true, ...merged };
+    return { hydrated: true, ...merged, record: serverRecord };
   } catch (error) {
     console.error("Could not restore known business:", error);
     return { hydrated: false, reason: "server-error" };
@@ -421,6 +421,31 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   let selectedRevisionTarget = null;
   let recommendationBusinessId = null;
   let customerParticipationResults = [];
+
+  function renderRecommendsUnderstanding(record, businessId) {
+    const stateElement = byId("recommends-understanding-state");
+    if (!stateElement) return;
+    if (!record) {
+      stateElement.textContent = "Understanding evidence is unavailable";
+      byId("recommends-understanding-profile").textContent = "Availability unavailable";
+      ["outcomes", "interest", "participation-campaigns", "used", "modified", "rejected"].forEach(function (key) {
+        byId(`recommends-understanding-${key}`).textContent = "—";
+      });
+      return;
+    }
+    const understanding = DemeosUnderstanding.getDemeosUnderstanding(record, businessId);
+    stateElement.textContent = understanding.evidenceAvailable
+      ? "Understanding is growing" : "Building understanding";
+    byId("recommends-understanding-profile").textContent = understanding.verifiedBusinessProfile
+      ? "Complete verified Business Manager Profile available"
+      : "Complete verified Business Manager Profile not available";
+    byId("recommends-understanding-outcomes").textContent = understanding.campaignOutcomeCount;
+    byId("recommends-understanding-interest").textContent = understanding.customerInterestCount;
+    byId("recommends-understanding-participation-campaigns").textContent = understanding.campaignsWithCustomerParticipation;
+    byId("recommends-understanding-used").textContent = understanding.recommendationDecisions.used;
+    byId("recommends-understanding-modified").textContent = understanding.recommendationDecisions.modified;
+    byId("recommends-understanding-rejected").textContent = understanding.recommendationDecisions.rejected;
+  }
 
   function showWorkspaceView(viewId) {
     if (typeof document.querySelectorAll !== "function") return;
@@ -660,9 +685,13 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     const requestedBusinessId = state.activeBusinessId;
     if (!requestedBusinessId || typeof window === "undefined" || typeof fetch !== "function") return;
     const result = await hydrateKnownBusiness(localStorage, requestedBusinessId, fetch);
-    if (!result.hydrated || state.activeBusinessId !== requestedBusinessId) return;
+    if (!result.hydrated || state.activeBusinessId !== requestedBusinessId) {
+      if (state.activeBusinessId === requestedBusinessId) renderRecommendsUnderstanding(null, requestedBusinessId);
+      return;
+    }
     state.profiles = result.profiles;
     customerParticipationResults = getCustomerParticipationResults(result.customerParticipationResults, requestedBusinessId);
+    renderRecommendsUnderstanding(result.record, requestedBusinessId);
     fillProfile(activeProfile()); renderSelector(); renderActiveMarketingWork(); renderCustomerParticipationResults(); renderCampaignHistory();
   }
   async function persistBusiness(profile) {
@@ -908,6 +937,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     state.activeBusinessId = businessId; addingBusiness = false;
     localStorage.setItem("demeosActiveBusinessId", businessId);
     customerParticipationResults = [];
+    renderRecommendsUnderstanding(null, businessId);
     clearRecommendations(); clearBusinessSituation(); fillProfile(activeProfile()); renderSelector(); clearCampaignWorkspace(); renderActiveMarketingWork(); renderCustomerParticipationResults(); renderCampaignHistory();
     hydrateActiveBusiness();
   }
@@ -930,7 +960,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   else hydrateActiveBusiness();
   businessSelector.addEventListener("change", function () { switchBusiness(businessSelector.value); });
   addBusinessBtn.addEventListener("click", function () {
-    addingBusiness = true; customerParticipationResults = []; businessSelector.value = ""; fillProfile(null); clearRecommendations(); clearBusinessSituation(); clearCampaignWorkspace(); renderActiveMarketingWork(); renderCustomerParticipationResults(); renderRecommendationDecisionResults();
+    addingBusiness = true; customerParticipationResults = []; businessSelector.value = ""; fillProfile(null); clearRecommendations(); clearBusinessSituation(); clearCampaignWorkspace(); renderActiveMarketingWork(); renderCustomerParticipationResults(); renderRecommendationDecisionResults(); renderRecommendsUnderstanding(null, null);
   });
   saveBusinessProfileBtn.addEventListener("click", async function () {
     const profileFields = {};
