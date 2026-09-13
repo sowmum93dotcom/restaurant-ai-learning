@@ -221,6 +221,27 @@ function validFactIntegrity(item, profile, situation, outcomes) {
     .some((text) => containsUnsupportedBusinessPremise(text, suppliedText));
 }
 
+function removeVerifiedGoal(text, goal) {
+  if (typeof text !== "string" || typeof goal !== "string" || !goal) return text;
+  const escapedGoal = goal.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return text.replace(new RegExp(escapedGoal, "ig"), "");
+}
+
+function claimsParticipationOutcome(item, profile, participation) {
+  if (!participation.length) return false;
+  const participationSignal = /\b(?:customer\s+interest|customer\s+participation|participation|interested(?:\s+(?:customers?|count))?|customerinterestcount)\b/i;
+  const outcomeClaim = /\b(?:sales?|revenue|conversions?|success(?:ful|fully)?)\b/i;
+  const attributionClaim = /\b(?:prove|proves|proved|proven|show|shows|showed|shown|demonstrate|demonstrates|demonstrated|mean|means|meant|confirm|confirms|confirmed|cause|causes|caused|generate|generates|generated|drive|drives|drove|driven|lead to|leads to|led to|result in|results in|resulted in|equal|equals|represent|represents|constitute|constitutes|is|are|was|were)\b/i;
+  const texts = [
+    item.title,
+    item.reason,
+    item.suggestedRequest,
+    removeVerifiedGoal(item.businessObjective, profile.goal),
+    removeVerifiedGoal(item.expectedOutcome, profile.goal)
+  ];
+  return texts.some((text) => participationSignal.test(text) && outcomeClaim.test(text) && attributionClaim.test(text));
+}
+
 function recommendationValidationReason(item, profile, situation, outcomes, participation, decisions) {
   const textFields = ["title", "reason", "targetCustomer", "businessObjective", "demeosCapability", "suggestedRequest"];
   if (!item || typeof item !== "object" || Array.isArray(item) || Object.keys(item).length !== recommendationFields.length ||
@@ -238,9 +259,7 @@ function recommendationValidationReason(item, profile, situation, outcomes, part
   if (!validRequiredInput(item.requiredInput, capability, profile, situation)) return "invalid-required-input";
   if (claimsUnavailableExecution(item)) return "unavailable-execution-capability";
   if (!validFactIntegrity(item, profile, situation, outcomes)) return "fact-integrity-failure";
-  if (item.evidence.some((evidence) => evidence.source === "customerParticipation") &&
-      [item.title, item.reason, item.businessObjective, item.suggestedRequest, item.expectedOutcome]
-        .some((text) => /\b(?:sales?|revenue|conversions?|success(?:ful|fully)?)\b/i.test(text))) return "interest-overclaim";
+  if (claimsParticipationOutcome(item, profile, participation)) return "interest-overclaim";
   return null;
 }
 
