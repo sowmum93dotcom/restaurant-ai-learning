@@ -2,7 +2,8 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 const fs = require("node:fs");
 const path = require("node:path");
-const { createCustomerWorkCard, getServerCustomerPackages, recordParticipation, renderCustomerWork } = require("../js/customer.js");
+const { createCustomerWorkCard, getServerCustomerPackages, getValidCustomerWork,
+  recordParticipation, renderCustomerWork } = require("../js/customer.js");
 
 class Element {
   constructor(tag = "div") { this.tag = tag; this.children = []; this.listeners = {}; this.attributes = {}; this._text = ""; this.innerHTML = ""; }
@@ -40,6 +41,55 @@ test("participation sends only the action and no browser-provided business ident
   assert.equal(request.url, "/api/customer/work/work%2Fa/participation");
   assert.equal(request.options.method, "POST");
   assert.deepEqual(JSON.parse(request.options.body), { action: "Interested" });
+});
+
+test("malformed public work is skipped without hiding valid work or exposing object values", function () {
+  const document = fakeDocument();
+  const valid = { workItemId: " valid-a ", businessName: " North Star ", location: " Leeds ",
+    content: " Approved message ", participationAction: "Interested" };
+  const malformed = [
+    { ...valid, workItemId: undefined },
+    { ...valid, businessName: null },
+    { ...valid, content: "" },
+    { ...valid, workItemId: "   " },
+    { ...valid, participationAction: "Buy" },
+    { ...valid, businessName: { name: "Object Business" } },
+    { ...valid, content: ["Array content"] }
+  ];
+
+  renderCustomerWork(document, [valid, ...malformed], [], async function () {});
+
+  const cards = document.elements["customer-work-list"].children;
+  assert.equal(cards.length, 1);
+  assert.match(cards[0].textContent, /North Star|Leeds|Approved message|Interested/);
+  assert.doesNotMatch(cards[0].textContent, /undefined|null|\[object Object\]|Buy|Array content/);
+});
+
+test("empty locations are omitted and malformed package data cannot become visible", function () {
+  const work = { workItemId: "a", businessName: "North Star", location: "   ",
+    content: "Approved message", participationAction: "Interested" };
+  assert.deepEqual(getValidCustomerWork([work]), [{ workItemId: "a", businessName: "North Star",
+    content: "Approved message", participationAction: "Interested" }]);
+
+  const document = fakeDocument();
+  renderCustomerWork(document, [work], { name: "Gold", price: "£99", benefits: ["Reward"] }, async function () {});
+  assert.doesNotMatch(document.elements["customer-work-list"].textContent, /Gold|£99|Reward/);
+});
+
+test("malformed work cannot send participation and valid participation is always Interested", async function () {
+  const originalFetch = global.fetch;
+  const requests = [];
+  global.fetch = async function (url, options) { requests.push({ url, options }); return { ok: true }; };
+  try {
+    await assert.rejects(recordParticipation({ workItemId: "a", participationAction: "Pay" }));
+    await assert.rejects(recordParticipation({ workItemId: "", participationAction: "Interested" }));
+    await recordParticipation({ workItemId: " a ", businessName: "Business", content: "Content",
+      participationAction: "Interested", action: "Pay" });
+  } finally { global.fetch = originalFetch; }
+
+  assert.equal(requests.length, 1);
+  assert.equal(requests[0].url, "/api/customer/work/a/participation");
+  assert.deepEqual(JSON.parse(requests[0].options.body), { action: "Interested" });
 });
 
 test("participation gives accurate signal confirmation", async function () {
