@@ -26,9 +26,11 @@ async function call(businessProfile = profile, output = JSON.stringify(valid), b
   const storedDecisions = (options.storedDecisions === undefined ? (recommendationDecisions || []).map((item) => ({
     businessId, ...item
   })) : options.storedDecisions);
+  const storedParticipation = options.storedParticipation === undefined ? [] : options.storedParticipation;
   const repository = { async getKnownBusiness(id) { getKnownBusinessCalls += 1;
     return options.missingBusiness ? null : { businessProfile: { ...storedProfile, businessId: id },
-      campaigns: storedCampaigns, recommendationDecisions: storedDecisions }; } };
+      campaigns: storedCampaigns, customerParticipationResults: storedParticipation,
+      recommendationDecisions: storedDecisions }; } };
   const context = { module: { exports: {} }, process: { env: { OPENAI_API_KEY: "key" } }, console,
     require(id) {
       if (id === "./_lib/capability-registry.js") return require("../api/_lib/capability-registry.js");
@@ -108,6 +110,56 @@ test("browser outcome and decision evidence cannot replace persisted evidence", 
   assert.equal(result.response.statusCode, 200);
   assert.match(result.requestBody.input, /Stored outcome only/); assert.doesNotMatch(result.requestBody.input, /Spoofed outcome/);
   assert.match(result.requestBody.input, /Stored decision only/); assert.doesNotMatch(result.requestBody.input, /Spoofed decision/);
+});
+
+test("server-stored participation is available as a distinct interest signal and browser participation is ignored", async () => {
+  const output = structuredClone(valid);
+  output.recommendations[0].evidence.push({ source: "customerParticipation", field: "customerInterestCount",
+    value: "4", verificationState: "systemRecordedInterest" });
+  const result = await call(profile, JSON.stringify(output), "", [], [], {
+    storedParticipation: [{ businessId: "business-a", name: "Stored social campaign", customerInterestCount: 4 }],
+    spoofedBody: { customerInterestCount: 999, customerParticipation: [{ businessId: "business-a",
+      campaignId: "spoofed", customerInterestCount: 999, latestParticipationAt: "2099-01-01T00:00:00Z" }] }
+  });
+  assert.equal(result.response.statusCode, 200);
+  assert.match(result.requestBody.input, /Stored Customer Participation \(server-recorded interest signals/);
+  assert.match(result.requestBody.input, /"customerInterestCount":4/);
+  assert.doesNotMatch(result.requestBody.input, /999|2099|spoofed/);
+  assert.match(result.requestBody.input, /not a sale, revenue, conversion, campaign success, customer identity, or guaranteed demand/);
+});
+
+test("participation from another business is excluded and missing participation is stated honestly", async () => {
+  const result = await call(profile, JSON.stringify(valid), "", [], [], { storedParticipation: [
+    { businessId: "business-b", name: "Other business campaign", customerInterestCount: 87 }
+  ] });
+  assert.equal(result.response.statusCode, 200);
+  assert.doesNotMatch(result.requestBody.input, /Other business campaign|87/);
+  assert.match(result.requestBody.input, /No stored participation evidence is available/);
+  assert.match(result.requestBody.input, /Do not invent or infer customer activity/);
+});
+
+test("zero stored participation remains an explicit interest count without a failure conclusion", async () => {
+  const result = await call(profile, JSON.stringify(valid), "", [], [], { storedParticipation: [
+    { businessId: "business-a", name: "Quiet email", customerInterestCount: 0 }
+  ] });
+  assert.equal(result.response.statusCode, 200);
+  assert.match(result.requestBody.input, /"customerInterestCount":0/);
+  assert.match(result.requestBody.input, /zero count is valid evidence/);
+  assert.match(result.requestBody.input, /do not treat zero as campaign failure or lack of demand/);
+});
+
+test("a recommendation cannot derive sales, revenue, conversion, or success from participation evidence", async () => {
+  for (const claim of ["sales", "revenue", "conversion", "success"]) {
+    const output = structuredClone(valid);
+    output.recommendations[0].evidence.push({ source: "customerParticipation", field: "customerInterestCount",
+      value: "2", verificationState: "systemRecordedInterest" });
+    output.recommendations[0].reason = `Interested count proves ${claim}`;
+    const result = await call(profile, JSON.stringify(output), "", [], [], { storedParticipation: [
+      { businessId: "business-a", name: "Eligible work", customerInterestCount: 2 }
+    ] });
+    assert.equal(result.response.statusCode, 502);
+    assert.equal(result.response.body.validationDiagnostic[0].reason, "interest-overclaim");
+  }
 });
 
 test("persisted evidence tagged for another business cannot enter the prompt", async () => {
