@@ -904,7 +904,7 @@ footer { background: #081f3d; color: #c4cfdb; text-align: center; }
   .workspace-shell .workspace-main { margin: 0; padding: 1.4rem .9rem 3rem; }
 }
 
-/* DEMEOS Customer Experience */
+/* DEMEOS Customer Interface */
 .customer-body { min-height: 100vh; background: #f4f1e9; color: #11243f; }
 .customer-header { position: relative; z-index: 2; border-bottom: 1px solid rgba(210,173,88,.45); background: #071b35; }
 .customer-header-inner { width: min(1180px, calc(100% - 3rem)); min-height: 88px; margin: auto; display: flex; align-items: center; justify-content: space-between; gap: 2rem; }
@@ -920,7 +920,14 @@ footer { background: #081f3d; color: #c4cfdb; text-align: center; }
 .customer-introduction h1 { max-width: 700px; margin: .7rem 0 1.2rem; font-family: Georgia, serif; font-size: clamp(2.6rem, 6vw, 5rem); font-weight: 500; letter-spacing: -.035em; line-height: 1.03; }
 .customer-introduction > p:not(.customer-eyebrow) { max-width: 650px; color: #cfdae6; font-size: clamp(1rem, 2vw, 1.2rem); }
 .customer-intro-action { display: inline-block; margin-top: 2rem; padding-bottom: .3rem; border-bottom: 1px solid #d5b45e; color: #f2da99; font-weight: 700; text-decoration: none; }
-.customer-experience { width: min(1180px, calc(100% - 3rem)); margin: -54px auto 5rem; padding: clamp(1.5rem, 4vw, 3rem); border-radius: 3px; background: #fff; box-shadow: 0 20px 55px rgba(6,25,48,.13); }
+.customer-path { position: relative; z-index: 1; display: grid; width: min(1180px, calc(100% - 3rem)); margin: -54px auto 1.5rem; grid-template-columns: repeat(4, 1fr); border-top: 4px solid #c8a24a; background: #fff; box-shadow: 0 20px 55px rgba(6,25,48,.13); }
+.customer-path a { min-width: 0; padding: 1.35rem 1.4rem; border-right: 1px solid #e0e4e9; color: #102a52; text-decoration: none; }
+.customer-path a:last-child { border-right: 0; }
+.customer-path a:hover, .customer-path a:focus { background: #f8f5ed; }
+.customer-path span { display: block; color: #a77d27; font-size: .68rem; font-weight: 800; letter-spacing: .14em; }
+.customer-path strong { display: block; margin: .25rem 0; font-family: Georgia, serif; font-size: 1.25rem; font-weight: 500; }
+.customer-path small { display: block; color: #667284; font-size: .78rem; line-height: 1.45; }
+.customer-experience { width: min(1180px, calc(100% - 3rem)); margin: 0 auto 5rem; padding: clamp(1.5rem, 4vw, 3rem); border-radius: 3px; background: #fff; box-shadow: 0 20px 55px rgba(6,25,48,.1); }
 .customer-section-heading { display: flex; justify-content: space-between; align-items: end; gap: 2rem; padding-bottom: 1.6rem; border-bottom: 1px solid #dde2e8; }
 .customer-section-heading h2 { margin-top: .3rem; color: #102a52; font-family: Georgia, serif; font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 500; }
 .customer-section-heading > p { max-width: 300px; color: #667284; text-align: right; }
@@ -934,9 +941,14 @@ footer { background: #081f3d; color: #c4cfdb; text-align: center; }
 .customer-message { padding: clamp(1.5rem, 4vw, 2.25rem) 1.75rem; }
 .customer-message-label { margin-bottom: .75rem; }
 .customer-work-content { max-width: 790px; margin: 0; color: #28384d; font-size: 1.05rem; line-height: 1.8; white-space: pre-wrap; }
-.customer-choice { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; padding: 1.25rem 1.75rem; border-top: 1px solid #e1e5ea; background: #0b274b; }
-.customer-choice .customer-step { color: #d6b761; }
-.customer-choice-copy { margin-top: .2rem; color: #e4ebf2; }
+.customer-choice { padding: 1.5rem 1.75rem; border-top: 1px solid #e1e5ea; background: #f8f6f0; }
+.customer-choice-title, .customer-participation-title { margin: .25rem 0 .65rem; color: #102a52; font-family: Georgia, serif; font-size: 1.25rem; font-weight: 500; }
+.customer-package-region { padding: 1.1rem 1.25rem; border: 1px dashed #b9c3cf; background: #fff; }
+.customer-package-empty { margin: 0; color: #667284; }
+.customer-participation { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; padding: 1.4rem 1.75rem; background: #0b274b; }
+.customer-participation .customer-step { color: #d6b761; }
+.customer-participation-title { margin-bottom: .25rem; color: #fff; }
+.customer-participation-copy { max-width: 650px; margin: 0; color: #cbd6e1; font-size: .88rem; line-height: 1.55; }
 .customer-participation-button { min-width: 145px; padding: .85rem 1.25rem; border: 1px solid #e0c16c; border-radius: 2px; background: #d2ad58; color: #0a2343; font: inherit; font-weight: 800; cursor: pointer; }
 .customer-participation-button:hover { background: #edcf7a; }
 .customer-participation-button:disabled { cursor: default; opacity: .8; }
@@ -955,12 +967,16 @@ footer { background: #081f3d; color: #c4cfdb; text-align: center; }
   .customer-journey-nav { gap: .8rem; }
   .customer-journey-nav a { font-size: .68rem; }
   .customer-introduction { min-height: 420px; padding: 4.5rem 1.25rem; }
-  .customer-experience { width: calc(100% - 1.5rem); margin-top: -35px; padding: 1.25rem; }
+  .customer-path { width: calc(100% - 1.5rem); margin-top: -35px; grid-template-columns: repeat(2, 1fr); }
+  .customer-path a:nth-child(2) { border-right: 0; }
+  .customer-path a:nth-child(-n+2) { border-bottom: 1px solid #e0e4e9; }
+  .customer-experience { width: calc(100% - 1.5rem); padding: 1.25rem; }
   .customer-section-heading, .customer-work-context { align-items: flex-start; flex-direction: column; }
   .customer-section-heading > p { text-align: left; }
   .customer-approved-mark { align-self: flex-start; }
   .customer-message, .customer-work-context { padding: 1.25rem; }
-  .customer-choice { align-items: stretch; flex-direction: column; padding: 1.25rem; }
+  .customer-choice, .customer-participation { padding: 1.25rem; }
+  .customer-participation { align-items: stretch; flex-direction: column; }
   .customer-participation-button { width: 100%; }
   .customer-footer { flex-direction: column; }
 }

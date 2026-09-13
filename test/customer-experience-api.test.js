@@ -98,12 +98,22 @@ test("customer feed returns only the deliberately public work shape", async func
   }];
   const res = await runHandler("../api/customer/work.js", { async getCustomerWork() { return work; } }, { method: "GET" });
   assert.equal(res.statusCode, 200);
-  assert.deepEqual(res.body, { work });
+  assert.deepEqual(res.body, { work, customerPackages: [] });
   assert.deepEqual(Object.keys(res.body.work[0]).sort(), [
     "businessName", "content", "location", "participationAction", "workItemId"
   ]);
   assert.equal("businessId" in res.body.work[0], false);
   assert.doesNotMatch(JSON.stringify(res.body), /businessId/);
+});
+
+test("customer package availability has an explicit server-owned empty boundary", async function () {
+  const res = await runHandler("../api/customer/work.js", {
+    async getCustomerWork() { return []; }
+  }, { method: "GET", query: { customerPackages: "browser-package" } });
+
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(res.body, { work: [], customerPackages: [] });
+  assert.doesNotMatch(JSON.stringify(res.body), /browser-package|price|discount|membership|benefit/i);
 });
 
 test("Interested uses the route campaign identity and exposes only the safe action", async function () {

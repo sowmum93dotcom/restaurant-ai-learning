@@ -17,7 +17,11 @@ module.exports = async function handler(req, res) {
     return res.status(403).json({ error: "DEMEOS permission denied." });
   }
   try {
-    return res.status(200).json({ work: await getRepository().getCustomerWork() });
+    return res.status(200).json({
+      work: await getRepository().getCustomerWork(),
+      // Customer package availability is server-owned. No package definitions exist yet.
+      customerPackages: []
+    });
   } catch (error) {
     console.error("Could not load customer work:", error);
     return res.status(500).json({ error: "DEMEOS could not load customer work." });
