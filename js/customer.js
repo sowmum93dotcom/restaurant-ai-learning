@@ -68,7 +68,7 @@ const CUSTOMER_STAGE_THREE_COPY = Object.freeze({
   saveExplanation: "Keep this possibility in your DEMEOS relationship.",
   saveSuccess: "Saved to My Possibilities.",
   saveError: "DEMEOS could not save this possibility. Please try again.",
-  saveSignInNote: "Sign in to My DEMEOS if you want to keep this possibility across visits.",
+  saveSignInNote: "Enter My DEMEOS if you want to keep this possibility across visits.",
   changeAction: "Change what I’m looking for"
 });
 

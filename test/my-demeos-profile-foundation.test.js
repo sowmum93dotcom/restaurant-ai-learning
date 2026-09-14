@@ -24,9 +24,16 @@ test("My DEMEOS uses the official logo and accessible, current-section navigatio
   assert.match(html, /<h1>My DEMEOS<\/h1>/);
 });
 
-test("profile foundation presents trusted sign-in and honest empty relationship areas", function () {
+test("profile foundation presents trusted DEMEOS entry language and honest empty relationship areas", function () {
   const html = read("my-demeos.html");
-  assert.match(html, /Sign in to My DEMEOS/);
+  assert.match(html, /<h2>Enter My DEMEOS<\/h2>/);
+  assert.match(html, /type="button">Enter My DEMEOS<\/button>/);
+  assert.match(html, /type="button">Leave My DEMEOS<\/button>/);
+  assert.match(html, /Checking your DEMEOS relationship securely\./);
+  assert.match(html, /Enter My DEMEOS to keep intentions across visits\./);
+  assert.match(html, /Enter My DEMEOS to keep possibilities across visits\./);
+  assert.match(html, /Enter My DEMEOS to see your participation across visits\./);
+  assert.doesNotMatch(html, />Sign (?:in|out)(?: to My DEMEOS)?</);
   assert.match(html, /Your secure DEMEOS relationship is active\./);
   assert.match(html, /Customer sign-in is not available yet\./);
   assert.match(html, /requires Clerk provider configuration before it can be activated\./);
