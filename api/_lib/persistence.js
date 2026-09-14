@@ -64,6 +64,53 @@ function createPersistenceRepository(database) {
           createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at };
       });
     },
+
+    async saveCustomerPossibility(trustedCustomerIdentityId, workItemId) {
+      if (!isNonEmptyString(trustedCustomerIdentityId) || !isNonEmptyString(workItemId)) return null;
+      await database.ensureSchema();
+      // Resolve and re-check the campaign on the server. Browser display data is
+      // never inserted, and a changed/unpublished campaign cannot slip through.
+      const authoritative = await database.query(
+        `SELECT c.campaign_id, c.campaign, b.profile
+         FROM demeos_campaigns c JOIN demeos_businesses b ON b.business_id = c.business_id
+         WHERE c.campaign_id = $1`, [workItemId]);
+      if (!authoritative.rows.length) return null;
+      const row = authoritative.rows[0];
+      if (!canPublishToDemeosCustomerExperience(row.campaign)) return null;
+      const publicItem = toPublicCustomerWorkItem({ workItemId: row.campaign_id,
+        businessName: row.profile && row.profile.name, location: row.profile && row.profile.location,
+        content: getCustomerFacingContent(row.campaign), participationAction: "Interested" });
+      if (!publicItem) return null;
+      const result = await database.query(
+        `INSERT INTO demeos_customer_saved_possibilities
+           (trusted_customer_identity_id, work_item_id, possibility_content, business_name, location,
+            relevance_basis, evidence_type, source, action)
+         SELECT $1, c.campaign_id, $3, $4, $5, 'explicit-customer-intent-overlap',
+                'customer-saved-possibility', 'authenticated-customer', 'saved'
+         FROM demeos_campaigns c
+         WHERE c.campaign_id = $2 AND c.campaign = $6::jsonb
+           AND c.campaign->>'approvalStatus' = 'Approved'
+         ON CONFLICT (trusted_customer_identity_id, work_item_id) DO UPDATE
+           SET trusted_customer_identity_id = EXCLUDED.trusted_customer_identity_id
+         RETURNING possibility_content, business_name, location, relevance_basis, created_at`,
+        [trustedCustomerIdentityId, workItemId, publicItem.content, publicItem.businessName,
+          publicItem.location || null, JSON.stringify(row.campaign)]);
+      if (!result.rows.length) return null;
+      return toSavedPossibility(result.rows[0]);
+    },
+
+    async getCustomerSavedPossibilities(trustedCustomerIdentityId, limit = 50) {
+      if (!isNonEmptyString(trustedCustomerIdentityId)) return [];
+      await database.ensureSchema();
+      const safeLimit = Math.min(50, Math.max(1, Number.isInteger(limit) ? limit : 50));
+      const result = await database.query(
+        `SELECT possibility_content, business_name, location, relevance_basis, created_at
+         FROM demeos_customer_saved_possibilities
+         WHERE trusted_customer_identity_id = $1
+         ORDER BY created_at DESC, saved_possibility_id DESC LIMIT $2`,
+        [trustedCustomerIdentityId, safeLimit]);
+      return result.rows.map(toSavedPossibility);
+    },
     async getOwnedBusinessIds(trustedIdentityId) {
       if (!isNonEmptyString(trustedIdentityId)) return [];
       await database.ensureSchema();
@@ -309,6 +356,14 @@ function createPersistenceRepository(database) {
       return result.rows.length ? { response: result.rows[0].response } : null;
     }
   };
+}
+
+function toSavedPossibility(row) {
+  const saved = { content: row.possibility_content, businessName: row.business_name,
+    relevance: { basis: row.relevance_basis },
+    createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at };
+  if (row.location) saved.location = row.location;
+  return saved;
 }
 
 let defaultRepository;

@@ -64,6 +64,11 @@ const CUSTOMER_STAGE_THREE_COPY = Object.freeze({
   participationSuccess: "Interest shared",
   participationConfirmation: "Your interest has been shared with this business.",
   participationError: "DEMEOS could not share your interest. Please try again.",
+  saveAction: "Save to My DEMEOS",
+  saveExplanation: "Keep this possibility in your DEMEOS relationship.",
+  saveSuccess: "Saved to My Possibilities.",
+  saveError: "DEMEOS could not save this possibility. Please try again.",
+  saveSignInNote: "Sign in to My DEMEOS if you want to keep this possibility across visits.",
   changeAction: "Change what I’m looking for"
 });
 
@@ -113,7 +118,7 @@ function getValidCustomerPossibilities(possibilities) {
   return Array.isArray(possibilities) ? possibilities.map(toCustomerPossibility).filter(Boolean).slice(0, 5) : [];
 }
 
-function renderCustomerPossibilities(document, possibilities, understanding, participationRecorder, feedbackRecorder, continuationActions) {
+function renderCustomerPossibilities(document, possibilities, understanding, participationRecorder, feedbackRecorder, continuationActions, saveOptions) {
   const region = document.getElementById("customer-possibilities");
   const heading = document.getElementById("customer-possibilities-heading");
   const list = document.getElementById("customer-possibilities-list");
@@ -179,6 +184,28 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
     addText(document, focusRegion, "p", "customer-provider-label", CUSTOMER_STAGE_THREE_COPY.providedBy);
     addText(document, focusRegion, "p", "customer-possibility-provider", possibility.businessName);
     if (possibility.location) addText(document, focusRegion, "p", "customer-possibility-location", possibility.location);
+    const save = document.createElement("section");
+    save.className = "customer-possibility-save";
+    if (saveOptions && saveOptions.authenticated === true) {
+      addText(document, save, "p", "customer-possibility-save-copy", CUSTOMER_STAGE_THREE_COPY.saveExplanation);
+      const saveButton = addText(document, save, "button", "customer-possibility-save-button", CUSTOMER_STAGE_THREE_COPY.saveAction);
+      saveButton.type = "button";
+      const saveStatus = addText(document, save, "p", "customer-possibility-save-status", "");
+      saveStatus.setAttribute("aria-live", "polite");
+      saveButton.addEventListener("click", async function () {
+        saveButton.disabled = true;
+        try {
+          await (saveOptions.record || saveCustomerPossibility)(possibility);
+          saveStatus.textContent = CUSTOMER_STAGE_THREE_COPY.saveSuccess;
+        } catch (_error) {
+          saveButton.disabled = false;
+          saveStatus.textContent = CUSTOMER_STAGE_THREE_COPY.saveError;
+        }
+      });
+    } else {
+      addText(document, save, "p", "customer-possibility-save-note", CUSTOMER_STAGE_THREE_COPY.saveSignInNote);
+    }
+    focusRegion.appendChild(save);
     const participation = document.createElement("section");
     participation.className = "customer-focused-participation";
     addText(document, participation, "h4", "customer-participation-title", CUSTOMER_STAGE_THREE_COPY.participateHeading);
@@ -300,11 +327,27 @@ async function requestCustomerPossibilities(document, understanding, fetcher, co
     });
     const data = await response.json();
     if (!response.ok || !data || !Array.isArray(data.possibilities)) throw new Error();
+    let authenticated = false;
+    try {
+      const identityResponse = await fetcher("/api/customer/identity", { credentials: "same-origin", headers: { Accept: "application/json" } });
+      const identity = identityResponse.ok ? await identityResponse.json() : null;
+      authenticated = Boolean(identity && identity.authenticated === true);
+    } catch (_error) { authenticated = false; }
     renderCustomerPossibilities(document, data.possibilities, understanding, recordParticipation,
-      recordCustomerFeedback, continuationActions);
+      recordCustomerFeedback, continuationActions, { authenticated, record: saveCustomerPossibility });
   } catch (error) {
     heading.textContent = CUSTOMER_STAGE_THREE_COPY.error;
   }
+}
+
+async function saveCustomerPossibility(possibility) {
+  const workItemId = possibility && normalizedRequiredString(possibility.workItemId);
+  if (!workItemId) throw new Error(CUSTOMER_STAGE_THREE_COPY.saveError);
+  const response = await fetch("/api/customer/possibilities/saved", {
+    method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ workItemId })
+  });
+  if (!response.ok) throw new Error(CUSTOMER_STAGE_THREE_COPY.saveError);
 }
 
 async function recordCustomerFeedback(work, feedback) {
@@ -651,7 +694,7 @@ if (typeof module !== "undefined" && module.exports) {
     getServerCustomerPackages, getValidCustomerPossibilities, getValidCustomerWork, initializeCustomerIntention, loadCustomerWork,
     normalizedCustomerIntention, recordCustomerFeedback, recordParticipation, renderCustomerPossibilities, renderCustomerWork,
     requestCustomerLocation, requestCustomerPossibilities,
-    selectCustomerIntention, toCustomerPossibility, toCustomerWorkItem };
+    saveCustomerPossibility, selectCustomerIntention, toCustomerPossibility, toCustomerWorkItem };
 }
 
 if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", function () {

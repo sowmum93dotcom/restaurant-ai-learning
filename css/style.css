@@ -1031,6 +1031,10 @@ footer { background: #081f3d; color: #c4cfdb; text-align: center; }
 .my-intentions-list article { padding: 1rem; border-left: 3px solid #7567a8; background: #f7f8fb; }
 .my-intentions-list article > * { margin: 0 0 .45rem; }
 .my-intentions-list time { color: #625f72; font-size: .85rem; }
+.my-possibilities-list { display: grid; gap: .75rem; margin-top: .75rem; }
+.my-possibilities-list article { padding: 1rem; border-left: 3px solid #7567a8; background: #f7f8fb; }
+.my-possibilities-list article > * { margin: 0 0 .45rem; }
+.my-possibilities-list time { color: #625f72; font-size: .85rem; }
 .my-demeos-evidence { margin-top: 2.5rem; padding: clamp(1.4rem, 4vw, 2rem); border-left: 4px solid #c8a24a; background: #0b274b; color: #d4dfeb; }
 .my-demeos-evidence .customer-eyebrow { color: #d6b761; }
 .my-demeos-evidence h2 { margin: .2rem 0 .5rem; color: #fff; font-size: 1.55rem; }
@@ -1182,6 +1186,11 @@ footer { background: #081f3d; color: #c4cfdb; text-align: center; }
 .customer-evidence-heading { margin-bottom: .4rem; color: #102a52; }.customer-possibility-evidence { color: #3f5e7d; }
 .customer-provider-label { margin: 1.5rem 0 .25rem; color: #73591c; }.customer-focused-possibility .customer-possibility-provider { color: #40536a; font-size: .95rem; font-weight: 700; }.customer-possibility-location { color: #66788b; font-size: .86rem; }
 .customer-focused-participation { margin-top: 1.5rem; padding: 1.25rem; background: #0b274b; color: #fff; }.customer-focused-participation .customer-participation-copy { margin-bottom: 1rem; }.customer-focused-participation .customer-participation-confirmation:not(:empty) { margin-top: 1rem; padding: .8rem; color: #124f31; }
+.customer-possibility-save { margin-top: 1.25rem; padding: 1rem; border: 1px solid rgba(117, 103, 168, .35); border-radius: .75rem; }
+.customer-possibility-save-copy, .customer-possibility-save-note { margin: 0 0 .75rem; color: #514d61; }
+.customer-possibility-save-button { min-height: 44px; padding: .7rem 1rem; border: 1px solid #7567a8; border-radius: .5rem; background: #fff; color: #302852; font: inherit; font-weight: 700; cursor: pointer; }
+.customer-possibility-save-button:focus-visible { outline: 3px solid #f4b942; outline-offset: 3px; }
+.customer-possibility-save-status:not(:empty) { margin: .75rem 0 0; color: #124f31; font-weight: 700; }
 .customer-feedback { margin-top: 1.25rem; padding: clamp(1.2rem, 3vw, 2rem); border: 1px solid rgba(210,173,88,.55); background: linear-gradient(145deg, #fff, #edf3fa); color: #0a2343; }
 .customer-feedback-heading { margin: .25rem 0 1rem; font-family: Georgia, serif; font-size: 1.35rem; }
 .customer-feedback-form fieldset { display: grid; gap: .65rem; margin: 0; padding: 0; border: 0; }
