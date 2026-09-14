@@ -46,12 +46,12 @@
       customerText: originalText,
       understanding,
       source: "customer-provided",
-      confidenceState: clarificationIntentions.has(selected) && !detail ? "needs-clarification" : "confirmed"
+      confidenceState: clarificationIntentions.has(selected) && !detail ? "needs-clarification" : "ready-for-confirmation"
     });
   }
 
   function confirmCustomerUnderstanding(understanding) {
-    if (!understanding || understanding.confidenceState !== "confirmed") return null;
+    if (!understanding || understanding.confidenceState !== "ready-for-confirmation") return null;
     return Object.freeze({ ...understanding, confidenceState: "confirmed" });
   }
 
