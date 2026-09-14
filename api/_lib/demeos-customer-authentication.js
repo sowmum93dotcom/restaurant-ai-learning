@@ -9,6 +9,7 @@ async function resolveTrustedCustomerIdentityFromRequest(req, options = {}) {
   if (!identity || typeof identity.trustedIdentityId !== "string" || !identity.trustedIdentityId) {
     return null;
   }
+  if (identity.actorScope === "business-owner" || identity.actorScope === "demeos-admin") return null;
 
   return Object.freeze({
     trustedCustomerIdentityId: identity.trustedIdentityId,

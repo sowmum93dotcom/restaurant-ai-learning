@@ -42,6 +42,7 @@ const CUSTOMER_STAGE_TWO_COPY = Object.freeze({
   changeAction: "Change this",
   foundationTrust: "DEMEOS will use your intention to look for relevant Solution, Participation, Convenience and Experience.",
   confirmed: "DEMEOS understands your intention.",
+  saved: "Saved to My Intentions.",
   clarificationRequired: "Add a little more detail so DEMEOS can understand your intention."
 });
 
@@ -386,6 +387,10 @@ function initializeCustomerIntention(document, navigatorValue, now) {
     document.getElementById("customer-no-possibilities-actions").hidden = false;
     document.getElementById("customer-add-detail-text").value = "";
     understandingPanel.hidden = true;
+    document.getElementById("customer-intention-save").hidden = true;
+    document.getElementById("customer-intention-sign-in-note").hidden = true;
+    document.getElementById("customer-intention-save-button").disabled = false;
+    document.getElementById("customer-intention-save-status").textContent = "";
     intentionForm.hidden = false;
     document.getElementById("customer-understanding-status").textContent = "";
     document.getElementById("customer-intention-text").focus();
@@ -479,6 +484,24 @@ function initializeCustomerIntention(document, navigatorValue, now) {
     document.getElementById("customer-understanding-confirm").hidden = true;
     document.getElementById("customer-understanding-status").textContent = CUSTOMER_STAGE_TWO_COPY.confirmed;
     document.getElementById("customer-understanding-change").hidden = false;
+    const saveArea = document.getElementById("customer-intention-save");
+    const signInNote = document.getElementById("customer-intention-sign-in-note");
+    const saveButton = document.getElementById("customer-intention-save-button");
+    fetch("/api/customer/identity", { credentials: "same-origin", headers: { Accept: "application/json" } })
+      .then(function (response) { return response.ok ? response.json() : { authenticated: false }; })
+      .then(function (identity) { saveArea.hidden = identity.authenticated !== true; signInNote.hidden = identity.authenticated === true; })
+      .catch(function () { signInNote.hidden = false; });
+    saveButton.onclick = async function () {
+      if (saveButton.disabled || !currentUnderstanding || currentUnderstanding.confidenceState !== "confirmed") return;
+      saveButton.disabled = true;
+      try {
+        const response = await fetch("/api/customer/intentions", { method: "POST", credentials: "same-origin",
+          headers: { "Content-Type": "application/json" }, body: JSON.stringify({ intention: currentUnderstanding.intention,
+            customerText: currentUnderstanding.customerText, understanding: currentUnderstanding.understanding }) });
+        if (response.ok) document.getElementById("customer-intention-save-status").textContent = CUSTOMER_STAGE_TWO_COPY.saved;
+        else saveButton.disabled = false;
+      } catch (_error) { saveButton.disabled = false; }
+    };
     understandingPanel.hidden = true;
     requestCustomerPossibilities(document, currentUnderstanding, globalThis.fetch, {
       explore: function () {

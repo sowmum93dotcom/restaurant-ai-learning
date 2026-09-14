@@ -86,10 +86,13 @@ async function resolveTrustedIdentityFromRequest(req, options = {}) {
     const userId = authentication && authentication.userId;
     if (typeof userId !== "string" || userId.length === 0) return null;
 
-    return Object.freeze({
+    const trusted = {
       trustedIdentityId: userId,
       provider: "clerk"
-    });
+    };
+    const providerRole = authentication.sessionClaims?.metadata?.role || authentication.sessionClaims?.publicMetadata?.role;
+    if (["business-owner", "demeos-admin"].includes(providerRole)) trusted.actorScope = providerRole;
+    return Object.freeze(trusted);
   } catch (_error) {
     return null;
   }
