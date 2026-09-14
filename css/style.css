@@ -951,7 +951,7 @@ footer { background: #081f3d; color: #c4cfdb; text-align: center; }
 .customer-clarification input { width: min(620px, 100%); min-height: 46px; padding: .7rem .85rem; border: 1px solid #6886a8; background: #fff; color: #10243e; font: inherit; }
 .customer-clarification button { margin: .7rem 0 0; display: block; }
 .customer-understanding-status { min-height: 1.5em; margin-top: 1rem; color: #e4cb84; font-weight: 700; }
-.customer-intention-option:focus-visible, .customer-location-button:focus-visible, .customer-continue-button:focus-visible, .customer-intention-detail textarea:focus-visible, .customer-work-link:focus-visible, .customer-participation-button:focus-visible, .customer-understanding button:focus-visible, .customer-understanding input:focus-visible, .customer-understanding h2:focus-visible { outline: 3px solid #8fc1ff; outline-offset: 3px; }
+.customer-intention-option:focus-visible, .customer-location-button:focus-visible, .customer-continue-button:focus-visible, .customer-intention-detail textarea:focus-visible, .customer-work-link:focus-visible, .customer-participation-button:focus-visible, .customer-understanding button:focus-visible, .customer-understanding input:focus-visible, .customer-understanding h2:focus-visible, .customer-feedback :focus-visible { outline: 3px solid #8fc1ff; outline-offset: 3px; }
 .customer-journey-nav { display: flex; align-items: center; gap: clamp(1rem, 3vw, 2.5rem); }
 .customer-journey-nav a { color: #d7e0e9; font-size: .82rem; font-weight: 700; letter-spacing: .04em; text-decoration: none; }
 .customer-journey-nav a:hover, .customer-journey-nav a:focus { color: #e5c777; }
@@ -1147,6 +1147,18 @@ footer { background: #081f3d; color: #c4cfdb; text-align: center; }
 .customer-evidence-heading { margin-bottom: .4rem; color: #102a52; }.customer-possibility-evidence { color: #3f5e7d; }
 .customer-provider-label { margin: 1.5rem 0 .25rem; color: #73591c; }.customer-focused-possibility .customer-possibility-provider { color: #40536a; font-size: .95rem; font-weight: 700; }.customer-possibility-location { color: #66788b; font-size: .86rem; }
 .customer-focused-participation { margin-top: 1.5rem; padding: 1.25rem; background: #0b274b; color: #fff; }.customer-focused-participation .customer-participation-copy { margin-bottom: 1rem; }.customer-focused-participation .customer-participation-confirmation:not(:empty) { margin-top: 1rem; padding: .8rem; color: #124f31; }
+.customer-feedback { margin-top: 1.25rem; padding: clamp(1.2rem, 3vw, 2rem); border: 1px solid rgba(210,173,88,.55); background: linear-gradient(145deg, #fff, #edf3fa); color: #0a2343; }
+.customer-feedback-heading { margin: .25rem 0 1rem; font-family: Georgia, serif; font-size: 1.35rem; }
+.customer-feedback-form fieldset { display: grid; gap: .65rem; margin: 0; padding: 0; border: 0; }
+.customer-feedback-question { margin-bottom: .6rem; font-weight: 700; }
+.customer-feedback-choice { display: flex; gap: .7rem; align-items: center; padding: .8rem; border: 1px solid #aebdce; background: #fff; cursor: pointer; }
+.customer-feedback-choice:has(input:checked) { border-color: #bd9238; box-shadow: inset 4px 0 #d2ad58; }
+.customer-feedback-comment-label { display: block; margin-top: 1.1rem; font-weight: 700; }
+.customer-feedback textarea { box-sizing: border-box; width: 100%; margin: .45rem 0 1rem; padding: .75rem; border: 1px solid #8da2ba; color: #0a2343; font: inherit; resize: vertical; }
+.customer-feedback-submit, .customer-feedback-continuations button { padding: .8rem 1rem; border: 1px solid #d2ad58; background: #0b477c; color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+.customer-feedback-result:not(:empty) { margin-top: 1rem; padding: .9rem; border-left: 4px solid #d2ad58; background: #fff; }
+.customer-feedback-continuations { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1rem; }
+.customer-feedback-continuations button:last-child { background: #fff; color: #0a2343; }
 .customer-change-intention { display: block; position: relative; z-index: 9; margin: 1rem auto 0; border-color: #d2ad58; color: #f4d98b; }
 @keyframes customer-possibility-emerge { from { opacity: 0; transform: translateY(18px) translateZ(-40px); } }
 

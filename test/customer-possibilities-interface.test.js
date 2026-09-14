@@ -86,7 +86,7 @@ test("selecting a possibility opens its readable surface and back restores the s
   assert.match(focused.textContent, /Interested is an interest signal only\. It is not a purchase, booking or sale\./);
   assert.equal(participation.length, 0, "participation is never automatic");
 
-  const participationSection = focused.children.at(-1);
+  const participationSection = focused.children.at(-2);
   await participationSection.children[2].listeners.click();
   assert.equal(participation[0].workItemId, "work/a");
   assert.match(focused.textContent, /Interest shared|Your interest has been shared with this business/);

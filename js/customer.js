@@ -66,6 +66,24 @@ const CUSTOMER_STAGE_THREE_COPY = Object.freeze({
   changeAction: "Change what I’m looking for"
 });
 
+const CUSTOMER_STAGE_SIX_COPY = Object.freeze({
+  stageLabel: "Stage 6 · Continue with DEMEOS",
+  heading: "Help DEMEOS understand better",
+  question: "Did this possibility fit what you were looking for?",
+  choices: Object.freeze([
+    Object.freeze({ label: "Yes, this was relevant", value: "Relevant" }),
+    Object.freeze({ label: "Not quite", value: "Not quite" }),
+    Object.freeze({ label: "I need something different", value: "Something different" })
+  ]),
+  commentLabel: "Tell DEMEOS a little more (optional)",
+  submitAction: "Share feedback",
+  required: "Choose one response before sharing feedback.",
+  error: "DEMEOS could not share your feedback. Please try again.",
+  success: "Thank you. Your feedback will help DEMEOS understand better.",
+  exploreAction: "Explore my possibilities",
+  newIntentionAction: "Start with a new intention"
+});
+
 function toCustomerPossibility(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const possibilityId = normalizedRequiredString(value.possibilityId);
@@ -89,7 +107,7 @@ function getValidCustomerPossibilities(possibilities) {
   return Array.isArray(possibilities) ? possibilities.map(toCustomerPossibility).filter(Boolean).slice(0, 5) : [];
 }
 
-function renderCustomerPossibilities(document, possibilities, understanding, participationRecorder) {
+function renderCustomerPossibilities(document, possibilities, understanding, participationRecorder, feedbackRecorder, continuationActions) {
   const region = document.getElementById("customer-possibilities");
   const heading = document.getElementById("customer-possibilities-heading");
   const list = document.getElementById("customer-possibilities-list");
@@ -154,6 +172,76 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
       }
     });
     focusRegion.appendChild(participation);
+
+    const feedback = document.createElement("section");
+    feedback.className = "customer-feedback";
+    addText(document, feedback, "p", "customer-stage-label", CUSTOMER_STAGE_SIX_COPY.stageLabel);
+    addText(document, feedback, "h4", "customer-feedback-heading", CUSTOMER_STAGE_SIX_COPY.heading);
+    const form = document.createElement("form");
+    form.className = "customer-feedback-form";
+    const choices = document.createElement("fieldset");
+    const legend = addText(document, choices, "legend", "customer-feedback-question", CUSTOMER_STAGE_SIX_COPY.question);
+    legend.id = "customer-feedback-question-" + possibility.possibilityId;
+    CUSTOMER_STAGE_SIX_COPY.choices.forEach(function (choice, index) {
+      const label = document.createElement("label");
+      label.className = "customer-feedback-choice";
+      const input = document.createElement("input");
+      input.type = "radio";
+      input.name = "customer-feedback-response";
+      input.value = choice.value;
+      input.required = index === 0;
+      label.appendChild(input);
+      addText(document, label, "span", "", choice.label);
+      choices.appendChild(label);
+    });
+    form.appendChild(choices);
+    const commentLabel = addText(document, form, "label", "customer-feedback-comment-label", CUSTOMER_STAGE_SIX_COPY.commentLabel);
+    const comment = document.createElement("textarea");
+    comment.rows = 3;
+    comment.maxLength = 500;
+    comment.id = "customer-feedback-comment-" + possibility.possibilityId;
+    commentLabel.setAttribute("for", comment.id);
+    form.appendChild(comment);
+    const submit = addText(document, form, "button", "customer-feedback-submit", CUSTOMER_STAGE_SIX_COPY.submitAction);
+    submit.type = "submit";
+    const feedbackResult = addText(document, form, "p", "customer-feedback-result", "");
+    feedbackResult.setAttribute("aria-live", "polite");
+    feedbackResult.setAttribute("tabindex", "-1");
+    const continueActions = document.createElement("div");
+    continueActions.className = "customer-feedback-continuations";
+    continueActions.hidden = true;
+    const explore = addText(document, continueActions, "button", "customer-feedback-explore", CUSTOMER_STAGE_SIX_COPY.exploreAction);
+    explore.type = "button";
+    const restart = addText(document, continueActions, "button", "customer-feedback-restart", CUSTOMER_STAGE_SIX_COPY.newIntentionAction);
+    restart.type = "button";
+    explore.addEventListener("click", function () {
+      if (continuationActions && continuationActions.explore) continuationActions.explore();
+      else if (typeof back.click === "function") back.click();
+    });
+    restart.addEventListener("click", function () {
+      if (continuationActions && continuationActions.restart) continuationActions.restart();
+    });
+    form.appendChild(continueActions);
+    form.addEventListener("submit", async function (event) {
+      event.preventDefault();
+      const selected = choices.children.map ? choices.children.map(function (label) { return label.children[0]; }).find(function (input) { return input.checked; })
+        : Array.from(choices.querySelectorAll("input[type=radio]")).find(function (input) { return input.checked; });
+      if (!selected) { feedbackResult.textContent = CUSTOMER_STAGE_SIX_COPY.required; return; }
+      submit.disabled = true;
+      try {
+        await (feedbackRecorder || recordCustomerFeedback)(possibility, { response: selected.value, comment: comment.value || "" });
+        feedbackResult.textContent = CUSTOMER_STAGE_SIX_COPY.success;
+        continueActions.hidden = false;
+        choices.disabled = true;
+        comment.disabled = true;
+        if (typeof feedbackResult.focus === "function") feedbackResult.focus();
+      } catch (error) {
+        submit.disabled = false;
+        feedbackResult.textContent = CUSTOMER_STAGE_SIX_COPY.error;
+      }
+    });
+    feedback.appendChild(form);
+    focusRegion.appendChild(feedback);
     focusRegion.setAttribute("aria-label", CUSTOMER_STAGE_THREE_COPY.possibilityLabel + ": " + possibility.content);
     if (typeof focusRegion.focus === "function") focusRegion.focus();
   }
@@ -173,7 +261,7 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
   heading.focus();
 }
 
-async function requestCustomerPossibilities(document, understanding, fetcher) {
+async function requestCustomerPossibilities(document, understanding, fetcher, continuationActions) {
   const region = document.getElementById("customer-possibilities");
   const heading = document.getElementById("customer-possibilities-heading");
   region.hidden = false;
@@ -185,10 +273,25 @@ async function requestCustomerPossibilities(document, understanding, fetcher) {
     });
     const data = await response.json();
     if (!response.ok || !data || !Array.isArray(data.possibilities)) throw new Error();
-    renderCustomerPossibilities(document, data.possibilities, understanding, recordParticipation);
+    renderCustomerPossibilities(document, data.possibilities, understanding, recordParticipation,
+      recordCustomerFeedback, continuationActions);
   } catch (error) {
     heading.textContent = CUSTOMER_STAGE_THREE_COPY.error;
   }
+}
+
+async function recordCustomerFeedback(work, feedback) {
+  const workItemId = work && normalizedRequiredString(work.workItemId);
+  const allowed = CUSTOMER_STAGE_SIX_COPY.choices.map(function (choice) { return choice.value; });
+  if (!workItemId || !feedback || !allowed.includes(feedback.response) || typeof feedback.comment !== "string" || feedback.comment.length > 500) {
+    throw new Error(CUSTOMER_STAGE_SIX_COPY.error);
+  }
+  const body = { response: feedback.response };
+  if (feedback.comment.trim()) body.comment = feedback.comment.trim();
+  const response = await fetch(`/api/customer/work/${encodeURIComponent(workItemId)}/feedback`, {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body)
+  });
+  if (!response.ok) throw new Error(CUSTOMER_STAGE_SIX_COPY.error);
 }
 
 function getLocalGreeting(value) {
@@ -318,7 +421,15 @@ function initializeCustomerIntention(document, navigatorValue, now) {
     document.getElementById("customer-understanding-status").textContent = CUSTOMER_STAGE_TWO_COPY.confirmed;
     document.getElementById("customer-understanding-change").hidden = false;
     understandingPanel.hidden = true;
-    requestCustomerPossibilities(document, currentUnderstanding, globalThis.fetch);
+    requestCustomerPossibilities(document, currentUnderstanding, globalThis.fetch, {
+      explore: function () {
+        document.getElementById("customer-focused-possibility").hidden = true;
+        document.getElementById("customer-focused-possibility").textContent = "";
+        document.getElementById("customer-possibilities-list").className = "customer-possibilities-list";
+        document.getElementById("customer-possibilities-heading").focus();
+      },
+      restart: changeIntention
+    });
   });
 }
 
@@ -454,9 +565,9 @@ async function loadCustomerWork(document, fetcher) {
 }
 
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { CUSTOMER_STAGE_ONE_COPY, CUSTOMER_STAGE_TWO_COPY, CUSTOMER_STAGE_THREE_COPY, createCustomerWorkCard, getLocalGreeting, getPreferredLanguage,
+  module.exports = { CUSTOMER_STAGE_ONE_COPY, CUSTOMER_STAGE_TWO_COPY, CUSTOMER_STAGE_THREE_COPY, CUSTOMER_STAGE_SIX_COPY, createCustomerWorkCard, getLocalGreeting, getPreferredLanguage,
     getServerCustomerPackages, getValidCustomerPossibilities, getValidCustomerWork, initializeCustomerIntention, loadCustomerWork,
-    normalizedCustomerIntention, recordParticipation, renderCustomerPossibilities, renderCustomerWork,
+    normalizedCustomerIntention, recordCustomerFeedback, recordParticipation, renderCustomerPossibilities, renderCustomerWork,
     requestCustomerLocation, requestCustomerPossibilities,
     selectCustomerIntention, toCustomerPossibility, toCustomerWorkItem };
 }
