@@ -1115,3 +1115,7 @@ footer { background: #081f3d; color: #c4cfdb; text-align: center; }
   .marketing-capability-main { padding: 1.25rem .9rem 2.5rem; }
   .marketing-workspace-main { padding-top: 1.25rem; }
 }
+.customer-possibilities { margin-top: 1.5rem; }
+.customer-possibilities h3 { max-width: 42rem; }
+.customer-possibility-card { margin-top: 1rem; padding: 1rem; border: 1px solid rgba(255,255,255,.22); border-radius: .75rem; }
+.customer-possibility-evidence { margin-bottom: 0; opacity: .8; }

@@ -50,15 +50,16 @@ test("understanding ignores coordinates, business data, and unrelated arguments"
   assert.doesNotMatch(JSON.stringify(result), /51\.5|Invented Cafe|rating|nearby/);
 });
 
-test("confirmation is an explicit in-memory state change and customer code does not post it", function () {
+test("confirmation is explicit and only then prepares server-authoritative possibilities", function () {
   const ready = buildCustomerUnderstanding("Go somewhere", "visit a museum");
   assert.equal(ready.confidenceState, "ready-for-confirmation");
   const confirmed = confirmCustomerUnderstanding(ready);
   assert.equal(confirmed.confidenceState, "confirmed");
   const source = fs.readFileSync(path.join(__dirname, "..", "js/customer.js"), "utf8");
-  const confirmationHandler = source.slice(source.indexOf('getElementById("customer-understanding-confirm")'),
+  const confirmationHandler = source.slice(source.indexOf('getElementById("customer-understanding-confirm").addEventListener'),
     source.indexOf("function toCustomerWorkItem"));
-  assert.doesNotMatch(confirmationHandler, /fetch|XMLHttpRequest|\/api\/customer\/work|participation|localStorage/);
+  assert.match(confirmationHandler, /confirmCustomerUnderstanding[\s\S]*requestCustomerPossibilities/);
+  assert.doesNotMatch(confirmationHandler, /\/api\/customer\/work|participation|localStorage|geolocation/);
 });
 
 test("Stage 2 exposes accessible controls, preserves Stage 1, and introduces no marketplace features", function () {
