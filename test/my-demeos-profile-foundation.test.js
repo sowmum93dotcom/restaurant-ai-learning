@@ -24,17 +24,20 @@ test("My DEMEOS uses the official logo and accessible, current-section navigatio
   assert.match(html, /<h1>My DEMEOS<\/h1>/);
 });
 
-test("profile foundation is honest about unavailable customer identity and empty future areas", function () {
+test("profile foundation presents trusted sign-in and honest empty relationship areas", function () {
   const html = read("my-demeos.html");
+  assert.match(html, /Sign in to My DEMEOS/);
+  assert.match(html, /Your secure DEMEOS relationship is active\./);
   assert.match(html, /Customer sign-in is not available yet\./);
-  assert.match(html, /Secure customer sign-in will be added before DEMEOS stores your relationship across visits\./);
+  assert.match(html, /requires Clerk provider configuration before it can be activated\./);
   for (const heading of ["My Intentions", "My Possibilities", "My Participation", "My Preferences", "Privacy &amp; Control"]) {
     assert.match(html, new RegExp(`<h3>${heading}<\\/h3>`));
   }
   assert.match(html, /Interest remains interest\. Feedback remains feedback\. A choice is not automatically a purchase, sale or success\./);
-  assert.doesNotMatch(html, /localStorage|sessionStorage|randomUUID|crypto\.|owner-auth|owner-sign-in|clerk|business-workspace\.js/i);
+  assert.doesNotMatch(html, /localStorage|sessionStorage|randomUUID|crypto\.|owner-auth|owner-sign-in|business-workspace\.js/i);
   assert.doesNotMatch(html, /reward|points|discount|membership|booking|order history|purchase history/i);
-  assert.doesNotMatch(html, /<script\b|data-customer-id|customerId|\b\d+\s+(intentions|possibilities|participations)/i);
+  assert.match(html, /<script src="js\/my-demeos\.js"><\/script>/);
+  assert.doesNotMatch(html, /data-customer-id|customerId|\b\d+\s+(intentions|possibilities|participations)/i);
 });
 
 test("My DEMEOS responsive styles preserve focus visibility and a single-column mobile reading flow", function () {

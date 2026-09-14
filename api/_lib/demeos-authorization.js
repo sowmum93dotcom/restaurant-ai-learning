@@ -5,6 +5,7 @@ const {
 const {
   DEMEOS_ACTOR_CONTEXT_STATES,
   isTrustedBusinessOwnerContext,
+  isTrustedCustomerContext,
   isTrustedAdminContext
 } = require("./demeos-actor-context.js");
 
@@ -32,6 +33,9 @@ function authorizeDemeosAction({ actorContext, action, businessId } = {}) {
   if (actorContext && action) {
     if (isPublicCustomerContext(actorContext)) {
       allowed = canPerformDemeosAction({ actorScope: actorContext.actorScope, action });
+    } else if (actorContext.actorScope === DEMEOS_ACTOR_SCOPES.CUSTOMER) {
+      allowed = isTrustedCustomerContext(actorContext) &&
+        canPerformDemeosAction({ actorScope: actorContext.actorScope, action });
     } else if (actorContext.actorScope === DEMEOS_ACTOR_SCOPES.BUSINESS_OWNER) {
       allowed = isTrustedBusinessOwnerContext(actorContext, businessId) &&
         canPerformDemeosAction({ actorScope: actorContext.actorScope, action });

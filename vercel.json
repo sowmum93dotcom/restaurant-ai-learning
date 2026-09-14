@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/api/customer/identity",
+      "destination": "/api/public-config?resource=customer-identity"
+    },
+    {
       "source": "/api/customer/work/:campaignId/feedback",
       "destination": "/api/customer/work/:campaignId/participation?interaction=feedback"
     }

@@ -6,6 +6,7 @@ const DEMEOS_ACTOR_CONTEXT_STATES = Object.freeze({
 
 const ACTOR_SCOPES = Object.freeze({
   PUBLIC_CUSTOMER: "public-customer",
+  CUSTOMER: "customer",
   BUSINESS_OWNER: "business-owner",
   ADMIN: "demeos-admin"
 });
@@ -61,6 +62,29 @@ function createAuthenticatedAdminContext({ trustedIdentityId } = {}) {
   });
 }
 
+function createAuthenticatedCustomerContext({ trustedCustomerIdentityId } = {}) {
+  if (!isNonEmptyIdentifier(trustedCustomerIdentityId)) return createUnresolvedActorContext();
+
+  return Object.freeze({
+    state: DEMEOS_ACTOR_CONTEXT_STATES.AUTHENTICATED,
+    actorScope: ACTOR_SCOPES.CUSTOMER,
+    authenticated: true,
+    trustedCustomerIdentityId,
+    businessId: null
+  });
+}
+
+function isTrustedCustomerContext(context) {
+  return Boolean(
+    context &&
+    context.state === DEMEOS_ACTOR_CONTEXT_STATES.AUTHENTICATED &&
+    context.authenticated === true &&
+    context.actorScope === ACTOR_SCOPES.CUSTOMER &&
+    isNonEmptyIdentifier(context.trustedCustomerIdentityId) &&
+    context.businessId === null
+  );
+}
+
 function isTrustedBusinessOwnerContext(context, businessId) {
   return Boolean(
     context &&
@@ -88,8 +112,10 @@ module.exports = {
   DEMEOS_ACTOR_CONTEXT_STATES,
   createPublicCustomerContext,
   createAuthenticatedBusinessOwnerContext,
+  createAuthenticatedCustomerContext,
   createAuthenticatedAdminContext,
   createUnresolvedActorContext,
   isTrustedBusinessOwnerContext,
+  isTrustedCustomerContext,
   isTrustedAdminContext
 };
