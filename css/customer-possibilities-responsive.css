@@ -1,0 +1,46 @@
+.customer-possibilities-list.is-deemphasized:has(+ .customer-focused-possibility[hidden]) {
+  opacity: 1;
+  filter: none;
+  pointer-events: auto;
+}
+
+@media (max-width: 700px) {
+  .customer-possibilities-list {
+    position: relative;
+    display: flex;
+    min-height: 0;
+    padding: 1rem 0;
+    flex-direction: column;
+    gap: .8rem;
+  }
+
+  .customer-possibility-surface,
+  .customer-possibility-position-1,
+  .customer-possibility-position-2,
+  .customer-possibility-position-3,
+  .customer-possibility-position-4,
+  .customer-possibility-position-5 {
+    position: relative;
+    top: auto;
+    right: auto;
+    bottom: auto;
+    left: auto;
+    z-index: auto;
+    width: 100%;
+    min-height: 150px;
+    transform: none;
+  }
+
+  .customer-possibility-surface:focus,
+  .customer-possibility-surface:focus-visible {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .customer-possibility-surface,
+  .customer-possibilities-list {
+    animation: none !important;
+    transition: none !important;
+  }
+}
