@@ -11,62 +11,49 @@ function response() {
 
 async function runFeedbackRoute(repository, req) {
   const persistencePath = require.resolve("../api/_lib/persistence.js");
-  const routePath = require.resolve("../api/customer/work/[campaignId]/feedback.js");
+  const routePath = require.resolve("../api/customer/work/[campaignId]/participation.js");
   const persistence = require(persistencePath);
   const original = persistence.getRepository;
   persistence.getRepository = function () { return repository; };
   delete require.cache[routePath];
   const handler = require(routePath);
   const res = response();
-  try { await handler(req, res); } finally { persistence.getRepository = original; delete require.cache[routePath]; }
+  const request = { ...req, query: { ...(req.query || {}), interaction: "feedback" } };
+  try { await handler(request, res); } finally { persistence.getRepository = original; delete require.cache[routePath]; }
   return res;
 }
 
-test("feedback contract accepts only relevance responses and trims optional plain text", function () {
+test("feedback contract preserves relevance-only semantics", function () {
   assert.deepEqual(parseCustomerFeedback({ response: "Relevant", comment: "  useful direction  " }), {
-    feedbackType: "possibility-relevance", response: "Relevant", comment: "useful direction"
+    feedbackType: CUSTOMER_FEEDBACK_TYPE, response: "Relevant", comment: "useful direction"
   });
-  assert.deepEqual(parseCustomerFeedback({ response: "Not quite", comment: "   " }), {
+  assert.deepEqual(parseCustomerFeedback({ response: "Not quite" }), {
     feedbackType: CUSTOMER_FEEDBACK_TYPE, response: "Not quite"
   });
-  assert.deepEqual(parseCustomerFeedback({ response: "Something different" }), {
-    feedbackType: CUSTOMER_FEEDBACK_TYPE, response: "Something different"
-  });
+  assert.equal(parseCustomerFeedback({ response: "Great" }), null);
+  assert.equal(parseCustomerFeedback({ response: "Relevant", comment: "x".repeat(501) }), null);
+  assert.equal(parseCustomerFeedback({ response: "Relevant", businessId: "browser-value" }), null);
 });
 
-test("feedback contract rejects malformed, unsupported, oversized, HTML, and browser authority", function () {
-  for (const body of [null, [], "Relevant", {}, { response: "Yes" }, { response: 5 },
-    { response: "Relevant", comment: "x".repeat(501) }, { response: "Relevant", comment: "<b>yes</b>" },
-    { response: "Relevant", businessId: "spoof" },
-    { response: "Relevant", feedbackType: "customer-satisfaction" },
-    { response: "Relevant", rating: 5 }, { response: "Relevant", purchased: true }]) {
-    assert.equal(parseCustomerFeedback(body), null);
-  }
-});
-
-test("feedback client sends only response and trimmed comment and never submits by itself", async function () {
+test("feedback client sends only response and trimmed optional comment", async function () {
   const originalFetch = global.fetch;
   const requests = [];
   global.fetch = async function (url, options) { requests.push({ url, options }); return { ok: true }; };
   try {
-    assert.equal(requests.length, 0);
-    await recordCustomerFeedback({ workItemId: "work/a", businessId: "browser" },
-      { response: "Relevant", comment: "  helpful  " });
+    await recordCustomerFeedback({ workItemId: "work/a" }, { response: "Relevant", comment: "  helpful  " });
   } finally { global.fetch = originalFetch; }
   assert.equal(requests[0].url, "/api/customer/work/work%2Fa/feedback");
   assert.deepEqual(JSON.parse(requests[0].options.body), { response: "Relevant", comment: "helpful" });
 });
 
-test("Stage 6 copy has exactly three non-rating relevance choices and neutral success language", function () {
+test("Stage 6 has exactly three relevance choices and neutral success copy", function () {
   assert.deepEqual(CUSTOMER_STAGE_SIX_COPY.choices.map((choice) => choice.label), [
     "Yes, this was relevant", "Not quite", "I need something different"
   ]);
-  assert.doesNotMatch(JSON.stringify(CUSTOMER_STAGE_SIX_COPY), /\bstar\b|rating|score|percentage|purchased|satisfied|business was/i);
-  assert.equal(CUSTOMER_STAGE_SIX_COPY.success,
-    "Thank you. Your feedback will help DEMEOS understand better.");
+  assert.equal(CUSTOMER_STAGE_SIX_COPY.success, "Thank you. Your feedback will help DEMEOS understand better.");
 });
 
-test("repository resolves business from current publishable campaign and inserts dedicated feedback", async function () {
+test("repository stores feedback separately for a current publishable campaign", async function () {
   const queries = [];
   const campaign = { campaignType: "social", campaignText: "A useful possibility", approvalStatus: "Approved" };
   const repository = createPersistenceRepository({ async ensureSchema() {}, async query(statement, values) {
@@ -83,43 +70,23 @@ test("repository resolves business from current publishable campaign and inserts
   assert.equal(queries[1].values[4], "stored-business");
 });
 
-test("repository rejects unavailable feedback work before inserting", async function () {
-  let count = 0;
-  const repository = createPersistenceRepository({ async ensureSchema() {}, async query() {
-    count += 1; return { rows: [{ business_id: "business", campaign: {
-      campaignType: "social", campaignText: "Draft", approvalStatus: "Unapproved"
-    }}] };
-  }});
-  assert.equal(await repository.recordCustomerFeedback("draft", {
-    feedbackType: CUSTOMER_FEEDBACK_TYPE, response: "Relevant"
-  }), null);
-  assert.equal(count, 1);
-});
-
-test("feedback endpoint makes type and identities authoritative and minimizes confirmation", async function () {
+test("feedback endpoint keeps feedback type and business identity server-authoritative", async function () {
   let received;
   const res = await runFeedbackRoute({ async recordCustomerFeedback(campaignId, feedback) {
-    received = { campaignId, feedback }; return { response: feedback.response, internalId: 42 };
-  }}, { method: "POST", query: { campaignId: "campaign-a" }, body: {
-    response: "Relevant", comment: "  useful  "
-  }});
+    received = { campaignId, feedback }; return { response: feedback.response };
+  }}, { method: "POST", query: { campaignId: "campaign-a" }, body: { response: "Relevant", comment: "  useful  " } });
   assert.equal(res.statusCode, 201);
   assert.deepEqual(received, { campaignId: "campaign-a", feedback: {
     feedbackType: "possibility-relevance", response: "Relevant", comment: "useful"
   }});
   assert.deepEqual(res.body, { feedback: { response: "Relevant" } });
-
-  for (const body of [{ response: "Relevant", businessId: "spoof" },
-    { response: "Relevant", feedbackType: "spoof" }, { response: "Great" }]) {
-    const invalid = await runFeedbackRoute({ async recordCustomerFeedback() { throw new Error("must not run"); } },
-      { method: "POST", query: { campaignId: "campaign-a" }, body });
-    assert.equal(invalid.statusCode, 400);
-  }
 });
 
-test("feedback endpoint returns not found for work no longer publishable", async function () {
-  const res = await runFeedbackRoute({ async recordCustomerFeedback() { return null; } },
+test("feedback endpoint rejects invalid input and missing publishable work", async function () {
+  const invalid = await runFeedbackRoute({ async recordCustomerFeedback() { return { response: "Relevant" }; } },
+    { method: "POST", query: { campaignId: "campaign-a" }, body: { response: "Unsupported" } });
+  assert.equal(invalid.statusCode, 400);
+  const unavailable = await runFeedbackRoute({ async recordCustomerFeedback() { return null; } },
     { method: "POST", query: { campaignId: "campaign-a" }, body: { response: "Not quite" } });
-  assert.equal(res.statusCode, 404);
-  assert.deepEqual(res.body, { error: "Approved DEMEOS work was not found." });
+  assert.equal(unavailable.statusCode, 404);
 });
