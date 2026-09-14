@@ -27,7 +27,12 @@ function fakeDocument() {
     "customer-possibilities-heading": new Element("h2"),
     "customer-possibilities-list": new Element(),
     "customer-focused-possibility": new Element("div"),
-    "customer-possibility-intention": new Element("div")
+    "customer-possibility-intention": new Element("div"),
+    "customer-possibilities-header": new Element("header"),
+    "customer-possibility-space": new Element("div"),
+    "customer-change-intention": new Element("button"),
+    "customer-no-possibilities": new Element("section"),
+    "customer-no-possibilities-heading": new Element("h2")
   };
   return { elements, createElement(tag) { return new Element(tag); }, getElementById(id) { return elements[id]; } };
 }
@@ -74,6 +79,20 @@ test("Stage 3 remains hidden without an explicitly confirmed understanding", fun
   assert.equal(document.elements["customer-possibilities-list"].children.length, 0);
 });
 
+test("an empty server result renders the trusted continuation state and no possibility", function () {
+  const document = fakeDocument();
+  renderCustomerPossibilities(document, [], understanding);
+
+  assert.equal(document.elements["customer-possibilities"].hidden, false);
+  assert.equal(document.elements["customer-no-possibilities"].hidden, false);
+  assert.equal(document.elements["customer-possibility-space"].hidden, true);
+  assert.equal(document.elements["customer-possibilities-list"].children.length, 0);
+  assert.equal(document.elements["customer-no-possibilities-heading"].focused, true);
+  assert.equal(document.elements["customer-possibilities"].attributes["aria-labelledby"], "customer-no-possibilities-heading");
+  assert.equal(document.elements["customer-possibilities-heading"].textContent,
+    "DEMEOS doesn’t have a sufficiently supported possibility yet.");
+});
+
 test("selecting a possibility opens its readable surface and back restores the space", async function () {
   const document = fakeDocument();
   const participation = [];
@@ -111,4 +130,25 @@ test("Customer Interface makes Stage 3 primary, keeps its copy centralized, and 
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.customer-possibility-surface[\s\S]*transition: none/);
   assert.doesNotMatch(CUSTOMER_STAGE_THREE_COPY.found, /best|top|recommended|score|perfect|ideal/i);
   assert.doesNotMatch(html, /filter|search results|rating|review|price|availability|map|booking/i);
+});
+
+test("trusted empty-state refinement is explicit, bounded, and returns through fresh confirmation", function () {
+  const html = fs.readFileSync(path.join(__dirname, "..", "customer.html"), "utf8");
+  const source = fs.readFileSync(path.join(__dirname, "..", "js/customer.js"), "utf8");
+  const continuation = fs.readFileSync(path.join(__dirname, "..", "js/customer-continuation.js"), "utf8");
+  const emptyMarkup = html.slice(html.indexOf('id="customer-no-possibilities"'), html.indexOf("</section>", html.indexOf('id="customer-no-possibilities"')));
+
+  assert.match(emptyMarkup, /Your Possibilities/);
+  assert.match(emptyMarkup, /DEMEOS doesn’t have a sufficiently supported possibility yet\./);
+  assert.match(emptyMarkup, /Your intention is clear\. DEMEOS will only show a possibility when the available information supports the connection\./);
+  assert.match(emptyMarkup, /Add more detail/);
+  assert.match(emptyMarkup, /Change my intention/);
+  assert.match(emptyMarkup, /textarea[^>]*maxlength="500"/);
+  assert.match(source, /customer-add-detail[^]*addEventListener\("click"[^]*\.focus\(\)/);
+  assert.match(source, /customer-add-detail-form[^]*addEventListener\("submit"[^]*preventDefault[^]*source: "customer-provided"|customer-add-detail-form[^]*addEventListener\("submit"[^]*showUnderstanding/);
+  assert.match(source, /showUnderstanding\(""\);[^]*customer-understanding-confirm[^]*confirmCustomerUnderstanding[^]*requestCustomerPossibilities/);
+  assert.match(source, /customer-empty-change-intention[^]*changeIntention/);
+  assert.doesNotMatch(source.slice(source.indexOf('customer-empty-change-intention'), source.indexOf('customer-understanding-confirm')), /selectedIntention\s*=\s*""/);
+  assert.match(continuation, /intentionText\.value = ""[^]*clarificationText\.value = ""[^]*aria-pressed", "false"/);
+  assert.doesNotMatch(emptyMarkup, /no results|nothing found|try another search|no businesses available|best match|recommended|sponsored|score|ranking|rating|filter|map|price|booking/i);
 });

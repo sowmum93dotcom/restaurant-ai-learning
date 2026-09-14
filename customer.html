@@ -66,18 +66,36 @@
         </section>
 
         <section id="customer-possibilities" class="customer-possibilities" aria-labelledby="customer-possibilities-heading" hidden>
-          <header class="customer-possibilities-header">
+          <header id="customer-possibilities-header" class="customer-possibilities-header">
             <p class="customer-stage-label" data-possibilities-copy="stageLabel"></p>
             <h2 id="customer-possibilities-heading" tabindex="-1"></h2>
             <p data-possibilities-copy="introduction"></p>
           </header>
-          <div class="customer-possibility-space">
+          <div id="customer-possibility-space" class="customer-possibility-space">
             <div class="customer-space-rings" aria-hidden="true"></div>
             <div id="customer-possibility-intention" class="customer-possibility-intention"></div>
             <div id="customer-possibilities-list" class="customer-possibilities-list"></div>
             <div id="customer-focused-possibility" class="customer-focused-possibility" role="region" aria-live="polite" tabindex="-1" hidden></div>
           </div>
           <button id="customer-change-intention" class="customer-change-intention" type="button" data-possibilities-copy="changeAction"></button>
+          <section id="customer-no-possibilities" class="customer-no-possibilities" aria-labelledby="customer-no-possibilities-heading" hidden>
+            <p class="customer-stage-label">Your Possibilities</p>
+            <h2 id="customer-no-possibilities-heading" tabindex="-1">DEMEOS doesn’t have a sufficiently supported possibility yet.</h2>
+            <p>Your intention is clear. DEMEOS will only show a possibility when the available information supports the connection.</p>
+            <div id="customer-no-possibilities-actions" class="customer-no-possibilities-actions">
+              <button id="customer-add-detail" type="button">Add more detail</button>
+              <button id="customer-empty-change-intention" type="button">Change my intention</button>
+            </div>
+            <form id="customer-add-detail-form" class="customer-add-detail-form" hidden>
+              <label for="customer-add-detail-text">Add customer-provided context about what you want</label>
+              <textarea id="customer-add-detail-text" rows="4" maxlength="500"></textarea>
+              <div class="customer-no-possibilities-actions">
+                <button type="submit">Continue</button>
+                <button id="customer-add-detail-cancel" type="button">Cancel</button>
+              </div>
+              <p id="customer-add-detail-status" class="customer-context-status" aria-live="polite"></p>
+            </form>
+          </section>
         </section>
       </div>
     </section>
