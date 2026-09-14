@@ -12,6 +12,98 @@ function normalizedRequiredString(value) {
   return normalized || null;
 }
 
+const CUSTOMER_STAGE_ONE_COPY = Object.freeze({
+  stageLabel: "Stage 1 · Your intention",
+  question: "What would you like to do today?",
+  trust: "Tell DEMEOS what you need. You stay in control.",
+  intentionLegend: "Choose an intention",
+  intentions: Object.freeze([
+    "Eat & enjoy", "Take care of myself", "Spend time together",
+    "Get something done", "Go somewhere", "Discover something new"
+  ]),
+  textLabel: "Describe what you need in your own words (optional)",
+  textPlaceholder: "For example, I would like a relaxed place to spend time together.",
+  locationAction: "Use my location",
+  locationAvailable: "Location available for this session.",
+  locationOptional: "Location is optional. You can continue without it.",
+  continueAction: "Continue",
+  continueReady: "Your intention is ready. No information has been sent.",
+  approvedWorkLink: "View approved work",
+  greetings: Object.freeze({ morning: "Good morning", afternoon: "Good afternoon", evening: "Good evening" })
+});
+
+function getLocalGreeting(value) {
+  const hour = value instanceof Date ? value.getHours() : Number(value);
+  if (Number.isFinite(hour) && hour >= 5 && hour < 12) return CUSTOMER_STAGE_ONE_COPY.greetings.morning;
+  if (Number.isFinite(hour) && hour >= 12 && hour < 18) return CUSTOMER_STAGE_ONE_COPY.greetings.afternoon;
+  return CUSTOMER_STAGE_ONE_COPY.greetings.evening;
+}
+
+function getPreferredLanguage(navigatorValue) {
+  if (!navigatorValue || typeof navigatorValue !== "object") return "en";
+  const languages = Array.isArray(navigatorValue.languages) ? navigatorValue.languages : [];
+  return normalizedRequiredString(languages[0]) || normalizedRequiredString(navigatorValue.language) || "en";
+}
+
+function normalizedCustomerIntention(value) {
+  if (typeof value !== "string") return "";
+  return value.trim().replace(/\s+/g, " ");
+}
+
+function selectCustomerIntention(value) {
+  return CUSTOMER_STAGE_ONE_COPY.intentions.includes(value) ? value : "";
+}
+
+function requestCustomerLocation(geolocation, onState) {
+  if (!geolocation || typeof geolocation.getCurrentPosition !== "function") {
+    onState("optional");
+    return;
+  }
+  geolocation.getCurrentPosition(function () { onState("available"); }, function () { onState("optional"); });
+}
+
+function initializeCustomerIntention(document, navigatorValue, now) {
+  const greeting = document.getElementById("customer-greeting");
+  if (!greeting) return;
+  document.querySelectorAll("[data-stage-copy]").forEach(function (element) {
+    element.textContent = CUSTOMER_STAGE_ONE_COPY[element.getAttribute("data-stage-copy")] || "";
+  });
+  document.querySelectorAll("[data-stage-placeholder]").forEach(function (element) {
+    element.setAttribute("placeholder", CUSTOMER_STAGE_ONE_COPY[element.getAttribute("data-stage-placeholder")] || "");
+  });
+  greeting.textContent = getLocalGreeting(now || new Date());
+  document.documentElement.dataset.preferredLanguage = getPreferredLanguage(navigatorValue);
+
+  const options = document.getElementById("customer-intention-options");
+  let selectedIntention = "";
+  CUSTOMER_STAGE_ONE_COPY.intentions.forEach(function (label) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "customer-intention-option";
+    button.textContent = label;
+    button.setAttribute("aria-pressed", "false");
+    button.addEventListener("click", function () {
+      selectedIntention = selectCustomerIntention(label);
+      Array.from(options.children).forEach(function (option) {
+        option.setAttribute("aria-pressed", String(option === button));
+      });
+    });
+    options.appendChild(button);
+  });
+
+  const locationStatus = document.getElementById("customer-location-status");
+  document.getElementById("customer-location-button").addEventListener("click", function () {
+    requestCustomerLocation(navigatorValue && navigatorValue.geolocation, function (state) {
+      locationStatus.textContent = state === "available" ? CUSTOMER_STAGE_ONE_COPY.locationAvailable : CUSTOMER_STAGE_ONE_COPY.locationOptional;
+    });
+  });
+  document.getElementById("customer-intention-form").addEventListener("submit", function (event) {
+    event.preventDefault();
+    const freeText = normalizedCustomerIntention(document.getElementById("customer-intention-text").value);
+    document.getElementById("customer-intention-status").textContent = (selectedIntention || freeText) ? CUSTOMER_STAGE_ONE_COPY.continueReady : "";
+  });
+}
+
 function toCustomerWorkItem(item) {
   if (!item || typeof item !== "object" || Array.isArray(item)) return null;
   const workItemId = normalizedRequiredString(item.workItemId);
@@ -144,10 +236,13 @@ async function loadCustomerWork(document, fetcher) {
 }
 
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { createCustomerWorkCard, getServerCustomerPackages, getValidCustomerWork, loadCustomerWork,
-    recordParticipation, renderCustomerWork, toCustomerWorkItem };
+  module.exports = { CUSTOMER_STAGE_ONE_COPY, createCustomerWorkCard, getLocalGreeting, getPreferredLanguage,
+    getServerCustomerPackages, getValidCustomerWork, initializeCustomerIntention, loadCustomerWork,
+    normalizedCustomerIntention, recordParticipation, renderCustomerWork, requestCustomerLocation,
+    selectCustomerIntention, toCustomerWorkItem };
 }
 
 if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", function () {
+  initializeCustomerIntention(document, navigator, new Date());
   loadCustomerWork(document, fetch);
 });
