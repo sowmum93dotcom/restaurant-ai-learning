@@ -9,6 +9,10 @@
       "destination": "/api/public-config?resource=customer-intentions"
     },
     {
+      "source": "/api/customer/possibilities/saved",
+      "destination": "/api/public-config?resource=customer-saved-possibilities"
+    },
+    {
       "source": "/api/customer/work/:campaignId/feedback",
       "destination": "/api/customer/work/:campaignId/participation?interaction=feedback"
     }

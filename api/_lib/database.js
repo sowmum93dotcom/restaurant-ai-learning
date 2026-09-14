@@ -62,7 +62,24 @@ const SCHEMA_STATEMENTS = [
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`,
   `CREATE INDEX IF NOT EXISTS demeos_customer_intentions_owner_created_idx
-    ON demeos_customer_intentions (trusted_customer_identity_id, created_at DESC, intention_id DESC)`
+    ON demeos_customer_intentions (trusted_customer_identity_id, created_at DESC, intention_id DESC)`,
+  `CREATE TABLE IF NOT EXISTS demeos_customer_saved_possibilities (
+    saved_possibility_id BIGSERIAL PRIMARY KEY,
+    trusted_customer_identity_id TEXT NOT NULL,
+    work_item_id TEXT NOT NULL REFERENCES demeos_campaigns(campaign_id),
+    possibility_content TEXT NOT NULL,
+    business_name TEXT NOT NULL,
+    location TEXT,
+    relevance_basis TEXT NOT NULL CHECK (relevance_basis = 'explicit-customer-intent-overlap'),
+    evidence_type TEXT NOT NULL CHECK (evidence_type = 'customer-saved-possibility'),
+    source TEXT NOT NULL CHECK (source = 'authenticated-customer'),
+    action TEXT NOT NULL CHECK (action = 'saved'),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (trusted_customer_identity_id, work_item_id)
+  )`,
+  `CREATE INDEX IF NOT EXISTS demeos_customer_saved_possibilities_owner_created_idx
+    ON demeos_customer_saved_possibilities
+      (trusted_customer_identity_id, created_at DESC, saved_possibility_id DESC)`
 ];
 
 function createDatabase(client) {

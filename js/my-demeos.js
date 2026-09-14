@@ -41,6 +41,33 @@
     renderIntentions(documentObject, Array.isArray(result.intentions) ? result.intentions : []);
   }
 
+  function renderPossibilities(documentObject, possibilities) {
+    const list = documentObject.getElementById("my-possibilities-list");
+    const empty = documentObject.getElementById("my-possibilities-empty");
+    documentObject.getElementById("my-possibilities-loading").hidden = true;
+    list.textContent = "";
+    empty.hidden = possibilities.length !== 0;
+    possibilities.forEach(function (possibility) {
+      const article = documentObject.createElement("article");
+      const content = documentObject.createElement("h4"); content.textContent = possibility.content; article.appendChild(content);
+      const provider = documentObject.createElement("p"); provider.textContent = "Provided by " + possibility.businessName; article.appendChild(provider);
+      if (possibility.location) { const location = documentObject.createElement("p"); location.textContent = possibility.location; article.appendChild(location); }
+      if (possibility.relevance && possibility.relevance.basis === "explicit-customer-intent-overlap") {
+        const why = documentObject.createElement("p"); why.textContent = "Why this appeared: explicit customer intent overlap"; article.appendChild(why);
+      }
+      const date = documentObject.createElement("time"); date.dateTime = possibility.createdAt;
+      date.textContent = "Saved " + new Date(possibility.createdAt).toLocaleDateString(); article.appendChild(date);
+      list.appendChild(article);
+    });
+  }
+
+  async function loadPossibilities(documentObject, fetchFunction) {
+    const response = await fetchFunction("/api/customer/possibilities/saved", { credentials: "same-origin", headers: { Accept: "application/json" } });
+    if (!response.ok) throw new Error("Could not load possibilities");
+    const result = await response.json();
+    renderPossibilities(documentObject, Array.isArray(result.possibilities) ? result.possibilities : []);
+  }
+
   async function confirmTrustedCustomer(fetchFunction) {
     const response = await fetchFunction("/api/customer/identity", {
       credentials: "same-origin",
@@ -90,7 +117,9 @@
         showState(authElements, authenticated ? "signedIn" : "signedOut");
         documentObject.getElementById("my-intentions-signed-out").hidden = authenticated;
         documentObject.getElementById("my-intentions-signed-in").hidden = !authenticated;
-        if (authenticated) await loadIntentions(documentObject, fetchFunction);
+        documentObject.getElementById("my-possibilities-signed-out").hidden = authenticated;
+        documentObject.getElementById("my-possibilities-signed-in").hidden = !authenticated;
+        if (authenticated) await Promise.all([loadIntentions(documentObject, fetchFunction), loadPossibilities(documentObject, fetchFunction)]);
       }
       authElements.signIn.addEventListener("click", function () { clerk.openSignIn(); });
       authElements.signOut.addEventListener("click", function () { clerk.signOut(); });
@@ -101,7 +130,7 @@
     }
   }
 
-  const api = { confirmTrustedCustomer, showState, renderIntentions, loadIntentions, initialiseCustomerAuthentication };
+  const api = { confirmTrustedCustomer, showState, renderIntentions, loadIntentions, renderPossibilities, loadPossibilities, initialiseCustomerAuthentication };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   if (root && root.document && root.fetch) {
     initialiseCustomerAuthentication(root, root.document, root.fetch.bind(root));
