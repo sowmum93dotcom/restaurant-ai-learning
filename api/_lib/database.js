@@ -38,7 +38,18 @@ const SCHEMA_STATEMENTS = [
     participated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`,
   `CREATE INDEX IF NOT EXISTS demeos_customer_participations_work_idx
-    ON demeos_customer_participations (business_id, campaign_id)`
+    ON demeos_customer_participations (business_id, campaign_id)`,
+  `CREATE TABLE IF NOT EXISTS demeos_customer_feedback (
+    feedback_id BIGSERIAL PRIMARY KEY,
+    business_id TEXT NOT NULL REFERENCES demeos_businesses(business_id),
+    campaign_id TEXT NOT NULL REFERENCES demeos_campaigns(campaign_id),
+    feedback_type TEXT NOT NULL CHECK (feedback_type = 'possibility-relevance'),
+    response TEXT NOT NULL CHECK (response IN ('Relevant', 'Not quite', 'Something different')),
+    comment TEXT CHECK (comment IS NULL OR CHAR_LENGTH(comment) <= 500),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`,
+  `CREATE INDEX IF NOT EXISTS demeos_customer_feedback_work_idx
+    ON demeos_customer_feedback (business_id, campaign_id)`
 ];
 
 function createDatabase(client) {

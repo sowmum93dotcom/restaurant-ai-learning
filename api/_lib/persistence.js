@@ -232,6 +232,28 @@ function createPersistenceRepository(database) {
            AND c.campaign = $3::jsonb RETURNING business_id, campaign_id, action, participated_at`,
         [campaignId, action, JSON.stringify(campaignResult.rows[0].campaign)]);
       return result.rows.length ? result.rows[0] : null;
+    },
+
+    // Feedback, owner-recorded outcomes, recommendation decisions, and Interested
+    // participation are distinct evidence sources. They must never become a generic
+    // success signal or silently change recommendation or business conclusions.
+    async recordCustomerFeedback(campaignId, feedback) {
+      await database.ensureSchema();
+      const campaignResult = await database.query(
+        `SELECT business_id, campaign FROM demeos_campaigns WHERE campaign_id = $1`, [campaignId]);
+      if (!campaignResult.rows.length || !canPublishToDemeosCustomerExperience(campaignResult.rows[0].campaign)) return null;
+      const stored = campaignResult.rows[0];
+      const result = await database.query(
+        `INSERT INTO demeos_customer_feedback
+           (business_id, campaign_id, feedback_type, response, comment)
+         SELECT c.business_id, c.campaign_id, $2, $3, $4
+         FROM demeos_campaigns c
+         WHERE c.campaign_id = $1 AND c.business_id = $5
+           AND c.campaign->>'approvalStatus' = 'Approved' AND c.campaign = $6::jsonb
+         RETURNING response`,
+        [campaignId, feedback.feedbackType, feedback.response, feedback.comment || null,
+          stored.business_id, JSON.stringify(stored.campaign)]);
+      return result.rows.length ? { response: result.rows[0].response } : null;
     }
   };
 }

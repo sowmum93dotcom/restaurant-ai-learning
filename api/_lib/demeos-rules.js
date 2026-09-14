@@ -13,6 +13,7 @@ const DEMEOS_ACTIONS = Object.freeze({
   VIEW_OWN_BUSINESS_RESULTS: "view-own-business-results",
   VIEW_CUSTOMER_EXPERIENCE: "view-customer-experience",
   RECORD_CUSTOMER_PARTICIPATION: "record-customer-participation",
+  RECORD_CUSTOMER_FEEDBACK: "record-customer-feedback",
   MANAGE_PLATFORM: "manage-platform"
 });
 
@@ -30,7 +31,8 @@ const permissionsByActorScope = Object.freeze({
   ]),
   [DEMEOS_ACTOR_SCOPES.PUBLIC_CUSTOMER]: Object.freeze([
     DEMEOS_ACTIONS.VIEW_CUSTOMER_EXPERIENCE,
-    DEMEOS_ACTIONS.RECORD_CUSTOMER_PARTICIPATION
+    DEMEOS_ACTIONS.RECORD_CUSTOMER_PARTICIPATION,
+    DEMEOS_ACTIONS.RECORD_CUSTOMER_FEEDBACK
   ])
 });
 

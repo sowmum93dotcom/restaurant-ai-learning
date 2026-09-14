@@ -30,10 +30,11 @@ test("business owners can perform only the defined business-owner actions", func
   }), false);
 });
 
-test("public customers can only view Customer Experience and record participation", function () {
+test("public customers can only view Customer Experience and record separate participation and feedback", function () {
   assert.deepEqual(permittedActionsFor(DEMEOS_ACTOR_SCOPES.PUBLIC_CUSTOMER), [
     DEMEOS_ACTIONS.VIEW_CUSTOMER_EXPERIENCE,
-    DEMEOS_ACTIONS.RECORD_CUSTOMER_PARTICIPATION
+    DEMEOS_ACTIONS.RECORD_CUSTOMER_PARTICIPATION,
+    DEMEOS_ACTIONS.RECORD_CUSTOMER_FEEDBACK
   ]);
 
   for (const action of [
@@ -101,6 +102,7 @@ test("supported scopes and actions are immutable constants", function () {
     "view-own-business-results",
     "view-customer-experience",
     "record-customer-participation",
+    "record-customer-feedback",
     "manage-platform"
   ]);
 });
