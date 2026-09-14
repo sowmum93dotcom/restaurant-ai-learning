@@ -105,6 +105,7 @@ test("supported scopes and actions are immutable constants", function () {
     "view-own-customer-intentions",
     "record-own-customer-saved-possibility",
     "view-own-customer-saved-possibilities",
+    "view-own-customer-participation",
     "view-customer-experience",
     "record-customer-participation",
     "record-customer-feedback",

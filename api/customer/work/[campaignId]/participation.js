@@ -1,5 +1,6 @@
 const { getRepository } = require("../../../_lib/persistence.js");
 const { parseCustomerFeedback } = require("../../../_lib/customer-feedback-contract.js");
+const { resolveTrustedCustomerIdentityFromRequest } = require("../../../_lib/demeos-customer-authentication.js");
 const {
   DEMEOS_ACTOR_SCOPES,
   DEMEOS_ACTIONS,
@@ -44,7 +45,15 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: "Valid DEMEOS work and participation are required." });
   }
   try {
-    const participation = await getRepository().recordCustomerParticipation(campaignId, action);
+    const repository = getRepository();
+    let identity = null;
+    try { identity = await resolveTrustedCustomerIdentityFromRequest(req); } catch (_authenticationError) { identity = null; }
+    // Provider-verified admins are rejected by customer authentication. This
+    // additional authoritative ownership check keeps known business owners out
+    // of customer-owned history even when provider role metadata is absent.
+    if (identity && (await repository.getOwnedBusinessIds(identity.trustedCustomerIdentityId)).length) identity = null;
+    const participation = await repository.recordCustomerParticipation(campaignId, action,
+      identity ? identity.trustedCustomerIdentityId : null);
     if (!participation) return res.status(404).json({ error: "Approved DEMEOS work was not found." });
     return res.status(201).json({ participation: { action: participation.action } });
   } catch (error) {

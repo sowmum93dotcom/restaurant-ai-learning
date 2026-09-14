@@ -271,7 +271,7 @@ test("repository resolves participation business identity from the approved stor
   assert.deepEqual(queries[0].parameters, ["campaign-a"]);
   assert.match(queries[1].statement, /SELECT c\.business_id, c\.campaign_id/);
   assert.doesNotMatch(queries[1].statement, /c\.business_id = \$/);
-  assert.deepEqual(queries[1].parameters, ["campaign-a", "Interested", JSON.stringify(storedCampaign)]);
+  assert.deepEqual(queries[1].parameters, ["campaign-a", "Interested", JSON.stringify(storedCampaign), null]);
 });
 
 test("repository returns not found for unknown, unapproved, and non-publishable campaigns", async function () {

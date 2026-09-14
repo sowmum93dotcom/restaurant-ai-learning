@@ -34,11 +34,17 @@ const SCHEMA_STATEMENTS = [
     participation_id BIGSERIAL PRIMARY KEY,
     business_id TEXT NOT NULL REFERENCES demeos_businesses(business_id),
     campaign_id TEXT NOT NULL REFERENCES demeos_campaigns(campaign_id),
+    trusted_customer_identity_id TEXT NULL,
     action TEXT NOT NULL CHECK (action IN ('Interested')),
     participated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`,
+  `ALTER TABLE demeos_customer_participations
+    ADD COLUMN IF NOT EXISTS trusted_customer_identity_id TEXT NULL`,
   `CREATE INDEX IF NOT EXISTS demeos_customer_participations_work_idx
     ON demeos_customer_participations (business_id, campaign_id)`,
+  `CREATE INDEX IF NOT EXISTS demeos_customer_participations_owner_participated_idx
+    ON demeos_customer_participations
+      (trusted_customer_identity_id, participated_at DESC, participation_id DESC)`,
   `CREATE TABLE IF NOT EXISTS demeos_customer_feedback (
     feedback_id BIGSERIAL PRIMARY KEY,
     business_id TEXT NOT NULL REFERENCES demeos_businesses(business_id),

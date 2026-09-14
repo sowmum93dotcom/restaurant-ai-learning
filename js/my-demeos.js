@@ -68,6 +68,31 @@
     renderPossibilities(documentObject, Array.isArray(result.possibilities) ? result.possibilities : []);
   }
 
+  function renderParticipations(documentObject, participations) {
+    const list = documentObject.getElementById("my-participation-list");
+    const empty = documentObject.getElementById("my-participation-empty");
+    documentObject.getElementById("my-participation-loading").hidden = true;
+    list.textContent = "";
+    empty.hidden = participations.length !== 0;
+    participations.forEach(function (participation) {
+      const article = documentObject.createElement("article");
+      const action = documentObject.createElement("h4"); action.textContent = "Interested"; article.appendChild(action);
+      if (participation.content) { const content = documentObject.createElement("p"); content.textContent = participation.content; article.appendChild(content); }
+      if (participation.businessName) { const provider = documentObject.createElement("p"); provider.textContent = "Provided by " + participation.businessName; article.appendChild(provider); }
+      if (participation.location) { const location = documentObject.createElement("p"); location.textContent = participation.location; article.appendChild(location); }
+      const date = documentObject.createElement("time"); date.dateTime = participation.participatedAt;
+      date.textContent = new Date(participation.participatedAt).toLocaleDateString(); article.appendChild(date);
+      list.appendChild(article);
+    });
+  }
+
+  async function loadParticipations(documentObject, fetchFunction) {
+    const response = await fetchFunction("/api/customer/participation", { credentials: "same-origin", headers: { Accept: "application/json" } });
+    if (!response.ok) throw new Error("Could not load participation");
+    const result = await response.json();
+    renderParticipations(documentObject, Array.isArray(result.participations) ? result.participations : []);
+  }
+
   async function confirmTrustedCustomer(fetchFunction) {
     const response = await fetchFunction("/api/customer/identity", {
       credentials: "same-origin",
@@ -119,7 +144,9 @@
         documentObject.getElementById("my-intentions-signed-in").hidden = !authenticated;
         documentObject.getElementById("my-possibilities-signed-out").hidden = authenticated;
         documentObject.getElementById("my-possibilities-signed-in").hidden = !authenticated;
-        if (authenticated) await Promise.all([loadIntentions(documentObject, fetchFunction), loadPossibilities(documentObject, fetchFunction)]);
+        documentObject.getElementById("my-participation-signed-out").hidden = authenticated;
+        documentObject.getElementById("my-participation-signed-in").hidden = !authenticated;
+        if (authenticated) await Promise.all([loadIntentions(documentObject, fetchFunction), loadPossibilities(documentObject, fetchFunction), loadParticipations(documentObject, fetchFunction)]);
       }
       authElements.signIn.addEventListener("click", function () { clerk.openSignIn(); });
       authElements.signOut.addEventListener("click", function () { clerk.signOut(); });
@@ -130,7 +157,7 @@
     }
   }
 
-  const api = { confirmTrustedCustomer, showState, renderIntentions, loadIntentions, renderPossibilities, loadPossibilities, initialiseCustomerAuthentication };
+  const api = { confirmTrustedCustomer, showState, renderIntentions, loadIntentions, renderPossibilities, loadPossibilities, renderParticipations, loadParticipations, initialiseCustomerAuthentication };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   if (root && root.document && root.fetch) {
     initialiseCustomerAuthentication(root, root.document, root.fetch.bind(root));

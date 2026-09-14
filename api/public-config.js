@@ -16,10 +16,12 @@ async function publicConfig(req, res) {
   res.setHeader("Cache-Control", "no-store");
   const savedPossibilitiesRequest = req?.query?.resource === "customer-saved-possibilities" ||
     (typeof req?.url === "string" && req.url.startsWith("/api/customer/possibilities/saved"));
-  if (savedPossibilitiesRequest || req?.query?.resource === "customer-intentions" ||
+  const participationRequest = req?.query?.resource === "customer-participation" ||
+    (typeof req?.url === "string" && req.url.startsWith("/api/customer/participation"));
+  if (participationRequest || savedPossibilitiesRequest || req?.query?.resource === "customer-intentions" ||
       (typeof req?.url === "string" && req.url.startsWith("/api/customer/intentions"))) {
-    if (!['GET', 'POST'].includes(req.method)) {
-      res.setHeader("Allow", "GET, POST");
+    if (!['GET', 'POST'].includes(req.method) || (participationRequest && req.method !== 'GET')) {
+      res.setHeader("Allow", participationRequest ? "GET" : "GET, POST");
       return res.status(405).json({ error: "Method not allowed" });
     }
     const identity = await resolveTrustedCustomerIdentityFromRequest(req);
@@ -31,10 +33,11 @@ async function publicConfig(req, res) {
       return res.status(403).json({ error: "Customer permission required." });
     }
     const context = createAuthenticatedCustomerContext(identity);
-    const action = savedPossibilitiesRequest
+    const action = participationRequest ? DEMEOS_ACTIONS.VIEW_OWN_CUSTOMER_PARTICIPATION : savedPossibilitiesRequest
       ? (req.method === 'POST' ? DEMEOS_ACTIONS.RECORD_OWN_CUSTOMER_SAVED_POSSIBILITY : DEMEOS_ACTIONS.VIEW_OWN_CUSTOMER_SAVED_POSSIBILITIES)
       : (req.method === 'POST' ? DEMEOS_ACTIONS.RECORD_OWN_CUSTOMER_INTENTION : DEMEOS_ACTIONS.VIEW_OWN_CUSTOMER_INTENTIONS);
     if (!authorizeDemeosAction({ actorContext: context, action }).allowed) return res.status(403).json({ error: "DEMEOS permission denied." });
+    if (participationRequest) return res.status(200).json({ participations: await repository.getCustomerParticipations(identity.trustedCustomerIdentityId, 50) });
     if (savedPossibilitiesRequest) {
       if (req.method === 'GET') return res.status(200).json({ possibilities: await repository.getCustomerSavedPossibilities(identity.trustedCustomerIdentityId, 50) });
       const body = req.body;

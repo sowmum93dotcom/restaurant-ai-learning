@@ -13,6 +13,10 @@
       "destination": "/api/public-config?resource=customer-saved-possibilities"
     },
     {
+      "source": "/api/customer/participation",
+      "destination": "/api/public-config?resource=customer-participation"
+    },
+    {
       "source": "/api/customer/work/:campaignId/feedback",
       "destination": "/api/customer/work/:campaignId/participation?interaction=feedback"
     }

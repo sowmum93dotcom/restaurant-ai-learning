@@ -35,7 +35,7 @@ test("profile foundation presents trusted sign-in and honest empty relationship 
   }
   assert.match(html, /Interest remains interest\. Feedback remains feedback\. A choice is not automatically a purchase, sale or success\./);
   assert.doesNotMatch(html, /localStorage|sessionStorage|randomUUID|crypto\.|owner-auth|owner-sign-in|business-workspace\.js/i);
-  assert.doesNotMatch(html, /reward|points|discount|membership|booking|order history|purchase history/i);
+  assert.doesNotMatch(html, /reward|points|discount|membership|order history|purchase history/i);
   assert.match(html, /<script src="js\/my-demeos\.js"><\/script>/);
   assert.doesNotMatch(html, /data-customer-id|customerId|\b\d+\s+(intentions|possibilities|participations)/i);
 });

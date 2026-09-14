@@ -320,18 +320,49 @@ function createPersistenceRepository(database) {
       return publicWork;
     },
 
-    async recordCustomerParticipation(campaignId, action) {
+    async recordCustomerParticipation(campaignId, action, trustedCustomerIdentityId = null) {
       await database.ensureSchema();
       const campaignResult = await database.query(
         `SELECT business_id, campaign FROM demeos_campaigns WHERE campaign_id = $1`, [campaignId]);
       if (!campaignResult.rows.length || !canPublishToDemeosCustomerExperience(campaignResult.rows[0].campaign)) return null;
       const result = await database.query(
-        `INSERT INTO demeos_customer_participations (business_id, campaign_id, action)
-         SELECT c.business_id, c.campaign_id, $2 FROM demeos_campaigns c
+        `INSERT INTO demeos_customer_participations
+           (business_id, campaign_id, action, trusted_customer_identity_id)
+         SELECT c.business_id, c.campaign_id, $2, $4 FROM demeos_campaigns c
          WHERE c.campaign_id = $1 AND c.campaign->>'approvalStatus' = 'Approved'
            AND c.campaign = $3::jsonb RETURNING business_id, campaign_id, action, participated_at`,
-        [campaignId, action, JSON.stringify(campaignResult.rows[0].campaign)]);
+        [campaignId, action, JSON.stringify(campaignResult.rows[0].campaign),
+          isNonEmptyString(trustedCustomerIdentityId) ? trustedCustomerIdentityId : null]);
       return result.rows.length ? result.rows[0] : null;
+    },
+
+    async getCustomerParticipations(trustedCustomerIdentityId, limit = 50) {
+      if (!isNonEmptyString(trustedCustomerIdentityId)) return [];
+      await database.ensureSchema();
+      const safeLimit = Math.min(50, Math.max(1, Number.isInteger(limit) ? limit : 50));
+      const result = await database.query(
+        `SELECT p.action, p.participated_at, c.campaign_id, c.campaign, b.profile
+         FROM demeos_customer_participations p
+         JOIN demeos_campaigns c ON c.campaign_id = p.campaign_id
+         JOIN demeos_businesses b ON b.business_id = p.business_id
+         WHERE p.trusted_customer_identity_id = $1
+         ORDER BY p.participated_at DESC, p.participation_id DESC LIMIT $2`,
+        [trustedCustomerIdentityId, safeLimit]);
+      return result.rows.map(function (row) {
+        const participation = { action: "Interested",
+          participatedAt: row.participated_at instanceof Date ? row.participated_at.toISOString() : row.participated_at };
+        // Unpublished work remains truthful minimal evidence. Public display facts
+        // are included only when they are still authoritative and publishable.
+        if (!canPublishToDemeosCustomerExperience(row.campaign)) return participation;
+        const publicItem = toPublicCustomerWorkItem({ workItemId: row.campaign_id,
+          businessName: row.profile && row.profile.name, location: row.profile && row.profile.location,
+          content: getCustomerFacingContent(row.campaign), participationAction: "Interested" });
+        if (!publicItem) return participation;
+        participation.content = publicItem.content;
+        participation.businessName = publicItem.businessName;
+        if (publicItem.location) participation.location = publicItem.location;
+        return participation;
+      });
     },
 
     // Feedback, owner-recorded outcomes, recommendation decisions, and Interested
