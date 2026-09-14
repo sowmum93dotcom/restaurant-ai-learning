@@ -25,11 +25,27 @@
       <p class="customer-eyebrow">Your DEMEOS relationship</p>
       <h1>My DEMEOS</h1>
       <p class="my-demeos-lead">Your relationship with DEMEOS.</p>
-      <div class="my-demeos-sign-in-status" role="status">
-        <h2>Available now</h2>
-        <p><strong>Customer sign-in is not available yet.</strong></p>
-        <p>Secure customer sign-in will be added before DEMEOS stores your relationship across visits.</p>
-        <p>Sign in will allow DEMEOS to securely continue your relationship across visits.</p>
+      <div class="my-demeos-sign-in-status" role="status" aria-live="polite">
+        <div id="customer-auth-loading">
+          <h2>Secure customer sign-in</h2>
+          <p>Checking your DEMEOS sign-in securely.</p>
+        </div>
+        <div id="customer-auth-signed-out" hidden>
+          <h2>Sign in to My DEMEOS</h2>
+          <p>Use secure sign-in to continue your DEMEOS relationship across visits.</p>
+          <button id="customer-sign-in" class="demeos-primary-button" type="button">Sign in to My DEMEOS</button>
+        </div>
+        <div id="customer-auth-signed-in" hidden>
+          <h2>My DEMEOS</h2>
+          <p><strong>Your secure DEMEOS relationship is active.</strong></p>
+          <p>No previous anonymous activity has been linked to this account.</p>
+          <button id="customer-sign-out" class="demeos-secondary-button" type="button">Sign out</button>
+        </div>
+        <div id="customer-auth-unavailable" hidden>
+          <h2>Secure sign-in unavailable</h2>
+          <p><strong>Customer sign-in is not available yet.</strong></p>
+          <p>Secure sign-in requires Clerk provider configuration before it can be activated.</p>
+        </div>
       </div>
     </header>
 
@@ -37,7 +53,7 @@
       <div class="my-demeos-section-heading">
         <p class="customer-eyebrow">Requires secure customer identity</p>
         <h2 id="relationship-areas-heading">Your relationship areas</h2>
-        <p>These areas are a foundation for later. They do not contain customer records yet.</p>
+        <p>These areas do not contain customer records yet.</p>
       </div>
       <div class="my-demeos-areas">
         <section><h3>My Intentions</h3><p>Your confirmed intentions can appear here when secure customer identity is available.</p></section>
@@ -56,5 +72,6 @@
   </main>
 
   <footer class="customer-footer"><img src="images/demeos-logo.png" alt="" /><p>&copy; 2026 DEMEOS — One System. Real Value. Shared Future.</p></footer>
+  <script src="js/my-demeos.js"></script>
 </body>
 </html>

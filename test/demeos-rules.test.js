@@ -91,7 +91,7 @@ test("supported scopes and actions are immutable constants", function () {
   assert.equal(Object.isFrozen(DEMEOS_ACTOR_SCOPES), true);
   assert.equal(Object.isFrozen(DEMEOS_ACTIONS), true);
   assert.deepEqual(Object.values(DEMEOS_ACTOR_SCOPES), [
-    "demeos-admin", "business-owner", "public-customer"
+    "demeos-admin", "business-owner", "customer", "public-customer"
   ]);
   assert.deepEqual(Object.values(DEMEOS_ACTIONS), [
     "manage-business-profile",
@@ -100,6 +100,7 @@ test("supported scopes and actions are immutable constants", function () {
     "record-campaign-outcome",
     "record-recommendation-decision",
     "view-own-business-results",
+    "view-own-customer-profile",
     "view-customer-experience",
     "record-customer-participation",
     "record-customer-feedback",

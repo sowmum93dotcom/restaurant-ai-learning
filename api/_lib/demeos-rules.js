@@ -1,6 +1,7 @@
 const DEMEOS_ACTOR_SCOPES = Object.freeze({
   ADMIN: "demeos-admin",
   BUSINESS_OWNER: "business-owner",
+  CUSTOMER: "customer",
   PUBLIC_CUSTOMER: "public-customer"
 });
 
@@ -11,6 +12,7 @@ const DEMEOS_ACTIONS = Object.freeze({
   RECORD_CAMPAIGN_OUTCOME: "record-campaign-outcome",
   RECORD_RECOMMENDATION_DECISION: "record-recommendation-decision",
   VIEW_OWN_BUSINESS_RESULTS: "view-own-business-results",
+  VIEW_OWN_CUSTOMER_PROFILE: "view-own-customer-profile",
   VIEW_CUSTOMER_EXPERIENCE: "view-customer-experience",
   RECORD_CUSTOMER_PARTICIPATION: "record-customer-participation",
   RECORD_CUSTOMER_FEEDBACK: "record-customer-feedback",
@@ -28,6 +30,9 @@ const permissionsByActorScope = Object.freeze({
     DEMEOS_ACTIONS.RECORD_CAMPAIGN_OUTCOME,
     DEMEOS_ACTIONS.RECORD_RECOMMENDATION_DECISION,
     DEMEOS_ACTIONS.VIEW_OWN_BUSINESS_RESULTS
+  ]),
+  [DEMEOS_ACTOR_SCOPES.CUSTOMER]: Object.freeze([
+    DEMEOS_ACTIONS.VIEW_OWN_CUSTOMER_PROFILE
   ]),
   [DEMEOS_ACTOR_SCOPES.PUBLIC_CUSTOMER]: Object.freeze([
     DEMEOS_ACTIONS.VIEW_CUSTOMER_EXPERIENCE,
