@@ -47,6 +47,23 @@
           </div>
           <p id="customer-intention-status" class="customer-context-status customer-intention-status" aria-live="polite"></p>
         </form>
+
+        <section id="customer-understanding" class="customer-understanding" aria-labelledby="customer-understanding-heading" hidden>
+          <p class="customer-stage-label" data-understanding-copy="stageLabel"></p>
+          <h2 id="customer-understanding-heading" tabindex="-1" data-understanding-copy="heading"></h2>
+          <p id="customer-understanding-summary" class="customer-understanding-summary"></p>
+          <div id="customer-clarification" class="customer-clarification" hidden>
+            <label for="customer-clarification-text" data-understanding-copy="clarificationLabel"></label>
+            <input id="customer-clarification-text" type="text" autocomplete="off" />
+            <button id="customer-clarification-button" type="button" data-understanding-copy="clarificationAction"></button>
+          </div>
+          <p class="customer-understanding-trust" data-understanding-copy="foundationTrust"></p>
+          <div id="customer-understanding-actions" class="customer-understanding-actions">
+            <button id="customer-understanding-confirm" type="button" data-understanding-copy="confirmAction"></button>
+            <button id="customer-understanding-change" type="button" data-understanding-copy="changeAction"></button>
+          </div>
+          <p id="customer-understanding-status" class="customer-understanding-status" aria-live="polite"></p>
+        </section>
       </div>
     </section>
 
@@ -60,6 +77,7 @@
     </section>
   </main>
   <footer class="customer-footer"><img src="images/demeos-logo.png" alt="" /><p>&copy; 2026 DEMEOS — One System. Real Value. Shared Future.</p></footer>
+  <script src="js/customer-understanding.js"></script>
   <script src="js/customer.js"></script>
 </body>
 </html>

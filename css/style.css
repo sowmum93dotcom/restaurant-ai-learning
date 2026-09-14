@@ -938,7 +938,20 @@ footer { background: #081f3d; color: #c4cfdb; text-align: center; }
 .customer-continue-button:hover { background: #e8c96e; }
 .customer-context-status { min-height: 1.5em; margin-top: .4rem; color: #c8d6e5; font-size: .86rem; }
 .customer-intention-status { color: #e4cb84; }
-.customer-intention-option:focus-visible, .customer-location-button:focus-visible, .customer-continue-button:focus-visible, .customer-intention-detail textarea:focus-visible, .customer-work-link:focus-visible, .customer-participation-button:focus-visible { outline: 3px solid #8fc1ff; outline-offset: 3px; }
+.customer-understanding { margin-top: 2.3rem; padding: clamp(1.5rem, 4vw, 2.5rem); border: 1px solid rgba(142,184,239,.35); border-top: 3px solid #d2ad58; background: linear-gradient(145deg, rgba(8,35,68,.97), rgba(4,20,40,.97)); box-shadow: 0 24px 60px rgba(0,5,16,.32); }
+.customer-understanding[hidden], .customer-clarification[hidden], .customer-understanding-actions[hidden], .customer-intention-form[hidden] { display: none; }
+.customer-understanding h2 { margin: .4rem 0 1rem; color: #fff; font-family: Georgia, serif; font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 500; }
+.customer-understanding-summary { max-width: 760px; padding: 1.2rem 1.35rem; border-left: 3px solid #6fa9ef; background: rgba(240,246,252,.08); color: #f4f7fb; font-size: clamp(1.05rem, 2vw, 1.3rem); line-height: 1.65; }
+.customer-understanding-trust { margin-top: 1.25rem; color: #bdccdc; font-size: .92rem; line-height: 1.6; }
+.customer-understanding-actions { display: flex; gap: .8rem; margin-top: 1.4rem; }
+.customer-understanding-actions button, .customer-clarification button { min-height: 46px; padding: .7rem 1.1rem; border: 1px solid #e1c36f; border-radius: 3px; background: #d2ad58; color: #071b35; font: inherit; font-weight: 800; cursor: pointer; }
+#customer-understanding-change { border-color: #829bb8; background: transparent; color: #eef5fc; }
+.customer-clarification { margin-top: 1.25rem; }
+.customer-clarification label { display: block; margin-bottom: .5rem; color: #fff; font-weight: 700; }
+.customer-clarification input { width: min(620px, 100%); min-height: 46px; padding: .7rem .85rem; border: 1px solid #6886a8; background: #fff; color: #10243e; font: inherit; }
+.customer-clarification button { margin: .7rem 0 0; display: block; }
+.customer-understanding-status { min-height: 1.5em; margin-top: 1rem; color: #e4cb84; font-weight: 700; }
+.customer-intention-option:focus-visible, .customer-location-button:focus-visible, .customer-continue-button:focus-visible, .customer-intention-detail textarea:focus-visible, .customer-work-link:focus-visible, .customer-participation-button:focus-visible, .customer-understanding button:focus-visible, .customer-understanding input:focus-visible, .customer-understanding h2:focus-visible { outline: 3px solid #8fc1ff; outline-offset: 3px; }
 .customer-journey-nav { display: flex; align-items: center; gap: clamp(1rem, 3vw, 2.5rem); }
 .customer-journey-nav a { color: #d7e0e9; font-size: .82rem; font-weight: 700; letter-spacing: .04em; text-decoration: none; }
 .customer-journey-nav a:hover, .customer-journey-nav a:focus { color: #e5c777; }
@@ -997,6 +1010,7 @@ footer { background: #081f3d; color: #c4cfdb; text-align: center; }
   .customer-intention-options { grid-template-columns: repeat(2, 1fr); }
   .customer-context-actions { align-items: stretch; flex-direction: column; }
   .customer-continue-button { width: 100%; }
+  .customer-understanding-actions { flex-direction: column; }
   .customer-journey-nav { gap: .8rem; }
   .customer-journey-nav a { font-size: .68rem; }
   .customer-introduction { min-height: 420px; padding: 4.5rem 1.25rem; }
