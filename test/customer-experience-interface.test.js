@@ -3,7 +3,8 @@ const test = require("node:test");
 const fs = require("node:fs");
 const path = require("node:path");
 const { createCustomerWorkCard, getServerCustomerPackages, getValidCustomerWork,
-  recordParticipation, renderCustomerWork } = require("../js/customer.js");
+  getLocalGreeting, getPreferredLanguage, normalizedCustomerIntention, recordParticipation,
+  renderCustomerWork, requestCustomerLocation, selectCustomerIntention } = require("../js/customer.js");
 
 class Element {
   constructor(tag = "div") { this.tag = tag; this.children = []; this.listeners = {}; this.attributes = {}; this._text = ""; this.innerHTML = ""; }
@@ -148,18 +149,61 @@ test("participation remains Interested and is expressly not a commercial outcome
   assert.doesNotMatch(card.textContent, /buy now|checkout|converted|subscribe now|package accepted/i);
 });
 
-test("page presents the four-step customer journey and no owner interface", function () {
+test("page presents Stage 1 before approved work and no owner interface", function () {
   const html = fs.readFileSync(path.join(__dirname, "..", "customer.html"), "utf8");
-  for (const step of ["Discover", "Understand", "Choose", "Participate"]) assert.match(html, new RegExp(step));
-  for (const anchor of ["discover", "understand", "choose", "participate"]) assert.match(html, new RegExp(`href="#${anchor}"`));
   assert.match(html, /images\/demeos-logo\.png/);
-  assert.match(html, /customer-path/);
+  assert.ok(html.indexOf("customer-intention") < html.indexOf('id="discover"'));
+  assert.match(html, /customer-intention-options|customer-intention-text|customer-location-button/);
   assert.doesNotMatch(html, /business profile|recommendation|campaign strategy|email strategy|approval controls|capability registry|dashboard|ratings|prices|discounts|opening hours/i);
 });
 
-test("Customer Interface retains responsive layouts for the journey and participation action", function () {
+test("Customer Interface retains responsive layouts for intentions and participation", function () {
   const css = fs.readFileSync(path.join(__dirname, "..", "css/style.css"), "utf8");
-  assert.match(css, /@media \(max-width: 700px\)[\s\S]*?\.customer-path[\s\S]*?grid-template-columns: repeat\(2, 1fr\)/);
+  assert.match(css, /@media \(max-width: 700px\)[\s\S]*?\.customer-intention-options[\s\S]*?grid-template-columns: repeat\(2, 1fr\)/);
   assert.match(css, /@media \(max-width: 700px\)[\s\S]*?\.customer-participation[\s\S]*?flex-direction: column/);
   assert.match(css, /@media \(max-width: 700px\)[\s\S]*?\.customer-participation-button \{ width: 100%; \}/);
+  assert.match(css, /prefers-reduced-motion: reduce/);
+});
+
+test("local greeting follows morning, afternoon and evening boundaries", function () {
+  assert.equal(getLocalGreeting(5), "Good morning");
+  assert.equal(getLocalGreeting(new Date(2026, 0, 1, 11, 59)), "Good morning");
+  assert.equal(getLocalGreeting(12), "Good afternoon");
+  assert.equal(getLocalGreeting(17), "Good afternoon");
+  assert.equal(getLocalGreeting(18), "Good evening");
+  assert.equal(getLocalGreeting(4), "Good evening");
+});
+
+test("intention free text is normalized without becoming participation", function () {
+  assert.equal(normalizedCustomerIntention("  spend   time\n together  "), "spend time together");
+  assert.equal(normalizedCustomerIntention(null), "");
+});
+
+test("intention selection accepts only the six Stage 1 controls", function () {
+  assert.equal(selectCustomerIntention("Eat & enjoy"), "Eat & enjoy");
+  assert.equal(selectCustomerIntention("Discover something new"), "Discover something new");
+  assert.equal(selectCustomerIntention("Book now"), "");
+});
+
+test("preferred language uses browser preference and falls back to English", function () {
+  assert.equal(getPreferredLanguage({ languages: ["cy-GB", "en-GB"], language: "en-GB" }), "cy-GB");
+  assert.equal(getPreferredLanguage({ languages: [], language: "fr" }), "fr");
+  assert.equal(getPreferredLanguage({}), "en");
+});
+
+test("location is requested only by an explicit helper call and denial remains optional", function () {
+  let requests = 0;
+  const states = [];
+  const geolocation = { getCurrentPosition(success, denied) { requests += 1; denied(); } };
+  assert.equal(requests, 0);
+  requestCustomerLocation(geolocation, (state) => states.push(state));
+  assert.equal(requests, 1);
+  assert.deepEqual(states, ["optional"]);
+});
+
+test("available location exposes only neutral session state", function () {
+  const states = [];
+  requestCustomerLocation({ getCurrentPosition(success) { success({ coords: { latitude: 1, longitude: 2 } }); } },
+    (state) => states.push(state));
+  assert.deepEqual(states, ["available"]);
 });
