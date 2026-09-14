@@ -8,7 +8,7 @@ test("selected intention alone produces only a broad customer-provided understan
   assert.deepEqual(buildCustomerUnderstanding("Spend time together", ""), {
     intention: "Spend time together", customerText: "",
     understanding: "You’d like to spend time together.",
-    source: "customer-provided", confidenceState: "confirmed"
+    source: "customer-provided", confidenceState: "ready-for-confirmation"
   });
 });
 
@@ -17,12 +17,14 @@ test("selected intention and free text produce a concise combined understanding"
   assert.equal(result.understanding,
     "You’d like to spend time together and are looking for somewhere relaxed for dinner with your family.");
   assert.equal(result.customerText, "I want somewhere relaxed for dinner with my family.");
+  assert.equal(result.confidenceState, "ready-for-confirmation");
 });
 
 test("free text alone remains quoted customer information", function () {
   const result = buildCustomerUnderstanding("", "  Help me plan a team dinner  ");
   assert.equal(result.understanding, "You told DEMEOS: “Help me plan a team dinner”");
   assert.equal(result.source, "customer-provided");
+  assert.equal(result.confidenceState, "ready-for-confirmation");
 });
 
 test("empty or invalid input cannot produce an understanding", function () {
@@ -36,7 +38,7 @@ test("a broad get-something-done intention requests one clarification", function
   assert.equal(confirmCustomerUnderstanding(broad), null);
 
   const clarified = buildCustomerUnderstanding("Get something done", "", "repair my bicycle");
-  assert.equal(clarified.confidenceState, "confirmed");
+  assert.equal(clarified.confidenceState, "ready-for-confirmation");
   assert.equal(clarified.understanding, "You’d like to get something done and are looking for repair your bicycle.");
 });
 
@@ -48,8 +50,10 @@ test("understanding ignores coordinates, business data, and unrelated arguments"
   assert.doesNotMatch(JSON.stringify(result), /51\.5|Invented Cafe|rating|nearby/);
 });
 
-test("confirmation is an in-memory transformation and customer code does not post it", function () {
-  const confirmed = confirmCustomerUnderstanding(buildCustomerUnderstanding("Go somewhere", "visit a museum"));
+test("confirmation is an explicit in-memory state change and customer code does not post it", function () {
+  const ready = buildCustomerUnderstanding("Go somewhere", "visit a museum");
+  assert.equal(ready.confidenceState, "ready-for-confirmation");
+  const confirmed = confirmCustomerUnderstanding(ready);
   assert.equal(confirmed.confidenceState, "confirmed");
   const source = fs.readFileSync(path.join(__dirname, "..", "js/customer.js"), "utf8");
   const confirmationHandler = source.slice(source.indexOf('getElementById("customer-understanding-confirm")'),
