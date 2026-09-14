@@ -43,7 +43,7 @@
 
     return Object.freeze({
       intention: selected,
-      customerText: originalText,
+      customerText: clarification || originalText,
       understanding,
       source: "customer-provided",
       confidenceState: clarificationIntentions.has(selected) && !detail ? "needs-clarification" : "ready-for-confirmation"

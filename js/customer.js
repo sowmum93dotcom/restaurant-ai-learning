@@ -45,6 +45,57 @@ const CUSTOMER_STAGE_TWO_COPY = Object.freeze({
   clarificationRequired: "Add a little more detail so DEMEOS can understand your intention."
 });
 
+const CUSTOMER_STAGE_THREE_COPY = Object.freeze({
+  preparing: "Preparing possibilities connected to what you asked for…",
+  found: "DEMEOS found possibilities connected to what you asked for.",
+  none: "DEMEOS could not find a suitable possibility from the information currently available.",
+  error: "DEMEOS could not prepare possibilities. Please try again.",
+  why: "Why this appeared"
+});
+
+function renderCustomerPossibilities(document, possibilities) {
+  const region = document.getElementById("customer-possibilities");
+  const heading = document.getElementById("customer-possibilities-heading");
+  const list = document.getElementById("customer-possibilities-list");
+  const valid = Array.isArray(possibilities) ? possibilities : [];
+  list.textContent = "";
+  heading.textContent = valid.length ? CUSTOMER_STAGE_THREE_COPY.found : CUSTOMER_STAGE_THREE_COPY.none;
+  valid.forEach(function (possibility) {
+    if (!possibility || typeof possibility.content !== "string" || typeof possibility.businessName !== "string" ||
+        !possibility.relevance || !Array.isArray(possibility.relevance.evidence)) return;
+    const card = document.createElement("article");
+    card.className = "customer-possibility-card";
+    addText(document, card, "p", "customer-work-content", possibility.content);
+    addText(document, card, "p", "customer-business-name", possibility.businessName);
+    if (typeof possibility.location === "string" && possibility.location) {
+      addText(document, card, "p", "customer-work-location", possibility.location);
+    }
+    addText(document, card, "p", "customer-possibility-evidence",
+      CUSTOMER_STAGE_THREE_COPY.why + ": " + possibility.relevance.evidence.slice(0, 5).join(", "));
+    list.appendChild(card);
+  });
+  region.hidden = false;
+  heading.focus();
+}
+
+async function requestCustomerPossibilities(document, understanding, fetcher) {
+  const region = document.getElementById("customer-possibilities");
+  const heading = document.getElementById("customer-possibilities-heading");
+  region.hidden = false;
+  heading.textContent = CUSTOMER_STAGE_THREE_COPY.preparing;
+  try {
+    const response = await fetcher("/api/customer/possibilities", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ understanding })
+    });
+    const data = await response.json();
+    if (!response.ok || !data || !Array.isArray(data.possibilities)) throw new Error();
+    renderCustomerPossibilities(document, data.possibilities);
+  } catch (error) {
+    heading.textContent = CUSTOMER_STAGE_THREE_COPY.error;
+  }
+}
+
 function getLocalGreeting(value) {
   const hour = value instanceof Date ? value.getHours() : Number(value);
   if (Number.isFinite(hour) && hour >= 5 && hour < 12) return CUSTOMER_STAGE_ONE_COPY.greetings.morning;
@@ -107,6 +158,7 @@ function initializeCustomerIntention(document, navigatorValue, now) {
     const needsClarification = currentUnderstanding.confidenceState === "needs-clarification";
     document.getElementById("customer-clarification").hidden = !needsClarification;
     document.getElementById("customer-understanding-actions").hidden = needsClarification;
+    document.getElementById("customer-understanding-confirm").hidden = false;
     document.getElementById("customer-understanding-status").textContent = needsClarification ? CUSTOMER_STAGE_TWO_COPY.clarificationRequired : "";
     intentionForm.hidden = true;
     understandingPanel.hidden = false;
@@ -144,6 +196,7 @@ function initializeCustomerIntention(document, navigatorValue, now) {
     if (detail) showUnderstanding(detail);
   });
   document.getElementById("customer-understanding-change").addEventListener("click", function () {
+    document.getElementById("customer-possibilities").hidden = true;
     understandingPanel.hidden = true;
     intentionForm.hidden = false;
     document.getElementById("customer-intention-text").focus();
@@ -151,8 +204,10 @@ function initializeCustomerIntention(document, navigatorValue, now) {
   document.getElementById("customer-understanding-confirm").addEventListener("click", function () {
     currentUnderstanding = globalThis.CustomerUnderstanding.confirmCustomerUnderstanding(currentUnderstanding);
     if (!currentUnderstanding) return;
-    document.getElementById("customer-understanding-actions").hidden = true;
+    document.getElementById("customer-understanding-confirm").hidden = true;
     document.getElementById("customer-understanding-status").textContent = CUSTOMER_STAGE_TWO_COPY.confirmed;
+    document.getElementById("customer-understanding-change").hidden = false;
+    requestCustomerPossibilities(document, currentUnderstanding, globalThis.fetch);
   });
 }
 
@@ -288,9 +343,10 @@ async function loadCustomerWork(document, fetcher) {
 }
 
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { CUSTOMER_STAGE_ONE_COPY, CUSTOMER_STAGE_TWO_COPY, createCustomerWorkCard, getLocalGreeting, getPreferredLanguage,
+  module.exports = { CUSTOMER_STAGE_ONE_COPY, CUSTOMER_STAGE_TWO_COPY, CUSTOMER_STAGE_THREE_COPY, createCustomerWorkCard, getLocalGreeting, getPreferredLanguage,
     getServerCustomerPackages, getValidCustomerWork, initializeCustomerIntention, loadCustomerWork,
-    normalizedCustomerIntention, recordParticipation, renderCustomerWork, requestCustomerLocation,
+    normalizedCustomerIntention, recordParticipation, renderCustomerPossibilities, renderCustomerWork,
+    requestCustomerLocation, requestCustomerPossibilities,
     selectCustomerIntention, toCustomerWorkItem };
 }
 
