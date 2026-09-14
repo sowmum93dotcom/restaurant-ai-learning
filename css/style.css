@@ -1115,7 +1115,7 @@ footer { background: #081f3d; color: #c4cfdb; text-align: center; }
   .marketing-capability-main { padding: 1.25rem .9rem 2.5rem; }
   .marketing-workspace-main { padding-top: 1.25rem; }
 }
-.customer-possibilities[hidden], .customer-focused-possibility[hidden], .customer-approved-work-fallback[hidden] { display: none; }
+.customer-possibilities[hidden], .customer-focused-possibility[hidden], .customer-approved-work-fallback[hidden], .customer-possibilities-header[hidden], .customer-possibility-space[hidden], .customer-change-intention[hidden], .customer-no-possibilities[hidden], .customer-add-detail-form[hidden], .customer-no-possibilities-actions[hidden] { display: none; }
 .customer-possibilities { margin-top: 2.3rem; padding: clamp(1.25rem, 3vw, 2.5rem); border: 1px solid rgba(143,193,255,.3); border-top: 3px solid #d2ad58; background: radial-gradient(circle at 50% 42%, rgba(30,112,220,.2), transparent 35%), linear-gradient(145deg, rgba(5,27,54,.98), rgba(2,14,30,.99)); box-shadow: 0 30px 70px rgba(0,5,16,.42); }
 .customer-possibilities-header { position: relative; z-index: 5; text-align: center; }
 .customer-possibilities-header h2 { margin: .35rem 0 .5rem; color: #fff; font-family: Georgia, serif; font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 500; }
@@ -1160,6 +1160,16 @@ footer { background: #081f3d; color: #c4cfdb; text-align: center; }
 .customer-feedback-continuations { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1rem; }
 .customer-feedback-continuations button:last-child { background: #fff; color: #0a2343; }
 .customer-change-intention { display: block; position: relative; z-index: 9; margin: 1rem auto 0; border-color: #d2ad58; color: #f4d98b; }
+.customer-no-possibilities { max-width: 720px; margin: 1rem auto; padding: clamp(1.25rem, 4vw, 2.5rem); border-left: 3px solid #d2ad58; background: rgba(7,30,58,.76); }
+.customer-no-possibilities h2 { margin: .5rem 0 1rem; color: #fff; font-family: Georgia, serif; font-size: clamp(1.8rem, 4vw, 2.65rem); font-weight: 500; line-height: 1.15; }
+.customer-no-possibilities > p:not(.customer-stage-label) { color: #c6d4e3; line-height: 1.65; }
+.customer-no-possibilities-actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1.5rem; }
+.customer-no-possibilities button { min-height: 46px; padding: .7rem 1.1rem; border: 1px solid #d2ad58; border-radius: 3px; background: #d2ad58; color: #071b35; font: inherit; font-weight: 800; cursor: pointer; }
+.customer-no-possibilities button + button { border-color: #8aa4c2; background: transparent; color: #eef5fc; }
+.customer-add-detail-form { margin-top: 1.5rem; }
+.customer-add-detail-form label { display: block; margin-bottom: .5rem; color: #f3f7fb; font-weight: 750; }
+.customer-add-detail-form textarea { width: 100%; min-height: 120px; padding: .8rem; border: 1px solid #7895b6; border-radius: 3px; background: #f7fbff; color: #10243d; font: inherit; resize: vertical; }
+.customer-no-possibilities :focus-visible { outline: 3px solid #8fc1ff; outline-offset: 3px; }
 @keyframes customer-possibility-emerge { from { opacity: 0; transform: translateY(18px) translateZ(-40px); } }
 
 @media (max-width: 820px) {
