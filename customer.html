@@ -6,6 +6,7 @@
   <meta name="description" content="Tell DEMEOS what you need, then explore approved customer-facing work." />
   <title>Customer Interface | DEMEOS</title>
   <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/customer-possibilities-responsive.css" />
 </head>
 <body class="customer-body">
   <header class="customer-header">
@@ -13,7 +14,6 @@
       <a class="customer-brand" href="#customer-title" aria-label="DEMEOS Customer Interface home">
         <img src="images/demeos-logo.png" alt="DEMEOS" class="demeos-logo" />
       </a>
-      <a class="customer-work-link" href="#discover" data-stage-copy="approvedWorkLink"></a>
     </div>
   </header>
 
@@ -63,16 +63,26 @@
             <button id="customer-understanding-change" type="button" data-understanding-copy="changeAction"></button>
           </div>
           <p id="customer-understanding-status" class="customer-understanding-status" aria-live="polite"></p>
-          <section id="customer-possibilities" class="customer-possibilities" aria-labelledby="customer-possibilities-heading" hidden>
-            <p class="customer-stage-label">Stage 3 · Your possibilities</p>
-            <h3 id="customer-possibilities-heading" tabindex="-1">Preparing possibilities connected to what you asked for…</h3>
-            <div id="customer-possibilities-list"></div>
-          </section>
+        </section>
+
+        <section id="customer-possibilities" class="customer-possibilities" aria-labelledby="customer-possibilities-heading" hidden>
+          <header class="customer-possibilities-header">
+            <p class="customer-stage-label" data-possibilities-copy="stageLabel"></p>
+            <h2 id="customer-possibilities-heading" tabindex="-1"></h2>
+            <p data-possibilities-copy="introduction"></p>
+          </header>
+          <div class="customer-possibility-space">
+            <div class="customer-space-rings" aria-hidden="true"></div>
+            <div id="customer-possibility-intention" class="customer-possibility-intention"></div>
+            <div id="customer-possibilities-list" class="customer-possibilities-list"></div>
+            <div id="customer-focused-possibility" class="customer-focused-possibility" role="region" aria-live="polite" tabindex="-1" hidden></div>
+          </div>
+          <button id="customer-change-intention" class="customer-change-intention" type="button" data-possibilities-copy="changeAction"></button>
         </section>
       </div>
     </section>
 
-    <section id="discover" class="customer-experience" aria-labelledby="customer-work-heading">
+    <section id="discover" class="customer-experience customer-approved-work-fallback" aria-labelledby="customer-work-heading" hidden>
       <div class="customer-section-heading">
         <div><p class="customer-step">Approved customer work</p><h2 id="customer-work-heading">Approved work, ready to explore</h2></div>
         <p>Only public work a business has approved for customers appears here.</p>

@@ -29,7 +29,7 @@ const CUSTOMER_STAGE_ONE_COPY = Object.freeze({
   continueAction: "Continue",
   continueReady: "Your intention is ready. No information has been sent.",
   missingIntention: "Tell DEMEOS what you need before continuing.",
-  approvedWorkLink: "View approved work",
+  changeIntention: "Change what I’m looking for",
   greetings: Object.freeze({ morning: "Good morning", afternoon: "Good afternoon", evening: "Good evening" })
 });
 
@@ -46,33 +46,128 @@ const CUSTOMER_STAGE_TWO_COPY = Object.freeze({
 });
 
 const CUSTOMER_STAGE_THREE_COPY = Object.freeze({
+  stageLabel: "Stage 3 · Your possibilities",
   preparing: "Preparing possibilities connected to what you asked for…",
-  found: "DEMEOS found possibilities connected to what you asked for.",
+  found: "Your possibilities",
+  introduction: "DEMEOS has brought forward a small set of possibilities around your intention.",
   none: "DEMEOS could not find a suitable possibility from the information currently available.",
   error: "DEMEOS could not prepare possibilities. Please try again.",
-  why: "Why this appeared"
+  intentionLabel: "Your intention",
+  possibilityLabel: "Possibility",
+  why: "Why this appeared",
+  providedBy: "Provided by",
+  backAction: "Back to possibilities",
+  participateHeading: "Interested in this possibility?",
+  participateExplanation: "Interested is an interest signal only. It is not a purchase, booking or sale.",
+  participationAction: "Interested",
+  participationSuccess: "Interest shared",
+  participationConfirmation: "Your interest has been shared with this business.",
+  participationError: "DEMEOS could not share your interest. Please try again.",
+  changeAction: "Change what I’m looking for"
 });
 
-function renderCustomerPossibilities(document, possibilities) {
+function toCustomerPossibility(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const possibilityId = normalizedRequiredString(value.possibilityId);
+  const workItemId = normalizedRequiredString(value.workItemId);
+  const businessName = normalizedRequiredString(value.businessName);
+  const content = normalizedRequiredString(value.content);
+  const relevance = value.relevance;
+  if (!possibilityId || !workItemId || !businessName || !content || value.participationAction !== "Interested" ||
+      !relevance || typeof relevance !== "object" || Array.isArray(relevance) ||
+      relevance.basis !== "explicit-customer-intent-overlap" || !Array.isArray(relevance.evidence) ||
+      relevance.evidence.length > 5 || (Object.hasOwn(value, "location") && typeof value.location !== "string")) return null;
+  const evidence = relevance.evidence.map(normalizedRequiredString);
+  if (!evidence.length || evidence.some(function (term) { return !term || term.length > 60; })) return null;
+  const possibility = { possibilityId, workItemId, businessName, content, participationAction: "Interested",
+    relevance: { basis: "explicit-customer-intent-overlap", evidence: evidence.slice(0, 5) } };
+  if (typeof value.location === "string" && value.location.trim()) possibility.location = value.location.trim();
+  return possibility;
+}
+
+function getValidCustomerPossibilities(possibilities) {
+  return Array.isArray(possibilities) ? possibilities.map(toCustomerPossibility).filter(Boolean).slice(0, 5) : [];
+}
+
+function renderCustomerPossibilities(document, possibilities, understanding, participationRecorder) {
   const region = document.getElementById("customer-possibilities");
   const heading = document.getElementById("customer-possibilities-heading");
   const list = document.getElementById("customer-possibilities-list");
-  const valid = Array.isArray(possibilities) ? possibilities : [];
+  const focusRegion = document.getElementById("customer-focused-possibility");
+  const intention = document.getElementById("customer-possibility-intention");
+  const valid = getValidCustomerPossibilities(possibilities);
+  const confirmed = understanding && understanding.confidenceState === "confirmed" ? understanding : null;
+  if (!confirmed) {
+    region.hidden = true;
+    return;
+  }
   list.textContent = "";
+  focusRegion.textContent = "";
+  focusRegion.hidden = true;
+  intention.textContent = "";
   heading.textContent = valid.length ? CUSTOMER_STAGE_THREE_COPY.found : CUSTOMER_STAGE_THREE_COPY.none;
-  valid.forEach(function (possibility) {
-    if (!possibility || typeof possibility.content !== "string" || typeof possibility.businessName !== "string" ||
-        !possibility.relevance || !Array.isArray(possibility.relevance.evidence)) return;
-    const card = document.createElement("article");
-    card.className = "customer-possibility-card";
-    addText(document, card, "p", "customer-work-content", possibility.content);
-    addText(document, card, "p", "customer-business-name", possibility.businessName);
-    if (typeof possibility.location === "string" && possibility.location) {
-      addText(document, card, "p", "customer-work-location", possibility.location);
-    }
-    addText(document, card, "p", "customer-possibility-evidence",
-      CUSTOMER_STAGE_THREE_COPY.why + ": " + possibility.relevance.evidence.slice(0, 5).join(", "));
-    list.appendChild(card);
+  addText(document, intention, "p", "customer-intention-anchor-label", CUSTOMER_STAGE_THREE_COPY.intentionLabel);
+  if (confirmed.intention) addText(document, intention, "h3", "customer-intention-anchor-title", confirmed.intention);
+  addText(document, intention, "p", "customer-intention-anchor-summary", confirmed.understanding);
+  const logo = document.createElement("img");
+  logo.src = "images/demeos-logo.png";
+  logo.alt = "";
+  logo.className = "customer-space-logo";
+  intention.appendChild(logo);
+
+  function showFocused(possibility) {
+    list.className = "customer-possibilities-list is-deemphasized";
+    focusRegion.textContent = "";
+    focusRegion.hidden = false;
+    const back = addText(document, focusRegion, "button", "customer-possibility-back", CUSTOMER_STAGE_THREE_COPY.backAction);
+    back.type = "button";
+    back.addEventListener("click", function () {
+      focusRegion.hidden = true;
+      focusRegion.textContent = "";
+      list.className = "customer-possibilities-list";
+      heading.focus();
+    });
+    addText(document, focusRegion, "p", "customer-possibility-label", CUSTOMER_STAGE_THREE_COPY.possibilityLabel);
+    addText(document, focusRegion, "h3", "customer-focused-content", possibility.content);
+    addText(document, focusRegion, "h4", "customer-evidence-heading", CUSTOMER_STAGE_THREE_COPY.why);
+    addText(document, focusRegion, "p", "customer-possibility-evidence", possibility.relevance.evidence.join(" · "));
+    addText(document, focusRegion, "p", "customer-provider-label", CUSTOMER_STAGE_THREE_COPY.providedBy);
+    addText(document, focusRegion, "p", "customer-possibility-provider", possibility.businessName);
+    if (possibility.location) addText(document, focusRegion, "p", "customer-possibility-location", possibility.location);
+    const participation = document.createElement("section");
+    participation.className = "customer-focused-participation";
+    addText(document, participation, "h4", "customer-participation-title", CUSTOMER_STAGE_THREE_COPY.participateHeading);
+    addText(document, participation, "p", "customer-participation-copy", CUSTOMER_STAGE_THREE_COPY.participateExplanation);
+    const action = addText(document, participation, "button", "customer-participation-button", CUSTOMER_STAGE_THREE_COPY.participationAction);
+    action.type = "button";
+    const result = addText(document, participation, "p", "customer-participation-confirmation", "");
+    result.setAttribute("aria-live", "polite");
+    action.addEventListener("click", async function () {
+      action.disabled = true;
+      try {
+        await (participationRecorder || recordParticipation)(possibility);
+        action.textContent = CUSTOMER_STAGE_THREE_COPY.participationSuccess;
+        result.textContent = CUSTOMER_STAGE_THREE_COPY.participationConfirmation;
+      } catch (error) {
+        action.disabled = false;
+        result.textContent = CUSTOMER_STAGE_THREE_COPY.participationError;
+      }
+    });
+    focusRegion.appendChild(participation);
+    focusRegion.setAttribute("aria-label", CUSTOMER_STAGE_THREE_COPY.possibilityLabel + ": " + possibility.content);
+    if (typeof focusRegion.focus === "function") focusRegion.focus();
+  }
+
+  valid.forEach(function (possibility, index) {
+    const surface = document.createElement("button");
+    surface.type = "button";
+    surface.className = "customer-possibility-surface customer-possibility-position-" + (index + 1);
+    surface.setAttribute("aria-label", CUSTOMER_STAGE_THREE_COPY.possibilityLabel + ": " + possibility.content);
+    addText(document, surface, "span", "customer-possibility-label", CUSTOMER_STAGE_THREE_COPY.possibilityLabel);
+    addText(document, surface, "span", "customer-possibility-preview", possibility.content);
+    addText(document, surface, "span", "customer-possibility-provider", CUSTOMER_STAGE_THREE_COPY.providedBy + " " + possibility.businessName);
+    surface.addEventListener("click", function () { showFocused(possibility); });
+    list.appendChild(surface);
   });
   region.hidden = false;
   heading.focus();
@@ -90,7 +185,7 @@ async function requestCustomerPossibilities(document, understanding, fetcher) {
     });
     const data = await response.json();
     if (!response.ok || !data || !Array.isArray(data.possibilities)) throw new Error();
-    renderCustomerPossibilities(document, data.possibilities);
+    renderCustomerPossibilities(document, data.possibilities, understanding, recordParticipation);
   } catch (error) {
     heading.textContent = CUSTOMER_STAGE_THREE_COPY.error;
   }
@@ -146,6 +241,23 @@ function initializeCustomerIntention(document, navigatorValue, now) {
   document.querySelectorAll("[data-understanding-copy]").forEach(function (element) {
     element.textContent = CUSTOMER_STAGE_TWO_COPY[element.getAttribute("data-understanding-copy")] || "";
   });
+  document.querySelectorAll("[data-possibilities-copy]").forEach(function (element) {
+    element.textContent = CUSTOMER_STAGE_THREE_COPY[element.getAttribute("data-possibilities-copy")] || "";
+  });
+
+  function changeIntention() {
+    currentUnderstanding = null;
+    const possibilityRegion = document.getElementById("customer-possibilities");
+    possibilityRegion.hidden = true;
+    document.getElementById("customer-possibilities-list").textContent = "";
+    document.getElementById("customer-focused-possibility").textContent = "";
+    document.getElementById("customer-focused-possibility").hidden = true;
+    document.getElementById("customer-possibility-intention").textContent = "";
+    understandingPanel.hidden = true;
+    intentionForm.hidden = false;
+    document.getElementById("customer-understanding-status").textContent = "";
+    document.getElementById("customer-intention-text").focus();
+  }
 
   function showUnderstanding(clarificationText) {
     currentUnderstanding = globalThis.CustomerUnderstanding.buildCustomerUnderstanding(
@@ -196,17 +308,16 @@ function initializeCustomerIntention(document, navigatorValue, now) {
     if (detail) showUnderstanding(detail);
   });
   document.getElementById("customer-understanding-change").addEventListener("click", function () {
-    document.getElementById("customer-possibilities").hidden = true;
-    understandingPanel.hidden = true;
-    intentionForm.hidden = false;
-    document.getElementById("customer-intention-text").focus();
+    changeIntention();
   });
+  document.getElementById("customer-change-intention").addEventListener("click", changeIntention);
   document.getElementById("customer-understanding-confirm").addEventListener("click", function () {
     currentUnderstanding = globalThis.CustomerUnderstanding.confirmCustomerUnderstanding(currentUnderstanding);
     if (!currentUnderstanding) return;
     document.getElementById("customer-understanding-confirm").hidden = true;
     document.getElementById("customer-understanding-status").textContent = CUSTOMER_STAGE_TWO_COPY.confirmed;
     document.getElementById("customer-understanding-change").hidden = false;
+    understandingPanel.hidden = true;
     requestCustomerPossibilities(document, currentUnderstanding, globalThis.fetch);
   });
 }
@@ -344,13 +455,12 @@ async function loadCustomerWork(document, fetcher) {
 
 if (typeof module !== "undefined" && module.exports) {
   module.exports = { CUSTOMER_STAGE_ONE_COPY, CUSTOMER_STAGE_TWO_COPY, CUSTOMER_STAGE_THREE_COPY, createCustomerWorkCard, getLocalGreeting, getPreferredLanguage,
-    getServerCustomerPackages, getValidCustomerWork, initializeCustomerIntention, loadCustomerWork,
+    getServerCustomerPackages, getValidCustomerPossibilities, getValidCustomerWork, initializeCustomerIntention, loadCustomerWork,
     normalizedCustomerIntention, recordParticipation, renderCustomerPossibilities, renderCustomerWork,
     requestCustomerLocation, requestCustomerPossibilities,
-    selectCustomerIntention, toCustomerWorkItem };
+    selectCustomerIntention, toCustomerPossibility, toCustomerWorkItem };
 }
 
 if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", function () {
   initializeCustomerIntention(document, navigator, new Date());
-  loadCustomerWork(document, fetch);
 });
