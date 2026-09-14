@@ -84,7 +84,9 @@ function initializeCustomerIntention(document, navigatorValue, now) {
     button.setAttribute("aria-pressed", "false");
     button.addEventListener("click", function () {
       selectedIntention = selectCustomerIntention(label);
-      options.children.forEach(function (option) { option.setAttribute("aria-pressed", String(option === button)); });
+      Array.from(options.children).forEach(function (option) {
+        option.setAttribute("aria-pressed", String(option === button));
+      });
     });
     options.appendChild(button);
   });
