@@ -11,6 +11,59 @@ function createPersistenceRepository(database) {
   }
 
   return {
+    async saveCustomerIntention(trustedCustomerIdentityId, intention) {
+      if (!isNonEmptyString(trustedCustomerIdentityId)) return null;
+      await database.ensureSchema();
+      // The transaction-scoped identity lock and short retry window make a double
+      // click/retried request idempotent without merging the same genuine intention
+      // when a customer chooses to save it again later.
+      const result = await database.query(
+        `WITH identity_lock AS (
+           SELECT pg_advisory_xact_lock(hashtext($1))
+         ), inserted AS (
+           INSERT INTO demeos_customer_intentions
+             (trusted_customer_identity_id, intention_category, customer_text,
+              confirmed_understanding, evidence_type, source, confirmation_state)
+           SELECT $1, $2, $3, $4, 'customer-confirmed-intention', 'authenticated-customer', 'confirmed'
+           FROM identity_lock
+           WHERE NOT EXISTS (
+             SELECT 1 FROM demeos_customer_intentions
+             WHERE trusted_customer_identity_id = $1 AND intention_category = $2
+               AND customer_text IS NOT DISTINCT FROM $3 AND confirmed_understanding = $4
+               AND created_at > NOW() - INTERVAL '30 seconds'
+           )
+           RETURNING intention_category, customer_text, confirmed_understanding, created_at
+         )
+         SELECT * FROM inserted
+         UNION ALL
+         SELECT intention_category, customer_text, confirmed_understanding, created_at
+         FROM demeos_customer_intentions
+         WHERE trusted_customer_identity_id = $1 AND intention_category = $2
+           AND customer_text IS NOT DISTINCT FROM $3 AND confirmed_understanding = $4
+           AND created_at > NOW() - INTERVAL '30 seconds'
+         ORDER BY created_at DESC LIMIT 1`,
+        [trustedCustomerIdentityId, intention.intention, intention.customerText || null, intention.understanding]);
+      if (!result.rows.length) return null;
+      const row = result.rows[0];
+      return { intention: row.intention_category, customerText: row.customer_text || undefined,
+        understanding: row.confirmed_understanding,
+        createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at };
+    },
+
+    async getCustomerIntentions(trustedCustomerIdentityId, limit = 50) {
+      if (!isNonEmptyString(trustedCustomerIdentityId)) return [];
+      await database.ensureSchema();
+      const safeLimit = Math.min(50, Math.max(1, Number.isInteger(limit) ? limit : 50));
+      const result = await database.query(
+        `SELECT intention_category, customer_text, confirmed_understanding, created_at
+         FROM demeos_customer_intentions WHERE trusted_customer_identity_id = $1
+         ORDER BY created_at DESC, intention_id DESC LIMIT $2`, [trustedCustomerIdentityId, safeLimit]);
+      return result.rows.map(function (row) {
+        return { intention: row.intention_category, customerText: row.customer_text || undefined,
+          understanding: row.confirmed_understanding,
+          createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at };
+      });
+    },
     async getOwnedBusinessIds(trustedIdentityId) {
       if (!isNonEmptyString(trustedIdentityId)) return [];
       await database.ensureSchema();

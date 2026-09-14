@@ -49,7 +49,20 @@ const SCHEMA_STATEMENTS = [
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`,
   `CREATE INDEX IF NOT EXISTS demeos_customer_feedback_work_idx
-    ON demeos_customer_feedback (business_id, campaign_id)`
+    ON demeos_customer_feedback (business_id, campaign_id)`,
+  `CREATE TABLE IF NOT EXISTS demeos_customer_intentions (
+    intention_id BIGSERIAL PRIMARY KEY,
+    trusted_customer_identity_id TEXT NOT NULL,
+    intention_category TEXT NOT NULL,
+    customer_text TEXT,
+    confirmed_understanding TEXT NOT NULL,
+    evidence_type TEXT NOT NULL CHECK (evidence_type = 'customer-confirmed-intention'),
+    source TEXT NOT NULL CHECK (source = 'authenticated-customer'),
+    confirmation_state TEXT NOT NULL CHECK (confirmation_state = 'confirmed'),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`,
+  `CREATE INDEX IF NOT EXISTS demeos_customer_intentions_owner_created_idx
+    ON demeos_customer_intentions (trusted_customer_identity_id, created_at DESC, intention_id DESC)`
 ];
 
 function createDatabase(client) {

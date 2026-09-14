@@ -18,6 +18,29 @@
     }
   }
 
+  function renderIntentions(documentObject, intentions) {
+    const list = documentObject.getElementById("my-intentions-list");
+    const empty = documentObject.getElementById("my-intentions-empty");
+    documentObject.getElementById("my-intentions-loading").hidden = true;
+    list.textContent = "";
+    empty.hidden = intentions.length !== 0;
+    intentions.forEach(function (intention) {
+      const article = documentObject.createElement("article");
+      const heading = documentObject.createElement("h4"); heading.textContent = intention.intention; article.appendChild(heading);
+      if (intention.customerText) { const detail = documentObject.createElement("p"); detail.textContent = intention.customerText; article.appendChild(detail); }
+      const understanding = documentObject.createElement("p"); understanding.textContent = intention.understanding; article.appendChild(understanding);
+      const date = documentObject.createElement("time"); date.dateTime = intention.createdAt; date.textContent = "Saved " + new Date(intention.createdAt).toLocaleDateString(); article.appendChild(date);
+      list.appendChild(article);
+    });
+  }
+
+  async function loadIntentions(documentObject, fetchFunction) {
+    const response = await fetchFunction("/api/customer/intentions", { credentials: "same-origin", headers: { Accept: "application/json" } });
+    if (!response.ok) throw new Error("Could not load intentions");
+    const result = await response.json();
+    renderIntentions(documentObject, Array.isArray(result.intentions) ? result.intentions : []);
+  }
+
   async function confirmTrustedCustomer(fetchFunction) {
     const response = await fetchFunction("/api/customer/identity", {
       credentials: "same-origin",
@@ -65,6 +88,9 @@
       async function update() {
         const authenticated = clerk.user ? await confirmTrustedCustomer(fetchFunction) : false;
         showState(authElements, authenticated ? "signedIn" : "signedOut");
+        documentObject.getElementById("my-intentions-signed-out").hidden = authenticated;
+        documentObject.getElementById("my-intentions-signed-in").hidden = !authenticated;
+        if (authenticated) await loadIntentions(documentObject, fetchFunction);
       }
       authElements.signIn.addEventListener("click", function () { clerk.openSignIn(); });
       authElements.signOut.addEventListener("click", function () { clerk.signOut(); });
@@ -75,7 +101,7 @@
     }
   }
 
-  const api = { confirmTrustedCustomer, showState, initialiseCustomerAuthentication };
+  const api = { confirmTrustedCustomer, showState, renderIntentions, loadIntentions, initialiseCustomerAuthentication };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   if (root && root.document && root.fetch) {
     initialiseCustomerAuthentication(root, root.document, root.fetch.bind(root));

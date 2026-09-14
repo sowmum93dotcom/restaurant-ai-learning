@@ -1025,6 +1025,12 @@ footer { background: #081f3d; color: #c4cfdb; text-align: center; }
 .my-demeos-areas section:last-child { grid-column: 1 / -1; }
 .my-demeos-areas h3 { margin-bottom: .55rem; color: #102a52; font-family: Georgia, serif; font-size: 1.4rem; font-weight: 500; }
 .my-demeos-areas p { color: #5d6b7c; }
+.customer-intention-save { margin-top: 1rem; padding: 1rem; border-left: 3px solid #d2ad58; background: #fff; }
+.customer-intention-sign-in-note { color: #5d6b7c; font-size: .92rem; }
+.my-intentions-list { display: grid; gap: .75rem; margin-top: .75rem; }
+.my-intentions-list article { padding: 1rem; border-left: 3px solid #7567a8; background: #f7f8fb; }
+.my-intentions-list article > * { margin: 0 0 .45rem; }
+.my-intentions-list time { color: #625f72; font-size: .85rem; }
 .my-demeos-evidence { margin-top: 2.5rem; padding: clamp(1.4rem, 4vw, 2rem); border-left: 4px solid #c8a24a; background: #0b274b; color: #d4dfeb; }
 .my-demeos-evidence .customer-eyebrow { color: #d6b761; }
 .my-demeos-evidence h2 { margin: .2rem 0 .5rem; color: #fff; font-size: 1.55rem; }
