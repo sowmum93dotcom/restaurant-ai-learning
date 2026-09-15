@@ -1,1 +1,0 @@
-DEMEOS Customer Interface reference layout correction: presentation-only tablet/mobile overlap fix. No application behaviour, API, authentication, evidence semantics, or DEMEOS rules changed.
