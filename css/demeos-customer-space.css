@@ -144,6 +144,8 @@
 .my-demeos-lead { color: var(--space-silver); font-size: clamp(1.05rem, 2vw, 1.35rem); }
 .my-demeos-sign-in-status { position: relative; width: min(560px, 100%); margin-top: 2rem; padding: 1.35rem 2rem; border: 0; border-inline: 1px solid rgba(216,182,94,.5); background: rgba(3, 17, 35, .66); color: var(--space-muted); }
 .my-demeos-sign-in-status h2 { color: #fff; font-size: 1.15rem; letter-spacing: .03em; }
+.my-demeos-sign-in-status p { color: var(--space-muted); }
+.my-demeos-sign-in-status strong { color: #f7fbff; }
 .my-demeos-future { margin-top: clamp(4rem, 9vw, 7rem); }
 .my-demeos-section-heading { position: relative; z-index: 2; max-width: 620px; margin: auto; color: var(--space-muted); text-align: center; }
 .my-demeos-section-heading h2 { margin: .4rem 0; color: #fff; font-size: clamp(1.8rem, 4vw, 3.2rem); }
@@ -162,13 +164,17 @@
 .my-demeos-area-copy { margin-inline: auto; color: #b8c9da; font-size: .82rem; }
 .my-demeos-area-status { color: var(--space-gold); font-size: .62rem; letter-spacing: .11em; }
 .my-demeos-area-enter { color: #d9e9fb; }
-.my-demeos-area-future { border-style: dashed; opacity: .58; box-shadow: none; }
+.my-demeos-area-future { border-style: dashed; opacity: .7; box-shadow: none; }
+.my-demeos-area-future .my-demeos-area-title { color: var(--space-silver); }
+.my-demeos-area-future .my-demeos-area-copy { color: #b8c9da; }
+.my-demeos-area-future .my-demeos-area-status { color: var(--space-gold); }
 .my-demeos-relationship-view { position: relative; margin-top: 3rem; border: 0; border-inline: 1px solid rgba(216,182,94,.45); background: rgba(4,22,44,.88); box-shadow: 0 30px 80px rgba(0,0,0,.36); color: var(--space-silver); }
 .my-demeos-relationship-view h2 { color: #fff; }
 .my-demeos-relationship-view > div > p { color: var(--space-muted); }
 .my-demeos-back, .demeos-secondary-button { border-color: rgba(142,188,244,.5); border-radius: 999px; background: transparent; color: var(--space-silver); }
 .my-demeos-meaning { border-left-color: var(--space-gold); background: rgba(0,77,167,.18); color: var(--space-silver); }
 .my-intentions-list article, .my-possibilities-list article { border-left-color: var(--space-gold); background: rgba(14,47,82,.7); color: var(--space-silver); }
+.my-intentions-list time, .my-possibilities-list time { color: var(--space-muted); }
 .my-demeos-evidence { max-width: 760px; margin: 4rem auto 0; border: 0; border-block: 1px solid rgba(216,182,94,.4); background: transparent; text-align: center; }
 
 @media (max-width: 1024px) {
