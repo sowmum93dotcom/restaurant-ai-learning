@@ -18,6 +18,44 @@
     }
   }
 
+  function setupRelationshipDashboard(documentObject) {
+    const overview = documentObject.getElementById("my-demeos-overview");
+    const triggers = Array.from(documentObject.querySelectorAll("[data-relationship-area]"));
+    const views = Array.from(documentObject.querySelectorAll(".my-demeos-relationship-view"));
+    let activeTrigger = null;
+
+    function openView(trigger) {
+      const view = documentObject.getElementById(trigger.getAttribute("data-relationship-area"));
+      if (!view) return;
+      activeTrigger = trigger;
+      overview.hidden = true;
+      views.forEach(function (candidate) { candidate.hidden = candidate !== view; });
+      const heading = view.querySelector("h2");
+      if (heading) heading.focus();
+    }
+
+    function closeView() {
+      views.forEach(function (view) { view.hidden = true; });
+      overview.hidden = false;
+      if (activeTrigger) activeTrigger.focus();
+    }
+
+    triggers.forEach(function (trigger) {
+      trigger.addEventListener("click", function () { openView(trigger); });
+    });
+    documentObject.querySelectorAll("[data-relationship-back]").forEach(function (button) {
+      button.addEventListener("click", closeView);
+    });
+    documentObject.querySelectorAll(".relationship-sign-in").forEach(function (button) {
+      button.addEventListener("click", function () {
+        const existingAction = documentObject.getElementById("customer-sign-in");
+        if (existingAction) existingAction.click();
+      });
+    });
+
+    return { openView, closeView };
+  }
+
   function renderIntentions(documentObject, intentions) {
     const list = documentObject.getElementById("my-intentions-list");
     const empty = documentObject.getElementById("my-intentions-empty");
@@ -157,9 +195,10 @@
     }
   }
 
-  const api = { confirmTrustedCustomer, showState, renderIntentions, loadIntentions, renderPossibilities, loadPossibilities, renderParticipations, loadParticipations, initialiseCustomerAuthentication };
+  const api = { confirmTrustedCustomer, showState, setupRelationshipDashboard, renderIntentions, loadIntentions, renderPossibilities, loadPossibilities, renderParticipations, loadParticipations, initialiseCustomerAuthentication };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   if (root && root.document && root.fetch) {
+    setupRelationshipDashboard(root.document);
     initialiseCustomerAuthentication(root, root.document, root.fetch.bind(root));
   }
 })(typeof window !== "undefined" ? window : globalThis);
