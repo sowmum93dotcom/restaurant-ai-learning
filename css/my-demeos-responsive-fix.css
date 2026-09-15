@@ -10,7 +10,7 @@
   .my-demeos-sign-in-status{width:100%;max-width:760px}
 
   /* One authoritative tablet composition: centre first, cards second. */
-  .my-demeos-areas{display:grid;position:relative;width:100%;min-height:0;margin-top:.75rem;padding:245px 0 0;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:auto;gap:.8rem}
+  .my-demeos-areas{display:grid;position:relative;width:100%;min-height:0;margin-top:.75rem;padding:300px 0 0;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:auto;gap:.8rem}
   .my-demeos-areas:before{position:absolute;left:50%;top:100px;bottom:auto;width:180px;height:180px;background-size:106px auto,100% 100%;padding-top:110px;font-size:.68rem;transform:translateX(-50%);z-index:2}
   .my-demeos-areas:after{position:absolute;left:50%;top:100px;width:min(400px,60vw);height:220px;transform:translate(-50%,-50%);z-index:0;pointer-events:none}
   .my-demeos-area:nth-child(n){position:relative;left:auto;right:auto;top:auto;bottom:auto;width:100%;min-width:0;min-height:150px;margin:0;padding:1rem;transform:none;grid-row:auto;z-index:3}
@@ -28,7 +28,7 @@
   .my-demeos-future{margin-top:1rem}
 
   /* Phone composition also reserves a complete centre zone before cards. */
-  .my-demeos-areas{display:grid;position:relative;width:100%;min-height:0;margin-top:.5rem;padding:220px 0 0;grid-template-columns:1fr;grid-template-rows:auto;gap:.7rem}
+  .my-demeos-areas{display:grid;position:relative;width:100%;min-height:0;margin-top:.5rem;padding:270px 0 0;grid-template-columns:1fr;grid-template-rows:auto;gap:.7rem}
   .my-demeos-areas:before{position:absolute;left:50%;top:92px;bottom:auto;width:160px;height:160px;background-size:94px auto,100% 100%;padding-top:98px;font-size:.62rem;transform:translateX(-50%);z-index:2}
   .my-demeos-areas:after{position:absolute;left:50%;top:92px;width:min(270px,78vw);height:190px;transform:translate(-50%,-50%);z-index:0;pointer-events:none}
   .my-demeos-area:nth-child(n){position:relative;left:auto;right:auto;top:auto;bottom:auto;width:100%;min-width:0;min-height:0;margin:0;padding:.9rem;transform:none;grid-column:1;grid-row:auto;z-index:3}
