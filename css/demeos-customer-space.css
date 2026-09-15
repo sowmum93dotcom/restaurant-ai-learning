@@ -1,0 +1,229 @@
+/* Shared DEMEOS Customer Space. Kept separate from the Business Interface. */
+:root {
+  --space-ink: #020813;
+  --space-navy: #061a35;
+  --space-blue: #0758cf;
+  --space-electric: #2b82ff;
+  --space-gold: #d8b65e;
+  --space-silver: #d9e5f2;
+  --space-muted: #9fb3ca;
+}
+
+.customer-body {
+  min-width: 0;
+  background: var(--space-ink);
+  color: #f7fbff;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.customer-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  border: 0;
+  background: rgba(2, 8, 19, .88);
+  box-shadow: 0 1px rgba(120, 171, 235, .16);
+  backdrop-filter: blur(18px) saturate(130%);
+}
+
+.customer-header::after {
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(216, 182, 94, .7), rgba(43, 130, 255, .65), transparent);
+  content: "";
+}
+
+.customer-header-inner { width: min(1240px, calc(100% - 3rem)); min-height: 76px; }
+.customer-brand { display: grid; min-width: 132px; min-height: 52px; align-items: center; }
+.customer-brand .demeos-logo { width: 106px; border-radius: 0; filter: drop-shadow(0 0 14px rgba(43, 130, 255, .22)); }
+.customer-journey-nav a { position: relative; min-height: 44px; padding: .8rem .15rem; color: var(--space-silver); letter-spacing: .06em; }
+.customer-journey-nav a::after { position: absolute; right: 50%; bottom: 5px; left: 50%; height: 1px; background: var(--space-gold); content: ""; transition: right .2s ease, left .2s ease; }
+.customer-journey-nav a:hover::after, .customer-journey-nav a:focus-visible::after, .customer-journey-nav a.is-current::after { right: 0; left: 0; }
+.customer-journey-nav a.is-current { border: 0; }
+
+.customer-main, .my-demeos-main { position: relative; isolation: isolate; overflow: hidden; }
+.customer-intention, .my-demeos-body {
+  background:
+    radial-gradient(circle at 50% 18%, rgba(20, 99, 224, .27), transparent 27rem),
+    radial-gradient(circle at 85% 62%, rgba(5, 72, 173, .19), transparent 31rem),
+    linear-gradient(145deg, #020813 0%, #061a35 54%, #020a17 100%);
+}
+.customer-intention { min-height: calc(100vh - 76px); padding: clamp(3.5rem, 7vw, 6.5rem) 1.5rem 6rem; }
+.customer-intention::before, .my-demeos-main::before {
+  position: absolute;
+  z-index: -1;
+  top: 4rem;
+  left: 50%;
+  width: min(74vw, 900px);
+  aspect-ratio: 1;
+  border: 1px solid rgba(107, 164, 235, .13);
+  border-radius: 50%;
+  box-shadow: 0 0 90px rgba(0, 86, 220, .09), inset 0 0 90px rgba(0, 86, 220, .06);
+  content: "";
+  transform: translateX(-50%) rotateX(67deg);
+  pointer-events: none;
+}
+.customer-intention::after { right: auto; bottom: 8%; left: 50%; width: min(850px, 85vw); height: min(850px, 85vw); transform: translateX(-50%) perspective(700px) rotateX(72deg); }
+.customer-intention-glow { top: 12%; left: 50%; height: 70%; opacity: .35; }
+.customer-intention-inner { width: min(1080px, 100%); text-align: center; }
+.customer-eyebrow, .customer-stage-label { color: var(--space-gold); letter-spacing: .2em; }
+.customer-intention h1, .customer-understanding h2, .customer-possibilities-header h2,
+.customer-no-possibilities h2, .my-demeos-introduction h1, .my-demeos-section-heading h2,
+.my-demeos-relationship-view h2 { font-family: inherit; font-weight: 450; letter-spacing: -.035em; }
+.customer-intention h1 { max-width: none; margin: .35rem auto .75rem; font-size: clamp(2.2rem, 5vw, 4.6rem); }
+.customer-trust-copy { max-width: 42rem; margin-inline: auto; color: var(--space-muted); }
+
+/* Six semantic buttons become a spatial constellation around the intention. */
+.customer-intention-form { position: relative; margin: 3rem auto 0; padding: 0; border: 0; background: transparent; box-shadow: none; backdrop-filter: none; }
+.customer-intention-form fieldset { position: relative; min-height: 390px; }
+.customer-intention-form fieldset::before, .customer-intention-form fieldset::after {
+  position: absolute; inset: 6% 18%; border: 1px solid rgba(90, 156, 241, .18); border-radius: 50%; content: ""; pointer-events: none;
+}
+.customer-intention-form fieldset::after { inset: 19% 31%; border-color: rgba(216, 182, 94, .18); }
+.customer-intention-options { position: relative; display: block; min-height: 390px; }
+.customer-intention-option {
+  position: absolute; width: clamp(150px, 18vw, 210px); min-height: 64px; padding: .8rem 1rem;
+  border: 1px solid rgba(132, 181, 242, .45); border-radius: 999px;
+  background: radial-gradient(circle at 50% 0, rgba(44, 126, 237, .25), rgba(5, 25, 51, .9));
+  box-shadow: 0 16px 40px rgba(0, 5, 18, .4), inset 0 1px rgba(255,255,255,.08);
+  color: #edf6ff; text-align: center; transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease;
+}
+.customer-intention-option:nth-child(1) { top: 0; left: 50%; transform: translateX(-50%); }
+.customer-intention-option:nth-child(2) { top: 23%; right: 7%; }
+.customer-intention-option:nth-child(3) { right: 14%; bottom: 5%; }
+.customer-intention-option:nth-child(4) { bottom: 5%; left: 14%; }
+.customer-intention-option:nth-child(5) { top: 23%; left: 7%; }
+.customer-intention-option:nth-child(6) { top: 43%; left: 50%; transform: translate(-50%, -50%); }
+.customer-intention-option:hover { border-color: #76b2ff; background: rgba(10, 65, 135, .92); }
+.customer-intention-option[aria-pressed="true"] { z-index: 3; border-color: var(--space-gold); background: radial-gradient(circle at 50% 0, #176ddd, #082a58 72%); box-shadow: 0 0 0 8px rgba(216,182,94,.06), 0 0 34px rgba(43,130,255,.45); color: #fff; }
+.customer-intention-option:nth-child(6)[aria-pressed="true"], .customer-intention-option:nth-child(1)[aria-pressed="true"] { transform: translate(-50%, -50%) scale(1.08); }
+.customer-intention-option:nth-child(1)[aria-pressed="true"] { transform: translateX(-50%) scale(1.08); }
+
+.customer-intention-detail { position: relative; width: min(680px, 100%); margin: 1rem auto 0; text-align: left; }
+.customer-intention-detail label { color: var(--space-silver); font-size: .9rem; }
+.customer-intention-detail textarea, .customer-clarification input, .customer-add-detail-form textarea {
+  border: 0; border-bottom: 1px solid rgba(145, 188, 240, .6); border-radius: 0;
+  background: rgba(4, 18, 37, .72); box-shadow: inset 0 1px rgba(255,255,255,.04); color: #f7fbff;
+}
+.customer-intention-detail textarea::placeholder { color: #8398b0; }
+.customer-context-actions { width: min(680px, 100%); margin: 1.2rem auto 0; align-items: center; }
+.customer-location-button { border-color: rgba(145,188,240,.45); border-radius: 999px; color: var(--space-muted); }
+.customer-continue-button, .customer-understanding-actions button, .demeos-primary-button {
+  min-height: 50px; padding-inline: 1.45rem; border: 1px solid #f0d37f; border-radius: 999px;
+  background: linear-gradient(110deg, #b88d32, #f0d37f 52%, #b98d31); box-shadow: 0 9px 30px rgba(216,182,94,.16); color: #041226;
+}
+.customer-continue-button::after { margin-left: .7rem; content: "›"; font-size: 1.35em; line-height: 0; }
+.customer-context-status { color: var(--space-muted); text-align: left; }
+.customer-intention-status { width: min(680px, 100%); margin-inline: auto; color: #efd37f; }
+
+.customer-understanding, .customer-possibilities { position: relative; margin-top: 4rem; border: 0; background: transparent; box-shadow: none; }
+.customer-understanding { padding: clamp(2rem, 6vw, 4.5rem); }
+.customer-understanding::before { position: absolute; inset: 0; border: 1px solid rgba(114,174,247,.24); border-radius: 50%; box-shadow: inset 0 0 60px rgba(19,95,202,.12); content: ""; pointer-events: none; }
+.customer-understanding-summary { position: relative; max-width: 680px; margin: 1.5rem auto; border: 0; border-block: 1px solid rgba(216,182,94,.4); background: rgba(5,26,52,.68); }
+.customer-understanding-trust { color: var(--space-muted); }
+.customer-understanding-actions { justify-content: center; }
+#customer-understanding-change { border-radius: 999px; }
+.customer-intention-save { max-width: 680px; margin: 2rem auto; border: 0; border-left: 1px solid var(--space-gold); background: rgba(5, 25, 49, .65); color: var(--space-silver); text-align: left; }
+.customer-intention-sign-in-note { color: var(--space-muted); }
+.customer-possibilities { padding: 2rem 0; }
+.customer-possibility-intention { border-radius: 50%; }
+.customer-possibility-surface { border-radius: 50% 50% 42% 42%; }
+.customer-no-possibilities { border: 0; border-inline: 1px solid rgba(216,182,94,.5); background: radial-gradient(circle, rgba(8,43,83,.7), transparent 75%); }
+
+.customer-footer { border-top: 1px solid rgba(113,166,231,.14); background: #020813; color: #8297ae; }
+.customer-footer img { width: 58px; border-radius: 0; opacity: .7; }
+.customer-footer p { letter-spacing: .08em; }
+
+/* My DEMEOS is another state of the same space, not an account dashboard. */
+.my-demeos-main { width: min(1240px, 100%); min-height: calc(100vh - 76px); margin: auto; padding: clamp(3.5rem, 7vw, 6rem) 1.5rem; color: #f7fbff; }
+.my-demeos-introduction { display: grid; justify-items: center; text-align: center; }
+.my-demeos-introduction h1 { margin: .35rem 0; color: #fff; font-size: clamp(2.8rem, 7vw, 5.5rem); }
+.my-demeos-lead { color: var(--space-silver); font-size: clamp(1.05rem, 2vw, 1.35rem); }
+.my-demeos-sign-in-status { position: relative; width: min(560px, 100%); margin-top: 2rem; padding: 1.35rem 2rem; border: 0; border-inline: 1px solid rgba(216,182,94,.5); background: rgba(3, 17, 35, .66); color: var(--space-muted); }
+.my-demeos-sign-in-status h2 { color: #fff; font-size: 1.15rem; letter-spacing: .03em; }
+.my-demeos-future { margin-top: clamp(4rem, 9vw, 7rem); }
+.my-demeos-section-heading { position: relative; z-index: 2; max-width: 620px; margin: auto; color: var(--space-muted); text-align: center; }
+.my-demeos-section-heading h2 { margin: .4rem 0; color: #fff; font-size: clamp(1.8rem, 4vw, 3.2rem); }
+.my-demeos-areas { position: relative; display: grid; min-height: 660px; margin-top: 2rem; grid-template-columns: repeat(12, 1fr); grid-template-rows: repeat(8, 1fr); gap: 0; }
+.my-demeos-areas::before, .my-demeos-areas::after { position: absolute; inset: 7% 12%; border: 1px solid rgba(104,163,235,.18); border-radius: 50%; content: ""; pointer-events: none; }
+.my-demeos-areas::after { inset: 25% 30%; border-color: rgba(216,182,94,.2); }
+.my-demeos-area { z-index: 1; min-height: 0; padding: 1.35rem; border: 1px solid rgba(117,173,239,.35); border-radius: 50%; background: radial-gradient(circle at 50% 0, rgba(20,93,190,.4), rgba(3,20,42,.92) 70%); color: #fff; box-shadow: 0 18px 42px rgba(0,5,16,.35); text-align: center; }
+.my-demeos-area-active { display: flex; flex-direction: column; justify-content: center; cursor: pointer; }
+.my-demeos-area-active:hover, .my-demeos-area-active:focus-visible { border-color: var(--space-gold); background: radial-gradient(circle at 50% 0, rgba(28,119,239,.55), rgba(3,25,53,.96)); transform: translateY(-5px) scale(1.02); }
+.my-demeos-area:nth-child(1) { grid-area: 1 / 5 / 4 / 9; }
+.my-demeos-area:nth-child(2) { grid-area: 3 / 1 / 7 / 5; }
+.my-demeos-area:nth-child(3) { grid-area: 3 / 9 / 7 / 13; }
+.my-demeos-area:nth-child(4) { grid-area: 6 / 3 / 9 / 7; }
+.my-demeos-area:nth-child(5) { grid-area: 6 / 7 / 9 / 11; }
+.my-demeos-area-title { color: #fff; font-family: inherit; font-size: clamp(1.1rem, 2vw, 1.45rem); font-weight: 550; }
+.my-demeos-area-copy { margin-inline: auto; color: #b8c9da; font-size: .82rem; }
+.my-demeos-area-status { color: var(--space-gold); font-size: .62rem; letter-spacing: .11em; }
+.my-demeos-area-enter { color: #d9e9fb; }
+.my-demeos-area-future { border-style: dashed; opacity: .58; box-shadow: none; }
+.my-demeos-relationship-view { position: relative; margin-top: 3rem; border: 0; border-inline: 1px solid rgba(216,182,94,.45); background: rgba(4,22,44,.88); box-shadow: 0 30px 80px rgba(0,0,0,.36); color: var(--space-silver); }
+.my-demeos-relationship-view h2 { color: #fff; }
+.my-demeos-relationship-view > div > p { color: var(--space-muted); }
+.my-demeos-back, .demeos-secondary-button { border-color: rgba(142,188,244,.5); border-radius: 999px; background: transparent; color: var(--space-silver); }
+.my-demeos-meaning { border-left-color: var(--space-gold); background: rgba(0,77,167,.18); color: var(--space-silver); }
+.my-intentions-list article, .my-possibilities-list article { border-left-color: var(--space-gold); background: rgba(14,47,82,.7); color: var(--space-silver); }
+.my-demeos-evidence { max-width: 760px; margin: 4rem auto 0; border: 0; border-block: 1px solid rgba(216,182,94,.4); background: transparent; text-align: center; }
+
+@media (max-width: 1024px) {
+  .customer-intention { padding-top: 4rem; }
+  .customer-intention-form fieldset, .customer-intention-options { min-height: 360px; }
+  .customer-intention-option:nth-child(2) { right: 2%; }
+  .customer-intention-option:nth-child(5) { left: 2%; }
+  .my-demeos-areas { min-height: 600px; }
+}
+
+@media (max-width: 768px) {
+  .customer-header-inner { width: calc(100% - 2rem); min-height: 70px; }
+  .customer-intention { min-height: calc(100vh - 70px); padding: 3rem 1rem 4rem; }
+  .customer-intention-form fieldset { min-height: 0; }
+  .customer-intention-form fieldset::before, .customer-intention-form fieldset::after { display: none; }
+  .customer-intention-options { display: grid; min-height: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; }
+  .customer-intention-option, .customer-intention-option:nth-child(n) { position: relative; inset: auto; width: 100%; min-height: 64px; transform: none; }
+  .customer-intention-option:nth-child(n)[aria-pressed="true"] { transform: scale(1.025); }
+  .customer-intention-detail { margin-top: 2rem; }
+  .customer-understanding::before { border-radius: 30%; }
+  .my-demeos-main { padding-top: 3rem; }
+  .my-demeos-areas { min-height: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: auto; gap: 1rem; }
+  .my-demeos-areas::before, .my-demeos-areas::after { display: none; }
+  .my-demeos-area:nth-child(n) { grid-area: auto; min-height: 220px; }
+  .my-demeos-area:nth-child(3) { grid-column: 1 / -1; width: 50%; justify-self: center; }
+  .my-demeos-area-future { min-height: 180px; }
+}
+
+@media (max-width: 480px) {
+  .customer-header-inner { min-height: 66px; }
+  .customer-brand { min-width: 94px; }
+  .customer-brand .demeos-logo { width: 88px; }
+  .customer-journey-nav { gap: .7rem; }
+  .customer-journey-nav a { display: block !important; font-size: .68rem; }
+  .customer-intention { padding-top: 2.5rem; }
+  .customer-intention-options { grid-template-columns: 1fr; }
+  .customer-intention-option { border-radius: 1.1rem; }
+  .customer-context-actions, .customer-understanding-actions { align-items: stretch; flex-direction: column; }
+  .customer-context-actions > div { text-align: left; }
+  .customer-continue-button { width: 100%; }
+  .customer-understanding { padding: 1.5rem .5rem; }
+  .customer-understanding::before { display: none; }
+  .my-demeos-main { padding: 2.5rem 1rem 4rem; }
+  .my-demeos-sign-in-status { padding: 1.25rem 1rem; }
+  .my-demeos-areas { grid-template-columns: 1fr; }
+  .my-demeos-area:nth-child(n) { grid-column: auto; width: 100%; min-height: 164px; border-radius: 1.5rem; }
+  .my-demeos-area-future { min-height: 145px; }
+  .customer-footer { padding-inline: 1rem; text-align: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .customer-body *, .customer-body *::before, .customer-body *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
