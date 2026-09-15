@@ -1,124 +1,16 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="The foundation for your future relationship with DEMEOS." />
-  <title>My DEMEOS</title>
-  <link rel="stylesheet" href="css/style.css" />
-  <link rel="stylesheet" href="css/demeos-customer-space.css" />
-</head>
+<html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="description" content="The foundation for your future relationship with DEMEOS." /><title>My DEMEOS</title><link rel="stylesheet" href="css/style.css" /><link rel="stylesheet" href="css/demeos-customer-space.css" /><link rel="stylesheet" href="css/demeos-approved-concept.css" /></head>
 <body class="customer-body my-demeos-body">
-  <header class="customer-header">
-    <div class="customer-header-inner">
-      <a class="customer-brand" href="customer.html" aria-label="Return to the DEMEOS Customer Interface">
-        <img src="images/demeos-logo.png" alt="DEMEOS" class="demeos-logo" />
-      </a>
-      <nav class="customer-journey-nav" aria-label="Customer navigation">
-        <a href="customer.html#customer-intention-form">New intention</a>
-        <a class="is-current" href="my-demeos.html" aria-current="page">My DEMEOS</a>
-      </nav>
-    </div>
-  </header>
-
-  <main class="my-demeos-main">
-    <header class="my-demeos-introduction">
-      <p class="customer-eyebrow">Your DEMEOS relationship</p>
-      <h1>My DEMEOS</h1>
-      <p class="my-demeos-lead">Your relationship with DEMEOS.</p>
-      <div class="my-demeos-sign-in-status" role="status" aria-live="polite">
-        <div id="customer-auth-loading">
-          <h2>Entering My DEMEOS&hellip;</h2>
-          <p>Checking your DEMEOS relationship securely.</p>
-        </div>
-        <div id="customer-auth-signed-out" hidden>
-          <h2>Enter My DEMEOS</h2>
-          <p>Enter your DEMEOS relationship securely and continue across visits.</p>
-          <button id="customer-sign-in" class="demeos-primary-button" type="button">Enter My DEMEOS</button>
-        </div>
-        <div id="customer-auth-signed-in" hidden>
-          <h2>My DEMEOS</h2>
-          <p><strong>Your secure DEMEOS relationship is active.</strong></p>
-          <p>No previous anonymous activity has been linked to your DEMEOS relationship.</p>
-          <button id="customer-sign-out" class="demeos-secondary-button" type="button">Leave My DEMEOS</button>
-        </div>
-        <div id="customer-auth-unavailable" hidden>
-          <h2>Secure sign-in unavailable</h2>
-          <p><strong>Customer sign-in is not available yet.</strong></p>
-          <p>Secure sign-in requires Clerk provider configuration before it can be activated.</p>
-        </div>
-      </div>
-    </header>
-
-    <section class="my-demeos-future" aria-labelledby="relationship-areas-heading">
-      <div class="my-demeos-section-heading">
-        <p class="customer-eyebrow">Your relationship, clearly held</p>
-        <h2 id="relationship-areas-heading">Your relationship areas</h2>
-        <p>Enter a relationship area to see the choices you have explicitly made.</p>
-      </div>
-      <div id="my-demeos-overview" class="my-demeos-areas">
-        <button id="open-my-intentions" class="my-demeos-area my-demeos-area-active" type="button" aria-controls="my-intentions" data-relationship-area="my-intentions">
-          <span class="my-demeos-area-status">Open relationship area</span>
-          <span class="my-demeos-area-title" role="heading" aria-level="3">My Intentions</span>
-          <span class="my-demeos-area-copy">The intentions you explicitly chose to save.</span>
-          <span class="my-demeos-area-enter" aria-hidden="true">Enter <span>&rarr;</span></span>
-        </button>
-        <button id="open-my-possibilities" class="my-demeos-area my-demeos-area-active" type="button" aria-controls="my-possibilities" data-relationship-area="my-possibilities">
-          <span class="my-demeos-area-status">Open relationship area</span>
-          <span class="my-demeos-area-title" role="heading" aria-level="3">My Possibilities</span>
-          <span class="my-demeos-area-copy">The possibilities you explicitly chose to save.</span>
-          <span class="my-demeos-area-enter" aria-hidden="true">Enter <span>&rarr;</span></span>
-        </button>
-        <button id="open-my-participation" class="my-demeos-area my-demeos-area-active" type="button" aria-controls="my-participation" data-relationship-area="my-participation">
-          <span class="my-demeos-area-status">Open relationship area</span>
-          <span class="my-demeos-area-title" role="heading" aria-level="3">My Participation</span>
-          <span class="my-demeos-area-copy">Your explicit Interested actions. Interest remains interest.</span>
-          <span class="my-demeos-area-enter" aria-hidden="true">Enter <span>&rarr;</span></span>
-        </button>
-        <section class="my-demeos-area my-demeos-area-future" aria-labelledby="my-preferences-title">
-          <span class="my-demeos-area-status">Coming to your DEMEOS relationship</span>
-          <h3 id="my-preferences-title" class="my-demeos-area-title">My Preferences</h3>
-          <p class="my-demeos-area-copy">Preferences will only come from choices you explicitly make.</p>
-        </section>
-        <section class="my-demeos-area my-demeos-area-future" aria-labelledby="privacy-control-title">
-          <span class="my-demeos-area-status">More relationship controls are being prepared.</span>
-          <h3 id="privacy-control-title" class="my-demeos-area-title">Privacy &amp; Control</h3>
-          <p class="my-demeos-area-copy">DEMEOS will only show controls here when they are genuinely available.</p>
-        </section>
-      </div>
-
-      <div id="my-intentions" class="my-demeos-relationship-view" aria-labelledby="my-intentions-heading" hidden>
-        <button class="my-demeos-back" type="button" data-relationship-back>&larr; Back to My DEMEOS</button>
-        <p class="customer-eyebrow">Your relationship area</p>
-        <h2 id="my-intentions-heading" tabindex="-1">My Intentions</h2>
-        <div id="my-intentions-signed-out"><p>Enter My DEMEOS to keep and see your intentions across visits.</p><button class="demeos-primary-button relationship-sign-in" type="button">Enter My DEMEOS</button></div>
-        <div id="my-intentions-signed-in" hidden><p id="my-intentions-loading">Loading your saved intentions…</p><div id="my-intentions-empty" hidden><p>No saved intentions yet.</p><p>When you confirm an intention, you can choose to save it here.</p></div><div id="my-intentions-list" class="my-intentions-list"></div></div>
-      </div>
-      <div id="my-possibilities" class="my-demeos-relationship-view" aria-labelledby="my-possibilities-heading" hidden>
-        <button class="my-demeos-back" type="button" data-relationship-back>&larr; Back to My DEMEOS</button>
-        <p class="customer-eyebrow">Your relationship area</p>
-        <h2 id="my-possibilities-heading" tabindex="-1">My Possibilities</h2>
-        <div id="my-possibilities-signed-out"><p>Enter My DEMEOS to keep and see your possibilities across visits.</p><button class="demeos-primary-button relationship-sign-in" type="button">Enter My DEMEOS</button></div>
-        <div id="my-possibilities-signed-in" hidden><p id="my-possibilities-loading">Loading your saved possibilities…</p><div id="my-possibilities-empty" hidden><p>No saved possibilities yet.</p><p>When DEMEOS shows you a possibility, you can choose to save it here.</p></div><div id="my-possibilities-list" class="my-possibilities-list"></div></div>
-      </div>
-      <div id="my-participation" class="my-demeos-relationship-view" aria-labelledby="my-participation-heading" hidden>
-        <button class="my-demeos-back" type="button" data-relationship-back>&larr; Back to My DEMEOS</button>
-        <p class="customer-eyebrow">Your relationship area</p>
-        <h2 id="my-participation-heading" tabindex="-1">My Participation</h2>
-        <p class="my-demeos-meaning">Interested is an interest signal only. It is not a purchase, booking or sale.</p>
-        <div id="my-participation-signed-out"><p>Enter My DEMEOS to see your participation across visits.</p><button class="demeos-primary-button relationship-sign-in" type="button">Enter My DEMEOS</button></div>
-        <div id="my-participation-signed-in" hidden><p id="my-participation-loading">Loading your participation…</p><div id="my-participation-empty" hidden><p>No participation recorded yet.</p><p>When you choose Interested on a possibility while your DEMEOS relationship is active, it can appear here.</p></div><div id="my-participation-list" class="my-participation-list"></div></div>
-      </div>
-    </section>
-
-    <aside class="my-demeos-evidence" aria-labelledby="evidence-heading">
-      <p class="customer-eyebrow">Clear meanings</p>
-      <h2 id="evidence-heading">Your choices stay clear</h2>
-      <p>Interest remains interest. Feedback remains feedback. A choice is not automatically a purchase, sale or success.</p>
-    </aside>
-  </main>
-
-  <footer class="customer-footer"><img src="images/demeos-logo.png" alt="" /><p>&copy; 2026 DEMEOS — ONE SYSTEM. REAL VALUE. SHARED FUTURE.</p></footer>
-  <script src="js/my-demeos.js"></script>
-</body>
-</html>
+<header class="customer-header"><div class="customer-header-inner"><a class="customer-brand" href="customer.html" aria-label="Return to the DEMEOS Customer Interface"><img src="images/demeos-logo.png" alt="DEMEOS" class="demeos-logo" /></a><nav class="customer-journey-nav" aria-label="Customer navigation"><a href="customer.html#customer-intention-form">New intention</a><a class="is-current" href="my-demeos.html" aria-current="page">My DEMEOS</a></nav></div></header>
+<main class="my-demeos-main">
+<header class="my-demeos-introduction"><p class="customer-eyebrow">Your DEMEOS relationship</p><h1>My DEMEOS</h1><p class="my-demeos-lead">Your relationship with DEMEOS.</p><div class="my-demeos-sign-in-status" role="status" aria-live="polite"><div id="customer-auth-loading"><h2>Entering My DEMEOS&hellip;</h2><p>Checking your DEMEOS relationship securely.</p></div><div id="customer-auth-signed-out" hidden><h2>Enter My DEMEOS</h2><p>Enter your DEMEOS relationship securely and continue across visits.</p><button id="customer-sign-in" class="demeos-primary-button" type="button">Enter My DEMEOS</button></div><div id="customer-auth-signed-in" hidden><h2>My DEMEOS</h2><p><strong>Your secure DEMEOS relationship is active.</strong></p><p>No previous anonymous activity has been linked to your DEMEOS relationship.</p><button id="customer-sign-out" class="demeos-secondary-button" type="button">Leave My DEMEOS</button></div><div id="customer-auth-unavailable" hidden><h2>Secure sign-in unavailable</h2><p><strong>Customer sign-in is not available yet.</strong></p><p>Secure sign-in requires Clerk provider configuration before it can be activated.</p></div></div></header>
+<section class="my-demeos-future" aria-labelledby="relationship-areas-heading"><div class="my-demeos-section-heading"><p class="customer-eyebrow">Your relationship, clearly held</p><h2 id="relationship-areas-heading">Your relationship areas</h2><p>Enter a relationship area to see the choices you have explicitly made.</p></div><div id="my-demeos-overview" class="my-demeos-areas">
+<button id="open-my-intentions" class="my-demeos-area my-demeos-area-active" type="button" aria-controls="my-intentions" data-relationship-area="my-intentions"><span class="my-demeos-area-status">Open relationship area</span><span class="my-demeos-area-title" role="heading" aria-level="3">My Intentions</span><span class="my-demeos-area-copy">The intentions you explicitly chose to save.</span><span class="my-demeos-area-enter" aria-hidden="true">View my intentions <span>&rarr;</span></span></button>
+<button id="open-my-possibilities" class="my-demeos-area my-demeos-area-active" type="button" aria-controls="my-possibilities" data-relationship-area="my-possibilities"><span class="my-demeos-area-status">Open relationship area</span><span class="my-demeos-area-title" role="heading" aria-level="3">My Possibilities</span><span class="my-demeos-area-copy">The possibilities you explicitly chose to save.</span><span class="my-demeos-area-enter" aria-hidden="true">View my possibilities <span>&rarr;</span></span></button>
+<button id="open-my-participation" class="my-demeos-area my-demeos-area-active" type="button" aria-controls="my-participation" data-relationship-area="my-participation"><span class="my-demeos-area-status">Open relationship area</span><span class="my-demeos-area-title" role="heading" aria-level="3">My Participation</span><span class="my-demeos-area-copy">Your explicit Interested actions. Interest remains interest.</span><span class="my-demeos-area-enter" aria-hidden="true">View my participation <span>&rarr;</span></span></button>
+<section class="my-demeos-area my-demeos-area-future" aria-labelledby="my-preferences-title"><span class="my-demeos-area-status">Available when explicitly supported</span><h3 id="my-preferences-title" class="my-demeos-area-title">My Preferences</h3><p class="my-demeos-area-copy">Preferences will only come from choices you explicitly make.</p></section><section class="my-demeos-area my-demeos-area-future" aria-labelledby="privacy-control-title"><span class="my-demeos-area-status">Shown only when genuinely available</span><h3 id="privacy-control-title" class="my-demeos-area-title">Privacy &amp; Control</h3><p class="my-demeos-area-copy">DEMEOS will only show controls here when they are genuinely available.</p></section></div>
+<div id="my-intentions" class="my-demeos-relationship-view" aria-labelledby="my-intentions-heading" hidden><button class="my-demeos-back" type="button" data-relationship-back>&larr; Back to My DEMEOS</button><p class="customer-eyebrow">Your relationship area</p><h2 id="my-intentions-heading" tabindex="-1">My Intentions</h2><div id="my-intentions-signed-out"><p>Enter My DEMEOS to keep and see your intentions across visits.</p><button class="demeos-primary-button relationship-sign-in" type="button">Enter My DEMEOS</button></div><div id="my-intentions-signed-in" hidden><p id="my-intentions-loading">Loading your saved intentions…</p><div id="my-intentions-empty" hidden><p>No saved intentions yet.</p><p>When you confirm an intention, you can choose to save it here.</p></div><div id="my-intentions-list" class="my-intentions-list"></div></div></div>
+<div id="my-possibilities" class="my-demeos-relationship-view" aria-labelledby="my-possibilities-heading" hidden><button class="my-demeos-back" type="button" data-relationship-back>&larr; Back to My DEMEOS</button><p class="customer-eyebrow">Your relationship area</p><h2 id="my-possibilities-heading" tabindex="-1">My Possibilities</h2><div id="my-possibilities-signed-out"><p>Enter My DEMEOS to keep and see your possibilities across visits.</p><button class="demeos-primary-button relationship-sign-in" type="button">Enter My DEMEOS</button></div><div id="my-possibilities-signed-in" hidden><p id="my-possibilities-loading">Loading your saved possibilities…</p><div id="my-possibilities-empty" hidden><p>No saved possibilities yet.</p><p>When DEMEOS shows you a possibility, you can choose to save it here.</p></div><div id="my-possibilities-list" class="my-possibilities-list"></div></div></div>
+<div id="my-participation" class="my-demeos-relationship-view" aria-labelledby="my-participation-heading" hidden><button class="my-demeos-back" type="button" data-relationship-back>&larr; Back to My DEMEOS</button><p class="customer-eyebrow">Your relationship area</p><h2 id="my-participation-heading" tabindex="-1">My Participation</h2><p class="my-demeos-meaning">Interested is an interest signal only. It is not a purchase, booking or sale.</p><div id="my-participation-signed-out"><p>Enter My DEMEOS to see your participation across visits.</p><button class="demeos-primary-button relationship-sign-in" type="button">Enter My DEMEOS</button></div><div id="my-participation-signed-in" hidden><p id="my-participation-loading">Loading your participation…</p><div id="my-participation-empty" hidden><p>No participation recorded yet.</p><p>When you choose Interested on a possibility while your DEMEOS relationship is active, it can appear here.</p></div><div id="my-participation-list" class="my-participation-list"></div></div></div></section>
+<aside class="my-demeos-evidence" aria-labelledby="evidence-heading"><p class="customer-eyebrow">A relationship built on clarity</p><h2 id="evidence-heading">Your choices stay clear</h2><p>Interest remains interest. Feedback remains feedback. A choice is not automatically a purchase, sale or success.</p></aside></main>
+<footer class="customer-footer"><img src="images/demeos-logo.png" alt="" /><p>&copy; 2026 DEMEOS — ONE SYSTEM. REAL VALUE. SHARED FUTURE.</p></footer><script src="js/my-demeos.js"></script></body></html>
