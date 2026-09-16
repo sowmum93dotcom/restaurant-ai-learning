@@ -5,6 +5,7 @@ const { createAuthenticatedCustomerContext } = require("./_lib/demeos-actor-cont
 const { authorizeDemeosAction } = require("./_lib/demeos-authorization.js");
 const { DEMEOS_ACTIONS } = require("./_lib/demeos-rules.js");
 const { validateCustomerIntention } = require("./_lib/customer-intention-contract.js");
+const { validateCustomerPreference } = require("./_lib/customer-preference-contract.js");
 const { getRepository } = require("./_lib/persistence.js");
 
 function isCustomerIdentityRequest(req) {
@@ -18,10 +19,13 @@ async function publicConfig(req, res) {
     (typeof req?.url === "string" && req.url.startsWith("/api/customer/possibilities/saved"));
   const participationRequest = req?.query?.resource === "customer-participation" ||
     (typeof req?.url === "string" && req.url.startsWith("/api/customer/participation"));
-  if (participationRequest || savedPossibilitiesRequest || req?.query?.resource === "customer-intentions" ||
+  const preferencesRequest = req?.query?.resource === "customer-preferences" ||
+    (typeof req?.url === "string" && req.url.startsWith("/api/customer/preferences"));
+  if (preferencesRequest || participationRequest || savedPossibilitiesRequest || req?.query?.resource === "customer-intentions" ||
       (typeof req?.url === "string" && req.url.startsWith("/api/customer/intentions"))) {
-    if (!['GET', 'POST'].includes(req.method) || (participationRequest && req.method !== 'GET')) {
-      res.setHeader("Allow", participationRequest ? "GET" : "GET, POST");
+    const allowedMethods = preferencesRequest ? ['GET', 'POST', 'DELETE'] : participationRequest ? ['GET'] : ['GET', 'POST'];
+    if (!allowedMethods.includes(req.method)) {
+      res.setHeader("Allow", allowedMethods.join(", "));
       return res.status(405).json({ error: "Method not allowed" });
     }
     const identity = await resolveTrustedCustomerIdentityFromRequest(req);
@@ -33,10 +37,29 @@ async function publicConfig(req, res) {
       return res.status(403).json({ error: "Customer permission required." });
     }
     const context = createAuthenticatedCustomerContext(identity);
-    const action = participationRequest ? DEMEOS_ACTIONS.VIEW_OWN_CUSTOMER_PARTICIPATION : savedPossibilitiesRequest
+    const action = preferencesRequest
+      ? (req.method === 'POST' ? DEMEOS_ACTIONS.RECORD_OWN_CUSTOMER_PREFERENCE : req.method === 'DELETE'
+        ? DEMEOS_ACTIONS.REMOVE_OWN_CUSTOMER_PREFERENCE : DEMEOS_ACTIONS.VIEW_OWN_CUSTOMER_PREFERENCES)
+      : participationRequest ? DEMEOS_ACTIONS.VIEW_OWN_CUSTOMER_PARTICIPATION : savedPossibilitiesRequest
       ? (req.method === 'POST' ? DEMEOS_ACTIONS.RECORD_OWN_CUSTOMER_SAVED_POSSIBILITY : DEMEOS_ACTIONS.VIEW_OWN_CUSTOMER_SAVED_POSSIBILITIES)
       : (req.method === 'POST' ? DEMEOS_ACTIONS.RECORD_OWN_CUSTOMER_INTENTION : DEMEOS_ACTIONS.VIEW_OWN_CUSTOMER_INTENTIONS);
     if (!authorizeDemeosAction({ actorContext: context, action }).allowed) return res.status(403).json({ error: "DEMEOS permission denied." });
+    if (preferencesRequest) {
+      if (req.method === 'GET') return res.status(200).json({ preferences: await repository.getCustomerPreferences(identity.trustedCustomerIdentityId, 50) });
+      if (req.method === 'DELETE') {
+        const body = req.body;
+        if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).length !== 1 ||
+            typeof body.preferenceId !== "string" || !/^\d+$/.test(body.preferenceId)) {
+          return res.status(400).json({ error: "A valid preference reference is required." });
+        }
+        const removed = await repository.removeCustomerPreference(identity.trustedCustomerIdentityId, body.preferenceId);
+        if (!removed) return res.status(404).json({ error: "Preference not found." });
+        return res.status(200).json({ removed: true });
+      }
+      const preference = validateCustomerPreference(req.body);
+      if (!preference) return res.status(400).json({ error: "A valid explicit preference is required." });
+      return res.status(201).json({ preference: await repository.saveCustomerPreference(identity.trustedCustomerIdentityId, preference) });
+    }
     if (participationRequest) return res.status(200).json({ participations: await repository.getCustomerParticipations(identity.trustedCustomerIdentityId, 50) });
     if (savedPossibilitiesRequest) {
       if (req.method === 'GET') return res.status(200).json({ possibilities: await repository.getCustomerSavedPossibilities(identity.trustedCustomerIdentityId, 50) });

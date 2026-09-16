@@ -85,7 +85,19 @@ const SCHEMA_STATEMENTS = [
   )`,
   `CREATE INDEX IF NOT EXISTS demeos_customer_saved_possibilities_owner_created_idx
     ON demeos_customer_saved_possibilities
-      (trusted_customer_identity_id, created_at DESC, saved_possibility_id DESC)`
+      (trusted_customer_identity_id, created_at DESC, saved_possibility_id DESC)`,
+  `CREATE TABLE IF NOT EXISTS demeos_customer_preferences (
+    preference_id BIGSERIAL PRIMARY KEY,
+    trusted_customer_identity_id TEXT NOT NULL,
+    preference_text TEXT NOT NULL,
+    evidence_type TEXT NOT NULL CHECK (evidence_type = 'customer-explicit-preference'),
+    source TEXT NOT NULL CHECK (source = 'authenticated-customer'),
+    confirmation_state TEXT NOT NULL CHECK (confirmation_state = 'confirmed'),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`,
+  `CREATE INDEX IF NOT EXISTS demeos_customer_preferences_owner_created_idx
+    ON demeos_customer_preferences
+      (trusted_customer_identity_id, created_at DESC, preference_id DESC)`
 ];
 
 function createDatabase(client) {
