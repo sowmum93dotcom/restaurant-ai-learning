@@ -1,12 +1,12 @@
 {
   "rewrites": [
     {
-      "source": "/api/customer/understanding",
-      "destination": "/api/public-config?resource=customer-understanding"
-    },
-    {
       "source": "/api/customer/identity",
       "destination": "/api/public-config?resource=customer-identity"
+    },
+    {
+      "source": "/api/customer/understanding",
+      "destination": "/api/public-config?resource=customer-understanding"
     },
     {
       "source": "/api/customer/intentions",
