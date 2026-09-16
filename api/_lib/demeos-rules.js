@@ -23,6 +23,8 @@ const DEMEOS_ACTIONS = Object.freeze({
   RECORD_OWN_CUSTOMER_PREFERENCE: "record-own-customer-preference",
   VIEW_OWN_CUSTOMER_PREFERENCES: "view-own-customer-preferences",
   VIEW_OWN_CUSTOMER_FEEDBACK: "view-own-customer-feedback",
+  VIEW_OWN_CUSTOMER_PRIVACY_CONTROLS: "view-own-customer-privacy-controls",
+  MANAGE_OWN_CUSTOMER_PRIVACY_CONTROLS: "manage-own-customer-privacy-controls",
   REMOVE_OWN_CUSTOMER_PREFERENCE: "remove-own-customer-preference",
   VIEW_CUSTOMER_EXPERIENCE: "view-customer-experience",
   RECORD_CUSTOMER_PARTICIPATION: "record-customer-participation",
@@ -54,6 +56,8 @@ const permissionsByActorScope = Object.freeze({
     DEMEOS_ACTIONS.RECORD_OWN_CUSTOMER_PREFERENCE,
     DEMEOS_ACTIONS.VIEW_OWN_CUSTOMER_PREFERENCES,
     DEMEOS_ACTIONS.VIEW_OWN_CUSTOMER_FEEDBACK,
+    DEMEOS_ACTIONS.VIEW_OWN_CUSTOMER_PRIVACY_CONTROLS,
+    DEMEOS_ACTIONS.MANAGE_OWN_CUSTOMER_PRIVACY_CONTROLS,
     DEMEOS_ACTIONS.REMOVE_OWN_CUSTOMER_PREFERENCE
   ]),
   [DEMEOS_ACTOR_SCOPES.PUBLIC_CUSTOMER]: Object.freeze([

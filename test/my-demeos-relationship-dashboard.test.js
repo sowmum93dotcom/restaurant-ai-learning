@@ -93,14 +93,18 @@ test("signed-out detail states are truthful for every implemented relationship a
   assert.match(html, /Enter My DEMEOS to keep and see your possibilities across visits\./);
   assert.match(html, /Enter My DEMEOS to see your participation across visits\./);
   assert.match(html, /Enter My DEMEOS to add and manage your preferences\./);
-  assert.equal((html.match(/class="demeos-primary-button relationship-sign-in"/g) || []).length, 4);
+  assert.match(html, /Enter My DEMEOS to control how your stored relationship evidence may guide future understanding\./);
+  assert.equal((html.match(/class="demeos-primary-button relationship-sign-in"/g) || []).length, 5);
 });
 
-test("Privacy & Control truthfully describes only enforceable controls", function () {
+test("Privacy & Control exposes explicit guidance controls without rewriting evidence", function () {
   assert.match(html, /data-relationship-area="privacy-control"/);
   assert.match(html, /You can remove saved intentions from My Intentions, saved possibilities from My Possibilities, and explicit preferences from My Preferences\./);
   assert.doesNotMatch(html, /<button[^>]*>\s*(?:Delete my data|Export data|Consent settings|History controls)/i);
   assert.match(html, /Removing a saved relationship record does not rewrite history\./);
+  assert.match(html, /Use my explicit Preferences as future DEMEOS guidance\./);
+  assert.match(html, /Use my explicit Feedback as future DEMEOS relevance-learning guidance\./);
+  assert.match(html, /Turning either control off does not delete or rewrite historical evidence\./);
 });
 
 test("trusted evidence meanings and existing authenticated render targets remain unchanged", function () {

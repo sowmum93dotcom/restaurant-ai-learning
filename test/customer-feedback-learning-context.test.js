@@ -32,6 +32,7 @@ async function understand(identity, repository, body) {
 const current = { intention: "Eat & enjoy", customerText: "A relaxed family dinner", clarificationText: "" };
 function customerRepository(feedback) {
   return { getOwnedBusinessIds: async () => [], getCustomerPreferences: async () => [{ preference: "Quiet tables" }],
+    getCustomerPrivacyControls: async () => ({ usePreferencesAsGuidance: true, useFeedbackAsGuidance: true }),
     getCustomerFeedback: async () => feedback };
 }
 
@@ -108,4 +109,19 @@ test("repository reads feedback only by trusted owner and preserves Customer Fee
   assert.match(calls[0].statement, /trusted_customer_identity_id = \$1/);
   assert.deepEqual(feedback[0], { response: "Relevant", possibilityContent: "Relaxed family dinner",
     evidenceType: "customer-feedback", source: "authenticated-customer", comment: "Useful" });
+});
+
+test("feedback relevance guidance can be disabled and explicitly re-enabled", async function () {
+  let feedbackReads = 0;
+  const repository = customerRepository([]);
+  repository.getCustomerPrivacyControls = async () => ({ usePreferencesAsGuidance: false, useFeedbackAsGuidance: false });
+  repository.getCustomerFeedback = async () => { feedbackReads += 1;
+    return [{ response: "Relevant", possibilityContent: "Historic garden supper" }]; };
+  const disabled = await understand({ trustedCustomerIdentityId: "customer-a" }, repository, current);
+  assert.deepEqual(disabled.body.understanding.feedbackContext.evidence, []);
+  assert.equal(feedbackReads, 0);
+  repository.getCustomerPrivacyControls = async () => ({ usePreferencesAsGuidance: false, useFeedbackAsGuidance: true });
+  const enabled = await understand({ trustedCustomerIdentityId: "customer-a" }, repository, current);
+  assert.equal(enabled.body.understanding.feedbackContext.evidence[0].evidenceType, "customer-feedback");
+  assert.equal(feedbackReads, 1);
 });

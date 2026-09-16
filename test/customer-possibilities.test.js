@@ -22,14 +22,20 @@ function response() {
 }
 async function post(body, repository = { async getCustomerWork() { return []; } }) {
   const persistence = require(persistencePath);
+  const issuanceTrust = require("../api/_lib/customer-possibility-issuance-trust.js");
   const original = persistence.getRepository;
+  const originalPrepare = issuanceTrust.prepareCustomerPossibilityIssuanceTrust;
+  const originalConfirm = issuanceTrust.confirmCustomerPossibilityIssuanceDelivery;
   persistence.getRepository = function () { return repository; };
+  issuanceTrust.prepareCustomerPossibilityIssuanceTrust = async function () {};
+  issuanceTrust.confirmCustomerPossibilityIssuanceDelivery = async function (_identity, ids) { return ids; };
   const routePath = require.resolve("../api/customer/possibilities.js");
   delete require.cache[routePath];
   const handler = require(routePath);
   const res = response();
   try { await handler({ method: "POST", body }, res); }
-  finally { persistence.getRepository = original; delete require.cache[routePath]; }
+  finally { persistence.getRepository = original; issuanceTrust.prepareCustomerPossibilityIssuanceTrust = originalPrepare;
+    issuanceTrust.confirmCustomerPossibilityIssuanceDelivery = originalConfirm; delete require.cache[routePath]; }
   return res;
 }
 
@@ -143,6 +149,7 @@ test("authenticated possibilities are issued only to the trusted customer identi
   const repository = {
     async getCustomerWork() { return [work("work-1", "A relaxed family dinner")]; },
     async getOwnedBusinessIds(id) { assert.equal(id, "trusted-customer-a"); return []; },
+    async getCustomerPrivacyControls() { return { usePreferencesAsGuidance: true, useFeedbackAsGuidance: true }; },
     async getCustomerPreferences() { return []; }, async getCustomerFeedback() { return []; },
     async recordCustomerPossibilityIssuance(...args) { issuance = args; return ["work-1"]; }
   };
@@ -159,6 +166,7 @@ test("browser identity spoofing cannot select another customer's issuance", asyn
   const repository = {
     async getCustomerWork() { return [work("work-1", "A relaxed family dinner")]; },
     async getOwnedBusinessIds() { return []; }, async getCustomerPreferences() { return []; },
+    async getCustomerPrivacyControls() { return { usePreferencesAsGuidance: true, useFeedbackAsGuidance: true }; },
     async getCustomerFeedback() { return []; },
     async recordCustomerPossibilityIssuance(id) { issuedTo = id; return ["work-1"]; }
   };
@@ -166,6 +174,22 @@ test("browser identity spoofing cannot select another customer's issuance", asyn
   assert.equal(res.statusCode, 200);
   assert.equal(issuedTo, "trusted-customer-a");
   assert.notEqual(issuedTo, "browser-customer-b");
+});
+
+test("customer possibility guidance reads only evidence enabled by trusted privacy controls", async function () {
+  const reads = [];
+  const repository = {
+    async getCustomerWork() { return [work("work-1", "A relaxed family dinner")]; },
+    async getOwnedBusinessIds() { return []; },
+    async getCustomerPrivacyControls() { return { usePreferencesAsGuidance: false, useFeedbackAsGuidance: true }; },
+    async getCustomerPreferences() { reads.push("preferences"); return [{ preference: "quiet" }]; },
+    async getCustomerFeedback() { reads.push("feedback"); return []; },
+    async recordCustomerPossibilityIssuance(_id, possibilities) { return possibilities.map((item) => item.workItemId); }
+  };
+  const understanding = confirmed("Spend time together", "relaxed family dinner");
+  const res = await postAs({ trustedCustomerIdentityId: "trusted-customer-a" }, { understanding }, repository);
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(reads, ["feedback"]);
 });
 
 test("anonymous Customer Experience stays functional and is not retroactively issued after authentication", async function () {

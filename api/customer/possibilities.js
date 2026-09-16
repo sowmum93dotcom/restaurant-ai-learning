@@ -31,12 +31,15 @@ module.exports = async function handler(req, res) {
       ? identity : null;
     if (customerIdentity) {
       const context = createAuthenticatedCustomerContext(customerIdentity);
-      if (authorizeDemeosAction({ actorContext: context, action: DEMEOS_ACTIONS.VIEW_OWN_CUSTOMER_PREFERENCES }).allowed) {
+      const controls = typeof repository.getCustomerPrivacyControls === "function"
+        ? await repository.getCustomerPrivacyControls(customerIdentity.trustedCustomerIdentityId)
+        : { usePreferencesAsGuidance: false, useFeedbackAsGuidance: false };
+      if (controls.usePreferencesAsGuidance && authorizeDemeosAction({ actorContext: context, action: DEMEOS_ACTIONS.VIEW_OWN_CUSTOMER_PREFERENCES }).allowed) {
         preferences = await repository.getCustomerPreferences(customerIdentity.trustedCustomerIdentityId, 50);
-        if (typeof repository.getCustomerFeedback === "function" &&
-            authorizeDemeosAction({ actorContext: context, action: DEMEOS_ACTIONS.VIEW_OWN_CUSTOMER_FEEDBACK }).allowed) {
-          feedback = await repository.getCustomerFeedback(customerIdentity.trustedCustomerIdentityId, 50);
-        }
+      }
+      if (controls.useFeedbackAsGuidance && typeof repository.getCustomerFeedback === "function" &&
+          authorizeDemeosAction({ actorContext: context, action: DEMEOS_ACTIONS.VIEW_OWN_CUSTOMER_FEEDBACK }).allowed) {
+        feedback = await repository.getCustomerFeedback(customerIdentity.trustedCustomerIdentityId, 50);
       }
     }
     let possibilities = findCustomerPossibilities(understanding, work, undefined, preferences, feedback);
