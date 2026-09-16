@@ -32,11 +32,11 @@ function createPersistenceRepository(database) {
                AND customer_text IS NOT DISTINCT FROM $3 AND confirmed_understanding = $4
                AND created_at > NOW() - INTERVAL '30 seconds'
            )
-           RETURNING intention_category, customer_text, confirmed_understanding, created_at
+           RETURNING intention_id, intention_category, customer_text, confirmed_understanding, created_at
          )
          SELECT * FROM inserted
          UNION ALL
-         SELECT intention_category, customer_text, confirmed_understanding, created_at
+         SELECT intention_id, intention_category, customer_text, confirmed_understanding, created_at
          FROM demeos_customer_intentions
          WHERE trusted_customer_identity_id = $1 AND intention_category = $2
            AND customer_text IS NOT DISTINCT FROM $3 AND confirmed_understanding = $4
@@ -45,7 +45,7 @@ function createPersistenceRepository(database) {
         [trustedCustomerIdentityId, intention.intention, intention.customerText || null, intention.understanding]);
       if (!result.rows.length) return null;
       const row = result.rows[0];
-      return { intention: row.intention_category, customerText: row.customer_text || undefined,
+      return { intentionId: String(row.intention_id), intention: row.intention_category, customerText: row.customer_text || undefined,
         understanding: row.confirmed_understanding,
         createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at };
     },
@@ -55,14 +55,24 @@ function createPersistenceRepository(database) {
       await database.ensureSchema();
       const safeLimit = Math.min(50, Math.max(1, Number.isInteger(limit) ? limit : 50));
       const result = await database.query(
-        `SELECT intention_category, customer_text, confirmed_understanding, created_at
+        `SELECT intention_id, intention_category, customer_text, confirmed_understanding, created_at
          FROM demeos_customer_intentions WHERE trusted_customer_identity_id = $1
          ORDER BY created_at DESC, intention_id DESC LIMIT $2`, [trustedCustomerIdentityId, safeLimit]);
       return result.rows.map(function (row) {
-        return { intention: row.intention_category, customerText: row.customer_text || undefined,
+        return { intentionId: String(row.intention_id), intention: row.intention_category, customerText: row.customer_text || undefined,
           understanding: row.confirmed_understanding,
           createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at };
       });
+    },
+
+    async removeCustomerIntention(trustedCustomerIdentityId, intentionId) {
+      if (!isNonEmptyString(trustedCustomerIdentityId) || !isNonEmptyString(intentionId)) return false;
+      await database.ensureSchema();
+      const result = await database.query(
+        `DELETE FROM demeos_customer_intentions
+         WHERE trusted_customer_identity_id = $1 AND intention_id = $2
+         RETURNING intention_id`, [trustedCustomerIdentityId, intentionId]);
+      return result.rows.length > 0;
     },
 
     async saveCustomerPreference(trustedCustomerIdentityId, preference) {
@@ -127,7 +137,7 @@ function createPersistenceRepository(database) {
            AND c.campaign->>'approvalStatus' = 'Approved'
          ON CONFLICT (trusted_customer_identity_id, work_item_id) DO UPDATE
            SET trusted_customer_identity_id = EXCLUDED.trusted_customer_identity_id
-         RETURNING possibility_content, business_name, location, relevance_basis, created_at`,
+         RETURNING saved_possibility_id, possibility_content, business_name, location, relevance_basis, created_at`,
         [trustedCustomerIdentityId, workItemId, publicItem.content, publicItem.businessName,
           publicItem.location || null, JSON.stringify(row.campaign)]);
       if (!result.rows.length) return null;
@@ -139,12 +149,23 @@ function createPersistenceRepository(database) {
       await database.ensureSchema();
       const safeLimit = Math.min(50, Math.max(1, Number.isInteger(limit) ? limit : 50));
       const result = await database.query(
-        `SELECT possibility_content, business_name, location, relevance_basis, created_at
+        `SELECT saved_possibility_id, possibility_content, business_name, location, relevance_basis, created_at
          FROM demeos_customer_saved_possibilities
          WHERE trusted_customer_identity_id = $1
          ORDER BY created_at DESC, saved_possibility_id DESC LIMIT $2`,
         [trustedCustomerIdentityId, safeLimit]);
       return result.rows.map(toSavedPossibility);
+    },
+    async removeCustomerSavedPossibility(trustedCustomerIdentityId, savedPossibilityId) {
+      if (!isNonEmptyString(trustedCustomerIdentityId) || !isNonEmptyString(savedPossibilityId)) return false;
+      await database.ensureSchema();
+      // Only the customer's saved relationship row is removed. The referenced
+      // campaign and all participation and feedback evidence remain untouched.
+      const result = await database.query(
+        `DELETE FROM demeos_customer_saved_possibilities
+         WHERE trusted_customer_identity_id = $1 AND saved_possibility_id = $2
+         RETURNING saved_possibility_id`, [trustedCustomerIdentityId, savedPossibilityId]);
+      return result.rows.length > 0;
     },
     async getOwnedBusinessIds(trustedIdentityId) {
       if (!isNonEmptyString(trustedIdentityId)) return [];
@@ -425,7 +446,7 @@ function createPersistenceRepository(database) {
 }
 
 function toSavedPossibility(row) {
-  const saved = { content: row.possibility_content, businessName: row.business_name,
+  const saved = { savedPossibilityId: String(row.saved_possibility_id), content: row.possibility_content, businessName: row.business_name,
     relevance: { basis: row.relevance_basis },
     createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at };
   if (row.location) saved.location = row.location;

@@ -38,11 +38,11 @@ test("the header remains in document flow and reserves usable content height", f
   assert.match(css, /\.customer-intention\s*\{[^}]*min-height: calc\(100vh - 76px\)/);
 });
 
-test("relationship areas distinguish real controls from honest future sections", function () {
-  assert.equal((relationship.match(/data-relationship-area=/g) || []).length, 4);
-  assert.equal((relationship.match(/my-demeos-area-future/g) || []).length, 1);
+test("all available relationship areas are real controls", function () {
+  assert.equal((relationship.match(/data-relationship-area=/g) || []).length, 5);
+  assert.equal((relationship.match(/my-demeos-area-future/g) || []).length, 0);
+  assert.match(relationship, /data-relationship-area="privacy-control"/);
   assert.match(css, /\.my-demeos-area-active/);
-  assert.match(css, /\.my-demeos-area-future\s*\{[^}]*border-style: dashed/);
 });
 
 test("the visual layer introduces no commerce or ranking language", function () {
