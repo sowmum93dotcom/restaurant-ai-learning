@@ -113,12 +113,15 @@ function createPersistenceRepository(database) {
     async saveCustomerPossibility(trustedCustomerIdentityId, workItemId) {
       if (!isNonEmptyString(trustedCustomerIdentityId) || !isNonEmptyString(workItemId)) return null;
       await database.ensureSchema();
-      // Resolve and re-check the campaign on the server. Browser display data is
-      // never inserted, and a changed/unpublished campaign cannot slip through.
+      // Resolve and re-check the campaign on the server. Issuance is scoped to the
+      // trusted identity and exact campaign snapshot, so a browser reference alone
+      // cannot establish that DEMEOS showed this possibility to this customer.
       const authoritative = await database.query(
         `SELECT c.campaign_id, c.campaign, b.profile
          FROM demeos_campaigns c JOIN demeos_businesses b ON b.business_id = c.business_id
-         WHERE c.campaign_id = $1`, [workItemId]);
+         JOIN demeos_customer_possibility_issuances i ON i.work_item_id = c.campaign_id
+           AND i.trusted_customer_identity_id = $2 AND i.campaign_snapshot = c.campaign
+         WHERE c.campaign_id = $1`, [workItemId, trustedCustomerIdentityId]);
       if (!authoritative.rows.length) return null;
       const row = authoritative.rows[0];
       if (!canPublishToDemeosCustomerExperience(row.campaign)) return null;
@@ -135,6 +138,11 @@ function createPersistenceRepository(database) {
          FROM demeos_campaigns c
          WHERE c.campaign_id = $2 AND c.campaign = $6::jsonb
            AND c.campaign->>'approvalStatus' = 'Approved'
+           AND EXISTS (
+             SELECT 1 FROM demeos_customer_possibility_issuances i
+             WHERE i.trusted_customer_identity_id = $1 AND i.work_item_id = c.campaign_id
+               AND i.campaign_snapshot = c.campaign
+           )
          ON CONFLICT (trusted_customer_identity_id, work_item_id) DO UPDATE
            SET trusted_customer_identity_id = EXCLUDED.trusted_customer_identity_id
          RETURNING saved_possibility_id, possibility_content, business_name, location, relevance_basis, created_at`,
@@ -142,6 +150,38 @@ function createPersistenceRepository(database) {
           publicItem.location || null, JSON.stringify(row.campaign)]);
       if (!result.rows.length) return null;
       return toSavedPossibility(result.rows[0]);
+    },
+
+    async recordCustomerPossibilityIssuance(trustedCustomerIdentityId, possibilities) {
+      if (!isNonEmptyString(trustedCustomerIdentityId) || !Array.isArray(possibilities) || !possibilities.length) return [];
+      await database.ensureSchema();
+      const issuedWorkItemIds = [];
+      for (const possibility of possibilities) {
+        if (!possibility || !isNonEmptyString(possibility.workItemId)) continue;
+        const authoritative = await database.query(
+          `SELECT c.campaign_id, c.campaign, b.profile
+           FROM demeos_campaigns c JOIN demeos_businesses b ON b.business_id = c.business_id
+           WHERE c.campaign_id = $1`, [possibility.workItemId]);
+        if (!authoritative.rows.length || !canPublishToDemeosCustomerExperience(authoritative.rows[0].campaign)) continue;
+        const row = authoritative.rows[0];
+        const publicItem = toPublicCustomerWorkItem({ workItemId: row.campaign_id,
+          businessName: row.profile && row.profile.name, location: row.profile && row.profile.location,
+          content: getCustomerFacingContent(row.campaign), participationAction: "Interested" });
+        if (!publicItem || publicItem.content !== possibility.content ||
+            publicItem.businessName !== possibility.businessName || publicItem.location !== possibility.location) continue;
+        const result = await database.query(
+          `INSERT INTO demeos_customer_possibility_issuances
+             (trusted_customer_identity_id, work_item_id, campaign_snapshot, evidence_type, source)
+           SELECT $1, c.campaign_id, c.campaign, 'demeos-possibility-issuance', 'demeos'
+           FROM demeos_campaigns c JOIN demeos_businesses b ON b.business_id = c.business_id
+           WHERE c.campaign_id = $2 AND c.campaign = $3::jsonb
+           ON CONFLICT (trusted_customer_identity_id, work_item_id) DO UPDATE
+             SET campaign_snapshot = EXCLUDED.campaign_snapshot, issued_at = NOW()
+           RETURNING work_item_id`,
+          [trustedCustomerIdentityId, possibility.workItemId, JSON.stringify(row.campaign)]);
+        if (result.rows.length) issuedWorkItemIds.push(result.rows[0].work_item_id);
+      }
+      return issuedWorkItemIds;
     },
 
     async getCustomerSavedPossibilities(trustedCustomerIdentityId, limit = 50) {

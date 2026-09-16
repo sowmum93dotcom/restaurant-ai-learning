@@ -8,6 +8,7 @@ const {
 const { buildCustomerUnderstanding, confirmCustomerUnderstanding } = require("../js/customer-understanding.js");
 
 const persistencePath = require.resolve("../api/_lib/persistence.js");
+const authenticationPath = require.resolve("../api/_lib/demeos-customer-authentication.js");
 function confirmed(intention, text) {
   return confirmCustomerUnderstanding(buildCustomerUnderstanding(intention, text));
 }
@@ -30,6 +31,14 @@ async function post(body, repository = { async getCustomerWork() { return []; } 
   try { await handler({ method: "POST", body }, res); }
   finally { persistence.getRepository = original; delete require.cache[routePath]; }
   return res;
+}
+
+async function postAs(identity, body, repository) {
+  const authentication = require(authenticationPath);
+  const original = authentication.resolveTrustedCustomerIdentityFromRequest;
+  authentication.resolveTrustedCustomerIdentityFromRequest = async function () { return identity; };
+  try { return await post(body, repository); }
+  finally { authentication.resolveTrustedCustomerIdentityFromRequest = original; }
 }
 
 test("confirmed understanding contract rejects malformed, unconfirmed, wrong-source and unsupported input", function () {
@@ -126,4 +135,48 @@ test("client requests possibilities only from confirmation and sends no coordina
   assert.match(requestFunction, /\/api\/customer\/possibilities/);
   assert.doesNotMatch(requestFunction, /latitude|longitude|coordinates|geolocation/);
   assert.doesNotMatch(html + source, /best match|star rating|sponsored badge|book now|map control|marketplace filter/i);
+});
+
+test("authenticated possibilities are issued only to the trusted customer identity", async function () {
+  const understanding = confirmed("Spend time together", "relaxed family dinner");
+  let issuance;
+  const repository = {
+    async getCustomerWork() { return [work("work-1", "A relaxed family dinner")]; },
+    async getOwnedBusinessIds(id) { assert.equal(id, "trusted-customer-a"); return []; },
+    async getCustomerPreferences() { return []; }, async getCustomerFeedback() { return []; },
+    async recordCustomerPossibilityIssuance(...args) { issuance = args; return ["work-1"]; }
+  };
+  const res = await postAs({ trustedCustomerIdentityId: "trusted-customer-a" }, { understanding }, repository);
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.possibilities.length, 1);
+  assert.equal(issuance[0], "trusted-customer-a");
+  assert.equal(issuance[1][0].workItemId, "work-1");
+});
+
+test("browser identity spoofing cannot select another customer's issuance", async function () {
+  const understanding = confirmed("Spend time together", "relaxed family dinner");
+  let issuedTo;
+  const repository = {
+    async getCustomerWork() { return [work("work-1", "A relaxed family dinner")]; },
+    async getOwnedBusinessIds() { return []; }, async getCustomerPreferences() { return []; },
+    async getCustomerFeedback() { return []; },
+    async recordCustomerPossibilityIssuance(id) { issuedTo = id; return ["work-1"]; }
+  };
+  const res = await postAs({ trustedCustomerIdentityId: "trusted-customer-a" }, { understanding }, repository);
+  assert.equal(res.statusCode, 200);
+  assert.equal(issuedTo, "trusted-customer-a");
+  assert.notEqual(issuedTo, "browser-customer-b");
+});
+
+test("anonymous Customer Experience stays functional and is not retroactively issued after authentication", async function () {
+  const understanding = confirmed("Spend time together", "relaxed family dinner");
+  let issuanceCalls = 0;
+  const repository = {
+    async getCustomerWork() { return [work("work-1", "A relaxed family dinner")]; },
+    async recordCustomerPossibilityIssuance() { issuanceCalls += 1; return ["work-1"]; }
+  };
+  const res = await postAs(null, { understanding }, repository);
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.possibilities.length, 1);
+  assert.equal(issuanceCalls, 0);
 });
