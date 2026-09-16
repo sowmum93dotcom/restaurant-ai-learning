@@ -27,6 +27,7 @@ test("participation results remain isolated to the requested business", async fu
 
   assert.deepEqual(record.customerParticipationResults, [{
     workItemId: "work-a", businessId: "business-a", name: "social", customerInterestCount: 2,
+    evidenceType: "customer-participation", source: "customer-interested-action",
     latestParticipationAt: "2026-09-07T10:00:00.000Z"
   }]);
   assert.deepEqual(getCustomerParticipationResults(record.customerParticipationResults.concat([
@@ -57,7 +58,8 @@ test("approved work with zero participation has an explicit zero state and no la
 
   assert.deepEqual(record.customerParticipationResults[0], {
     workItemId: "quiet-work", businessId: "business-a", name: "Email Campaign",
-    customerInterestCount: 0, latestParticipationAt: null
+    customerInterestCount: 0, evidenceType: "customer-participation",
+    source: "customer-interested-action", latestParticipationAt: null
   });
 });
 

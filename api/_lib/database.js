@@ -40,6 +40,12 @@ const SCHEMA_STATEMENTS = [
   )`,
   `ALTER TABLE demeos_customer_participations
     ADD COLUMN IF NOT EXISTS trusted_customer_identity_id TEXT NULL`,
+  `ALTER TABLE demeos_customer_participations
+    ADD COLUMN IF NOT EXISTS evidence_type TEXT NOT NULL DEFAULT 'customer-participation'
+      CHECK (evidence_type = 'customer-participation')`,
+  `ALTER TABLE demeos_customer_participations
+    ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'customer-interested-action'
+      CHECK (source = 'customer-interested-action')`,
   `CREATE INDEX IF NOT EXISTS demeos_customer_participations_work_idx
     ON demeos_customer_participations (business_id, campaign_id)`,
   `CREATE INDEX IF NOT EXISTS demeos_customer_participations_owner_participated_idx
@@ -56,6 +62,12 @@ const SCHEMA_STATEMENTS = [
   )`,
   `ALTER TABLE demeos_customer_feedback
     ADD COLUMN IF NOT EXISTS trusted_customer_identity_id TEXT NULL`,
+  `ALTER TABLE demeos_customer_feedback
+    ADD COLUMN IF NOT EXISTS evidence_type TEXT NOT NULL DEFAULT 'customer-feedback'
+      CHECK (evidence_type = 'customer-feedback')`,
+  `ALTER TABLE demeos_customer_feedback
+    ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'customer-feedback-action'
+      CHECK (source = 'customer-feedback-action')`,
   `CREATE INDEX IF NOT EXISTS demeos_customer_feedback_work_idx
     ON demeos_customer_feedback (business_id, campaign_id)`,
   `CREATE INDEX IF NOT EXISTS demeos_customer_feedback_owner_created_idx

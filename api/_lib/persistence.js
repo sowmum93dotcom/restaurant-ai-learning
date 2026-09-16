@@ -331,6 +331,9 @@ function createPersistenceRepository(database) {
            (SELECT MAX(p.participated_at) FROM demeos_customer_participations p
             WHERE p.business_id = demeos_campaigns.business_id AND p.campaign_id = demeos_campaigns.campaign_id
               AND p.action = 'Interested') AS latest_participation_at,
+           (SELECT MAX(f.created_at) FROM demeos_customer_feedback f
+            WHERE f.business_id = demeos_campaigns.business_id AND f.campaign_id = demeos_campaigns.campaign_id
+              AND f.feedback_type = 'possibility-relevance') AS latest_feedback_at,
            (SELECT COUNT(*)::integer FROM demeos_customer_feedback f
             WHERE f.business_id = demeos_campaigns.business_id AND f.campaign_id = demeos_campaigns.campaign_id
               AND f.feedback_type = 'possibility-relevance' AND f.response = 'Relevant') AS feedback_relevant_count,
@@ -355,13 +358,18 @@ function createPersistenceRepository(database) {
         const latest = row.latest_participation_at;
         return { workItemId: row.campaign_id, businessId,
           name: (typeof campaign.promoText === "string" && campaign.promoText.trim()) || campaign.campaignTypeLabel || campaign.campaignType || "Approved work",
-          customerInterestCount: Number(row.customer_interest_count || 0), latestParticipationAt: latest instanceof Date ? latest.toISOString() : latest || null };
+          customerInterestCount: Number(row.customer_interest_count || 0),
+          evidenceType: "customer-participation", source: "customer-interested-action",
+          latestParticipationAt: latest instanceof Date ? latest.toISOString() : latest || null };
       }).filter(Boolean);
       const customerFeedbackResults = campaignResult.rows.map(function (row) {
+        const latest = row.latest_feedback_at;
         return { workItemId: row.campaign_id, businessId,
+          evidenceType: "customer-feedback", source: "customer-feedback-action",
           relevantCount: Number(row.feedback_relevant_count || 0),
           notQuiteCount: Number(row.feedback_not_quite_count || 0),
-          somethingDifferentCount: Number(row.feedback_something_different_count || 0) };
+          somethingDifferentCount: Number(row.feedback_something_different_count || 0),
+          latestFeedbackAt: latest instanceof Date ? latest.toISOString() : latest || null };
       });
       return { businessProfile: { ...businessResult.rows[0].profile, businessId }, campaigns, customerParticipationResults,
         customerFeedbackResults,
@@ -470,10 +478,12 @@ function createPersistenceRepository(database) {
       if (!campaignResult.rows.length || !canPublishToDemeosCustomerExperience(campaignResult.rows[0].campaign)) return null;
       const result = await database.query(
         `INSERT INTO demeos_customer_participations
-           (business_id, campaign_id, action, trusted_customer_identity_id)
-         SELECT c.business_id, c.campaign_id, $2, $4 FROM demeos_campaigns c
+           (business_id, campaign_id, action, trusted_customer_identity_id, evidence_type, source)
+         SELECT c.business_id, c.campaign_id, $2, $4, 'customer-participation', 'customer-interested-action'
+         FROM demeos_campaigns c
          WHERE c.campaign_id = $1 AND c.campaign->>'approvalStatus' = 'Approved'
-           AND c.campaign = $3::jsonb RETURNING business_id, campaign_id, action, participated_at`,
+           AND c.campaign = $3::jsonb
+         RETURNING business_id, campaign_id, action, evidence_type, source, participated_at`,
         [campaignId, action, JSON.stringify(campaignResult.rows[0].campaign),
           isNonEmptyString(trustedCustomerIdentityId) ? trustedCustomerIdentityId : null]);
       return result.rows.length ? result.rows[0] : null;
@@ -538,12 +548,14 @@ function createPersistenceRepository(database) {
       const stored = campaignResult.rows[0];
       const result = await database.query(
         `INSERT INTO demeos_customer_feedback
-           (business_id, campaign_id, feedback_type, response, comment, trusted_customer_identity_id)
-         SELECT c.business_id, c.campaign_id, $2, $3, $4, $7
+           (business_id, campaign_id, feedback_type, response, comment, trusted_customer_identity_id,
+            evidence_type, source)
+         SELECT c.business_id, c.campaign_id, $2, $3, $4, $7,
+                'customer-feedback', 'customer-feedback-action'
          FROM demeos_campaigns c
          WHERE c.campaign_id = $1 AND c.business_id = $5
            AND c.campaign->>'approvalStatus' = 'Approved' AND c.campaign = $6::jsonb
-         RETURNING response`,
+         RETURNING response, evidence_type, source, created_at`,
         [campaignId, feedback.feedbackType, feedback.response, feedback.comment || null,
           stored.business_id, JSON.stringify(stored.campaign),
           isNonEmptyString(trustedCustomerIdentityId) ? trustedCustomerIdentityId : null]);
