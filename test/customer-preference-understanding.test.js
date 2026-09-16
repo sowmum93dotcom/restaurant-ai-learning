@@ -8,7 +8,13 @@ async function invoke(identity, repository, body) {
   const oldAuth = auth.resolveTrustedCustomerIdentityFromRequest;
   const oldRepo = persistence.getRepository;
   auth.resolveTrustedCustomerIdentityFromRequest = async () => identity;
-  persistence.getRepository = () => repository;
+  const effectiveRepository = new Proxy(repository, {
+    get(target, property) {
+      if (property === "getOwnedBusinessIds" && !(property in target)) return async () => [];
+      return target[property];
+    }
+  });
+  persistence.getRepository = () => effectiveRepository;
   delete require.cache[require.resolve("../api/public-config.js")];
   try {
     const res = response();
@@ -42,6 +48,16 @@ test("trusted server identity scopes preferences and browser identity cannot sel
   const attack = await invoke({ trustedCustomerIdentityId: "customer-a" }, repository, { ...intention, customerId: "customer-b" });
   assert.equal(attack.statusCode, 400);
   assert.deepEqual(owners, ["customer-a", "customer-a"]);
+});
+
+test("business owners cannot read historical customer preferences through understanding", async function () {
+  let preferenceReads = 0;
+  const res = await invoke({ trustedCustomerIdentityId: "owner-a" }, {
+    getOwnedBusinessIds: async () => ["business-a"],
+    getCustomerPreferences: async () => { preferenceReads += 1; return [{ preference: "private" }]; }
+  }, intention);
+  assert.equal(res.statusCode, 403);
+  assert.equal(preferenceReads, 0);
 });
 
 test("preferences cannot override current intention or become business claims", async function () {
