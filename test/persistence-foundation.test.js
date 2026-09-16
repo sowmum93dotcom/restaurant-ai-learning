@@ -140,6 +140,28 @@ test("repository restores every campaign when a business has fewer than 20", asy
   );
 });
 
+test("business restoration aggregates feedback by authoritative campaign relationship without customer data", async function () {
+  let campaignSql;
+  const database = { async ensureSchema() {}, async query(sql, values) {
+    if (sql.startsWith("SELECT profile")) return { rows: [{ profile: { name: "Business A" } }] };
+    if (sql.includes("demeos_recommendation_decisions")) return { rows: [] };
+    campaignSql = sql;
+    assert.deepEqual(values, ["business-a"]);
+    return { rows: [{ campaign_id: "campaign-a", campaign: { approvalStatus: "Approved", campaignType: "social",
+      campaignText: "Approved customer-facing work" },
+      customer_interest_count: 5, feedback_relevant_count: 4, feedback_not_quite_count: 3,
+      feedback_something_different_count: 2 }] };
+  } };
+  const restored = await createPersistenceRepository(database).getKnownBusiness("business-a");
+  assert.deepEqual(restored.customerFeedbackResults, [{ workItemId: "campaign-a", businessId: "business-a",
+    relevantCount: 4, notQuiteCount: 3, somethingDifferentCount: 2 }]);
+  assert.equal(restored.customerParticipationResults[0].customerInterestCount, 5);
+  assert.equal(restored.campaigns[0].outcome, undefined);
+  assert.match(campaignSql, /f\.business_id = demeos_campaigns\.business_id AND f\.campaign_id = demeos_campaigns\.campaign_id/);
+  assert.match(campaignSql, /f\.feedback_type = 'possibility-relevance'/);
+  assert.doesNotMatch(campaignSql, /SELECT[^]*f\.comment/);
+});
+
 test("campaign outcomes update only the approved campaign version for the requested business", async function () {
   const original = { id: "version-a", campaignText: "Keep this", approvalStatus: "Approved" };
   const database = {

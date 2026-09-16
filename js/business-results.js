@@ -126,6 +126,9 @@ if (typeof document !== "undefined") {
     byId("demeos-understanding-outcomes").textContent = understanding.campaignOutcomeCount;
     byId("demeos-understanding-interest").textContent = understanding.customerInterestCount;
     byId("demeos-understanding-participation-campaigns").textContent = understanding.campaignsWithCustomerParticipation;
+    byId("demeos-understanding-feedback-relevant").textContent = understanding.customerFeedback.relevant;
+    byId("demeos-understanding-feedback-not-quite").textContent = understanding.customerFeedback.notQuite;
+    byId("demeos-understanding-feedback-something-different").textContent = understanding.customerFeedback.somethingDifferent;
     byId("demeos-understanding-used").textContent = understanding.recommendationDecisions.used;
     byId("demeos-understanding-modified").textContent = understanding.recommendationDecisions.modified;
     byId("demeos-understanding-rejected").textContent = understanding.recommendationDecisions.rejected;

@@ -14,8 +14,8 @@ function completeProfile(businessId) {
 test("What DEMEOS Understands appears before the recommendation action with clear trust copy", function () {
   assert.match(html, /<h3 id="recommends-understanding-heading">What DEMEOS Understands<\/h3>/);
   assert.ok(html.indexOf("What DEMEOS Understands") < html.indexOf('id="recommendations-btn"'));
-  assert.match(html, /Different evidence types remain separate so customer interest, owner feedback and owner decisions are not mistaken for verified business results\./);
-  assert.match(html, /Interested signals show interest only, not a sale, conversion, revenue, booking or proof of success\./);
+  assert.match(html, /Different evidence types remain separate so Customer Feedback, customer participation, owner-recorded outcomes and owner decisions are not mistaken for one another\./);
+  assert.match(html, /Feedback shows possibility relevance only/);
   assert.doesNotMatch(`${html}\n${script}`, /intelligence score|confidence percentage|maturity score|performance grade|success grade|ranking/i);
 });
 
@@ -43,6 +43,7 @@ test("shared understanding counts only active-business server evidence and prese
     campaignOutcomeCount: 1,
     customerInterestCount: 4,
     campaignsWithCustomerParticipation: 2,
+    customerFeedback: { relevant: 0, notQuite: 0, somethingDifferent: 0 },
     recommendationDecisions: { used: 1, modified: 1, rejected: 1 },
     evidenceAvailable: true
   });
@@ -57,6 +58,7 @@ test("zero participation remains zero, missing participation is absent, and no i
   assert.deepEqual(getDemeosUnderstanding({ businessProfile: completeProfile("a"), campaigns: [] }, "a"), {
     verifiedBusinessProfile: true, campaignOutcomeCount: 0, customerInterestCount: 0,
     campaignsWithCustomerParticipation: 0,
+    customerFeedback: { relevant: 0, notQuite: 0, somethingDifferent: 0 },
     recommendationDecisions: { used: 0, modified: 0, rejected: 0 }, evidenceAvailable: false
   });
   assert.doesNotMatch(JSON.stringify(understanding), /customerName|email|identity|score|percent|rank|grade|success/i);
@@ -67,4 +69,20 @@ test("Recommends obtains understanding from the authenticated business record an
   assert.match(script, /record: serverRecord/);
   assert.match(script, /Understanding evidence is unavailable/);
   assert.match(html, /id="recommends-understanding-interest">—<\/strong>/);
+});
+
+test("Customer Feedback counts stay separate, business-scoped, and do not change participation or outcomes", function () {
+  const record = { businessProfile: completeProfile("a"), campaigns: [{ id: "work-a", businessId: "a" }],
+    customerParticipationResults: [{ workItemId: "work-a", businessId: "a", customerInterestCount: 2 }],
+    customerFeedbackResults: [
+      { workItemId: "work-a", businessId: "a", relevantCount: 4, notQuiteCount: 3, somethingDifferentCount: 2 },
+      { workItemId: "work-a", businessId: "b", relevantCount: 90, notQuiteCount: 80, somethingDifferentCount: 70 },
+      { workItemId: "unknown", businessId: "a", relevantCount: 60, notQuiteCount: 50, somethingDifferentCount: 40 }
+    ] };
+  const understanding = getDemeosUnderstanding(record, "a");
+  assert.deepEqual(understanding.customerFeedback, { relevant: 4, notQuite: 3, somethingDifferent: 2 });
+  assert.equal(understanding.customerInterestCount, 2);
+  assert.equal(understanding.campaignOutcomeCount, 0);
+  assert.doesNotMatch(JSON.stringify(understanding), /comment|identity/);
+  assert.match(html, /Customer Feedback evidence/);
 });

@@ -259,7 +259,16 @@ function createPersistenceRepository(database) {
               AND p.action = 'Interested') AS customer_interest_count,
            (SELECT MAX(p.participated_at) FROM demeos_customer_participations p
             WHERE p.business_id = demeos_campaigns.business_id AND p.campaign_id = demeos_campaigns.campaign_id
-              AND p.action = 'Interested') AS latest_participation_at
+              AND p.action = 'Interested') AS latest_participation_at,
+           (SELECT COUNT(*)::integer FROM demeos_customer_feedback f
+            WHERE f.business_id = demeos_campaigns.business_id AND f.campaign_id = demeos_campaigns.campaign_id
+              AND f.feedback_type = 'possibility-relevance' AND f.response = 'Relevant') AS feedback_relevant_count,
+           (SELECT COUNT(*)::integer FROM demeos_customer_feedback f
+            WHERE f.business_id = demeos_campaigns.business_id AND f.campaign_id = demeos_campaigns.campaign_id
+              AND f.feedback_type = 'possibility-relevance' AND f.response = 'Not quite') AS feedback_not_quite_count,
+           (SELECT COUNT(*)::integer FROM demeos_customer_feedback f
+            WHERE f.business_id = demeos_campaigns.business_id AND f.campaign_id = demeos_campaigns.campaign_id
+              AND f.feedback_type = 'possibility-relevance' AND f.response = 'Something different') AS feedback_something_different_count
          FROM demeos_campaigns WHERE business_id = $1 ORDER BY created_at DESC LIMIT 20`, [businessId]);
       const decisionResult = await database.query(
         `SELECT recommendation_title, suggested_campaign_type, decision, decided_at
@@ -277,7 +286,14 @@ function createPersistenceRepository(database) {
           name: (typeof campaign.promoText === "string" && campaign.promoText.trim()) || campaign.campaignTypeLabel || campaign.campaignType || "Approved work",
           customerInterestCount: Number(row.customer_interest_count || 0), latestParticipationAt: latest instanceof Date ? latest.toISOString() : latest || null };
       }).filter(Boolean);
+      const customerFeedbackResults = campaignResult.rows.map(function (row) {
+        return { workItemId: row.campaign_id, businessId,
+          relevantCount: Number(row.feedback_relevant_count || 0),
+          notQuiteCount: Number(row.feedback_not_quite_count || 0),
+          somethingDifferentCount: Number(row.feedback_something_different_count || 0) };
+      });
       return { businessProfile: { ...businessResult.rows[0].profile, businessId }, campaigns, customerParticipationResults,
+        customerFeedbackResults,
         recommendationDecisions: decisionResult.rows.map(function (row) {
           return { businessId, recommendationTitle: row.recommendation_title, suggestedCampaignType: row.suggested_campaign_type,
             decision: row.decision, timestamp: row.decided_at instanceof Date ? row.decided_at.toISOString() : row.decided_at };
