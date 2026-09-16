@@ -26,7 +26,7 @@ class TestElement {
 function dashboardDocument() {
   const overview = new TestElement("my-demeos-overview");
   const signIn = new TestElement("customer-sign-in");
-  const relationships = ["my-intentions", "my-possibilities", "my-participation"].map(function (id) {
+  const relationships = ["my-intentions", "my-possibilities", "my-participation", "my-preferences"].map(function (id) {
     const trigger = new TestElement("open-" + id);
     const view = new TestElement(id);
     const heading = new TestElement(id + "-heading");
@@ -52,13 +52,13 @@ function dashboardDocument() {
   };
 }
 
-test("the three implemented relationship areas are native controls tied to their real views", function () {
-  for (const id of ["my-intentions", "my-possibilities", "my-participation"]) {
+test("the implemented relationship areas are native controls tied to their real views", function () {
+  for (const id of ["my-intentions", "my-possibilities", "my-participation", "my-preferences"]) {
     assert.match(html, new RegExp(`<button id="open-${id}"[^>]+type="button"[^>]+aria-controls="${id}"[^>]+data-relationship-area="${id}"`));
     assert.match(html, new RegExp(`<div id="${id}" class="my-demeos-relationship-view"[^>]+hidden>`));
   }
-  assert.equal((html.match(/data-relationship-back/g) || []).length, 3);
-  assert.equal((html.match(/Back to My DEMEOS/g) || []).length, 3);
+  assert.equal((html.match(/data-relationship-back/g) || []).length, 4);
+  assert.equal((html.match(/Back to My DEMEOS/g) || []).length, 4);
 });
 
 test("each relationship control opens its matching view, focuses its heading, and Back restores focus", function () {
@@ -92,20 +92,18 @@ test("signed-out detail states are truthful for every implemented relationship a
   assert.match(html, /Enter My DEMEOS to keep and see your intentions across visits\./);
   assert.match(html, /Enter My DEMEOS to keep and see your possibilities across visits\./);
   assert.match(html, /Enter My DEMEOS to see your participation across visits\./);
-  assert.equal((html.match(/class="demeos-primary-button relationship-sign-in"/g) || []).length, 3);
+  assert.match(html, /Enter My DEMEOS to add and manage your preferences\./);
+  assert.equal((html.match(/class="demeos-primary-button relationship-sign-in"/g) || []).length, 4);
 });
 
-test("future areas are honest non-controls and introduce no fabricated privacy functionality", function () {
-  assert.match(html, /Coming to your DEMEOS relationship/);
-  assert.match(html, /Preferences will only come from choices you explicitly make\./);
-  assert.match(html, /More relationship controls are being prepared\./);
+test("Privacy & Control remains an honest non-control", function () {
   assert.match(html, /DEMEOS will only show controls here when they are genuinely available\./);
   assert.doesNotMatch(html, /<button[^>]*>\s*(?:Delete my data|Export data|Consent settings|History controls)/i);
-  assert.doesNotMatch(html, /data-relationship-area="(?:my-preferences|privacy-control)"/);
+  assert.doesNotMatch(html, /data-relationship-area="privacy-control"/);
 });
 
 test("trusted evidence meanings and existing authenticated render targets remain unchanged", function () {
-  for (const id of ["my-intentions-list", "my-possibilities-list", "my-participation-list"]) {
+  for (const id of ["my-intentions-list", "my-possibilities-list", "my-participation-list", "my-preferences-list"]) {
     assert.match(html, new RegExp(`id="${id}"`));
   }
   assert.match(html, /Interested is an interest signal only\. It is not a purchase, booking or sale\./);

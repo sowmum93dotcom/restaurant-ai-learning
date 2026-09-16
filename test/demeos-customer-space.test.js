@@ -39,8 +39,8 @@ test("the header remains in document flow and reserves usable content height", f
 });
 
 test("relationship areas distinguish real controls from honest future sections", function () {
-  assert.equal((relationship.match(/data-relationship-area=/g) || []).length, 3);
-  assert.equal((relationship.match(/my-demeos-area-future/g) || []).length, 2);
+  assert.equal((relationship.match(/data-relationship-area=/g) || []).length, 4);
+  assert.equal((relationship.match(/my-demeos-area-future/g) || []).length, 1);
   assert.match(css, /\.my-demeos-area-active/);
   assert.match(css, /\.my-demeos-area-future\s*\{[^}]*border-style: dashed/);
 });

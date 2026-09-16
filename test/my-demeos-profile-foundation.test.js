@@ -37,10 +37,9 @@ test("profile foundation presents trusted DEMEOS entry language and honest empty
   assert.match(html, /Your secure DEMEOS relationship is active\./);
   assert.match(html, /Customer sign-in is not available yet\./);
   assert.match(html, /requires Clerk provider configuration before it can be activated\./);
-  for (const heading of ["My Intentions", "My Possibilities", "My Participation"]) {
+  for (const heading of ["My Intentions", "My Possibilities", "My Participation", "My Preferences"]) {
     assert.match(html, new RegExp(`role="heading" aria-level="3">${heading}<\\/span>`));
   }
-  assert.match(html, /<h3 id="my-preferences-title" class="my-demeos-area-title">My Preferences<\/h3>/);
   assert.match(html, /<h3 id="privacy-control-title" class="my-demeos-area-title">Privacy &amp; Control<\/h3>/);
   assert.match(html, /Interest remains interest\. Feedback remains feedback\. A choice is not automatically a purchase, sale or success\./);
   assert.doesNotMatch(html, /localStorage|sessionStorage|randomUUID|crypto\.|owner-auth|owner-sign-in|business-workspace\.js/i);

@@ -131,6 +131,55 @@
     renderParticipations(documentObject, Array.isArray(result.participations) ? result.participations : []);
   }
 
+  function renderPreferences(documentObject, preferences, removePreference) {
+    const list = documentObject.getElementById("my-preferences-list");
+    const empty = documentObject.getElementById("my-preferences-empty");
+    documentObject.getElementById("my-preferences-loading").hidden = true;
+    list.textContent = "";
+    empty.hidden = preferences.length !== 0;
+    preferences.forEach(function (preference) {
+      const article = documentObject.createElement("article");
+      const text = documentObject.createElement("h4"); text.textContent = preference.preference; article.appendChild(text);
+      if (preference.createdAt) {
+        const date = documentObject.createElement("time"); date.dateTime = preference.createdAt;
+        date.textContent = "Saved " + new Date(preference.createdAt).toLocaleDateString(); article.appendChild(date);
+      }
+      const remove = documentObject.createElement("button"); remove.type = "button"; remove.className = "demeos-secondary-button";
+      remove.textContent = "Remove";
+      remove.addEventListener("click", function () { removePreference(preference.preferenceId); });
+      article.appendChild(remove); list.appendChild(article);
+    });
+  }
+
+  async function loadPreferences(documentObject, fetchFunction) {
+    const response = await fetchFunction("/api/customer/preferences", { credentials: "same-origin", headers: { Accept: "application/json" } });
+    if (!response.ok) throw new Error("Could not load preferences");
+    const result = await response.json();
+    renderPreferences(documentObject, Array.isArray(result.preferences) ? result.preferences : [], async function (preferenceId) {
+      const removed = await fetchFunction("/api/customer/preferences", { method: "DELETE", credentials: "same-origin",
+        headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify({ preferenceId }) });
+      if (removed.ok) await loadPreferences(documentObject, fetchFunction);
+    });
+  }
+
+  function setupPreferenceCreation(documentObject, fetchFunction) {
+    const form = documentObject.getElementById("my-preferences-form");
+    if (!form) return;
+    form.addEventListener("submit", async function (event) {
+      event.preventDefault();
+      const input = documentObject.getElementById("customer-preference");
+      const status = documentObject.getElementById("my-preferences-status");
+      const preference = input.value.trim();
+      if (!preference) return;
+      status.textContent = "Saving your preference…";
+      const response = await fetchFunction("/api/customer/preferences", { method: "POST", credentials: "same-origin",
+        headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify({ preference }) });
+      if (!response.ok) { status.textContent = "Your preference could not be saved."; return; }
+      input.value = ""; status.textContent = "Preference saved.";
+      await loadPreferences(documentObject, fetchFunction);
+    });
+  }
+
   async function confirmTrustedCustomer(fetchFunction) {
     const response = await fetchFunction("/api/customer/identity", {
       credentials: "same-origin",
@@ -184,7 +233,9 @@
         documentObject.getElementById("my-possibilities-signed-in").hidden = !authenticated;
         documentObject.getElementById("my-participation-signed-out").hidden = authenticated;
         documentObject.getElementById("my-participation-signed-in").hidden = !authenticated;
-        if (authenticated) await Promise.all([loadIntentions(documentObject, fetchFunction), loadPossibilities(documentObject, fetchFunction), loadParticipations(documentObject, fetchFunction)]);
+        documentObject.getElementById("my-preferences-signed-out").hidden = authenticated;
+        documentObject.getElementById("my-preferences-signed-in").hidden = !authenticated;
+        if (authenticated) await Promise.all([loadIntentions(documentObject, fetchFunction), loadPossibilities(documentObject, fetchFunction), loadParticipations(documentObject, fetchFunction), loadPreferences(documentObject, fetchFunction)]);
       }
       authElements.signIn.addEventListener("click", function () { clerk.openSignIn(); });
       authElements.signOut.addEventListener("click", function () { clerk.signOut(); });
@@ -195,10 +246,11 @@
     }
   }
 
-  const api = { confirmTrustedCustomer, showState, setupRelationshipDashboard, renderIntentions, loadIntentions, renderPossibilities, loadPossibilities, renderParticipations, loadParticipations, initialiseCustomerAuthentication };
+  const api = { confirmTrustedCustomer, showState, setupRelationshipDashboard, renderIntentions, loadIntentions, renderPossibilities, loadPossibilities, renderParticipations, loadParticipations, renderPreferences, loadPreferences, setupPreferenceCreation, initialiseCustomerAuthentication };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   if (root && root.document && root.fetch) {
     setupRelationshipDashboard(root.document);
+    setupPreferenceCreation(root.document, root.fetch.bind(root));
     initialiseCustomerAuthentication(root, root.document, root.fetch.bind(root));
   }
 })(typeof window !== "undefined" ? window : globalThis);

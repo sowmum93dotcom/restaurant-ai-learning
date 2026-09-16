@@ -65,6 +65,41 @@ function createPersistenceRepository(database) {
       });
     },
 
+    async saveCustomerPreference(trustedCustomerIdentityId, preference) {
+      if (!isNonEmptyString(trustedCustomerIdentityId) || !preference || !isNonEmptyString(preference.preference)) return null;
+      await database.ensureSchema();
+      const result = await database.query(
+        `INSERT INTO demeos_customer_preferences
+           (trusted_customer_identity_id, preference_text, evidence_type, source, confirmation_state)
+         VALUES ($1, $2, 'customer-explicit-preference', 'authenticated-customer', 'confirmed')
+         RETURNING preference_id, preference_text, created_at`,
+        [trustedCustomerIdentityId, preference.preference]);
+      return result.rows.length ? toCustomerPreference(result.rows[0]) : null;
+    },
+
+    async getCustomerPreferences(trustedCustomerIdentityId, limit = 50) {
+      if (!isNonEmptyString(trustedCustomerIdentityId)) return [];
+      await database.ensureSchema();
+      const safeLimit = Math.min(50, Math.max(1, Number.isInteger(limit) ? limit : 50));
+      const result = await database.query(
+        `SELECT preference_id, preference_text, created_at
+         FROM demeos_customer_preferences
+         WHERE trusted_customer_identity_id = $1
+         ORDER BY created_at DESC, preference_id DESC LIMIT $2`,
+        [trustedCustomerIdentityId, safeLimit]);
+      return result.rows.map(toCustomerPreference);
+    },
+
+    async removeCustomerPreference(trustedCustomerIdentityId, preferenceId) {
+      if (!isNonEmptyString(trustedCustomerIdentityId) || !isNonEmptyString(preferenceId)) return false;
+      await database.ensureSchema();
+      const result = await database.query(
+        `DELETE FROM demeos_customer_preferences
+         WHERE trusted_customer_identity_id = $1 AND preference_id = $2
+         RETURNING preference_id`, [trustedCustomerIdentityId, preferenceId]);
+      return result.rows.length > 0;
+    },
+
     async saveCustomerPossibility(trustedCustomerIdentityId, workItemId) {
       if (!isNonEmptyString(trustedCustomerIdentityId) || !isNonEmptyString(workItemId)) return null;
       await database.ensureSchema();
@@ -395,6 +430,11 @@ function toSavedPossibility(row) {
     createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at };
   if (row.location) saved.location = row.location;
   return saved;
+}
+
+function toCustomerPreference(row) {
+  return { preferenceId: String(row.preference_id), preference: row.preference_text,
+    createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at };
 }
 
 let defaultRepository;
