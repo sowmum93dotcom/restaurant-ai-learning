@@ -120,7 +120,13 @@ const SCHEMA_STATEMENTS = [
   )`,
   `CREATE INDEX IF NOT EXISTS demeos_customer_preferences_owner_created_idx
     ON demeos_customer_preferences
-      (trusted_customer_identity_id, created_at DESC, preference_id DESC)`
+      (trusted_customer_identity_id, created_at DESC, preference_id DESC)`,
+  `CREATE TABLE IF NOT EXISTS demeos_customer_privacy_controls (
+    trusted_customer_identity_id TEXT PRIMARY KEY,
+    use_preferences_as_guidance BOOLEAN NOT NULL DEFAULT FALSE,
+    use_feedback_as_guidance BOOLEAN NOT NULL DEFAULT FALSE,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`
 ];
 
 function createDatabase(client) {

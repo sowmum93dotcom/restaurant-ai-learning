@@ -204,6 +204,31 @@
     });
   }
 
+  async function loadPrivacyControls(documentObject, fetchFunction) {
+    const response = await fetchFunction("/api/customer/privacy-controls", { credentials: "same-origin", headers: { Accept: "application/json" } });
+    if (!response.ok) throw new Error("Could not load privacy controls");
+    const result = await response.json();
+    const controls = result.controls || {};
+    documentObject.getElementById("use-preferences-as-guidance").checked = controls.usePreferencesAsGuidance === true;
+    documentObject.getElementById("use-feedback-as-guidance").checked = controls.useFeedbackAsGuidance === true;
+  }
+
+  function setupPrivacyControls(documentObject, fetchFunction) {
+    const form = documentObject.getElementById("privacy-controls-form");
+    if (!form) return;
+    form.addEventListener("submit", async function (event) {
+      event.preventDefault();
+      const status = documentObject.getElementById("privacy-controls-status");
+      const controls = { usePreferencesAsGuidance: documentObject.getElementById("use-preferences-as-guidance").checked,
+        useFeedbackAsGuidance: documentObject.getElementById("use-feedback-as-guidance").checked };
+      status.textContent = "Saving your privacy controls…";
+      const response = await fetchFunction("/api/customer/privacy-controls", { method: "POST", credentials: "same-origin",
+        headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify(controls) });
+      status.textContent = response.ok ? "Privacy controls saved." : "Your privacy controls could not be saved.";
+      if (response.ok) await loadPrivacyControls(documentObject, fetchFunction);
+    });
+  }
+
   async function confirmTrustedCustomer(fetchFunction) {
     const response = await fetchFunction("/api/customer/identity", {
       credentials: "same-origin",
@@ -259,7 +284,9 @@
         documentObject.getElementById("my-participation-signed-in").hidden = !authenticated;
         documentObject.getElementById("my-preferences-signed-out").hidden = authenticated;
         documentObject.getElementById("my-preferences-signed-in").hidden = !authenticated;
-        if (authenticated) await Promise.all([loadIntentions(documentObject, fetchFunction), loadPossibilities(documentObject, fetchFunction), loadParticipations(documentObject, fetchFunction), loadPreferences(documentObject, fetchFunction)]);
+        documentObject.getElementById("privacy-control-signed-out").hidden = authenticated;
+        documentObject.getElementById("privacy-controls-form").hidden = !authenticated;
+        if (authenticated) await Promise.all([loadIntentions(documentObject, fetchFunction), loadPossibilities(documentObject, fetchFunction), loadParticipations(documentObject, fetchFunction), loadPreferences(documentObject, fetchFunction), loadPrivacyControls(documentObject, fetchFunction)]);
       }
       authElements.signIn.addEventListener("click", function () { clerk.openSignIn(); });
       authElements.signOut.addEventListener("click", function () { clerk.signOut(); });
@@ -270,11 +297,12 @@
     }
   }
 
-  const api = { confirmTrustedCustomer, showState, setupRelationshipDashboard, renderIntentions, loadIntentions, renderPossibilities, loadPossibilities, renderParticipations, loadParticipations, renderPreferences, loadPreferences, setupPreferenceCreation, initialiseCustomerAuthentication };
+  const api = { confirmTrustedCustomer, showState, setupRelationshipDashboard, renderIntentions, loadIntentions, renderPossibilities, loadPossibilities, renderParticipations, loadParticipations, renderPreferences, loadPreferences, setupPreferenceCreation, loadPrivacyControls, setupPrivacyControls, initialiseCustomerAuthentication };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   if (root && root.document && root.fetch) {
     setupRelationshipDashboard(root.document);
     setupPreferenceCreation(root.document, root.fetch.bind(root));
+    setupPrivacyControls(root.document, root.fetch.bind(root));
     initialiseCustomerAuthentication(root, root.document, root.fetch.bind(root));
   }
 })(typeof window !== "undefined" ? window : globalThis);

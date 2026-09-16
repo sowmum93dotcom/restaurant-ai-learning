@@ -11,6 +11,8 @@ async function invoke(identity, repository, body) {
   const effectiveRepository = new Proxy(repository, {
     get(target, property) {
       if (property === "getOwnedBusinessIds" && !(property in target)) return async () => [];
+      if (property === "getCustomerPrivacyControls" && !(property in target)) return async () =>
+        ({ usePreferencesAsGuidance: true, useFeedbackAsGuidance: true });
       return target[property];
     }
   });
@@ -87,4 +89,17 @@ test("anonymous understanding works with no stored preference access", async fun
   assert.equal(res.statusCode, 200);
   assert.deepEqual(res.body.understanding.preferenceContext.evidence, []);
   assert.equal(res.body.understanding.confidenceState, "ready-for-confirmation");
+});
+
+test("preference guidance can be disabled and explicitly re-enabled without changing evidence", async function () {
+  let preferenceReads = 0;
+  const repository = { getCustomerPrivacyControls: async () => ({ usePreferencesAsGuidance: false, useFeedbackAsGuidance: false }),
+    getCustomerPreferences: async () => { preferenceReads += 1; return [{ preference: "Quiet tables" }]; } };
+  const disabled = await invoke({ trustedCustomerIdentityId: "customer-a" }, repository, intention);
+  assert.deepEqual(disabled.body.understanding.preferenceContext.evidence, []);
+  assert.equal(preferenceReads, 0);
+  repository.getCustomerPrivacyControls = async () => ({ usePreferencesAsGuidance: true, useFeedbackAsGuidance: false });
+  const enabled = await invoke({ trustedCustomerIdentityId: "customer-a" }, repository, intention);
+  assert.equal(enabled.body.understanding.preferenceContext.evidence[0].value, "Quiet tables");
+  assert.equal(preferenceReads, 1);
 });

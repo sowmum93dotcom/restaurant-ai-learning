@@ -11,6 +11,37 @@ function createPersistenceRepository(database) {
   }
 
   return {
+    async getCustomerPrivacyControls(trustedCustomerIdentityId) {
+      const safeDefaults = { usePreferencesAsGuidance: false, useFeedbackAsGuidance: false };
+      if (!isNonEmptyString(trustedCustomerIdentityId)) return safeDefaults;
+      await database.ensureSchema();
+      const result = await database.query(
+        `SELECT use_preferences_as_guidance, use_feedback_as_guidance
+         FROM demeos_customer_privacy_controls WHERE trusted_customer_identity_id = $1`,
+        [trustedCustomerIdentityId]);
+      if (!result.rows.length) return safeDefaults;
+      return { usePreferencesAsGuidance: result.rows[0].use_preferences_as_guidance === true,
+        useFeedbackAsGuidance: result.rows[0].use_feedback_as_guidance === true };
+    },
+
+    async saveCustomerPrivacyControls(trustedCustomerIdentityId, controls) {
+      if (!isNonEmptyString(trustedCustomerIdentityId) || !controls) return null;
+      await database.ensureSchema();
+      const result = await database.query(
+        `INSERT INTO demeos_customer_privacy_controls
+           (trusted_customer_identity_id, use_preferences_as_guidance, use_feedback_as_guidance)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (trusted_customer_identity_id) DO UPDATE SET
+           use_preferences_as_guidance = EXCLUDED.use_preferences_as_guidance,
+           use_feedback_as_guidance = EXCLUDED.use_feedback_as_guidance,
+           updated_at = NOW()
+         RETURNING use_preferences_as_guidance, use_feedback_as_guidance`,
+        [trustedCustomerIdentityId, controls.usePreferencesAsGuidance, controls.useFeedbackAsGuidance]);
+      const row = result.rows[0];
+      return { usePreferencesAsGuidance: row.use_preferences_as_guidance === true,
+        useFeedbackAsGuidance: row.use_feedback_as_guidance === true };
+    },
+
     async saveCustomerIntention(trustedCustomerIdentityId, intention) {
       if (!isNonEmptyString(trustedCustomerIdentityId)) return null;
       await database.ensureSchema();

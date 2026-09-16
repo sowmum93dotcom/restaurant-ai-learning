@@ -35,8 +35,13 @@ async function publicConfig(req, res) {
       if (!authorizeDemeosAction({ actorContext: context, action: DEMEOS_ACTIONS.VIEW_OWN_CUSTOMER_PREFERENCES }).allowed) {
         return res.status(403).json({ error: "DEMEOS permission denied." });
       }
-      preferences = await repository.getCustomerPreferences(identity.trustedCustomerIdentityId, 50);
-      if (typeof repository.getCustomerFeedback === "function" &&
+      const controls = typeof repository.getCustomerPrivacyControls === "function"
+        ? await repository.getCustomerPrivacyControls(identity.trustedCustomerIdentityId)
+        : { usePreferencesAsGuidance: false, useFeedbackAsGuidance: false };
+      if (controls.usePreferencesAsGuidance) {
+        preferences = await repository.getCustomerPreferences(identity.trustedCustomerIdentityId, 50);
+      }
+      if (controls.useFeedbackAsGuidance && typeof repository.getCustomerFeedback === "function" &&
           authorizeDemeosAction({ actorContext: context, action: DEMEOS_ACTIONS.VIEW_OWN_CUSTOMER_FEEDBACK }).allowed) {
         feedback = await repository.getCustomerFeedback(identity.trustedCustomerIdentityId, 50);
       }
@@ -51,9 +56,11 @@ async function publicConfig(req, res) {
     (typeof req?.url === "string" && req.url.startsWith("/api/customer/participation"));
   const preferencesRequest = req?.query?.resource === "customer-preferences" ||
     (typeof req?.url === "string" && req.url.startsWith("/api/customer/preferences"));
-  if (preferencesRequest || participationRequest || savedPossibilitiesRequest || req?.query?.resource === "customer-intentions" ||
+  const privacyControlsRequest = req?.query?.resource === "customer-privacy-controls" ||
+    (typeof req?.url === "string" && req.url.startsWith("/api/customer/privacy-controls"));
+  if (privacyControlsRequest || preferencesRequest || participationRequest || savedPossibilitiesRequest || req?.query?.resource === "customer-intentions" ||
       (typeof req?.url === "string" && req.url.startsWith("/api/customer/intentions"))) {
-    const allowedMethods = participationRequest ? ['GET'] : ['GET', 'POST', 'DELETE'];
+    const allowedMethods = participationRequest ? ['GET'] : privacyControlsRequest ? ['GET', 'POST'] : ['GET', 'POST', 'DELETE'];
     if (!allowedMethods.includes(req.method)) {
       res.setHeader("Allow", allowedMethods.join(", "));
       return res.status(405).json({ error: "Method not allowed" });
@@ -65,7 +72,9 @@ async function publicConfig(req, res) {
       return res.status(403).json({ error: "Customer permission required." });
     }
     const context = createAuthenticatedCustomerContext(identity);
-    const action = preferencesRequest
+    const action = privacyControlsRequest
+      ? (req.method === 'POST' ? DEMEOS_ACTIONS.MANAGE_OWN_CUSTOMER_PRIVACY_CONTROLS : DEMEOS_ACTIONS.VIEW_OWN_CUSTOMER_PRIVACY_CONTROLS)
+      : preferencesRequest
       ? (req.method === 'POST' ? DEMEOS_ACTIONS.RECORD_OWN_CUSTOMER_PREFERENCE : req.method === 'DELETE'
         ? DEMEOS_ACTIONS.REMOVE_OWN_CUSTOMER_PREFERENCE : DEMEOS_ACTIONS.VIEW_OWN_CUSTOMER_PREFERENCES)
       : participationRequest ? DEMEOS_ACTIONS.VIEW_OWN_CUSTOMER_PARTICIPATION : savedPossibilitiesRequest
@@ -74,6 +83,17 @@ async function publicConfig(req, res) {
       : (req.method === 'POST' ? DEMEOS_ACTIONS.RECORD_OWN_CUSTOMER_INTENTION : req.method === 'DELETE'
         ? DEMEOS_ACTIONS.REMOVE_OWN_CUSTOMER_INTENTION : DEMEOS_ACTIONS.VIEW_OWN_CUSTOMER_INTENTIONS);
     if (!authorizeDemeosAction({ actorContext: context, action }).allowed) return res.status(403).json({ error: "DEMEOS permission denied." });
+    if (privacyControlsRequest) {
+      if (req.method === 'GET') return res.status(200).json({ controls: await repository.getCustomerPrivacyControls(identity.trustedCustomerIdentityId) });
+      const body = req.body;
+      if (!body || typeof body !== "object" || Array.isArray(body) ||
+          Object.keys(body).sort().join(",") !== "useFeedbackAsGuidance,usePreferencesAsGuidance" ||
+          typeof body.usePreferencesAsGuidance !== "boolean" || typeof body.useFeedbackAsGuidance !== "boolean") {
+        return res.status(400).json({ error: "Valid privacy controls are required." });
+      }
+      const controls = await repository.saveCustomerPrivacyControls(identity.trustedCustomerIdentityId, body);
+      return res.status(200).json({ controls });
+    }
     if (preferencesRequest) {
       if (req.method === 'GET') return res.status(200).json({ preferences: await repository.getCustomerPreferences(identity.trustedCustomerIdentityId, 50) });
       if (req.method === 'DELETE') {
