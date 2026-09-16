@@ -1,6 +1,7 @@
 const {
   resolveTrustedCustomerIdentityFromRequest
 } = require("./_lib/demeos-customer-authentication.js");
+const { hasAllowedClerkPublishableKey } = require("./_lib/demeos-authentication.js");
 const { createAuthenticatedCustomerContext } = require("./_lib/demeos-actor-context.js");
 const { authorizeDemeosAction } = require("./_lib/demeos-authorization.js");
 const { DEMEOS_ACTIONS } = require("./_lib/demeos-rules.js");
@@ -154,7 +155,7 @@ async function publicConfig(req, res) {
   }
 
   const clerkPublishableKey = process.env.CLERK_PUBLISHABLE_KEY;
-  if (typeof clerkPublishableKey !== "string" || !clerkPublishableKey.trim()) {
+  if (!hasAllowedClerkPublishableKey()) {
     return res.status(503).json({ error: "Authentication configuration is unavailable." });
   }
 

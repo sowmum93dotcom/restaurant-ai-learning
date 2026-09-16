@@ -18,7 +18,8 @@ const configuredEnvironment = {
 async function withClerkEnvironment(environment, callback) {
   const previous = {
     CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
-    CLERK_PUBLISHABLE_KEY: process.env.CLERK_PUBLISHABLE_KEY
+    CLERK_PUBLISHABLE_KEY: process.env.CLERK_PUBLISHABLE_KEY,
+    VERCEL_ENV: process.env.VERCEL_ENV
   };
 
   for (const name of Object.keys(previous)) {
@@ -127,6 +128,36 @@ test("missing Clerk configuration fails closed before authentication", async fun
   });
   assert.equal(identity, null);
   assert.equal(calls, 0);
+});
+
+test("production deployment rejects Clerk development credentials before authentication", async function () {
+  for (const environment of [
+    { VERCEL_ENV: "production", CLERK_SECRET_KEY: "sk_test_server", CLERK_PUBLISHABLE_KEY: "pk_live_public" },
+    { VERCEL_ENV: "production", CLERK_SECRET_KEY: "sk_live_server", CLERK_PUBLISHABLE_KEY: "pk_test_public" }
+  ]) {
+    let calls = 0;
+    const identity = await withClerkEnvironment(environment, function () {
+      return resolveTrustedIdentityFromRequest(request, {
+        authenticateRequest: async function () {
+          calls += 1;
+          return verifiedAs("user_1")();
+        }
+      });
+    });
+    assert.equal(identity, null);
+    assert.equal(calls, 0);
+  }
+});
+
+test("production deployment accepts matching Clerk live credential types", async function () {
+  const identity = await withClerkEnvironment({
+    VERCEL_ENV: "production",
+    CLERK_SECRET_KEY: "sk_live_server",
+    CLERK_PUBLISHABLE_KEY: "pk_live_public"
+  }, function () {
+    return resolveTrustedIdentityFromRequest(request, { authenticateRequest: verifiedAs("user_1") });
+  });
+  assert.equal(identity.trustedIdentityId, "user_1");
 });
 
 test("Clerk authentication exceptions fail closed", async function () {

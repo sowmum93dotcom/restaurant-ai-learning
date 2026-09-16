@@ -59,3 +59,27 @@ test("missing publishable key fails safely without leaking other configuration",
     assert.doesNotMatch(JSON.stringify(res.body), /sk_test_secret|postgres|CLERK_SECRET_KEY/);
   });
 });
+
+test("production public config rejects a Clerk development publishable key", function () {
+  return withEnvironment({
+    VERCEL_ENV: "production",
+    CLERK_PUBLISHABLE_KEY: "pk_test_public"
+  }, function () {
+    const res = response();
+    publicConfig({}, res);
+    assert.equal(res.statusCode, 503);
+    assert.deepEqual(res.body, { error: "Authentication configuration is unavailable." });
+  });
+});
+
+test("production public config exposes a Clerk live publishable key", function () {
+  return withEnvironment({
+    VERCEL_ENV: "production",
+    CLERK_PUBLISHABLE_KEY: "pk_live_public"
+  }, function () {
+    const res = response();
+    publicConfig({}, res);
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.clerkPublishableKey, "pk_live_public");
+  });
+});

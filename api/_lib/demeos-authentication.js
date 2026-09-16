@@ -1,10 +1,20 @@
-function hasRequiredClerkConfiguration() {
-  return Boolean(
-    typeof process.env.CLERK_SECRET_KEY === "string" &&
-    process.env.CLERK_SECRET_KEY.length > 0 &&
-    typeof process.env.CLERK_PUBLISHABLE_KEY === "string" &&
-    process.env.CLERK_PUBLISHABLE_KEY.length > 0
-  );
+function isProductionDeployment(environment = process.env) {
+  return environment.VERCEL_ENV === "production";
+}
+
+function hasAllowedClerkKey(key, kind, environment = process.env) {
+  if (typeof key !== "string" || !key.trim()) return false;
+  if (!isProductionDeployment(environment)) return true;
+  return key.trim().startsWith(`${kind}_live_`);
+}
+
+function hasRequiredClerkConfiguration(environment = process.env) {
+  return hasAllowedClerkKey(environment.CLERK_SECRET_KEY, "sk", environment) &&
+    hasAllowedClerkKey(environment.CLERK_PUBLISHABLE_KEY, "pk", environment);
+}
+
+function hasAllowedClerkPublishableKey(environment = process.env) {
+  return hasAllowedClerkKey(environment.CLERK_PUBLISHABLE_KEY, "pk", environment);
 }
 
 function isRequestLike(req) {
@@ -98,4 +108,8 @@ async function resolveTrustedIdentityFromRequest(req, options = {}) {
   }
 }
 
-module.exports = { resolveTrustedIdentityFromRequest };
+module.exports = {
+  hasAllowedClerkPublishableKey,
+  hasRequiredClerkConfiguration,
+  resolveTrustedIdentityFromRequest
+};
