@@ -6,6 +6,7 @@ const { authorizeDemeosAction } = require("./_lib/demeos-authorization.js");
 const { DEMEOS_ACTIONS } = require("./_lib/demeos-rules.js");
 const { validateCustomerIntention } = require("./_lib/customer-intention-contract.js");
 const { validateCustomerPreference } = require("./_lib/customer-preference-contract.js");
+const { buildTrustedCustomerUnderstanding } = require("./_lib/customer-understanding-context.js");
 const { getRepository } = require("./_lib/persistence.js");
 
 function isCustomerIdentityRequest(req) {
@@ -15,6 +16,30 @@ function isCustomerIdentityRequest(req) {
 
 async function publicConfig(req, res) {
   res.setHeader("Cache-Control", "no-store");
+  const understandingRequest = req?.query?.resource === "customer-understanding" ||
+    (typeof req?.url === "string" && req.url.startsWith("/api/customer/understanding"));
+  if (understandingRequest) {
+    if (req.method !== "POST") {
+      res.setHeader("Allow", "POST");
+      return res.status(405).json({ error: "Method not allowed" });
+    }
+    const identity = await resolveTrustedCustomerIdentityFromRequest(req);
+    const repository = getRepository();
+    let preferences = [];
+    if (identity) {
+      if ((await repository.getOwnedBusinessIds(identity.trustedCustomerIdentityId)).length) {
+        return res.status(403).json({ error: "Customer permission required." });
+      }
+      const context = createAuthenticatedCustomerContext(identity);
+      if (!authorizeDemeosAction({ actorContext: context, action: DEMEOS_ACTIONS.VIEW_OWN_CUSTOMER_PREFERENCES }).allowed) {
+        return res.status(403).json({ error: "DEMEOS permission denied." });
+      }
+      preferences = await repository.getCustomerPreferences(identity.trustedCustomerIdentityId, 50);
+    }
+    const understanding = buildTrustedCustomerUnderstanding(req.body, preferences);
+    if (!understanding) return res.status(400).json({ error: "A valid current customer intention is required." });
+    return res.status(200).json({ understanding });
+  }
   const savedPossibilitiesRequest = req?.query?.resource === "customer-saved-possibilities" ||
     (typeof req?.url === "string" && req.url.startsWith("/api/customer/possibilities/saved"));
   const participationRequest = req?.query?.resource === "customer-participation" ||
@@ -31,8 +56,6 @@ async function publicConfig(req, res) {
     const identity = await resolveTrustedCustomerIdentityFromRequest(req);
     if (!identity) return res.status(401).json({ error: "Customer authentication required." });
     const repository = getRepository();
-    // A known business owner is deliberately not treated as a customer merely
-    // because the same authentication provider can authenticate both roles.
     if ((await repository.getOwnedBusinessIds(identity.trustedCustomerIdentityId)).length) {
       return res.status(403).json({ error: "Customer permission required." });
     }
@@ -110,7 +133,6 @@ async function publicConfig(req, res) {
     return res.status(503).json({ error: "Authentication configuration is unavailable." });
   }
 
-  // This endpoint is intentionally restricted to configuration safe for any browser.
   return res.status(200).json({
     clerkPublishableKey: clerkPublishableKey.trim(),
     businessIdDiagnosticEnabled: process.env.DEMEOS_BUSINESS_ID_DIAGNOSTIC_ENABLED === "true"
