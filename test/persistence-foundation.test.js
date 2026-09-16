@@ -154,7 +154,8 @@ test("business restoration aggregates feedback by authoritative campaign relatio
   } };
   const restored = await createPersistenceRepository(database).getKnownBusiness("business-a");
   assert.deepEqual(restored.customerFeedbackResults, [{ workItemId: "campaign-a", businessId: "business-a",
-    relevantCount: 4, notQuiteCount: 3, somethingDifferentCount: 2 }]);
+    evidenceType: "customer-feedback", source: "customer-feedback-action",
+    relevantCount: 4, notQuiteCount: 3, somethingDifferentCount: 2, latestFeedbackAt: null }]);
   assert.equal(restored.customerParticipationResults[0].customerInterestCount, 5);
   assert.equal(restored.campaigns[0].outcome, undefined);
   assert.match(campaignSql, /f\.business_id = demeos_campaigns\.business_id AND f\.campaign_id = demeos_campaigns\.campaign_id/);
