@@ -40,7 +40,6 @@ function validateConfirmedUnderstanding(body) {
   if (!intention && !customerText) return null;
   if (!understanding) return null;
 
-  // The server accepts only the shared deterministic interpretation of the supplied customer words.
   const expected = buildCustomerUnderstanding(intention, customerText);
   if (!expected || expected.confidenceState !== "ready-for-confirmation" || expected.understanding !== understanding) return null;
   return Object.freeze({ intention, customerText, understanding, source: value.source, confidenceState: value.confidenceState });
@@ -51,34 +50,43 @@ function meaningfulTerms(value) {
   return new Set(matches.filter(function (term) { return term.length >= 3 && !STOP_WORDS.has(term); }));
 }
 
+function preferenceTerms(storedPreferences) {
+  const values = (Array.isArray(storedPreferences) ? storedPreferences : []).slice(0, 50)
+    .filter(function (item) { return item && typeof item.preference === "string"; })
+    .map(function (item) { return item.preference; });
+  return meaningfulTerms(values.join(" "));
+}
+
 function stablePossibilityId(workItemId) {
   return "possibility_" + crypto.createHash("sha256").update("demeos-customer-possibility:" + workItemId)
     .digest("base64url").slice(0, 20);
 }
 
-function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_POSSIBILITIES) {
+function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_POSSIBILITIES, storedPreferences = []) {
   const customerTerms = meaningfulTerms([understanding.intention, understanding.customerText].join(" "));
+  const guidanceTerms = preferenceTerms(storedPreferences);
   const candidates = [];
   getValidPublicCustomerWork(repositoryWork).forEach(function (work) {
-    // Provider identity and location are display-only public facts, never relevance inputs.
     const contentTerms = meaningfulTerms(work.content);
     const evidence = Array.from(customerTerms).filter(function (term) { return contentTerms.has(term); }).sort();
     if (evidence.length < 2) return;
+    const guidanceOverlap = Array.from(guidanceTerms).filter(function (term) { return contentTerms.has(term); }).length;
     const possibility = {
       possibilityId: stablePossibilityId(work.workItemId), workItemId: work.workItemId,
       businessName: work.businessName, content: work.content, participationAction: "Interested",
       relevance: { basis: "explicit-customer-intent-overlap", evidence: evidence.slice(0, 5) }
     };
     if (work.location) possibility.location = work.location;
-    candidates.push({ strength: evidence.length, possibility });
+    candidates.push({ strength: evidence.length, guidanceOverlap, possibility });
   });
   candidates.sort(function (left, right) {
-    return right.strength - left.strength || left.possibility.workItemId.localeCompare(right.possibility.workItemId);
+    return right.strength - left.strength || right.guidanceOverlap - left.guidanceOverlap ||
+      left.possibility.workItemId.localeCompare(right.possibility.workItemId);
   });
   return candidates.slice(0, Math.min(MAX_POSSIBILITIES, Math.max(0, limit))).map(function (item) { return item.possibility; });
 }
 
 module.exports = {
   FIELD_LIMITS, MAX_POSSIBILITIES, SUPPORTED_INTENTIONS, findCustomerPossibilities,
-  meaningfulTerms, stablePossibilityId, validateConfirmedUnderstanding
+  meaningfulTerms, preferenceTerms, stablePossibilityId, validateConfirmedUnderstanding
 };
