@@ -33,7 +33,14 @@ module.exports = async function handler(req, res) {
         }
       }
     }
-    return res.status(200).json({ possibilities: findCustomerPossibilities(understanding, work, undefined, preferences, feedback) });
+    let possibilities = findCustomerPossibilities(understanding, work, undefined, preferences, feedback);
+    if (identity) {
+      const issuedWorkItemIds = await repository.recordCustomerPossibilityIssuance(
+        identity.trustedCustomerIdentityId, possibilities);
+      const issued = new Set(issuedWorkItemIds);
+      possibilities = possibilities.filter(function (possibility) { return issued.has(possibility.workItemId); });
+    }
+    return res.status(200).json({ possibilities });
   } catch (error) {
     console.error("Could not prepare customer possibilities:", error);
     return res.status(500).json({ error: "DEMEOS could not prepare possibilities." });

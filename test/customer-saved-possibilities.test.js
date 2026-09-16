@@ -69,8 +69,43 @@ test("repository resolves authoritative publishable work and idempotently snapsh
   } };
   const result = await createPersistenceRepository(db).saveCustomerPossibility("trusted", "work-1");
   assert.equal(result.content, "A quiet supper");
+  assert.match(calls[0].sql, /JOIN demeos_customer_possibility_issuances i/);
+  assert.match(calls[0].sql, /i\.trusted_customer_identity_id = \$2 AND i\.campaign_snapshot = c\.campaign/);
+  assert.deepEqual(calls[0].values, ["work-1", "trusted"]);
   assert.match(calls[1].sql, /ON CONFLICT \(trusted_customer_identity_id, work_item_id\)/);
+  assert.match(calls[1].sql, /demeos_customer_possibility_issuances/);
   assert.deepEqual(calls[1].values.slice(0, 5), ["trusted", "work-1", "A quiet supper", "Cafe", "York"]);
+});
+
+test("issuance records the trusted customer and exact authoritative campaign without creating customer signals", async function () {
+  const calls = [];
+  const campaign = { approvalStatus: "Approved", campaignType: "social", campaignText: "A quiet supper" };
+  const db = { ensureSchema: async () => {}, query: async (sql, values) => {
+    calls.push({ sql, values });
+    if (sql.startsWith("SELECT")) return { rows: [{ campaign_id: "work-1", campaign, profile: { name: "Cafe" } }] };
+    return { rows: [{ work_item_id: "work-1" }] };
+  } };
+  const issued = await createPersistenceRepository(db).recordCustomerPossibilityIssuance("customer-a", [{
+    workItemId: "work-1", content: "A quiet supper", businessName: "Cafe"
+  }]);
+  assert.deepEqual(issued, ["work-1"]);
+  assert.deepEqual(calls[1].values, ["customer-a", "work-1", JSON.stringify(campaign)]);
+  assert.match(calls[1].sql, /'demeos-possibility-issuance', 'demeos'/);
+  assert.doesNotMatch(calls[1].sql, /participations|feedback|preferences|purchase|booking|sale|conversion|outcome|success/i);
+});
+
+test("issuance refuses a possibility that no longer exactly matches authoritative work", async function () {
+  let inserts = 0;
+  const db = { ensureSchema: async () => {}, query: async (sql) => {
+    if (sql.startsWith("SELECT")) return { rows: [{ campaign_id: "work-1",
+      campaign: { approvalStatus: "Approved", campaignType: "social", campaignText: "Changed content" },
+      profile: { name: "Cafe" } }] };
+    inserts += 1; return { rows: [{ work_item_id: "work-1" }] };
+  } };
+  assert.deepEqual(await createPersistenceRepository(db).recordCustomerPossibilityIssuance("customer-a", [{
+    workItemId: "work-1", content: "Old content", businessName: "Cafe"
+  }]), []);
+  assert.equal(inserts, 0);
 });
 
 test("save UX is explicit, distinct, safe, and consolidated into an existing function", function () {

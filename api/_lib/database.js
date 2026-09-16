@@ -74,6 +74,18 @@ const SCHEMA_STATEMENTS = [
   )`,
   `CREATE INDEX IF NOT EXISTS demeos_customer_intentions_owner_created_idx
     ON demeos_customer_intentions (trusted_customer_identity_id, created_at DESC, intention_id DESC)`,
+  `CREATE TABLE IF NOT EXISTS demeos_customer_possibility_issuances (
+    trusted_customer_identity_id TEXT NOT NULL,
+    work_item_id TEXT NOT NULL REFERENCES demeos_campaigns(campaign_id),
+    campaign_snapshot JSONB NOT NULL,
+    evidence_type TEXT NOT NULL CHECK (evidence_type = 'demeos-possibility-issuance'),
+    source TEXT NOT NULL CHECK (source = 'demeos'),
+    issued_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (trusted_customer_identity_id, work_item_id)
+  )`,
+  `CREATE INDEX IF NOT EXISTS demeos_customer_possibility_issuances_owner_issued_idx
+    ON demeos_customer_possibility_issuances
+      (trusted_customer_identity_id, issued_at DESC)`,
   `CREATE TABLE IF NOT EXISTS demeos_customer_saved_possibilities (
     saved_possibility_id BIGSERIAL PRIMARY KEY,
     trusted_customer_identity_id TEXT NOT NULL,
