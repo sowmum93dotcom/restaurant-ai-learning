@@ -8,6 +8,7 @@
   function getDemeosUnderstanding(record, activeBusinessId) {
     const empty = { verifiedBusinessProfile: false, campaignOutcomeCount: 0, customerInterestCount: 0,
       campaignsWithCustomerParticipation: 0,
+      customerFeedback: { relevant: 0, notQuite: 0, somethingDifferent: 0 },
       recommendationDecisions: { used: 0, modified: 0, rejected: 0 }, evidenceAvailable: false };
     if (!record || !activeBusinessId || !record.businessProfile ||
         record.businessProfile.businessId !== activeBusinessId) return empty;
@@ -31,6 +32,15 @@
     const customerInterestCount = participation.reduce(function (total, result) {
       return total + Number(result.customerInterestCount);
     }, 0);
+    const feedback = (Array.isArray(record.customerFeedbackResults) ? record.customerFeedbackResults : []).filter(function (result) {
+      return result && result.businessId === activeBusinessId && activeCampaignIds.has(result.workItemId);
+    });
+    const customerFeedback = feedback.reduce(function (counts, result) {
+      counts.relevant += Math.max(0, Number(result.relevantCount) || 0);
+      counts.notQuite += Math.max(0, Number(result.notQuiteCount) || 0);
+      counts.somethingDifferent += Math.max(0, Number(result.somethingDifferentCount) || 0);
+      return counts;
+    }, { relevant: 0, notQuite: 0, somethingDifferent: 0 });
     const recommendationDecisions = { used: 0, modified: 0, rejected: 0 };
     (Array.isArray(record.recommendationDecisions) ? record.recommendationDecisions : []).forEach(function (item) {
       if (item && item.businessId === activeBusinessId &&
@@ -39,8 +49,10 @@
     const decisionCount = recommendationDecisions.used + recommendationDecisions.modified + recommendationDecisions.rejected;
     return { verifiedBusinessProfile, campaignOutcomeCount, customerInterestCount,
       campaignsWithCustomerParticipation: new Set(participation.map(function (result) { return result.workItemId; })).size,
+      customerFeedback,
       recommendationDecisions,
-      evidenceAvailable: campaignOutcomeCount > 0 || participation.length > 0 || decisionCount > 0 };
+      evidenceAvailable: campaignOutcomeCount > 0 || participation.length > 0 || decisionCount > 0 ||
+        customerFeedback.relevant > 0 || customerFeedback.notQuite > 0 || customerFeedback.somethingDifferent > 0 };
   }
 
   return { getDemeosUnderstanding };

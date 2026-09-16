@@ -428,7 +428,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     if (!record) {
       stateElement.textContent = "Understanding evidence is unavailable";
       byId("recommends-understanding-profile").textContent = "Availability unavailable";
-      ["outcomes", "interest", "participation-campaigns", "used", "modified", "rejected"].forEach(function (key) {
+      ["outcomes", "interest", "participation-campaigns", "feedback-relevant", "feedback-not-quite", "feedback-something-different", "used", "modified", "rejected"].forEach(function (key) {
         byId(`recommends-understanding-${key}`).textContent = "—";
       });
       return;
@@ -442,6 +442,9 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     byId("recommends-understanding-outcomes").textContent = understanding.campaignOutcomeCount;
     byId("recommends-understanding-interest").textContent = understanding.customerInterestCount;
     byId("recommends-understanding-participation-campaigns").textContent = understanding.campaignsWithCustomerParticipation;
+    byId("recommends-understanding-feedback-relevant").textContent = understanding.customerFeedback.relevant;
+    byId("recommends-understanding-feedback-not-quite").textContent = understanding.customerFeedback.notQuite;
+    byId("recommends-understanding-feedback-something-different").textContent = understanding.customerFeedback.somethingDifferent;
     byId("recommends-understanding-used").textContent = understanding.recommendationDecisions.used;
     byId("recommends-understanding-modified").textContent = understanding.recommendationDecisions.modified;
     byId("recommends-understanding-rejected").textContent = understanding.recommendationDecisions.rejected;

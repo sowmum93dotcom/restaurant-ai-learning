@@ -51,8 +51,8 @@ test("DEMEOS Understanding is placed between outcomes and decisions with explici
   assert.match(html, /<h3 id="demeos-understanding-heading">DEMEOS Understanding<\/h3>/);
   assert.ok(html.indexOf("Campaign Outcomes") < html.indexOf("DEMEOS Understanding"));
   assert.ok(html.indexOf("DEMEOS Understanding") < html.indexOf("Recommendation Decisions"));
-  assert.match(html, /Customer interest is an interest signal only — not a sale, conversion or proof that a campaign succeeded\./);
-  assert.match(html, /owner-recorded outcomes and your recommendation decisions are kept separate/);
+  assert.match(html, /Customer Feedback describes possibility relevance only/);
+  assert.match(html, /Customer Feedback, customer participation, owner-recorded outcomes and your recommendation decisions are kept separate/);
 });
 
 test("understanding deterministically summarizes only active-business trusted evidence", function () {
@@ -66,11 +66,13 @@ test("understanding deterministically summarizes only active-business trusted ev
   const snapshot = JSON.stringify(record);
   assert.deepEqual(getDemeosUnderstanding(record, "business-a"), {
     verifiedBusinessProfile: false, campaignOutcomeCount: 2, customerInterestCount: 7, campaignsWithCustomerParticipation: 2,
+    customerFeedback: { relevant: 0, notQuite: 0, somethingDifferent: 0 },
     recommendationDecisions: { used: 1, modified: 1, rejected: 1 }, evidenceAvailable: true
   });
   assert.equal(JSON.stringify(record), snapshot);
   assert.deepEqual(getDemeosUnderstanding(record, "business-b"), {
     verifiedBusinessProfile: false, campaignOutcomeCount: 0, customerInterestCount: 0, campaignsWithCustomerParticipation: 0,
+    customerFeedback: { relevant: 0, notQuite: 0, somethingDifferent: 0 },
     recommendationDecisions: { used: 0, modified: 0, rejected: 0 }, evidenceAvailable: false
   });
 });
@@ -85,12 +87,14 @@ test("understanding preserves explicit zero participation and does not invent mi
   ] };
   assert.deepEqual(getDemeosUnderstanding(record, "business-a"), {
     verifiedBusinessProfile: false, campaignOutcomeCount: 1, customerInterestCount: 0, campaignsWithCustomerParticipation: 1,
+    customerFeedback: { relevant: 0, notQuite: 0, somethingDifferent: 0 },
     recommendationDecisions: { used: 0, modified: 0, rejected: 0 }, evidenceAvailable: true
   });
 });
 
 test("understanding fails closed and exposes no identity or synthetic scoring fields", function () {
   const empty = { verifiedBusinessProfile: false, campaignOutcomeCount: 0, customerInterestCount: 0, campaignsWithCustomerParticipation: 0,
+    customerFeedback: { relevant: 0, notQuite: 0, somethingDifferent: 0 },
     recommendationDecisions: { used: 0, modified: 0, rejected: 0 }, evidenceAvailable: false };
   assert.deepEqual(getDemeosUnderstanding(null, "business-a"), empty);
   assert.deepEqual(getDemeosUnderstanding(storedRecord(), "wrong-business"), empty);

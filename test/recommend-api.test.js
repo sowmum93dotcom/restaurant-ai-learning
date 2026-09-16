@@ -27,9 +27,11 @@ async function call(businessProfile = profile, output = JSON.stringify(valid), b
     businessId, ...item
   })) : options.storedDecisions);
   const storedParticipation = options.storedParticipation === undefined ? [] : options.storedParticipation;
+  const storedFeedback = options.storedFeedback === undefined ? [] : options.storedFeedback;
   const repository = { async getKnownBusiness(id) { getKnownBusinessCalls += 1;
     return options.missingBusiness ? null : { businessProfile: { ...storedProfile, businessId: id },
       campaigns: storedCampaigns, customerParticipationResults: storedParticipation,
+      customerFeedbackResults: storedFeedback,
       recommendationDecisions: storedDecisions }; } };
   const context = { module: { exports: {} }, process: { env: { OPENAI_API_KEY: "key" } }, console,
     require(id) {
@@ -126,6 +128,22 @@ test("server-stored participation is available as a distinct interest signal and
   assert.match(result.requestBody.input, /"customerInterestCount":4/);
   assert.doesNotMatch(result.requestBody.input, /999|2099|spoofed/);
   assert.match(result.requestBody.input, /not a sale, revenue, conversion, campaign success, customer identity, or guaranteed demand/);
+});
+
+test("owner feedback remains separate, business-scoped relevance evidence and ignores browser values", async () => {
+  const result = await call(profile, JSON.stringify(valid), "", [], [], {
+    storedFeedback: [
+      { businessId: "business-a", relevantCount: 3, notQuiteCount: 2, somethingDifferentCount: 1 },
+      { businessId: "business-b", relevantCount: 99, notQuiteCount: 98, somethingDifferentCount: 97 }
+    ],
+    spoofedBody: { customerFeedbackResults: [{ businessId: "business-a", relevantCount: 999 }] }
+  });
+  assert.equal(result.response.statusCode, 200);
+  assert.match(result.requestBody.input, /Stored Customer Feedback \(server-aggregated possibility-relevance feedback/);
+  assert.match(result.requestBody.input, /"relevantCount":3,"notQuiteCount":2,"somethingDifferentCount":1/);
+  assert.doesNotMatch(result.requestBody.input, /999|"relevantCount":99|"notQuiteCount":98/);
+  assert.match(result.requestBody.input, /Never reinterpret any response as Interested participation/);
+  assert.match(result.requestBody.input, /purchase, booking, sale, conversion, outcome, success, or performance/);
 });
 
 test("participation from another business is excluded and missing participation is stated honestly", async () => {
