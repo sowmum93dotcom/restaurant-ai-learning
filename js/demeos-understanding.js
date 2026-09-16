@@ -62,7 +62,6 @@
       if (item && item.businessId === activeBusinessId &&
           Object.hasOwn(recommendationDecisions, item.decision)) recommendationDecisions[item.decision] += 1;
     });
-    const decisionCount = recommendationDecisions.used + recommendationDecisions.modified + recommendationDecisions.rejected;
     const approvedWork = campaigns.filter(function (campaign) {
       return campaign && campaign.businessId === activeBusinessId && campaign.approvalStatus === "Approved";
     });
@@ -84,8 +83,7 @@
       campaignsWithCustomerParticipation: new Set(participation.map(function (result) { return result.workItemId; })).size,
       customerFeedback,
       recommendationDecisions,
-      evidenceAvailable: campaignOutcomeCount > 0 || participation.length > 0 || decisionCount > 0 ||
-        customerFeedback.relevant > 0 || customerFeedback.notQuite > 0 || customerFeedback.somethingDifferent > 0 },
+      evidenceAvailable: historical.length > 0 },
     { current: verifiedBusinessProfile ? [{ evidenceType: "business-profile", source: "business-owner" }] : [],
       historical, absent });
   }
