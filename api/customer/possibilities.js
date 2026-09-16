@@ -27,23 +27,25 @@ module.exports = async function handler(req, res) {
     let preferences = [];
     let feedback = [];
     const identity = await resolveTrustedCustomerIdentityFromRequest(req);
-    if (identity && !(await repository.getOwnedBusinessIds(identity.trustedCustomerIdentityId)).length) {
-      const context = createAuthenticatedCustomerContext(identity);
+    const customerIdentity = identity && !(await repository.getOwnedBusinessIds(identity.trustedCustomerIdentityId)).length
+      ? identity : null;
+    if (customerIdentity) {
+      const context = createAuthenticatedCustomerContext(customerIdentity);
       if (authorizeDemeosAction({ actorContext: context, action: DEMEOS_ACTIONS.VIEW_OWN_CUSTOMER_PREFERENCES }).allowed) {
-        preferences = await repository.getCustomerPreferences(identity.trustedCustomerIdentityId, 50);
+        preferences = await repository.getCustomerPreferences(customerIdentity.trustedCustomerIdentityId, 50);
         if (typeof repository.getCustomerFeedback === "function" &&
             authorizeDemeosAction({ actorContext: context, action: DEMEOS_ACTIONS.VIEW_OWN_CUSTOMER_FEEDBACK }).allowed) {
-          feedback = await repository.getCustomerFeedback(identity.trustedCustomerIdentityId, 50);
+          feedback = await repository.getCustomerFeedback(customerIdentity.trustedCustomerIdentityId, 50);
         }
       }
     }
     let possibilities = findCustomerPossibilities(understanding, work, undefined, preferences, feedback);
-    if (identity) {
+    if (customerIdentity) {
       await prepareCustomerPossibilityIssuanceTrust();
       const issuedWorkItemIds = await repository.recordCustomerPossibilityIssuance(
-        identity.trustedCustomerIdentityId, possibilities);
+        customerIdentity.trustedCustomerIdentityId, possibilities);
       const confirmedWorkItemIds = await confirmCustomerPossibilityIssuanceDelivery(
-        identity.trustedCustomerIdentityId, issuedWorkItemIds);
+        customerIdentity.trustedCustomerIdentityId, issuedWorkItemIds);
       const issued = new Set(confirmedWorkItemIds);
       possibilities = possibilities.filter(function (possibility) { return issued.has(possibility.workItemId); });
     }
