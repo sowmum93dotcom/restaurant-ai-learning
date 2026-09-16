@@ -23,7 +23,7 @@ async function publicConfig(req, res) {
     (typeof req?.url === "string" && req.url.startsWith("/api/customer/preferences"));
   if (preferencesRequest || participationRequest || savedPossibilitiesRequest || req?.query?.resource === "customer-intentions" ||
       (typeof req?.url === "string" && req.url.startsWith("/api/customer/intentions"))) {
-    const allowedMethods = preferencesRequest ? ['GET', 'POST', 'DELETE'] : participationRequest ? ['GET'] : ['GET', 'POST'];
+    const allowedMethods = participationRequest ? ['GET'] : ['GET', 'POST', 'DELETE'];
     if (!allowedMethods.includes(req.method)) {
       res.setHeader("Allow", allowedMethods.join(", "));
       return res.status(405).json({ error: "Method not allowed" });
@@ -41,8 +41,10 @@ async function publicConfig(req, res) {
       ? (req.method === 'POST' ? DEMEOS_ACTIONS.RECORD_OWN_CUSTOMER_PREFERENCE : req.method === 'DELETE'
         ? DEMEOS_ACTIONS.REMOVE_OWN_CUSTOMER_PREFERENCE : DEMEOS_ACTIONS.VIEW_OWN_CUSTOMER_PREFERENCES)
       : participationRequest ? DEMEOS_ACTIONS.VIEW_OWN_CUSTOMER_PARTICIPATION : savedPossibilitiesRequest
-      ? (req.method === 'POST' ? DEMEOS_ACTIONS.RECORD_OWN_CUSTOMER_SAVED_POSSIBILITY : DEMEOS_ACTIONS.VIEW_OWN_CUSTOMER_SAVED_POSSIBILITIES)
-      : (req.method === 'POST' ? DEMEOS_ACTIONS.RECORD_OWN_CUSTOMER_INTENTION : DEMEOS_ACTIONS.VIEW_OWN_CUSTOMER_INTENTIONS);
+      ? (req.method === 'POST' ? DEMEOS_ACTIONS.RECORD_OWN_CUSTOMER_SAVED_POSSIBILITY : req.method === 'DELETE'
+        ? DEMEOS_ACTIONS.REMOVE_OWN_CUSTOMER_SAVED_POSSIBILITY : DEMEOS_ACTIONS.VIEW_OWN_CUSTOMER_SAVED_POSSIBILITIES)
+      : (req.method === 'POST' ? DEMEOS_ACTIONS.RECORD_OWN_CUSTOMER_INTENTION : req.method === 'DELETE'
+        ? DEMEOS_ACTIONS.REMOVE_OWN_CUSTOMER_INTENTION : DEMEOS_ACTIONS.VIEW_OWN_CUSTOMER_INTENTIONS);
     if (!authorizeDemeosAction({ actorContext: context, action }).allowed) return res.status(403).json({ error: "DEMEOS permission denied." });
     if (preferencesRequest) {
       if (req.method === 'GET') return res.status(200).json({ preferences: await repository.getCustomerPreferences(identity.trustedCustomerIdentityId, 50) });
@@ -63,6 +65,16 @@ async function publicConfig(req, res) {
     if (participationRequest) return res.status(200).json({ participations: await repository.getCustomerParticipations(identity.trustedCustomerIdentityId, 50) });
     if (savedPossibilitiesRequest) {
       if (req.method === 'GET') return res.status(200).json({ possibilities: await repository.getCustomerSavedPossibilities(identity.trustedCustomerIdentityId, 50) });
+      if (req.method === 'DELETE') {
+        const body = req.body;
+        if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).length !== 1 ||
+            typeof body.savedPossibilityId !== "string" || !/^\d+$/.test(body.savedPossibilityId)) {
+          return res.status(400).json({ error: "A valid saved possibility reference is required." });
+        }
+        const removed = await repository.removeCustomerSavedPossibility(identity.trustedCustomerIdentityId, body.savedPossibilityId);
+        if (!removed) return res.status(404).json({ error: "Saved possibility not found." });
+        return res.status(200).json({ removed: true });
+      }
       const body = req.body;
       if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).length !== 1 ||
           typeof body.workItemId !== "string" || !body.workItemId.trim() || body.workItemId !== body.workItemId.trim() || body.workItemId.length > 200) {
@@ -73,6 +85,16 @@ async function publicConfig(req, res) {
       return res.status(201).json({ possibility: saved });
     }
     if (req.method === 'GET') return res.status(200).json({ intentions: await repository.getCustomerIntentions(identity.trustedCustomerIdentityId, 50) });
+    if (req.method === 'DELETE') {
+      const body = req.body;
+      if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).length !== 1 ||
+          typeof body.intentionId !== "string" || !/^\d+$/.test(body.intentionId)) {
+        return res.status(400).json({ error: "A valid intention reference is required." });
+      }
+      const removed = await repository.removeCustomerIntention(identity.trustedCustomerIdentityId, body.intentionId);
+      if (!removed) return res.status(404).json({ error: "Intention not found." });
+      return res.status(200).json({ removed: true });
+    }
     const intention = validateCustomerIntention(req.body);
     if (!intention) return res.status(400).json({ error: "A valid confirmed intention is required." });
     const saved = await repository.saveCustomerIntention(identity.trustedCustomerIdentityId, intention);

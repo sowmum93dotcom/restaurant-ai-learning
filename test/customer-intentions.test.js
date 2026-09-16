@@ -25,7 +25,7 @@ test("intention contract accepts only bounded confirmed evidence fields", functi
   assert.equal(validateCustomerIntention({ ...valid, customerText: "x".repeat(501) }), null);
 });
 test("only CUSTOMER receives the two own-intention actions", function () {
-  for (const action of [DEMEOS_ACTIONS.RECORD_OWN_CUSTOMER_INTENTION, DEMEOS_ACTIONS.VIEW_OWN_CUSTOMER_INTENTIONS]) {
+  for (const action of [DEMEOS_ACTIONS.RECORD_OWN_CUSTOMER_INTENTION, DEMEOS_ACTIONS.VIEW_OWN_CUSTOMER_INTENTIONS, DEMEOS_ACTIONS.REMOVE_OWN_CUSTOMER_INTENTION]) {
     assert.equal(canPerformDemeosAction({ actorScope: DEMEOS_ACTOR_SCOPES.CUSTOMER, action }), true);
     for (const role of [DEMEOS_ACTOR_SCOPES.PUBLIC_CUSTOMER, DEMEOS_ACTOR_SCOPES.BUSINESS_OWNER, DEMEOS_ACTOR_SCOPES.ADMIN]) assert.equal(canPerformDemeosAction({ actorScope: role, action }), false);
   }
@@ -62,4 +62,20 @@ test("UI saves only from the explicit post-confirmation click and preserves anon
   assert.doesNotMatch(customer.slice(customer.indexOf('customer-understanding-confirm'), customer.indexOf('saveButton.onclick')), /method: "POST"/);
   assert.match(html, /No saved intentions yet/); assert.match(html, /When you confirm an intention, you can choose to save it here/);
   assert.match(fs.readFileSync(require.resolve("../vercel.json"), "utf8"), /customer\/intentions[^]*public-config\?resource=customer-intentions/);
+});
+test("removal requires authentication, trusts server identity, and rejects non-owned intentions", async function () {
+  assert.equal((await invoke(null, {}, { method: "DELETE", body: { intentionId: "7" } })).statusCode, 401);
+  let received;
+  const repo = { getOwnedBusinessIds: async () => [], removeCustomerIntention: async (...args) => { received = args; return args[0] === "customer-a" && args[1] === "7"; } };
+  const removed = await invoke({ trustedCustomerIdentityId: "customer-a" }, repo, { method: "DELETE", query: { customerId: "customer-b" }, body: { intentionId: "7" } });
+  assert.equal(removed.statusCode, 200); assert.deepEqual(received, ["customer-a", "7"]);
+  assert.equal((await invoke({ trustedCustomerIdentityId: "customer-b" }, { getOwnedBusinessIds: async () => [], removeCustomerIntention: async () => false }, { method: "DELETE", body: { intentionId: "7" } })).statusCode, 404);
+  assert.equal((await invoke({ trustedCustomerIdentityId: "customer-a" }, repo, { method: "DELETE", body: { intentionId: "7", customerId: "customer-b" } })).statusCode, 400);
+});
+test("intention removal is owner-scoped and does not touch other evidence", async function () {
+  const calls = []; const db = { ensureSchema: async () => {}, query: async (sql, values) => { calls.push({ sql, values }); return { rows: [{ intention_id: 7 }] }; } };
+  assert.equal(await persistence.createPersistenceRepository(db).removeCustomerIntention("customer-a", "7"), true);
+  assert.match(calls[0].sql, /DELETE FROM demeos_customer_intentions/);
+  assert.match(calls[0].sql, /trusted_customer_identity_id = \$1 AND intention_id = \$2/);
+  assert.doesNotMatch(calls[0].sql, /participations|feedback|preferences|saved_possibilities|campaigns/);
 });

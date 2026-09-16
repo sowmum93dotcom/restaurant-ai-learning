@@ -24,7 +24,7 @@ async function invoke(identity, repository, req) {
 }
 
 test("only CUSTOMER has narrow saved-possibility actions", function () {
-  for (const action of [DEMEOS_ACTIONS.RECORD_OWN_CUSTOMER_SAVED_POSSIBILITY, DEMEOS_ACTIONS.VIEW_OWN_CUSTOMER_SAVED_POSSIBILITIES]) {
+  for (const action of [DEMEOS_ACTIONS.RECORD_OWN_CUSTOMER_SAVED_POSSIBILITY, DEMEOS_ACTIONS.VIEW_OWN_CUSTOMER_SAVED_POSSIBILITIES, DEMEOS_ACTIONS.REMOVE_OWN_CUSTOMER_SAVED_POSSIBILITY]) {
     assert.equal(canPerformDemeosAction({ actorScope: DEMEOS_ACTOR_SCOPES.CUSTOMER, action }), true);
     for (const scope of [DEMEOS_ACTOR_SCOPES.PUBLIC_CUSTOMER, DEMEOS_ACTOR_SCOPES.BUSINESS_OWNER, DEMEOS_ACTOR_SCOPES.ADMIN])
       assert.equal(canPerformDemeosAction({ actorScope: scope, action }), false);
@@ -88,4 +88,20 @@ test("save UX is explicit, distinct, safe, and consolidated into an existing fun
   const vercel = fs.readFileSync(require.resolve("../vercel.json"), "utf8");
   assert.match(vercel, /customer\/possibilities\/saved[^]*public-config\?resource=customer-saved-possibilities/);
   assert.equal(fs.existsSync(require.resolve("../api/public-config.js")), true);
+});
+test("saved possibility removal requires authentication and uses only trusted ownership", async function () {
+  assert.equal((await invoke(null, {}, { method: "DELETE", body: { savedPossibilityId: "9" } })).statusCode, 401);
+  let received;
+  const repo = { getOwnedBusinessIds: async () => [], removeCustomerSavedPossibility: async (...args) => { received = args; return args[0] === "customer-a"; } };
+  assert.equal((await invoke({ trustedCustomerIdentityId: "customer-a" }, repo, { method: "DELETE", query: { customerId: "attacker" }, body: { savedPossibilityId: "9" } })).statusCode, 200);
+  assert.deepEqual(received, ["customer-a", "9"]);
+  assert.equal((await invoke({ trustedCustomerIdentityId: "customer-b" }, { getOwnedBusinessIds: async () => [], removeCustomerSavedPossibility: async () => false }, { method: "DELETE", body: { savedPossibilityId: "9" } })).statusCode, 404);
+  assert.equal((await invoke({ trustedCustomerIdentityId: "customer-a" }, repo, { method: "DELETE", body: { savedPossibilityId: "9", customerId: "attacker" } })).statusCode, 400);
+});
+test("saved possibility removal deletes only its owned relationship row", async function () {
+  const calls = []; const db = { ensureSchema: async () => {}, query: async (sql, values) => { calls.push({ sql, values }); return { rows: [{ saved_possibility_id: 9 }] }; } };
+  assert.equal(await createPersistenceRepository(db).removeCustomerSavedPossibility("customer-a", "9"), true);
+  assert.match(calls[0].sql, /DELETE FROM demeos_customer_saved_possibilities/);
+  assert.match(calls[0].sql, /trusted_customer_identity_id = \$1 AND saved_possibility_id = \$2/);
+  assert.doesNotMatch(calls[0].sql, /demeos_campaigns|participations|feedback/);
 });

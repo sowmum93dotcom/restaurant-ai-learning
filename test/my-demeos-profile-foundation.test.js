@@ -40,7 +40,7 @@ test("profile foundation presents trusted DEMEOS entry language and honest empty
   for (const heading of ["My Intentions", "My Possibilities", "My Participation", "My Preferences"]) {
     assert.match(html, new RegExp(`role="heading" aria-level="3">${heading}<\\/span>`));
   }
-  assert.match(html, /<h3 id="privacy-control-title" class="my-demeos-area-title">Privacy &amp; Control<\/h3>/);
+  assert.match(html, /data-relationship-area="privacy-control"[^]*Privacy &amp; Control/);
   assert.match(html, /Interest remains interest\. Feedback remains feedback\. A choice is not automatically a purchase, sale or success\./);
   assert.doesNotMatch(html, /localStorage|sessionStorage|randomUUID|crypto\.|owner-auth|owner-sign-in|business-workspace\.js/i);
   assert.doesNotMatch(html, /reward|points|discount|membership|order history|purchase history/i);

@@ -56,7 +56,7 @@
     return { openView, closeView };
   }
 
-  function renderIntentions(documentObject, intentions) {
+  function renderIntentions(documentObject, intentions, removeIntention) {
     const list = documentObject.getElementById("my-intentions-list");
     const empty = documentObject.getElementById("my-intentions-empty");
     documentObject.getElementById("my-intentions-loading").hidden = true;
@@ -68,6 +68,10 @@
       if (intention.customerText) { const detail = documentObject.createElement("p"); detail.textContent = intention.customerText; article.appendChild(detail); }
       const understanding = documentObject.createElement("p"); understanding.textContent = intention.understanding; article.appendChild(understanding);
       const date = documentObject.createElement("time"); date.dateTime = intention.createdAt; date.textContent = "Saved " + new Date(intention.createdAt).toLocaleDateString(); article.appendChild(date);
+      if (removeIntention && intention.intentionId) {
+        const remove = documentObject.createElement("button"); remove.type = "button"; remove.className = "demeos-secondary-button"; remove.textContent = "Remove";
+        remove.addEventListener("click", function () { removeIntention(intention.intentionId, remove); }); article.appendChild(remove);
+      }
       list.appendChild(article);
     });
   }
@@ -76,10 +80,18 @@
     const response = await fetchFunction("/api/customer/intentions", { credentials: "same-origin", headers: { Accept: "application/json" } });
     if (!response.ok) throw new Error("Could not load intentions");
     const result = await response.json();
-    renderIntentions(documentObject, Array.isArray(result.intentions) ? result.intentions : []);
+    renderIntentions(documentObject, Array.isArray(result.intentions) ? result.intentions : [], async function (intentionId, button) {
+      const status = documentObject.getElementById("my-intentions-status"); button.disabled = true; status.textContent = "Removing saved intention…";
+      try {
+        const removed = await fetchFunction("/api/customer/intentions", { method: "DELETE", credentials: "same-origin",
+          headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify({ intentionId }) });
+        if (!removed.ok) throw new Error("Removal failed");
+        status.textContent = "Saved intention removed."; await loadIntentions(documentObject, fetchFunction);
+      } catch (_error) { button.disabled = false; status.textContent = "The saved intention could not be removed."; }
+    });
   }
 
-  function renderPossibilities(documentObject, possibilities) {
+  function renderPossibilities(documentObject, possibilities, removePossibility) {
     const list = documentObject.getElementById("my-possibilities-list");
     const empty = documentObject.getElementById("my-possibilities-empty");
     documentObject.getElementById("my-possibilities-loading").hidden = true;
@@ -95,6 +107,10 @@
       }
       const date = documentObject.createElement("time"); date.dateTime = possibility.createdAt;
       date.textContent = "Saved " + new Date(possibility.createdAt).toLocaleDateString(); article.appendChild(date);
+      if (removePossibility && possibility.savedPossibilityId) {
+        const remove = documentObject.createElement("button"); remove.type = "button"; remove.className = "demeos-secondary-button"; remove.textContent = "Remove";
+        remove.addEventListener("click", function () { removePossibility(possibility.savedPossibilityId, remove); }); article.appendChild(remove);
+      }
       list.appendChild(article);
     });
   }
@@ -103,7 +119,15 @@
     const response = await fetchFunction("/api/customer/possibilities/saved", { credentials: "same-origin", headers: { Accept: "application/json" } });
     if (!response.ok) throw new Error("Could not load possibilities");
     const result = await response.json();
-    renderPossibilities(documentObject, Array.isArray(result.possibilities) ? result.possibilities : []);
+    renderPossibilities(documentObject, Array.isArray(result.possibilities) ? result.possibilities : [], async function (savedPossibilityId, button) {
+      const status = documentObject.getElementById("my-possibilities-status"); button.disabled = true; status.textContent = "Removing saved possibility…";
+      try {
+        const removed = await fetchFunction("/api/customer/possibilities/saved", { method: "DELETE", credentials: "same-origin",
+          headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify({ savedPossibilityId }) });
+        if (!removed.ok) throw new Error("Removal failed");
+        status.textContent = "Saved possibility removed."; await loadPossibilities(documentObject, fetchFunction);
+      } catch (_error) { button.disabled = false; status.textContent = "The saved possibility could not be removed."; }
+    });
   }
 
   function renderParticipations(documentObject, participations) {
