@@ -35,7 +35,7 @@ test("intention nodes retain native semantics and spatial-to-linear responsive r
 test("the header remains in document flow and reserves usable content height", function () {
   assert.match(css, /\.customer-header\s*\{[\s\S]*?position: sticky/);
   assert.doesNotMatch(css, /\.customer-header\s*\{[^}]*position: fixed/);
-  assert.match(css, /\.customer-intention\s*\{[^}]*min-height: calc\(100vh - 76px\)/);
+  assert.match(css, /\.customer-intention\s*\{[^}]*min-height: calc\(100vh - 92px\)/);
 });
 
 test("all available relationship areas are real controls", function () {
