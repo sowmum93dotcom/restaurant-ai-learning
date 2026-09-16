@@ -4,6 +4,10 @@ const { createAuthenticatedCustomerContext } = require("../_lib/demeos-actor-con
 const { authorizeDemeosAction } = require("../_lib/demeos-authorization.js");
 const { resolveTrustedCustomerIdentityFromRequest } = require("../_lib/demeos-customer-authentication.js");
 const { findCustomerPossibilities, validateConfirmedUnderstanding } = require("../_lib/customer-possibility-contract.js");
+const {
+  prepareCustomerPossibilityIssuanceTrust,
+  confirmCustomerPossibilityIssuanceDelivery
+} = require("../_lib/customer-possibility-issuance-trust.js");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
@@ -35,9 +39,12 @@ module.exports = async function handler(req, res) {
     }
     let possibilities = findCustomerPossibilities(understanding, work, undefined, preferences, feedback);
     if (identity) {
+      await prepareCustomerPossibilityIssuanceTrust();
       const issuedWorkItemIds = await repository.recordCustomerPossibilityIssuance(
         identity.trustedCustomerIdentityId, possibilities);
-      const issued = new Set(issuedWorkItemIds);
+      const confirmedWorkItemIds = await confirmCustomerPossibilityIssuanceDelivery(
+        identity.trustedCustomerIdentityId, issuedWorkItemIds);
+      const issued = new Set(confirmedWorkItemIds);
       possibilities = possibilities.filter(function (possibility) { return issued.has(possibility.workItemId); });
     }
     return res.status(200).json({ possibilities });
