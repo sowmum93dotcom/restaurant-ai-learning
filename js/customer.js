@@ -321,9 +321,12 @@ async function requestCustomerPossibilities(document, understanding, fetcher, co
   region.hidden = false;
   heading.textContent = CUSTOMER_STAGE_THREE_COPY.preparing;
   try {
+    const currentIntention = { intention: understanding.intention, customerText: understanding.customerText,
+      understanding: understanding.understanding, source: understanding.source,
+      confidenceState: understanding.confidenceState };
     const response = await fetcher("/api/customer/possibilities", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ understanding })
+      body: JSON.stringify({ understanding: currentIntention })
     });
     const data = await response.json();
     if (!response.ok || !data || !Array.isArray(data.possibilities)) throw new Error();
@@ -439,13 +442,22 @@ function initializeCustomerIntention(document, navigatorValue, now) {
     document.getElementById("customer-intention-text").focus();
   }
 
-  function showUnderstanding(clarificationText) {
+  async function showUnderstanding(clarificationText) {
+    const customerText = document.getElementById("customer-intention-text").value;
     currentUnderstanding = globalThis.CustomerUnderstanding.buildCustomerUnderstanding(
-      selectedIntention, document.getElementById("customer-intention-text").value, clarificationText);
+      selectedIntention, customerText, clarificationText);
     if (!currentUnderstanding) {
       document.getElementById("customer-intention-status").textContent = CUSTOMER_STAGE_ONE_COPY.missingIntention;
       return;
     }
+    try {
+      const response = await fetch("/api/customer/understanding", { method: "POST", credentials: "same-origin",
+        headers: { "Content-Type": "application/json" }, body: JSON.stringify({
+          intention: selectedIntention, customerText, clarificationText: clarificationText || ""
+        }) });
+      const data = response.ok ? await response.json() : null;
+      if (data && data.understanding) currentUnderstanding = data.understanding;
+    } catch (_error) { /* The existing anonymous, intention-first flow remains available. */ }
     document.getElementById("customer-understanding-summary").textContent = currentUnderstanding.understanding;
     const needsClarification = currentUnderstanding.confidenceState === "needs-clarification";
     document.getElementById("customer-clarification").hidden = !needsClarification;

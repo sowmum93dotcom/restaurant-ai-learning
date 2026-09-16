@@ -6,6 +6,7 @@ const { authorizeDemeosAction } = require("./_lib/demeos-authorization.js");
 const { DEMEOS_ACTIONS } = require("./_lib/demeos-rules.js");
 const { validateCustomerIntention } = require("./_lib/customer-intention-contract.js");
 const { validateCustomerPreference } = require("./_lib/customer-preference-contract.js");
+const { buildTrustedCustomerUnderstanding } = require("./_lib/customer-understanding-context.js");
 const { getRepository } = require("./_lib/persistence.js");
 
 function isCustomerIdentityRequest(req) {
@@ -15,6 +16,21 @@ function isCustomerIdentityRequest(req) {
 
 async function publicConfig(req, res) {
   res.setHeader("Cache-Control", "no-store");
+  const understandingRequest = req?.query?.resource === "customer-understanding" ||
+    (typeof req?.url === "string" && req.url.startsWith("/api/customer/understanding"));
+  if (understandingRequest) {
+    if (req.method !== "POST") {
+      res.setHeader("Allow", "POST");
+      return res.status(405).json({ error: "Method not allowed" });
+    }
+    const identity = await resolveTrustedCustomerIdentityFromRequest(req);
+    const preferences = identity
+      ? await getRepository().getCustomerPreferences(identity.trustedCustomerIdentityId, 50)
+      : [];
+    const understanding = buildTrustedCustomerUnderstanding(req.body, preferences);
+    if (!understanding) return res.status(400).json({ error: "A valid current customer intention is required." });
+    return res.status(200).json({ understanding });
+  }
   const savedPossibilitiesRequest = req?.query?.resource === "customer-saved-possibilities" ||
     (typeof req?.url === "string" && req.url.startsWith("/api/customer/possibilities/saved"));
   const participationRequest = req?.query?.resource === "customer-participation" ||
