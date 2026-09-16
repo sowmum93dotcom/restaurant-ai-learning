@@ -158,6 +158,15 @@ test("URL business identity is authoritative and spoofed body identity cannot by
   assert.notEqual(allowed.persistenceCalls[0].businessId, "body-business");
 });
 
+test("browser-supplied decision timestamps cannot replace the server-recorded time", async () => {
+  const supplied = "2001-01-01T00:00:00.000Z";
+  const result = await request({ body: { recommendationTitle: "Seasonal email",
+    suggestedCampaignType: "email", decision: "used", timestamp: supplied } });
+  assert.equal(result.res.statusCode, 201);
+  assert.notEqual(result.persistenceCalls[0].timestamp, supplied);
+  assert.equal(Number.isFinite(Date.parse(result.persistenceCalls[0].timestamp)), true);
+});
+
 test("recommendation decisions accept only used, modified, or rejected after authorization", async () => {
   for (const decision of ["used", "modified", "rejected"]) {
     const result = await request({ body: { recommendationTitle: "Seasonal email", suggestedCampaignType: "email", decision } });
