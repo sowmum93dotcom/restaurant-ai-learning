@@ -24,9 +24,18 @@ async function publicConfig(req, res) {
       return res.status(405).json({ error: "Method not allowed" });
     }
     const identity = await resolveTrustedCustomerIdentityFromRequest(req);
-    const preferences = identity
-      ? await getRepository().getCustomerPreferences(identity.trustedCustomerIdentityId, 50)
-      : [];
+    const repository = getRepository();
+    let preferences = [];
+    if (identity) {
+      if ((await repository.getOwnedBusinessIds(identity.trustedCustomerIdentityId)).length) {
+        return res.status(403).json({ error: "Customer permission required." });
+      }
+      const context = createAuthenticatedCustomerContext(identity);
+      if (!authorizeDemeosAction({ actorContext: context, action: DEMEOS_ACTIONS.VIEW_OWN_CUSTOMER_PREFERENCES }).allowed) {
+        return res.status(403).json({ error: "DEMEOS permission denied." });
+      }
+      preferences = await repository.getCustomerPreferences(identity.trustedCustomerIdentityId, 50);
+    }
     const understanding = buildTrustedCustomerUnderstanding(req.body, preferences);
     if (!understanding) return res.status(400).json({ error: "A valid current customer intention is required." });
     return res.status(200).json({ understanding });
@@ -47,8 +56,6 @@ async function publicConfig(req, res) {
     const identity = await resolveTrustedCustomerIdentityFromRequest(req);
     if (!identity) return res.status(401).json({ error: "Customer authentication required." });
     const repository = getRepository();
-    // A known business owner is deliberately not treated as a customer merely
-    // because the same authentication provider can authenticate both roles.
     if ((await repository.getOwnedBusinessIds(identity.trustedCustomerIdentityId)).length) {
       return res.status(403).json({ error: "Customer permission required." });
     }
@@ -126,7 +133,6 @@ async function publicConfig(req, res) {
     return res.status(503).json({ error: "Authentication configuration is unavailable." });
   }
 
-  // This endpoint is intentionally restricted to configuration safe for any browser.
   return res.status(200).json({
     clerkPublishableKey: clerkPublishableKey.trim(),
     businessIdDiagnosticEnabled: process.env.DEMEOS_BUSINESS_ID_DIAGNOSTIC_ENABLED === "true"
