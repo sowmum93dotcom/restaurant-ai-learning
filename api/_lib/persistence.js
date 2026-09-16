@@ -324,7 +324,7 @@ function createPersistenceRepository(database) {
       const businessResult = await database.query("SELECT profile FROM demeos_businesses WHERE business_id = $1", [businessId]);
       if (!businessResult.rows.length) return null;
       const campaignResult = await database.query(
-        `SELECT campaign_id, campaign,
+        `SELECT campaign_id, campaign, created_at, approved_at,
            (SELECT COUNT(*)::integer FROM demeos_customer_participations p
             WHERE p.business_id = demeos_campaigns.business_id AND p.campaign_id = demeos_campaigns.campaign_id
               AND p.action = 'Interested') AS customer_interest_count,
@@ -348,7 +348,9 @@ function createPersistenceRepository(database) {
         `SELECT recommendation_title, suggested_campaign_type, decision, decided_at
          FROM demeos_recommendation_decisions WHERE business_id = $1 ORDER BY decided_at DESC LIMIT 100`, [businessId]);
       const campaigns = campaignResult.rows.map(function (row) {
-        const campaign = { ...row.campaign, businessId };
+        const campaign = { ...row.campaign, businessId,
+          ...(row.created_at ? { recordedAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at } : {}),
+          ...(row.approved_at ? { approvedAt: row.approved_at instanceof Date ? row.approved_at.toISOString() : row.approved_at } : {}) };
         if (row.customer_interest_count !== undefined) campaign.customerInterestCount = Number(row.customer_interest_count || 0);
         return campaign;
       });
@@ -407,7 +409,8 @@ function createPersistenceRepository(database) {
       await database.ensureSchema();
       const result = await database.query(
         `UPDATE demeos_campaigns
-         SET campaign = jsonb_set(campaign, '{approvalStatus}', '"Approved"'::jsonb), updated_at = NOW()
+         SET campaign = jsonb_set(campaign, '{approvalStatus}', '"Approved"'::jsonb),
+             approved_at = COALESCE(approved_at, NOW()), updated_at = NOW()
          WHERE campaign_id = $1 AND business_id = $2
            AND campaign->>'approvalStatus' = 'Unapproved'
          RETURNING campaign`,
@@ -435,7 +438,10 @@ function createPersistenceRepository(database) {
          RETURNING recommendation_title, suggested_campaign_type, decision, decided_at`,
         [decision.businessId, decision.recommendationTitle, decision.suggestedCampaignType, decision.decision, decision.timestamp]);
       if (!result.rows.length) return null;
-      return { ...decision, businessId: decision.businessId };
+      const row = result.rows[0];
+      return { businessId: decision.businessId, recommendationTitle: row.recommendation_title,
+        suggestedCampaignType: row.suggested_campaign_type, decision: row.decision,
+        timestamp: row.decided_at instanceof Date ? row.decided_at.toISOString() : row.decided_at };
     },
 
     async getCustomerWork() {
@@ -534,7 +540,8 @@ function createPersistenceRepository(database) {
         [trustedCustomerIdentityId, safeLimit]);
       return result.rows.map(function (row) {
         const item = { response: row.response, possibilityContent: getCustomerFacingContent(row.campaign),
-          evidenceType: "customer-feedback", source: "authenticated-customer" };
+          evidenceType: "customer-feedback", source: "authenticated-customer",
+          createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at };
         if (isNonEmptyString(row.comment)) item.comment = row.comment;
         return item;
       }).filter(function (item) { return isNonEmptyString(item.possibilityContent); });

@@ -108,7 +108,8 @@ test("repository reads feedback only by trusted owner and preserves Customer Fee
   assert.deepEqual(calls[0].values, ["customer-a", 50]);
   assert.match(calls[0].statement, /trusted_customer_identity_id = \$1/);
   assert.deepEqual(feedback[0], { response: "Relevant", possibilityContent: "Relaxed family dinner",
-    evidenceType: "customer-feedback", source: "authenticated-customer", comment: "Useful" });
+    evidenceType: "customer-feedback", source: "authenticated-customer", createdAt: feedback[0].createdAt, comment: "Useful" });
+  assert.equal(Number.isFinite(Date.parse(feedback[0].createdAt)), true);
 });
 
 test("feedback relevance guidance can be disabled and explicitly re-enabled", async function () {

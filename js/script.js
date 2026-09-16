@@ -435,7 +435,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     }
     const understanding = DemeosUnderstanding.getDemeosUnderstanding(record, businessId);
     stateElement.textContent = understanding.evidenceAvailable
-      ? "Understanding is growing" : "Building understanding";
+      ? "Current profile context with evidence recorded previously" : "No historical evidence recorded; absence is not failure";
     byId("recommends-understanding-profile").textContent = understanding.verifiedBusinessProfile
       ? "Complete verified Business Manager Profile available"
       : "Complete verified Business Manager Profile not available";

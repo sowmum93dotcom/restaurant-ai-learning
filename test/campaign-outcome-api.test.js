@@ -70,6 +70,14 @@ async function save({
   return { res, req, repository, authorizationCalls, persistenceCalls };
 }
 
+test("browser-supplied outcome timestamps cannot replace the server-recorded time", async () => {
+  const supplied = "2001-01-01T00:00:00.000Z";
+  const result = await save({ body: { outcome: "Mixed", ownerNote: "Delayed result", savedAt: supplied } });
+  assert.equal(result.res.statusCode, 200);
+  assert.notEqual(result.persistenceCalls[0].outcome.savedAt, supplied);
+  assert.equal(Number.isFinite(Date.parse(result.persistenceCalls[0].outcome.savedAt)), true);
+});
+
 test("unauthenticated outcome request returns 401", async function () {
   const result = await save({ authenticated: false, allowed: false });
   assert.equal(result.res.statusCode, 401);
