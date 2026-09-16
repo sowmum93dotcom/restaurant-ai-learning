@@ -78,11 +78,17 @@ const SCHEMA_STATEMENTS = [
     trusted_customer_identity_id TEXT NOT NULL,
     work_item_id TEXT NOT NULL REFERENCES demeos_campaigns(campaign_id),
     campaign_snapshot JSONB NOT NULL,
+    business_name_snapshot TEXT NOT NULL,
+    location_snapshot TEXT,
     evidence_type TEXT NOT NULL CHECK (evidence_type = 'demeos-possibility-issuance'),
     source TEXT NOT NULL CHECK (source = 'demeos'),
     issued_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     PRIMARY KEY (trusted_customer_identity_id, work_item_id)
   )`,
+  `ALTER TABLE demeos_customer_possibility_issuances
+    ADD COLUMN IF NOT EXISTS business_name_snapshot TEXT`,
+  `ALTER TABLE demeos_customer_possibility_issuances
+    ADD COLUMN IF NOT EXISTS location_snapshot TEXT`,
   `CREATE INDEX IF NOT EXISTS demeos_customer_possibility_issuances_owner_issued_idx
     ON demeos_customer_possibility_issuances
       (trusted_customer_identity_id, issued_at DESC)`,
