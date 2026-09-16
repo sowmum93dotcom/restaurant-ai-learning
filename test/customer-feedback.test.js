@@ -63,11 +63,13 @@ test("repository stores feedback separately for a current publishable campaign",
   }});
   const result = await repository.recordCustomerFeedback("campaign-a", {
     feedbackType: CUSTOMER_FEEDBACK_TYPE, response: "Relevant", comment: "Helpful"
-  });
+  }, "trusted-customer-a");
   assert.deepEqual(result, { response: "Relevant" });
   assert.match(queries[1].statement, /INSERT INTO demeos_customer_feedback/);
   assert.doesNotMatch(queries[1].statement, /demeos_customer_participations/);
   assert.equal(queries[1].values[4], "stored-business");
+  assert.equal(queries[1].values[6], "trusted-customer-a");
+  assert.match(queries[1].statement, /trusted_customer_identity_id/);
 });
 
 test("feedback endpoint keeps feedback type and business identity server-authoritative", async function () {

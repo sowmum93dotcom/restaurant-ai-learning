@@ -26,6 +26,7 @@ async function publicConfig(req, res) {
     const identity = await resolveTrustedCustomerIdentityFromRequest(req);
     const repository = getRepository();
     let preferences = [];
+    let feedback = [];
     if (identity) {
       if ((await repository.getOwnedBusinessIds(identity.trustedCustomerIdentityId)).length) {
         return res.status(403).json({ error: "Customer permission required." });
@@ -35,8 +36,12 @@ async function publicConfig(req, res) {
         return res.status(403).json({ error: "DEMEOS permission denied." });
       }
       preferences = await repository.getCustomerPreferences(identity.trustedCustomerIdentityId, 50);
+      if (typeof repository.getCustomerFeedback === "function" &&
+          authorizeDemeosAction({ actorContext: context, action: DEMEOS_ACTIONS.VIEW_OWN_CUSTOMER_FEEDBACK }).allowed) {
+        feedback = await repository.getCustomerFeedback(identity.trustedCustomerIdentityId, 50);
+      }
     }
-    const understanding = buildTrustedCustomerUnderstanding(req.body, preferences);
+    const understanding = buildTrustedCustomerUnderstanding(req.body, preferences, feedback);
     if (!understanding) return res.status(400).json({ error: "A valid current customer intention is required." });
     return res.status(200).json({ understanding });
   }

@@ -71,13 +71,13 @@ test("preferences cannot override current intention or become business claims", 
   assert.equal(res.body.understanding.preferenceContext.authority, "current-intention-primary");
 });
 
-test("no other customer evidence source is requested or converted into preference evidence", async function () {
+test("only preferences and separate feedback are requested and neither is converted", async function () {
   const calls = [];
   const repository = new Proxy({ getCustomerPreferences: async () => { calls.push("preferences"); return []; } }, {
     get(target, property) { if (property in target) return target[property]; return async () => { calls.push(String(property)); return [{ preference: "leaked" }]; }; }
   });
   const res = await invoke({ trustedCustomerIdentityId: "customer-a" }, repository, intention);
-  assert.deepEqual(calls, ["preferences"]);
+  assert.deepEqual(calls, ["preferences", "getCustomerFeedback"]);
   assert.deepEqual(res.body.understanding.preferenceContext.evidence, []);
 });
 
