@@ -440,7 +440,26 @@ function createPersistenceRepository(database) {
     // Feedback, owner-recorded outcomes, recommendation decisions, and Interested
     // participation are distinct evidence sources. They must never become a generic
     // success signal or silently change recommendation or business conclusions.
-    async recordCustomerFeedback(campaignId, feedback) {
+    async getCustomerFeedback(trustedCustomerIdentityId, limit = 50) {
+      if (!isNonEmptyString(trustedCustomerIdentityId)) return [];
+      await database.ensureSchema();
+      const safeLimit = Math.min(50, Math.max(1, Number(limit) || 50));
+      const result = await database.query(
+        `SELECT f.response, f.comment, f.created_at, c.campaign
+         FROM demeos_customer_feedback f
+         JOIN demeos_campaigns c ON c.campaign_id = f.campaign_id AND c.business_id = f.business_id
+         WHERE f.trusted_customer_identity_id = $1 AND f.feedback_type = 'possibility-relevance'
+         ORDER BY f.created_at DESC, f.feedback_id DESC LIMIT $2`,
+        [trustedCustomerIdentityId, safeLimit]);
+      return result.rows.map(function (row) {
+        const item = { response: row.response, possibilityContent: getCustomerFacingContent(row.campaign),
+          evidenceType: "customer-feedback", source: "authenticated-customer" };
+        if (isNonEmptyString(row.comment)) item.comment = row.comment;
+        return item;
+      }).filter(function (item) { return isNonEmptyString(item.possibilityContent); });
+    },
+
+    async recordCustomerFeedback(campaignId, feedback, trustedCustomerIdentityId = null) {
       await database.ensureSchema();
       const campaignResult = await database.query(
         `SELECT business_id, campaign FROM demeos_campaigns WHERE campaign_id = $1`, [campaignId]);
@@ -448,14 +467,15 @@ function createPersistenceRepository(database) {
       const stored = campaignResult.rows[0];
       const result = await database.query(
         `INSERT INTO demeos_customer_feedback
-           (business_id, campaign_id, feedback_type, response, comment)
-         SELECT c.business_id, c.campaign_id, $2, $3, $4
+           (business_id, campaign_id, feedback_type, response, comment, trusted_customer_identity_id)
+         SELECT c.business_id, c.campaign_id, $2, $3, $4, $7
          FROM demeos_campaigns c
          WHERE c.campaign_id = $1 AND c.business_id = $5
            AND c.campaign->>'approvalStatus' = 'Approved' AND c.campaign = $6::jsonb
          RETURNING response`,
         [campaignId, feedback.feedbackType, feedback.response, feedback.comment || null,
-          stored.business_id, JSON.stringify(stored.campaign)]);
+          stored.business_id, JSON.stringify(stored.campaign),
+          isNonEmptyString(trustedCustomerIdentityId) ? trustedCustomerIdentityId : null]);
       return result.rows.length ? { response: result.rows[0].response } : null;
     }
   };

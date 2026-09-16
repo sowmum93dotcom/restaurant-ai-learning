@@ -21,14 +21,19 @@ module.exports = async function handler(req, res) {
     const repository = getRepository();
     const work = await repository.getCustomerWork();
     let preferences = [];
+    let feedback = [];
     const identity = await resolveTrustedCustomerIdentityFromRequest(req);
     if (identity && !(await repository.getOwnedBusinessIds(identity.trustedCustomerIdentityId)).length) {
       const context = createAuthenticatedCustomerContext(identity);
       if (authorizeDemeosAction({ actorContext: context, action: DEMEOS_ACTIONS.VIEW_OWN_CUSTOMER_PREFERENCES }).allowed) {
         preferences = await repository.getCustomerPreferences(identity.trustedCustomerIdentityId, 50);
+        if (typeof repository.getCustomerFeedback === "function" &&
+            authorizeDemeosAction({ actorContext: context, action: DEMEOS_ACTIONS.VIEW_OWN_CUSTOMER_FEEDBACK }).allowed) {
+          feedback = await repository.getCustomerFeedback(identity.trustedCustomerIdentityId, 50);
+        }
       }
     }
-    return res.status(200).json({ possibilities: findCustomerPossibilities(understanding, work, undefined, preferences) });
+    return res.status(200).json({ possibilities: findCustomerPossibilities(understanding, work, undefined, preferences, feedback) });
   } catch (error) {
     console.error("Could not prepare customer possibilities:", error);
     return res.status(500).json({ error: "DEMEOS could not prepare possibilities." });

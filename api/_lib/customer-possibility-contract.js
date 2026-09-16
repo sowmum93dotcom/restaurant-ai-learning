@@ -57,30 +57,47 @@ function preferenceTerms(storedPreferences) {
   return meaningfulTerms(values.join(" "));
 }
 
+function feedbackGuidance(storedFeedback) {
+  return (Array.isArray(storedFeedback) ? storedFeedback : []).slice(0, 50).reduce(function (guidance, item) {
+    if (!item || !["Relevant", "Not quite", "Something different"].includes(item.response)) return guidance;
+    const terms = meaningfulTerms([item.possibilityContent, item.comment].join(" "));
+    terms.forEach(function (term) {
+      const signal = item.response === "Relevant" ? 1 : -1;
+      guidance.set(term, (guidance.get(term) || 0) + signal);
+    });
+    return guidance;
+  }, new Map());
+}
+
 function stablePossibilityId(workItemId) {
   return "possibility_" + crypto.createHash("sha256").update("demeos-customer-possibility:" + workItemId)
     .digest("base64url").slice(0, 20);
 }
 
-function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_POSSIBILITIES, storedPreferences = []) {
+function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_POSSIBILITIES, storedPreferences = [], storedFeedback = []) {
   const customerTerms = meaningfulTerms([understanding.intention, understanding.customerText].join(" "));
   const guidanceTerms = preferenceTerms(storedPreferences);
+  const feedbackSignals = feedbackGuidance(storedFeedback);
   const candidates = [];
   getValidPublicCustomerWork(repositoryWork).forEach(function (work) {
     const contentTerms = meaningfulTerms(work.content);
     const evidence = Array.from(customerTerms).filter(function (term) { return contentTerms.has(term); }).sort();
     if (evidence.length < 2) return;
     const guidanceOverlap = Array.from(guidanceTerms).filter(function (term) { return contentTerms.has(term); }).length;
+    const feedbackGuidanceScore = Array.from(contentTerms).reduce(function (score, term) {
+      return score + (feedbackSignals.get(term) || 0);
+    }, 0);
     const possibility = {
       possibilityId: stablePossibilityId(work.workItemId), workItemId: work.workItemId,
       businessName: work.businessName, content: work.content, participationAction: "Interested",
       relevance: { basis: "explicit-customer-intent-overlap", evidence: evidence.slice(0, 5) }
     };
     if (work.location) possibility.location = work.location;
-    candidates.push({ strength: evidence.length, guidanceOverlap, possibility });
+    candidates.push({ strength: evidence.length, guidanceOverlap, feedbackGuidanceScore, possibility });
   });
   candidates.sort(function (left, right) {
     return right.strength - left.strength || right.guidanceOverlap - left.guidanceOverlap ||
+      right.feedbackGuidanceScore - left.feedbackGuidanceScore ||
       left.possibility.workItemId.localeCompare(right.possibility.workItemId);
   });
   return candidates.slice(0, Math.min(MAX_POSSIBILITIES, Math.max(0, limit))).map(function (item) { return item.possibility; });
@@ -88,5 +105,5 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
 
 module.exports = {
   FIELD_LIMITS, MAX_POSSIBILITIES, SUPPORTED_INTENTIONS, findCustomerPossibilities,
-  meaningfulTerms, preferenceTerms, stablePossibilityId, validateConfirmedUnderstanding
+  feedbackGuidance, meaningfulTerms, preferenceTerms, stablePossibilityId, validateConfirmedUnderstanding
 };

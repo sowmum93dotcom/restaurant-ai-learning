@@ -54,8 +54,13 @@ const SCHEMA_STATEMENTS = [
     comment TEXT CHECK (comment IS NULL OR CHAR_LENGTH(comment) <= 500),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`,
+  `ALTER TABLE demeos_customer_feedback
+    ADD COLUMN IF NOT EXISTS trusted_customer_identity_id TEXT NULL`,
   `CREATE INDEX IF NOT EXISTS demeos_customer_feedback_work_idx
     ON demeos_customer_feedback (business_id, campaign_id)`,
+  `CREATE INDEX IF NOT EXISTS demeos_customer_feedback_owner_created_idx
+    ON demeos_customer_feedback
+      (trusted_customer_identity_id, created_at DESC, feedback_id DESC)`,
   `CREATE TABLE IF NOT EXISTS demeos_customer_intentions (
     intention_id BIGSERIAL PRIMARY KEY,
     trusted_customer_identity_id TEXT NOT NULL,

@@ -17,7 +17,12 @@ async function handleFeedback(req, res, campaignId) {
   const feedback = parseCustomerFeedback(req.body);
   if (!campaignId || !feedback) return res.status(400).json({ error: "Valid customer feedback is required." });
   try {
-    const recorded = await getRepository().recordCustomerFeedback(campaignId, feedback);
+    const repository = getRepository();
+    let identity = null;
+    try { identity = await resolveTrustedCustomerIdentityFromRequest(req); } catch (_authenticationError) { identity = null; }
+    if (identity && (await repository.getOwnedBusinessIds(identity.trustedCustomerIdentityId)).length) identity = null;
+    const recorded = await repository.recordCustomerFeedback(campaignId, feedback,
+      identity ? identity.trustedCustomerIdentityId : null);
     if (!recorded) return res.status(404).json({ error: "Approved DEMEOS work was not found." });
     return res.status(201).json({ feedback: { response: recorded.response } });
   } catch (error) {
