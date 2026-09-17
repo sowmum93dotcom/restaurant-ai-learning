@@ -90,6 +90,18 @@ test("production public config exposes a Clerk live publishable key", function (
   });
 });
 
+test("production public config defers non-development publishable key validation to Clerk", function () {
+  return withEnvironment({
+    VERCEL_ENV: "production",
+    CLERK_PUBLISHABLE_KEY: "provider_managed_public_value"
+  }, function () {
+    const res = response();
+    publicConfig({}, res);
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.clerkPublishableKey, "provider_managed_public_value");
+  });
+});
+
 test("production public config supports Clerk's standard NEXT_PUBLIC publishable key alias", function () {
   return withEnvironment({
     VERCEL_ENV: "production",
