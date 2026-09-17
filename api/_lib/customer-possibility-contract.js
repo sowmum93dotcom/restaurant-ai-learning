@@ -16,6 +16,18 @@ const STOP_WORDS = new Set([
   "they", "their", "them", "its", "get", "getting", "make", "take", "use", "using", "enjoy", "discover"
 ]);
 
+// A deliberately small, reviewable vocabulary connects equivalent expressions
+// without turning the Customer Experience into open-ended keyword search.  A
+// concept must be evidenced in both the current request and authorized work.
+const SOLUTION_CONCEPTS = Object.freeze([
+  Object.freeze({ name: "meal", terms: Object.freeze(["meal", "dinner", "lunch", "breakfast", "supper", "food", "eat", "restaurant"]) }),
+  Object.freeze({ name: "bicycle care", terms: Object.freeze(["bicycle", "bike", "cycle"]) }),
+  Object.freeze({ name: "wellbeing", terms: Object.freeze(["wellbeing", "wellness", "health", "massage", "fitness"]) }),
+  Object.freeze({ name: "shared time", terms: Object.freeze(["family", "friends", "together", "group", "celebrate", "celebration"]) }),
+  Object.freeze({ name: "journey", terms: Object.freeze(["travel", "trip", "visit", "journey", "stay", "hotel"]) }),
+  Object.freeze({ name: "learning", terms: Object.freeze(["learn", "learning", "class", "course", "workshop", "discover"]) })
+]);
+
 function ownKeysAre(value, keys) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const actual = Object.keys(value).sort();
@@ -50,6 +62,13 @@ function meaningfulTerms(value) {
   return new Set(matches.filter(function (term) { return term.length >= 3 && !STOP_WORDS.has(term); }));
 }
 
+function evidencedConcepts(customerTerms, contentTerms) {
+  return SOLUTION_CONCEPTS.filter(function (concept) {
+    return concept.terms.some(function (term) { return customerTerms.has(term); }) &&
+      concept.terms.some(function (term) { return contentTerms.has(term); });
+  }).map(function (concept) { return concept.name; });
+}
+
 function preferenceTerms(storedPreferences) {
   const values = (Array.isArray(storedPreferences) ? storedPreferences : []).slice(0, 50)
     .filter(function (item) { return item && typeof item.preference === "string"; })
@@ -82,7 +101,10 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
   getValidPublicCustomerWork(repositoryWork).forEach(function (work) {
     const contentTerms = meaningfulTerms(work.content);
     const evidence = Array.from(customerTerms).filter(function (term) { return contentTerms.has(term); }).sort();
-    if (evidence.length < 2) return;
+    const concepts = evidencedConcepts(customerTerms, contentTerms);
+    // Generic token overlap alone is not a defensible connection. Require either
+    // two specific shared expressions or a transparent DEMEOS solution concept.
+    if (evidence.length < 2 && concepts.length === 0) return;
     const guidanceOverlap = Array.from(guidanceTerms).filter(function (term) { return contentTerms.has(term); }).length;
     const feedbackGuidanceScore = Array.from(contentTerms).reduce(function (score, term) {
       return score + (feedbackSignals.get(term) || 0);
@@ -90,10 +112,11 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
     const possibility = {
       possibilityId: stablePossibilityId(work.workItemId), workItemId: work.workItemId,
       businessName: work.businessName, content: work.content, participationAction: "Interested",
-      relevance: { basis: "explicit-customer-intent-overlap", evidence: evidence.slice(0, 5) }
+      relevance: { basis: "current-intention-authorized-work", evidence: (evidence.length >= 2 ? evidence : concepts).slice(0, 5),
+        explanation: "This authorized possibility connects to your current request." }
     };
     if (work.location) possibility.location = work.location;
-    candidates.push({ strength: evidence.length, guidanceOverlap, feedbackGuidanceScore, possibility });
+    candidates.push({ strength: concepts.length + evidence.length, guidanceOverlap, feedbackGuidanceScore, possibility });
   });
   candidates.sort(function (left, right) {
     return right.strength - left.strength || right.guidanceOverlap - left.guidanceOverlap ||
@@ -105,5 +128,5 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
 
 module.exports = {
   FIELD_LIMITS, MAX_POSSIBILITIES, SUPPORTED_INTENTIONS, findCustomerPossibilities,
-  feedbackGuidance, meaningfulTerms, preferenceTerms, stablePossibilityId, validateConfirmedUnderstanding
+  evidencedConcepts, feedbackGuidance, meaningfulTerms, preferenceTerms, stablePossibilityId, validateConfirmedUnderstanding
 };

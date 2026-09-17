@@ -41,7 +41,8 @@ function possibility(overrides = {}) {
   return {
     possibilityId: "possibility_safe", workItemId: "work/a", businessName: "Bella Vista Bistro",
     location: "London", content: "A relaxed family dinner.", participationAction: "Interested",
-    relevance: { basis: "explicit-customer-intent-overlap", evidence: ["dinner", "family", "relaxed"] },
+    relevance: { basis: "current-intention-authorized-work", evidence: ["dinner", "family", "relaxed"],
+      explanation: "This authorized possibility connects to your current request." },
     ...overrides
   };
 }
@@ -55,10 +56,11 @@ const understanding = {
 test("client validates each trusted possibility and skips malformed entries individually", function () {
   assert.deepEqual(getValidCustomerPossibilities([
     possibility(), possibility({ possibilityId: "" }), possibility({ participationAction: "Book" }),
-    possibility({ relevance: { basis: "browser-guess", evidence: ["invented"] } })
+    possibility({ relevance: { basis: "browser-guess", evidence: ["invented"], explanation: "Unsafe" } })
   ]), [possibility()]);
   assert.equal(toCustomerPossibility(possibility({ location: { city: "London" } })), null);
-  assert.equal(toCustomerPossibility(possibility({ relevance: { basis: "explicit-customer-intent-overlap", evidence: [] } })), null);
+  assert.equal(toCustomerPossibility(possibility({ relevance: { basis: "current-intention-authorized-work", evidence: [],
+    explanation: "This authorized possibility connects to your current request." } })), null);
 });
 
 test("Stage 3 centres the confirmed understanding and renders trusted evidence without exposing identifiers", function () {

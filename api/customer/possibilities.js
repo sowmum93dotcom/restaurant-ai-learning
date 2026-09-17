@@ -26,11 +26,23 @@ module.exports = async function handler(req, res) {
     const work = await repository.getCustomerWork();
     let preferences = [];
     let feedback = [];
+    let persistedIntention = null;
     const identity = await resolveTrustedCustomerIdentityFromRequest(req);
     const customerIdentity = identity && !(await repository.getOwnedBusinessIds(identity.trustedCustomerIdentityId)).length
       ? identity : null;
     if (customerIdentity) {
       const context = createAuthenticatedCustomerContext(customerIdentity);
+      // Confirmation is the authoritative point at which an authenticated
+      // customer's current intention becomes durable evidence. The browser does
+      // not supply an owner or an intention id.
+      persistedIntention = await repository.saveCustomerIntention(
+        customerIdentity.trustedCustomerIdentityId,
+        { intention: understanding.intention, customerText: understanding.customerText,
+          understanding: understanding.understanding }
+      );
+      if (!persistedIntention || !persistedIntention.intentionId) {
+        return res.status(500).json({ error: "DEMEOS could not record the current intention." });
+      }
       const controls = typeof repository.getCustomerPrivacyControls === "function"
         ? await repository.getCustomerPrivacyControls(customerIdentity.trustedCustomerIdentityId)
         : { usePreferencesAsGuidance: false, useFeedbackAsGuidance: false };
@@ -46,7 +58,7 @@ module.exports = async function handler(req, res) {
     if (customerIdentity) {
       await prepareCustomerPossibilityIssuanceTrust();
       const issuedWorkItemIds = await repository.recordCustomerPossibilityIssuance(
-        customerIdentity.trustedCustomerIdentityId, possibilities, understanding);
+        customerIdentity.trustedCustomerIdentityId, possibilities, understanding, persistedIntention.intentionId);
       const confirmedWorkItemIds = await confirmCustomerPossibilityIssuanceDelivery(
         customerIdentity.trustedCustomerIdentityId, issuedWorkItemIds);
       const issued = new Set(confirmedWorkItemIds);

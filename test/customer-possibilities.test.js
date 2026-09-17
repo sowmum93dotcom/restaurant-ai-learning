@@ -145,10 +145,11 @@ test("client requests possibilities only from confirmation and sends no coordina
 
 test("authenticated possibilities are issued only to the trusted customer identity", async function () {
   const understanding = confirmed("Spend time together", "relaxed family dinner");
-  let issuance;
+  let issuance; let savedIntention;
   const repository = {
     async getCustomerWork() { return [work("work-1", "A relaxed family dinner")]; },
     async getOwnedBusinessIds(id) { assert.equal(id, "trusted-customer-a"); return []; },
+    async saveCustomerIntention(id, value) { assert.equal(id, "trusted-customer-a"); savedIntention = value; return { intentionId: "41" }; },
     async getCustomerPrivacyControls() { return { usePreferencesAsGuidance: true, useFeedbackAsGuidance: true }; },
     async getCustomerPreferences() { return []; }, async getCustomerFeedback() { return []; },
     async recordCustomerPossibilityIssuance(...args) { issuance = args; return ["work-1"]; }
@@ -158,6 +159,21 @@ test("authenticated possibilities are issued only to the trusted customer identi
   assert.equal(res.body.possibilities.length, 1);
   assert.equal(issuance[0], "trusted-customer-a");
   assert.equal(issuance[1][0].workItemId, "work-1");
+  assert.deepEqual(savedIntention, { intention: understanding.intention, customerText: understanding.customerText,
+    understanding: understanding.understanding });
+  assert.equal(issuance[3], "41");
+});
+
+test("reviewable solution concepts connect equivalent current wording but never unrelated authorized work", function () {
+  const request = confirmed("Get something done", "my bike needs servicing");
+  const results = findCustomerPossibilities(request, [
+    work("cycle", "Bicycle care and repair for local riders"),
+    work("meal", "A family dinner in our restaurant")
+  ]);
+  assert.deepEqual(results.map((item) => item.workItemId), ["cycle"]);
+  assert.deepEqual(results[0].relevance.evidence, ["bicycle care"]);
+  assert.equal(results[0].relevance.explanation, "This authorized possibility connects to your current request.");
+  assert.doesNotMatch(JSON.stringify(results), /score|confidence|profile/i);
 });
 
 test("browser identity spoofing cannot select another customer's issuance", async function () {
@@ -166,6 +182,7 @@ test("browser identity spoofing cannot select another customer's issuance", asyn
   const repository = {
     async getCustomerWork() { return [work("work-1", "A relaxed family dinner")]; },
     async getOwnedBusinessIds() { return []; }, async getCustomerPreferences() { return []; },
+    async saveCustomerIntention() { return { intentionId: "42" }; },
     async getCustomerPrivacyControls() { return { usePreferencesAsGuidance: true, useFeedbackAsGuidance: true }; },
     async getCustomerFeedback() { return []; },
     async recordCustomerPossibilityIssuance(id) { issuedTo = id; return ["work-1"]; }
@@ -181,6 +198,7 @@ test("customer possibility guidance reads only evidence enabled by trusted priva
   const repository = {
     async getCustomerWork() { return [work("work-1", "A relaxed family dinner")]; },
     async getOwnedBusinessIds() { return []; },
+    async saveCustomerIntention() { return { intentionId: "43" }; },
     async getCustomerPrivacyControls() { return { usePreferencesAsGuidance: false, useFeedbackAsGuidance: true }; },
     async getCustomerPreferences() { reads.push("preferences"); return [{ preference: "quiet" }]; },
     async getCustomerFeedback() { reads.push("feedback"); return []; },

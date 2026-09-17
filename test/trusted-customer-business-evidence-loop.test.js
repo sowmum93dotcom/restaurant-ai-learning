@@ -51,6 +51,7 @@ test("approved work completes the trusted customer-to-business recommendation ev
   const state = { issued: new Set(), participation: [], feedback: [] };
   const repository = {
     async getCustomerWork() { return [publicWork]; }, async getOwnedBusinessIds() { return []; },
+    async saveCustomerIntention(owner) { assert.equal(owner, customerId); return { intentionId: "17" }; },
     async getCustomerPrivacyControls() { return { usePreferencesAsGuidance: false, useFeedbackAsGuidance: false }; },
     async recordCustomerPossibilityIssuance(owner, possibilities) {
       assert.equal(owner, customerId);
