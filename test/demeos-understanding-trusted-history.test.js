@@ -64,3 +64,26 @@ test("another business cannot supply linked work or an outcome", function () {
   assert.equal(understanding.trustedLearningHistory[0].relatedWork.created, false);
   assert.equal(understanding.trustedLearningHistory[0].outcome, null);
 });
+
+test("trusted history links customer evidence to work without promoting it to current evidence", function () {
+  const understanding = getDemeosUnderstanding({
+    businessProfile: profile,
+    recommendationDecisions: [{ decisionId: "decision-2", businessId: "business-a",
+      recommendationTitle: "Invite nearby families", suggestedCampaignType: "social", decision: "modified",
+      timestamp: "2026-08-01T10:00:00.000Z" }],
+    campaigns: [{ id: "work-2", businessId: "business-a", recommendationDecisionId: "decision-2",
+      approvalStatus: "Approved", createdAt: "2026-08-02T10:00:00.000Z" }],
+    customerParticipationResults: [{ workItemId: "work-2", businessId: "business-a", customerInterestCount: 4,
+      latestParticipationAt: "2026-08-03T10:00:00.000Z" }],
+    customerFeedbackResults: [{ workItemId: "work-2", businessId: "business-a", relevantCount: 2,
+      notQuiteCount: 1, somethingDifferentCount: 0, latestFeedbackAt: "2026-08-04T10:00:00.000Z" }]
+  }, "business-a");
+  const [history] = understanding.trustedLearningHistory;
+  assert.deepEqual(history.customerParticipation, { interestedCount: 4,
+    recordedAt: "2026-08-03T10:00:00.000Z", source: "customer-interested-action" });
+  assert.deepEqual(history.customerFeedback, { relevant: 2, notQuite: 1, somethingDifferent: 0,
+    recordedAt: "2026-08-04T10:00:00.000Z", source: "customer-feedback-action" });
+  assert.deepEqual(understanding.evidenceContext.current, [{ evidenceType: "business-profile", source: "business-owner" }]);
+  assert.ok(understanding.evidenceContext.historical.some((item) => item.evidenceType === "customer-participation"));
+  assert.ok(understanding.evidenceContext.historical.some((item) => item.evidenceType === "customer-feedback"));
+});

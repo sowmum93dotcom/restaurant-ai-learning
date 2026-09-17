@@ -172,6 +172,8 @@ test("campaign outcomes update only the approved campaign version for the reques
       assert.match(sql, /business_id = \$2/);
       assert.match(sql, /campaign->>'approvalStatus' = 'Approved'/);
       assert.match(sql, /jsonb_set\(campaign, '\{outcome\}'/);
+      assert.match(sql, /campaign \? 'recommendationDecisionId'/);
+      assert.match(sql, /jsonb_build_object\('recommendationDecisionId'/);
       assert.deepEqual(values.slice(0, 2), ["version-a", "business-a"]);
       return { rows: [{ campaign: { ...original, outcome: JSON.parse(values[2]) } }] };
     }
