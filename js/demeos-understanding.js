@@ -19,11 +19,48 @@
     return summary;
   }
 
+  function withTrustedLearningHistory(summary, history) {
+    Object.defineProperty(summary, "trustedLearningHistory", { value: history, enumerable: false });
+    return summary;
+  }
+
+  function trustedLearningHistory(decisions, campaigns, activeBusinessId) {
+    const businessCampaigns = campaigns.filter(function (campaign) {
+      return campaign && campaign.businessId === activeBusinessId;
+    });
+    return decisions.filter(function (decision) {
+      return decision && decision.businessId === activeBusinessId && decision.decisionId != null &&
+        typeof decision.recommendationTitle === "string" &&
+        ["used", "modified", "rejected"].includes(decision.decision);
+    }).map(function (decision) {
+      const relatedWork = businessCampaigns.find(function (campaign) {
+        return campaign.recommendationDecisionId != null &&
+          String(campaign.recommendationDecisionId) === String(decision.decisionId);
+      });
+      const outcome = relatedWork && relatedWork.outcome && typeof relatedWork.outcome.outcome === "string"
+        ? { value: relatedWork.outcome.outcome,
+          recordedAt: typeof relatedWork.outcome.savedAt === "string" ? relatedWork.outcome.savedAt : null,
+          source: "business-owner" } : null;
+      return {
+        recommendation: decision.recommendationTitle,
+        decision: { value: decision.decision,
+          recordedAt: typeof decision.timestamp === "string" ? decision.timestamp : null,
+          source: "business-owner" },
+        relatedWork: relatedWork ? { created: true, workItemId: relatedWork.id,
+          recordedAt: typeof relatedWork.createdAt === "string" ? relatedWork.createdAt : null,
+          source: "demeos-campaign-record" } : { created: false, recordedAt: null,
+          source: "demeos-campaign-record" },
+        outcome
+      };
+    });
+  }
+
   function getDemeosUnderstanding(record, activeBusinessId) {
     const empty = { verifiedBusinessProfile: false, campaignOutcomeCount: 0, customerInterestCount: 0,
       campaignsWithCustomerParticipation: 0,
       customerFeedback: { relevant: 0, notQuite: 0, somethingDifferent: 0 },
       recommendationDecisions: { used: 0, modified: 0, rejected: 0 }, evidenceAvailable: false };
+    withTrustedLearningHistory(empty, []);
     withEvidenceContext(empty, { current: [], historical: [], absent: ["business-profile", "approved-work",
       "owner-recorded-outcome", "customer-participation", "customer-feedback", "recommendation-decision"] });
     if (!record || !activeBusinessId || !record.businessProfile ||
@@ -57,8 +94,9 @@
       counts.somethingDifferent += Math.max(0, Number(result.somethingDifferentCount) || 0);
       return counts;
     }, { relevant: 0, notQuite: 0, somethingDifferent: 0 });
+    const businessDecisions = Array.isArray(record.recommendationDecisions) ? record.recommendationDecisions : [];
     const recommendationDecisions = { used: 0, modified: 0, rejected: 0 };
-    (Array.isArray(record.recommendationDecisions) ? record.recommendationDecisions : []).forEach(function (item) {
+    businessDecisions.forEach(function (item) {
       if (item && item.businessId === activeBusinessId &&
           Object.hasOwn(recommendationDecisions, item.decision)) recommendationDecisions[item.decision] += 1;
     });
@@ -79,13 +117,13 @@
     const presentTypes = new Set(historical.map(function (item) { return item.evidenceType; }));
     const absent = ["approved-work", "owner-recorded-outcome", "customer-participation", "customer-feedback",
       "recommendation-decision"].filter(function (type) { return !presentTypes.has(type); });
-    return withEvidenceContext({ verifiedBusinessProfile, campaignOutcomeCount, customerInterestCount,
+    return withTrustedLearningHistory(withEvidenceContext({ verifiedBusinessProfile, campaignOutcomeCount, customerInterestCount,
       campaignsWithCustomerParticipation: new Set(participation.map(function (result) { return result.workItemId; })).size,
       customerFeedback,
       recommendationDecisions,
       evidenceAvailable: historical.length > 0 },
     { current: verifiedBusinessProfile ? [{ evidenceType: "business-profile", source: "business-owner" }] : [],
-      historical, absent });
+      historical, absent }), trustedLearningHistory(businessDecisions, campaigns, activeBusinessId));
   }
 
   return { getDemeosUnderstanding };

@@ -425,13 +425,17 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
 
   function renderRecommendsUnderstanding(record, businessId) {
     const stateElement = byId("recommends-understanding-state");
+    const learningList = byId("understanding-learning-history-list");
+    const learningEmpty = byId("understanding-learning-history-empty");
     if (!stateElement) return;
+    if (learningList) learningList.textContent = "";
     if (!record) {
       stateElement.textContent = "Understanding evidence is unavailable";
       byId("recommends-understanding-profile").textContent = "Availability unavailable";
       ["outcomes", "interest", "participation-campaigns", "feedback-relevant", "feedback-not-quite", "feedback-something-different", "used", "modified", "rejected"].forEach(function (key) {
         byId(`recommends-understanding-${key}`).textContent = "—";
       });
+      if (learningEmpty) learningEmpty.hidden = false;
       return;
     }
     const understanding = DemeosUnderstanding.getDemeosUnderstanding(record, businessId);
@@ -449,6 +453,32 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     byId("recommends-understanding-used").textContent = understanding.recommendationDecisions.used;
     byId("recommends-understanding-modified").textContent = understanding.recommendationDecisions.modified;
     byId("recommends-understanding-rejected").textContent = understanding.recommendationDecisions.rejected;
+    if (learningEmpty) learningEmpty.hidden = understanding.trustedLearningHistory.length > 0;
+    understanding.trustedLearningHistory.forEach(function (learning) {
+      if (!learningList) return;
+      const item = document.createElement("article");
+      item.className = "compact-list-item understanding-learning-record";
+      addText(item, "strong", learning.recommendation);
+      const decisionLabels = { used: "Used", modified: "Modified", rejected: "Not for me" };
+      const decisionTime = learning.decision.recordedAt
+        ? ` on ${new Date(learning.decision.recordedAt).toLocaleString()}` : " (recorded time unavailable)";
+      addText(item, "span", `Owner decision: ${decisionLabels[learning.decision.value]}${decisionTime}. Source: business owner.`);
+      if (learning.relatedWork.created) {
+        const workTime = learning.relatedWork.recordedAt
+          ? ` on ${new Date(learning.relatedWork.recordedAt).toLocaleString()}` : " (recorded time unavailable)";
+        addText(item, "span", `Related work was created${workTime}. Source: DEMEOS campaign record.`);
+      } else {
+        addText(item, "span", "No related work is recorded for this previous decision.");
+      }
+      if (learning.outcome) {
+        const outcomeTime = learning.outcome.recordedAt
+          ? ` on ${new Date(learning.outcome.recordedAt).toLocaleString()}` : " (recorded time unavailable)";
+        addText(item, "span", `Later owner-recorded outcome: ${learning.outcome.value}${outcomeTime}. Source: business owner. This is historical evidence, not current demand.`);
+      } else {
+        addText(item, "span", "There is no owner-recorded outcome for this previous decision; absence is not failure.");
+      }
+      learningList.appendChild(item);
+    });
   }
 
   function showWorkspaceView(viewId) {
