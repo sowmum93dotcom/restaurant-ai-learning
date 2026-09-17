@@ -13,13 +13,17 @@ async function runFeedbackRoute(repository, req) {
   const persistencePath = require.resolve("../api/_lib/persistence.js");
   const routePath = require.resolve("../api/customer/work/[campaignId]/participation.js");
   const persistence = require(persistencePath);
+  const auth = require("../api/_lib/demeos-customer-authentication.js");
   const original = persistence.getRepository;
+  const originalAuth = auth.resolveTrustedCustomerIdentityFromRequest;
   persistence.getRepository = function () { return repository; };
+  auth.resolveTrustedCustomerIdentityFromRequest = async function () { return { trustedCustomerIdentityId: "trusted-customer" }; };
+  if (typeof repository.getOwnedBusinessIds !== "function") repository.getOwnedBusinessIds = async function () { return []; };
   delete require.cache[routePath];
   const handler = require(routePath);
   const res = response();
   const request = { ...req, query: { ...(req.query || {}), interaction: "feedback" } };
-  try { await handler(request, res); } finally { persistence.getRepository = original; delete require.cache[routePath]; }
+  try { await handler(request, res); } finally { persistence.getRepository = original; auth.resolveTrustedCustomerIdentityFromRequest = originalAuth; delete require.cache[routePath]; }
   return res;
 }
 
@@ -74,13 +78,13 @@ test("repository stores feedback separately for a current publishable campaign",
 
 test("feedback endpoint keeps feedback type and business identity server-authoritative", async function () {
   let received;
-  const res = await runFeedbackRoute({ async recordCustomerFeedback(campaignId, feedback) {
-    received = { campaignId, feedback }; return { response: feedback.response };
+  const res = await runFeedbackRoute({ async recordCustomerFeedback(campaignId, feedback, customerId) {
+    received = { campaignId, feedback, customerId }; return { response: feedback.response };
   }}, { method: "POST", query: { campaignId: "campaign-a" }, body: { response: "Relevant", comment: "  useful  " } });
   assert.equal(res.statusCode, 201);
   assert.deepEqual(received, { campaignId: "campaign-a", feedback: {
     feedbackType: "possibility-relevance", response: "Relevant", comment: "useful"
-  }});
+  }, customerId: "trusted-customer" });
   assert.deepEqual(res.body, { feedback: { response: "Relevant" } });
 });
 

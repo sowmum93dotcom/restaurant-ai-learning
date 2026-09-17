@@ -485,20 +485,36 @@ function createPersistenceRepository(database) {
     },
 
     async recordCustomerParticipation(campaignId, action, trustedCustomerIdentityId = null) {
+      if (!isNonEmptyString(trustedCustomerIdentityId) || action !== "Interested") return null;
       await database.ensureSchema();
       const campaignResult = await database.query(
         `SELECT business_id, campaign FROM demeos_campaigns WHERE campaign_id = $1`, [campaignId]);
       if (!campaignResult.rows.length || !canPublishToDemeosCustomerExperience(campaignResult.rows[0].campaign)) return null;
       const result = await database.query(
-        `INSERT INTO demeos_customer_participations
+        `WITH customer_work_lock AS (
+           SELECT pg_advisory_xact_lock(hashtext($4 || ':' || $1))
+         ), inserted AS (
+         INSERT INTO demeos_customer_participations
            (business_id, campaign_id, action, trusted_customer_identity_id, evidence_type, source)
          SELECT c.business_id, c.campaign_id, $2, $4, 'customer-participation', 'customer-interested-action'
          FROM demeos_campaigns c
+         JOIN demeos_customer_possibility_issuances i ON i.work_item_id = c.campaign_id
+           AND i.trusted_customer_identity_id = $4 AND i.campaign_snapshot = c.campaign
+         CROSS JOIN customer_work_lock
          WHERE c.campaign_id = $1 AND c.campaign->>'approvalStatus' = 'Approved'
            AND c.campaign = $3::jsonb
-         RETURNING business_id, campaign_id, action, evidence_type, source, participated_at`,
+           AND NOT EXISTS (SELECT 1 FROM demeos_customer_participations p
+             WHERE p.campaign_id = c.campaign_id AND p.business_id = c.business_id
+               AND p.trusted_customer_identity_id = $4 AND p.action = 'Interested')
+         RETURNING business_id, campaign_id, action, evidence_type, source, participated_at
+         ) SELECT * FROM inserted UNION ALL
+         SELECT p.business_id, p.campaign_id, p.action, p.evidence_type, p.source, p.participated_at
+         FROM demeos_customer_participations p
+         WHERE p.campaign_id = $1 AND p.business_id = $5
+           AND p.trusted_customer_identity_id = $4 AND p.action = 'Interested'
+         LIMIT 1`,
         [campaignId, action, JSON.stringify(campaignResult.rows[0].campaign),
-          isNonEmptyString(trustedCustomerIdentityId) ? trustedCustomerIdentityId : null]);
+          trustedCustomerIdentityId, campaignResult.rows[0].business_id]);
       return result.rows.length ? result.rows[0] : null;
     },
 
@@ -555,24 +571,40 @@ function createPersistenceRepository(database) {
     },
 
     async recordCustomerFeedback(campaignId, feedback, trustedCustomerIdentityId = null) {
+      if (!isNonEmptyString(trustedCustomerIdentityId)) return null;
       await database.ensureSchema();
       const campaignResult = await database.query(
         `SELECT business_id, campaign FROM demeos_campaigns WHERE campaign_id = $1`, [campaignId]);
       if (!campaignResult.rows.length || !canPublishToDemeosCustomerExperience(campaignResult.rows[0].campaign)) return null;
       const stored = campaignResult.rows[0];
       const result = await database.query(
-        `INSERT INTO demeos_customer_feedback
+        `WITH customer_work_lock AS (
+           SELECT pg_advisory_xact_lock(hashtext($7 || ':' || $1 || ':feedback'))
+         ), inserted AS (
+         INSERT INTO demeos_customer_feedback
            (business_id, campaign_id, feedback_type, response, comment, trusted_customer_identity_id,
             evidence_type, source)
          SELECT c.business_id, c.campaign_id, $2, $3, $4, $7,
                 'customer-feedback', 'customer-feedback-action'
          FROM demeos_campaigns c
+         JOIN demeos_customer_possibility_issuances i ON i.work_item_id = c.campaign_id
+           AND i.trusted_customer_identity_id = $7 AND i.campaign_snapshot = c.campaign
+         CROSS JOIN customer_work_lock
          WHERE c.campaign_id = $1 AND c.business_id = $5
            AND c.campaign->>'approvalStatus' = 'Approved' AND c.campaign = $6::jsonb
-         RETURNING response, evidence_type, source, created_at`,
+           AND NOT EXISTS (SELECT 1 FROM demeos_customer_feedback f
+             WHERE f.campaign_id = c.campaign_id AND f.business_id = c.business_id
+               AND f.trusted_customer_identity_id = $7 AND f.feedback_type = $2
+               AND f.response = $3 AND f.comment IS NOT DISTINCT FROM $4)
+         RETURNING response, evidence_type, source, created_at
+         ) SELECT * FROM inserted UNION ALL
+         SELECT f.response, f.evidence_type, f.source, f.created_at FROM demeos_customer_feedback f
+         WHERE f.campaign_id = $1 AND f.business_id = $5 AND f.trusted_customer_identity_id = $7
+           AND f.feedback_type = $2 AND f.response = $3 AND f.comment IS NOT DISTINCT FROM $4
+         ORDER BY created_at DESC LIMIT 1`,
         [campaignId, feedback.feedbackType, feedback.response, feedback.comment || null,
           stored.business_id, JSON.stringify(stored.campaign),
-          isNonEmptyString(trustedCustomerIdentityId) ? trustedCustomerIdentityId : null]);
+          trustedCustomerIdentityId]);
       return result.rows.length ? { response: result.rows[0].response } : null;
     }
   };

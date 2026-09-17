@@ -362,7 +362,7 @@ async function recordCustomerFeedback(work, feedback) {
   const body = { response: feedback.response };
   if (feedback.comment.trim()) body.comment = feedback.comment.trim();
   const response = await fetch(`/api/customer/work/${encodeURIComponent(workItemId)}/feedback`, {
-    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body)
+    method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body)
   });
   if (!response.ok) throw new Error(CUSTOMER_STAGE_SIX_COPY.error);
 }
@@ -660,6 +660,7 @@ async function recordParticipation(work) {
   }
   const response = await fetch(`/api/customer/work/${encodeURIComponent(workItemId)}/participation`, {
     method: "POST",
+    credentials: "same-origin",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ action: "Interested" })
   });

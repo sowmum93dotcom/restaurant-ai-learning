@@ -61,7 +61,7 @@ test("participation is not recorded when the campaign fails the publication rule
     }
   });
 
-  const participation = await repository.recordCustomerParticipation("campaign-a", "Interested");
+  const participation = await repository.recordCustomerParticipation("campaign-a", "Interested", "trusted-customer");
 
   assert.equal(participation, null);
   assert.equal(statements.length, 1);

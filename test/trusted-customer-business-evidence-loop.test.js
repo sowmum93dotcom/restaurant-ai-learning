@@ -6,6 +6,7 @@ const vm = require("node:vm");
 const persistence = require("../api/_lib/persistence.js");
 const customerAuth = require("../api/_lib/demeos-customer-authentication.js");
 const issuanceTrust = require("../api/_lib/customer-possibility-issuance-trust.js");
+const { createPersistenceRepository } = persistence;
 
 function response() {
   return { statusCode: null, body: null, headers: {}, setHeader(name, value) { this.headers[name] = value; },
@@ -142,5 +143,61 @@ test("approved work completes the trusted customer-to-business recommendation ev
     customerAuth.resolveTrustedCustomerIdentityFromRequest = oldAuth;
     issuanceTrust.prepareCustomerPossibilityIssuanceTrust = oldPrepare;
     issuanceTrust.confirmCustomerPossibilityIssuanceDelivery = oldConfirm;
+  }
+});
+
+test("trusted response persistence requires the exact issued campaign snapshot and is retry safe", async function () {
+  const campaign = { campaignType: "social", campaignText: "Family supper tonight",
+    approvalStatus: "Approved", recommendationDecisionId: "decision-17", recommendationAction: "used" };
+  const queries = [];
+  const repository = createPersistenceRepository({ async ensureSchema() {}, async query(sql, values) {
+    queries.push({ sql, values });
+    if (sql.startsWith("SELECT business_id")) return { rows: [{ business_id: "business-a", campaign }] };
+    return { rows: [{ business_id: "business-a", campaign_id: "work-17", action: "Interested",
+      evidence_type: "customer-participation", source: "customer-interested-action",
+      participated_at: "2026-09-17T10:00:00.000Z" }] };
+  } });
+
+  const first = await repository.recordCustomerParticipation("work-17", "Interested", "customer-a");
+  const retry = await repository.recordCustomerParticipation("work-17", "Interested", "customer-a");
+  assert.equal(first.action, "Interested");
+  assert.equal(retry.action, "Interested");
+  for (const write of [queries[1], queries[3]]) {
+    assert.match(write.sql, /demeos_customer_possibility_issuances/);
+    assert.match(write.sql, /i\.trusted_customer_identity_id = \$4/);
+    assert.match(write.sql, /i\.campaign_snapshot = c\.campaign/);
+    assert.match(write.sql, /NOT EXISTS \(SELECT 1 FROM demeos_customer_participations/);
+    assert.match(write.sql, /pg_advisory_xact_lock/);
+    assert.deepEqual(write.values, ["work-17", "Interested", JSON.stringify(campaign), "customer-a", "business-a"]);
+  }
+  assert.equal(campaign.recommendationDecisionId, "decision-17");
+  assert.equal(Object.hasOwn(first, "sale"), false);
+  assert.equal(Object.hasOwn(first, "conversion"), false);
+});
+
+test("trusted feedback remains separate, customer-scoped, issuance-bound evidence", async function () {
+  const campaign = { campaignType: "email", campaignText: "A calm garden lunch",
+    approvalStatus: "Approved", recommendationDecisionId: "decision-18", recommendationAction: "modified" };
+  const queries = [];
+  const repository = createPersistenceRepository({ async ensureSchema() {}, async query(sql, values) {
+    queries.push({ sql, values });
+    if (sql.startsWith("SELECT business_id")) return { rows: [{ business_id: "business-b", campaign }] };
+    return { rows: [{ response: values[2], evidence_type: "customer-feedback",
+      source: "customer-feedback-action", created_at: "2026-09-17T11:00:00.000Z" }] };
+  } });
+
+  for (const response of ["Relevant", "Not quite", "Something different"]) {
+    const recorded = await repository.recordCustomerFeedback("work-18",
+      { feedbackType: "possibility-relevance", response }, "customer-b");
+    assert.equal(recorded.response, response);
+  }
+  for (const write of [queries[1], queries[3], queries[5]]) {
+    assert.match(write.sql, /demeos_customer_possibility_issuances/);
+    assert.match(write.sql, /i\.trusted_customer_identity_id = \$7/);
+    assert.match(write.sql, /f\.trusted_customer_identity_id = \$7/);
+    assert.match(write.sql, /customer-feedback/);
+    assert.doesNotMatch(write.sql, /demeos_customer_participations|outcome|conversion|sale/);
+    assert.equal(write.values[4], "business-b");
+    assert.equal(write.values[6], "customer-b");
   }
 });
