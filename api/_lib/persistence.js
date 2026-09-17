@@ -345,7 +345,7 @@ function createPersistenceRepository(database) {
               AND f.feedback_type = 'possibility-relevance' AND f.response = 'Something different') AS feedback_something_different_count
          FROM demeos_campaigns WHERE business_id = $1 ORDER BY created_at DESC LIMIT 20`, [businessId]);
       const decisionResult = await database.query(
-        `SELECT recommendation_title, suggested_campaign_type, decision, decided_at
+        `SELECT decision_id, recommendation_title, suggested_campaign_type, decision, decided_at
          FROM demeos_recommendation_decisions WHERE business_id = $1 ORDER BY decided_at DESC LIMIT 100`, [businessId]);
       const campaigns = campaignResult.rows.map(function (row) {
         const campaign = { ...row.campaign, businessId,
@@ -376,7 +376,7 @@ function createPersistenceRepository(database) {
       return { businessProfile: { ...businessResult.rows[0].profile, businessId }, campaigns, customerParticipationResults,
         customerFeedbackResults,
         recommendationDecisions: decisionResult.rows.map(function (row) {
-          return { businessId, recommendationTitle: row.recommendation_title, suggestedCampaignType: row.suggested_campaign_type,
+          return { decisionId: String(row.decision_id), businessId, recommendationTitle: row.recommendation_title, suggestedCampaignType: row.suggested_campaign_type,
             decision: row.decision, timestamp: row.decided_at instanceof Date ? row.decided_at.toISOString() : row.decided_at };
         }) };
     },
@@ -435,11 +435,11 @@ function createPersistenceRepository(database) {
         `INSERT INTO demeos_recommendation_decisions
            (business_id, recommendation_title, suggested_campaign_type, decision, decided_at)
          SELECT $1, $2, $3, $4, $5 WHERE EXISTS (SELECT 1 FROM demeos_businesses WHERE business_id = $1)
-         RETURNING recommendation_title, suggested_campaign_type, decision, decided_at`,
+         RETURNING decision_id, recommendation_title, suggested_campaign_type, decision, decided_at`,
         [decision.businessId, decision.recommendationTitle, decision.suggestedCampaignType, decision.decision, decision.timestamp]);
       if (!result.rows.length) return null;
       const row = result.rows[0];
-      return { businessId: decision.businessId, recommendationTitle: row.recommendation_title,
+      return { decisionId: String(row.decision_id), businessId: decision.businessId, recommendationTitle: row.recommendation_title,
         suggestedCampaignType: row.suggested_campaign_type, decision: row.decision,
         timestamp: row.decided_at instanceof Date ? row.decided_at.toISOString() : row.decided_at };
     },
