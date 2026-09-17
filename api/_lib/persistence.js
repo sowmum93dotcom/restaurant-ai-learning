@@ -110,10 +110,22 @@ function createPersistenceRepository(database) {
       if (!isNonEmptyString(trustedCustomerIdentityId) || !preference || !isNonEmptyString(preference.preference)) return null;
       await database.ensureSchema();
       const result = await database.query(
-        `INSERT INTO demeos_customer_preferences
+        `WITH identity_lock AS (
+           SELECT pg_advisory_xact_lock(hashtext($1 || ':preference'))
+         ), inserted AS (
+         INSERT INTO demeos_customer_preferences
            (trusted_customer_identity_id, preference_text, evidence_type, source, confirmation_state)
-         VALUES ($1, $2, 'customer-explicit-preference', 'authenticated-customer', 'confirmed')
-         RETURNING preference_id, preference_text, created_at`,
+         SELECT $1, $2, 'customer-explicit-preference', 'authenticated-customer', 'confirmed'
+         FROM identity_lock
+         WHERE NOT EXISTS (SELECT 1 FROM demeos_customer_preferences
+           WHERE trusted_customer_identity_id = $1 AND preference_text = $2
+             AND created_at > NOW() - INTERVAL '30 seconds')
+         RETURNING preference_id, preference_text, created_at
+         ) SELECT * FROM inserted UNION ALL
+         SELECT preference_id, preference_text, created_at FROM demeos_customer_preferences
+         WHERE trusted_customer_identity_id = $1 AND preference_text = $2
+           AND created_at > NOW() - INTERVAL '30 seconds'
+         ORDER BY created_at DESC LIMIT 1`,
         [trustedCustomerIdentityId, preference.preference]);
       return result.rows.length ? toCustomerPreference(result.rows[0]) : null;
     },
@@ -183,7 +195,7 @@ function createPersistenceRepository(database) {
       return toSavedPossibility(result.rows[0]);
     },
 
-    async recordCustomerPossibilityIssuance(trustedCustomerIdentityId, possibilities) {
+    async recordCustomerPossibilityIssuance(trustedCustomerIdentityId, possibilities, understanding = null) {
       if (!isNonEmptyString(trustedCustomerIdentityId) || !Array.isArray(possibilities) || !possibilities.length) return [];
       await database.ensureSchema();
       const issuedWorkItemIds = [];
@@ -200,19 +212,60 @@ function createPersistenceRepository(database) {
           content: getCustomerFacingContent(row.campaign), participationAction: "Interested" });
         if (!publicItem || publicItem.content !== possibility.content ||
             publicItem.businessName !== possibility.businessName || publicItem.location !== possibility.location) continue;
+        const linkedIntention = understanding && isNonEmptyString(understanding.understanding);
+        const intentionExpression = linkedIntention ? `(SELECT intention_id FROM demeos_customer_intentions
+              WHERE trusted_customer_identity_id = $1
+                AND intention_category = $4
+                AND customer_text IS NOT DISTINCT FROM $5
+                AND confirmed_understanding = $6
+              ORDER BY created_at DESC, intention_id DESC LIMIT 1)` : "NULL";
         const result = await database.query(
           `INSERT INTO demeos_customer_possibility_issuances
-             (trusted_customer_identity_id, work_item_id, campaign_snapshot, evidence_type, source)
-           SELECT $1, c.campaign_id, c.campaign, 'demeos-possibility-issuance', 'demeos'
+             (trusted_customer_identity_id, work_item_id, campaign_snapshot, evidence_type, source, intention_id)
+           SELECT $1, c.campaign_id, c.campaign, 'demeos-possibility-issuance', 'demeos',
+             ${intentionExpression}
            FROM demeos_campaigns c JOIN demeos_businesses b ON b.business_id = c.business_id
            WHERE c.campaign_id = $2 AND c.campaign = $3::jsonb
-           ON CONFLICT (trusted_customer_identity_id, work_item_id) DO UPDATE
-             SET campaign_snapshot = EXCLUDED.campaign_snapshot, issued_at = NOW()
+           ON CONFLICT (trusted_customer_identity_id, work_item_id) DO NOTHING
            RETURNING work_item_id`,
-          [trustedCustomerIdentityId, possibility.workItemId, JSON.stringify(row.campaign)]);
-        if (result.rows.length) issuedWorkItemIds.push(result.rows[0].work_item_id);
+          linkedIntention ? [trustedCustomerIdentityId, possibility.workItemId, JSON.stringify(row.campaign),
+            understanding.intention || "", understanding.customerText || null, understanding.understanding]
+            : [trustedCustomerIdentityId, possibility.workItemId, JSON.stringify(row.campaign)]);
+        // A retry may find the already-issued row. It is still the authoritative
+        // issuance, but its original snapshot and timestamp must not be rewritten.
+        issuedWorkItemIds.push(result.rows.length ? result.rows[0].work_item_id : possibility.workItemId);
       }
       return issuedWorkItemIds;
+    },
+
+    async getCustomerIssuedPossibilities(trustedCustomerIdentityId, limit = 50) {
+      if (!isNonEmptyString(trustedCustomerIdentityId)) return [];
+      await database.ensureSchema();
+      const safeLimit = Math.min(50, Math.max(1, Number.isInteger(limit) ? limit : 50));
+      const result = await database.query(
+        `SELECT i.work_item_id, i.campaign_snapshot, i.business_name_snapshot,
+                i.location_snapshot, i.issued_at, i.intention_id,
+                f.response, f.comment, f.created_at AS feedback_at
+         FROM demeos_customer_possibility_issuances i
+         LEFT JOIN LATERAL (
+           SELECT response, comment, created_at FROM demeos_customer_feedback
+           WHERE trusted_customer_identity_id = i.trusted_customer_identity_id
+             AND campaign_id = i.work_item_id AND feedback_type = 'possibility-relevance'
+           ORDER BY created_at DESC, feedback_id DESC LIMIT 1
+         ) f ON TRUE
+         WHERE i.trusted_customer_identity_id = $1 AND i.delivery_confirmed = TRUE
+         ORDER BY i.issued_at DESC, i.work_item_id DESC LIMIT $2`,
+        [trustedCustomerIdentityId, safeLimit]);
+      return result.rows.map(function (row) {
+        const item = { workItemId: row.work_item_id, content: getCustomerFacingContent(row.campaign_snapshot),
+          businessName: row.business_name_snapshot, issuedAt: row.issued_at instanceof Date ? row.issued_at.toISOString() : row.issued_at };
+        if (row.location_snapshot) item.location = row.location_snapshot;
+        if (row.intention_id !== null && row.intention_id !== undefined) item.intentionId = String(row.intention_id);
+        if (row.response) item.feedback = { response: row.response,
+          createdAt: row.feedback_at instanceof Date ? row.feedback_at.toISOString() : row.feedback_at };
+        if (item.feedback && isNonEmptyString(row.comment)) item.feedback.comment = row.comment;
+        return item;
+      }).filter(function (item) { return isNonEmptyString(item.content); });
     },
 
     async getCustomerSavedPossibilities(trustedCustomerIdentityId, limit = 50) {
