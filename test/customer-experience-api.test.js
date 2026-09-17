@@ -3,6 +3,7 @@ const test = require("node:test");
 
 const persistencePath = require.resolve("../api/_lib/persistence.js");
 const rulesPath = require.resolve("../api/_lib/demeos-rules.js");
+const customerAuthPath = require.resolve("../api/_lib/demeos-customer-authentication.js");
 
 function response() {
   return {
@@ -16,8 +17,14 @@ function response() {
 async function runHandler(handlerPath, repository, req, permissionCheck) {
   const persistence = require(persistencePath);
   const rules = require(rulesPath);
+  const customerAuth = require(customerAuthPath);
   const original = persistence.getRepository;
   const originalPermissionCheck = rules.canPerformDemeosAction;
+  const originalCustomerAuth = customerAuth.resolveTrustedCustomerIdentityFromRequest;
+  customerAuth.resolveTrustedCustomerIdentityFromRequest = async function () {
+    return { trustedCustomerIdentityId: "trusted-test-customer" };
+  };
+  if (typeof repository.getOwnedBusinessIds !== "function") repository.getOwnedBusinessIds = async function () { return []; };
   persistence.getRepository = function () { return repository; };
   if (permissionCheck) rules.canPerformDemeosAction = permissionCheck;
   delete require.cache[require.resolve(handlerPath)];
@@ -27,6 +34,7 @@ async function runHandler(handlerPath, repository, req, permissionCheck) {
   finally {
     persistence.getRepository = original;
     rules.canPerformDemeosAction = originalPermissionCheck;
+    customerAuth.resolveTrustedCustomerIdentityFromRequest = originalCustomerAuth;
     delete require.cache[require.resolve(handlerPath)];
   }
   return res;
@@ -154,8 +162,8 @@ test("customer package availability has an explicit server-owned empty boundary"
 test("Interested uses the route campaign identity and exposes only the safe action", async function () {
   let received;
   const repository = {
-    async recordCustomerParticipation(campaignId, action) {
-      received = { campaignId, action };
+    async recordCustomerParticipation(campaignId, action, customerId) {
+      received = { campaignId, action, customerId };
       return { ...received };
     }
   };
@@ -164,7 +172,7 @@ test("Interested uses the route campaign identity and exposes only the safe acti
     body: { businessId: "spoofed-business", campaign: { businessId: "nested-spoof" }, action: "Interested" }
   });
   assert.equal(res.statusCode, 201);
-  assert.deepEqual(received, { campaignId: "campaign-a", action: "Interested" });
+  assert.deepEqual(received, { campaignId: "campaign-a", action: "Interested", customerId: "trusted-test-customer" });
   assert.deepEqual(res.body, { participation: { action: "Interested" } });
 });
 
@@ -180,7 +188,7 @@ test("unsupported actions and work that is not approved are rejected", async fun
     async recordCustomerParticipation() { return null; }
   }, { method: "POST", query: { campaignId: "campaign-a" }, body: { action: "Interested" } });
   assert.equal(unavailable.statusCode, 404);
-  assert.deepEqual(unavailable.body, { error: "Approved DEMEOS work was not found." });
+  assert.deepEqual(unavailable.body, { error: "An issued, approved DEMEOS possibility was not found." });
 });
 
 test("customer routes retain their method contracts", async function () {
@@ -264,14 +272,15 @@ test("repository resolves participation business identity from the approved stor
     }
   });
 
-  const participation = await repository.recordCustomerParticipation("campaign-a", "Interested");
+  const participation = await repository.recordCustomerParticipation("campaign-a", "Interested", "trusted-customer");
 
   assert.equal(participation.business_id, "stored-business");
   assert.match(queries[0].statement, /WHERE campaign_id = \$1/);
   assert.deepEqual(queries[0].parameters, ["campaign-a"]);
   assert.match(queries[1].statement, /SELECT c\.business_id, c\.campaign_id/);
   assert.doesNotMatch(queries[1].statement, /c\.business_id = \$/);
-  assert.deepEqual(queries[1].parameters, ["campaign-a", "Interested", JSON.stringify(storedCampaign), null]);
+  assert.match(queries[1].statement, /demeos_customer_possibility_issuances/);
+  assert.deepEqual(queries[1].parameters, ["campaign-a", "Interested", JSON.stringify(storedCampaign), "trusted-customer", "stored-business"]);
 });
 
 test("repository returns not found for unknown, unapproved, and non-publishable campaigns", async function () {
@@ -294,7 +303,7 @@ test("repository returns not found for unknown, unapproved, and non-publishable 
         return { rows: stored ? [stored] : [] };
       }
     });
-    const participation = await repository.recordCustomerParticipation("campaign-a", "Interested");
+    const participation = await repository.recordCustomerParticipation("campaign-a", "Interested", "trusted-customer");
     assert.equal(participation, null);
     assert.equal(queryCount, 1);
   }

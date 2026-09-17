@@ -62,18 +62,16 @@ test("only CUSTOMER can read its own participation", function () {
   }
 });
 
-test("Interested stays public while only a trusted CUSTOMER identity is stored", async function () {
+test("Interested requires a trusted CUSTOMER identity and rejects business owners", async function () {
   const received = [];
   const repository = { getOwnedBusinessIds: async (identity) => identity === "known-owner" ? ["business-a"] : [],
     recordCustomerParticipation: async (...args) => { received.push(args); return { action: "Interested" }; } };
   assert.equal((await invokeParticipation(null, repository,
-    { action: "Interested", customerId: "body-attacker" })).statusCode, 201);
-  assert.deepEqual(received.pop(), ["campaign-a", "Interested", null]);
+    { action: "Interested", customerId: "body-attacker" })).statusCode, 401);
   assert.equal((await invokeParticipation({ trustedCustomerIdentityId: "trusted-customer" }, repository,
     { action: "Interested", trustedCustomerIdentityId: "body-attacker" })).statusCode, 201);
   assert.deepEqual(received.pop(), ["campaign-a", "Interested", "trusted-customer"]);
-  assert.equal((await invokeParticipation({ trustedCustomerIdentityId: "known-owner" }, repository)).statusCode, 201);
-  assert.deepEqual(received.pop(), ["campaign-a", "Interested", null]);
+  assert.equal((await invokeParticipation({ trustedCustomerIdentityId: "known-owner" }, repository)).statusCode, 403);
 });
 
 test("history requires a customer, rejects owners, and uses only trusted ownership with limit 50", async function () {
@@ -99,14 +97,12 @@ test("repository writes nullable trusted identity and reads deterministic owner-
     return { rows: [{ action: "Interested", participated_at: new Date("2026-09-14T10:00:00Z"),
       campaign_id: "campaign-a", campaign, profile: { name: "Cafe", location: "York", secret: "private" } }] };
   } });
-  await repository.recordCustomerParticipation("campaign-a", "Interested");
   await repository.recordCustomerParticipation("campaign-a", "Interested", "trusted-customer");
-  assert.equal(calls[1].values[3], null);
-  assert.equal(calls[3].values[3], "trusted-customer");
+  assert.equal(calls[1].values[3], "trusted-customer");
   const history = await repository.getCustomerParticipations("trusted-customer", 999);
-  assert.deepEqual(calls[4].values, ["trusted-customer", 50]);
-  assert.match(calls[4].sql, /WHERE p\.trusted_customer_identity_id = \$1/);
-  assert.match(calls[4].sql, /ORDER BY p\.participated_at DESC, p\.participation_id DESC LIMIT \$2/);
+  assert.deepEqual(calls[2].values, ["trusted-customer", 50]);
+  assert.match(calls[2].sql, /WHERE p\.trusted_customer_identity_id = \$1/);
+  assert.match(calls[2].sql, /ORDER BY p\.participated_at DESC, p\.participation_id DESC LIMIT \$2/);
   assert.deepEqual(history, [{ action: "Interested", participatedAt: "2026-09-14T10:00:00.000Z",
     content: "Public possibility", businessName: "Cafe", location: "York" }]);
 });
