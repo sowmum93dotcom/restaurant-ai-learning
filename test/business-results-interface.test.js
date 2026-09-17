@@ -42,14 +42,14 @@ test("Recommendation Decisions is separate from campaign evidence and has an emp
   assert.match(html, /<h3 id="recommendation-decisions-heading">Recommendation Decisions<\/h3>/);
   assert.match(html, /Recorded choices you made about DEMEOS recommendations\. These are owner decisions, not campaign performance results\./);
   assert.match(html, /id="recommendation-decisions-empty"[^>]* hidden>No recommendation decisions recorded yet\./);
-  assert.ok(html.indexOf("Campaign Outcomes") < html.indexOf("Recommendation Decisions"));
+  assert.ok(html.indexOf("Marketing Work Evidence") < html.indexOf("Recommendation Decisions"));
   assert.ok(html.indexOf("business-results-list") < html.indexOf("recommendation-decisions-list"));
   assert.deepEqual(getRecommendationDecisions({ businessProfile: { businessId: "business-a" } }, "business-a"), []);
 });
 
 test("DEMEOS Understanding is placed between outcomes and decisions with explicit trust language", function () {
   assert.match(html, /<h3 id="demeos-understanding-heading">DEMEOS Understanding<\/h3>/);
-  assert.ok(html.indexOf("Campaign Outcomes") < html.indexOf("DEMEOS Understanding"));
+  assert.ok(html.indexOf("Marketing Work Evidence") < html.indexOf("DEMEOS Understanding"));
   assert.ok(html.indexOf("DEMEOS Understanding") < html.indexOf("Recommendation Decisions"));
   assert.match(html, /Customer Feedback describes possibility relevance only/);
   assert.match(html, /Customer Feedback, customer participation, owner-recorded outcomes and your recommendation decisions are kept separate/);
@@ -162,7 +162,7 @@ test("the page renders server-returned decisions and ignores browser decision st
   assert.deepEqual(reads, ["demeosActiveBusinessId"]);
   assert.equal(document.getElementById("recommendation-decisions-empty").hidden, true);
   assert.equal(document.getElementById("business-results-list").children.length, 1);
-  assert.equal(document.getElementById("business-results-list").children[0].children[2].children.length, 2);
+  assert.equal(document.getElementById("business-results-list").children[0].children[2].children.length, 3);
   assert.equal(document.getElementById("demeos-understanding-state").textContent, "Understanding is growing");
   assert.equal(document.getElementById("demeos-understanding-outcomes").textContent, 1);
   assert.equal(document.getElementById("demeos-understanding-interest").textContent, 3);
@@ -181,8 +181,38 @@ test("only stored outcomes and participation values are exposed", function () {
   assert.deepEqual(getBusinessResults(storedRecord(), "business-a"), [{
     campaignId: "campaign-a", name: "Friday supper", type: "Email Campaign", status: "Approved",
     outcome: "Positive", ownerNote: "More walk-ins.", customerInterestCount: 3,
-    latestParticipationAt: "2026-09-07T12:30:00.000Z"
+    latestParticipationAt: "2026-09-07T12:30:00.000Z",
+    feedback: { relevant: 0, notQuite: 0, somethingDifferent: 0, recorded: false, latestFeedbackAt: null },
+    recommendation: null, recommendationDecisionId: null
   }]);
+});
+
+test("Business Results keeps participation, feedback, outcome, and recommendation provenance separate", function () {
+  const record = storedRecord();
+  record.campaigns[0].recommendationDecisionId = "decision-7";
+  record.recommendationDecisions = [{ decisionId: "decision-7", businessId: "business-a",
+    recommendationTitle: "A Friday welcome", suggestedCampaignType: "email", decision: "used",
+    timestamp: "2026-09-01T09:00:00.000Z" }];
+  record.customerFeedbackResults = [{ workItemId: "campaign-a", businessId: "business-a",
+    relevantCount: 2, notQuiteCount: 1, somethingDifferentCount: 3,
+    latestFeedbackAt: "2026-09-08T13:00:00.000Z" },
+  { workItemId: "campaign-a", businessId: "business-b", relevantCount: 99,
+    latestFeedbackAt: "2026-09-09T13:00:00.000Z" }];
+  const [result] = getBusinessResults(record, "business-a");
+  assert.equal(result.customerInterestCount, 3);
+  assert.deepEqual(result.feedback, { relevant: 2, notQuite: 1, somethingDifferent: 3,
+    recorded: true, latestFeedbackAt: "2026-09-08T13:00:00.000Z" });
+  assert.equal(result.outcome, "Positive");
+  assert.equal(result.recommendation, "A Friday welcome");
+  assert.equal(result.recommendationDecisionId, "decision-7");
+  assert.doesNotMatch(JSON.stringify(result), /99|sale|conversion|revenue|performance score/i);
+});
+
+test("Business Results uses explicit non-negative absence language", function () {
+  assert.match(script, /No Interested evidence recorded yet\. Absence does not mean lack of demand\./);
+  assert.match(script, /No Customer Feedback recorded yet\. Absence is not a negative opinion\./);
+  assert.match(script, /No owner-recorded outcome yet\. Absence is not failure\./);
+  assert.match(script, /Owner-recorded outcome/);
 });
 
 test("approved participation stays associated with its campaign", function () {

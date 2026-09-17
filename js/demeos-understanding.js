@@ -24,7 +24,7 @@
     return summary;
   }
 
-  function trustedLearningHistory(decisions, campaigns, activeBusinessId) {
+  function trustedLearningHistory(decisions, campaigns, participation, feedback, activeBusinessId) {
     const businessCampaigns = campaigns.filter(function (campaign) {
       return campaign && campaign.businessId === activeBusinessId;
     });
@@ -41,6 +41,12 @@
         ? { value: relatedWork.outcome.outcome,
           recordedAt: typeof relatedWork.outcome.savedAt === "string" ? relatedWork.outcome.savedAt : null,
           source: "business-owner" } : null;
+      const participationEvidence = relatedWork && participation.find(function (item) {
+        return item && item.businessId === activeBusinessId && item.workItemId === relatedWork.id;
+      });
+      const feedbackEvidence = relatedWork && feedback.find(function (item) {
+        return item && item.businessId === activeBusinessId && item.workItemId === relatedWork.id;
+      });
       return {
         recommendation: decision.recommendationTitle,
         decision: { value: decision.decision,
@@ -50,6 +56,18 @@
           recordedAt: typeof relatedWork.createdAt === "string" ? relatedWork.createdAt : null,
           source: "demeos-campaign-record" } : { created: false, recordedAt: null,
           source: "demeos-campaign-record" },
+        ...(participationEvidence ? { customerParticipation: {
+          interestedCount: Math.max(0, Number(participationEvidence.customerInterestCount) || 0),
+          recordedAt: participationEvidence.latestParticipationAt || null,
+          source: "customer-interested-action"
+        } } : {}),
+        ...(feedbackEvidence ? { customerFeedback: {
+          relevant: Math.max(0, Number(feedbackEvidence.relevantCount) || 0),
+          notQuite: Math.max(0, Number(feedbackEvidence.notQuiteCount) || 0),
+          somethingDifferent: Math.max(0, Number(feedbackEvidence.somethingDifferentCount) || 0),
+          recordedAt: feedbackEvidence.latestFeedbackAt || null,
+          source: "customer-feedback-action"
+        } } : {}),
         outcome
       };
     });
@@ -121,9 +139,10 @@
       campaignsWithCustomerParticipation: new Set(participation.map(function (result) { return result.workItemId; })).size,
       customerFeedback,
       recommendationDecisions,
-      evidenceAvailable: historical.length > 0 },
+      evidenceAvailable: historical.length > 0 || campaignOutcomeCount > 0 || participation.length > 0 || feedback.length > 0 ||
+        Object.values(recommendationDecisions).some(function (count) { return count > 0; }) },
     { current: verifiedBusinessProfile ? [{ evidenceType: "business-profile", source: "business-owner" }] : [],
-      historical, absent }), trustedLearningHistory(businessDecisions, campaigns, activeBusinessId));
+      historical, absent }), trustedLearningHistory(businessDecisions, campaigns, participation, feedback, activeBusinessId));
   }
 
   return { getDemeosUnderstanding };

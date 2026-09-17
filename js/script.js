@@ -470,6 +470,16 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       } else {
         addText(item, "span", "No related work is recorded for this previous decision.");
       }
+      if (learning.customerParticipation) {
+        addText(item, "span", `Historical Interested: ${learning.customerParticipation.interestedCount}. Customer participation only; not current demand.`);
+      } else if (learning.relatedWork.created) {
+        addText(item, "span", "No Interested evidence is recorded for this work; absence is not failure.");
+      }
+      if (learning.customerFeedback) {
+        addText(item, "span", `Historical Customer Feedback — Relevant: ${learning.customerFeedback.relevant}; Not quite: ${learning.customerFeedback.notQuite}; Something different: ${learning.customerFeedback.somethingDifferent}. Not current customer opinion.`);
+      } else if (learning.relatedWork.created) {
+        addText(item, "span", "No Customer Feedback is recorded for this work; absence is not a negative opinion.");
+      }
       if (learning.outcome) {
         const outcomeTime = learning.outcome.recordedAt
           ? ` on ${new Date(learning.outcome.recordedAt).toLocaleString()}` : " (recorded time unavailable)";

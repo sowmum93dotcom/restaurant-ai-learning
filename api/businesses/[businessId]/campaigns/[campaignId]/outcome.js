@@ -50,6 +50,8 @@ module.exports = async function handler(req, res) {
       campaignId,
       outcome: selectedOutcome,
       ownerNote: typeof ownerNote === "string" ? ownerNote.trim() : "",
+      source: "business-owner",
+      attribution: "authenticated-business-owner",
       savedAt: new Date().toISOString()
     };
     const campaign = await repository.saveCampaignOutcome(businessId, campaignId, outcome);

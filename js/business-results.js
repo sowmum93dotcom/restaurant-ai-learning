@@ -8,13 +8,26 @@ function getBusinessResults(record, activeBusinessId) {
   const participationByCampaign = new Map(participation.filter(function (result) {
     return result && result.businessId === activeBusinessId && typeof result.workItemId === "string";
   }).map(function (result) { return [result.workItemId, result]; }));
+  const feedback = Array.isArray(record.customerFeedbackResults) ? record.customerFeedbackResults : [];
+  const feedbackByCampaign = new Map(feedback.filter(function (result) {
+    return result && result.businessId === activeBusinessId && typeof result.workItemId === "string";
+  }).map(function (result) { return [result.workItemId, result]; }));
+  const decisions = new Map((Array.isArray(record.recommendationDecisions) ? record.recommendationDecisions : [])
+    .filter(function (decision) {
+      return decision && decision.businessId === activeBusinessId && decision.decisionId != null;
+    }).map(function (decision) { return [String(decision.decisionId), decision]; }));
 
   return campaigns.filter(function (campaign) {
     if (!campaign || campaign.businessId !== activeBusinessId) return false;
     const signal = participationByCampaign.get(campaign.id);
-    return Boolean(campaign.outcome && typeof campaign.outcome.outcome === "string") || Boolean(signal);
+    const customerFeedback = feedbackByCampaign.get(campaign.id);
+    return campaign.approvalStatus === "Approved" ||
+      Boolean(campaign.outcome && typeof campaign.outcome.outcome === "string") || Boolean(signal) || Boolean(customerFeedback);
   }).map(function (campaign) {
     const signal = participationByCampaign.get(campaign.id);
+    const customerFeedback = feedbackByCampaign.get(campaign.id);
+    const linkedDecision = campaign.recommendationDecisionId != null
+      ? decisions.get(String(campaign.recommendationDecisionId)) : null;
     return {
       campaignId: campaign.id,
       name: (typeof campaign.promoText === "string" && campaign.promoText.trim()) ||
@@ -25,7 +38,18 @@ function getBusinessResults(record, activeBusinessId) {
       ownerNote: campaign.outcome && typeof campaign.outcome.ownerNote === "string"
         ? campaign.outcome.ownerNote : "",
       customerInterestCount: signal ? Number(signal.customerInterestCount) : 0,
-      latestParticipationAt: signal ? signal.latestParticipationAt || null : null
+      latestParticipationAt: signal ? signal.latestParticipationAt || null : null,
+      feedback: {
+        relevant: customerFeedback ? Math.max(0, Number(customerFeedback.relevantCount) || 0) : 0,
+        notQuite: customerFeedback ? Math.max(0, Number(customerFeedback.notQuiteCount) || 0) : 0,
+        somethingDifferent: customerFeedback ? Math.max(0, Number(customerFeedback.somethingDifferentCount) || 0) : 0,
+        recorded: Boolean(customerFeedback && customerFeedback.latestFeedbackAt),
+        latestFeedbackAt: customerFeedback ? customerFeedback.latestFeedbackAt || null : null
+      },
+      recommendation: linkedDecision && typeof linkedDecision.recommendationTitle === "string"
+        ? linkedDecision.recommendationTitle : null,
+      recommendationDecisionId: campaign.recommendationDecisionId != null
+        ? String(campaign.recommendationDecisionId) : null
     };
   });
 }
@@ -93,16 +117,29 @@ if (typeof document !== "undefined") {
       addText(card, "p", `${result.type} · ${result.status}`, "business-result-meta");
       const details = document.createElement("div"); details.className = "business-result-details";
       const outcome = document.createElement("section"); outcome.className = "business-result-section";
-      addText(outcome, "h4", "Recorded outcome");
-      addText(outcome, "p", result.outcome || "No owner outcome recorded.");
+      if (result.recommendation) addText(card, "p", `Created from DEMEOS recommendation: ${result.recommendation}`, "business-result-provenance");
+      addText(outcome, "h4", "Owner-recorded outcome");
+      addText(outcome, "p", result.outcome || "No owner-recorded outcome yet. Absence is not failure.");
       if (result.ownerNote) addText(outcome, "p", result.ownerNote);
       const participation = document.createElement("section"); participation.className = "business-result-section";
       addText(participation, "h4", "Customer participation");
-      addText(participation, "p", `${result.customerInterestCount} interested participation${result.customerInterestCount === 1 ? "" : "s"} recorded`);
+      addText(participation, "p", result.latestParticipationAt
+        ? `${result.customerInterestCount} Interested action${result.customerInterestCount === 1 ? "" : "s"} recorded`
+        : "No Interested evidence recorded yet. Absence does not mean lack of demand.");
       if (result.latestParticipationAt) {
         addText(participation, "p", `Latest participation: ${new Date(result.latestParticipationAt).toLocaleString()}`);
       }
-      details.append(outcome, participation); card.appendChild(details); list.appendChild(card);
+      const feedback = document.createElement("section"); feedback.className = "business-result-section";
+      addText(feedback, "h4", "Customer Feedback");
+      if (result.feedback.recorded) {
+        addText(feedback, "p", `Relevant: ${result.feedback.relevant}`);
+        addText(feedback, "p", `Not quite: ${result.feedback.notQuite}`);
+        addText(feedback, "p", `Something different: ${result.feedback.somethingDifferent}`);
+        addText(feedback, "p", `Latest feedback: ${new Date(result.feedback.latestFeedbackAt).toLocaleString()}`);
+      } else {
+        addText(feedback, "p", "No Customer Feedback recorded yet. Absence is not a negative opinion.");
+      }
+      details.append(participation, feedback, outcome); card.appendChild(details); list.appendChild(card);
     });
   }
 

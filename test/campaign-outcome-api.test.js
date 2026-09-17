@@ -120,6 +120,8 @@ test("owner can record an outcome for their own approved campaign", async functi
   assert.equal(result.persistenceCalls[0].campaignId, "version-a");
   assert.deepEqual(result.persistenceCalls[0].outcome, result.res.body.outcome);
   assert.equal(result.persistenceCalls[0].outcome.ownerNote, "Guests mentioned it.");
+  assert.equal(result.persistenceCalls[0].outcome.source, "business-owner");
+  assert.equal(result.persistenceCalls[0].outcome.attribution, "authenticated-business-owner");
   assert.match(result.persistenceCalls[0].outcome.savedAt, /^\d{4}-\d{2}-\d{2}T/);
   assert.equal(result.authorizationCalls.length, 1);
   assert.equal(result.authorizationCalls[0].req, result.req);
