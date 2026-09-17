@@ -248,11 +248,14 @@ test("an owner decision and its later owner-recorded outcome stay linked as hist
         savedAt: "2026-08-15T10:00:00.000Z" } }]
   });
   const prompt = result.requestBody.input;
-  assert.match(prompt, /"associatedRecommendationDecision":"used"/);
-  assert.match(prompt, /links this outcome to the earlier owner decision/);
-  assert.match(prompt, /owner-provided feedback for this business, not verified performance data/);
-  assert.match(prompt, /does not change either record’s meaning/);
-  assert.match(prompt, /does not mean the campaign succeeded/);
+  assert.match(prompt, /Trusted Historical Learning \(linked records for this business\)/);
+  assert.match(prompt, /"recommendation":"Try a calm email"/);
+  assert.match(prompt, /"decision":\{"value":"used","recordedAt":"2026-08-01T10:00:00.000Z","source":"business-owner"\}/);
+  assert.match(prompt, /"relatedWork":\{"created":true,"workItemId":"campaign-17","recordedAt":null,"source":"demeos-campaign-record"\}/);
+  assert.match(prompt, /"outcome":\{"value":"Mixed","recordedAt":"2026-08-15T10:00:00.000Z","source":"business-owner"\}/);
+  assert.match(prompt, /explicitly owner-provided historical evidence, not independently verified performance/);
+  assert.match(prompt, /"used" means only that the owner chose to proceed, not success/);
+  assert.doesNotMatch(prompt, /Historical Campaign Outcomes[\s\S]*I recorded a mixed response/);
 });
 
 test("missing or unmatched outcome association remains absence rather than failure", async () => {
@@ -264,10 +267,23 @@ test("missing or unmatched outcome association remains absence rather than failu
         savedAt: "2026-08-15T10:00:00.000Z" } }]
   });
   const prompt = result.requestBody.input;
-  assert.doesNotMatch(prompt, /"associatedRecommendationDecision":/);
-  assert.match(prompt, /"rejected" means the owner did not want that recommendation at that time/);
-  assert.match(prompt, /not a permanent prohibition/);
+  assert.match(prompt, /"recommendation":"Skipped idea"/);
+  assert.match(prompt, /"relatedWork":\{"created":false,"recordedAt":null,"source":"demeos-campaign-record"\},"outcome":null/);
+  assert.match(prompt, /A null outcome means the result is unknown and supplies no outcome evidence/);
+  assert.match(prompt, /"rejected" is neither failure nor a permanent prohibition/);
   assert.match(prompt, /no performance evidence and must never be treated as success or failure/);
+});
+
+test("trusted learning stays historical, yields to the current situation, and cannot authorize action", async () => {
+  const result = await call(profile, JSON.stringify(valid), "The owner now needs to focus on a different audience moment.", [], [], {
+    storedDecisions: [{ decisionId: "old", businessId: "business-a", recommendationTitle: "Earlier direction",
+      suggestedCampaignType: "social", decision: "rejected", timestamp: "2026-07-01T10:00:00.000Z" }]
+  });
+  const prompt = result.requestBody.input;
+  assert.match(prompt, /Historical evidence is not current demand and must not be described as current customer wants/);
+  assert.match(prompt, /Current Business Situation may supersede or recontextualize an earlier direction/);
+  assert.match(prompt, /Every output remains a recommendation pending owner decision/);
+  assert.match(prompt, /never automatically authorize offers, commitments, discounts, prices, availability, services, or customer entitlements/);
 });
 
 test("outcome context cannot override capability or verified-fact restrictions", async () => {
