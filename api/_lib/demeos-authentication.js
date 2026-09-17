@@ -5,7 +5,18 @@ function isProductionDeployment(environment = process.env) {
 function hasAllowedClerkKey(key, kind, environment = process.env) {
   if (typeof key !== "string" || !key.trim()) return false;
   if (!isProductionDeployment(environment)) return true;
-  return key.trim().startsWith(`${kind}_live_`);
+
+  const value = key.trim();
+  const developmentPrefix = `${kind}_test_`;
+  const oppositeKind = kind === "pk" ? "sk" : "pk";
+
+  // Production must never accept Clerk development credentials or a key of
+  // the opposite type. Do not require one exact production prefix here:
+  // Clerk remains the authority for validating the configured credential,
+  // and this keeps DEMEOS compatible with provider-managed production values.
+  if (value.startsWith(developmentPrefix)) return false;
+  if (value.startsWith(`${oppositeKind}_`)) return false;
+  return true;
 }
 
 function getAllowedClerkPublishableKey(environment = process.env) {
