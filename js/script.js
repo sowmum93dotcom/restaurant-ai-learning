@@ -7,7 +7,7 @@ function getCampaignContinuity(campaign) {
   };
 }
 
-function createCampaignContinuity(campaignId, sourceCampaign) {
+  function createCampaignContinuity(campaignId, sourceCampaign) {
   if (!sourceCampaign) return { originalMarketingWorkId: campaignId, revisionNumber: 0 };
   const source = getCampaignContinuity(sourceCampaign);
   return {
@@ -564,6 +564,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
         const content = document.createElement("p"); content.textContent = value;
         section.append(label, content); return section;
       }
+      const why = detail("Why this recommendation", recommendation.whyThisRecommendation);
       const reason = detail("Why this helps", recommendation.reason);
       const targetCustomer = detail("Target customer", recommendation.targetCustomer);
       const businessObjective = detail("Business objective", recommendation.businessObjective);
@@ -594,6 +595,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
             method: "PUT", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               recommendationTitle: recommendation.title,
+              recommendationId: recommendation.recommendationId,
               suggestedCampaignType: recommendation.suggestedCampaignType,
               decision
             })
@@ -601,46 +603,53 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
           if (!response.ok) throw new Error(`server returned ${response.status}`);
           const data = typeof response.json === "function" ? await response.json() : {};
           const decisions = parseStoredJson(localStorage, recommendationDecisionsKey, []);
-          decisions.push({ businessId, recommendationTitle: recommendation.title,
-            suggestedCampaignType: recommendation.suggestedCampaignType, decision, timestamp: new Date().toISOString() });
+          const savedDecision = data.recommendationDecision;
+          if (!savedDecision || !savedDecision.decisionId) throw new Error("server returned no decision provenance");
+          decisions.push(savedDecision);
           localStorage.setItem(recommendationDecisionsKey, JSON.stringify(decisions));
           renderRecommendationDecisionResults();
-          return data.recommendationDecision;
+          return savedDecision;
         } catch (error) {
           console.error("Could not persist recommendation decision:", error);
         }
       }
       const use = document.createElement("button"); use.type = "button"; use.className = "demeos-secondary-button";
       use.textContent = "Use This Recommendation";
-      use.addEventListener("click", function () {
+      use.addEventListener("click", async function () {
         if (recommendationBusinessId !== state.activeBusinessId || addingBusiness) return;
+        const savedDecision = await recordDecision("used");
+        if (!savedDecision) { decisionStatus.textContent = "Could not record your decision. Please try again."; return; }
         promoInput.value = recommendation.suggestedRequest;
         campaignType.value = recommendation.suggestedCampaignType;
         showWorkspaceView("create");
         if (typeof promoInput.focus === "function") promoInput.focus();
-        selectedRecommendationDecision = recordDecision("used");
+        selectedRecommendationDecision = Promise.resolve(savedDecision);
         return selectedRecommendationDecision;
       });
       const modify = document.createElement("button"); modify.type = "button"; modify.className = "demeos-secondary-button";
       modify.textContent = "Modify";
-      modify.addEventListener("click", function () {
+      modify.addEventListener("click", async function () {
         if (recommendationBusinessId !== state.activeBusinessId || addingBusiness) return;
+        const savedDecision = await recordDecision("modified");
+        if (!savedDecision) { decisionStatus.textContent = "Could not record your decision. Please try again."; return; }
         promoInput.value = recommendation.suggestedRequest;
         campaignType.value = recommendation.suggestedCampaignType;
         showWorkspaceView("create");
         if (typeof promoInput.focus === "function") promoInput.focus();
-        selectedRecommendationDecision = recordDecision("modified");
+        selectedRecommendationDecision = Promise.resolve(savedDecision);
         return selectedRecommendationDecision;
       });
       const reject = document.createElement("button"); reject.type = "button"; reject.className = "demeos-secondary-button";
       reject.textContent = "Not for me";
-      reject.addEventListener("click", function () {
+      reject.addEventListener("click", async function () {
         if (recommendationBusinessId !== state.activeBusinessId || addingBusiness) return;
+        const savedDecision = await recordDecision("rejected");
+        if (!savedDecision) { decisionStatus.textContent = "Could not record your decision. Please try again."; return; }
         card.classList.toggle("is-rejected", true);
         decisionStatus.textContent = "Not for me";
-        return recordDecision("rejected");
+        return savedDecision;
       });
-      card.append(title, reason, targetCustomer, businessObjective, capability, evidence, expectedOutcome, requiredInput,
+      card.append(title, why, reason, targetCustomer, businessObjective, capability, evidence, expectedOutcome, requiredInput,
         approval, use, modify, reject, decisionStatus);
       recommendationsList.appendChild(card);
     });
@@ -988,7 +997,12 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     const campaign = { id, campaignText: text, campaignType: type, campaignTypeLabel: typeLabel, promoText: promo,
       businessName: profile.name, businessId: getCampaignBusinessId(profile, source), createdAt: new Date().toISOString(),
       approvalStatus: "Unapproved", ...(recommendationDecision && recommendationDecision.decisionId
-        ? { recommendationDecisionId: recommendationDecision.decisionId } : {}), ...continuity };
+        ? { recommendationDecisionId: recommendationDecision.decisionId,
+          recommendationId: recommendationDecision.recommendationId,
+          recommendationAction: recommendationDecision.decision } : source && source.recommendationDecisionId
+          ? { recommendationDecisionId: source.recommendationDecisionId,
+            ...(source.recommendationId ? { recommendationId: source.recommendationId } : {}),
+            ...(source.recommendationAction ? { recommendationAction: source.recommendationAction } : {}) } : {}), ...continuity };
     campaigns.unshift(campaign);
     const retained = enforceBusinessCampaignLimit(campaigns, profile.businessId, 20, [id, sourceId]);
     localStorage.setItem(campaignHistoryKey, JSON.stringify(retained)); openCampaignId = id; renderActiveMarketingWork(); renderCampaignHistory(); renderCampaignVersions();

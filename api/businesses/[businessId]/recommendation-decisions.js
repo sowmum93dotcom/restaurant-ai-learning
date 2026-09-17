@@ -36,12 +36,14 @@ module.exports = async function handler(req, res) {
     }
 
     const recommendationTitle = req.body && req.body.recommendationTitle;
+    const recommendationId = req.body && req.body.recommendationId;
     const suggestedCampaignType = req.body && req.body.suggestedCampaignType;
     const decision = req.body && req.body.decision;
     const campaignCapability = typeof suggestedCampaignType === "string"
       ? getCapabilityForRecommendationType(suggestedCampaignType)
       : null;
     if (
+      typeof recommendationId !== "string" || !/^[a-zA-Z0-9-]{8,100}$/.test(recommendationId) ||
       typeof recommendationTitle !== "string" || !recommendationTitle.trim() ||
       recommendationTitle.length > 500 || !campaignCapability ||
       !campaignCapability.available || campaignCapability.supportedOutputType !== suggestedCampaignType ||
@@ -52,6 +54,7 @@ module.exports = async function handler(req, res) {
 
     const record = {
       businessId,
+      recommendationId,
       recommendationTitle: recommendationTitle.trim(),
       suggestedCampaignType,
       decision,

@@ -345,7 +345,7 @@ function createPersistenceRepository(database) {
               AND f.feedback_type = 'possibility-relevance' AND f.response = 'Something different') AS feedback_something_different_count
          FROM demeos_campaigns WHERE business_id = $1 ORDER BY created_at DESC LIMIT 20`, [businessId]);
       const decisionResult = await database.query(
-        `SELECT decision_id, recommendation_title, suggested_campaign_type, decision, decided_at
+        `SELECT decision_id, recommendation_id, recommendation_title, suggested_campaign_type, decision, decided_at
          FROM demeos_recommendation_decisions WHERE business_id = $1 ORDER BY decided_at DESC LIMIT 100`, [businessId]);
       const campaigns = campaignResult.rows.map(function (row) {
         const campaign = { ...row.campaign, businessId,
@@ -376,7 +376,7 @@ function createPersistenceRepository(database) {
       return { businessProfile: { ...businessResult.rows[0].profile, businessId }, campaigns, customerParticipationResults,
         customerFeedbackResults,
         recommendationDecisions: decisionResult.rows.map(function (row) {
-          return { decisionId: String(row.decision_id), businessId, recommendationTitle: row.recommendation_title, suggestedCampaignType: row.suggested_campaign_type,
+          return { decisionId: String(row.decision_id), ...(row.recommendation_id ? { recommendationId: row.recommendation_id } : {}), businessId, recommendationTitle: row.recommendation_title, suggestedCampaignType: row.suggested_campaign_type,
             decision: row.decision, timestamp: row.decided_at instanceof Date ? row.decided_at.toISOString() : row.decided_at };
         }) };
     },
@@ -394,8 +394,15 @@ function createPersistenceRepository(database) {
       await database.ensureSchema();
       const result = await database.query(
         `INSERT INTO demeos_campaigns (campaign_id, business_id, campaign)
-         VALUES ($1, $2, $3::jsonb)
-         ON CONFLICT (campaign_id) DO UPDATE SET campaign = EXCLUDED.campaign, updated_at = NOW()
+         SELECT $1, $2, $3::jsonb
+         WHERE NOT ($3::jsonb ? 'recommendationDecisionId') OR EXISTS (
+           SELECT 1 FROM demeos_recommendation_decisions d
+           WHERE d.business_id = $2 AND d.decision_id::text = $3::jsonb->>'recommendationDecisionId'
+             AND d.decision IN ('used', 'modified'))
+         ON CONFLICT (campaign_id) DO UPDATE SET campaign =
+           CASE WHEN demeos_campaigns.campaign ? 'recommendationDecisionId'
+             THEN jsonb_set(EXCLUDED.campaign, '{recommendationDecisionId}', demeos_campaigns.campaign->'recommendationDecisionId', true)
+             ELSE EXCLUDED.campaign END, updated_at = NOW()
          WHERE demeos_campaigns.business_id = EXCLUDED.business_id
          RETURNING campaign`,
         [campaign.id, campaign.businessId, JSON.stringify(campaign)]);
@@ -433,13 +440,13 @@ function createPersistenceRepository(database) {
       await database.ensureSchema();
       const result = await database.query(
         `INSERT INTO demeos_recommendation_decisions
-           (business_id, recommendation_title, suggested_campaign_type, decision, decided_at)
-         SELECT $1, $2, $3, $4, $5 WHERE EXISTS (SELECT 1 FROM demeos_businesses WHERE business_id = $1)
-         RETURNING decision_id, recommendation_title, suggested_campaign_type, decision, decided_at`,
-        [decision.businessId, decision.recommendationTitle, decision.suggestedCampaignType, decision.decision, decision.timestamp]);
+           (business_id, recommendation_id, recommendation_title, suggested_campaign_type, decision, decided_at)
+         SELECT $1, $2, $3, $4, $5, $6 WHERE EXISTS (SELECT 1 FROM demeos_businesses WHERE business_id = $1)
+         RETURNING decision_id, recommendation_id, recommendation_title, suggested_campaign_type, decision, decided_at`,
+        [decision.businessId, decision.recommendationId, decision.recommendationTitle, decision.suggestedCampaignType, decision.decision, decision.timestamp]);
       if (!result.rows.length) return null;
       const row = result.rows[0];
-      return { decisionId: String(row.decision_id), businessId: decision.businessId, recommendationTitle: row.recommendation_title,
+      return { decisionId: String(row.decision_id), recommendationId: row.recommendation_id, businessId: decision.businessId, recommendationTitle: row.recommendation_title,
         suggestedCampaignType: row.suggested_campaign_type, decision: row.decision,
         timestamp: row.decided_at instanceof Date ? row.decided_at.toISOString() : row.decided_at };
     },

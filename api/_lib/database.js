@@ -30,6 +30,8 @@ const SCHEMA_STATEMENTS = [
     decision TEXT NOT NULL CHECK (decision IN ('used', 'modified', 'rejected')),
     decided_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`,
+  `ALTER TABLE demeos_recommendation_decisions
+    ADD COLUMN IF NOT EXISTS recommendation_id TEXT NULL`,
   `CREATE INDEX IF NOT EXISTS demeos_recommendation_decisions_business_id_idx
     ON demeos_recommendation_decisions (business_id)`,
   `CREATE TABLE IF NOT EXISTS demeos_customer_participations (
