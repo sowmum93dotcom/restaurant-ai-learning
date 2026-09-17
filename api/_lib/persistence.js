@@ -195,7 +195,7 @@ function createPersistenceRepository(database) {
       return toSavedPossibility(result.rows[0]);
     },
 
-    async recordCustomerPossibilityIssuance(trustedCustomerIdentityId, possibilities, understanding = null) {
+    async recordCustomerPossibilityIssuance(trustedCustomerIdentityId, possibilities, understanding = null, intentionId = null) {
       if (!isNonEmptyString(trustedCustomerIdentityId) || !Array.isArray(possibilities) || !possibilities.length) return [];
       await database.ensureSchema();
       const issuedWorkItemIds = [];
@@ -212,13 +212,13 @@ function createPersistenceRepository(database) {
           content: getCustomerFacingContent(row.campaign), participationAction: "Interested" });
         if (!publicItem || publicItem.content !== possibility.content ||
             publicItem.businessName !== possibility.businessName || publicItem.location !== possibility.location) continue;
-        const linkedIntention = understanding && isNonEmptyString(understanding.understanding);
+        const linkedIntention = understanding && isNonEmptyString(understanding.understanding) && isNonEmptyString(intentionId);
         const intentionExpression = linkedIntention ? `(SELECT intention_id FROM demeos_customer_intentions
               WHERE trusted_customer_identity_id = $1
-                AND intention_category = $4
-                AND customer_text IS NOT DISTINCT FROM $5
-                AND confirmed_understanding = $6
-              ORDER BY created_at DESC, intention_id DESC LIMIT 1)` : "NULL";
+                AND intention_id = $4
+                AND intention_category = $5
+                AND customer_text IS NOT DISTINCT FROM $6
+                AND confirmed_understanding = $7)` : "NULL";
         const result = await database.query(
           `INSERT INTO demeos_customer_possibility_issuances
              (trusted_customer_identity_id, work_item_id, campaign_snapshot, evidence_type, source, intention_id)
@@ -226,10 +226,13 @@ function createPersistenceRepository(database) {
              ${intentionExpression}
            FROM demeos_campaigns c JOIN demeos_businesses b ON b.business_id = c.business_id
            WHERE c.campaign_id = $2 AND c.campaign = $3::jsonb
+             AND c.campaign->>'approvalStatus' = 'Approved'
+             AND c.campaign->>'campaignType' IN ('full', 'social', 'email')
+             AND COALESCE(BTRIM(c.campaign->>'campaignText'), '') <> ''
            ON CONFLICT (trusted_customer_identity_id, work_item_id) DO NOTHING
            RETURNING work_item_id`,
           linkedIntention ? [trustedCustomerIdentityId, possibility.workItemId, JSON.stringify(row.campaign),
-            understanding.intention || "", understanding.customerText || null, understanding.understanding]
+            intentionId, understanding.intention || "", understanding.customerText || null, understanding.understanding]
             : [trustedCustomerIdentityId, possibility.workItemId, JSON.stringify(row.campaign)]);
         // A retry may find the already-issued row. It is still the authoritative
         // issuance, but its original snapshot and timestamp must not be rewritten.

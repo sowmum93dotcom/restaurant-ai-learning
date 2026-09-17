@@ -104,12 +104,13 @@ function toCustomerPossibility(value) {
   const relevance = value.relevance;
   if (!possibilityId || !workItemId || !businessName || !content || value.participationAction !== "Interested" ||
       !relevance || typeof relevance !== "object" || Array.isArray(relevance) ||
-      relevance.basis !== "explicit-customer-intent-overlap" || !Array.isArray(relevance.evidence) ||
+      relevance.basis !== "current-intention-authorized-work" || !Array.isArray(relevance.evidence) ||
+      relevance.explanation !== "This authorized possibility connects to your current request." ||
       relevance.evidence.length > 5 || (Object.hasOwn(value, "location") && typeof value.location !== "string")) return null;
   const evidence = relevance.evidence.map(normalizedRequiredString);
   if (!evidence.length || evidence.some(function (term) { return !term || term.length > 60; })) return null;
   const possibility = { possibilityId, workItemId, businessName, content, participationAction: "Interested",
-    relevance: { basis: "explicit-customer-intent-overlap", evidence: evidence.slice(0, 5) } };
+    relevance: { basis: relevance.basis, evidence: evidence.slice(0, 5), explanation: relevance.explanation } };
   if (typeof value.location === "string" && value.location.trim()) possibility.location = value.location.trim();
   return possibility;
 }
@@ -180,7 +181,7 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
     addText(document, focusRegion, "p", "customer-possibility-label", CUSTOMER_STAGE_THREE_COPY.possibilityLabel);
     addText(document, focusRegion, "h3", "customer-focused-content", possibility.content);
     addText(document, focusRegion, "h4", "customer-evidence-heading", CUSTOMER_STAGE_THREE_COPY.why);
-    addText(document, focusRegion, "p", "customer-possibility-evidence", possibility.relevance.evidence.join(" · "));
+    addText(document, focusRegion, "p", "customer-possibility-evidence", possibility.relevance.explanation);
     addText(document, focusRegion, "p", "customer-provider-label", CUSTOMER_STAGE_THREE_COPY.providedBy);
     addText(document, focusRegion, "p", "customer-possibility-provider", possibility.businessName);
     if (possibility.location) addText(document, focusRegion, "p", "customer-possibility-location", possibility.location);

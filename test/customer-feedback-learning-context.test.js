@@ -94,7 +94,7 @@ test("feedback guides only ordering after current intention and cannot create un
   const results = findCustomerPossibilities(understanding, work, 5, [], feedback);
   assert.deepEqual(results.map((item) => item.workItemId), ["a", "b"]);
   assert.doesNotMatch(JSON.stringify(results), /£10|rooftop|booking|offer/);
-  results.forEach((item) => assert.equal(item.relevance.basis, "explicit-customer-intent-overlap"));
+  results.forEach((item) => assert.equal(item.relevance.basis, "current-intention-authorized-work"));
 });
 
 test("repository reads feedback only by trusted owner and preserves Customer Feedback provenance", async function () {
