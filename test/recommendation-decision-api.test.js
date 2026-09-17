@@ -217,12 +217,12 @@ test("repository scopes restored decisions and writes to one business", async ()
     calls.push({ sql, values });
     if (sql.startsWith("SELECT profile")) return { rows: [{ profile: { name: "Alpha" } }] };
     if (sql.includes("FROM demeos_campaigns")) return { rows: [] };
-    if (sql.startsWith("SELECT recommendation_title")) return { rows: [{ recommendation_title: "Alpha idea", suggested_campaign_type: "full", decision: "rejected", decided_at: "2026-09-06T00:00:00.000Z" }] };
-    return { rows: [{ decision: values[3] }] };
+    if (sql.startsWith("SELECT decision_id")) return { rows: [{ decision_id: 41, recommendation_title: "Alpha idea", suggested_campaign_type: "full", decision: "rejected", decided_at: "2026-09-06T00:00:00.000Z" }] };
+    return { rows: [{ decision_id: 42, recommendation_title: values[1], suggested_campaign_type: values[2], decision: values[3], decided_at: values[4] }] };
   } };
   const repository = createPersistenceRepository(database);
   const restored = await repository.getKnownBusiness("business-a");
-  assert.deepEqual(restored.recommendationDecisions, [{ businessId: "business-a", recommendationTitle: "Alpha idea", suggestedCampaignType: "full", decision: "rejected", timestamp: "2026-09-06T00:00:00.000Z" }]);
+  assert.deepEqual(restored.recommendationDecisions, [{ decisionId: "41", businessId: "business-a", recommendationTitle: "Alpha idea", suggestedCampaignType: "full", decision: "rejected", timestamp: "2026-09-06T00:00:00.000Z" }]);
   assert.match(calls[2].sql, /WHERE business_id = \$1/);
   assert.deepEqual(calls[2].values, ["business-a"]);
 
