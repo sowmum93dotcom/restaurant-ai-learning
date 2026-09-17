@@ -7,20 +7,75 @@ const {
   getCapabilityForRecommendationType
 } = require("../../../_lib/capability-registry.js");
 
+function findCampaign(record, campaignId) {
+  const campaigns = record && Array.isArray(record.campaigns) ? record.campaigns : [];
+  return campaigns.find(function (campaign) { return campaign && campaign.id === campaignId; }) || null;
+}
+
+async function handleLifecycleChange(req, res, repository, businessId, campaignId) {
+  const action = req.body && req.body.action;
+  if (action !== "withdraw" && action !== "reactivate") {
+    return res.status(400).json({ error: "A supported lifecycle action is required." });
+  }
+
+  const access = await authorizeBusinessOwnerRequest({
+    req,
+    businessId,
+    action: action === "reactivate" ? DEMEOS_ACTIONS.APPROVE_OWN_MARKETING : DEMEOS_ACTIONS.CREATE_MARKETING,
+    repository
+  });
+  if (!access.authenticated) return res.status(401).json({ error: "Authentication required." });
+  if (!access.allowed) return res.status(403).json({ error: "Forbidden." });
+
+  const record = await repository.getKnownBusiness(businessId);
+  const existing = findCampaign(record, campaignId);
+  if (!existing || existing.businessId !== businessId) {
+    return res.status(404).json({ error: "Campaign was not found for this business." });
+  }
+
+  if (action === "withdraw") {
+    // DEMEOS already uses Unapproved as the non-publishable state. Reuse that
+    // lifecycle instead of inventing a parallel archive/expiry system. Historical
+    // issuance, participation, feedback and outcomes remain stored independently.
+    if (existing.approvalStatus !== "Unapproved") {
+      const saved = await repository.saveCampaign({ ...existing, id: campaignId, businessId, approvalStatus: "Unapproved" });
+      if (!saved) return res.status(409).json({ error: "Campaign could not be withdrawn for this business." });
+    }
+    return res.status(200).json({ workItemId: campaignId, approvalStatus: "Unapproved", currentCustomerPublication: false });
+  }
+
+  // Reactivation is an explicit owner approval. The existing approval pathway is
+  // authoritative and customer publication rules still validate capability/content.
+  let approved = existing.approvalStatus === "Approved" ? existing : await repository.approveCampaign(businessId, campaignId);
+  if (!approved) return res.status(404).json({ error: "Campaign was not found for this business." });
+  const capability = getCapabilityForRecommendationType(approved.campaignType);
+  if (!capability || !capability.available || capability.supportedOutputType !== approved.campaignType ||
+      typeof approved.campaignText !== "string" || !approved.campaignText.trim()) {
+    // Fail closed: do not leave invalid work newly authorized.
+    await repository.saveCampaign({ ...approved, id: campaignId, businessId, approvalStatus: "Unapproved" });
+    return res.status(409).json({ error: "Campaign is not eligible for reactivation." });
+  }
+  return res.status(200).json({ workItemId: campaignId, approvalStatus: "Approved", currentCustomerPublication: true });
+}
+
 module.exports = async function handler(req, res) {
-  if (req.method !== "PUT") {
-    res.setHeader("Allow", "PUT");
+  if (req.method !== "PUT" && req.method !== "PATCH") {
+    res.setHeader("Allow", "PUT, PATCH");
     return res.status(405).json({ error: "Method not allowed" });
   }
   const businessId = typeof req.query.businessId === "string" ? req.query.businessId.trim() : "";
   const campaignId = typeof req.query.campaignId === "string" ? req.query.campaignId.trim() : "";
-  const campaign = req.body && req.body.campaign;
   if (!businessId || !campaignId) {
-    return res.status(400).json({ error: "A businessId, campaignId, and campaign are required." });
+    return res.status(400).json({ error: "A businessId and campaignId are required." });
   }
 
   try {
     const repository = getRepository();
+    if (req.method === "PATCH") {
+      return await handleLifecycleChange(req, res, repository, businessId, campaignId);
+    }
+
+    const campaign = req.body && req.body.campaign;
     const isApprovalRequest = campaign && campaign.approvalStatus === "Approved";
     const access = await authorizeBusinessOwnerRequest({
       req,
@@ -30,41 +85,23 @@ module.exports = async function handler(req, res) {
         : DEMEOS_ACTIONS.CREATE_MARKETING,
       repository
     });
-    if (!access.authenticated) {
-      return res.status(401).json({ error: "Authentication required." });
-    }
-    if (!access.allowed) {
-      return res.status(403).json({ error: "Forbidden." });
-    }
+    if (!access.authenticated) return res.status(401).json({ error: "Authentication required." });
+    if (!access.allowed) return res.status(403).json({ error: "Forbidden." });
 
     const requiredCampaignFields = [
-      "campaignText",
-      "campaignType",
-      "campaignTypeLabel",
-      "businessName",
-      "createdAt",
-      "approvalStatus"
+      "campaignText", "campaignType", "campaignTypeLabel", "businessName", "createdAt", "approvalStatus"
     ];
     const isCampaignObject = campaign && typeof campaign === "object" && !Array.isArray(campaign);
     const hasInvalidCampaignField = !isCampaignObject || requiredCampaignFields.some(function (field) {
       return typeof campaign[field] !== "string" || !campaign[field].trim();
     });
-    const campaignCapability = isCampaignObject
-      ? getCapabilityForRecommendationType(campaign.campaignType)
-      : null;
-    if (
-      hasInvalidCampaignField ||
-      !["Unapproved", "Approved"].includes(campaign.approvalStatus) ||
-      !campaignCapability ||
-      !campaignCapability.available ||
-      campaignCapability.supportedOutputType !== campaign.campaignType
-    ) {
+    const campaignCapability = isCampaignObject ? getCapabilityForRecommendationType(campaign.campaignType) : null;
+    if (hasInvalidCampaignField || !["Unapproved", "Approved"].includes(campaign.approvalStatus) ||
+        !campaignCapability || !campaignCapability.available ||
+        campaignCapability.supportedOutputType !== campaign.campaignType) {
       return res.status(400).json({ error: "DEMEOS received invalid campaign data." });
     }
-    const campaignForPersistence = {
-      ...campaign,
-      campaignTypeLabel: campaignCapability.ownerFacingName
-    };
+    const campaignForPersistence = { ...campaign, campaignTypeLabel: campaignCapability.ownerFacingName };
 
     if (isApprovalRequest) {
       let approvedCampaign = await repository.approveCampaign(businessId, campaignId);
@@ -72,53 +109,27 @@ module.exports = async function handler(req, res) {
         const approvedCapability = getCapabilityForRecommendationType(approvedCampaign.campaignType);
         if (approvedCapability && approvedCampaign.campaignTypeLabel !== approvedCapability.ownerFacingName) {
           const normalizedCampaign = await repository.saveCampaign({
-            ...approvedCampaign,
-            id: campaignId,
-            businessId,
-            campaignTypeLabel: approvedCapability.ownerFacingName
+            ...approvedCampaign, id: campaignId, businessId, campaignTypeLabel: approvedCapability.ownerFacingName
           });
-          if (!normalizedCampaign) {
-            throw new Error("Could not normalize approved campaign label.");
-          }
+          if (!normalizedCampaign) throw new Error("Could not normalize approved campaign label.");
           approvedCampaign = normalizedCampaign;
         }
       }
       if (!approvedCampaign) {
         const createAccess = await authorizeBusinessOwnerRequest({
-          req,
-          businessId,
-          action: DEMEOS_ACTIONS.CREATE_MARKETING,
-          repository
+          req, businessId, action: DEMEOS_ACTIONS.CREATE_MARKETING, repository
         });
-        if (!createAccess.authenticated) {
-          return res.status(401).json({ error: "Authentication required." });
-        }
-        if (!createAccess.allowed) {
-          return res.status(403).json({ error: "Forbidden." });
-        }
-
+        if (!createAccess.authenticated) return res.status(401).json({ error: "Authentication required." });
+        if (!createAccess.allowed) return res.status(403).json({ error: "Forbidden." });
         const restoredCampaign = await repository.saveCampaign({
-          ...campaignForPersistence,
-          id: campaignId,
-          businessId,
-          approvalStatus: "Unapproved"
+          ...campaignForPersistence, id: campaignId, businessId, approvalStatus: "Unapproved"
         });
-        if (restoredCampaign) {
-          approvedCampaign = await repository.approveCampaign(businessId, campaignId);
-        }
+        if (restoredCampaign) approvedCampaign = await repository.approveCampaign(businessId, campaignId);
       }
-      if (!approvedCampaign) {
-        return res.status(404).json({ error: "Campaign was not found for this business." });
-      }
+      if (!approvedCampaign) return res.status(404).json({ error: "Campaign was not found for this business." });
     } else {
-      const savedCampaign = await repository.saveCampaign({
-        ...campaignForPersistence,
-        id: campaignId,
-        businessId
-      });
-      if (!savedCampaign) {
-        return res.status(409).json({ error: "Campaign could not be saved for this business." });
-      }
+      const savedCampaign = await repository.saveCampaign({ ...campaignForPersistence, id: campaignId, businessId });
+      if (!savedCampaign) return res.status(409).json({ error: "Campaign could not be saved for this business." });
     }
     return res.status(204).end();
   } catch (error) {
