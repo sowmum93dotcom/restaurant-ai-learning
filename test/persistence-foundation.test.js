@@ -251,6 +251,20 @@ test("campaign persistence returns the same-business updated campaign", async fu
   assert.deepEqual(saved, campaign);
 });
 
+test("recommendation-linked campaign persistence requires a same-business used or modified decision and preserves provenance on edits", async function () {
+  const campaign = { id: "campaign-a", businessId: "business-a", campaignText: "Edited",
+    recommendationDecisionId: "42" };
+  const database = { async ensureSchema() {}, async query(sql, values) {
+    assert.match(sql, /d\.business_id = \$2/);
+    assert.match(sql, /d\.decision IN \('used', 'modified'\)/);
+    assert.match(sql, /jsonb_set\(EXCLUDED\.campaign, '\{recommendationDecisionId\}'/);
+    assert.deepEqual(values, ["campaign-a", "business-a", JSON.stringify(campaign)]);
+    return { rows: [{ campaign }] };
+  } };
+
+  assert.deepEqual(await createPersistenceRepository(database).saveCampaign(campaign), campaign);
+});
+
 test("campaign persistence returns null and preserves stored data on a cross-business ID collision", async function () {
   const stored = { campaignText: "Other business original", businessId: "business-b" };
   const database = {

@@ -195,6 +195,30 @@ test("persisted evidence tagged for another business cannot enter the prompt", a
 test("a complete Business Manager Profile is accepted", async () => {
   const result = await call(); assert.equal(result.response.statusCode, 200); assert.equal(result.fetchCalls, 1);
   assert.equal(result.response.body.recommendations.length, 3);
+  result.response.body.recommendations.forEach(function (recommendation) {
+    assert.match(recommendation.recommendationId, /^[0-9a-f-]{36}$/);
+    assert.equal(recommendation.whyThisRecommendation,
+      "This recommendation is based on your verified Business Manager Profile. There is not yet relevant historical evidence in this recommendation.");
+  });
+});
+
+test("owner-facing evidence explanations label current situation and historical evidence without promoting it", async () => {
+  const grounded = structuredClone(valid);
+  grounded.recommendations.forEach(function (recommendation) {
+    recommendation.evidence.push(
+      { source: "businessSituation", field: "businessSituation", value: "Weekdays need attention", verificationState: "ownerProvided" },
+      { source: "campaignOutcome", field: "outcome", value: "Mixed", verificationState: "ownerProvidedResult" }
+    );
+  });
+  const result = await call(profile, JSON.stringify(grounded), "Weekdays need attention", [{
+    campaignType: "social", outcome: "Mixed", ownerNote: "Owner saw a mixed result."
+  }]);
+  assert.equal(result.response.statusCode, 200);
+  const explanation = result.response.body.recommendations[0].whyThisRecommendation;
+  assert.match(explanation, /current owner-provided Business Situation/);
+  assert.match(explanation, /historical owner-recorded campaign outcomes/);
+  assert.match(explanation, /not a current result or demand signal/);
+  assert.doesNotMatch(explanation, /sale|conversion|revenue|success/i);
 });
 
 test("an owner-provided situation is included as recommendation context, not instructions", async () => {

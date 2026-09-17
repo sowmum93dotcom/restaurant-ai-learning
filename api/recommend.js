@@ -8,6 +8,7 @@ const {
 const { DEMEOS_ACTIONS } = require("../api/_lib/demeos-rules.js");
 const { ALLOWED_CAMPAIGN_OUTCOMES } = require("./_lib/campaign-outcome-contract.js");
 const { getDemeosUnderstanding } = require("../js/demeos-understanding.js");
+const { randomUUID } = require("node:crypto");
 
 const requiredBusinessProfileFields = ["name", "type", "location", "brandVoice", "targetCustomer", "goal"];
 const recommendationCapabilities = getRecommendationCapabilities();
@@ -312,6 +313,29 @@ function parseRecommendations(text, profile, situation, outcomes, participation,
   })) } : null;
 }
 
+function recommendationEvidenceExplanation(recommendation, situation) {
+  const sources = new Set(recommendation.evidence.map((item) => item.source));
+  const parts = [];
+  if (situation && sources.has("businessSituation")) parts.push("your current owner-provided Business Situation");
+  if (sources.has("campaignOutcome")) parts.push("historical owner-recorded campaign outcomes");
+  if (sources.has("customerParticipation")) parts.push("historical Interested participation");
+  if (sources.has("customerFeedback")) parts.push("historical Customer Feedback");
+  if (sources.has("recommendationDecision")) parts.push("historical owner recommendation decisions");
+  if (!parts.length) {
+    return "This recommendation is based on your verified Business Manager Profile. There is not yet relevant historical evidence in this recommendation.";
+  }
+  const joined = parts.length === 1 ? parts[0] : `${parts.slice(0, -1).join(", ")} and ${parts.at(-1)}`;
+  return `This recommendation is based on your verified Business Manager Profile and ${joined}. Historical evidence is context from its recorded time, not a current result or demand signal.`;
+}
+
+function prepareRecommendationsForOwner(recommendations, situation) {
+  return { recommendations: recommendations.recommendations.map((recommendation) => ({
+    ...recommendation,
+    recommendationId: randomUUID(),
+    whyThisRecommendation: recommendationEvidenceExplanation(recommendation, situation)
+  })) };
+}
+
 function extractRecommendationOutput(data) {
   return data.output_text || data.output?.flatMap((item) => item.content || []).map((item) => item.text || "").join("").trim();
 }
@@ -441,7 +465,7 @@ export default async function handler(req, res) {
 
     if (!recommendations) return res.status(502).json({ error: "The DEMEOS Marketing Agent returned invalid recommendations.",
       validationDiagnostic: diagnoseRecommendations(lastOutput, profile, situation, outcomes, participation, feedback, decisions), ...(requestId ? { requestId } : {}) });
-    return res.status(200).json(recommendations);
+    return res.status(200).json(prepareRecommendationsForOwner(recommendations, situation));
   } catch (error) {
     console.error("Recommendation server error:", error);
     return res.status(500).json({ error: "Something went wrong while creating recommendations." });

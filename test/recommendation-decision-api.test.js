@@ -48,7 +48,7 @@ async function request({
       actorScope: "demeos-admin"
     },
     body: {
-      ...body, businessId: "body-business", ownerId: "body-owner",
+      recommendationId: "recommendation-123", ...body, businessId: "body-business", ownerId: "body-owner",
       trustedIdentityId: "body-attacker", userId: "body-attacker", actorScope: "demeos-admin"
     },
     headers: {
@@ -218,7 +218,7 @@ test("repository scopes restored decisions and writes to one business", async ()
     if (sql.startsWith("SELECT profile")) return { rows: [{ profile: { name: "Alpha" } }] };
     if (sql.includes("FROM demeos_campaigns")) return { rows: [] };
     if (sql.startsWith("SELECT decision_id")) return { rows: [{ decision_id: 41, recommendation_title: "Alpha idea", suggested_campaign_type: "full", decision: "rejected", decided_at: "2026-09-06T00:00:00.000Z" }] };
-    return { rows: [{ decision_id: 42, recommendation_title: values[1], suggested_campaign_type: values[2], decision: values[3], decided_at: values[4] }] };
+    return { rows: [{ decision_id: 42, recommendation_id: values[1], recommendation_title: values[2], suggested_campaign_type: values[3], decision: values[4], decided_at: values[5] }] };
   } };
   const repository = createPersistenceRepository(database);
   const restored = await repository.getKnownBusiness("business-a");
@@ -226,7 +226,7 @@ test("repository scopes restored decisions and writes to one business", async ()
   assert.match(calls[2].sql, /WHERE business_id = \$1/);
   assert.deepEqual(calls[2].values, ["business-a"]);
 
-  await repository.saveRecommendationDecision({ businessId: "business-b", recommendationTitle: "Beta idea", suggestedCampaignType: "email", decision: "modified", timestamp: "2026-09-06T01:00:00.000Z" });
+  await repository.saveRecommendationDecision({ businessId: "business-b", recommendationId: "recommendation-beta", recommendationTitle: "Beta idea", suggestedCampaignType: "email", decision: "modified", timestamp: "2026-09-06T01:00:00.000Z" });
   assert.match(calls[3].sql, /WHERE EXISTS.*business_id = \$1/s);
-  assert.deepEqual(calls[3].values, ["business-b", "Beta idea", "email", "modified", "2026-09-06T01:00:00.000Z"]);
+  assert.deepEqual(calls[3].values, ["business-b", "recommendation-beta", "Beta idea", "email", "modified", "2026-09-06T01:00:00.000Z"]);
 });

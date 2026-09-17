@@ -38,7 +38,8 @@ function setup(campaigns = [], decisions = [], decisionResponseOk = true) {
     createElement(tag) { const element = new Element(tag); created.push(element); return element; },
     getElementById(id) { if (!elements.has(id)) elements.set(id, new Element()); return elements.get(id); } };
   let generateCalls = 0; const recommendBodies = []; const decisionWrites = [];
-  const recommendations = { recommendations: ["First", "Second", "Third"].map((title, index) => ({ title, reason: `Why ${index}`,
+  const recommendations = { recommendations: ["First", "Second", "Third"].map((title, index) => ({ title, recommendationId: `recommendation-${index}`,
+    whyThisRecommendation: "Based on verified profile evidence.", reason: `Why ${index}`,
     targetCustomer: "Families", businessObjective: `Awareness objective ${index}`,
     demeosCapability: ["Full Marketing Campaign", "Social Media Campaign", "Email Campaign"][index],
     suggestedRequest: `Do ${index}`, suggestedCampaignType: ["full", "social", "email"][index],
@@ -49,7 +50,10 @@ function setup(campaigns = [], decisions = [], decisionResponseOk = true) {
     fetch: async (url, options = {}) => {
       if (url === "/api/recommend") { recommendBodies.push(JSON.parse(options.body)); return { ok: true, status: 200, async text() { return JSON.stringify(recommendations); } }; }
       if (url === "/api/generate") { generateCalls += 1; return { ok: true, status: 200, async text() { return JSON.stringify({ campaign: "Campaign" }); } }; }
-      if (url.endsWith("/recommendation-decisions")) { decisionWrites.push({ url, body: JSON.parse(options.body) }); return { ok: decisionResponseOk, status: decisionResponseOk ? 201 : 500 }; }
+      if (url.endsWith("/recommendation-decisions")) { const body = JSON.parse(options.body); decisionWrites.push({ url, body }); return { ok: decisionResponseOk, status: decisionResponseOk ? 201 : 500,
+        async json() { return { recommendationDecision: { decisionId: "decision-1", businessId: "a", recommendationId: body.recommendationId,
+          recommendationTitle: body.recommendationTitle, suggestedCampaignType: body.suggestedCampaignType,
+          decision: body.decision, timestamp: "2026-09-17T00:00:00.000Z" } }; } }; }
       return { ok: false, status: 404, async json() { return {}; }, async text() { return "{}"; } };
     } };
   vm.runInNewContext(fs.readFileSync(require.resolve("../js/script.js"), "utf8"), context); document.ready();
@@ -95,7 +99,7 @@ test("Recommendation Decisions renders only valid active-business owner choices 
 test("persisted recommendation decisions appear immediately and failed writes do not appear", async () => {
   const app = setup();
   await app.document.getElementById("recommendations-btn").listeners.click();
-  await app.document.getElementById("recommendations-list").children[0].children[9].listeners.click();
+  await app.document.getElementById("recommendations-list").children[0].children[10].listeners.click();
   const list = app.document.getElementById("recommendation-decisions-results-list");
   assert.equal(list.children.length, 1);
   assert.equal(list.children[0].children[0].textContent, "First");
@@ -103,7 +107,7 @@ test("persisted recommendation decisions appear immediately and failed writes do
 
   const failed = setup([], [], false);
   await failed.document.getElementById("recommendations-btn").listeners.click();
-  await failed.document.getElementById("recommendations-list").children[0].children[9].listeners.click();
+  await failed.document.getElementById("recommendations-list").children[0].children[10].listeners.click();
   assert.equal(failed.document.getElementById("recommendation-decisions-results-list").children.length, 0);
   assert.deepEqual(JSON.parse(failed.store.get("demeosRecommendationDecisions")), []);
 });
@@ -119,15 +123,16 @@ test("recommendations use the active profile, show loading, render three, and po
   assert.equal(app.recommendBodies[0].businessSituation, "Tuesday evenings are quiet.");
   const list = app.document.getElementById("recommendations-list"); assert.equal(list.children.length, 3);
   const card = list.children[1];
-  assert.deepEqual(card.children.slice(1, 5).map((section) => [section.children[0].textContent, section.children[1].textContent]), [
-    ["Why this helps", "Why 1"], ["Target customer", "Families"],
-    ["Business objective", "Awareness objective 1"], ["DEMEOS will create", "Social Media Campaign"]
+  assert.deepEqual(card.children.slice(1, 6).map((section) => [section.children[0].textContent, section.children[1].textContent]), [
+    ["Why this recommendation", "Based on verified profile evidence."], ["Why this helps", "Why 1"],
+    ["Target customer", "Families"], ["Business objective", "Awareness objective 1"],
+    ["DEMEOS will create", "Social Media Campaign"]
   ]);
-  const useButton = card.children[9]; assert.equal(useButton.textContent, "Use This Recommendation"); useButton.listeners.click();
+  const useButton = card.children[10]; assert.equal(useButton.textContent, "Use This Recommendation"); await useButton.listeners.click();
   assert.equal(app.document.getElementById("promo-input").value, "Do 1");
   assert.equal(app.document.getElementById("campaign-type").value, "social");
   assert.deepEqual(app.decisionWrites, [{ url: "/api/businesses/a/recommendation-decisions", body: {
-    recommendationTitle: "Second", suggestedCampaignType: "social", decision: "used"
+    recommendationTitle: "Second", recommendationId: "recommendation-1", suggestedCampaignType: "social", decision: "used"
   } }]);
   assert.equal(app.getGenerateCalls(), 0);
 });
@@ -135,7 +140,7 @@ test("recommendations use the active profile, show loading, render three, and po
 test("Modify records modified, fills editable controls, and does not generate", async () => {
   const app = setup(); await app.document.getElementById("recommendations-btn").listeners.click();
   const card = app.document.getElementById("recommendations-list").children[2];
-  card.children[10].listeners.click();
+  await card.children[11].listeners.click();
   const input = app.document.getElementById("promo-input");
   assert.equal(input.value, "Do 2");
   assert.equal(app.document.getElementById("campaign-type").value, "email");
@@ -148,9 +153,9 @@ test("Not for me records rejected visibly without filling or generating and keep
   const app = setup(); await app.document.getElementById("recommendations-btn").listeners.click();
   const list = app.document.getElementById("recommendations-list");
   const request = app.document.getElementById("promo-input"); request.value = "Owner's existing request";
-  list.children[0].children[11].listeners.click();
+  await list.children[0].children[12].listeners.click();
   assert.equal(request.value, "Owner's existing request");
-  assert.equal(list.children[0].children[12].textContent, "Not for me");
+  assert.equal(list.children[0].children[13].textContent, "Not for me");
   assert.equal(list.children[0].classes.has("is-rejected"), true);
   assert.equal(list.children.length, 3);
   assert.equal(app.decisionWrites[0].body.decision, "rejected");
@@ -173,10 +178,10 @@ test("switching businesses and Add Business clear recommendations", async () => 
 test("switching businesses keeps recommendation decisions scoped to the active business", async () => {
   const app = setup();
   await app.document.getElementById("recommendations-btn").listeners.click();
-  app.document.getElementById("recommendations-list").children[0].children[11].listeners.click();
+  await app.document.getElementById("recommendations-list").children[0].children[12].listeners.click();
   const selector = app.document.getElementById("business-selector"); selector.value = "b"; selector.listeners.change();
   await app.document.getElementById("recommendations-btn").listeners.click();
-  app.document.getElementById("recommendations-list").children[1].children[9].listeners.click();
+  await app.document.getElementById("recommendations-list").children[1].children[10].listeners.click();
   assert.deepEqual(app.decisionWrites.map((write) => [write.url, write.body.decision]), [
     ["/api/businesses/a/recommendation-decisions", "rejected"],
     ["/api/businesses/b/recommendation-decisions", "used"]
@@ -239,12 +244,12 @@ test("business switching keeps each business outcome history isolated", async ()
 test("recommendation cards render structured contract fields without raw JSON and preserve controls", async () => {
   const app = setup(); await app.document.getElementById("recommendations-btn").listeners.click();
   const card = app.document.getElementById("recommendations-list").children[0];
-  assert.deepEqual(card.children.slice(5, 9).map((section) => [section.children[0].textContent, section.children[1].textContent]), [
+  assert.deepEqual(card.children.slice(6, 10).map((section) => [section.children[0].textContent, section.children[1].textContent]), [
     ["Evidence", "Primary marketing goal — Awareness — Verified Business Profile"],
     ["Expected outcome", "Aims to support Awareness through customer interest"],
     ["Required information", "None"], ["Approval", "Pending"]
   ]);
-  assert.deepEqual(card.children.slice(9, 12).map((button) => button.textContent),
+  assert.deepEqual(card.children.slice(10, 13).map((button) => button.textContent),
     ["Use This Recommendation", "Modify", "Not for me"]);
-  assert.doesNotMatch(card.children[5].children[1].textContent, /[{}\[\]"]/);
+  assert.doesNotMatch(card.children[6].children[1].textContent, /[{}\[\]"]/);
 });
