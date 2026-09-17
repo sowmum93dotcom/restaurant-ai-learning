@@ -57,7 +57,12 @@ test("missing publishable key fails safely with a non-secret diagnostic", functi
     assert.equal(res.statusCode, 503);
     assert.deepEqual(res.body, {
       error: "Authentication configuration is unavailable.",
-      configurationStatus: "publishable-key-missing"
+      configurationStatus: "publishable-key-missing",
+      diagnostic: {
+        vercelEnvironment: "missing",
+        clerkPublishableKey: "missing",
+        nextPublicClerkPublishableKey: "missing"
+      }
     });
     assert.doesNotMatch(JSON.stringify(res.body), /sk_test_secret|postgres|CLERK_SECRET_KEY/);
   });
@@ -73,8 +78,14 @@ test("production public config rejects a Clerk development publishable key", fun
     assert.equal(res.statusCode, 503);
     assert.deepEqual(res.body, {
       error: "Authentication configuration is unavailable.",
-      configurationStatus: "publishable-key-invalid"
+      configurationStatus: "publishable-key-invalid",
+      diagnostic: {
+        vercelEnvironment: "production",
+        clerkPublishableKey: "development-key",
+        nextPublicClerkPublishableKey: "missing"
+      }
     });
+    assert.doesNotMatch(JSON.stringify(res.body), /pk_test_public/);
   });
 });
 
