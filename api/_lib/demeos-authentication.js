@@ -39,6 +39,24 @@ function hasAllowedClerkPublishableKey(environment = process.env) {
   return Boolean(getAllowedClerkPublishableKey(environment));
 }
 
+function classifyClerkPublishableKey(key, environment = process.env) {
+  if (typeof key !== "string") return "missing";
+  const value = key.trim();
+  if (!value) return "empty";
+  if (!isProductionDeployment(environment)) return "allowed-non-production";
+  if (value.startsWith("pk_test_")) return "development-key";
+  if (value.startsWith("sk_")) return "secret-key-in-publishable-slot";
+  return "production-compatible";
+}
+
+function getClerkConfigurationDiagnostic(environment = process.env) {
+  return Object.freeze({
+    vercelEnvironment: typeof environment.VERCEL_ENV === "string" ? environment.VERCEL_ENV : "missing",
+    clerkPublishableKey: classifyClerkPublishableKey(environment.CLERK_PUBLISHABLE_KEY, environment),
+    nextPublicClerkPublishableKey: classifyClerkPublishableKey(environment.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY, environment)
+  });
+}
+
 function getClerkConfigurationStatus(environment = process.env) {
   const direct = environment.CLERK_PUBLISHABLE_KEY;
   const nextPublic = environment.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -140,6 +158,7 @@ async function resolveTrustedIdentityFromRequest(req, options = {}) {
 
 module.exports = {
   getAllowedClerkPublishableKey,
+  getClerkConfigurationDiagnostic,
   getClerkConfigurationStatus,
   hasAllowedClerkPublishableKey,
   hasRequiredClerkConfiguration,
