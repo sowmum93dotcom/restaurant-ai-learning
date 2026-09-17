@@ -8,13 +8,32 @@ function hasAllowedClerkKey(key, kind, environment = process.env) {
   return key.trim().startsWith(`${kind}_live_`);
 }
 
+function getAllowedClerkPublishableKey(environment = process.env) {
+  const candidates = [
+    environment.CLERK_PUBLISHABLE_KEY,
+    environment.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+  ];
+  for (const candidate of candidates) {
+    if (hasAllowedClerkKey(candidate, "pk", environment)) return candidate.trim();
+  }
+  return null;
+}
+
 function hasRequiredClerkConfiguration(environment = process.env) {
   return hasAllowedClerkKey(environment.CLERK_SECRET_KEY, "sk", environment) &&
-    hasAllowedClerkKey(environment.CLERK_PUBLISHABLE_KEY, "pk", environment);
+    Boolean(getAllowedClerkPublishableKey(environment));
 }
 
 function hasAllowedClerkPublishableKey(environment = process.env) {
-  return hasAllowedClerkKey(environment.CLERK_PUBLISHABLE_KEY, "pk", environment);
+  return Boolean(getAllowedClerkPublishableKey(environment));
+}
+
+function getClerkConfigurationStatus(environment = process.env) {
+  const direct = environment.CLERK_PUBLISHABLE_KEY;
+  const nextPublic = environment.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  if (typeof direct !== "string" && typeof nextPublic !== "string") return "publishable-key-missing";
+  if (!getAllowedClerkPublishableKey(environment)) return "publishable-key-invalid";
+  return "ready";
 }
 
 function isRequestLike(req) {
@@ -71,7 +90,7 @@ function getClerkAuthenticateRequest() {
   const { createClerkClient } = require("@clerk/backend");
   const clerkClient = createClerkClient({
     secretKey: process.env.CLERK_SECRET_KEY,
-    publishableKey: process.env.CLERK_PUBLISHABLE_KEY
+    publishableKey: getAllowedClerkPublishableKey()
   });
 
   return clerkClient.authenticateRequest.bind(clerkClient);
@@ -109,6 +128,8 @@ async function resolveTrustedIdentityFromRequest(req, options = {}) {
 }
 
 module.exports = {
+  getAllowedClerkPublishableKey,
+  getClerkConfigurationStatus,
   hasAllowedClerkPublishableKey,
   hasRequiredClerkConfiguration,
   resolveTrustedIdentityFromRequest

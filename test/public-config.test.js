@@ -50,12 +50,15 @@ test("public config enables the business ID diagnostic only for exact true", fun
   });
 });
 
-test("missing publishable key fails safely without leaking other configuration", function () {
+test("missing publishable key fails safely with a non-secret diagnostic", function () {
   return withEnvironment({ CLERK_SECRET_KEY: "sk_test_secret", DATABASE_URL: "postgres://secret" }, function () {
     const res = response();
     publicConfig({}, res);
     assert.equal(res.statusCode, 503);
-    assert.deepEqual(res.body, { error: "Authentication configuration is unavailable." });
+    assert.deepEqual(res.body, {
+      error: "Authentication configuration is unavailable.",
+      configurationStatus: "publishable-key-missing"
+    });
     assert.doesNotMatch(JSON.stringify(res.body), /sk_test_secret|postgres|CLERK_SECRET_KEY/);
   });
 });
@@ -68,7 +71,10 @@ test("production public config rejects a Clerk development publishable key", fun
     const res = response();
     publicConfig({}, res);
     assert.equal(res.statusCode, 503);
-    assert.deepEqual(res.body, { error: "Authentication configuration is unavailable." });
+    assert.deepEqual(res.body, {
+      error: "Authentication configuration is unavailable.",
+      configurationStatus: "publishable-key-invalid"
+    });
   });
 });
 
@@ -76,6 +82,18 @@ test("production public config exposes a Clerk live publishable key", function (
   return withEnvironment({
     VERCEL_ENV: "production",
     CLERK_PUBLISHABLE_KEY: "pk_live_public"
+  }, function () {
+    const res = response();
+    publicConfig({}, res);
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.clerkPublishableKey, "pk_live_public");
+  });
+});
+
+test("production public config supports Clerk's standard NEXT_PUBLIC publishable key alias", function () {
+  return withEnvironment({
+    VERCEL_ENV: "production",
+    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_live_public"
   }, function () {
     const res = response();
     publicConfig({}, res);

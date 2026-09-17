@@ -1,7 +1,10 @@
 const {
   resolveTrustedCustomerIdentityFromRequest
 } = require("./_lib/demeos-customer-authentication.js");
-const { hasAllowedClerkPublishableKey } = require("./_lib/demeos-authentication.js");
+const {
+  getAllowedClerkPublishableKey,
+  getClerkConfigurationStatus
+} = require("./_lib/demeos-authentication.js");
 const { createAuthenticatedCustomerContext } = require("./_lib/demeos-actor-context.js");
 const { authorizeDemeosAction } = require("./_lib/demeos-authorization.js");
 const { DEMEOS_ACTIONS } = require("./_lib/demeos-rules.js");
@@ -157,13 +160,18 @@ async function publicConfig(req, res) {
     return res.status(200).json({ authenticated: Boolean(identity) });
   }
 
-  const clerkPublishableKey = process.env.CLERK_PUBLISHABLE_KEY;
-  if (!hasAllowedClerkPublishableKey()) {
-    return res.status(503).json({ error: "Authentication configuration is unavailable." });
+  const clerkPublishableKey = getAllowedClerkPublishableKey();
+  if (!clerkPublishableKey) {
+    const configurationStatus = getClerkConfigurationStatus();
+    console.error(`[DEMEOS authentication] ${configurationStatus}`);
+    return res.status(503).json({
+      error: "Authentication configuration is unavailable.",
+      configurationStatus
+    });
   }
 
   return res.status(200).json({
-    clerkPublishableKey: clerkPublishableKey.trim(),
+    clerkPublishableKey,
     businessIdDiagnosticEnabled: process.env.DEMEOS_BUSINESS_ID_DIAGNOSTIC_ENABLED === "true"
   });
 }
