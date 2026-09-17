@@ -113,7 +113,10 @@ async function publicConfig(req, res) {
     }
     if (participationRequest) return res.status(200).json({ participations: await repository.getCustomerParticipations(identity.trustedCustomerIdentityId, 50) });
     if (savedPossibilitiesRequest) {
-      if (req.method === 'GET') return res.status(200).json({ possibilities: await repository.getCustomerSavedPossibilities(identity.trustedCustomerIdentityId, 50) });
+      if (req.method === 'GET') return res.status(200).json({ possibilities:
+        typeof repository.getCustomerIssuedPossibilities === "function"
+          ? await repository.getCustomerIssuedPossibilities(identity.trustedCustomerIdentityId, 50)
+          : await repository.getCustomerSavedPossibilities(identity.trustedCustomerIdentityId, 50) });
       if (req.method === 'DELETE') {
         const body = req.body;
         if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).length !== 1 ||

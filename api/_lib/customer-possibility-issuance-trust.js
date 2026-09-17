@@ -25,7 +25,7 @@ async function prepareCustomerPossibilityIssuanceTrust() {
     BEGIN
       IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'demeos_fill_possibility_issuance_snapshot_trigger') THEN
         CREATE TRIGGER demeos_fill_possibility_issuance_snapshot_trigger
-        BEFORE INSERT OR UPDATE OF campaign_snapshot ON demeos_customer_possibility_issuances
+        BEFORE INSERT ON demeos_customer_possibility_issuances
         FOR EACH ROW EXECUTE FUNCTION demeos_fill_possibility_issuance_snapshot();
       END IF;
     END $$`);
@@ -71,7 +71,7 @@ async function confirmCustomerPossibilityIssuanceDelivery(trustedCustomerIdentit
   if (!uniqueIds.length) return [];
   const result = await database.query(
     `UPDATE demeos_customer_possibility_issuances
-     SET delivery_confirmed = TRUE, issued_at = NOW()
+     SET delivery_confirmed = TRUE
      WHERE trusted_customer_identity_id = $1 AND work_item_id = ANY($2::text[])
      RETURNING work_item_id`,
     [trustedCustomerIdentityId, uniqueIds]);

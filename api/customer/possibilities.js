@@ -46,7 +46,7 @@ module.exports = async function handler(req, res) {
     if (customerIdentity) {
       await prepareCustomerPossibilityIssuanceTrust();
       const issuedWorkItemIds = await repository.recordCustomerPossibilityIssuance(
-        customerIdentity.trustedCustomerIdentityId, possibilities);
+        customerIdentity.trustedCustomerIdentityId, possibilities, understanding);
       const confirmedWorkItemIds = await confirmCustomerPossibilityIssuanceDelivery(
         customerIdentity.trustedCustomerIdentityId, issuedWorkItemIds);
       const issued = new Set(confirmedWorkItemIds);

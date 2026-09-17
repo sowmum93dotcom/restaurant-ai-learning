@@ -105,8 +105,15 @@
       if (possibility.relevance && possibility.relevance.basis === "explicit-customer-intent-overlap") {
         const why = documentObject.createElement("p"); why.textContent = "Why this appeared: explicit customer intent overlap"; article.appendChild(why);
       }
-      const date = documentObject.createElement("time"); date.dateTime = possibility.createdAt;
-      date.textContent = "Saved " + new Date(possibility.createdAt).toLocaleDateString(); article.appendChild(date);
+      const recordedAt = possibility.issuedAt || possibility.createdAt;
+      const date = documentObject.createElement("time"); date.dateTime = recordedAt;
+      date.textContent = "Shown " + new Date(recordedAt).toLocaleDateString(); article.appendChild(date);
+      if (possibility.feedback) {
+        const feedback = documentObject.createElement("p");
+        feedback.textContent = "Your feedback: " + possibility.feedback.response;
+        article.appendChild(feedback);
+        if (possibility.feedback.comment) { const comment = documentObject.createElement("p"); comment.textContent = possibility.feedback.comment; article.appendChild(comment); }
+      }
       if (removePossibility && possibility.savedPossibilityId) {
         const remove = documentObject.createElement("button"); remove.type = "button"; remove.className = "demeos-secondary-button"; remove.textContent = "Remove";
         remove.addEventListener("click", function () { removePossibility(possibility.savedPossibilityId, remove); }); article.appendChild(remove);
@@ -191,16 +198,20 @@
     if (!form) return;
     form.addEventListener("submit", async function (event) {
       event.preventDefault();
+      const submit = form.querySelector('button[type="submit"]');
+      if (submit && submit.disabled) return;
       const input = documentObject.getElementById("customer-preference");
       const status = documentObject.getElementById("my-preferences-status");
       const preference = input.value.trim();
       if (!preference) return;
       status.textContent = "Saving your preference…";
+      if (submit) submit.disabled = true;
       const response = await fetchFunction("/api/customer/preferences", { method: "POST", credentials: "same-origin",
         headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify({ preference }) });
-      if (!response.ok) { status.textContent = "Your preference could not be saved."; return; }
+      if (!response.ok) { status.textContent = "Your preference could not be saved."; if (submit) submit.disabled = false; return; }
       input.value = ""; status.textContent = "Preference saved.";
       await loadPreferences(documentObject, fetchFunction);
+      if (submit) submit.disabled = false;
     });
   }
 
@@ -218,14 +229,18 @@
     if (!form) return;
     form.addEventListener("submit", async function (event) {
       event.preventDefault();
+      const submit = form.querySelector('button[type="submit"]');
+      if (submit && submit.disabled) return;
       const status = documentObject.getElementById("privacy-controls-status");
       const controls = { usePreferencesAsGuidance: documentObject.getElementById("use-preferences-as-guidance").checked,
         useFeedbackAsGuidance: documentObject.getElementById("use-feedback-as-guidance").checked };
       status.textContent = "Saving your privacy controls…";
+      if (submit) submit.disabled = true;
       const response = await fetchFunction("/api/customer/privacy-controls", { method: "POST", credentials: "same-origin",
         headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify(controls) });
       status.textContent = response.ok ? "Privacy controls saved." : "Your privacy controls could not be saved.";
       if (response.ok) await loadPrivacyControls(documentObject, fetchFunction);
+      if (submit) submit.disabled = false;
     });
   }
 
