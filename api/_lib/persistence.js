@@ -222,7 +222,9 @@ function createPersistenceRepository(database) {
         const result = await database.query(
           `INSERT INTO demeos_customer_possibility_issuances
              (trusted_customer_identity_id, work_item_id, campaign_snapshot, evidence_type, source, intention_id)
-           SELECT $1, c.campaign_id, c.campaign, 'demeos-possibility-issuance', 'demeos',
+           SELECT $1, c.campaign_id,
+             c.campaign || jsonb_build_object('issuedProducts', $8::jsonb),
+             'demeos-possibility-issuance', 'demeos',
              ${intentionExpression}
            FROM demeos_campaigns c JOIN demeos_businesses b ON b.business_id = c.business_id
            WHERE c.campaign_id = $2 AND c.campaign = $3::jsonb
@@ -232,8 +234,10 @@ function createPersistenceRepository(database) {
            ON CONFLICT (trusted_customer_identity_id, work_item_id) DO NOTHING
            RETURNING work_item_id`,
           linkedIntention ? [trustedCustomerIdentityId, possibility.workItemId, JSON.stringify(row.campaign),
-            intentionId, understanding.intention || "", understanding.customerText || null, understanding.understanding]
-            : [trustedCustomerIdentityId, possibility.workItemId, JSON.stringify(row.campaign)]);
+            intentionId, understanding.intention || "", understanding.customerText || null, understanding.understanding,
+            JSON.stringify(Array.isArray(possibility.products) ? possibility.products : [])]
+            : [trustedCustomerIdentityId, possibility.workItemId, JSON.stringify(row.campaign), null, null, null, null,
+              JSON.stringify(Array.isArray(possibility.products) ? possibility.products : [])]);
         // A retry may find the already-issued row. It is still the authoritative
         // issuance, but its original snapshot and timestamp must not be rewritten.
         issuedWorkItemIds.push(result.rows.length ? result.rows[0].work_item_id : possibility.workItemId);
@@ -288,7 +292,7 @@ function createPersistenceRepository(database) {
       return result.rows.map(function (row) {
         const item = toSavedPossibility(row);
         const snapshot = row.campaign_snapshot && typeof row.campaign_snapshot === "object" ? row.campaign_snapshot : {};
-        const products = Array.isArray(snapshot.products) ? snapshot.products : [];
+        const products = Array.isArray(snapshot.issuedProducts) ? snapshot.issuedProducts : [];
         if (products.length) item.products = products.map(function (product) {
           return {
             productId: product.productId, name: product.name, description: product.description,
