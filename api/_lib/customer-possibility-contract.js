@@ -112,7 +112,6 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
     const possibility = {
       possibilityId: stablePossibilityId(work.workItemId), workItemId: work.workItemId,
       businessName: work.businessName, content: work.content, participationAction: "Interested",
-      ...(work.businessId ? { businessId: work.businessId } : {}),
       relevance: { basis: "current-intention-authorized-work", evidence: (evidence.length >= 2 ? evidence : concepts).slice(0, 5),
         explanation: "This authorized possibility connects to your current request." }
     };
