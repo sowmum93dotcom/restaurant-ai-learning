@@ -159,10 +159,20 @@ function toCustomerPossibility(value) {
         (!product.imageUrl || /^https?:\/\//i.test(product.imageUrl)) &&
         (!product.continuationRoute || (possibility.customerContinuation && possibility.customerContinuation.routes.includes(product.continuationRoute)));
     }).slice(0, 100).map(function (product) {
-      return { productId: product.productId.trim(), name: product.name.trim(), description: product.description.trim(),
+      const normalized = { productId: product.productId.trim(), name: product.name.trim(), description: product.description.trim(),
         price: normalizedRequiredString(product.price) || "", imageUrl: normalizedRequiredString(product.imageUrl) || "",
         continuationRoute: normalizedRequiredString(product.continuationRoute) || "",
         availability: ["available", "limited", "unavailable", "contact"].includes(product.availability) ? product.availability : "contact" };
+      const productRelevance = product.relevance;
+      if (productRelevance && typeof productRelevance === "object" && !Array.isArray(productRelevance) &&
+          productRelevance.basis === "current-intention-product-information" && Array.isArray(productRelevance.evidence) &&
+          productRelevance.evidence.length > 0 && productRelevance.evidence.length <= 5) {
+        const productEvidence = productRelevance.evidence.map(normalizedRequiredString);
+        if (productEvidence.every(function (term) { return term && term.length <= 60; })) {
+          normalized.relevance = { basis: productRelevance.basis, evidence: productEvidence };
+        }
+      }
+      return normalized;
     });
   }
   if (value.informationSource === "business-provided") possibility.informationSource = "business-provided";
