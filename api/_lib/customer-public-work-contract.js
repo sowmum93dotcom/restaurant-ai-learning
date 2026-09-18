@@ -67,6 +67,7 @@ function toPublicCustomerWorkItem(item) {
       const route = normalizedRequiredString(product.continuationRoute);
       const safeRoute = route && publicItem.customerContinuation &&
         publicItem.customerContinuation.routes.includes(route) ? route : null;
+      if (!safeRoute) return null;
       return {
         productId: product.productId.trim(),
         businessId,
@@ -77,7 +78,7 @@ function toPublicCustomerWorkItem(item) {
         ...(safeRoute ? { continuationRoute: safeRoute } : {}),
         availability: ["available", "limited", "unavailable", "contact"].includes(product.availability) ? product.availability : "contact"
       };
-    });
+    }).filter(Boolean);
     if (products.length) publicItem.products = products;
   }
 
