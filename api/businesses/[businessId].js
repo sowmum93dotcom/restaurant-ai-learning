@@ -16,6 +16,13 @@ function isSafeHttpUrl(value) {
   return /^https?:\/\//i.test(cleanString(value, 500));
 }
 
+function isPlausiblePhone(value) {
+  const text = cleanString(value, 100);
+  if (!/^[+()\d\s.-]+$/.test(text)) return false;
+  const digits = text.replace(/\D/g, "");
+  return digits.length >= 7 && digits.length <= 15;
+}
+
 function isPlausibleEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanString(value, 320));
 }
@@ -57,6 +64,9 @@ function getValidatedProfile(req) {
   if (enhancedProfile && continuation.routes.includes("website") && !isSafeHttpUrl(continuation.website)) return null;
   if (enhancedProfile && continuation.routes.includes("booking") && !isSafeHttpUrl(continuation.bookingLink)) return null;
   if (enhancedProfile && continuation.routes.includes("email") && !isPlausibleEmail(continuation.email)) return null;
+  if (enhancedProfile && continuation.routes.includes("phone") && !isPlausiblePhone(continuation.phone)) return null;
+  if (enhancedProfile && continuation.routes.includes("whatsapp") && !isPlausiblePhone(continuation.whatsapp)) return null;
+  if (enhancedProfile && continuation.routes.includes("visit") && !cleanString(continuation.visitAddress, 500)) return null;
   if (enhancedProfile && continuation.routes.includes("quote") &&
       !continuation.routes.some(function (route) { return ["email", "phone", "whatsapp", "website", "booking"].includes(route); })) return null;
   const rawProducts = Array.isArray(profile.products) ? profile.products : [];
@@ -117,7 +127,8 @@ function getValidatedProfile(req) {
       phone: cleanString(continuation.phone, 100),
       whatsapp: cleanString(continuation.whatsapp, 100),
       email: cleanString(continuation.email, 320),
-      bookingLink: cleanString(continuation.bookingLink, 500)
+      bookingLink: cleanString(continuation.bookingLink, 500),
+      visitAddress: cleanString(continuation.visitAddress, 500)
     },
     fulfilment: {
       methods: Array.from(new Set(fulfilment.methods)),
