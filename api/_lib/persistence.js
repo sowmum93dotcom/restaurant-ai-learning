@@ -163,7 +163,7 @@ function createPersistenceRepository(database) {
         `SELECT c.campaign_id, c.campaign, b.profile
          FROM demeos_campaigns c JOIN demeos_businesses b ON b.business_id = c.business_id
          JOIN demeos_customer_possibility_issuances i ON i.work_item_id = c.campaign_id
-           AND i.trusted_customer_identity_id = $2 AND (i.campaign_snapshot - 'issuedProducts') = c.campaign
+           AND i.trusted_customer_identity_id = $2 AND i.campaign_snapshot = c.campaign
          WHERE c.campaign_id = $1`, [workItemId, trustedCustomerIdentityId]);
       if (!authoritative.rows.length) return null;
       const row = authoritative.rows[0];
@@ -184,7 +184,7 @@ function createPersistenceRepository(database) {
            AND EXISTS (
              SELECT 1 FROM demeos_customer_possibility_issuances i
              WHERE i.trusted_customer_identity_id = $1 AND i.work_item_id = c.campaign_id
-               AND (i.campaign_snapshot - 'issuedProducts') = c.campaign
+               AND i.campaign_snapshot = c.campaign
            )
          ON CONFLICT (trusted_customer_identity_id, work_item_id) DO UPDATE
            SET trusted_customer_identity_id = EXCLUDED.trusted_customer_identity_id
@@ -221,11 +221,10 @@ function createPersistenceRepository(database) {
                 AND confirmed_understanding = $7)` : "NULL";
         const result = await database.query(
           `INSERT INTO demeos_customer_possibility_issuances
-             (trusted_customer_identity_id, work_item_id, campaign_snapshot, evidence_type, source, intention_id)
-           SELECT $1, c.campaign_id,
-             c.campaign || jsonb_build_object('issuedProducts', $8::jsonb),
+             (trusted_customer_identity_id, work_item_id, campaign_snapshot, evidence_type, source, intention_id, public_products_snapshot)
+           SELECT $1, c.campaign_id, c.campaign,
              'demeos-possibility-issuance', 'demeos',
-             ${intentionExpression}
+             ${intentionExpression}, $8::jsonb
            FROM demeos_campaigns c JOIN demeos_businesses b ON b.business_id = c.business_id
            WHERE c.campaign_id = $2 AND c.campaign = $3::jsonb
              AND c.campaign->>'approvalStatus' = 'Approved'
@@ -291,8 +290,7 @@ function createPersistenceRepository(database) {
         [trustedCustomerIdentityId, safeLimit]);
       return result.rows.map(function (row) {
         const item = toSavedPossibility(row);
-        const snapshot = row.campaign_snapshot && typeof row.campaign_snapshot === "object" ? row.campaign_snapshot : {};
-        const products = Array.isArray(snapshot.issuedProducts) ? snapshot.issuedProducts : [];
+        const products = Array.isArray(row.public_products_snapshot) ? row.public_products_snapshot : [];
         if (products.length) item.products = products.map(function (product) {
           return {
             productId: product.productId, name: product.name, description: product.description,
@@ -584,7 +582,7 @@ function createPersistenceRepository(database) {
          SELECT c.business_id, c.campaign_id, $2, $4, 'customer-participation', 'customer-interested-action'
          FROM demeos_campaigns c
          JOIN demeos_customer_possibility_issuances i ON i.work_item_id = c.campaign_id
-           AND i.trusted_customer_identity_id = $4 AND (i.campaign_snapshot - 'issuedProducts') = c.campaign
+           AND i.trusted_customer_identity_id = $4 AND i.campaign_snapshot = c.campaign
          CROSS JOIN customer_work_lock
          WHERE c.campaign_id = $1 AND c.campaign->>'approvalStatus' = 'Approved'
            AND c.campaign = $3::jsonb
@@ -673,7 +671,7 @@ function createPersistenceRepository(database) {
                 'customer-feedback', 'customer-feedback-action'
          FROM demeos_campaigns c
          JOIN demeos_customer_possibility_issuances i ON i.work_item_id = c.campaign_id
-           AND i.trusted_customer_identity_id = $7 AND (i.campaign_snapshot - 'issuedProducts') = c.campaign
+           AND i.trusted_customer_identity_id = $7 AND i.campaign_snapshot = c.campaign
          CROSS JOIN customer_work_lock
          WHERE c.campaign_id = $1 AND c.business_id = $5
            AND c.campaign->>'approvalStatus' = 'Approved' AND c.campaign = $6::jsonb
