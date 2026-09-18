@@ -335,7 +335,7 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
       actions.className = "customer-continuation-actions";
       const labels = { website: "Visit website", phone: "Call", whatsapp: "WhatsApp", email: "Email", visit: "Visit business", booking: "Book / order", quote: "Request quote / enquiry" };
       possibility.customerContinuation.routes.forEach(function (route) {
-        const field = { website: "website", phone: "phone", whatsapp: "whatsapp", email: "email", booking: "bookingLink" }[route];
+        const field = { website: "website", phone: "phone", whatsapp: "whatsapp", email: "email", visit: "visitAddress", booking: "bookingLink" }[route];
         const detail = field ? possibility.customerContinuation[field] : null;
         let href = null;
         if ((route === "website" || route === "booking") && /^https?:\/\//i.test(detail)) href = detail;
