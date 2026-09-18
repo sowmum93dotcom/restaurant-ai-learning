@@ -7,9 +7,16 @@ const {
 } = require("../_lib/demeos-authentication.js");
 const { DEMEOS_ACTIONS } = require("../_lib/demeos-rules.js");
 
+const ALLOWED_CONTINUATION_ROUTES = new Set(["website", "phone", "whatsapp", "email", "visit", "booking", "quote"]);
+const ALLOWED_FULFILMENT_METHODS = new Set(["collection", "delivery", "shipping", "premises", "customer-location", "appointment", "digital"]);
+
+function cleanString(value, maxLength) {
+  return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
+}
+
 function getValidatedProfile(req) {
   const profile = req.body && req.body.businessProfile;
-  const requiredFields = ["name", "type", "location", "brandVoice", "targetCustomer", "goal"];
+  const requiredFields = ["name", "type", "location", "productsServices", "brandVoice", "targetCustomer", "goal"];
   if (
     !profile ||
     typeof profile !== "object" ||
@@ -18,7 +25,43 @@ function getValidatedProfile(req) {
       return typeof profile[field] !== "string" || !profile[field].trim();
     })
   ) return null;
-  return profile;
+
+  const continuation = profile.customerContinuation;
+  const fulfilment = profile.fulfilment;
+  if (!continuation || typeof continuation !== "object" || Array.isArray(continuation) ||
+      !Array.isArray(continuation.routes) || !continuation.routes.length ||
+      continuation.routes.some(function (route) { return !ALLOWED_CONTINUATION_ROUTES.has(route); }) ||
+      !fulfilment || typeof fulfilment !== "object" || Array.isArray(fulfilment) ||
+      !Array.isArray(fulfilment.methods) || !fulfilment.methods.length ||
+      fulfilment.methods.some(function (method) { return !ALLOWED_FULFILMENT_METHODS.has(method); })) return null;
+
+  const requiredRouteDetails = { website: "website", phone: "phone", whatsapp: "whatsapp", email: "email", booking: "bookingLink" };
+  if (Object.keys(requiredRouteDetails).some(function (route) {
+    return continuation.routes.includes(route) && !cleanString(continuation[requiredRouteDetails[route]], 500);
+  })) return null;
+
+  return {
+    ...profile,
+    name: cleanString(profile.name, 200),
+    type: cleanString(profile.type, 200),
+    location: cleanString(profile.location, 300),
+    productsServices: cleanString(profile.productsServices, 5000),
+    brandVoice: cleanString(profile.brandVoice, 3000),
+    targetCustomer: cleanString(profile.targetCustomer, 3000),
+    goal: cleanString(profile.goal, 1000),
+    customerContinuation: {
+      routes: Array.from(new Set(continuation.routes)),
+      website: cleanString(continuation.website, 500),
+      phone: cleanString(continuation.phone, 100),
+      whatsapp: cleanString(continuation.whatsapp, 100),
+      email: cleanString(continuation.email, 320),
+      bookingLink: cleanString(continuation.bookingLink, 500)
+    },
+    fulfilment: {
+      methods: Array.from(new Set(fulfilment.methods)),
+      notes: cleanString(fulfilment.notes, 2000)
+    }
+  };
 }
 
 module.exports = async function handler(req, res) {
@@ -53,7 +96,15 @@ module.exports = async function handler(req, res) {
       }
 
       if (access.allowed) {
-        await repository.saveBusiness({ ...profile, businessId });
+        await repository.saveBusiness({
+          ...profile,
+          businessId,
+          informationStatus: {
+            source: "business-owner",
+            status: "business-provided",
+            ownerConfirmedAt: new Date().toISOString()
+          }
+        });
         return res.status(204).end();
       }
 
@@ -65,7 +116,15 @@ module.exports = async function handler(req, res) {
       }
       const created = await repository.createBusinessForOwner(
         trustedIdentity.trustedIdentityId,
-        { ...profile, businessId }
+        {
+          ...profile,
+          businessId,
+          informationStatus: {
+            source: "business-owner",
+            status: "business-provided",
+            ownerConfirmedAt: new Date().toISOString()
+          }
+        }
       );
       if (!created) return res.status(403).json({ error: "Forbidden." });
       return res.status(204).end();
