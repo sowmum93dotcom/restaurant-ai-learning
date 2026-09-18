@@ -37,6 +37,11 @@ function toPublicCustomerWorkItem(item) {
       }
       safeContinuation.routes.push(route);
     });
+    if (safeContinuation.routes.includes("quote")) {
+      const fallbackRoute = ["email", "phone", "whatsapp", "website", "booking"].find(function (route) { return safeContinuation.routes.includes(route); });
+      if (fallbackRoute) safeContinuation.quoteVia = fallbackRoute;
+      else safeContinuation.routes = safeContinuation.routes.filter(function (route) { return route !== "quote"; });
+    }
     if (safeContinuation.routes.length) publicItem.customerContinuation = safeContinuation;
   }
 
