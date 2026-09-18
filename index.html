@@ -283,14 +283,20 @@
         <section id="business-profile" class="workspace-view" data-workspace-panel hidden aria-labelledby="business-profile-heading">
           <div class="view-heading"><p class="workspace-eyebrow">Workspace settings</p><h2 id="business-profile-heading">Business Profile</h2><p>Manage the business information DEMEOS uses when creating marketing work.</p></div>
           <section class="business-profile-section content-card">
-            <h3>Business Manager Profile</h3><p class="business-profile-intro">Tell DEMEOS about your business so your marketing work is created for your business.</p>
+            <h3>Business Manager Profile</h3><p class="business-profile-intro">Give DEMEOS accurate information once, then keep it current. Customers only see information that is safe to use for their need.</p>
+            <nav class="business-profile-progress" aria-label="Business Profile steps">
+              <a href="#business-profile-identity">1. Business</a><a href="#business-profile-offering">2. Products &amp; services</a><a href="#business-profile-continuation">3. Customer route</a><a href="#business-profile-operations">4. Fulfilment</a><a href="#business-profile-confirmation">5. Review &amp; save</a>
+            </nav>
             <div class="business-selector" aria-label="Business selection"><div class="business-selector-field"><label for="business-selector">Active Business</label><select id="business-selector"></select></div><button id="add-business-btn" class="demeos-secondary-button" type="button">Add Business</button></div>
             <div class="profile-fields">
+              <section id="business-profile-identity" class="profile-step profile-long-field"><div class="profile-step-heading"><span>Step 1</span><div><h4>Your business</h4><p>Start with the identity customers need to recognise the business.</p></div></div></section>
               <div><label for="business-name">Business Name</label><input type="text" id="business-name" name="business-name" placeholder="Enter your business name" /></div>
               <div><label for="business-type">Business Type</label><input type="text" id="business-type" name="business-type" placeholder="Example: Bakery, plumber, clothing shop" /></div>
               <div><label for="business-location">Business Location / Service Area</label><input type="text" id="business-location" name="business-location" placeholder="Example: Croydon, London" /></div>
+              <section id="business-profile-offering" class="profile-step profile-long-field"><div class="profile-step-heading"><span>Step 2</span><div><h4>Products &amp; services</h4><p>Describe what the business genuinely provides.</p></div></div></section>
               <div class="profile-long-field"><label for="business-products-services">What does your business provide?</label><textarea id="business-products-services" name="business-products-services" rows="5" placeholder="Example: Birthday cakes, celebration cakes and cupcakes made to order."></textarea><p>Describe only products and services your business genuinely provides. DEMEOS will not invent products, availability or prices.</p></div>
 
+              <section id="business-profile-continuation" class="profile-step profile-long-field"><div class="profile-step-heading"><span>Step 3</span><div><h4>How customers continue</h4><p>Choose the direct routes your business actually supports.</p></div></div></section>
               <fieldset class="profile-choice-group profile-long-field">
                 <legend>How can customers continue with your business?</legend>
                 <p>Select only routes your business currently supports. A website is optional.</p>
@@ -303,15 +309,16 @@
                   <label><input type="checkbox" id="business-route-booking" value="booking" /> Booking / order link</label>
                   <label><input type="checkbox" id="business-route-quote" value="quote" /> Request a quote / enquiry</label>
                 </div>
-                <div class="profile-route-details">
-                  <div><label for="business-website">Website / online shop link</label><input type="url" id="business-website" placeholder="https://www.example.co.uk" /></div>
-                  <div><label for="business-phone">Business phone</label><input type="tel" id="business-phone" placeholder="Business contact number" /></div>
-                  <div><label for="business-whatsapp">WhatsApp number</label><input type="tel" id="business-whatsapp" placeholder="WhatsApp business number" /></div>
-                  <div><label for="business-email">Business email</label><input type="email" id="business-email" placeholder="hello@example.co.uk" /></div>
-                  <div><label for="business-booking-link">Booking / order link</label><input type="url" id="business-booking-link" placeholder="https://..." /></div>
+                <div class="profile-route-details" aria-live="polite">
+                  <div data-route-detail="website" hidden><label for="business-website">Website / online shop link</label><input type="url" id="business-website" placeholder="https://www.example.co.uk" /></div>
+                  <div data-route-detail="phone" hidden><label for="business-phone">Business phone</label><input type="tel" id="business-phone" placeholder="Business contact number" /></div>
+                  <div data-route-detail="whatsapp" hidden><label for="business-whatsapp">WhatsApp number</label><input type="tel" id="business-whatsapp" placeholder="WhatsApp business number" /></div>
+                  <div data-route-detail="email" hidden><label for="business-email">Business email</label><input type="email" id="business-email" placeholder="hello@example.co.uk" /></div>
+                  <div data-route-detail="booking" hidden><label for="business-booking-link">Booking / order link</label><input type="url" id="business-booking-link" placeholder="https://..." /></div>
                 </div>
               </fieldset>
 
+              <section id="business-profile-operations" class="profile-step profile-long-field"><div class="profile-step-heading"><span>Step 4</span><div><h4>Current operations</h4><p>Keep availability and fulfilment accurate so customers know what to expect.</p></div></div></section>
               <fieldset class="profile-choice-group profile-long-field">
                 <legend>Current customer availability</legend>
                 <p>Tell DEMEOS what customers can rely on now. This is business-provided operational information, not a DEMEOS guarantee.</p>
@@ -347,6 +354,7 @@
               <div class="profile-long-field target-customer-field"><label for="business-target-customer">Target Customer</label><textarea id="business-target-customer" name="business-target-customer" rows="4" placeholder="Example: Local families, professionals and weekend visitors."></textarea><p>Describe the customer groups you want DEMEOS to understand and reach.</p></div>
               <div><label for="business-goal">Primary Marketing Goal</label><input type="text" id="business-goal" name="business-goal" placeholder="Example: Increase local customers" /></div>
 
+              <section id="business-profile-confirmation" class="profile-step profile-long-field"><div class="profile-step-heading"><span>Step 5</span><div><h4>Review &amp; save</h4><p>Confirm the information is current before DEMEOS uses it.</p></div></div></section>
               <div class="profile-accuracy-confirmation profile-long-field">
                 <label><input type="checkbox" id="business-accuracy-confirmation" /> I confirm this information accurately describes what my business currently provides and how customers can continue with us.</label>
                 <p>DEMEOS stores this as business-provided information. It is not presented as independently verified unless DEMEOS has separately verified it.</p>
