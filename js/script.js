@@ -884,7 +884,12 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
         if (typeof productFields.name.focus === "function") productFields.name.focus();
       });
       const remove = document.createElement("button"); remove.type = "button"; remove.className = "demeos-secondary-button"; remove.textContent = "Remove";
-      remove.addEventListener("click", function () { draftProducts = draftProducts.filter(function (entry) { return entry.productId !== product.productId; }); resetProductForm(); renderBusinessProducts(); });
+      remove.addEventListener("click", function () {
+        const removingEditedProduct = productFields.id.value === product.productId;
+        draftProducts = draftProducts.filter(function (entry) { return entry.productId !== product.productId; });
+        if (removingEditedProduct) resetProductForm();
+        renderBusinessProducts();
+      });
       actions.append(edit, remove); body.append(name, description, meta, visibility, actions); card.appendChild(body); productsList.appendChild(card);
     });
   }
