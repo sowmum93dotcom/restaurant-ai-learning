@@ -10,6 +10,7 @@ const { DEMEOS_ACTIONS } = require("../_lib/demeos-rules.js");
 const ALLOWED_CONTINUATION_ROUTES = new Set(["website", "phone", "whatsapp", "email", "visit", "booking", "quote"]);
 const ALLOWED_FULFILMENT_METHODS = new Set(["collection", "delivery", "shipping", "premises", "customer-location", "appointment", "digital"]);
 const ALLOWED_AVAILABILITY_STATES = new Set(["available", "limited", "unavailable", "contact"]);
+const MAX_PRODUCTS = 100;
 
 function isSafeHttpUrl(value) {
   return /^https?:\/\//i.test(cleanString(value, 500));
@@ -58,6 +59,28 @@ function getValidatedProfile(req) {
   if (enhancedProfile && continuation.routes.includes("email") && !isPlausibleEmail(continuation.email)) return null;
   if (enhancedProfile && continuation.routes.includes("quote") &&
       !continuation.routes.some(function (route) { return ["email", "phone", "whatsapp", "website", "booking"].includes(route); })) return null;
+  const rawProducts = Array.isArray(profile.products) ? profile.products : [];
+  if (rawProducts.length > MAX_PRODUCTS) return null;
+  const products = [];
+  const productIds = new Set();
+  for (const item of rawProducts) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+    const productId = cleanString(item.productId, 120);
+    const name = cleanString(item.name, 200);
+    const description = cleanString(item.description, 1200);
+    const price = cleanString(item.price, 100);
+    const imageUrl = cleanString(item.imageUrl, 1000);
+    const continuationRoute = cleanString(item.continuationRoute, 30);
+    const availability = cleanString(item.availability, 30) || "contact";
+    if (!productId || productIds.has(productId) || !name || !description ||
+        (imageUrl && !isSafeHttpUrl(imageUrl)) ||
+        (continuationRoute && (!ALLOWED_CONTINUATION_ROUTES.has(continuationRoute) || !continuation.routes.includes(continuationRoute))) ||
+        !ALLOWED_AVAILABILITY_STATES.has(availability)) return null;
+    productIds.add(productId);
+    products.push({ productId, businessId: cleanString(profile.businessId, 120), name, description, price, imageUrl,
+      continuationRoute, availability, imageSource: imageUrl ? "business-provided" : "" });
+  }
+
   const operationalProfile = Number(profile.profileVersion) >= 3;
   if (operationalProfile && (!operational || typeof operational !== "object" || Array.isArray(operational) ||
       !ALLOWED_AVAILABILITY_STATES.has(operational.status))) return null;
@@ -93,6 +116,7 @@ function getValidatedProfile(req) {
       methods: Array.from(new Set(fulfilment.methods)),
       notes: cleanString(fulfilment.notes, 2000)
     },
+    products,
     ...(operationalProfile ? {
       operationalAvailability: {
         status: operational.status,
@@ -138,6 +162,7 @@ module.exports = async function handler(req, res) {
         await repository.saveBusiness({
           ...profile,
           businessId,
+          products: (profile.products || []).map(function (product) { return { ...product, businessId }; }),
           informationStatus: {
             source: "business-owner",
             status: "business-provided",
@@ -158,6 +183,7 @@ module.exports = async function handler(req, res) {
         {
           ...profile,
           businessId,
+          products: (profile.products || []).map(function (product) { return { ...product, businessId }; }),
           informationStatus: {
             source: "business-owner",
             status: "business-provided",
