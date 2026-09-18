@@ -130,6 +130,8 @@ function toCustomerPossibility(value) {
       }
       safe.routes.push(route);
     });
+    if (value.customerContinuation.quoteVia && safe.routes.includes(value.customerContinuation.quoteVia)) safe.quoteVia = value.customerContinuation.quoteVia;
+    if (safe.routes.includes("quote") && !safe.quoteVia) safe.routes = safe.routes.filter(function (route) { return route !== "quote"; });
     if (safe.routes.length) possibility.customerContinuation = safe;
   }
   const allowedFulfilment = ["collection", "delivery", "shipping", "premises", "customer-location", "appointment", "digital"];
@@ -232,6 +234,15 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
         else if (route === "whatsapp") href = /^https?:\/\//i.test(detail) ? detail : "https://wa.me/" + detail.replace(/\D/g, "");
         else if (route === "email") href = "mailto:" + detail;
         else if (route === "visit" && possibility.location) href = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(possibility.location);
+        else if (route === "quote" && possibility.customerContinuation.quoteVia) {
+          const quoteRoute = possibility.customerContinuation.quoteVia;
+          const quoteField = { website: "website", phone: "phone", whatsapp: "whatsapp", email: "email", booking: "bookingLink" }[quoteRoute];
+          const quoteDetail = quoteField ? possibility.customerContinuation[quoteField] : null;
+          if (quoteRoute === "email") href = "mailto:" + quoteDetail;
+          else if (quoteRoute === "phone") href = "tel:" + quoteDetail;
+          else if (quoteRoute === "whatsapp") href = /^https?:\/\//i.test(quoteDetail) ? quoteDetail : "https://wa.me/" + quoteDetail.replace(/\D/g, "");
+          else if ((quoteRoute === "website" || quoteRoute === "booking") && /^https?:\/\//i.test(quoteDetail)) href = quoteDetail;
+        }
         const action = document.createElement(href ? "a" : "span");
         action.className = href ? "customer-continuation-action" : "customer-continuation-note";
         action.textContent = labels[route];
