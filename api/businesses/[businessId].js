@@ -26,6 +26,7 @@ function cleanString(value, maxLength) {
 
 function getValidatedProfile(req) {
   const profile = req.body && req.body.businessProfile;
+  const ownerAccuracyConfirmed = Boolean(req.body && req.body.ownerAccuracyConfirmed === true);
   const requiredFields = ["name", "type", "location", "brandVoice", "targetCustomer", "goal"];
   if (
     !profile ||
@@ -37,6 +38,7 @@ function getValidatedProfile(req) {
   ) return null;
 
   const enhancedProfile = Number(profile.profileVersion) >= 2;
+  if (Number(profile.profileVersion) >= 3 && !ownerAccuracyConfirmed) return null;
   const continuation = profile.customerContinuation;
   const fulfilment = profile.fulfilment;
   const operational = profile.operationalAvailability;
@@ -159,14 +161,18 @@ module.exports = async function handler(req, res) {
       }
 
       if (access.allowed) {
+        const existingBusiness = await repository.getKnownBusiness(businessId);
+        const previousInformationStatus = existingBusiness && existingBusiness.informationStatus && typeof existingBusiness.informationStatus === "object"
+          ? existingBusiness.informationStatus : {};
         await repository.saveBusiness({
           ...profile,
           businessId,
           products: (profile.products || []).map(function (product) { return { ...product, businessId }; }),
           informationStatus: {
+            ...previousInformationStatus,
             source: "business-owner",
             status: "business-provided",
-            ownerConfirmedAt: new Date().toISOString()
+            ownerConfirmedAt: ownerAccuracyConfirmed ? new Date().toISOString() : previousInformationStatus.ownerConfirmedAt
           }
         });
         return res.status(204).end();
