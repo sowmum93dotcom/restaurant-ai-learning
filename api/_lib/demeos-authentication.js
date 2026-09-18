@@ -24,9 +24,15 @@ function hasAllowedClerkKey(key, kind, environment = process.env) {
   const value = normalizeConfiguredClerkKey(key, kind);
   if (!value) return false;
   if (!isProductionDeployment(environment)) return true;
-  // Clerk production credentials use the live prefix. Fail closed for
-  // development, opposite-type, malformed, or accidentally pasted values.
-  return value.startsWith(`${kind}_live_`);
+  const developmentPrefix = `${kind}_test_`;
+  const oppositeKind = kind === "pk" ? "sk" : "pk";
+
+  // Production must never accept Clerk development credentials or a key of
+  // the opposite type. Clerk remains authoritative for provider-managed
+  // production credential formats after any copied assignment is normalized.
+  if (value.startsWith(developmentPrefix)) return false;
+  if (value.startsWith(`${oppositeKind}_`)) return false;
+  return true;
 }
 
 function getAllowedClerkPublishableKey(environment = process.env) {
