@@ -132,7 +132,7 @@ function toCustomerPossibility(value) {
     });
     if (safe.routes.length) possibility.customerContinuation = safe;
   }
-  const allowedFulfilment = ["collection", "local-delivery", "shipping", "at-business", "at-customer-location", "appointment", "digital"];
+  const allowedFulfilment = ["collection", "delivery", "shipping", "premises", "customer-location", "appointment", "digital"];
   if (value.fulfilment && typeof value.fulfilment === "object" && Array.isArray(value.fulfilment.methods)) {
     const methods = value.fulfilment.methods.filter(function (method) { return allowedFulfilment.includes(method); });
     if (methods.length) {
@@ -227,7 +227,7 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
         const field = { website: "website", phone: "phone", whatsapp: "whatsapp", email: "email", booking: "bookingLink" }[route];
         const detail = field ? possibility.customerContinuation[field] : null;
         let href = null;
-        if (route === "website" || route === "booking") href = detail;
+        if ((route === "website" || route === "booking") && /^https?:\/\//i.test(detail)) href = detail;
         else if (route === "phone") href = "tel:" + detail;
         else if (route === "whatsapp") href = /^https?:\/\//i.test(detail) ? detail : "https://wa.me/" + detail.replace(/\D/g, "");
         else if (route === "email") href = "mailto:" + detail;
@@ -248,7 +248,7 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
       if (possibility.fulfilment) {
         addText(document, continuation, "h5", "customer-fulfilment-heading", CUSTOMER_STAGE_THREE_COPY.fulfilmentHeading);
         addText(document, continuation, "p", "customer-fulfilment-methods", possibility.fulfilment.methods.map(function (method) {
-          return ({ collection: "Collection", "local-delivery": "Local delivery", shipping: "Shipping", "at-business": "At the business", "at-customer-location": "At your location", appointment: "Appointment", digital: "Digital" })[method];
+          return ({ collection: "Collection", delivery: "Delivery", shipping: "Shipping", premises: "At the business", "customer-location": "At your location", appointment: "Appointment", digital: "Digital" })[method];
         }).join(" · "));
         if (possibility.fulfilment.notes) addText(document, continuation, "p", "customer-fulfilment-notes", possibility.fulfilment.notes);
       }
