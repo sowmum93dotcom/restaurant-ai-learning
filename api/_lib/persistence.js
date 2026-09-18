@@ -281,7 +281,7 @@ function createPersistenceRepository(database) {
       const safeLimit = Math.min(50, Math.max(1, Number.isInteger(limit) ? limit : 50));
       const result = await database.query(
         `SELECT s.saved_possibility_id, s.possibility_content, s.business_name, s.location, s.relevance_basis, s.created_at,
-                i.campaign_snapshot, i.issued_at
+                i.public_products_snapshot, i.issued_at
          FROM demeos_customer_saved_possibilities s
          LEFT JOIN demeos_customer_possibility_issuances i
            ON i.trusted_customer_identity_id = s.trusted_customer_identity_id
