@@ -9,6 +9,15 @@ const { DEMEOS_ACTIONS } = require("../_lib/demeos-rules.js");
 
 const ALLOWED_CONTINUATION_ROUTES = new Set(["website", "phone", "whatsapp", "email", "visit", "booking", "quote"]);
 const ALLOWED_FULFILMENT_METHODS = new Set(["collection", "delivery", "shipping", "premises", "customer-location", "appointment", "digital"]);
+const ALLOWED_AVAILABILITY_STATES = new Set(["available", "limited", "unavailable", "contact"]);
+
+function isSafeHttpUrl(value) {
+  return /^https?:\/\//i.test(cleanString(value, 500));
+}
+
+function isPlausibleEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanString(value, 320));
+}
 
 function cleanString(value, maxLength) {
   return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
@@ -29,6 +38,7 @@ function getValidatedProfile(req) {
   const enhancedProfile = Number(profile.profileVersion) >= 2;
   const continuation = profile.customerContinuation;
   const fulfilment = profile.fulfilment;
+  const operational = profile.operationalAvailability;
   if (enhancedProfile && (
       !cleanString(profile.productsServices, 5000) ||
       !continuation || typeof continuation !== "object" || Array.isArray(continuation) ||
@@ -43,6 +53,14 @@ function getValidatedProfile(req) {
   if (enhancedProfile && Object.keys(requiredRouteDetails).some(function (route) {
     return continuation.routes.includes(route) && !cleanString(continuation[requiredRouteDetails[route]], 500);
   })) return null;
+  if (enhancedProfile && continuation.routes.includes("website") && !isSafeHttpUrl(continuation.website)) return null;
+  if (enhancedProfile && continuation.routes.includes("booking") && !isSafeHttpUrl(continuation.bookingLink)) return null;
+  if (enhancedProfile && continuation.routes.includes("email") && !isPlausibleEmail(continuation.email)) return null;
+  if (enhancedProfile && continuation.routes.includes("quote") &&
+      !continuation.routes.some(function (route) { return ["email", "phone", "whatsapp", "website", "booking"].includes(route); })) return null;
+  const operationalProfile = Number(profile.profileVersion) >= 3;
+  if (operationalProfile && (!operational || typeof operational !== "object" || Array.isArray(operational) ||
+      !ALLOWED_AVAILABILITY_STATES.has(operational.status))) return null;
 
   if (!enhancedProfile) return {
     ...profile,
@@ -74,7 +92,14 @@ function getValidatedProfile(req) {
     fulfilment: {
       methods: Array.from(new Set(fulfilment.methods)),
       notes: cleanString(fulfilment.notes, 2000)
-    }
+    },
+    ...(operationalProfile ? {
+      operationalAvailability: {
+        status: operational.status,
+        hoursNotes: cleanString(operational.hoursNotes, 2000),
+        notes: cleanString(operational.notes, 2000)
+      }
+    } : {})
   };
 }
 
