@@ -34,6 +34,7 @@ function toPublicCustomerWorkItem(item) {
         if (!detail) return;
         if ((route === "website" || route === "booking") && !/^https?:\/\//i.test(detail)) return;
         if (route === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(detail)) return;
+        if ((route === "phone" || route === "whatsapp") && !/^\+?[0-9][0-9 ()-]{6,24}$/.test(detail)) return;
         if ((route === "phone" || route === "whatsapp") && (detail.replace(/\D/g, "").length < 7 || detail.replace(/\D/g, "").length > 15)) return;
         safeContinuation[detailField] = detail;
       }
