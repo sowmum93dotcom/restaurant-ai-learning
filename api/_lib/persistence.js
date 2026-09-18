@@ -294,7 +294,9 @@ function createPersistenceRepository(database) {
         if (products.length) item.products = products.map(function (product) {
           return {
             productId: product.productId, name: product.name, description: product.description,
-            price: product.price, imageUrl: product.imageUrl, availability: product.availability
+            price: product.price, priceMode: product.priceMode || (isNonEmptyString(product.price) ? "fixed" : "contact"),
+            imageUrl: product.imageUrl, availability: product.availability,
+            ...(product.fulfilment && Array.isArray(product.fulfilment.methods) ? { fulfilment: { methods: product.fulfilment.methods.slice() } } : {})
           };
         }).filter(function (product) { return isNonEmptyString(product.productId) && isNonEmptyString(product.name); });
         if (row.issued_at) item.issuedAt = row.issued_at instanceof Date ? row.issued_at.toISOString() : row.issued_at;
