@@ -13,7 +13,8 @@ test("modern Business Profile writes require explicit owner accuracy confirmatio
 
 test("only the explicit Business Profile save sends owner confirmation", function () {
   assert.match(client, /persistBusiness\(result\.profile, \{ ownerAccuracyConfirmed: true \}\)/);
-  assert.match(client, /persistBusiness\(profile\)/);
+  assert.match(client, /body: JSON\.stringify\(\{ businessProfile: profile, ownerAccuracyConfirmed: Boolean\(options && options\.ownerAccuracyConfirmed\) \}\)/);
+  assert.doesNotMatch(client, /persistCampaignWrite[\\s\\S]{0,200}persistBusiness\(profile\)/);
 });
 
 test("owner confirmation time is refreshed only by explicit confirmation", function () {
