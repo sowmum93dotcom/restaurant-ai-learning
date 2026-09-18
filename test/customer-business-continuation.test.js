@@ -8,11 +8,11 @@ test("public customer work carries only approved continuation and fulfilment fie
     workItemId: "work-1", businessName: "Example Bakery", content: "Birthday cake for a celebration",
     participationAction: "Interested", location: "Croydon",
     customerContinuation: { routes: ["website", "phone", "visit", "evil"], website: "https://example.test/order", phone: "02070000000", secret: "no" },
-    fulfilment: { methods: ["collection", "local-delivery", "teleport"], notes: "Collection after confirmation." },
+    fulfilment: { methods: ["collection", "delivery", "teleport"], notes: "Collection after confirmation." },
     informationSource: "business-provided"
   });
   assert.deepEqual(item.customerContinuation, { routes: ["website", "phone", "visit"], website: "https://example.test/order", phone: "02070000000" });
-  assert.deepEqual(item.fulfilment, { methods: ["collection", "local-delivery"], notes: "Collection after confirmation." });
+  assert.deepEqual(item.fulfilment, { methods: ["collection", "delivery"], notes: "Collection after confirmation." });
   assert.equal(item.informationSource, "business-provided");
   assert.equal(item.customerContinuation.secret, undefined);
 });
