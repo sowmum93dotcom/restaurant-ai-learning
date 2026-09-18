@@ -118,6 +118,7 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
     if (work.location) possibility.location = work.location;
     if (work.customerContinuation) possibility.customerContinuation = work.customerContinuation;
     if (work.fulfilment) possibility.fulfilment = work.fulfilment;
+    if (work.operationalAvailability) possibility.operationalAvailability = work.operationalAvailability;
     if (work.informationSource === "business-provided") possibility.informationSource = "business-provided";
     candidates.push({ strength: concepts.length + evidence.length, guidanceOverlap, feedbackGuidanceScore, possibility });
   });
