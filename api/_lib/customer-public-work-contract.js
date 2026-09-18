@@ -19,7 +19,9 @@ function toPublicCustomerWorkItem(item) {
     return null;
   }
 
+  const businessId = normalizedRequiredString(item.businessId);
   const publicItem = { workItemId, businessName, content, participationAction: CUSTOMER_PARTICIPATION_ACTION };
+  if (businessId) publicItem.businessId = businessId;
   if (typeof item.location === "string" && item.location.trim()) publicItem.location = item.location.trim();
 
   const continuation = item.customerContinuation;
@@ -60,14 +62,14 @@ function toPublicCustomerWorkItem(item) {
         normalizedRequiredString(product.productId) && normalizedRequiredString(product.name) &&
         normalizedRequiredString(product.description) &&
         (!product.imageUrl || /^https?:\/\//i.test(product.imageUrl)) &&
-        (!product.businessId || product.businessId === item.businessId);
+        businessId && normalizedRequiredString(product.businessId) === businessId;
     }).slice(0, 100).map(function (product) {
       const route = normalizedRequiredString(product.continuationRoute);
       const safeRoute = route && publicItem.customerContinuation &&
         publicItem.customerContinuation.routes.includes(route) ? route : null;
       return {
         productId: product.productId.trim(),
-        businessId: normalizedRequiredString(item.businessId) || normalizedRequiredString(product.businessId),
+        businessId,
         name: product.name.trim(),
         description: product.description.trim(),
         ...(normalizedRequiredString(product.price) ? { price: product.price.trim() } : {}),
