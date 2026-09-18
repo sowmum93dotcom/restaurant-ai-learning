@@ -886,8 +886,12 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     const name = productFields.name.value.trim(), description = productFields.description.value.trim(), imageUrl = productFields.image.value.trim();
     if (!name || !description) { alert("Please add a product/service name and description."); return; }
     if (!safeProductImageUrl(imageUrl)) { alert("Product image links must use http or https."); return; }
-    const route = productFields.route.value;
-    if (route && !selectedValues(continuationRouteIds).includes(route)) { alert("Select that customer route in the Business Profile before assigning it to a product."); return; }
+    const selectedRoutes = selectedValues(continuationRouteIds);
+    const route = productFields.route.value || selectedRoutes.find(function (candidate) {
+      return ["website", "booking", "phone", "whatsapp", "email", "visit", "quote"].includes(candidate);
+    }) || "";
+    if (!route) { alert("Select a customer continuation route before adding this product."); return; }
+    if (!selectedRoutes.includes(route)) { alert("Select that customer route in the Business Profile before assigning it to a product."); return; }
     const productId = productFields.id.value || ("product-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8));
     draftProducts.push({ productId, name, description, price: productFields.price.value.trim(), imageUrl,
       continuationRoute: route, availability: productFields.availability.value, imageSource: imageUrl ? "business-provided" : "" });
