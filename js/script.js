@@ -780,12 +780,12 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     renderRecommendsUnderstanding(result.record, requestedBusinessId);
     fillProfile(activeProfile()); renderSelector(); renderActiveMarketingWork(); renderCustomerParticipationResults(); renderCampaignHistory();
   }
-  async function persistBusiness(profile) {
+  async function persistBusiness(profile, options) {
     if (!profile || typeof window === "undefined" || typeof fetch !== "function") return false;
     try {
       const response = await fetch(`/api/businesses/${encodeURIComponent(profile.businessId)}`, {
         method: "PUT", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ businessProfile: profile })
+        body: JSON.stringify({ businessProfile: profile, ownerAccuracyConfirmed: Boolean(options && options.ownerAccuracyConfirmed) })
       });
       return response.ok;
     } catch (error) {
@@ -793,7 +793,6 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     }
   }
   async function persistCampaignWrite(profile, campaign) {
-    if (!await persistBusiness(profile)) return false;
     try {
       const response = await fetch(`/api/businesses/${encodeURIComponent(profile.businessId)}/campaigns/${encodeURIComponent(campaign.id)}`, {
         method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ campaign })
@@ -1221,7 +1220,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
         renderActiveMarketingWork(); renderCampaignHistory();
       }
       addPendingBusinessProfileSync(localStorage, result.profile.businessId);
-      const persisted = await persistBusiness(result.profile);
+      const persisted = await persistBusiness(result.profile, { ownerAccuracyConfirmed: true });
       if (persisted) {
         if (wasAddingBusiness) {
           state = { profiles: result.profiles, activeBusinessId: result.profile.businessId };

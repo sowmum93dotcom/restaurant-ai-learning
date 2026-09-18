@@ -151,6 +151,7 @@ module.exports = async function handler(req, res) {
     }
 
     if (req.method === "PUT") {
+      const ownerAccuracyConfirmed = Boolean(req.body && req.body.ownerAccuracyConfirmed === true);
       const profile = getValidatedProfile(req);
       if (!profile) {
         return res.status(400).json({
@@ -159,14 +160,21 @@ module.exports = async function handler(req, res) {
       }
 
       if (access.allowed) {
+        if (Number(profile.profileVersion) >= 3 && !ownerAccuracyConfirmed) {
+          return res.status(400).json({ error: "Please explicitly confirm that the Business Profile information is current before saving." });
+        }
+        const existingBusiness = await repository.getKnownBusiness(businessId);
+        const previousInformationStatus = existingBusiness && existingBusiness.informationStatus && typeof existingBusiness.informationStatus === "object"
+          ? existingBusiness.informationStatus : {};
         await repository.saveBusiness({
           ...profile,
           businessId,
           products: (profile.products || []).map(function (product) { return { ...product, businessId }; }),
           informationStatus: {
+            ...previousInformationStatus,
             source: "business-owner",
             status: "business-provided",
-            ownerConfirmedAt: new Date().toISOString()
+            ownerConfirmedAt: ownerAccuracyConfirmed ? new Date().toISOString() : previousInformationStatus.ownerConfirmedAt
           }
         });
         return res.status(204).end();
@@ -177,6 +185,9 @@ module.exports = async function handler(req, res) {
       const trustedIdentity = await resolveTrustedIdentityFromRequest(req);
       if (!trustedIdentity) {
         return res.status(401).json({ error: "Authentication required." });
+      }
+      if (Number(profile.profileVersion) >= 3 && !ownerAccuracyConfirmed) {
+        return res.status(400).json({ error: "Please explicitly confirm that the Business Profile information is current before saving." });
       }
       const created = await repository.createBusinessForOwner(
         trustedIdentity.trustedIdentityId,
