@@ -145,15 +145,22 @@ test("Clerk credentials pasted as complete environment assignments are normalize
   assert.equal(getAllowedClerkSecretKey(environment), "sk_live_server");
 });
 
-test("production rejects malformed values even when wrapped in an environment assignment", function () {
+test("production normalization still rejects known development and opposite-type credentials", function () {
   assert.equal(getAllowedClerkPublishableKey({
     VERCEL_ENV: "production",
-    CLERK_PUBLISHABLE_KEY: "CLERK_PUBLISHABLE_KEY=not-a-clerk-key"
+    CLERK_PUBLISHABLE_KEY: "CLERK_PUBLISHABLE_KEY=pk_test_development"
   }), null);
   assert.equal(getAllowedClerkSecretKey({
     VERCEL_ENV: "production",
     CLERK_SECRET_KEY: "CLERK_SECRET_KEY=pk_live_wrong_type"
   }), null);
+});
+
+test("production normalization preserves provider-managed credential formats for Clerk validation", function () {
+  assert.equal(getAllowedClerkPublishableKey({
+    VERCEL_ENV: "production",
+    CLERK_PUBLISHABLE_KEY: "CLERK_PUBLISHABLE_KEY=provider_managed_public"
+  }), "provider_managed_public");
 });
 
 test("production deployment rejects Clerk development credentials before authentication", async function () {
