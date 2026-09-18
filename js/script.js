@@ -886,11 +886,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     localStorage.setItem("demeosBusinessProfiles", JSON.stringify(state.profiles));
     if (state.activeBusinessId) localStorage.setItem("demeosActiveBusinessId", state.activeBusinessId);
     else localStorage.removeItem("demeosActiveBusinessId");
-    Object.keys(continuationRouteIds).forEach(function (route) {
-    const checkbox = byId(continuationRouteIds[route]);
-    if (checkbox) checkbox.addEventListener("change", updateContinuationDetailVisibility);
-  });
-  renderSelector(); fillProfile(activeProfile()); renderActiveMarketingWork();
+    renderSelector(); fillProfile(activeProfile()); renderActiveMarketingWork();
     renderCustomerParticipationResults(); renderCampaignHistory();
     if (state.activeBusinessId) hydrateActiveBusiness();
   }
@@ -1098,6 +1094,10 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     const persisted = await persistCampaign(profile, campaign); return { id, persisted };
   }
 
+  Object.keys(continuationRouteIds).forEach(function (route) {
+    const checkbox = byId(continuationRouteIds[route]);
+    if (checkbox) checkbox.addEventListener("change", updateContinuationDetailVisibility);
+  });
   renderSelector(); fillProfile(activeProfile()); renderActiveMarketingWork(); renderCustomerParticipationResults(); renderCampaignHistory();
   if (serverAuthorizationRequired) loadAuthorizedBusinesses();
   else hydrateActiveBusiness();
