@@ -59,3 +59,9 @@ test("relevant public product retains only transparent relevance evidence", func
   assert.deepEqual(results[0].products.map(function (item) { return item.productId; }), ["cake"]);
   assert.equal(results[0].products[0].relevance.basis, "current-intention-product-information");
 });
+
+test("client contract preserves only validated product relevance evidence", function () {
+  const source = require("node:fs").readFileSync(require("node:path").join(__dirname, "..", "js", "customer.js"), "utf8");
+  assert.match(source, /productRelevance\.basis === "current-intention-product-information"/);
+  assert.match(source, /normalized\.relevance = \{ basis: productRelevance\.basis, evidence: productEvidence \}/);
+});
