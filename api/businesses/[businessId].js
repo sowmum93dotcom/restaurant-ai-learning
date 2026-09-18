@@ -16,7 +16,7 @@ function cleanString(value, maxLength) {
 
 function getValidatedProfile(req) {
   const profile = req.body && req.body.businessProfile;
-  const requiredFields = ["name", "type", "location", "productsServices", "brandVoice", "targetCustomer", "goal"];
+  const requiredFields = ["name", "type", "location", "brandVoice", "targetCustomer", "goal"];
   if (
     !profile ||
     typeof profile !== "object" ||
@@ -26,19 +26,33 @@ function getValidatedProfile(req) {
     })
   ) return null;
 
+  const enhancedProfile = Number(profile.profileVersion) >= 2;
   const continuation = profile.customerContinuation;
   const fulfilment = profile.fulfilment;
-  if (!continuation || typeof continuation !== "object" || Array.isArray(continuation) ||
+  if (enhancedProfile && (
+      !cleanString(profile.productsServices, 5000) ||
+      !continuation || typeof continuation !== "object" || Array.isArray(continuation) ||
       !Array.isArray(continuation.routes) || !continuation.routes.length ||
       continuation.routes.some(function (route) { return !ALLOWED_CONTINUATION_ROUTES.has(route); }) ||
       !fulfilment || typeof fulfilment !== "object" || Array.isArray(fulfilment) ||
       !Array.isArray(fulfilment.methods) || !fulfilment.methods.length ||
-      fulfilment.methods.some(function (method) { return !ALLOWED_FULFILMENT_METHODS.has(method); })) return null;
+      fulfilment.methods.some(function (method) { return !ALLOWED_FULFILMENT_METHODS.has(method); })
+  )) return null;
 
   const requiredRouteDetails = { website: "website", phone: "phone", whatsapp: "whatsapp", email: "email", booking: "bookingLink" };
-  if (Object.keys(requiredRouteDetails).some(function (route) {
+  if (enhancedProfile && Object.keys(requiredRouteDetails).some(function (route) {
     return continuation.routes.includes(route) && !cleanString(continuation[requiredRouteDetails[route]], 500);
   })) return null;
+
+  if (!enhancedProfile) return {
+    ...profile,
+    name: cleanString(profile.name, 200),
+    type: cleanString(profile.type, 200),
+    location: cleanString(profile.location, 300),
+    brandVoice: cleanString(profile.brandVoice, 3000),
+    targetCustomer: cleanString(profile.targetCustomer, 3000),
+    goal: cleanString(profile.goal, 1000)
+  };
 
   return {
     ...profile,
