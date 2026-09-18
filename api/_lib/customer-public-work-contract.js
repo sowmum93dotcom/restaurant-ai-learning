@@ -72,7 +72,7 @@ function toPublicCustomerWorkItem(item) {
         name: product.name.trim(),
         description: product.description.trim(),
         ...(normalizedRequiredString(product.price) ? { price: product.price.trim() } : {}),
-        ...(["fixed", "from", "range"].includes(product.priceMode) ? { priceMode: product.priceMode } : { priceMode: "contact" }),
+        ...(["fixed", "from", "range"].includes(product.priceMode) ? { priceMode: product.priceMode } : { priceMode: normalizedRequiredString(product.price) ? "fixed" : "contact" }),
         ...(normalizedRequiredString(product.imageUrl) ? { imageUrl: product.imageUrl.trim(), imageSource: "business-provided" } : {}),
         ...(safeRoute ? { continuationRoute: safeRoute } : {}),
         availability: ["available", "limited", "unavailable", "contact"].includes(product.availability) ? product.availability : "contact",
