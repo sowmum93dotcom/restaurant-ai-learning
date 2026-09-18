@@ -57,6 +57,10 @@ const CUSTOMER_STAGE_THREE_COPY = Object.freeze({
   possibilityLabel: "Possibility",
   why: "Why this appeared",
   providedBy: "Provided by",
+  continueHeading: "Continue directly with this business",
+  continueExplanation: "These routes were provided by the business. Payment and fulfilment stay directly between you and the business.",
+  fulfilmentHeading: "How the business says it can fulfil",
+  businessProvided: "Business-provided information",
   backAction: "Back to possibilities",
   participateHeading: "Interested in this possibility?",
   participateExplanation: "Interested is an interest signal only. It is not a purchase, booking or sale.",
@@ -112,6 +116,32 @@ function toCustomerPossibility(value) {
   const possibility = { possibilityId, workItemId, businessName, content, participationAction: "Interested",
     relevance: { basis: relevance.basis, evidence: evidence.slice(0, 5), explanation: relevance.explanation } };
   if (typeof value.location === "string" && value.location.trim()) possibility.location = value.location.trim();
+  const allowedRoutes = ["website", "phone", "whatsapp", "email", "visit", "booking", "quote"];
+  const routeDetails = { website: "website", phone: "phone", whatsapp: "whatsapp", email: "email", booking: "bookingLink" };
+  if (value.customerContinuation && typeof value.customerContinuation === "object" && Array.isArray(value.customerContinuation.routes)) {
+    const safe = { routes: [] };
+    value.customerContinuation.routes.forEach(function (route) {
+      if (!allowedRoutes.includes(route)) return;
+      const field = routeDetails[route];
+      if (field) {
+        const detail = normalizedRequiredString(value.customerContinuation[field]);
+        if (!detail) return;
+        safe[field] = detail;
+      }
+      safe.routes.push(route);
+    });
+    if (safe.routes.length) possibility.customerContinuation = safe;
+  }
+  const allowedFulfilment = ["collection", "local-delivery", "shipping", "at-business", "at-customer-location", "appointment", "digital"];
+  if (value.fulfilment && typeof value.fulfilment === "object" && Array.isArray(value.fulfilment.methods)) {
+    const methods = value.fulfilment.methods.filter(function (method) { return allowedFulfilment.includes(method); });
+    if (methods.length) {
+      possibility.fulfilment = { methods };
+      const notes = normalizedRequiredString(value.fulfilment.notes);
+      if (notes) possibility.fulfilment.notes = notes;
+    }
+  }
+  if (value.informationSource === "business-provided") possibility.informationSource = "business-provided";
   return possibility;
 }
 
@@ -185,6 +215,46 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
     addText(document, focusRegion, "p", "customer-provider-label", CUSTOMER_STAGE_THREE_COPY.providedBy);
     addText(document, focusRegion, "p", "customer-possibility-provider", possibility.businessName);
     if (possibility.location) addText(document, focusRegion, "p", "customer-possibility-location", possibility.location);
+    if (possibility.customerContinuation) {
+      const continuation = document.createElement("section");
+      continuation.className = "customer-business-continuation";
+      addText(document, continuation, "h4", "customer-continuation-heading", CUSTOMER_STAGE_THREE_COPY.continueHeading);
+      addText(document, continuation, "p", "customer-continuation-copy", CUSTOMER_STAGE_THREE_COPY.continueExplanation);
+      const actions = document.createElement("div");
+      actions.className = "customer-continuation-actions";
+      const labels = { website: "Visit website", phone: "Call", whatsapp: "WhatsApp", email: "Email", visit: "Visit business", booking: "Book / order", quote: "Request quote / enquiry" };
+      possibility.customerContinuation.routes.forEach(function (route) {
+        const field = { website: "website", phone: "phone", whatsapp: "whatsapp", email: "email", booking: "bookingLink" }[route];
+        const detail = field ? possibility.customerContinuation[field] : null;
+        let href = null;
+        if (route === "website" || route === "booking") href = detail;
+        else if (route === "phone") href = "tel:" + detail;
+        else if (route === "whatsapp") href = /^https?:\/\//i.test(detail) ? detail : "https://wa.me/" + detail.replace(/\D/g, "");
+        else if (route === "email") href = "mailto:" + detail;
+        else if (route === "visit" && possibility.location) href = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(possibility.location);
+        const action = document.createElement(href ? "a" : "span");
+        action.className = href ? "customer-continuation-action" : "customer-continuation-note";
+        action.textContent = labels[route];
+        if (href) {
+          action.href = href;
+          if (route === "website" || route === "booking" || route === "whatsapp" || route === "visit") {
+            action.target = "_blank";
+            action.rel = "noopener noreferrer";
+          }
+        }
+        actions.appendChild(action);
+      });
+      continuation.appendChild(actions);
+      if (possibility.fulfilment) {
+        addText(document, continuation, "h5", "customer-fulfilment-heading", CUSTOMER_STAGE_THREE_COPY.fulfilmentHeading);
+        addText(document, continuation, "p", "customer-fulfilment-methods", possibility.fulfilment.methods.map(function (method) {
+          return ({ collection: "Collection", "local-delivery": "Local delivery", shipping: "Shipping", "at-business": "At the business", "at-customer-location": "At your location", appointment: "Appointment", digital: "Digital" })[method];
+        }).join(" · "));
+        if (possibility.fulfilment.notes) addText(document, continuation, "p", "customer-fulfilment-notes", possibility.fulfilment.notes);
+      }
+      if (possibility.informationSource === "business-provided") addText(document, continuation, "p", "customer-information-source", CUSTOMER_STAGE_THREE_COPY.businessProvided);
+      focusRegion.appendChild(continuation);
+    }
     const save = document.createElement("section");
     save.className = "customer-possibility-save";
     if (saveOptions && saveOptions.authenticated === true) {
