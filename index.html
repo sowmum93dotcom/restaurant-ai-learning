@@ -64,9 +64,53 @@
       border-color: #2f8a55;
       box-shadow: 0 0 0 3px rgba(47, 138, 85, 0.14);
     }
-    @media (max-width: 700px) {
+    .profile-choice-group {
+      margin: 0;
+      border-color: #d8e2f2;
+      background: #f8fbff;
+    }
+    .profile-choice-group legend {
+      padding: 0 0.35rem;
+      color: #102a52;
+      font-weight: 700;
+    }
+    .profile-choice-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.65rem;
+      margin-top: 1rem;
+    }
+    .profile-choice-grid label,
+    .profile-accuracy-confirmation label {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.55rem;
+      margin: 0;
+      color: #263b59;
+      font-weight: 600;
+    }
+    .profile-choice-grid input,
+    .profile-accuracy-confirmation input {
+      width: auto;
+      margin-top: 0.25rem;
+    }
+    .profile-route-details {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0 1rem;
+      margin-top: 0.75rem;
+    }
+    .profile-accuracy-confirmation {
+      background: #f7f9fc;
+      border-color: #d8e2f2;
+    }
+        @media (max-width: 700px) {
       .profile-long-field textarea {
         min-height: 10rem;
+      }
+      .profile-choice-grid,
+      .profile-route-details {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -243,12 +287,56 @@
             <div class="business-selector" aria-label="Business selection"><div class="business-selector-field"><label for="business-selector">Active Business</label><select id="business-selector"></select></div><button id="add-business-btn" class="demeos-secondary-button" type="button">Add Business</button></div>
             <div class="profile-fields">
               <div><label for="business-name">Business Name</label><input type="text" id="business-name" name="business-name" placeholder="Enter your business name" /></div>
-              <div><label for="business-type">Business Type</label><input type="text" id="business-type" name="business-type" placeholder="Example: Restaurant" /></div>
-              <div><label for="business-location">Business Location</label><input type="text" id="business-location" name="business-location" placeholder="Example: London, United Kingdom" /></div>
-              <div class="profile-long-field brand-voice-field"><label for="business-brand-voice">Brand Voice</label><textarea id="business-brand-voice" name="business-brand-voice" rows="4" placeholder="Example: Friendly, modern and professional. Describe how your business should sound when DEMEOS creates customer-facing content."></textarea><p>Describe how your business communicates so DEMEOS can keep the tone consistent.</p></div>
-              <div class="profile-long-field target-customer-field"><label for="business-target-customer">Target Customer</label><textarea id="business-target-customer" name="business-target-customer" rows="4" placeholder="Example: Local families, professionals, weekend visitors and other customer groups you want to reach."></textarea><p>Describe the customer groups you want DEMEOS to understand and reach.</p></div>
+              <div><label for="business-type">Business Type</label><input type="text" id="business-type" name="business-type" placeholder="Example: Bakery, plumber, clothing shop" /></div>
+              <div><label for="business-location">Business Location / Service Area</label><input type="text" id="business-location" name="business-location" placeholder="Example: Croydon, London" /></div>
+              <div class="profile-long-field"><label for="business-products-services">What does your business provide?</label><textarea id="business-products-services" name="business-products-services" rows="5" placeholder="Example: Birthday cakes, celebration cakes and cupcakes made to order."></textarea><p>Describe only products and services your business genuinely provides. DEMEOS will not invent products, availability or prices.</p></div>
+
+              <fieldset class="profile-choice-group profile-long-field">
+                <legend>How can customers continue with your business?</legend>
+                <p>Select only routes your business currently supports. A website is optional.</p>
+                <div class="profile-choice-grid">
+                  <label><input type="checkbox" id="business-route-website" value="website" /> Website / online shop</label>
+                  <label><input type="checkbox" id="business-route-phone" value="phone" /> Call</label>
+                  <label><input type="checkbox" id="business-route-whatsapp" value="whatsapp" /> WhatsApp</label>
+                  <label><input type="checkbox" id="business-route-email" value="email" /> Email</label>
+                  <label><input type="checkbox" id="business-route-visit" value="visit" /> Visit business</label>
+                  <label><input type="checkbox" id="business-route-booking" value="booking" /> Booking / order link</label>
+                  <label><input type="checkbox" id="business-route-quote" value="quote" /> Request a quote / enquiry</label>
+                </div>
+                <div class="profile-route-details">
+                  <div><label for="business-website">Website / online shop link</label><input type="url" id="business-website" placeholder="https://www.example.co.uk" /></div>
+                  <div><label for="business-phone">Business phone</label><input type="tel" id="business-phone" placeholder="Business contact number" /></div>
+                  <div><label for="business-whatsapp">WhatsApp number</label><input type="tel" id="business-whatsapp" placeholder="WhatsApp business number" /></div>
+                  <div><label for="business-email">Business email</label><input type="email" id="business-email" placeholder="hello@example.co.uk" /></div>
+                  <div><label for="business-booking-link">Booking / order link</label><input type="url" id="business-booking-link" placeholder="https://..." /></div>
+                </div>
+              </fieldset>
+
+              <fieldset class="profile-choice-group profile-long-field">
+                <legend>How do customers receive your product or service?</legend>
+                <div class="profile-choice-grid">
+                  <label><input type="checkbox" id="business-fulfilment-collection" value="collection" /> Collection</label>
+                  <label><input type="checkbox" id="business-fulfilment-delivery" value="delivery" /> Business delivery</label>
+                  <label><input type="checkbox" id="business-fulfilment-shipping" value="shipping" /> Shipping / post</label>
+                  <label><input type="checkbox" id="business-fulfilment-premises" value="premises" /> At our premises</label>
+                  <label><input type="checkbox" id="business-fulfilment-customer-location" value="customer-location" /> At customer location</label>
+                  <label><input type="checkbox" id="business-fulfilment-appointment" value="appointment" /> Appointment / booked service</label>
+                  <label><input type="checkbox" id="business-fulfilment-digital" value="digital" /> Digital / remote delivery</label>
+                </div>
+                <label for="business-fulfilment-notes">Important fulfilment information</label>
+                <textarea id="business-fulfilment-notes" rows="3" placeholder="Example: Collection from our Croydon shop. Local delivery is arranged directly with us."></textarea>
+              </fieldset>
+
+              <div class="profile-long-field brand-voice-field"><label for="business-brand-voice">Brand Voice</label><textarea id="business-brand-voice" name="business-brand-voice" rows="4" placeholder="Example: Friendly, modern and professional."></textarea><p>Describe how your business communicates so DEMEOS can keep the tone consistent.</p></div>
+              <div class="profile-long-field target-customer-field"><label for="business-target-customer">Target Customer</label><textarea id="business-target-customer" name="business-target-customer" rows="4" placeholder="Example: Local families, professionals and weekend visitors."></textarea><p>Describe the customer groups you want DEMEOS to understand and reach.</p></div>
               <div><label for="business-goal">Primary Marketing Goal</label><input type="text" id="business-goal" name="business-goal" placeholder="Example: Increase local customers" /></div>
+
+              <div class="profile-accuracy-confirmation profile-long-field">
+                <label><input type="checkbox" id="business-accuracy-confirmation" /> I confirm this information accurately describes what my business currently provides and how customers can continue with us.</label>
+                <p>DEMEOS stores this as business-provided information. It is not presented as independently verified unless DEMEOS has separately verified it.</p>
+              </div>
             </div>
+            <p id="business-profile-status" class="recommendations-status" role="status" aria-live="polite"></p>
             <button id="save-business-profile-btn" class="demeos-primary-button" type="button">Save Business Profile</button>
           </section>
         </section>
