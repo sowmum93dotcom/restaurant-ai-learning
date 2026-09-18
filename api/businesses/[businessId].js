@@ -69,6 +69,12 @@ function getValidatedProfile(req) {
     const name = cleanString(item.name, 200);
     const description = cleanString(item.description, 1200);
     const price = cleanString(item.price, 100);
+    const priceMode = cleanString(item.priceMode, 20) || (price ? "fixed" : "contact");
+    if (!["contact", "fixed", "from", "range"].includes(priceMode) || (priceMode === "contact" && price) || (priceMode !== "contact" && !price)) return null;
+    const productFulfilment = item.fulfilment;
+    if (productFulfilment !== undefined && (!productFulfilment || typeof productFulfilment !== "object" || Array.isArray(productFulfilment) ||
+        !Array.isArray(productFulfilment.methods) || !productFulfilment.methods.length ||
+        productFulfilment.methods.some(function (method) { return !ALLOWED_FULFILMENT_METHODS.has(method); }))) return null;
     const imageUrl = cleanString(item.imageUrl, 1000);
     const continuationRoute = cleanString(item.continuationRoute, 30);
     const availability = cleanString(item.availability, 30) || "contact";
@@ -78,7 +84,8 @@ function getValidatedProfile(req) {
         !ALLOWED_AVAILABILITY_STATES.has(availability)) return null;
     productIds.add(productId);
     products.push({ productId, businessId: cleanString(profile.businessId, 120), name, description, price, imageUrl,
-      continuationRoute, availability, customerVisible: item.customerVisible !== false, imageSource: imageUrl ? "business-provided" : "" });
+      continuationRoute, availability, priceMode, customerVisible: item.customerVisible !== false, imageSource: imageUrl ? "business-provided" : "",
+      ...(productFulfilment ? { fulfilment: { methods: Array.from(new Set(productFulfilment.methods)) } } : {}) });
   }
 
   const operationalProfile = Number(profile.profileVersion) >= 3;

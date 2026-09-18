@@ -113,7 +113,15 @@
           }
           const name = documentObject.createElement("strong"); name.textContent = product.name; productCard.appendChild(name);
           if (product.description) { const description = documentObject.createElement("p"); description.textContent = product.description; productCard.appendChild(description); }
-          if (product.price) { const price = documentObject.createElement("p"); price.textContent = product.price; productCard.appendChild(price); }
+          const historicalPrice = product.priceMode === "contact" ? "Contact for price" :
+            product.priceMode === "from" && product.price ? "From " + product.price :
+            product.priceMode === "range" && product.price ? "Price range: " + product.price : product.price;
+          if (historicalPrice) { const price = documentObject.createElement("p"); price.textContent = historicalPrice; productCard.appendChild(price); }
+          if (product.fulfilment && Array.isArray(product.fulfilment.methods) && product.fulfilment.methods.length) {
+            const labels = { collection: "Collection", delivery: "Delivery", shipping: "Shipping", premises: "At the business", "customer-location": "At your location", appointment: "Appointment", digital: "Digital" };
+            const fulfilment = documentObject.createElement("p"); fulfilment.textContent = "Shown fulfilment: " + product.fulfilment.methods.map(function (method) { return labels[method] || method; }).join(" · ");
+            productCard.appendChild(fulfilment);
+          }
           const availability = documentObject.createElement("p");
           availability.textContent = product.availability ? "Shown availability: " + product.availability : "Availability was not stated.";
           productCard.appendChild(availability); products.appendChild(productCard);

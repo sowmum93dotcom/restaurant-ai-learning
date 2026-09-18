@@ -160,9 +160,14 @@ function toCustomerPossibility(value) {
         (!product.continuationRoute || (possibility.customerContinuation && possibility.customerContinuation.routes.includes(product.continuationRoute)));
     }).slice(0, 100).map(function (product) {
       const normalized = { productId: product.productId.trim(), name: product.name.trim(), description: product.description.trim(),
-        price: normalizedRequiredString(product.price) || "", imageUrl: normalizedRequiredString(product.imageUrl) || "",
+        price: normalizedRequiredString(product.price) || "", priceMode: ["fixed", "from", "range"].includes(product.priceMode) ? product.priceMode : "contact",
+        imageUrl: normalizedRequiredString(product.imageUrl) || "",
         continuationRoute: normalizedRequiredString(product.continuationRoute) || "",
         availability: ["available", "limited", "unavailable", "contact"].includes(product.availability) ? product.availability : "contact" };
+      if (product.fulfilment && Array.isArray(product.fulfilment.methods)) {
+        const productMethods = product.fulfilment.methods.filter(function (method) { return allowedFulfilment.includes(method); });
+        if (productMethods.length) normalized.fulfilment = { methods: productMethods };
+      }
       const productRelevance = product.relevance;
       if (productRelevance && typeof productRelevance === "object" && !Array.isArray(productRelevance) &&
           productRelevance.basis === "current-intention-product-information" && Array.isArray(productRelevance.evidence) &&
@@ -285,11 +290,18 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
         }
         addText(document, card, "h5", "customer-product-name", product.name);
         addText(document, card, "p", "customer-product-description", product.description);
-        if (product.price) addText(document, card, "p", "customer-product-price", product.price);
+        const productPriceText = product.priceMode === "contact" ? "Contact business for price" :
+          product.priceMode === "from" ? "From " + product.price :
+          product.priceMode === "range" ? "Price range: " + product.price : product.price;
+        if (productPriceText) addText(document, card, "p", "customer-product-price", productPriceText);
         const productAvailabilityLabels = { available: "Available", limited: "Limited availability — contact the business first", unavailable: "Not currently available", contact: "Contact the business to confirm availability" };
         addText(document, card, "p", "customer-product-availability", productAvailabilityLabels[product.availability]);
         if (product.relevance && Array.isArray(product.relevance.evidence) && product.relevance.evidence.length) {
           addText(document, card, "p", "customer-product-relevance", "Relevant to your request: " + product.relevance.evidence.join(", ") + ".");
+        }
+        if (product.fulfilment && product.fulfilment.methods.length) {
+          const productFulfilmentLabels = { collection: "Collection", delivery: "Delivery", shipping: "Shipping", premises: "At the business", "customer-location": "At your location", appointment: "Appointment", digital: "Digital" };
+          addText(document, card, "p", "customer-product-fulfilment", "How you receive it: " + product.fulfilment.methods.map(function (method) { return productFulfilmentLabels[method]; }).join(" · "));
         }
         addText(document, card, "p", "customer-product-source", "Image and product information provided by " + possibility.businessName + ".");
         const controls = document.createElement("div"); controls.className = "customer-product-controls";

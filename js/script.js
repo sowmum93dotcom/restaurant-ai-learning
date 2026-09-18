@@ -844,15 +844,34 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     };
   }
   const productFields = {
-    id: byId("business-product-id"), name: byId("business-product-name"), price: byId("business-product-price"),
+    id: byId("business-product-id"), name: byId("business-product-name"), price: byId("business-product-price"), priceMode: byId("business-product-price-mode"),
     description: byId("business-product-description"), image: byId("business-product-image"),
-    route: byId("business-product-route"), availability: byId("business-product-availability"), visibility: byId("business-product-visibility")
+    route: byId("business-product-route"), availability: byId("business-product-availability"), visibility: byId("business-product-visibility"),
+    fulfilmentMode: byId("business-product-fulfilment-mode")
   };
   const productAddBtn = byId("business-product-add-btn");
   const productCancelBtn = byId("business-product-cancel-btn");
   const productsList = byId("business-products-list");
   const productsEmpty = byId("business-products-empty");
+  const productPriceValueWrap = byId("business-product-price-value-wrap");
+  const productFulfilmentOptions = byId("business-product-fulfilment-options");
   let draftProducts = [];
+
+  function selectedProductFulfilment() {
+    return productFulfilmentOptions && typeof productFulfilmentOptions.querySelectorAll === "function" ? Array.from(productFulfilmentOptions.querySelectorAll("input[type=checkbox]")).filter(function (input) { return input.checked; }).map(function (input) { return input.value; }) : [];
+  }
+  function setProductFulfilment(values) {
+    const selected = new Set(Array.isArray(values) ? values : []);
+    if (productFulfilmentOptions && typeof productFulfilmentOptions.querySelectorAll === "function") productFulfilmentOptions.querySelectorAll("input[type=checkbox]").forEach(function (input) { input.checked = selected.has(input.value); });
+  }
+  function updateProductPriceControls() {
+    if (productPriceValueWrap) productPriceValueWrap.hidden = productFields.priceMode.value === "contact";
+    if (productFields.priceMode.value === "contact") productFields.price.value = "";
+  }
+  function updateProductFulfilmentControls() {
+    if (productFulfilmentOptions) productFulfilmentOptions.hidden = productFields.fulfilmentMode.value !== "specific";
+    if (productFields.fulfilmentMode.value !== "specific") setProductFulfilment([]);
+  }
 
   function safeProductImageUrl(value) {
     const text = typeof value === "string" ? value.trim() : "";
@@ -877,9 +896,12 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       const edit = document.createElement("button"); edit.type = "button"; edit.className = "demeos-secondary-button"; edit.textContent = "Edit";
       edit.addEventListener("click", function () {
         productFields.id.value = product.productId; productFields.name.value = product.name; productFields.price.value = product.price || "";
+        productFields.priceMode.value = product.priceMode || (product.price ? "fixed" : "contact"); updateProductPriceControls();
         productFields.description.value = product.description; productFields.image.value = product.imageUrl || "";
         productFields.route.value = product.continuationRoute || ""; productFields.availability.value = product.availability || "contact";
         productFields.visibility.value = product.customerVisible === false ? "hidden" : "visible";
+        productFields.fulfilmentMode.value = product.fulfilment && Array.isArray(product.fulfilment.methods) ? "specific" : "business";
+        setProductFulfilment(product.fulfilment && product.fulfilment.methods); updateProductFulfilmentControls();
         productAddBtn.textContent = "Update product / service"; productCancelBtn.hidden = false;
         if (typeof productFields.name.focus === "function") productFields.name.focus();
       });
@@ -896,7 +918,8 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   function resetProductForm() {
     productFields.id.value = ""; productFields.name.value = ""; productFields.price.value = "";
     productFields.description.value = ""; productFields.image.value = ""; productFields.route.value = "";
-    productFields.availability.value = "contact"; productFields.visibility.value = "visible";
+    productFields.availability.value = "contact"; productFields.visibility.value = "visible"; productFields.priceMode.value = "contact";
+    productFields.fulfilmentMode.value = "business"; setProductFulfilment([]); updateProductPriceControls(); updateProductFulfilmentControls();
     if (productAddBtn) productAddBtn.textContent = "Add product / service";
     if (productCancelBtn) productCancelBtn.hidden = true;
   }
@@ -911,15 +934,23 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     if (!route) { alert("Select a customer continuation route before adding this product."); return; }
     if (!selectedRoutes.includes(route)) { alert("Select that customer route in the Business Profile before assigning it to a product."); return; }
     const productId = productFields.id.value || ("product-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8));
-    const product = { productId, name, description, price: productFields.price.value.trim(), imageUrl,
+    const priceMode = productFields.priceMode.value;
+    const price = productFields.price.value.trim();
+    if (priceMode !== "contact" && !price) { alert("Add the business-provided price information for this product."); return; }
+    const productFulfilment = selectedProductFulfilment();
+    if (productFields.fulfilmentMode.value === "specific" && !productFulfilment.length) { alert("Choose at least one fulfilment method for this product."); return; }
+    const product = { productId, name, description, price, priceMode, imageUrl,
       continuationRoute: route, availability: productFields.availability.value, customerVisible: productFields.visibility.value !== "hidden",
-      imageSource: imageUrl ? "business-provided" : "" };
+      imageSource: imageUrl ? "business-provided" : "",
+      ...(productFields.fulfilmentMode.value === "specific" ? { fulfilment: { methods: productFulfilment } } : {}) };
     const existingIndex = draftProducts.findIndex(function (entry) { return entry.productId === productId; });
     if (existingIndex >= 0) draftProducts.splice(existingIndex, 1, product); else draftProducts.push(product);
     resetProductForm(); renderBusinessProducts();
   }
   if (productAddBtn) productAddBtn.addEventListener("click", addDraftProduct);
   if (productCancelBtn) productCancelBtn.addEventListener("click", resetProductForm);
+  if (productFields.priceMode) productFields.priceMode.addEventListener("change", updateProductPriceControls);
+  if (productFields.fulfilmentMode) productFields.fulfilmentMode.addEventListener("change", updateProductFulfilmentControls);
 
   function fillProfile(profile) {
     draftProducts = profile && Array.isArray(profile.products) ? profile.products.map(function (product) { return { ...product }; }) : [];
