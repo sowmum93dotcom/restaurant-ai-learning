@@ -116,6 +116,9 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
         explanation: "This authorized possibility connects to your current request." }
     };
     if (work.location) possibility.location = work.location;
+    if (work.customerContinuation) possibility.customerContinuation = work.customerContinuation;
+    if (work.fulfilment) possibility.fulfilment = work.fulfilment;
+    if (work.informationSource === "business-provided") possibility.informationSource = "business-provided";
     candidates.push({ strength: concepts.length + evidence.length, guidanceOverlap, feedbackGuidanceScore, possibility });
   });
   candidates.sort(function (left, right) {
