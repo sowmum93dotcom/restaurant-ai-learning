@@ -33,3 +33,18 @@ test("matched possibility keeps continuation separate from Interested evidence",
   assert.equal(Object.hasOwn(possibility, "sale"), false);
   assert.equal(Object.hasOwn(possibility, "purchase"), false);
 });
+
+test("quote continuation is exposed only when a real customer route can carry the enquiry", function () {
+  const actionable = toPublicCustomerWorkItem({
+    workItemId: "work-quote", businessName: "Example", content: "Made to order cakes",
+    customerContinuation: { routes: ["quote", "email"], email: "orders@example.test" }
+  });
+  assert.deepEqual(actionable.customerContinuation.routes, ["quote", "email"]);
+  assert.equal(actionable.customerContinuation.quoteVia, "email");
+
+  const inert = toPublicCustomerWorkItem({
+    workItemId: "work-inert", businessName: "Example", content: "Made to order cakes",
+    customerContinuation: { routes: ["quote"] }
+  });
+  assert.equal(inert.customerContinuation, undefined);
+});
