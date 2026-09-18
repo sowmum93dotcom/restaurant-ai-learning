@@ -858,11 +858,11 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   let draftProducts = [];
 
   function selectedProductFulfilment() {
-    return productFulfilmentOptions ? Array.from(productFulfilmentOptions.querySelectorAll("input[type=checkbox]")).filter(function (input) { return input.checked; }).map(function (input) { return input.value; }) : [];
+    return productFulfilmentOptions && typeof productFulfilmentOptions.querySelectorAll === "function" ? Array.from(productFulfilmentOptions.querySelectorAll("input[type=checkbox]")).filter(function (input) { return input.checked; }).map(function (input) { return input.value; }) : [];
   }
   function setProductFulfilment(values) {
     const selected = new Set(Array.isArray(values) ? values : []);
-    if (productFulfilmentOptions) productFulfilmentOptions.querySelectorAll("input[type=checkbox]").forEach(function (input) { input.checked = selected.has(input.value); });
+    if (productFulfilmentOptions && typeof productFulfilmentOptions.querySelectorAll === "function") productFulfilmentOptions.querySelectorAll("input[type=checkbox]").forEach(function (input) { input.checked = selected.has(input.value); });
   }
   function updateProductPriceControls() {
     if (productPriceValueWrap) productPriceValueWrap.hidden = productFields.priceMode.value === "contact";
