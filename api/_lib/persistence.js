@@ -221,9 +221,10 @@ function createPersistenceRepository(database) {
                 AND confirmed_understanding = $7)` : "NULL";
         const result = await database.query(
           `INSERT INTO demeos_customer_possibility_issuances
-             (trusted_customer_identity_id, work_item_id, campaign_snapshot, evidence_type, source, intention_id)
-           SELECT $1, c.campaign_id, c.campaign, 'demeos-possibility-issuance', 'demeos',
-             ${intentionExpression}
+             (trusted_customer_identity_id, work_item_id, campaign_snapshot, evidence_type, source, intention_id, public_products_snapshot)
+           SELECT $1, c.campaign_id, c.campaign,
+             'demeos-possibility-issuance', 'demeos',
+             ${intentionExpression}, $8::jsonb
            FROM demeos_campaigns c JOIN demeos_businesses b ON b.business_id = c.business_id
            WHERE c.campaign_id = $2 AND c.campaign = $3::jsonb
              AND c.campaign->>'approvalStatus' = 'Approved'
@@ -232,8 +233,10 @@ function createPersistenceRepository(database) {
            ON CONFLICT (trusted_customer_identity_id, work_item_id) DO NOTHING
            RETURNING work_item_id`,
           linkedIntention ? [trustedCustomerIdentityId, possibility.workItemId, JSON.stringify(row.campaign),
-            intentionId, understanding.intention || "", understanding.customerText || null, understanding.understanding]
-            : [trustedCustomerIdentityId, possibility.workItemId, JSON.stringify(row.campaign)]);
+            intentionId, understanding.intention || "", understanding.customerText || null, understanding.understanding,
+            JSON.stringify(Array.isArray(possibility.products) ? possibility.products : [])]
+            : [trustedCustomerIdentityId, possibility.workItemId, JSON.stringify(row.campaign), null, null, null, null,
+              JSON.stringify(Array.isArray(possibility.products) ? possibility.products : [])]);
         // A retry may find the already-issued row. It is still the authoritative
         // issuance, but its original snapshot and timestamp must not be rewritten.
         issuedWorkItemIds.push(result.rows.length ? result.rows[0].work_item_id : possibility.workItemId);
@@ -276,12 +279,27 @@ function createPersistenceRepository(database) {
       await database.ensureSchema();
       const safeLimit = Math.min(50, Math.max(1, Number.isInteger(limit) ? limit : 50));
       const result = await database.query(
-        `SELECT saved_possibility_id, possibility_content, business_name, location, relevance_basis, created_at
-         FROM demeos_customer_saved_possibilities
-         WHERE trusted_customer_identity_id = $1
-         ORDER BY created_at DESC, saved_possibility_id DESC LIMIT $2`,
+        `SELECT s.saved_possibility_id, s.possibility_content, s.business_name, s.location, s.relevance_basis, s.created_at,
+                i.public_products_snapshot, i.issued_at
+         FROM demeos_customer_saved_possibilities s
+         LEFT JOIN demeos_customer_possibility_issuances i
+           ON i.trusted_customer_identity_id = s.trusted_customer_identity_id
+          AND i.work_item_id = s.work_item_id
+         WHERE s.trusted_customer_identity_id = $1
+         ORDER BY s.created_at DESC, s.saved_possibility_id DESC LIMIT $2`,
         [trustedCustomerIdentityId, safeLimit]);
-      return result.rows.map(toSavedPossibility);
+      return result.rows.map(function (row) {
+        const item = toSavedPossibility(row);
+        const products = Array.isArray(row.public_products_snapshot) ? row.public_products_snapshot : [];
+        if (products.length) item.products = products.map(function (product) {
+          return {
+            productId: product.productId, name: product.name, description: product.description,
+            price: product.price, imageUrl: product.imageUrl, availability: product.availability
+          };
+        }).filter(function (product) { return isNonEmptyString(product.productId) && isNonEmptyString(product.name); });
+        if (row.issued_at) item.issuedAt = row.issued_at instanceof Date ? row.issued_at.toISOString() : row.issued_at;
+        return item;
+      });
     },
     async removeCustomerSavedPossibility(trustedCustomerIdentityId, savedPossibilityId) {
       if (!isNonEmptyString(trustedCustomerIdentityId) || !isNonEmptyString(savedPossibilityId)) return false;

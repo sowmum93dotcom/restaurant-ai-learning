@@ -107,6 +107,8 @@ const SCHEMA_STATEMENTS = [
     ADD COLUMN IF NOT EXISTS location_snapshot TEXT`,
   `ALTER TABLE demeos_customer_possibility_issuances
     ADD COLUMN IF NOT EXISTS intention_id BIGINT NULL REFERENCES demeos_customer_intentions(intention_id)`,
+  `ALTER TABLE demeos_customer_possibility_issuances
+    ADD COLUMN IF NOT EXISTS public_products_snapshot JSONB NOT NULL DEFAULT '[]'::jsonb`,
   `CREATE INDEX IF NOT EXISTS demeos_customer_possibility_issuances_owner_issued_idx
     ON demeos_customer_possibility_issuances
       (trusted_customer_identity_id, issued_at DESC)`,
