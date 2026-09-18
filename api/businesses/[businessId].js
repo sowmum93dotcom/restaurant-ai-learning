@@ -74,7 +74,7 @@ function getValidatedProfile(req) {
     const availability = cleanString(item.availability, 30) || "contact";
     if (!productId || productIds.has(productId) || !name || !description ||
         (imageUrl && !isSafeHttpUrl(imageUrl)) ||
-        (continuationRoute && (!ALLOWED_CONTINUATION_ROUTES.has(continuationRoute) || !continuation.routes.includes(continuationRoute))) ||
+        (!continuationRoute || !ALLOWED_CONTINUATION_ROUTES.has(continuationRoute) || !continuation.routes.includes(continuationRoute)) ||
         !ALLOWED_AVAILABILITY_STATES.has(availability)) return null;
     productIds.add(productId);
     products.push({ productId, businessId: cleanString(profile.businessId, 120), name, description, price, imageUrl,
