@@ -54,6 +54,31 @@ function toPublicCustomerWorkItem(item) {
       if (notes) publicItem.fulfilment.notes = notes;
     }
   }
+  if (Array.isArray(item.products)) {
+    const products = item.products.filter(function (product) {
+      return product && typeof product === "object" && !Array.isArray(product) &&
+        normalizedRequiredString(product.productId) && normalizedRequiredString(product.name) &&
+        normalizedRequiredString(product.description) &&
+        (!product.imageUrl || /^https?:\/\//i.test(product.imageUrl)) &&
+        (!product.businessId || product.businessId === item.businessId);
+    }).slice(0, 100).map(function (product) {
+      const route = normalizedRequiredString(product.continuationRoute);
+      const safeRoute = route && publicItem.customerContinuation &&
+        publicItem.customerContinuation.routes.includes(route) ? route : null;
+      return {
+        productId: product.productId.trim(),
+        businessId: normalizedRequiredString(item.businessId) || normalizedRequiredString(product.businessId),
+        name: product.name.trim(),
+        description: product.description.trim(),
+        ...(normalizedRequiredString(product.price) ? { price: product.price.trim() } : {}),
+        ...(normalizedRequiredString(product.imageUrl) ? { imageUrl: product.imageUrl.trim(), imageSource: "business-provided" } : {}),
+        ...(safeRoute ? { continuationRoute: safeRoute } : {}),
+        availability: ["available", "limited", "unavailable", "contact"].includes(product.availability) ? product.availability : "contact"
+      };
+    });
+    if (products.length) publicItem.products = products;
+  }
+
   const operational = item.operationalAvailability;
   if (operational && typeof operational === "object" && ["available", "limited", "unavailable", "contact"].includes(operational.status)) {
     publicItem.operationalAvailability = {
