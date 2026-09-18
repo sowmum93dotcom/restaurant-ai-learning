@@ -57,7 +57,7 @@ function toPublicCustomerWorkItem(item) {
   }
   if (Array.isArray(item.products)) {
     const products = item.products.filter(function (product) {
-      return product && typeof product === "object" && !Array.isArray(product) &&
+      return product && typeof product === "object" && !Array.isArray(product) && product.customerVisible !== false &&
         normalizedRequiredString(product.productId) && normalizedRequiredString(product.name) &&
         normalizedRequiredString(product.description) &&
         (!product.imageUrl || /^https?:\/\//i.test(product.imageUrl)) &&

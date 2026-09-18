@@ -119,7 +119,12 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
     if (work.customerContinuation) possibility.customerContinuation = work.customerContinuation;
     if (work.fulfilment) possibility.fulfilment = work.fulfilment;
     if (work.operationalAvailability) possibility.operationalAvailability = work.operationalAvailability;
-    if (Array.isArray(work.products) && work.products.length) possibility.products = work.products.map(function (product) { return { ...product }; });
+    if (Array.isArray(work.products) && work.products.length) {
+      const visibleProducts = work.products.filter(function (product) { return product && product.customerVisible !== false; });
+      if (visibleProducts.length) possibility.products = visibleProducts.map(function (product) {
+        const publicProduct = { ...product }; delete publicProduct.customerVisible; return publicProduct;
+      });
+    }
     if (work.informationSource === "business-provided") possibility.informationSource = "business-provided";
     candidates.push({ strength: concepts.length + evidence.length, guidanceOverlap, feedbackGuidanceScore, possibility });
   });

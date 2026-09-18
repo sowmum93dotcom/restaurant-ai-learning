@@ -846,9 +846,10 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   const productFields = {
     id: byId("business-product-id"), name: byId("business-product-name"), price: byId("business-product-price"),
     description: byId("business-product-description"), image: byId("business-product-image"),
-    route: byId("business-product-route"), availability: byId("business-product-availability")
+    route: byId("business-product-route"), availability: byId("business-product-availability"), visibility: byId("business-product-visibility")
   };
   const productAddBtn = byId("business-product-add-btn");
+  const productCancelBtn = byId("business-product-cancel-btn");
   const productsList = byId("business-products-list");
   const productsEmpty = byId("business-products-empty");
   let draftProducts = [];
@@ -871,15 +872,33 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       const name = document.createElement("h5"); name.textContent = product.name;
       const description = document.createElement("p"); description.textContent = product.description;
       const meta = document.createElement("p"); meta.textContent = [product.price, product.availability === "contact" ? "Contact to confirm availability" : product.availability].filter(Boolean).join(" · ");
+      const visibility = document.createElement("p"); visibility.className = "business-product-visibility"; visibility.textContent = product.customerVisible === false ? "Hidden from customers" : "Visible when genuinely relevant";
+      const actions = document.createElement("div"); actions.className = "business-product-card-actions";
+      const edit = document.createElement("button"); edit.type = "button"; edit.className = "demeos-secondary-button"; edit.textContent = "Edit";
+      edit.addEventListener("click", function () {
+        productFields.id.value = product.productId; productFields.name.value = product.name; productFields.price.value = product.price || "";
+        productFields.description.value = product.description; productFields.image.value = product.imageUrl || "";
+        productFields.route.value = product.continuationRoute || ""; productFields.availability.value = product.availability || "contact";
+        productFields.visibility.value = product.customerVisible === false ? "hidden" : "visible";
+        productAddBtn.textContent = "Update product / service"; productCancelBtn.hidden = false;
+        if (typeof productFields.name.focus === "function") productFields.name.focus();
+      });
       const remove = document.createElement("button"); remove.type = "button"; remove.className = "demeos-secondary-button"; remove.textContent = "Remove";
-      remove.addEventListener("click", function () { draftProducts = draftProducts.filter(function (entry) { return entry.productId !== product.productId; }); renderBusinessProducts(); });
-      body.append(name, description, meta, remove); card.appendChild(body); productsList.appendChild(card);
+      remove.addEventListener("click", function () {
+        const removingEditedProduct = productFields.id.value === product.productId;
+        draftProducts = draftProducts.filter(function (entry) { return entry.productId !== product.productId; });
+        if (removingEditedProduct) resetProductForm();
+        renderBusinessProducts();
+      });
+      actions.append(edit, remove); body.append(name, description, meta, visibility, actions); card.appendChild(body); productsList.appendChild(card);
     });
   }
   function resetProductForm() {
     productFields.id.value = ""; productFields.name.value = ""; productFields.price.value = "";
     productFields.description.value = ""; productFields.image.value = ""; productFields.route.value = "";
-    productFields.availability.value = "contact";
+    productFields.availability.value = "contact"; productFields.visibility.value = "visible";
+    if (productAddBtn) productAddBtn.textContent = "Add product / service";
+    if (productCancelBtn) productCancelBtn.hidden = true;
   }
   function addDraftProduct() {
     const name = productFields.name.value.trim(), description = productFields.description.value.trim(), imageUrl = productFields.image.value.trim();
@@ -892,11 +911,15 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     if (!route) { alert("Select a customer continuation route before adding this product."); return; }
     if (!selectedRoutes.includes(route)) { alert("Select that customer route in the Business Profile before assigning it to a product."); return; }
     const productId = productFields.id.value || ("product-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8));
-    draftProducts.push({ productId, name, description, price: productFields.price.value.trim(), imageUrl,
-      continuationRoute: route, availability: productFields.availability.value, imageSource: imageUrl ? "business-provided" : "" });
+    const product = { productId, name, description, price: productFields.price.value.trim(), imageUrl,
+      continuationRoute: route, availability: productFields.availability.value, customerVisible: productFields.visibility.value !== "hidden",
+      imageSource: imageUrl ? "business-provided" : "" };
+    const existingIndex = draftProducts.findIndex(function (entry) { return entry.productId === productId; });
+    if (existingIndex >= 0) draftProducts.splice(existingIndex, 1, product); else draftProducts.push(product);
     resetProductForm(); renderBusinessProducts();
   }
   if (productAddBtn) productAddBtn.addEventListener("click", addDraftProduct);
+  if (productCancelBtn) productCancelBtn.addEventListener("click", resetProductForm);
 
   function fillProfile(profile) {
     draftProducts = profile && Array.isArray(profile.products) ? profile.products.map(function (product) { return { ...product }; }) : [];
