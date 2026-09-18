@@ -256,6 +256,15 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
         else if (route === "whatsapp" && detail) href = /^https?:\/\//i.test(detail) ? detail : "https://wa.me/" + detail.replace(/\D/g, "");
         else if (route === "email" && detail) href = "mailto:" + detail;
         else if (route === "visit" && possibility.location) href = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(possibility.location);
+        else if (route === "quote" && possibility.customerContinuation && possibility.customerContinuation.quoteVia) {
+          const quoteRoute = possibility.customerContinuation.quoteVia;
+          const quoteField = { website: "website", phone: "phone", whatsapp: "whatsapp", email: "email", booking: "bookingLink" }[quoteRoute];
+          const quoteDetail = quoteField ? possibility.customerContinuation[quoteField] : null;
+          if (quoteRoute === "email" && quoteDetail) href = "mailto:" + quoteDetail;
+          else if (quoteRoute === "phone" && quoteDetail) href = "tel:" + quoteDetail;
+          else if (quoteRoute === "whatsapp" && quoteDetail) href = /^https?:\/\//i.test(quoteDetail) ? quoteDetail : "https://wa.me/" + quoteDetail.replace(/\D/g, "");
+          else if ((quoteRoute === "website" || quoteRoute === "booking") && /^https?:\/\//i.test(quoteDetail)) href = quoteDetail;
+        }
         if (product.imageUrl) {
           const image = document.createElement("img"); image.src = product.imageUrl; image.alt = product.name; image.loading = "lazy";
           if (href) {
