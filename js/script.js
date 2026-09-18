@@ -844,7 +844,65 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       bookingLink: continuationDetails.bookingLink.value.trim()
     };
   }
+  const productFields = {
+    id: byId("business-product-id"), name: byId("business-product-name"), price: byId("business-product-price"),
+    description: byId("business-product-description"), image: byId("business-product-image"),
+    route: byId("business-product-route"), availability: byId("business-product-availability")
+  };
+  const productAddBtn = byId("business-product-add-btn");
+  const productsList = byId("business-products-list");
+  const productsEmpty = byId("business-products-empty");
+  let draftProducts = [];
+
+  function safeProductImageUrl(value) {
+    const text = typeof value === "string" ? value.trim() : "";
+    return !text || /^https?:\/\//i.test(text);
+  }
+  function renderBusinessProducts() {
+    if (!productsList) return;
+    productsList.textContent = "";
+    if (productsEmpty) productsEmpty.hidden = draftProducts.length > 0;
+    draftProducts.forEach(function (product) {
+      const card = document.createElement("article"); card.className = "business-product-card";
+      if (product.imageUrl) {
+        const image = document.createElement("img"); image.src = product.imageUrl; image.alt = product.name; image.loading = "lazy";
+        card.appendChild(image);
+      }
+      const body = document.createElement("div"); body.className = "business-product-card-body";
+      const name = document.createElement("h5"); name.textContent = product.name;
+      const description = document.createElement("p"); description.textContent = product.description;
+      const meta = document.createElement("p"); meta.textContent = [product.price, product.availability === "contact" ? "Contact to confirm availability" : product.availability].filter(Boolean).join(" · ");
+      const remove = document.createElement("button"); remove.type = "button"; remove.className = "demeos-secondary-button"; remove.textContent = "Remove";
+      remove.addEventListener("click", function () { draftProducts = draftProducts.filter(function (entry) { return entry.productId !== product.productId; }); renderBusinessProducts(); });
+      body.append(name, description, meta, remove); card.appendChild(body); productsList.appendChild(card);
+    });
+  }
+  function resetProductForm() {
+    productFields.id.value = ""; productFields.name.value = ""; productFields.price.value = "";
+    productFields.description.value = ""; productFields.image.value = ""; productFields.route.value = "";
+    productFields.availability.value = "contact";
+  }
+  function addDraftProduct() {
+    const name = productFields.name.value.trim(), description = productFields.description.value.trim(), imageUrl = productFields.image.value.trim();
+    if (!name || !description) { alert("Please add a product/service name and description."); return; }
+    if (!safeProductImageUrl(imageUrl)) { alert("Product image links must use http or https."); return; }
+    const selectedRoutes = selectedValues(continuationRouteIds);
+    const route = productFields.route.value || selectedRoutes.find(function (candidate) {
+      return ["website", "booking", "phone", "whatsapp", "email", "visit", "quote"].includes(candidate);
+    }) || "";
+    if (!route) { alert("Select a customer continuation route before adding this product."); return; }
+    if (!selectedRoutes.includes(route)) { alert("Select that customer route in the Business Profile before assigning it to a product."); return; }
+    const productId = productFields.id.value || ("product-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8));
+    draftProducts.push({ productId, name, description, price: productFields.price.value.trim(), imageUrl,
+      continuationRoute: route, availability: productFields.availability.value, imageSource: imageUrl ? "business-provided" : "" });
+    resetProductForm(); renderBusinessProducts();
+  }
+  if (productAddBtn) productAddBtn.addEventListener("click", addDraftProduct);
+
   function fillProfile(profile) {
+    draftProducts = profile && Array.isArray(profile.products) ? profile.products.map(function (product) { return { ...product }; }) : [];
+    renderBusinessProducts();
+    resetProductForm();
     Object.keys(fields).forEach(function (key) { fields[key].value = (profile && profile[key]) || ""; });
     const continuation = profile && profile.customerContinuation ? profile.customerContinuation : {};
     setSelectedValues(continuationRouteIds, continuation.routes);
@@ -1140,7 +1198,8 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     if (!accuracyConfirmation.checked) {
       alert("Please confirm that the Business Profile information is accurate before saving."); return;
     }
-    profileFields.profileVersion = 3;
+    profileFields.profileVersion = 4;
+    profileFields.products = draftProducts.map(function (product) { return { ...product }; });
     profileFields.operationalAvailability = {
       status: availabilityStatus.value,
       hoursNotes: businessHoursNotes.value.trim(),

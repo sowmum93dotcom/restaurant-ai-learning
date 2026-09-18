@@ -151,6 +151,20 @@ function toCustomerPossibility(value) {
       notes: normalizedRequiredString(value.operationalAvailability.notes) || ""
     };
   }
+  if (Array.isArray(value.products)) {
+    possibility.products = value.products.filter(function (product) {
+      return product && typeof product === "object" && !Array.isArray(product) &&
+        normalizedRequiredString(product.productId) && normalizedRequiredString(product.name) &&
+        normalizedRequiredString(product.description) &&
+        (!product.imageUrl || /^https?:\/\//i.test(product.imageUrl)) &&
+        (!product.continuationRoute || (possibility.customerContinuation && possibility.customerContinuation.routes.includes(product.continuationRoute)));
+    }).slice(0, 100).map(function (product) {
+      return { productId: product.productId.trim(), name: product.name.trim(), description: product.description.trim(),
+        price: normalizedRequiredString(product.price) || "", imageUrl: normalizedRequiredString(product.imageUrl) || "",
+        continuationRoute: normalizedRequiredString(product.continuationRoute) || "",
+        availability: ["available", "limited", "unavailable", "contact"].includes(product.availability) ? product.availability : "contact" };
+    });
+  }
   if (value.informationSource === "business-provided") possibility.informationSource = "business-provided";
   return possibility;
 }
@@ -225,6 +239,49 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
     addText(document, focusRegion, "p", "customer-provider-label", CUSTOMER_STAGE_THREE_COPY.providedBy);
     addText(document, focusRegion, "p", "customer-possibility-provider", possibility.businessName);
     if (possibility.location) addText(document, focusRegion, "p", "customer-possibility-location", possibility.location);
+    if (Array.isArray(possibility.products) && possibility.products.length) {
+      const products = document.createElement("section"); products.className = "customer-product-gallery";
+      addText(document, products, "h4", "customer-products-heading", "Products & services from this business");
+      const grid = document.createElement("div"); grid.className = "customer-product-grid";
+      possibility.products.forEach(function (product) {
+        const card = document.createElement("article"); card.className = "customer-product-card";
+        const route = product.continuationRoute;
+        const field = { website: "website", phone: "phone", whatsapp: "whatsapp", email: "email", booking: "bookingLink" }[route];
+        const detail = possibility.customerContinuation && field ? possibility.customerContinuation[field] : null;
+        let href = null;
+        if ((route === "website" || route === "booking") && /^https?:\/\//i.test(detail)) href = detail;
+        else if (route === "phone" && detail) href = "tel:" + detail;
+        else if (route === "whatsapp" && detail) href = /^https?:\/\//i.test(detail) ? detail : "https://wa.me/" + detail.replace(/\D/g, "");
+        else if (route === "email" && detail) href = "mailto:" + detail;
+        else if (route === "visit" && possibility.location) href = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(possibility.location);
+        else if (route === "quote" && possibility.customerContinuation && possibility.customerContinuation.quoteVia) {
+          const quoteRoute = possibility.customerContinuation.quoteVia;
+          const quoteField = { website: "website", phone: "phone", whatsapp: "whatsapp", email: "email", booking: "bookingLink" }[quoteRoute];
+          const quoteDetail = quoteField ? possibility.customerContinuation[quoteField] : null;
+          if (quoteRoute === "email" && quoteDetail) href = "mailto:" + quoteDetail;
+          else if (quoteRoute === "phone" && quoteDetail) href = "tel:" + quoteDetail;
+          else if (quoteRoute === "whatsapp" && quoteDetail) href = /^https?:\/\//i.test(quoteDetail) ? quoteDetail : "https://wa.me/" + quoteDetail.replace(/\D/g, "");
+          else if ((quoteRoute === "website" || quoteRoute === "booking") && /^https?:\/\//i.test(quoteDetail)) href = quoteDetail;
+        }
+        if (product.availability === "unavailable") href = null;
+        if (product.imageUrl) {
+          const image = document.createElement("img"); image.src = product.imageUrl; image.alt = product.name; image.loading = "lazy";
+          if (href) {
+            const imageLink = document.createElement("a"); imageLink.href = href; imageLink.setAttribute("aria-label", product.name + " — continue with " + possibility.businessName);
+            if (/^https?:\/\//i.test(href)) { imageLink.target = "_blank"; imageLink.rel = "noopener noreferrer"; }
+            imageLink.appendChild(image); card.appendChild(imageLink);
+          } else card.appendChild(image);
+        }
+        addText(document, card, "h5", "customer-product-name", product.name);
+        addText(document, card, "p", "customer-product-description", product.description);
+        if (product.price) addText(document, card, "p", "customer-product-price", product.price);
+        const productAvailabilityLabels = { available: "Available", limited: "Limited availability — contact the business first", unavailable: "Not currently available", contact: "Contact the business to confirm availability" };
+        addText(document, card, "p", "customer-product-availability", productAvailabilityLabels[product.availability]);
+        addText(document, card, "p", "customer-product-source", "Image and product information provided by " + possibility.businessName + ".");
+        grid.appendChild(card);
+      });
+      products.appendChild(grid); focusRegion.appendChild(products);
+    }
     if (possibility.customerContinuation) {
       const continuation = document.createElement("section");
       continuation.className = "customer-business-continuation";

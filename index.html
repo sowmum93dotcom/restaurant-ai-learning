@@ -295,6 +295,21 @@
               <div><label for="business-location">Business Location / Service Area</label><input type="text" id="business-location" name="business-location" placeholder="Example: Croydon, London" /></div>
               <section id="business-profile-offering" class="profile-step profile-long-field"><div class="profile-step-heading"><span>Step 2</span><div><h4>Products &amp; services</h4><p>Describe what the business genuinely provides.</p></div></div></section>
               <div class="profile-long-field"><label for="business-products-services">What does your business provide?</label><textarea id="business-products-services" name="business-products-services" rows="5" placeholder="Example: Birthday cakes, celebration cakes and cupcakes made to order."></textarea><p>Describe only products and services your business genuinely provides. DEMEOS will not invent products, availability or prices.</p></div>
+              <div class="profile-long-field business-products-manager">
+                <div class="profile-step-heading"><div><h4>Products customers can see</h4><p>Add genuine products or services. A product image is optional and is always tied to this business.</p></div></div>
+                <div class="business-product-form">
+                  <input type="hidden" id="business-product-id" />
+                  <div><label for="business-product-name">Product / service name</label><input id="business-product-name" type="text" maxlength="200" placeholder="Example: Chocolate celebration cake" /></div>
+                  <div><label for="business-product-price">Price information</label><input id="business-product-price" type="text" maxlength="100" placeholder="Example: £45 or Contact for price" /></div>
+                  <div class="profile-long-field"><label for="business-product-description">Description</label><textarea id="business-product-description" rows="3" maxlength="1200" placeholder="Describe only what the customer will genuinely receive."></textarea></div>
+                  <div class="profile-long-field"><label for="business-product-image">Product image link</label><input id="business-product-image" type="url" maxlength="1000" placeholder="https://..." /><p>Use an image supplied or controlled by this business. DEMEOS will not substitute another brand's product image.</p></div>
+                  <div><label for="business-product-route">Customer continues by</label><select id="business-product-route"><option value="">Use a selected business route</option><option value="website">Website / online shop</option><option value="phone">Call</option><option value="whatsapp">WhatsApp</option><option value="email">Email</option><option value="visit">Visit business</option><option value="booking">Booking / order link</option><option value="quote">Request quote / enquiry</option></select></div>
+                  <div><label for="business-product-availability">Product availability</label><select id="business-product-availability"><option value="contact">Contact business to confirm</option><option value="available">Available</option><option value="limited">Limited availability</option><option value="unavailable">Not currently available</option></select></div>
+                  <div class="profile-long-field"><button id="business-product-add-btn" class="demeos-secondary-button" type="button">Add product / service</button></div>
+                </div>
+                <div id="business-products-list" class="business-products-list" aria-live="polite"></div>
+                <p id="business-products-empty">No individual products or services added yet. Your general products/services description will still be used.</p>
+              </div>
 
               <section id="business-profile-continuation" class="profile-step profile-long-field"><div class="profile-step-heading"><span>Step 3</span><div><h4>How customers continue</h4><p>Choose the direct routes your business actually supports.</p></div></div></section>
               <fieldset class="profile-choice-group profile-long-field">
