@@ -531,7 +531,10 @@ function createPersistenceRepository(database) {
             businessName: row.profile && row.profile.name,
             location: row.profile && row.profile.location,
             content: getCustomerFacingContent(row.campaign),
-            participationAction: "Interested"
+            participationAction: "Interested",
+            customerContinuation: row.profile && row.profile.profileVersion >= 2 ? row.profile.customerContinuation : undefined,
+            fulfilment: row.profile && row.profile.profileVersion >= 2 ? row.profile.fulfilment : undefined,
+            informationSource: row.profile && row.profile.profileVersion >= 2 ? "business-provided" : undefined
           });
           if (!publicItem) continue;
           publicWork.push(publicItem);
