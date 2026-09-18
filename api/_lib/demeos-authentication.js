@@ -2,18 +2,34 @@ function isProductionDeployment(environment = process.env) {
   return environment.VERCEL_ENV === "production";
 }
 
-function hasAllowedClerkKey(key, kind, environment = process.env) {
-  if (typeof key !== "string" || !key.trim()) return false;
-  if (!isProductionDeployment(environment)) return true;
+function normalizeConfiguredClerkKey(key, kind) {
+  if (typeof key !== "string") return null;
+  let value = key.trim();
+  if (!value) return null;
 
-  const value = key.trim();
+  const assignmentNames = kind === "pk"
+    ? ["CLERK_PUBLISHABLE_KEY", "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"]
+    : ["CLERK_SECRET_KEY"];
+  for (const name of assignmentNames) {
+    const prefix = `${name}=`;
+    if (value.startsWith(prefix)) {
+      value = value.slice(prefix.length).trim();
+      break;
+    }
+  }
+  return value || null;
+}
+
+function hasAllowedClerkKey(key, kind, environment = process.env) {
+  const value = normalizeConfiguredClerkKey(key, kind);
+  if (!value) return false;
+  if (!isProductionDeployment(environment)) return true;
   const developmentPrefix = `${kind}_test_`;
   const oppositeKind = kind === "pk" ? "sk" : "pk";
 
   // Production must never accept Clerk development credentials or a key of
-  // the opposite type. Do not require one exact production prefix here:
-  // Clerk remains the authority for validating the configured credential,
-  // and this keeps DEMEOS compatible with provider-managed production values.
+  // the opposite type. Clerk remains authoritative for provider-managed
+  // production credential formats after any copied assignment is normalized.
   if (value.startsWith(developmentPrefix)) return false;
   if (value.startsWith(`${oppositeKind}_`)) return false;
   return true;
@@ -25,13 +41,18 @@ function getAllowedClerkPublishableKey(environment = process.env) {
     environment.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
   ];
   for (const candidate of candidates) {
-    if (hasAllowedClerkKey(candidate, "pk", environment)) return candidate.trim();
+    if (hasAllowedClerkKey(candidate, "pk", environment)) return normalizeConfiguredClerkKey(candidate, "pk");
   }
   return null;
 }
 
+function getAllowedClerkSecretKey(environment = process.env) {
+  return hasAllowedClerkKey(environment.CLERK_SECRET_KEY, "sk", environment)
+    ? normalizeConfiguredClerkKey(environment.CLERK_SECRET_KEY, "sk") : null;
+}
+
 function hasRequiredClerkConfiguration(environment = process.env) {
-  return hasAllowedClerkKey(environment.CLERK_SECRET_KEY, "sk", environment) &&
+  return Boolean(getAllowedClerkSecretKey(environment)) &&
     Boolean(getAllowedClerkPublishableKey(environment));
 }
 
@@ -41,7 +62,7 @@ function hasAllowedClerkPublishableKey(environment = process.env) {
 
 function classifyClerkPublishableKey(key, environment = process.env) {
   if (typeof key !== "string") return "missing";
-  const value = key.trim();
+  const value = normalizeConfiguredClerkKey(key, "pk");
   if (!value) return "empty";
   if (!isProductionDeployment(environment)) return "allowed-non-production";
   if (value.startsWith("pk_test_")) return "development-key";
@@ -118,7 +139,7 @@ function toClerkRequest(req) {
 function getClerkAuthenticateRequest() {
   const { createClerkClient } = require("@clerk/backend");
   const clerkClient = createClerkClient({
-    secretKey: process.env.CLERK_SECRET_KEY,
+    secretKey: getAllowedClerkSecretKey(),
     publishableKey: getAllowedClerkPublishableKey()
   });
 
@@ -157,7 +178,9 @@ async function resolveTrustedIdentityFromRequest(req, options = {}) {
 }
 
 module.exports = {
+  normalizeConfiguredClerkKey,
   getAllowedClerkPublishableKey,
+  getAllowedClerkSecretKey,
   getClerkConfigurationDiagnostic,
   getClerkConfigurationStatus,
   hasAllowedClerkPublishableKey,

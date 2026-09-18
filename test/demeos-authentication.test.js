@@ -2,6 +2,9 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 
 const {
+  normalizeConfiguredClerkKey,
+  getAllowedClerkPublishableKey,
+  getAllowedClerkSecretKey,
   resolveTrustedIdentityFromRequest
 } = require("../api/_lib/demeos-authentication.js");
 
@@ -128,6 +131,36 @@ test("missing Clerk configuration fails closed before authentication", async fun
   });
   assert.equal(identity, null);
   assert.equal(calls, 0);
+});
+
+
+test("Clerk credentials pasted as complete environment assignments are normalized safely", function () {
+  const environment = {
+    VERCEL_ENV: "production",
+    CLERK_PUBLISHABLE_KEY: "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_public",
+    CLERK_SECRET_KEY: "CLERK_SECRET_KEY=sk_live_server"
+  };
+  assert.equal(normalizeConfiguredClerkKey(environment.CLERK_PUBLISHABLE_KEY, "pk"), "pk_live_public");
+  assert.equal(getAllowedClerkPublishableKey(environment), "pk_live_public");
+  assert.equal(getAllowedClerkSecretKey(environment), "sk_live_server");
+});
+
+test("production normalization still rejects known development and opposite-type credentials", function () {
+  assert.equal(getAllowedClerkPublishableKey({
+    VERCEL_ENV: "production",
+    CLERK_PUBLISHABLE_KEY: "CLERK_PUBLISHABLE_KEY=pk_test_development"
+  }), null);
+  assert.equal(getAllowedClerkSecretKey({
+    VERCEL_ENV: "production",
+    CLERK_SECRET_KEY: "CLERK_SECRET_KEY=pk_live_wrong_type"
+  }), null);
+});
+
+test("production normalization preserves provider-managed credential formats for Clerk validation", function () {
+  assert.equal(getAllowedClerkPublishableKey({
+    VERCEL_ENV: "production",
+    CLERK_PUBLISHABLE_KEY: "CLERK_PUBLISHABLE_KEY=provider_managed_public"
+  }), "provider_managed_public");
 });
 
 test("production deployment rejects Clerk development credentials before authentication", async function () {
