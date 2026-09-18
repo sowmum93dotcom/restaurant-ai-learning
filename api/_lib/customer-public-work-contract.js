@@ -72,9 +72,11 @@ function toPublicCustomerWorkItem(item) {
         name: product.name.trim(),
         description: product.description.trim(),
         ...(normalizedRequiredString(product.price) ? { price: product.price.trim() } : {}),
+        ...(["fixed", "from", "range"].includes(product.priceMode) ? { priceMode: product.priceMode } : { priceMode: "contact" }),
         ...(normalizedRequiredString(product.imageUrl) ? { imageUrl: product.imageUrl.trim(), imageSource: "business-provided" } : {}),
         ...(safeRoute ? { continuationRoute: safeRoute } : {}),
-        availability: ["available", "limited", "unavailable", "contact"].includes(product.availability) ? product.availability : "contact"
+        availability: ["available", "limited", "unavailable", "contact"].includes(product.availability) ? product.availability : "contact",
+        ...(product.fulfilment && Array.isArray(product.fulfilment.methods) ? { fulfilment: { methods: product.fulfilment.methods.filter(function (method) { return ALLOWED_FULFILMENT_METHODS.has(method); }) } } : {})
       };
     }).filter(Boolean);
     if (products.length) publicItem.products = products;
