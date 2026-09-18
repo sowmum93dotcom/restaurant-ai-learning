@@ -143,6 +143,14 @@ function toCustomerPossibility(value) {
       if (notes) possibility.fulfilment.notes = notes;
     }
   }
+  if (value.operationalAvailability && typeof value.operationalAvailability === "object" &&
+      ["available", "limited", "unavailable", "contact"].includes(value.operationalAvailability.status)) {
+    possibility.operationalAvailability = {
+      status: value.operationalAvailability.status,
+      hoursNotes: normalizedRequiredString(value.operationalAvailability.hoursNotes) || "",
+      notes: normalizedRequiredString(value.operationalAvailability.notes) || ""
+    };
+  }
   if (value.informationSource === "business-provided") possibility.informationSource = "business-provided";
   return possibility;
 }
@@ -256,6 +264,12 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
         actions.appendChild(action);
       });
       continuation.appendChild(actions);
+      if (possibility.operationalAvailability) {
+        const availabilityLabels = { available: "Available for new customer enquiries", limited: "Limited availability — contact the business first", unavailable: "Not currently available for new enquiries", contact: "Contact the business to confirm availability" };
+        addText(document, continuation, "p", "customer-availability-status", availabilityLabels[possibility.operationalAvailability.status]);
+        if (possibility.operationalAvailability.hoursNotes) addText(document, continuation, "p", "customer-business-hours", possibility.operationalAvailability.hoursNotes);
+        if (possibility.operationalAvailability.notes) addText(document, continuation, "p", "customer-availability-notes", possibility.operationalAvailability.notes);
+      }
       if (possibility.fulfilment) {
         addText(document, continuation, "h5", "customer-fulfilment-heading", CUSTOMER_STAGE_THREE_COPY.fulfilmentHeading);
         addText(document, continuation, "p", "customer-fulfilment-methods", possibility.fulfilment.methods.map(function (method) {

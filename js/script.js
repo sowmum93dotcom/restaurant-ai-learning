@@ -426,6 +426,9 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     email: byId("business-email"), bookingLink: byId("business-booking-link")
   };
   const fulfilmentNotes = byId("business-fulfilment-notes");
+  const availabilityStatus = byId("business-availability-status");
+  const businessHoursNotes = byId("business-hours-notes");
+  const availabilityNotes = byId("business-availability-notes");
   const accuracyConfirmation = byId("business-accuracy-confirmation");
   const businessProfileStatus = byId("business-profile-status");
   const campaignHistoryKey = "demeosCampaignHistory";
@@ -835,6 +838,10 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     const fulfilment = profile && profile.fulfilment ? profile.fulfilment : {};
     setSelectedValues(fulfilmentIds, fulfilment.methods);
     fulfilmentNotes.value = fulfilment.notes || "";
+    const operational = profile && profile.operationalAvailability ? profile.operationalAvailability : {};
+    availabilityStatus.value = operational.status || "contact";
+    businessHoursNotes.value = operational.hoursNotes || "";
+    availabilityNotes.value = operational.notes || "";
     accuracyConfirmation.checked = false;
     if (businessProfileStatus) {
       businessProfileStatus.textContent = profile && profile.informationStatus
@@ -1104,10 +1111,18 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     if (missingRoute) {
       alert("Please provide the contact or link information for each customer route you selected."); return;
     }
+    if (routes.includes("quote") && !routes.some(function (route) { return ["email", "phone", "whatsapp", "website", "booking"].includes(route); })) {
+      alert("Request quote / enquiry needs at least one contact route so customers can actually continue."); return;
+    }
     if (!accuracyConfirmation.checked) {
       alert("Please confirm that the Business Profile information is accurate before saving."); return;
     }
-    profileFields.profileVersion = 2;
+    profileFields.profileVersion = 3;
+    profileFields.operationalAvailability = {
+      status: availabilityStatus.value,
+      hoursNotes: businessHoursNotes.value.trim(),
+      notes: availabilityNotes.value.trim()
+    };
     profileFields.customerContinuation = { routes, ...details };
     profileFields.fulfilment = { methods: fulfilmentMethods, notes: fulfilmentNotes.value.trim() };
 

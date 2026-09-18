@@ -54,6 +54,14 @@ function toPublicCustomerWorkItem(item) {
       if (notes) publicItem.fulfilment.notes = notes;
     }
   }
+  const operational = item.operationalAvailability;
+  if (operational && typeof operational === "object" && ["available", "limited", "unavailable", "contact"].includes(operational.status)) {
+    publicItem.operationalAvailability = {
+      status: operational.status,
+      hoursNotes: normalizedRequiredString(operational.hoursNotes) || "",
+      notes: normalizedRequiredString(operational.notes) || ""
+    };
+  }
   if (item.informationSource === "business-provided") publicItem.informationSource = "business-provided";
   return publicItem;
 }

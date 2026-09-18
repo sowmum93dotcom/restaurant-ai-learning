@@ -313,6 +313,22 @@
               </fieldset>
 
               <fieldset class="profile-choice-group profile-long-field">
+                <legend>Current customer availability</legend>
+                <p>Tell DEMEOS what customers can rely on now. This is business-provided operational information, not a DEMEOS guarantee.</p>
+                <label for="business-availability-status">Current status</label>
+                <select id="business-availability-status">
+                  <option value="available">Available for new customer enquiries</option>
+                  <option value="limited">Limited availability — contact us first</option>
+                  <option value="unavailable">Not currently available for new enquiries</option>
+                  <option value="contact">Contact us to confirm availability</option>
+                </select>
+                <label for="business-hours-notes">Opening / service hours</label>
+                <textarea id="business-hours-notes" rows="3" placeholder="Example: Monday–Friday 09:00–17:30; Saturday 10:00–16:00."></textarea>
+                <label for="business-availability-notes">Availability notes</label>
+                <textarea id="business-availability-notes" rows="3" placeholder="Example: Celebration cakes normally require advance notice. Contact us to confirm your date."></textarea>
+              </fieldset>
+
+              <fieldset class="profile-choice-group profile-long-field">
                 <legend>How do customers receive your product or service?</legend>
                 <div class="profile-choice-grid">
                   <label><input type="checkbox" id="business-fulfilment-collection" value="collection" /> Collection</label>

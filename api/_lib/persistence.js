@@ -534,6 +534,7 @@ function createPersistenceRepository(database) {
             participationAction: "Interested",
             customerContinuation: row.profile && row.profile.profileVersion >= 2 ? row.profile.customerContinuation : undefined,
             fulfilment: row.profile && row.profile.profileVersion >= 2 ? row.profile.fulfilment : undefined,
+            operationalAvailability: row.profile && row.profile.profileVersion >= 3 ? row.profile.operationalAvailability : undefined,
             informationSource: row.profile && row.profile.profileVersion >= 2 && row.profile.informationStatus && row.profile.informationStatus.status === "business-provided" ? "business-provided" : undefined
           });
           if (!publicItem) continue;
