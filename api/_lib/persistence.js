@@ -276,12 +276,28 @@ function createPersistenceRepository(database) {
       await database.ensureSchema();
       const safeLimit = Math.min(50, Math.max(1, Number.isInteger(limit) ? limit : 50));
       const result = await database.query(
-        `SELECT saved_possibility_id, possibility_content, business_name, location, relevance_basis, created_at
-         FROM demeos_customer_saved_possibilities
-         WHERE trusted_customer_identity_id = $1
-         ORDER BY created_at DESC, saved_possibility_id DESC LIMIT $2`,
+        `SELECT s.saved_possibility_id, s.possibility_content, s.business_name, s.location, s.relevance_basis, s.created_at,
+                i.campaign_snapshot, i.issued_at
+         FROM demeos_customer_saved_possibilities s
+         LEFT JOIN demeos_customer_possibility_issuances i
+           ON i.trusted_customer_identity_id = s.trusted_customer_identity_id
+          AND i.work_item_id = s.work_item_id
+         WHERE s.trusted_customer_identity_id = $1
+         ORDER BY s.created_at DESC, s.saved_possibility_id DESC LIMIT $2`,
         [trustedCustomerIdentityId, safeLimit]);
-      return result.rows.map(toSavedPossibility);
+      return result.rows.map(function (row) {
+        const item = toSavedPossibility(row);
+        const snapshot = row.campaign_snapshot && typeof row.campaign_snapshot === "object" ? row.campaign_snapshot : {};
+        const products = Array.isArray(snapshot.products) ? snapshot.products : [];
+        if (products.length) item.products = products.map(function (product) {
+          return {
+            productId: product.productId, name: product.name, description: product.description,
+            price: product.price, imageUrl: product.imageUrl, availability: product.availability
+          };
+        }).filter(function (product) { return isNonEmptyString(product.productId) && isNonEmptyString(product.name); });
+        if (row.issued_at) item.issuedAt = row.issued_at instanceof Date ? row.issued_at.toISOString() : row.issued_at;
+        return item;
+      });
     },
     async removeCustomerSavedPossibility(trustedCustomerIdentityId, savedPossibilityId) {
       if (!isNonEmptyString(trustedCustomerIdentityId) || !isNonEmptyString(savedPossibilityId)) return false;
