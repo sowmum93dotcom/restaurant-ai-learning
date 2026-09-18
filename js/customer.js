@@ -159,10 +159,20 @@ function toCustomerPossibility(value) {
         (!product.imageUrl || /^https?:\/\//i.test(product.imageUrl)) &&
         (!product.continuationRoute || (possibility.customerContinuation && possibility.customerContinuation.routes.includes(product.continuationRoute)));
     }).slice(0, 100).map(function (product) {
-      return { productId: product.productId.trim(), name: product.name.trim(), description: product.description.trim(),
+      const normalized = { productId: product.productId.trim(), name: product.name.trim(), description: product.description.trim(),
         price: normalizedRequiredString(product.price) || "", imageUrl: normalizedRequiredString(product.imageUrl) || "",
         continuationRoute: normalizedRequiredString(product.continuationRoute) || "",
         availability: ["available", "limited", "unavailable", "contact"].includes(product.availability) ? product.availability : "contact" };
+      const productRelevance = product.relevance;
+      if (productRelevance && typeof productRelevance === "object" && !Array.isArray(productRelevance) &&
+          productRelevance.basis === "current-intention-product-information" && Array.isArray(productRelevance.evidence) &&
+          productRelevance.evidence.length > 0 && productRelevance.evidence.length <= 5) {
+        const productEvidence = productRelevance.evidence.map(normalizedRequiredString);
+        if (productEvidence.every(function (term) { return term && term.length <= 60; })) {
+          normalized.relevance = { basis: productRelevance.basis, evidence: productEvidence };
+        }
+      }
+      return normalized;
     });
   }
   if (value.informationSource === "business-provided") possibility.informationSource = "business-provided";
@@ -241,7 +251,7 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
     if (possibility.location) addText(document, focusRegion, "p", "customer-possibility-location", possibility.location);
     if (Array.isArray(possibility.products) && possibility.products.length) {
       const products = document.createElement("section"); products.className = "customer-product-gallery";
-      addText(document, products, "h4", "customer-products-heading", "Products & services from this business");
+      addText(document, products, "h4", "customer-products-heading", "Products & services relevant to your request");
       const grid = document.createElement("div"); grid.className = "customer-product-grid";
       possibility.products.forEach(function (product) {
         const card = document.createElement("article"); card.className = "customer-product-card";
@@ -278,11 +288,14 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
         if (product.price) addText(document, card, "p", "customer-product-price", product.price);
         const productAvailabilityLabels = { available: "Available", limited: "Limited availability — contact the business first", unavailable: "Not currently available", contact: "Contact the business to confirm availability" };
         addText(document, card, "p", "customer-product-availability", productAvailabilityLabels[product.availability]);
+        if (product.relevance && Array.isArray(product.relevance.evidence) && product.relevance.evidence.length) {
+          addText(document, card, "p", "customer-product-relevance", "Relevant to your request: " + product.relevance.evidence.join(", ") + ".");
+        }
         addText(document, card, "p", "customer-product-source", "Image and product information provided by " + possibility.businessName + ".");
         const controls = document.createElement("div"); controls.className = "customer-product-controls";
         const detailButton = document.createElement("button"); detailButton.type = "button"; detailButton.className = "customer-product-detail-button"; detailButton.textContent = "View details";
         const details = document.createElement("div"); details.className = "customer-product-details"; details.hidden = true;
-        addText(document, details, "p", "customer-product-detail-trust", "This product is shown because it belongs to this business possibility. Viewing it is not recorded as interest or a purchase.");
+        addText(document, details, "p", "customer-product-detail-trust", "This product is shown because its business-provided information connects to your current request. Viewing it is not recorded as interest or a purchase.");
         if (product.availability !== "unavailable" && href) {
           const continueAction = document.createElement("a"); continueAction.className = "customer-product-continue-action"; continueAction.href = href;
           continueAction.textContent = product.availability === "limited" || product.availability === "contact" ? "Contact " + possibility.businessName : "Continue with " + possibility.businessName;

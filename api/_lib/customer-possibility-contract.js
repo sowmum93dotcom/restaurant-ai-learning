@@ -88,6 +88,30 @@ function feedbackGuidance(storedFeedback) {
   }, new Map());
 }
 
+function productRelevance(product, customerTerms) {
+  if (!product || typeof product !== "object") return null;
+  const productTerms = meaningfulTerms([product.name, product.description].join(" "));
+  const evidence = Array.from(customerTerms).filter(function (term) { return productTerms.has(term); }).sort();
+  const concepts = evidencedConcepts(customerTerms, productTerms);
+  if (evidence.length < 2 && concepts.length === 0) return null;
+  return Object.freeze({
+    basis: "current-intention-product-information",
+    evidence: (evidence.length >= 2 ? evidence : concepts).slice(0, 5)
+  });
+}
+
+function relevantProductsForCustomer(products, customerTerms) {
+  if (!Array.isArray(products)) return [];
+  return products.reduce(function (matches, product) {
+    if (!product) return matches;
+    const relevance = productRelevance(product, customerTerms);
+    if (!relevance) return matches;
+    const publicProduct = { ...product, relevance }; delete publicProduct.customerVisible;
+    matches.push(publicProduct);
+    return matches;
+  }, []);
+}
+
 function stablePossibilityId(workItemId) {
   return "possibility_" + crypto.createHash("sha256").update("demeos-customer-possibility:" + workItemId)
     .digest("base64url").slice(0, 20);
@@ -120,10 +144,8 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
     if (work.fulfilment) possibility.fulfilment = work.fulfilment;
     if (work.operationalAvailability) possibility.operationalAvailability = work.operationalAvailability;
     if (Array.isArray(work.products) && work.products.length) {
-      const visibleProducts = work.products.filter(function (product) { return product && product.customerVisible !== false; });
-      if (visibleProducts.length) possibility.products = visibleProducts.map(function (product) {
-        const publicProduct = { ...product }; delete publicProduct.customerVisible; return publicProduct;
-      });
+      const relevantProducts = relevantProductsForCustomer(work.products, customerTerms);
+      if (relevantProducts.length) possibility.products = relevantProducts;
     }
     if (work.informationSource === "business-provided") possibility.informationSource = "business-provided";
     candidates.push({ strength: concepts.length + evidence.length, guidanceOverlap, feedbackGuidanceScore, possibility });
@@ -138,5 +160,5 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
 
 module.exports = {
   FIELD_LIMITS, MAX_POSSIBILITIES, SUPPORTED_INTENTIONS, findCustomerPossibilities,
-  evidencedConcepts, feedbackGuidance, meaningfulTerms, preferenceTerms, stablePossibilityId, validateConfirmedUnderstanding
+  evidencedConcepts, feedbackGuidance, meaningfulTerms, preferenceTerms, productRelevance, relevantProductsForCustomer, stablePossibilityId, validateConfirmedUnderstanding
 };
