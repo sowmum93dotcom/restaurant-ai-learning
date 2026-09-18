@@ -35,3 +35,10 @@ test("unsafe product image URLs are never published", function () {
     name: "Cake", description: "A cake.", imageUrl: "javascript:alert(1)", continuationRoute: "website" }] }));
   assert.equal(Object.hasOwn(item, "products"), false);
 });
+
+test("a product without a business-approved continuation route is never published", function () {
+  const item = toPublicCustomerWorkItem(work({ products: [{ productId: "cake-3", businessId: "business-a",
+    name: "Cake", description: "A cake.", imageUrl: "https://bella.example/cake.jpg",
+    continuationRoute: "booking" }] }));
+  assert.equal(Object.hasOwn(item, "products"), false);
+});
