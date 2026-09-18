@@ -1,6 +1,6 @@
 const CUSTOMER_PARTICIPATION_ACTION = "Interested";
 const ALLOWED_CONTINUATION_ROUTES = new Set(["website", "phone", "whatsapp", "email", "visit", "booking", "quote"]);
-const ALLOWED_FULFILMENT_METHODS = new Set(["collection", "local-delivery", "shipping", "at-business", "at-customer-location", "appointment", "digital"]);
+const ALLOWED_FULFILMENT_METHODS = new Set(["collection", "delivery", "shipping", "premises", "customer-location", "appointment", "digital"]);
 const ROUTE_DETAIL_FIELDS = Object.freeze({ website: "website", phone: "phone", whatsapp: "whatsapp", email: "email", booking: "bookingLink" });
 
 function normalizedRequiredString(value) {
@@ -31,6 +31,8 @@ function toPublicCustomerWorkItem(item) {
       if (detailField) {
         const detail = normalizedRequiredString(continuation[detailField]);
         if (!detail) return;
+        if ((route === "website" || route === "booking") && !/^https?:\/\//i.test(detail)) return;
+        if (route === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(detail)) return;
         safeContinuation[detailField] = detail;
       }
       safeContinuation.routes.push(route);
