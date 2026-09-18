@@ -245,6 +245,7 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
       const grid = document.createElement("div"); grid.className = "customer-product-grid";
       possibility.products.forEach(function (product) {
         const card = document.createElement("article"); card.className = "customer-product-card";
+        card.setAttribute("data-product-id", product.productId);
         const route = product.continuationRoute;
         const field = { website: "website", phone: "phone", whatsapp: "whatsapp", email: "email", booking: "bookingLink" }[route];
         const detail = possibility.customerContinuation && field ? possibility.customerContinuation[field] : null;
@@ -278,6 +279,24 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
         const productAvailabilityLabels = { available: "Available", limited: "Limited availability — contact the business first", unavailable: "Not currently available", contact: "Contact the business to confirm availability" };
         addText(document, card, "p", "customer-product-availability", productAvailabilityLabels[product.availability]);
         addText(document, card, "p", "customer-product-source", "Image and product information provided by " + possibility.businessName + ".");
+        const controls = document.createElement("div"); controls.className = "customer-product-controls";
+        const detailButton = document.createElement("button"); detailButton.type = "button"; detailButton.className = "customer-product-detail-button"; detailButton.textContent = "View details";
+        const details = document.createElement("div"); details.className = "customer-product-details"; details.hidden = true;
+        addText(document, details, "p", "customer-product-detail-trust", "This product is shown because it belongs to this business possibility. Viewing it is not recorded as interest or a purchase.");
+        if (product.availability !== "unavailable" && href) {
+          const continueAction = document.createElement("a"); continueAction.className = "customer-product-continue-action"; continueAction.href = href;
+          continueAction.textContent = product.availability === "limited" || product.availability === "contact" ? "Contact " + possibility.businessName : "Continue with " + possibility.businessName;
+          if (/^https?:\/\//i.test(href)) { continueAction.target = "_blank"; continueAction.rel = "noopener noreferrer"; }
+          details.appendChild(continueAction);
+        } else if (product.availability === "unavailable") {
+          addText(document, details, "p", "customer-product-unavailable-note", "This business says this product is not currently available.");
+        }
+        detailButton.setAttribute("aria-expanded", "false");
+        detailButton.addEventListener("click", function () {
+          const opening = details.hidden; details.hidden = !opening; detailButton.setAttribute("aria-expanded", opening ? "true" : "false");
+          detailButton.textContent = opening ? "Hide details" : "View details";
+        });
+        controls.appendChild(detailButton); card.appendChild(controls); card.appendChild(details);
         grid.appendChild(card);
       });
       products.appendChild(grid); focusRegion.appendChild(products);
