@@ -21,7 +21,6 @@ function toPublicCustomerWorkItem(item) {
 
   const businessId = normalizedRequiredString(item.businessId);
   const publicItem = { workItemId, businessName, content, participationAction: CUSTOMER_PARTICIPATION_ACTION };
-  if (businessId) publicItem.businessId = businessId;
   if (typeof item.location === "string" && item.location.trim()) publicItem.location = item.location.trim();
 
   const continuation = item.customerContinuation;
@@ -70,7 +69,6 @@ function toPublicCustomerWorkItem(item) {
       if (!safeRoute) return null;
       return {
         productId: product.productId.trim(),
-        businessId,
         name: product.name.trim(),
         description: product.description.trim(),
         ...(normalizedRequiredString(product.price) ? { price: product.price.trim() } : {}),
