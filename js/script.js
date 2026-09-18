@@ -817,6 +817,17 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       if (element) element.checked = selected.has(key);
     });
   }
+  function updateContinuationDetailVisibility() {
+    Object.keys(continuationRouteIds).forEach(function (route) {
+      const checkbox = byId(continuationRouteIds[route]);
+      const detail = document.querySelector('[data-route-detail="' + route + '"]');
+      if (!detail) return;
+      const visible = Boolean(checkbox && checkbox.checked);
+      detail.hidden = !visible;
+      const input = detail.querySelector("input");
+      if (input) input.disabled = !visible;
+    });
+  }
   function getContinuationDetails() {
     return {
       website: continuationDetails.website.value.trim(),
@@ -835,6 +846,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     continuationDetails.whatsapp.value = continuation.whatsapp || "";
     continuationDetails.email.value = continuation.email || "";
     continuationDetails.bookingLink.value = continuation.bookingLink || "";
+    updateContinuationDetailVisibility();
     const fulfilment = profile && profile.fulfilment ? profile.fulfilment : {};
     setSelectedValues(fulfilmentIds, fulfilment.methods);
     fulfilmentNotes.value = fulfilment.notes || "";
@@ -874,7 +886,11 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     localStorage.setItem("demeosBusinessProfiles", JSON.stringify(state.profiles));
     if (state.activeBusinessId) localStorage.setItem("demeosActiveBusinessId", state.activeBusinessId);
     else localStorage.removeItem("demeosActiveBusinessId");
-    renderSelector(); fillProfile(activeProfile()); renderActiveMarketingWork();
+    Object.keys(continuationRouteIds).forEach(function (route) {
+    const checkbox = byId(continuationRouteIds[route]);
+    if (checkbox) checkbox.addEventListener("change", updateContinuationDetailVisibility);
+  });
+  renderSelector(); fillProfile(activeProfile()); renderActiveMarketingWork();
     renderCustomerParticipationResults(); renderCampaignHistory();
     if (state.activeBusinessId) hydrateActiveBusiness();
   }
