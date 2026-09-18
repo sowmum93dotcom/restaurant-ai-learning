@@ -262,14 +262,14 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
         const card = document.createElement("article"); card.className = "customer-product-card";
         card.setAttribute("data-product-id", product.productId);
         const route = product.continuationRoute;
-        const field = { website: "website", phone: "phone", whatsapp: "whatsapp", email: "email", booking: "bookingLink" }[route];
+        const field = { website: "website", phone: "phone", whatsapp: "whatsapp", email: "email", booking: "bookingLink", visit: "visitAddress" }[route];
         const detail = possibility.customerContinuation && field ? possibility.customerContinuation[field] : null;
         let href = null;
         if ((route === "website" || route === "booking") && /^https?:\/\//i.test(detail)) href = detail;
         else if (route === "phone" && detail) href = "tel:" + detail;
         else if (route === "whatsapp" && detail) href = /^https?:\/\//i.test(detail) ? detail : "https://wa.me/" + detail.replace(/\D/g, "");
         else if (route === "email" && detail) href = "mailto:" + detail;
-        else if (route === "visit" && possibility.location) href = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(possibility.location);
+        else if (route === "visit" && detail) href = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(detail);
         else if (route === "quote" && possibility.customerContinuation && possibility.customerContinuation.quoteVia) {
           const quoteRoute = possibility.customerContinuation.quoteVia;
           const quoteField = { website: "website", phone: "phone", whatsapp: "whatsapp", email: "email", booking: "bookingLink" }[quoteRoute];
@@ -342,7 +342,7 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
         else if (route === "phone") href = "tel:" + detail;
         else if (route === "whatsapp") href = /^https?:\/\//i.test(detail) ? detail : "https://wa.me/" + detail.replace(/\D/g, "");
         else if (route === "email") href = "mailto:" + detail;
-        else if (route === "visit" && possibility.location) href = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(possibility.location);
+        else if (route === "visit" && detail) href = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(detail);
         else if (route === "quote" && possibility.customerContinuation.quoteVia) {
           const quoteRoute = possibility.customerContinuation.quoteVia;
           const quoteField = { website: "website", phone: "phone", whatsapp: "whatsapp", email: "email", booking: "bookingLink" }[quoteRoute];
