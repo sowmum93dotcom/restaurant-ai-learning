@@ -102,6 +102,27 @@
       const content = documentObject.createElement("h4"); content.textContent = possibility.content; article.appendChild(content);
       const provider = documentObject.createElement("p"); provider.textContent = "Provided by " + possibility.businessName; article.appendChild(provider);
       if (possibility.location) { const location = documentObject.createElement("p"); location.textContent = possibility.location; article.appendChild(location); }
+      if (Array.isArray(possibility.products) && possibility.products.length) {
+        const productsHeading = documentObject.createElement("h5"); productsHeading.textContent = "Products shown with this possibility"; article.appendChild(productsHeading);
+        const products = documentObject.createElement("div"); products.className = "my-demeos-saved-products";
+        possibility.products.forEach(function (product) {
+          const productCard = documentObject.createElement("div"); productCard.className = "my-demeos-saved-product";
+          if (product.imageUrl) {
+            const image = documentObject.createElement("img"); image.src = product.imageUrl; image.alt = product.name || ""; image.loading = "lazy";
+            productCard.appendChild(image);
+          }
+          const name = documentObject.createElement("strong"); name.textContent = product.name; productCard.appendChild(name);
+          if (product.description) { const description = documentObject.createElement("p"); description.textContent = product.description; productCard.appendChild(description); }
+          if (product.price) { const price = documentObject.createElement("p"); price.textContent = product.price; productCard.appendChild(price); }
+          const availability = documentObject.createElement("p");
+          availability.textContent = product.availability ? "Shown availability: " + product.availability : "Availability was not stated.";
+          productCard.appendChild(availability); products.appendChild(productCard);
+        });
+        article.appendChild(products);
+        const historical = documentObject.createElement("p"); historical.className = "my-demeos-meaning";
+        historical.textContent = "This is the product information DEMEOS showed at the time. Availability may have changed; check with the business before continuing.";
+        article.appendChild(historical);
+      }
       if (possibility.relevance && possibility.relevance.basis === "explicit-customer-intent-overlap") {
         const why = documentObject.createElement("p"); why.textContent = "Why this appeared: explicit customer intent overlap"; article.appendChild(why);
       }
