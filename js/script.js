@@ -430,7 +430,8 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     phone: byId("business-phone").parentElement,
     whatsapp: byId("business-whatsapp").parentElement,
     email: byId("business-email").parentElement,
-    booking: byId("business-booking-link").parentElement
+    booking: byId("business-booking-link").parentElement,
+    visit: byId("business-visit-address").parentElement
   };
   const fulfilmentNotes = byId("business-fulfilment-notes");
   const availabilityStatus = byId("business-availability-status");
@@ -830,7 +831,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       if (!detail) return;
       const visible = Boolean(checkbox && checkbox.checked);
       detail.hidden = !visible;
-      const input = detail.querySelector("input");
+      const input = detail.querySelector("input") || detail.querySelector("textarea");
       if (input) input.disabled = !visible;
     });
   }
