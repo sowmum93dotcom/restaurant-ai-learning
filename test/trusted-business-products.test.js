@@ -18,9 +18,10 @@ function work(overrides = {}) {
 test("public customer work keeps a product image bound to the same business and route", function () {
   const item = toPublicCustomerWorkItem(work());
   assert.equal(item.products.length, 1);
-  assert.equal(item.products[0].businessId, "business-a");
   assert.equal(item.products[0].imageUrl, "https://bella.example/images/cake.jpg");
   assert.equal(item.products[0].continuationRoute, "website");
+  assert.equal(Object.hasOwn(item, "businessId"), false);
+  assert.equal(Object.hasOwn(item.products[0], "businessId"), false);
 });
 
 test("a product claiming another business is never published", function () {
