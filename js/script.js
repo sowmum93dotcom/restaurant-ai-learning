@@ -425,6 +425,13 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     website: byId("business-website"), phone: byId("business-phone"), whatsapp: byId("business-whatsapp"),
     email: byId("business-email"), bookingLink: byId("business-booking-link")
   };
+  const continuationDetailContainers = {
+    website: byId("business-website").parentElement,
+    phone: byId("business-phone").parentElement,
+    whatsapp: byId("business-whatsapp").parentElement,
+    email: byId("business-email").parentElement,
+    booking: byId("business-booking-link").parentElement
+  };
   const fulfilmentNotes = byId("business-fulfilment-notes");
   const availabilityStatus = byId("business-availability-status");
   const businessHoursNotes = byId("business-hours-notes");
@@ -820,7 +827,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   function updateContinuationDetailVisibility() {
     Object.keys(continuationRouteIds).forEach(function (route) {
       const checkbox = byId(continuationRouteIds[route]);
-      const detail = document.querySelector('[data-route-detail="' + route + '"]');
+      const detail = continuationDetailContainers[route];
       if (!detail) return;
       const visible = Boolean(checkbox && checkbox.checked);
       detail.hidden = !visible;
