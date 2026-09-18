@@ -10,9 +10,10 @@ test("saved possibilities restore products from the trusted issuance snapshot", 
   assert.match(persistence, /LEFT JOIN demeos_customer_possibility_issuances i/);
   assert.match(persistence, /i\.trusted_customer_identity_id = s\.trusted_customer_identity_id/);
   assert.match(persistence, /i\.work_item_id = s\.work_item_id/);
-  assert.match(persistence, /jsonb_build_object\('issuedProducts'/);
+  assert.match(persistence, /public_products_snapshot/);
   assert.match(persistence, /JSON\.stringify\(Array\.isArray\(possibility\.products\)/);
-  assert.match(persistence, /const products = Array\.isArray\(snapshot\.issuedProducts\)/);
+  assert.match(persistence, /const products = Array\.isArray\(row\.public_products_snapshot\)/);
+  assert.doesNotMatch(persistence, /campaign_snapshot - 'issuedProducts'/);
 });
 
 test("My DEMEOS labels saved product availability as historical", function () {
