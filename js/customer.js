@@ -113,7 +113,9 @@ function toCustomerPossibility(value) {
       relevance.evidence.length > 5 || (Object.hasOwn(value, "location") && typeof value.location !== "string")) return null;
   const evidence = relevance.evidence.map(normalizedRequiredString);
   if (!evidence.length || evidence.some(function (term) { return !term || term.length > 60; })) return null;
+  const businessId = normalizedRequiredString(value.businessId);
   const possibility = { possibilityId, workItemId, businessName, content, participationAction: "Interested",
+    ...(businessId ? { businessId } : {}),
     relevance: { basis: relevance.basis, evidence: evidence.slice(0, 5), explanation: relevance.explanation } };
   if (typeof value.location === "string" && value.location.trim()) possibility.location = value.location.trim();
   const allowedRoutes = ["website", "phone", "whatsapp", "email", "visit", "booking", "quote"];
@@ -150,6 +152,20 @@ function toCustomerPossibility(value) {
       hoursNotes: normalizedRequiredString(value.operationalAvailability.hoursNotes) || "",
       notes: normalizedRequiredString(value.operationalAvailability.notes) || ""
     };
+  }
+  if (businessId && Array.isArray(value.products)) {
+    possibility.products = value.products.filter(function (product) {
+      return product && typeof product === "object" && !Array.isArray(product) &&
+        normalizedRequiredString(product.productId) && normalizedRequiredString(product.name) &&
+        normalizedRequiredString(product.description) && normalizedRequiredString(product.businessId) === businessId &&
+        (!product.imageUrl || /^https?:\/\//i.test(product.imageUrl)) &&
+        (!product.continuationRoute || (possibility.customerContinuation && possibility.customerContinuation.routes.includes(product.continuationRoute)));
+    }).slice(0, 100).map(function (product) {
+      return { productId: product.productId.trim(), businessId, name: product.name.trim(), description: product.description.trim(),
+        price: normalizedRequiredString(product.price) || "", imageUrl: normalizedRequiredString(product.imageUrl) || "",
+        continuationRoute: normalizedRequiredString(product.continuationRoute) || "",
+        availability: ["available", "limited", "unavailable", "contact"].includes(product.availability) ? product.availability : "contact" };
+    });
   }
   if (value.informationSource === "business-provided") possibility.informationSource = "business-provided";
   return possibility;
@@ -225,6 +241,37 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
     addText(document, focusRegion, "p", "customer-provider-label", CUSTOMER_STAGE_THREE_COPY.providedBy);
     addText(document, focusRegion, "p", "customer-possibility-provider", possibility.businessName);
     if (possibility.location) addText(document, focusRegion, "p", "customer-possibility-location", possibility.location);
+    if (Array.isArray(possibility.products) && possibility.products.length) {
+      const products = document.createElement("section"); products.className = "customer-product-gallery";
+      addText(document, products, "h4", "customer-products-heading", "Products & services from this business");
+      const grid = document.createElement("div"); grid.className = "customer-product-grid";
+      possibility.products.forEach(function (product) {
+        const card = document.createElement("article"); card.className = "customer-product-card";
+        const route = product.continuationRoute;
+        const field = { website: "website", phone: "phone", whatsapp: "whatsapp", email: "email", booking: "bookingLink" }[route];
+        const detail = possibility.customerContinuation && field ? possibility.customerContinuation[field] : null;
+        let href = null;
+        if ((route === "website" || route === "booking") && /^https?:\/\//i.test(detail)) href = detail;
+        else if (route === "phone" && detail) href = "tel:" + detail;
+        else if (route === "whatsapp" && detail) href = /^https?:\/\//i.test(detail) ? detail : "https://wa.me/" + detail.replace(/\D/g, "");
+        else if (route === "email" && detail) href = "mailto:" + detail;
+        else if (route === "visit" && possibility.location) href = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(possibility.location);
+        if (product.imageUrl) {
+          const image = document.createElement("img"); image.src = product.imageUrl; image.alt = product.name; image.loading = "lazy";
+          if (href) {
+            const imageLink = document.createElement("a"); imageLink.href = href; imageLink.setAttribute("aria-label", product.name + " — continue with " + possibility.businessName);
+            if (/^https?:\/\//i.test(href)) { imageLink.target = "_blank"; imageLink.rel = "noopener noreferrer"; }
+            imageLink.appendChild(image); card.appendChild(imageLink);
+          } else card.appendChild(image);
+        }
+        addText(document, card, "h5", "customer-product-name", product.name);
+        addText(document, card, "p", "customer-product-description", product.description);
+        if (product.price) addText(document, card, "p", "customer-product-price", product.price);
+        addText(document, card, "p", "customer-product-source", "Image and product information provided by " + possibility.businessName + ".");
+        grid.appendChild(card);
+      });
+      products.appendChild(grid); focusRegion.appendChild(products);
+    }
     if (possibility.customerContinuation) {
       const continuation = document.createElement("section");
       continuation.className = "customer-business-continuation";
