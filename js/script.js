@@ -1221,7 +1221,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
         renderActiveMarketingWork(); renderCampaignHistory();
       }
       addPendingBusinessProfileSync(localStorage, result.profile.businessId);
-      const persisted = await persistBusiness(result.profile);
+      const persisted = await persistBusiness(result.profile, { ownerAccuracyConfirmed: true });
       if (persisted) {
         if (wasAddingBusiness) {
           state = { profiles: result.profiles, activeBusinessId: result.profile.businessId };
