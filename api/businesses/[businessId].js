@@ -26,7 +26,6 @@ function cleanString(value, maxLength) {
 
 function getValidatedProfile(req) {
   const profile = req.body && req.body.businessProfile;
-  const ownerAccuracyConfirmed = Boolean(req.body && req.body.ownerAccuracyConfirmed === true);
   const requiredFields = ["name", "type", "location", "brandVoice", "targetCustomer", "goal"];
   if (
     !profile ||
@@ -152,6 +151,7 @@ module.exports = async function handler(req, res) {
     }
 
     if (req.method === "PUT") {
+      const ownerAccuracyConfirmed = Boolean(req.body && req.body.ownerAccuracyConfirmed === true);
       const profile = getValidatedProfile(req);
       if (!profile) {
         return res.status(400).json({
