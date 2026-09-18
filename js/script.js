@@ -408,8 +408,26 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   const saveBusinessProfileBtn = byId("save-business-profile-btn");
   const fields = {
     name: byId("business-name"), type: byId("business-type"), location: byId("business-location"),
+    productsServices: byId("business-products-services"),
     brandVoice: byId("business-brand-voice"), targetCustomer: byId("business-target-customer"), goal: byId("business-goal")
   };
+  const continuationRouteIds = {
+    website: "business-route-website", phone: "business-route-phone", whatsapp: "business-route-whatsapp",
+    email: "business-route-email", visit: "business-route-visit", booking: "business-route-booking", quote: "business-route-quote"
+  };
+  const fulfilmentIds = {
+    collection: "business-fulfilment-collection", delivery: "business-fulfilment-delivery",
+    shipping: "business-fulfilment-shipping", premises: "business-fulfilment-premises",
+    "customer-location": "business-fulfilment-customer-location", appointment: "business-fulfilment-appointment",
+    digital: "business-fulfilment-digital"
+  };
+  const continuationDetails = {
+    website: byId("business-website"), phone: byId("business-phone"), whatsapp: byId("business-whatsapp"),
+    email: byId("business-email"), bookingLink: byId("business-booking-link")
+  };
+  const fulfilmentNotes = byId("business-fulfilment-notes");
+  const accuracyConfirmation = byId("business-accuracy-confirmation");
+  const businessProfileStatus = byId("business-profile-status");
   const campaignHistoryKey = "demeosCampaignHistory";
   const recommendationDecisionsKey = "demeosRecommendationDecisions";
   const cachedBusinessState = migrateBusinessProfiles(localStorage);
@@ -783,8 +801,46 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     const campaigns = parseStoredJson(localStorage, campaignHistoryKey, []);
     return Array.isArray(campaigns) ? campaigns : [];
   }
+  function selectedValues(idMap) {
+    return Object.keys(idMap).filter(function (key) {
+      const element = byId(idMap[key]);
+      return element && element.checked;
+    });
+  }
+  function setSelectedValues(idMap, values) {
+    const selected = new Set(Array.isArray(values) ? values : []);
+    Object.keys(idMap).forEach(function (key) {
+      const element = byId(idMap[key]);
+      if (element) element.checked = selected.has(key);
+    });
+  }
+  function getContinuationDetails() {
+    return {
+      website: continuationDetails.website.value.trim(),
+      phone: continuationDetails.phone.value.trim(),
+      whatsapp: continuationDetails.whatsapp.value.trim(),
+      email: continuationDetails.email.value.trim(),
+      bookingLink: continuationDetails.bookingLink.value.trim()
+    };
+  }
   function fillProfile(profile) {
     Object.keys(fields).forEach(function (key) { fields[key].value = (profile && profile[key]) || ""; });
+    const continuation = profile && profile.customerContinuation ? profile.customerContinuation : {};
+    setSelectedValues(continuationRouteIds, continuation.routes);
+    continuationDetails.website.value = continuation.website || "";
+    continuationDetails.phone.value = continuation.phone || "";
+    continuationDetails.whatsapp.value = continuation.whatsapp || "";
+    continuationDetails.email.value = continuation.email || "";
+    continuationDetails.bookingLink.value = continuation.bookingLink || "";
+    const fulfilment = profile && profile.fulfilment ? profile.fulfilment : {};
+    setSelectedValues(fulfilmentIds, fulfilment.methods);
+    fulfilmentNotes.value = fulfilment.notes || "";
+    accuracyConfirmation.checked = false;
+    if (businessProfileStatus) {
+      businessProfileStatus.textContent = profile && profile.informationStatus
+        ? "Saved as business-provided information. Reconfirm accuracy when you make changes."
+        : "";
+    }
   }
   function renderSelector() {
     businessSelector.textContent = "";
@@ -1030,8 +1086,29 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     const profileFields = {};
     Object.keys(fields).forEach(function (key) { profileFields[key] = fields[key].value.trim(); });
     if (Object.keys(profileFields).some(function (key) { return !profileFields[key]; })) {
-      alert("Please complete all Business Manager Profile fields before saving."); return;
+      alert("Please complete the business details, products/services and marketing profile before saving."); return;
     }
+    const routes = selectedValues(continuationRouteIds);
+    const fulfilmentMethods = selectedValues(fulfilmentIds);
+    if (!routes.length) {
+      alert("Please select at least one way customers can continue with your business."); return;
+    }
+    if (!fulfilmentMethods.length) {
+      alert("Please select at least one way customers receive your product or service."); return;
+    }
+    const details = getContinuationDetails();
+    const routeRequirements = { website: "website", phone: "phone", whatsapp: "whatsapp", email: "email", booking: "bookingLink" };
+    const missingRoute = Object.keys(routeRequirements).find(function (route) {
+      return routes.includes(route) && !details[routeRequirements[route]];
+    });
+    if (missingRoute) {
+      alert("Please provide the contact or link information for each customer route you selected."); return;
+    }
+    if (!accuracyConfirmation.checked) {
+      alert("Please confirm that the Business Profile information is accurate before saving."); return;
+    }
+    profileFields.customerContinuation = { routes, ...details };
+    profileFields.fulfilment = { methods: fulfilmentMethods, notes: fulfilmentNotes.value.trim() };
 
     saveBusinessProfileBtn.disabled = true;
     saveBusinessProfileBtn.textContent = "Saving Business Profile...";
