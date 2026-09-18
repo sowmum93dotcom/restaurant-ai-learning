@@ -425,6 +425,13 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     website: byId("business-website"), phone: byId("business-phone"), whatsapp: byId("business-whatsapp"),
     email: byId("business-email"), bookingLink: byId("business-booking-link")
   };
+  const continuationDetailContainers = {
+    website: byId("business-website").parentElement,
+    phone: byId("business-phone").parentElement,
+    whatsapp: byId("business-whatsapp").parentElement,
+    email: byId("business-email").parentElement,
+    booking: byId("business-booking-link").parentElement
+  };
   const fulfilmentNotes = byId("business-fulfilment-notes");
   const availabilityStatus = byId("business-availability-status");
   const businessHoursNotes = byId("business-hours-notes");
@@ -817,6 +824,17 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       if (element) element.checked = selected.has(key);
     });
   }
+  function updateContinuationDetailVisibility() {
+    Object.keys(continuationRouteIds).forEach(function (route) {
+      const checkbox = byId(continuationRouteIds[route]);
+      const detail = continuationDetailContainers[route];
+      if (!detail) return;
+      const visible = Boolean(checkbox && checkbox.checked);
+      detail.hidden = !visible;
+      const input = detail.querySelector("input");
+      if (input) input.disabled = !visible;
+    });
+  }
   function getContinuationDetails() {
     return {
       website: continuationDetails.website.value.trim(),
@@ -835,6 +853,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     continuationDetails.whatsapp.value = continuation.whatsapp || "";
     continuationDetails.email.value = continuation.email || "";
     continuationDetails.bookingLink.value = continuation.bookingLink || "";
+    updateContinuationDetailVisibility();
     const fulfilment = profile && profile.fulfilment ? profile.fulfilment : {};
     setSelectedValues(fulfilmentIds, fulfilment.methods);
     fulfilmentNotes.value = fulfilment.notes || "";
@@ -1082,6 +1101,10 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     const persisted = await persistCampaign(profile, campaign); return { id, persisted };
   }
 
+  Object.keys(continuationRouteIds).forEach(function (route) {
+    const checkbox = byId(continuationRouteIds[route]);
+    if (checkbox) checkbox.addEventListener("change", updateContinuationDetailVisibility);
+  });
   renderSelector(); fillProfile(activeProfile()); renderActiveMarketingWork(); renderCustomerParticipationResults(); renderCampaignHistory();
   if (serverAuthorizationRequired) loadAuthorizedBusinesses();
   else hydrateActiveBusiness();
