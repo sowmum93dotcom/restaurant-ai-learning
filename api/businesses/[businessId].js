@@ -78,7 +78,7 @@ function getValidatedProfile(req) {
         !ALLOWED_AVAILABILITY_STATES.has(availability)) return null;
     productIds.add(productId);
     products.push({ productId, businessId: cleanString(profile.businessId, 120), name, description, price, imageUrl,
-      continuationRoute, availability, imageSource: imageUrl ? "business-provided" : "" });
+      continuationRoute, availability, customerVisible: item.customerVisible !== false, imageSource: imageUrl ? "business-provided" : "" });
   }
 
   const operationalProfile = Number(profile.profileVersion) >= 3;
