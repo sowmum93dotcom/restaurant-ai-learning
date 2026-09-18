@@ -423,7 +423,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   };
   const continuationDetails = {
     website: byId("business-website"), phone: byId("business-phone"), whatsapp: byId("business-whatsapp"),
-    email: byId("business-email"), bookingLink: byId("business-booking-link")
+    email: byId("business-email"), bookingLink: byId("business-booking-link"), visitAddress: byId("business-visit-address")
   };
   const continuationDetailContainers = {
     website: byId("business-website").parentElement,
@@ -840,7 +840,8 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       phone: continuationDetails.phone.value.trim(),
       whatsapp: continuationDetails.whatsapp.value.trim(),
       email: continuationDetails.email.value.trim(),
-      bookingLink: continuationDetails.bookingLink.value.trim()
+      bookingLink: continuationDetails.bookingLink.value.trim(),
+      visitAddress: continuationDetails.visitAddress.value.trim()
     };
   }
   const productFields = {
@@ -964,6 +965,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     continuationDetails.whatsapp.value = continuation.whatsapp || "";
     continuationDetails.email.value = continuation.email || "";
     continuationDetails.bookingLink.value = continuation.bookingLink || "";
+    continuationDetails.visitAddress.value = continuation.visitAddress || "";
     updateContinuationDetailVisibility();
     const fulfilment = profile && profile.fulfilment ? profile.fulfilment : {};
     setSelectedValues(fulfilmentIds, fulfilment.methods);
