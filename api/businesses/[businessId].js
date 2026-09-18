@@ -38,7 +38,6 @@ function getValidatedProfile(req) {
   ) return null;
 
   const enhancedProfile = Number(profile.profileVersion) >= 2;
-  if (Number(profile.profileVersion) >= 3 && !ownerAccuracyConfirmed) return null;
   const continuation = profile.customerContinuation;
   const fulfilment = profile.fulfilment;
   const operational = profile.operationalAvailability;
@@ -161,6 +160,9 @@ module.exports = async function handler(req, res) {
       }
 
       if (access.allowed) {
+        if (Number(profile.profileVersion) >= 3 && !ownerAccuracyConfirmed) {
+          return res.status(400).json({ error: "Please explicitly confirm that the Business Profile information is current before saving." });
+        }
         const existingBusiness = await repository.getKnownBusiness(businessId);
         const previousInformationStatus = existingBusiness && existingBusiness.informationStatus && typeof existingBusiness.informationStatus === "object"
           ? existingBusiness.informationStatus : {};
@@ -183,6 +185,9 @@ module.exports = async function handler(req, res) {
       const trustedIdentity = await resolveTrustedIdentityFromRequest(req);
       if (!trustedIdentity) {
         return res.status(401).json({ error: "Authentication required." });
+      }
+      if (Number(profile.profileVersion) >= 3 && !ownerAccuracyConfirmed) {
+        return res.status(400).json({ error: "Please explicitly confirm that the Business Profile information is current before saving." });
       }
       const created = await repository.createBusinessForOwner(
         trustedIdentity.trustedIdentityId,
