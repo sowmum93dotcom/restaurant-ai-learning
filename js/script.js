@@ -423,14 +423,15 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   };
   const continuationDetails = {
     website: byId("business-website"), phone: byId("business-phone"), whatsapp: byId("business-whatsapp"),
-    email: byId("business-email"), bookingLink: byId("business-booking-link")
+    email: byId("business-email"), bookingLink: byId("business-booking-link"), visitAddress: byId("business-visit-address")
   };
   const continuationDetailContainers = {
     website: byId("business-website").parentElement,
     phone: byId("business-phone").parentElement,
     whatsapp: byId("business-whatsapp").parentElement,
     email: byId("business-email").parentElement,
-    booking: byId("business-booking-link").parentElement
+    booking: byId("business-booking-link").parentElement,
+    visit: byId("business-visit-address").parentElement
   };
   const fulfilmentNotes = byId("business-fulfilment-notes");
   const availabilityStatus = byId("business-availability-status");
@@ -830,7 +831,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       if (!detail) return;
       const visible = Boolean(checkbox && checkbox.checked);
       detail.hidden = !visible;
-      const input = detail.querySelector("input");
+      const input = detail.querySelector("input") || detail.querySelector("textarea");
       if (input) input.disabled = !visible;
     });
   }
@@ -840,7 +841,8 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       phone: continuationDetails.phone.value.trim(),
       whatsapp: continuationDetails.whatsapp.value.trim(),
       email: continuationDetails.email.value.trim(),
-      bookingLink: continuationDetails.bookingLink.value.trim()
+      bookingLink: continuationDetails.bookingLink.value.trim(),
+      visitAddress: continuationDetails.visitAddress.value.trim()
     };
   }
   const productFields = {
@@ -964,6 +966,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     continuationDetails.whatsapp.value = continuation.whatsapp || "";
     continuationDetails.email.value = continuation.email || "";
     continuationDetails.bookingLink.value = continuation.bookingLink || "";
+    continuationDetails.visitAddress.value = continuation.visitAddress || "";
     updateContinuationDetailVisibility();
     const fulfilment = profile && profile.fulfilment ? profile.fulfilment : {};
     setSelectedValues(fulfilmentIds, fulfilment.methods);
