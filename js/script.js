@@ -1107,6 +1107,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     if (!accuracyConfirmation.checked) {
       alert("Please confirm that the Business Profile information is accurate before saving."); return;
     }
+    profileFields.profileVersion = 2;
     profileFields.customerContinuation = { routes, ...details };
     profileFields.fulfilment = { methods: fulfilmentMethods, notes: fulfilmentNotes.value.trim() };
 
