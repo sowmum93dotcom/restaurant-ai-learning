@@ -113,9 +113,7 @@ function toCustomerPossibility(value) {
       relevance.evidence.length > 5 || (Object.hasOwn(value, "location") && typeof value.location !== "string")) return null;
   const evidence = relevance.evidence.map(normalizedRequiredString);
   if (!evidence.length || evidence.some(function (term) { return !term || term.length > 60; })) return null;
-  const businessId = normalizedRequiredString(value.businessId);
   const possibility = { possibilityId, workItemId, businessName, content, participationAction: "Interested",
-    ...(businessId ? { businessId } : {}),
     relevance: { basis: relevance.basis, evidence: evidence.slice(0, 5), explanation: relevance.explanation } };
   if (typeof value.location === "string" && value.location.trim()) possibility.location = value.location.trim();
   const allowedRoutes = ["website", "phone", "whatsapp", "email", "visit", "booking", "quote"];
@@ -153,15 +151,15 @@ function toCustomerPossibility(value) {
       notes: normalizedRequiredString(value.operationalAvailability.notes) || ""
     };
   }
-  if (businessId && Array.isArray(value.products)) {
+  if (Array.isArray(value.products)) {
     possibility.products = value.products.filter(function (product) {
       return product && typeof product === "object" && !Array.isArray(product) &&
         normalizedRequiredString(product.productId) && normalizedRequiredString(product.name) &&
-        normalizedRequiredString(product.description) && normalizedRequiredString(product.businessId) === businessId &&
+        normalizedRequiredString(product.description) &&
         (!product.imageUrl || /^https?:\/\//i.test(product.imageUrl)) &&
         (!product.continuationRoute || (possibility.customerContinuation && possibility.customerContinuation.routes.includes(product.continuationRoute)));
     }).slice(0, 100).map(function (product) {
-      return { productId: product.productId.trim(), businessId, name: product.name.trim(), description: product.description.trim(),
+      return { productId: product.productId.trim(), name: product.name.trim(), description: product.description.trim(),
         price: normalizedRequiredString(product.price) || "", imageUrl: normalizedRequiredString(product.imageUrl) || "",
         continuationRoute: normalizedRequiredString(product.continuationRoute) || "",
         availability: ["available", "limited", "unavailable", "contact"].includes(product.availability) ? product.availability : "contact" };
@@ -265,6 +263,7 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
           else if (quoteRoute === "whatsapp" && quoteDetail) href = /^https?:\/\//i.test(quoteDetail) ? quoteDetail : "https://wa.me/" + quoteDetail.replace(/\D/g, "");
           else if ((quoteRoute === "website" || quoteRoute === "booking") && /^https?:\/\//i.test(quoteDetail)) href = quoteDetail;
         }
+        if (product.availability === "unavailable") href = null;
         if (product.imageUrl) {
           const image = document.createElement("img"); image.src = product.imageUrl; image.alt = product.name; image.loading = "lazy";
           if (href) {
@@ -276,6 +275,8 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
         addText(document, card, "h5", "customer-product-name", product.name);
         addText(document, card, "p", "customer-product-description", product.description);
         if (product.price) addText(document, card, "p", "customer-product-price", product.price);
+        const productAvailabilityLabels = { available: "Available", limited: "Limited availability — contact the business first", unavailable: "Not currently available", contact: "Contact the business to confirm availability" };
+        addText(document, card, "p", "customer-product-availability", productAvailabilityLabels[product.availability]);
         addText(document, card, "p", "customer-product-source", "Image and product information provided by " + possibility.businessName + ".");
         grid.appendChild(card);
       });
