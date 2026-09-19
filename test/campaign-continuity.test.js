@@ -422,14 +422,17 @@ test("the application makes each saved revision the source of the next revision"
     },
     document,
     fetch: async function (url, options) {
-      requestBodies.push(JSON.parse(options.body));
-      return {
-        ok: true,
-        status: 200,
-        async text() {
-          return JSON.stringify({ campaign: revisionTexts[requestBodies.length - 1] });
-        }
-      };
+      if (url === "/api/generate") {
+        requestBodies.push(JSON.parse(options.body));
+        return {
+          ok: true,
+          status: 200,
+          async text() {
+            return JSON.stringify({ campaign: revisionTexts[requestBodies.length - 1] });
+          }
+        };
+      }
+      return { ok: true, status: 204, async text() { return ""; } };
     },
     localStorage: {
       getItem(key) {
