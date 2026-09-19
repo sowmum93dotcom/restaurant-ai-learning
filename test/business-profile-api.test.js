@@ -121,7 +121,8 @@ test("an authenticated owner can PUT their own valid profile", async function ()
   const result = await invoke({ method: "PUT", body: { businessProfile: profile } });
   assert.equal(result.response.statusCode, 204);
   assert.equal(result.response.ended, true);
-  assert.equal(result.savedProfiles.length, 1);\n  assert.deepEqual(result.savedProfiles[0], { ...profile, businessId: "business-a", products: [], informationStatus: { status: "business-provided", source: "business-owner", ownerConfirmedAt: undefined } });
+  assert.equal(result.savedProfiles.length, 1);
+  assert.deepEqual(result.savedProfiles[0], { ...profile, businessId: "business-a", products: [], informationStatus: { status: "business-provided", source: "business-owner", ownerConfirmedAt: undefined } });
   assert.deepEqual(result.createdBusinesses, []);
   assert.equal(result.authorizationCalls[0].action, DEMEOS_ACTIONS.MANAGE_BUSINESS_PROFILE);
 });
