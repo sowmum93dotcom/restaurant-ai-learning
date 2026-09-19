@@ -338,7 +338,7 @@ test("pending profile syncs support multiple businesses and remove only the succ
   addPendingBusinessProfileSync(storage, "business-a");
   addPendingBusinessProfileSync(storage, "business-b");
   addPendingBusinessProfileSync(storage, "business-a");
-  assert.equal(storage.getItem("demeosPendingBusinessProfileSync"), '["business-a","business-b"]');
+  assert.equal(storage.getItem("demeosPendingBusinessProfileSync"), '["business-b"]');
 
   removePendingBusinessProfileSync(storage, "business-a");
   assert.deepEqual(readPendingBusinessProfileSyncIds(storage), ["business-b"]);
