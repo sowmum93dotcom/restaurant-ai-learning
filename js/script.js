@@ -898,7 +898,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       productImagePreviewImg.src = imageUrl;
       productImagePreviewImg.alt = productFields.name.value.trim() ? productFields.name.value.trim() + " customer image preview" : "Customer product image preview";
     } else {
-      productImagePreviewImg.removeAttribute("src");
+      productImagePreviewImg.src = "";
       productImagePreviewImg.alt = "";
     }
   }
