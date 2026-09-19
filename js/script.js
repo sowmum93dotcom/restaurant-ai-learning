@@ -857,6 +857,11 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   const productsEmpty = byId("business-products-empty");
   const productPriceValueWrap = byId("business-product-price-value-wrap");
   const productFulfilmentOptions = byId("business-product-fulfilment-options");
+  const productImagePreview = byId("business-product-image-preview");
+  const productImagePreviewImg = byId("business-product-image-preview-img");
+  const productsTotal = byId("business-products-total");
+  const productsVisible = byId("business-products-visible");
+  const productsImages = byId("business-products-images");
   let draftProducts = [];
 
   function selectedProductFulfilment() {
@@ -879,9 +884,28 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     const text = typeof value === "string" ? value.trim() : "";
     return !text || /^https?:\/\//i.test(text);
   }
+  function updateProductManagerSummary() {
+    if (productsTotal) productsTotal.textContent = String(draftProducts.length);
+    if (productsVisible) productsVisible.textContent = String(draftProducts.filter(function (product) { return product.customerVisible !== false; }).length);
+    if (productsImages) productsImages.textContent = String(draftProducts.filter(function (product) { return Boolean(product.imageUrl); }).length);
+  }
+  function updateProductImagePreview() {
+    if (!productImagePreview || !productImagePreviewImg) return;
+    const imageUrl = productFields.image.value.trim();
+    const show = Boolean(imageUrl && safeProductImageUrl(imageUrl));
+    productImagePreview.hidden = !show;
+    if (show) {
+      productImagePreviewImg.src = imageUrl;
+      productImagePreviewImg.alt = productFields.name.value.trim() ? productFields.name.value.trim() + " customer image preview" : "Customer product image preview";
+    } else {
+      productImagePreviewImg.removeAttribute("src");
+      productImagePreviewImg.alt = "";
+    }
+  }
   function renderBusinessProducts() {
     if (!productsList) return;
     productsList.textContent = "";
+    updateProductManagerSummary();
     if (productsEmpty) productsEmpty.hidden = draftProducts.length > 0;
     draftProducts.forEach(function (product) {
       const card = document.createElement("article"); card.className = "business-product-card";
@@ -899,7 +923,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       edit.addEventListener("click", function () {
         productFields.id.value = product.productId; productFields.name.value = product.name; productFields.price.value = product.price || "";
         productFields.priceMode.value = product.priceMode || (product.price ? "fixed" : "contact"); updateProductPriceControls();
-        productFields.description.value = product.description; productFields.image.value = product.imageUrl || "";
+        productFields.description.value = product.description; productFields.image.value = product.imageUrl || ""; updateProductImagePreview();
         productFields.route.value = product.continuationRoute || ""; productFields.availability.value = product.availability || "contact";
         productFields.visibility.value = product.customerVisible === false ? "hidden" : "visible";
         productFields.fulfilmentMode.value = product.fulfilment && Array.isArray(product.fulfilment.methods) ? "specific" : "business";
@@ -921,7 +945,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     productFields.id.value = ""; productFields.name.value = ""; productFields.price.value = "";
     productFields.description.value = ""; productFields.image.value = ""; productFields.route.value = "";
     productFields.availability.value = "contact"; productFields.visibility.value = "visible"; productFields.priceMode.value = "contact";
-    productFields.fulfilmentMode.value = "business"; setProductFulfilment([]); updateProductPriceControls(); updateProductFulfilmentControls();
+    productFields.fulfilmentMode.value = "business"; setProductFulfilment([]); updateProductPriceControls(); updateProductFulfilmentControls(); updateProductImagePreview();
     if (productAddBtn) productAddBtn.textContent = "Add product / service";
     if (productCancelBtn) productCancelBtn.hidden = true;
   }
@@ -953,6 +977,8 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   if (productCancelBtn) productCancelBtn.addEventListener("click", resetProductForm);
   if (productFields.priceMode) productFields.priceMode.addEventListener("change", updateProductPriceControls);
   if (productFields.fulfilmentMode) productFields.fulfilmentMode.addEventListener("change", updateProductFulfilmentControls);
+  if (productFields.image) productFields.image.addEventListener("input", updateProductImagePreview);
+  if (productFields.name) productFields.name.addEventListener("input", updateProductImagePreview);
 
   function fillProfile(profile) {
     draftProducts = profile && Array.isArray(profile.products) ? profile.products.map(function (product) { return { ...product }; }) : [];
