@@ -117,7 +117,7 @@ function toCustomerPossibility(value) {
     relevance: { basis: relevance.basis, evidence: evidence.slice(0, 5), explanation: relevance.explanation } };
   if (typeof value.location === "string" && value.location.trim()) possibility.location = value.location.trim();
   const allowedRoutes = ["website", "phone", "whatsapp", "email", "visit", "booking", "quote"];
-  const routeDetails = { website: "website", phone: "phone", whatsapp: "whatsapp", email: "email", booking: "bookingLink" };
+  const routeDetails = { website: "website", phone: "phone", whatsapp: "whatsapp", email: "email", visit: "visitAddress", booking: "bookingLink" };
   if (value.customerContinuation && typeof value.customerContinuation === "object" && Array.isArray(value.customerContinuation.routes)) {
     const safe = { routes: [] };
     value.customerContinuation.routes.forEach(function (route) {
@@ -503,6 +503,17 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
     surface.className = "customer-possibility-surface customer-possibility-position-" + (index + 1);
     surface.setAttribute("aria-label", CUSTOMER_STAGE_THREE_COPY.possibilityLabel + ": " + possibility.content);
     addText(document, surface, "span", "customer-possibility-label", CUSTOMER_STAGE_THREE_COPY.possibilityLabel);
+    const imageProducts = Array.isArray(possibility.products) ? possibility.products.filter(function (product) { return product.imageUrl; }) : [];
+    if (imageProducts.length) {
+      const preview = document.createElement("span"); preview.className = "customer-possibility-product-preview";
+      imageProducts.slice(0, 3).forEach(function (product) {
+        const image = document.createElement("span"); image.className = "customer-possibility-product-image-ready";
+        image.setAttribute("aria-hidden", "true");
+        preview.appendChild(image);
+      });
+      surface.appendChild(preview);
+      addText(document, surface, "span", "customer-possibility-product-count", imageProducts.length === 1 ? "1 relevant product image" : imageProducts.length + " relevant product images");
+    }
     addText(document, surface, "span", "customer-possibility-preview", possibility.content);
     addText(document, surface, "span", "customer-possibility-provider", CUSTOMER_STAGE_THREE_COPY.providedBy + " " + possibility.businessName);
     surface.addEventListener("click", function () { showFocused(possibility); });
