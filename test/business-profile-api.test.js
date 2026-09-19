@@ -121,7 +121,8 @@ test("an authenticated owner can PUT their own valid profile", async function ()
   const result = await invoke({ method: "PUT", body: { businessProfile: profile } });
   assert.equal(result.response.statusCode, 204);
   assert.equal(result.response.ended, true);
-  assert.deepEqual(result.savedProfiles, [{ ...profile, businessId: "business-a" }]);
+  assert.equal(result.savedProfiles.length, 1);
+  assert.deepEqual(result.savedProfiles[0], { ...profile, businessId: "business-a", products: [], informationStatus: { status: "business-provided", source: "business-owner", ownerConfirmedAt: undefined } });
   assert.deepEqual(result.createdBusinesses, []);
   assert.equal(result.authorizationCalls[0].action, DEMEOS_ACTIONS.MANAGE_BUSINESS_PROFILE);
 });
@@ -134,9 +135,13 @@ test("a signed-in user can create a brand-new business and receive first ownersh
   });
   assert.equal(result.response.statusCode, 204);
   assert.deepEqual(result.savedProfiles, []);
-  assert.deepEqual(result.createdBusinesses, [{
-    identity: "verified-owner", profile: { ...profile, businessId: "new-business" }
-  }]);
+  assert.equal(result.createdBusinesses.length, 1);
+  assert.equal(result.createdBusinesses[0].identity, "verified-owner");
+  const createdProfile = result.createdBusinesses[0].profile;
+  assert.deepEqual(
+    { ...createdProfile, informationStatus: { ...createdProfile.informationStatus, ownerConfirmedAt: Boolean(createdProfile.informationStatus.ownerConfirmedAt) } },
+    { ...profile, businessId: "new-business", products: [], informationStatus: { status: "business-provided", source: "business-owner", ownerConfirmedAt: true } }
+  );
   assert.equal(result.identityCalls.length, 1);
   assert.equal(result.identityCalls[0], result.request);
 });

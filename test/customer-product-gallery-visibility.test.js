@@ -24,7 +24,7 @@ test("full product gallery remains visual and responsive", function () {
   assert.match(galleryCss, /\.customer-product-card img/);
   assert.match(galleryCss, /object-fit:cover/);
   assert.match(galleryCss, /min-height:860px/);
-  assert.match(galleryCss, /customer-product-detail-trust\\{color:#172435/);
+  assert.match(galleryCss, /\.customer-product-detail-trust\{color:#172435/);
 });
 
 test("customer normalization preserves dedicated visit address", function () {

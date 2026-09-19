@@ -412,14 +412,14 @@ test("unsupported methods and missing route identifiers preserve existing respon
   const unsupported = await invoke({ method: "POST" });
   assert.equal(unsupported.response.statusCode, 405);
   assert.deepEqual(unsupported.response.body, { error: "Method not allowed" });
-  assert.equal(unsupported.response.headers.Allow, "PUT");
+  assert.equal(unsupported.response.headers.Allow, "PUT, PATCH");
   assert.deepEqual(unsupported.authorizationCalls, []);
 
   for (const identifiers of [{ businessId: "" }, { campaignId: "" }]) {
     const invalid = await invoke(identifiers);
     assert.equal(invalid.response.statusCode, 400);
     assert.deepEqual(invalid.response.body, {
-      error: "A businessId, campaignId, and campaign are required."
+      error: "A businessId and campaignId are required."
     });
     assert.deepEqual(invalid.authorizationCalls, []);
     assert.deepEqual(invalid.savedCampaigns, []);
