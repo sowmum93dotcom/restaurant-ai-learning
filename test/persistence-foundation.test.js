@@ -455,7 +455,7 @@ test("Business Profile is marked before persistence resolves and a successful re
 
   addPendingBusinessProfileSync(storage, "business-b");
   await save();
-  assert.deepEqual(persistenceCalls, ["/api/businesses/business-a", "/api/businesses/business-a"]);
+  assert.deepEqual(persistenceCalls, ["/api/businesses/business-a"]);
   assert.equal(storage.getItem("demeosPendingBusinessProfileSync"), '["business-b"]');
 });
 
