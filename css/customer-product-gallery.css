@@ -1,6 +1,7 @@
 .customer-product-gallery-guide{max-width:760px;margin:.7rem auto 0;color:var(--d-silver);font-size:.94rem;line-height:1.55}
 .customer-possibility-product-preview{display:grid;grid-template-columns:repeat(3,1fr);gap:.35rem;width:100%;margin:.65rem 0 .35rem;overflow:hidden;border-radius:16px}
-.customer-possibility-product-preview img{display:block;width:100%;height:88px;object-fit:cover;background:rgba(255,255,255,.04)}
+.customer-possibility-product-image-ready{display:block;width:100%;height:42px;background:linear-gradient(145deg,rgba(35,135,255,.2),rgba(217,173,67,.12));border:1px solid rgba(113,177,255,.22)}
+.customer-possibility-product-image-ready:after{content:"Image available";display:grid;place-items:center;height:100%;color:var(--d-silver);font-size:.68rem;font-weight:700}
 .customer-possibility-product-count{display:block;margin:0 0 .45rem;color:var(--d-gold-light);font-size:.75rem;font-weight:750;letter-spacing:.03em}
 .customer-product-gallery{margin:1.35rem 0;padding:1.1rem;border:1px solid rgba(113,177,255,.3);border-radius:22px;background:rgba(2,15,32,.58)}
 .customer-products-heading{margin:.1rem 0 1rem;color:#fff;font-size:1.05rem}
@@ -12,5 +13,6 @@
 .customer-product-description,.customer-product-source,.customer-product-relevance,.customer-product-fulfilment{color:var(--d-silver);line-height:1.45}
 .customer-product-price{color:var(--d-gold-light);font-weight:750}.customer-product-availability{font-weight:650}
 .customer-product-controls{margin-top:.8rem;margin-bottom:.9rem}.customer-product-detail-button,.customer-product-continue-action{min-height:42px;padding:.6rem .9rem;border:1px solid rgba(128,187,255,.52);border-radius:999px;background:rgba(4,23,47,.82);color:#fff;font-weight:700;text-decoration:none}
-.customer-product-details{padding:.8rem 0 1rem;border-top:1px solid rgba(113,177,255,.2)}.customer-product-detail-trust{color:var(--d-silver);line-height:1.45}
-@media(max-width:700px){.customer-possibility-product-preview img{height:76px}.customer-product-grid{grid-template-columns:1fr}.customer-product-card img{aspect-ratio:16/10}}
+.customer-product-details{padding:.8rem 0 1rem;border-top:1px solid rgba(113,177,255,.2)}.customer-product-detail-trust{color:#172435;line-height:1.45}
+@media(min-width:701px){.customer-possibility-space:has(.customer-possibility-product-preview){min-height:860px}.customer-possibility-surface:has(.customer-possibility-product-preview){min-height:190px}}
+@media(max-width:700px){.customer-possibility-product-image-ready{height:38px}.customer-product-grid{grid-template-columns:1fr}.customer-product-card img{aspect-ratio:16/10}}
