@@ -256,11 +256,15 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
     if (possibility.location) addText(document, focusRegion, "p", "customer-possibility-location", possibility.location);
     if (Array.isArray(possibility.products) && possibility.products.length) {
       const products = document.createElement("section"); products.className = "customer-product-gallery";
-      addText(document, products, "h4", "customer-products-heading", "Products & services relevant to your request");
-      const grid = document.createElement("div"); grid.className = "customer-product-grid";
+      const galleryHeader = document.createElement("div"); galleryHeader.className = "customer-product-gallery-header";
+      const galleryHeading = addText(document, galleryHeader, "h4", "customer-products-heading", "Products & services relevant to your request");
+      galleryHeading.id = "customer-products-heading";
+      addText(document, galleryHeader, "p", "customer-products-count", possibility.products.length === 1 ? "1 relevant product or service" : possibility.products.length + " relevant products & services");
+      products.appendChild(galleryHeader);
+      const grid = document.createElement("div"); grid.className = "customer-product-grid"; grid.setAttribute("role", "list"); grid.setAttribute("aria-labelledby", "customer-products-heading");
       possibility.products.forEach(function (product) {
         const card = document.createElement("article"); card.className = "customer-product-card";
-        card.setAttribute("data-product-id", product.productId);
+        card.setAttribute("role", "listitem"); card.setAttribute("data-product-id", product.productId);
         const route = product.continuationRoute;
         const field = { website: "website", phone: "phone", whatsapp: "whatsapp", email: "email", booking: "bookingLink", visit: "visitAddress" }[route];
         const detail = possibility.customerContinuation && field ? possibility.customerContinuation[field] : null;
@@ -281,12 +285,17 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
         }
         if (product.availability === "unavailable") href = null;
         if (product.imageUrl) {
-          const image = document.createElement("img"); image.src = product.imageUrl; image.alt = product.name; image.loading = "lazy";
+          const imageFrame = document.createElement("div"); imageFrame.className = "customer-product-image-frame";
+          const image = document.createElement("img"); image.src = product.imageUrl; image.alt = product.name; image.loading = "lazy"; image.decoding = "async";
           if (href) {
             const imageLink = document.createElement("a"); imageLink.href = href; imageLink.setAttribute("aria-label", product.name + " — continue with " + possibility.businessName);
             if (/^https?:\/\//i.test(href)) { imageLink.target = "_blank"; imageLink.rel = "noopener noreferrer"; }
-            imageLink.appendChild(image); card.appendChild(imageLink);
-          } else card.appendChild(image);
+            imageLink.appendChild(image); imageFrame.appendChild(imageLink);
+          } else imageFrame.appendChild(image);
+          card.appendChild(imageFrame);
+        } else {
+          const noImage = addText(document, card, "div", "customer-product-no-image", "Product information available");
+          noImage.setAttribute("aria-label", product.name + " has no business-provided image");
         }
         addText(document, card, "h5", "customer-product-name", product.name);
         addText(document, card, "p", "customer-product-description", product.description);
