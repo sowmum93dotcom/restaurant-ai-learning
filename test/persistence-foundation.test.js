@@ -402,7 +402,7 @@ test("Business Profile is marked before persistence resolves and a successful re
     }
   };
   const profile = {
-    businessId: "business-a", name: "Business A", type: "Cafe", location: "Cardiff",
+    businessId: "business-a", name: "Business A", type: "Cafe", location: "Cardiff", productsServices: "Coffee and pastries",
     brandVoice: "Warm", targetCustomer: "Neighbours", goal: "Grow"
   };
   const storage = memoryStorage([
@@ -425,6 +425,10 @@ test("Business Profile is marked before persistence resolves and a successful re
     localStorage: storage, Math, setTimeout, window: {}
   });
   document.ready();
+  document.getElementById("business-route-website").checked = true;
+  document.getElementById("business-website").value = "https://example.test";
+  document.getElementById("business-fulfilment-premises").checked = true;
+  document.getElementById("business-accuracy-confirmation").checked = true;
 
   const save = document.getElementById("save-business-profile-btn").listeners.click;
   document.getElementById("business-name").value = "New local A";
