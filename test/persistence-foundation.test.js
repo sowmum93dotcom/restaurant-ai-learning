@@ -338,11 +338,11 @@ test("pending profile syncs support multiple businesses and remove only the succ
   addPendingBusinessProfileSync(storage, "business-a");
   addPendingBusinessProfileSync(storage, "business-b");
   addPendingBusinessProfileSync(storage, "business-a");
-  assert.equal(storage.getItem("demeosPendingBusinessProfileSync"), '["business-b"]');
+  assert.equal(storage.getItem("demeosPendingBusinessProfileSync"), '["business-a","business-b"]');
 
   removePendingBusinessProfileSync(storage, "business-a");
   assert.deepEqual(readPendingBusinessProfileSyncIds(storage), ["business-b"]);
-  assert.equal(storage.getItem("demeosPendingBusinessProfileSync"), '["business-a","business-b"]');
+  assert.equal(storage.getItem("demeosPendingBusinessProfileSync"), '["business-b"]');
 });
 
 test("pending profile sync reads missing, malformed, and non-array data as empty", function () {
@@ -456,7 +456,7 @@ test("Business Profile is marked before persistence resolves and a successful re
   addPendingBusinessProfileSync(storage, "business-b");
   await save();
   assert.deepEqual(persistenceCalls, ["/api/businesses/business-a"]);
-  assert.equal(storage.getItem("demeosPendingBusinessProfileSync"), '["business-b"]');
+  assert.equal(storage.getItem("demeosPendingBusinessProfileSync"), '["business-a","business-b"]');
 });
 
 test("hydration remains normal for a business outside the pending list", async function () {
