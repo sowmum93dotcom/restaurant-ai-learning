@@ -25,13 +25,14 @@ test("enhanced Business Profile validates safe customer destinations and actiona
 });
 
 test("public customer work carries only recognized current availability", function () {
+  const base = { workItemId: "work-availability", businessName: "Example", content: "Customer-facing work", participationAction: "Interested" };
   const item = toPublicCustomerWorkItem({
-    workItemId: "work-availability", businessName: "Example", content: "Customer-facing work",
+    ...base,
     operationalAvailability: { status: "limited", hoursNotes: "Mon-Fri", notes: "Contact us first" }
   });
   assert.deepEqual(item.operationalAvailability, { status: "limited", hoursNotes: "Mon-Fri", notes: "Contact us first" });
   const invalid = toPublicCustomerWorkItem({
-    workItemId: "work-invalid", businessName: "Example", content: "Customer-facing work",
+    ...base, workItemId: "work-invalid",
     operationalAvailability: { status: "guaranteed" }
   });
   assert.equal(invalid.operationalAvailability, undefined);

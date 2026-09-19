@@ -89,7 +89,7 @@ test("issuance records the trusted customer and exact authoritative campaign wit
     workItemId: "work-1", content: "A quiet supper", businessName: "Cafe"
   }]);
   assert.deepEqual(issued, ["work-1"]);
-  assert.deepEqual(calls[1].values, ["customer-a", "work-1", JSON.stringify(campaign)]);
+  assert.deepEqual(calls[1].values, ["customer-a", "work-1", JSON.stringify(campaign), null, null, null, null, "[]"]);
   assert.match(calls[1].sql, /'demeos-possibility-issuance', 'demeos'/);
   assert.doesNotMatch(calls[1].sql, /participations|feedback|preferences|purchase|booking|sale|conversion|outcome|success/i);
 });

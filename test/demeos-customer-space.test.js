@@ -25,17 +25,17 @@ test("the official logo asset and only the official brand line remain", function
 
 test("intention nodes retain native semantics and spatial-to-linear responsive rules", function () {
   assert.match(customer, /<fieldset>[\s\S]*?<legend class="visually-hidden"/);
-  assert.match(css, /\.customer-intention-option\s*\{[\s\S]*?position: absolute/);
+  assert.match(css, /\.customer-intention-option\{[^}]*position:absolute/);
   assert.match(css, /@media \(max-width: 1024px\)/);
-  assert.match(css, /@media \(max-width: 768px\)[\s\S]*?grid-template-columns: repeat\(2/);
-  assert.match(css, /@media \(max-width: 480px\)[\s\S]*?grid-template-columns: 1fr/);
+  assert.match(css, /@media \(max-width: 768px\)[\s\S]*?grid-template-columns:repeat\(2/);
+  assert.match(css, /@media \(max-width: 480px\)[\s\S]*?grid-template-columns:1fr/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
 });
 
 test("the header remains in document flow and reserves usable content height", function () {
-  assert.match(css, /\.customer-header\s*\{[\s\S]*?position: sticky/);
-  assert.doesNotMatch(css, /\.customer-header\s*\{[^}]*position: fixed/);
-  assert.match(css, /\.customer-intention\s*\{[^}]*min-height: calc\(100vh - 92px\)/);
+  assert.match(css, /\.customer-header\{[^}]*position:sticky/);
+  assert.doesNotMatch(css, /\.customer-header\{[^}]*position:fixed/);
+  assert.match(css, /\.customer-intention\{[^}]*min-height:calc\(100vh - 92px\)/);
 });
 
 test("all available relationship areas are real controls", function () {

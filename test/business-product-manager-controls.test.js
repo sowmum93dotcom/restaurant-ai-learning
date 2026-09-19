@@ -21,9 +21,9 @@ test("owner-controlled product visibility is stored server-side", function () {
 });
 
 test("hidden products never enter the public customer possibility contract", function () {
-  assert.match(contract, /product\.customerVisible !== false/);
   assert.match(publicWork, /product\.customerVisible !== false/);
   assert.match(contract, /delete publicProduct\.customerVisible/);
+  assert.match(contract, /relevantProductsForCustomer\(work\.products, customerTerms\)/);
 });
 
 test("removing another product does not discard the product currently being edited", function () {
