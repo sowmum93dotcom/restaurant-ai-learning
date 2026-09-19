@@ -53,6 +53,62 @@ const understanding = {
   source: "customer-provided", confidenceState: "confirmed"
 };
 
+function descendants(element) {
+  return [element, ...element.children.flatMap(descendants)];
+}
+
+async function openProduct(overrides = {}) {
+  const document = fakeDocument();
+  const participation = [];
+  renderCustomerPossibilities(document, [possibility({
+    customerContinuation: { routes: ["website"], website: "https://business.example/menu" },
+    products: [{ productId: "dinner", name: "Family dinner", description: "Fresh family dinner with seasonal vegetables.",
+      imageUrl: "https://business.example/dinner.jpg", availability: "available", continuationRoute: "website", ...overrides }]
+  })], understanding, async (item) => participation.push(item));
+  await document.elements["customer-possibilities-list"].children[0].listeners.click();
+  const card = descendants(document.elements["customer-focused-possibility"])
+    .find((element) => element.className === "customer-product-card");
+  return { card, participation };
+}
+
+test("failed product images retain details and the same business continuation without creating interest", async function () {
+  const { card, participation } = await openProduct();
+  const image = descendants(card).find((element) => element.tag === "img");
+  const link = descendants(card).find((element) => element.tag === "a");
+  assert.equal(image.src, "https://business.example/dinner.jpg");
+  assert.doesNotMatch(card.textContent, /Image unavailable/);
+  image.listeners.error();
+  assert.equal(descendants(card).filter((element) => element.tag === "img").length, 0);
+  assert.match(link.textContent, /Image unavailable/);
+  assert.equal(link.href, "https://business.example/menu");
+  assert.equal(link.attributes["aria-label"], "Family dinner — continue with Bella Vista Bistro");
+  const fallback = descendants(card).find((element) => element.className === "customer-product-no-image");
+  assert.match(fallback.attributes["aria-label"], /Family dinner could not be loaded/);
+  const button = descendants(card).find((element) => element.className === "customer-product-detail-button");
+  button.listeners.click();
+  const details = descendants(card).find((element) => element.className === "customer-product-details");
+  assert.equal(details.hidden, false);
+  assert.match(details.textContent, /Fresh family dinner with seasonal vegetables/);
+  assert.equal(descendants(details).find((element) => element.tag === "a").href, link.href);
+  assert.equal(participation.length, 0);
+});
+
+test("image failure does not enable continuation for an unavailable product", async function () {
+  const { card, participation } = await openProduct({ availability: "unavailable" });
+  descendants(card).find((element) => element.tag === "img").listeners.error();
+  assert.match(card.textContent, /Image unavailable/);
+  assert.equal(descendants(card).filter((element) => element.tag === "a").length, 0);
+  assert.match(card.textContent, /not currently available/);
+  assert.equal(participation.length, 0);
+});
+
+test("products without an image keep their distinct missing-image state", async function () {
+  const { card } = await openProduct({ imageUrl: "" });
+  assert.equal(descendants(card).filter((element) => element.tag === "img").length, 0);
+  assert.match(card.textContent, /Product information available/);
+  assert.doesNotMatch(card.textContent, /Image unavailable/);
+});
+
 test("client validates each trusted possibility and skips malformed entries individually", function () {
   assert.deepEqual(getValidCustomerPossibilities([
     possibility(), possibility({ possibilityId: "" }), possibility({ participationAction: "Book" }),
