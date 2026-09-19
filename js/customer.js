@@ -316,6 +316,7 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
         const controls = document.createElement("div"); controls.className = "customer-product-controls";
         const detailButton = document.createElement("button"); detailButton.type = "button"; detailButton.className = "customer-product-detail-button"; detailButton.textContent = "View details";
         const details = document.createElement("div"); details.className = "customer-product-details"; details.hidden = true;
+        addText(document, details, "p", "customer-product-detail-description", product.description);
         addText(document, details, "p", "customer-product-detail-trust", "This product is shown because its business-provided information connects to your current request. Viewing it is not recorded as interest or a purchase.");
         if (product.availability !== "unavailable" && href) {
           const continueAction = document.createElement("a"); continueAction.className = "customer-product-continue-action"; continueAction.href = href;
