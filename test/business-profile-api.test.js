@@ -135,9 +135,13 @@ test("a signed-in user can create a brand-new business and receive first ownersh
   });
   assert.equal(result.response.statusCode, 204);
   assert.deepEqual(result.savedProfiles, []);
-  assert.deepEqual(result.createdBusinesses, [{
-    identity: "verified-owner", profile: { ...profile, businessId: "new-business" }
-  }]);
+  assert.equal(result.createdBusinesses.length, 1);
+  assert.equal(result.createdBusinesses[0].identity, "verified-owner");
+  const createdProfile = result.createdBusinesses[0].profile;
+  assert.deepEqual(
+    { ...createdProfile, informationStatus: { ...createdProfile.informationStatus, ownerConfirmedAt: Boolean(createdProfile.informationStatus.ownerConfirmedAt) } },
+    { ...profile, businessId: "new-business", products: [], informationStatus: { status: "business-provided", source: "business-owner", ownerConfirmedAt: true } }
+  );
   assert.equal(result.identityCalls.length, 1);
   assert.equal(result.identityCalls[0], result.request);
 });
