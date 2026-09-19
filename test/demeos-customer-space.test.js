@@ -26,10 +26,10 @@ test("the official logo asset and only the official brand line remain", function
 test("intention nodes retain native semantics and spatial-to-linear responsive rules", function () {
   assert.match(customer, /<fieldset>[\s\S]*?<legend class="visually-hidden"/);
   assert.match(css, /\.customer-intention-option\{[^}]*position:absolute/);
-  assert.match(css, /@media\\(max-width:900px\\)/);
-  assert.match(css, /@media\\(max-width:680px\\)[\\s\\S]*?grid-template-columns:repeat/);
-  assert.match(css, /@media\\(max-width:680px\\)[\\s\\S]*?grid-template-columns:1fr/);
-  assert.match(css, /@media\\(prefers-reduced-motion:reduce\\)/);
+  assert.match(css, /@media\(max-width:900px\)/);
+  assert.match(css, /@media\(max-width:680px\)[\s\S]*?grid-template-columns:repeat/);
+  assert.match(css, /@media\(max-width:680px\)[\s\S]*?grid-template-columns:1fr/);
+  assert.match(css, /@media\(prefers-reduced-motion:reduce\)/);
 });
 
 test("the header remains in document flow and reserves usable content height", function () {
