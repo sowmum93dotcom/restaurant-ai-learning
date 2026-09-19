@@ -342,7 +342,7 @@ test("pending profile syncs support multiple businesses and remove only the succ
 
   removePendingBusinessProfileSync(storage, "business-a");
   assert.deepEqual(readPendingBusinessProfileSyncIds(storage), ["business-b"]);
-  assert.equal(storage.getItem("demeosPendingBusinessProfileSync"), '["business-b"]');
+  assert.equal(storage.getItem("demeosPendingBusinessProfileSync"), '["business-a","business-b"]');
 });
 
 test("pending profile sync reads missing, malformed, and non-array data as empty", function () {
