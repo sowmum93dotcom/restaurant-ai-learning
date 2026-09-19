@@ -507,7 +507,8 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
     if (imageProducts.length) {
       const preview = document.createElement("span"); preview.className = "customer-possibility-product-preview";
       imageProducts.slice(0, 3).forEach(function (product) {
-        const image = document.createElement("img"); image.src = product.imageUrl; image.alt = product.name; image.loading = "lazy";
+        const image = document.createElement("span"); image.className = "customer-possibility-product-image-ready";
+        image.setAttribute("aria-hidden", "true");
         preview.appendChild(image);
       });
       surface.appendChild(preview);
