@@ -47,7 +47,7 @@ test("Business Owner Overview provides a privacy-safe public-entry action below 
 test("Customer Experience has its clear public identity without an owner authentication boundary", function () {
   const html = read("customer.html");
   const source = read("js/customer.js");
-  assert.match(html, /<p class="customer-eyebrow">DEMEOS Customer Interface<\/p>/);
+  assert.match(html, /<p class="customer-eyebrow">Welcome to DEMEOS<\/p>/);
   assert.match(html, /<h1 id="customer-title" data-stage-copy="question"><\/h1>/);
   assert.match(source, /question: "What would you like to do today\?"/);
   assert.match(source, /trust: "Tell DEMEOS what you need\. You stay in control\."/);
