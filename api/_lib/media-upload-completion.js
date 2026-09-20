@@ -6,6 +6,11 @@ async function completeVerifiedMediaUpload({asset,businessId,assetId,uploadToken
  if(!token)return null;
  if((token.contentType||null)!==(asset.contentType||null))return null;
  if((token.sizeBytes||null)!==(asset.sizeBytes||null))return null;
+ if(asset.state==="processing"||asset.state==="ready"){
+  if(!asset.storageKey||asset.storageKey!==storageKey)return null;
+  return {...asset,uploadCompletionReplay:true};
+ }
+ if(asset.state!=="pending-upload")return null;
  const verified=await storageAdapter.verifyUpload(asset,storageKey);
  if(!verified)return null;
  return transitionMediaAsset(asset,businessId,"processing",{storageKey:verified.storageKey,etag:verified.etag||undefined},
