@@ -273,3 +273,16 @@ test("recommendations with required information cannot become marketing work pre
   assert.match(script, /businessSituation\.value = recommendation\.requiredInput\.join/);
   assert.match(script, /then ask DEMEOS to review again/);
 });
+
+
+test("recommendation provenance is resolved and business-checked before marketing generation", () => {
+  const script = fs.readFileSync(require.resolve("../js/script.js"), "utf8");
+  const generateStart = script.indexOf('generateBtn.addEventListener("click"');
+  const requestStart = script.indexOf('const text = await requestCampaign', generateStart);
+  const provenanceStart = script.indexOf('const recommendationDecision = selectedRecommendationDecision ? await selectedRecommendationDecision : null;', generateStart);
+  const businessCheck = script.indexOf('recommendationDecision.businessId !== profile.businessId', generateStart);
+  assert.ok(provenanceStart > generateStart && provenanceStart < requestStart);
+  assert.ok(businessCheck > provenanceStart && businessCheck < requestStart);
+  assert.match(script.slice(generateStart, requestStart), /selectedRecommendationDecision = null/);
+  assert.match(script, /This recommendation belongs to a different business/);
+});
