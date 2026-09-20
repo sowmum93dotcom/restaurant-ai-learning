@@ -558,16 +558,25 @@ function createPersistenceRepository(database) {
            WHERE status = 'running' AND claimed_at < NOW() - ($2::text || ' minutes')::interval
            ORDER BY claimed_at ASC, job_id ASC
            FOR UPDATE SKIP LOCKED LIMIT $3
+         ), recovered AS (
+           UPDATE demeos_media_processing_jobs j SET
+             status = CASE WHEN j.attempts < $1 THEN 'queued' ELSE 'failed' END,
+             available_at = CASE WHEN j.attempts < $1 THEN NOW() ELSE j.available_at END,
+             claimed_at = NULL, completed_at = NULL,
+             last_error = 'Media worker lease expired before completion.', updated_at = NOW()
+           FROM stale WHERE j.job_id = stale.job_id
+           RETURNING j.job_id, j.asset_id, j.business_id, j.status, j.attempts
+         ), failed_assets AS (
+           UPDATE demeos_business_media_assets a SET
+             asset = jsonb_set(jsonb_set(a.asset, '{state}', '"failed"'::jsonb, true),
+               '{failureReason}', '"Media processing could not be completed."'::jsonb, true),
+             updated_at = NOW()
+           FROM recovered r
+           WHERE r.status = 'failed' AND a.business_id = r.business_id AND a.asset_id = r.asset_id
+             AND a.asset->>'state' = 'processing'
+           RETURNING a.asset_id
          )
-         UPDATE demeos_media_processing_jobs j SET
-           status = CASE WHEN j.attempts < $1 THEN 'queued' ELSE 'failed' END,
-           available_at = CASE WHEN j.attempts < $1 THEN NOW() ELSE j.available_at END,
-           claimed_at = NULL,
-           completed_at = NULL,
-           last_error = 'Media worker lease expired before completion.',
-           updated_at = NOW()
-         FROM stale WHERE j.job_id = stale.job_id
-         RETURNING j.job_id, j.asset_id, j.business_id, j.status, j.attempts`,
+         SELECT r.* FROM recovered r LEFT JOIN failed_assets f ON f.asset_id = r.asset_id`,
         [safeMaxAttempts, safeLeaseMinutes, safeLimit]);
       return result.rows;
     },
