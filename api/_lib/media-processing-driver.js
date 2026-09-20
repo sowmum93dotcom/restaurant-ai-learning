@@ -10,7 +10,8 @@ function createHttpMediaProcessingDrivers({baseUrl,token,fetchImpl=globalThis.fe
    if(!response.ok)return null;return await response.json();
   }catch{return null;}finally{clearTimeout(timer);}
  }
- const source=(context)=>context&&typeof context.sourceUrl==="string"&&/^https:\/\//i.test(context.sourceUrl)?{sourceUrl:context.sourceUrl,sourceExpiresAt:context.sourceExpiresAt}:{};\n const inspect=(kind)=>(asset,context)=>call("/inspect/"+kind,{assetId:asset.assetId,businessId:asset.businessId,storageKey:asset.storageKey,contentType:asset.contentType,...source(context)});
+ const source=(context)=>context&&typeof context.sourceUrl==="string"&&/^https:\/\//i.test(context.sourceUrl)?{sourceUrl:context.sourceUrl,sourceExpiresAt:context.sourceExpiresAt}:{};
+ const inspect=(kind)=>(asset,context)=>call("/inspect/"+kind,{assetId:asset.assetId,businessId:asset.businessId,storageKey:asset.storageKey,contentType:asset.contentType,...source(context)});
  return{
   inspectImage:inspect("image"),inspectVideo:inspect("video"),
   optimizeImage:(asset,inspected,context)=>call("/optimize/image",{assetId:asset.assetId,businessId:asset.businessId,storageKey:asset.storageKey,inspected,...source(context)}),
