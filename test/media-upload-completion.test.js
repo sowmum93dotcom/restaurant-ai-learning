@@ -18,3 +18,12 @@ test("completion fails closed for wrong business expired token or storage mismat
  const bad=createMediaStorageAdapter({async createUpload(){return null;},async verifyUpload(){return{exists:true,storageKey:key,contentType:"image/png",sizeBytes:1234};}});
  assert.equal(await completeVerifiedMediaUpload({asset,businessId:"business-a",assetId:"media-1",uploadToken:session.uploadToken,storageKey:key,storageAdapter:bad,now}),null);
 }));
+
+test("verified completion replay is idempotent only for the same stored object",()=>configured(async()=>{
+ const now=Date.parse("2026-09-20T09:01:00Z"),session=createMediaUploadSession({...asset,now}),key=storageKeyFor(asset);
+ const adapter=createMediaStorageAdapter({async createUpload(){return null;},async verifyUpload(){throw new Error("replay must not re-verify storage");}});
+ const processing={...asset,state:"processing",storageKey:key,etag:"etag-1"};
+ const replay=await completeVerifiedMediaUpload({asset:processing,businessId:"business-a",assetId:"media-1",uploadToken:session.uploadToken,storageKey:key,storageAdapter:adapter,now});
+ assert.equal(replay.state,"processing");assert.equal(replay.uploadCompletionReplay,true);
+ assert.equal(await completeVerifiedMediaUpload({asset:processing,businessId:"business-a",assetId:"media-1",uploadToken:session.uploadToken,storageKey:key+"/wrong",storageAdapter:adapter,now}),null);
+}));

@@ -23,7 +23,7 @@ module.exports=async function handler(req,res){
    const processing=await completeVerifiedMediaUpload({asset:current,businessId,assetId,
     uploadToken:req.body.uploadToken,storageKey:req.body.storageKey,storageAdapter:storage});
    if(!processing)return res.status(409).json({error:"The uploaded media could not be verified."});
-   const handoff=await enqueueVerifiedMediaForProcessing(repository,processing);
+   if(processing.uploadCompletionReplay){\n    const processingStatus=processing.state==="ready"?"completed":"queued";\n    const asset={...processing};delete asset.uploadCompletionReplay;\n    return res.status(200).json({asset,processingStatus,replayed:true});\n   }\n   const handoff=await enqueueVerifiedMediaForProcessing(repository,processing);
    if(!handoff)return res.status(503).json({error:"Media processing could not be queued."});
    return res.status(202).json({asset:handoff.asset||processing,processingStatus:"queued"});
   }
