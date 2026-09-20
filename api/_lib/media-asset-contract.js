@@ -31,6 +31,8 @@ function normalizeMediaAsset(asset, businessId) {
   const height = normalizePositiveInteger(asset.height); if (height) normalized.height = height;
   const durationSeconds = typeof asset.durationSeconds === "number" && asset.durationSeconds > 0 ? asset.durationSeconds : null;
   if (durationSeconds) { if (kind !== "video" || durationSeconds > MAX_VIDEO_DURATION_SECONDS) return null; normalized.durationSeconds = durationSeconds; }
+  const storageKey = normalizeText(asset.storageKey); if (storageKey) normalized.storageKey = storageKey;
+  const etag = normalizeText(asset.etag); if (etag) normalized.etag = etag;
   const deliveryUrl = normalizeText(asset.deliveryUrl);
   if (deliveryUrl) { if (!isHttpsUrl(deliveryUrl)) return null; normalized.deliveryUrl = deliveryUrl; }
   const createdAt = normalizeText(asset.createdAt); if (createdAt) normalized.createdAt = createdAt;
