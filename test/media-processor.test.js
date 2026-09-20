@@ -1,7 +1,9 @@
 const test=require("node:test"),assert=require("node:assert/strict");
 const {createMediaProcessor}=require("../api/_lib/media-processor.js");
 const image={assetId:"i1",businessId:"b1",kind:"image",state:"processing",storageKey:"businesses/b1/media/i1/original"};
-const video={assetId:"v1",businessId:"b1",kind:"video",state:"processing",storageKey:"businesses/b1/media/v1/original"};\nconst imageContext={outputDestinations:[{role:"master",storageKey:"businesses/b1/media/i1/processed/master.webp"},{role:"customer",storageKey:"businesses/b1/media/i1/processed/customer.webp"}]};\nconst videoContext={outputDestinations:[{role:"master",storageKey:"businesses/b1/media/v1/processed/master.mp4"},{role:"customer",storageKey:"businesses/b1/media/v1/processed/customer.mp4"}]};
+const video={assetId:"v1",businessId:"b1",kind:"video",state:"processing",storageKey:"businesses/b1/media/v1/original"};
+const imageContext={outputDestinations:[{role:"master",storageKey:"businesses/b1/media/i1/processed/master.webp"},{role:"customer",storageKey:"businesses/b1/media/i1/processed/customer.webp"}]};
+const videoContext={outputDestinations:[{role:"master",storageKey:"businesses/b1/media/v1/processed/master.mp4"},{role:"customer",storageKey:"businesses/b1/media/v1/processed/customer.mp4"}]};
 test("image processor inspects actual media before optimization",async()=>{
  const calls=[];const p=createMediaProcessor({
   inspectImage:async()=>{calls.push("inspect");return{contentType:"image/jpeg",width:1600,height:1200};},
