@@ -262,3 +262,14 @@ test("recommendation request checks trusted onboarding readiness before calling 
   assert.match(fs.readFileSync(require.resolve("../js/script.js"), "utf8"), /Before DEMEOS recommends marketing work, complete:/);
   assert.match(fs.readFileSync(require.resolve("../js/script.js"), "utf8"), /showWorkspaceView\("business-profile"\)/);
 });
+
+
+test("recommendations with required information cannot become marketing work prematurely", () => {
+  const script = fs.readFileSync(require.resolve("../js/script.js"), "utf8");
+  assert.match(script, /const hasRequiredInput = Array\.isArray\(recommendation\.requiredInput\) && recommendation\.requiredInput\.length > 0/);
+  assert.match(script, /use\.disabled = hasRequiredInput/);
+  assert.match(script, /DEMEOS needs the required information above before this recommendation can become marketing work\./);
+  assert.match(script, /Complete Required Information/);
+  assert.match(script, /businessSituation\.value = recommendation\.requiredInput\.join/);
+  assert.match(script, /then ask DEMEOS to review again/);
+});
