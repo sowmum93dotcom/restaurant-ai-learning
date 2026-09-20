@@ -1,7 +1,6 @@
 const {getRepository}=require("./_lib/persistence.js");
 const {authorizeMediaWorker}=require("./_lib/media-worker-authorization.js");
-const {createMediaWorker}=require("./_lib/media-worker.js");
-function getDrivers(){return null;}
+const {createMediaWorker}=require("./_lib/media-worker.js");\nconst {getConfiguredMediaProcessingDrivers}=require("./_lib/media-processing-driver.js");\nfunction getDrivers(){return getConfiguredMediaProcessingDrivers();}
 module.exports=async function handler(req,res){
  if(req.method!=="POST"){res.setHeader("Allow","POST");return res.status(405).json({error:"Method not allowed"});}
  if(!authorizeMediaWorker(req))return res.status(401).json({error:"Unauthorized."});
