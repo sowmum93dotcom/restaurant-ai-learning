@@ -1339,9 +1339,36 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     return data.campaign;
   }
 
+  function getMarketingReadiness(profile) {
+    const labels = { name: "Business Name", type: "Business Type", location: "Business Location / Service Area",
+      productsServices: "Products & services", brandVoice: "Brand Voice", targetCustomer: "Target Customer",
+      goal: "Primary Marketing Goal" };
+    if (!profile || typeof profile !== "object") return { ready: false, missing: Object.values(labels) };
+    const missing = Object.keys(labels).filter(function (key) {
+      return typeof profile[key] !== "string" || !profile[key].trim();
+    }).map(function (key) { return labels[key]; });
+    if (!profile.customerContinuation || !Array.isArray(profile.customerContinuation.routes) || !profile.customerContinuation.routes.length) {
+      missing.push("Customer continuation route");
+    }
+    if (!profile.fulfilment || !Array.isArray(profile.fulfilment.methods) || !profile.fulfilment.methods.length) {
+      missing.push("Customer fulfilment method");
+    }
+    return { ready: missing.length === 0, missing };
+  }
+
+  function guideOwnerToCompleteProfile(readiness) {
+    clearRecommendations();
+    recommendationsStatus.textContent = "Before DEMEOS recommends marketing work, complete: " + readiness.missing.join(", ") + ".";
+    showWorkspaceView("business-profile");
+    const profileHeading = byId("business-profile-heading");
+    if (profileHeading && typeof profileHeading.focus === "function") profileHeading.focus();
+  }
+
   recommendationsBtn.addEventListener("click", async function () {
     const profile = activeProfile();
     if (!profile || addingBusiness) { alert("Please complete and save your Business Manager Profile before requesting recommendations."); return; }
+    const readiness = getMarketingReadiness(profile);
+    if (!readiness.ready) { guideOwnerToCompleteProfile(readiness); return; }
     const requestedBusinessId = profile.businessId;
     clearRecommendations(); recommendationsBtn.disabled = true;
     recommendationsStatus.textContent = "DEMEOS is reviewing your business...";
