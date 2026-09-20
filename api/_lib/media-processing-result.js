@@ -1,3 +1,4 @@
+const { normalizeMediaDerivatives }=require("./media-derivative-contract.js");
 const { normalizeMediaAsset }=require("./media-asset-contract.js");
 function normalizeProcessingResult(asset,result){
  if(!asset||asset.state!=="processing"||!result||result.success!==true)return null;
@@ -9,6 +10,8 @@ function normalizeProcessingResult(asset,result){
  if(!candidate)return null;
  if(asset.kind==="image"&&(!candidate.width||!candidate.height))return null;
  if(asset.kind==="video"&&(!candidate.width||!candidate.height||!candidate.durationSeconds))return null;
- return updates;
+ const derivatives=result.derivatives===undefined?[]:normalizeMediaDerivatives(asset,result.derivatives);
+ if(result.derivatives!==undefined&&!derivatives)return null;
+ return {...updates,...(derivatives&&derivatives.length?{derivatives}:{})};
 }
 module.exports={normalizeProcessingResult};
