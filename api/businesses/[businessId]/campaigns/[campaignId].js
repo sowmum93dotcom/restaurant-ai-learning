@@ -3,6 +3,7 @@ const {
   authorizeBusinessOwnerRequest
 } = require("../../../_lib/demeos-business-owner-authorization.js");
 const { DEMEOS_ACTIONS } = require("../../../_lib/demeos-rules.js");
+const { normalizeMarketingMediaLinks } = require("../../../_lib/marketing-media-link.js");
 const {
   getCapabilityForRecommendationType
 } = require("../../../_lib/capability-registry.js");
@@ -102,6 +103,13 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: "DEMEOS received invalid campaign data." });
     }
     let campaignForPersistence = { ...campaign, campaignTypeLabel: campaignCapability.ownerFacingName };
+    if (campaign.media !== undefined) {
+      const requestedIds = Array.isArray(campaign.media) ? campaign.media.map(function (link) { return link && link.assetId; }).filter(Boolean) : [];
+      const ownedAssets = await repository.getBusinessMediaAssetsByIds(businessId, requestedIds);
+      const trustedMedia = normalizeMarketingMediaLinks(campaign.media, businessId, ownedAssets);
+      if (!trustedMedia) return res.status(409).json({ error: "Campaign media could not be verified for this business." });
+      campaignForPersistence.media = trustedMedia;
+    }
     if (campaign.recommendationDecisionId) {
       const record = await repository.getKnownBusiness(businessId);
       const decisions = record && Array.isArray(record.recommendationDecisions) ? record.recommendationDecisions : [];
