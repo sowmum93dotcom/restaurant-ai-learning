@@ -253,3 +253,12 @@ test("recommendation cards render structured contract fields without raw JSON an
     ["Use This Recommendation", "Modify", "Not for me"]);
   assert.doesNotMatch(card.children[6].children[1].textContent, /[{}\[\]"]/);
 });
+
+
+test("recommendation request checks trusted onboarding readiness before calling DEMEOS", () => {
+  assert.match(fs.readFileSync(require.resolve("../js/script.js"), "utf8"), /function getMarketingReadiness\(profile\)/);
+  assert.match(fs.readFileSync(require.resolve("../js/script.js"), "utf8"), /Customer continuation route/);
+  assert.match(fs.readFileSync(require.resolve("../js/script.js"), "utf8"), /Customer fulfilment method/);
+  assert.match(fs.readFileSync(require.resolve("../js/script.js"), "utf8"), /Before DEMEOS recommends marketing work, complete:/);
+  assert.match(fs.readFileSync(require.resolve("../js/script.js"), "utf8"), /showWorkspaceView\("business-profile"\)/);
+});
