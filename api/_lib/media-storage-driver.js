@@ -24,14 +24,43 @@ function createHttpObjectStorageDriver({baseUrl,token,fetchImpl=globalThis.fetch
   }
  };
 }
+async function loadVercelBlobSdk(loader){
+ try{return await (loader?loader():import("@vercel/blob"));}catch{return null;}
+}
+function createVercelBlobStorageDriver({token,blobSdkLoader}={}){
+ const secret=clean(token);if(!secret)return null;
+ return{
+  async createUpload({storageKey,contentType,sizeBytes,expiresAt}){
+   const sdk=await loadVercelBlobSdk(blobSdkLoader);if(!sdk||typeof sdk.issueSignedToken!=="function"||typeof sdk.presignUrl!=="function")return null;
+   const validUntil=Date.parse(expiresAt);if(!Number.isFinite(validUntil)||validUntil<=Date.now())return null;
+   try{
+    const signed=await sdk.issueSignedToken({pathname:storageKey,operations:["put"],validUntil,
+     ...(contentType?{allowedContentTypes:[contentType]}:{}),...(sizeBytes?{maximumSizeInBytes:Number(sizeBytes)}:{}),token:secret});
+    const result=await sdk.presignUrl(signed,{operation:"put",pathname:storageKey,access:"private",validUntil,
+     ...(contentType?{allowedContentTypes:[contentType]}:{}),...(sizeBytes?{maximumSizeInBytes:Number(sizeBytes)}:{}),addRandomSuffix:false,allowOverwrite:false});
+    return result&&/^https:\/\//i.test(result.presignedUrl||"")?{storageKey,uploadUrl:result.presignedUrl}:null;
+   }catch{return null;}
+  },
+  async verifyUpload({storageKey}){
+   const sdk=await loadVercelBlobSdk(blobSdkLoader);if(!sdk||typeof sdk.head!=="function")return null;
+   try{
+    const result=await sdk.head(storageKey,{access:"private",token:secret});
+    if(!result)return null;
+    return{exists:true,storageKey,contentType:result.contentType||null,sizeBytes:Number(result.size)||null,etag:clean(result.etag)};
+   }catch{return null;}
+  }
+ };
+}
+
 function getConfiguredMediaStorageAdapter(env=process.env,fetchImpl=globalThis.fetch){
  const provider=clean(env.DEMEOS_MEDIA_STORAGE_PROVIDER)||"http";
- if(provider!=="http")return null;
- const driver=createHttpObjectStorageDriver({baseUrl:env.DEMEOS_MEDIA_STORAGE_URL,token:env.DEMEOS_MEDIA_STORAGE_TOKEN,fetchImpl});
+ const driver=provider==="vercel-blob"
+  ?createVercelBlobStorageDriver({token:env.BLOB_READ_WRITE_TOKEN})
+  :provider==="http"?createHttpObjectStorageDriver({baseUrl:env.DEMEOS_MEDIA_STORAGE_URL,token:env.DEMEOS_MEDIA_STORAGE_TOKEN,fetchImpl}):null;
  return driver?createMediaStorageAdapter(driver):null;
 }
 function getMediaStorageConfiguration(env=process.env){
  const provider=clean(env.DEMEOS_MEDIA_STORAGE_PROVIDER)||"http";
- return{provider,configured:provider==="http"&&Boolean(clean(env.DEMEOS_MEDIA_STORAGE_URL)&&clean(env.DEMEOS_MEDIA_STORAGE_TOKEN))};
+ return{provider,configured:provider==="vercel-blob"?Boolean(clean(env.BLOB_READ_WRITE_TOKEN)):provider==="http"&&Boolean(clean(env.DEMEOS_MEDIA_STORAGE_URL)&&clean(env.DEMEOS_MEDIA_STORAGE_TOKEN))};
 }
-module.exports={createHttpObjectStorageDriver,getConfiguredMediaStorageAdapter,getMediaStorageConfiguration};
+module.exports={createHttpObjectStorageDriver,createVercelBlobStorageDriver,getConfiguredMediaStorageAdapter,getMediaStorageConfiguration};
