@@ -11,11 +11,12 @@ function createHttpMediaProcessingDrivers({baseUrl,token,fetchImpl=globalThis.fe
   }catch{return null;}finally{clearTimeout(timer);}
  }
  const source=(context)=>context&&typeof context.sourceUrl==="string"&&/^https:\/\//i.test(context.sourceUrl)?{sourceUrl:context.sourceUrl,sourceExpiresAt:context.sourceExpiresAt}:{};
+ const outputs=(context)=>context&&Array.isArray(context.outputDestinations)?{outputDestinations:context.outputDestinations}:{};
  const inspect=(kind)=>(asset,context)=>call("/inspect/"+kind,{assetId:asset.assetId,businessId:asset.businessId,storageKey:asset.storageKey,contentType:asset.contentType,...source(context)});
  return{
   inspectImage:inspect("image"),inspectVideo:inspect("video"),
-  optimizeImage:(asset,inspected,context)=>call("/optimize/image",{assetId:asset.assetId,businessId:asset.businessId,storageKey:asset.storageKey,inspected,...source(context)}),
-  transcodeVideo:(asset,inspected,context)=>call("/transcode/video",{assetId:asset.assetId,businessId:asset.businessId,storageKey:asset.storageKey,inspected,...source(context)})
+  optimizeImage:(asset,inspected,context)=>call("/optimize/image",{assetId:asset.assetId,businessId:asset.businessId,storageKey:asset.storageKey,inspected,...source(context),...outputs(context)}),
+  transcodeVideo:(asset,inspected,context)=>call("/transcode/video",{assetId:asset.assetId,businessId:asset.businessId,storageKey:asset.storageKey,inspected,...source(context),...outputs(context)})
  };
 }
 function getConfiguredMediaProcessingDrivers(env=process.env,fetchImpl=globalThis.fetch){

@@ -50,6 +50,15 @@ function createVercelBlobStorageDriver({token,blobSdkLoader}={}){
     return result&&/^https:\/\//i.test(result.presignedUrl||"")?{storageKey,readUrl:result.presignedUrl,expiresAt}:null;
    }catch{return null;}
   },
+  async createProcessingWrite({storageKey,contentType,maximumSizeInBytes,expiresAt}){
+   const sdk=await loadVercelBlobSdk(blobSdkLoader);if(!sdk||typeof sdk.issueSignedToken!=="function"||typeof sdk.presignUrl!=="function")return null;
+   const validUntil=Date.parse(expiresAt),max=Number(maximumSizeInBytes);if(!Number.isFinite(validUntil)||validUntil<=Date.now()||!clean(storageKey)||!clean(contentType)||!Number.isFinite(max)||max<=0)return null;
+   try{
+    const signed=await sdk.issueSignedToken({pathname:storageKey,operations:["put"],validUntil,allowedContentTypes:[contentType],maximumSizeInBytes:max,token:secret});
+    const result=await sdk.presignUrl(signed,{operation:"put",pathname:storageKey,access:"private",validUntil,allowedContentTypes:[contentType],maximumSizeInBytes:max,addRandomSuffix:false,allowOverwrite:true});
+    return result&&/^https:\/\//i.test(result.presignedUrl||"")?{storageKey,uploadUrl:result.presignedUrl,contentType,expiresAt}:null;
+   }catch{return null;}
+  },
   async verifyUpload({storageKey}){
    const sdk=await loadVercelBlobSdk(blobSdkLoader);if(!sdk||typeof sdk.head!=="function")return null;
    try{
