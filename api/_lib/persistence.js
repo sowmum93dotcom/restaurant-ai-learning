@@ -518,6 +518,26 @@ function createPersistenceRepository(database) {
       return result.rows.length ? result.rows[0] : null;
     },
 
+    async retryMediaProcessingJob(jobId, errorMessage = null, maxAttempts = 5) {
+      if (!jobId) return null;
+      await database.ensureSchema();
+      const safeMaxAttempts = Math.max(1, Math.min(10, Number(maxAttempts) || 5));
+      const safeError = isNonEmptyString(errorMessage) ? errorMessage.trim().slice(0, 500) : null;
+      const result = await database.query(
+        `UPDATE demeos_media_processing_jobs SET
+           status = CASE WHEN attempts < $4 THEN 'queued' ELSE 'failed' END,
+           available_at = CASE WHEN attempts < $4
+             THEN NOW() + (LEAST(300, POWER(2, GREATEST(0, attempts - 1)) * 5)::text || ' seconds')::interval
+             ELSE available_at END,
+           completed_at = NULL,
+           last_error = $3,
+           updated_at = NOW()
+         WHERE job_id = $1 AND status = 'running' AND $2 = FALSE
+         RETURNING job_id, asset_id, business_id, status, attempts, available_at, last_error`,
+        [jobId, false, safeError, safeMaxAttempts]);
+      return result.rows.length ? result.rows[0] : null;
+    },
+
     async finishMediaProcessingJob(jobId, succeeded, errorMessage = null) {
       if (!jobId) return null;
       await database.ensureSchema();

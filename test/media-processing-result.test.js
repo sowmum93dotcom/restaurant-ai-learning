@@ -27,8 +27,8 @@ test("invalid processor output fails job and never publishes media",async functi
  let saved=false,finished;const repo={
   async claimNextMediaProcessingJob(){return{job_id:10,asset_id:"a1",business_id:"b1",attempts:1};},
   async getBusinessMediaAsset(){return image;},async saveBusinessMediaAsset(){saved=true;},
-  async finishMediaProcessingJob(...x){finished=x;}
+  async retryMediaProcessingJob(){return {status:"failed"};}, async finishMediaProcessingJob(...x){finished=x;}
  };
  const out=await processNextMediaJob(repo,async()=>({success:true,deliveryUrl:"https://cdn.example/a.webp"}));
- assert.equal(out.status,"failed");assert.equal(saved,false);assert.equal(finished[1],false);
+ assert.equal(out.status,"failed");assert.equal(saved,true);assert.equal(finished[1],false);
 });
