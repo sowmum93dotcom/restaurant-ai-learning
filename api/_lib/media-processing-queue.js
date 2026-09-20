@@ -16,6 +16,10 @@ async function processNextMediaJob(repository,processor,{maxAttempts=5}={}){
  const job=await repository.claimNextMediaProcessingJob(maxAttempts); if(!job)return null;
  try{
   const asset=await repository.getBusinessMediaAsset(job.business_id,job.asset_id);
+  if(asset&&asset.state==="ready"){
+   await repository.finishMediaProcessingJob(job.job_id,true);
+   return {jobId:String(job.job_id),assetId:job.asset_id,businessId:job.business_id,status:"completed",asset,recoveredCompletion:true};
+  }
   if(!asset||asset.state!=="processing")throw new Error("Media asset is not available for processing.");
   const result=await processor(asset,{jobId:String(job.job_id),attempt:job.attempts});
   if(!result||result.success!==true)throw new Error(result&&result.error||"Media processor did not complete.");
