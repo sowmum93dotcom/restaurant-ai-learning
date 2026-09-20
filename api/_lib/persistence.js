@@ -547,6 +547,31 @@ function createPersistenceRepository(database) {
         completed:Number(row.completed)||0,staleRunning:Number(row.stale_running)||0,delayedQueued:Number(row.delayed_queued)||0};
     },
 
+    async recoverStaleMediaProcessingJobs(maxAttempts = 5, leaseMinutes = 15, limit = 50) {
+      await database.ensureSchema();
+      const safeMaxAttempts = Math.max(1, Math.min(10, Number(maxAttempts) || 5));
+      const safeLeaseMinutes = Math.max(5, Math.min(60, Number(leaseMinutes) || 15));
+      const safeLimit = Math.max(1, Math.min(200, Number(limit) || 50));
+      const result = await database.query(
+        `WITH stale AS (
+           SELECT job_id FROM demeos_media_processing_jobs
+           WHERE status = 'running' AND claimed_at < NOW() - ($2::text || ' minutes')::interval
+           ORDER BY claimed_at ASC, job_id ASC
+           FOR UPDATE SKIP LOCKED LIMIT $3
+         )
+         UPDATE demeos_media_processing_jobs j SET
+           status = CASE WHEN j.attempts < $1 THEN 'queued' ELSE 'failed' END,
+           available_at = CASE WHEN j.attempts < $1 THEN NOW() ELSE j.available_at END,
+           claimed_at = NULL,
+           completed_at = NULL,
+           last_error = 'Media worker lease expired before completion.',
+           updated_at = NOW()
+         FROM stale WHERE j.job_id = stale.job_id
+         RETURNING j.job_id, j.asset_id, j.business_id, j.status, j.attempts`,
+        [safeMaxAttempts, safeLeaseMinutes, safeLimit]);
+      return result.rows;
+    },
+
     async reconcileUnqueuedProcessingMedia(limit = 50) {
       await database.ensureSchema();
       const safeLimit = Math.min(200, Math.max(1, Number.isInteger(limit) ? limit : 50));
