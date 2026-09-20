@@ -4,7 +4,7 @@ function positiveInt(value){return Number.isInteger(value)&&value>0;}
 function expectedOutputs(context){return new Map(Array.isArray(context&&context.outputDestinations)?context.outputDestinations.map(x=>[x.role,x.storageKey]):[]);}
 function outputMatches(asset,context,optimized){
  const expected=expectedOutputs(context);if(!expected.size||!optimized||optimized.storageKey!==expected.get("master"))return false;
- if(!Array.isArray(optimized.derivatives)||!optimized.derivatives.length)return false;
+ if(!outputMatches(asset,context,optimized))return false;
  return optimized.derivatives.every(d=>d&&expected.has(d.role)&&d.storageKey===expected.get(d.role));
 }
 function createMediaProcessor({inspectImage,inspectVideo,optimizeImage,transcodeVideo}={}){
