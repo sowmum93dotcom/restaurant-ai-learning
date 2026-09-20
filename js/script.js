@@ -1314,7 +1314,15 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
         }
         addingBusiness = false;
         removePendingBusinessProfileSync(localStorage, result.profile.businessId);
-        alert("Business Profile saved successfully.");
+        if (wasAddingBusiness) {
+          clearRecommendations();
+          clearBusinessSituation();
+          showWorkspaceView("recommends");
+          recommendationsStatus.textContent = "Your Business Profile is ready. DEMEOS can now review your business and recommend the first marketing action.";
+          if (typeof recommendationsBtn.focus === "function") recommendationsBtn.focus();
+        } else {
+          alert("Business Profile saved successfully.");
+        }
       } else {
         // Failed edits retain their existing retry marker. Failed creations are not
         // cached as owned businesses and therefore must not become selectable.
