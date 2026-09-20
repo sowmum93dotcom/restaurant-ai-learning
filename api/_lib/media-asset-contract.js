@@ -33,6 +33,7 @@ function normalizeMediaAsset(asset, businessId) {
   if (durationSeconds) { if (kind !== "video" || durationSeconds > MAX_VIDEO_DURATION_SECONDS) return null; normalized.durationSeconds = durationSeconds; }
   const storageKey = normalizeText(asset.storageKey); if (storageKey) normalized.storageKey = storageKey;
   const etag = normalizeText(asset.etag); if (etag) normalized.etag = etag;
+  if (Array.isArray(asset.derivatives) && asset.derivatives.length) normalized.derivatives = asset.derivatives.map(function (item) { return { ...item }; });
   const deliveryUrl = normalizeText(asset.deliveryUrl);
   if (deliveryUrl) { if (!isHttpsUrl(deliveryUrl)) return null; normalized.deliveryUrl = deliveryUrl; }
   const createdAt = normalizeText(asset.createdAt); if (createdAt) normalized.createdAt = createdAt;
@@ -46,7 +47,8 @@ function toPublicMediaAsset(asset, businessId) {
   return { assetId: normalized.assetId, kind: normalized.kind, deliveryUrl: normalized.deliveryUrl,
     ...(normalized.contentType ? { contentType: normalized.contentType } : {}),
     ...(normalized.width ? { width: normalized.width } : {}), ...(normalized.height ? { height: normalized.height } : {}),
-    ...(normalized.durationSeconds ? { durationSeconds: normalized.durationSeconds } : {}) };
+    ...(normalized.durationSeconds ? { durationSeconds: normalized.durationSeconds } : {}),
+    ...(normalized.derivatives ? { derivatives: normalized.derivatives.map(function (item) { return { ...item }; }) } : {}) };
 }
 function getMediaGuidance(asset) {
   const guidance = [];
