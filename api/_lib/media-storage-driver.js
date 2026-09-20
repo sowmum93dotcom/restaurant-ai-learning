@@ -41,6 +41,15 @@ function createVercelBlobStorageDriver({token,blobSdkLoader}={}){
     return result&&/^https:\/\//i.test(result.presignedUrl||"")?{storageKey,uploadUrl:result.presignedUrl}:null;
    }catch{return null;}
   },
+  async createProcessingRead({storageKey,expiresAt}){
+   const sdk=await loadVercelBlobSdk(blobSdkLoader);if(!sdk||typeof sdk.issueSignedToken!=="function"||typeof sdk.presignUrl!=="function")return null;
+   const validUntil=Date.parse(expiresAt);if(!Number.isFinite(validUntil)||validUntil<=Date.now())return null;
+   try{
+    const signed=await sdk.issueSignedToken({pathname:storageKey,operations:["get"],validUntil,token:secret});
+    const result=await sdk.presignUrl(signed,{operation:"get",pathname:storageKey,access:"private",validUntil,useCache:false});
+    return result&&/^https:\/\//i.test(result.presignedUrl||"")?{storageKey,readUrl:result.presignedUrl,expiresAt}:null;
+   }catch{return null;}
+  },
   async verifyUpload({storageKey}){
    const sdk=await loadVercelBlobSdk(blobSdkLoader);if(!sdk||typeof sdk.head!=="function")return null;
    try{
