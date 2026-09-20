@@ -4,6 +4,7 @@ const { authorizeBusinessOwnerRequest } = require("../../_lib/demeos-business-ow
 const { DEMEOS_ACTIONS } = require("../../_lib/demeos-rules.js");
 const { normalizeMediaAsset, getMediaGuidance } = require("../../_lib/media-asset-contract.js");
 const { createMediaUploadSession } = require("../../_lib/media-upload-session.js");
+const { getConfiguredMediaStorageAdapter } = require("../../_lib/media-storage-driver.js");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "GET" && req.method !== "POST") {
@@ -29,9 +30,7 @@ module.exports = async function handler(req, res) {
     if (!asset) return res.status(400).json({ error: "DEMEOS received invalid media information." });
     const saved = await repository.saveBusinessMediaAsset(businessId, asset);
     if (!saved) return res.status(409).json({ error: "Media asset could not be registered for this business." });
-    const uploadSession = createMediaUploadSession(saved);
-    return res.status(201).json({ asset: saved, guidance: getMediaGuidance(saved),
-      ...(uploadSession ? { uploadSession } : { uploadStatus: "storage-not-configured" }) });
+    const uploadSession = createMediaUploadSession(saved);\n    const storage = uploadSession ? getConfiguredMediaStorageAdapter() : null;\n    const storageUpload = storage ? await storage.createUpload(saved, uploadSession) : null;\n    return res.status(201).json({ asset: saved, guidance: getMediaGuidance(saved),\n      ...(uploadSession && storageUpload ? { uploadSession: { uploadToken: uploadSession.uploadToken, expiresAt: uploadSession.expiresAt, storageKey: storageUpload.storageKey, uploadUrl: storageUpload.uploadUrl } } : { uploadStatus: "storage-not-configured" }) });
   } catch (error) {
     console.error("Could not manage business media:", error);
     return res.status(500).json({ error: "DEMEOS could not manage business media." });
