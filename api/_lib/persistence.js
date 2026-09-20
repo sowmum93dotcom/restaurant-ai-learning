@@ -471,6 +471,15 @@ function createPersistenceRepository(database) {
       return result.rows.length ? result.rows[0].asset : null;
     },
 
+    async getBusinessMediaAsset(businessId, assetId) {
+      if (!isNonEmptyString(businessId) || !isNonEmptyString(assetId)) return null;
+      await database.ensureSchema();
+      const result = await database.query(
+        `SELECT asset FROM demeos_business_media_assets WHERE business_id = $1 AND asset_id = $2 LIMIT 1`,
+        [businessId, assetId]);
+      return result.rows.length ? result.rows[0].asset : null;
+    },
+
     async getBusinessMediaAssets(businessId, limit = 100) {
       if (!isNonEmptyString(businessId)) return [];
       await database.ensureSchema();
