@@ -265,6 +265,7 @@ test("recommendation request checks trusted onboarding readiness before calling 
 
 
 test("recommendations with required information cannot become marketing work prematurely", () => {
+  const script = fs.readFileSync(require.resolve("../js/script.js"), "utf8");
   assert.match(script, /const hasRequiredInput = Array\.isArray\(recommendation\.requiredInput\) && recommendation\.requiredInput\.length > 0/);
   assert.match(script, /use\.disabled = hasRequiredInput/);
   assert.match(script, /DEMEOS needs the required information above before this recommendation can become marketing work\./);
