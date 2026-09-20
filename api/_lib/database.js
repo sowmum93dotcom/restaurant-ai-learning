@@ -150,6 +150,22 @@ const SCHEMA_STATEMENTS = [
   )`,
   `CREATE INDEX IF NOT EXISTS demeos_business_media_assets_business_created_idx
     ON demeos_business_media_assets (business_id, created_at DESC)`,
+  `CREATE TABLE IF NOT EXISTS demeos_media_processing_jobs (
+    job_id BIGSERIAL PRIMARY KEY,
+    asset_id TEXT NOT NULL REFERENCES demeos_business_media_assets(asset_id),
+    business_id TEXT NOT NULL REFERENCES demeos_businesses(business_id),
+    status TEXT NOT NULL DEFAULT 'queued' CHECK (status IN ('queued','running','completed','failed')),
+    attempts INTEGER NOT NULL DEFAULT 0,
+    available_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    claimed_at TIMESTAMPTZ NULL,
+    completed_at TIMESTAMPTZ NULL,
+    last_error TEXT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (asset_id)
+  )`,
+  `CREATE INDEX IF NOT EXISTS demeos_media_processing_jobs_queue_idx
+    ON demeos_media_processing_jobs (status, available_at, job_id)`,
   `CREATE TABLE IF NOT EXISTS demeos_customer_privacy_controls (
     trusted_customer_identity_id TEXT PRIMARY KEY,
     use_preferences_as_guidance BOOLEAN NOT NULL DEFAULT FALSE,
