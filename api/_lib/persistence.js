@@ -1,3 +1,4 @@
+const { resolveApprovedMarketingMedia } = require("./marketing-media-link.js");
 const { getDatabase } = require("./database.js");
 const {
   canPublishToDemeosCustomerExperience,
@@ -653,7 +654,11 @@ function createPersistenceRepository(database) {
             operationalAvailability: row.profile && row.profile.profileVersion >= 3 ? row.profile.operationalAvailability : undefined,
             products: row.profile && row.profile.profileVersion >= 4 ? row.profile.products : undefined,
             businessId: row.business_id,
-            informationSource: row.profile && row.profile.profileVersion >= 2 && row.profile.informationStatus && row.profile.informationStatus.status === "business-provided" ? "business-provided" : undefined
+            informationSource: row.profile && row.profile.profileVersion >= 2 && row.profile.informationStatus && row.profile.informationStatus.status === "business-provided" ? "business-provided" : undefined,
+            media: Array.isArray(row.campaign.media) && row.campaign.media.length ? resolveApprovedMarketingMedia(
+              row.campaign, row.business_id,
+              await this.getBusinessMediaAssetsByIds(row.business_id, row.campaign.media.map(function (link) { return link.assetId; }))
+            ) : []
           });
           if (!publicItem) continue;
           publicWork.push(publicItem);
