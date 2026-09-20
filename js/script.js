@@ -1347,11 +1347,13 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     const missing = Object.keys(labels).filter(function (key) {
       return typeof profile[key] !== "string" || !profile[key].trim();
     }).map(function (key) { return labels[key]; });
-    if (!profile.customerContinuation || !Array.isArray(profile.customerContinuation.routes) || !profile.customerContinuation.routes.length) {
-      missing.push("Customer continuation route");
-    }
-    if (!profile.fulfilment || !Array.isArray(profile.fulfilment.methods) || !profile.fulfilment.methods.length) {
-      missing.push("Customer fulfilment method");
+    if (profile.profileVersion >= 4) {
+      if (!profile.customerContinuation || !Array.isArray(profile.customerContinuation.routes) || !profile.customerContinuation.routes.length) {
+        missing.push("Customer continuation route");
+      }
+      if (!profile.fulfilment || !Array.isArray(profile.fulfilment.methods) || !profile.fulfilment.methods.length) {
+        missing.push("Customer fulfilment method");
+      }
     }
     return { ready: missing.length === 0, missing };
   }
