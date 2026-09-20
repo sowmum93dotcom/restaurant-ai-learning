@@ -53,7 +53,10 @@ function createVercelBlobStorageDriver({token,blobSdkLoader}={}){
 }
 
 function getConfiguredMediaStorageAdapter(env=process.env,fetchImpl=globalThis.fetch){
- const provider=clean(env.DEMEOS_MEDIA_STORAGE_PROVIDER)||"http";\n const driver=provider==="vercel-blob"\n  ?createVercelBlobStorageDriver({token:env.BLOB_READ_WRITE_TOKEN})\n  :provider==="http"?createHttpObjectStorageDriver({baseUrl:env.DEMEOS_MEDIA_STORAGE_URL,token:env.DEMEOS_MEDIA_STORAGE_TOKEN,fetchImpl}):null;
+ const provider=clean(env.DEMEOS_MEDIA_STORAGE_PROVIDER)||"http";
+ const driver=provider==="vercel-blob"
+  ?createVercelBlobStorageDriver({token:env.BLOB_READ_WRITE_TOKEN})
+  :provider==="http"?createHttpObjectStorageDriver({baseUrl:env.DEMEOS_MEDIA_STORAGE_URL,token:env.DEMEOS_MEDIA_STORAGE_TOKEN,fetchImpl}):null;
  return driver?createMediaStorageAdapter(driver):null;
 }
 function getMediaStorageConfiguration(env=process.env){
