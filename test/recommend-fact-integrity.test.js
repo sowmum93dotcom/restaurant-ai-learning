@@ -199,3 +199,19 @@ test("an explicitly supplied owner offer can be referenced as an existing fact",
   await context.module.exports({ method: "POST", body: { businessId: "business-a", businessProfile: profile, businessSituation: ownerSituation } }, response);
   assert.equal(response.statusCode, 200);
 });
+
+
+test("DEMEOS rejects duplicate recommendation actions even when each item is individually valid", async () => {
+  const repeated = recommendation(
+    "Tuesday Evening Social Awareness",
+    "Create social messaging about Mamma Pizza and quiet Tuesday evenings for the verified target customer.",
+    "Create a social media campaign for Mamma Pizza focused on quiet Tuesday evenings and attracting more local customers.",
+    "social",
+    "Social Media Campaign",
+    `This social campaign aims to support ${profile.goal} by encouraging customer interest in visiting on Tuesday evenings.`
+  );
+  const response = await call({ recommendations: [repeated, { ...repeated }, { ...repeated }] });
+  assert.equal(response.statusCode, 502);
+  assert.equal(response.body.recommendations, undefined);
+  assert.ok(response.body.validationDiagnostic.some((item) => item.reason === "duplicate-recommendations"));
+});
