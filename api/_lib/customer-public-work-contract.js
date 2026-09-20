@@ -84,6 +84,17 @@ function toPublicCustomerWorkItem(item) {
     if (products.length) publicItem.products = products;
   }
 
+  if (Array.isArray(item.media)) {
+    const media = item.media.filter(function (asset) {
+      return asset && typeof asset === "object" && ["image", "video"].includes(asset.kind) &&
+        ["primary", "supporting"].includes(asset.role) && /^https:\/\//i.test(asset.deliveryUrl || "");
+    }).slice(0, 10).map(function (asset) {
+      return { assetId: asset.assetId, kind: asset.kind, role: asset.role, deliveryUrl: asset.deliveryUrl,
+        ...(asset.contentType ? { contentType: asset.contentType } : {}) };
+    });
+    if (media.length) publicItem.media = media;
+  }
+
   const operational = item.operationalAvailability;
   if (operational && typeof operational === "object" && ["available", "limited", "unavailable", "contact"].includes(operational.status)) {
     publicItem.operationalAvailability = {

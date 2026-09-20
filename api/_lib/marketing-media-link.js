@@ -15,10 +15,18 @@ function normalizeMarketingMediaLinks(links,businessId,assets){
  if(out.filter(x=>x.role==="primary").length>1)return null;
  return out;
 }
+function selectCustomerMediaVariant(asset){
+ const derivatives=Array.isArray(asset&&asset.derivatives)?asset.derivatives:[];
+ return derivatives.find(d=>d&&d.role==="customer")||derivatives.find(d=>d&&d.role==="marketing")||null;
+}
 function resolveApprovedMarketingMedia(campaign,businessId,assets){
  if(!campaign||campaign.approvalStatus!=="Approved")return [];
  const links=normalizeMarketingMediaLinks(campaign.media,businessId,assets);if(!links)return [];
  const byId=new Map(assets.map(a=>[a.assetId,a]));
- return links.map(link=>({...link,...toPublicMediaAsset(byId.get(link.assetId),businessId)}));
+ return links.map(function(link){
+  const asset=byId.get(link.assetId),publicAsset=toPublicMediaAsset(asset,businessId),variant=selectCustomerMediaVariant(asset);
+  if(variant) return {...link,assetId:publicAsset.assetId,kind:publicAsset.kind,deliveryUrl:variant.deliveryUrl,...(variant.contentType?{contentType:variant.contentType}:{})};
+  return {...link,...publicAsset};
+ });
 }
-module.exports={normalizeMarketingMediaLinks,resolveApprovedMarketingMedia};
+module.exports={normalizeMarketingMediaLinks,resolveApprovedMarketingMedia,selectCustomerMediaVariant};
