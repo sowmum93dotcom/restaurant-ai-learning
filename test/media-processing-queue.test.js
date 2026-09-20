@@ -7,9 +7,10 @@ test("verified processing media is enqueued without binary work in web request",
 });
 test("worker claims one job and records successful completion",async function(){
  const finished=[];const repo={async claimNextMediaProcessingJob(){return{job_id:7,asset_id:"a1",business_id:"b1",attempts:1};},
- async getBusinessMediaAsset(){return{assetId:"a1",businessId:"b1",state:"processing"};},
+ async getBusinessMediaAsset(){return{assetId:"a1",businessId:"b1",kind:"image",state:"processing"};},
+ async saveBusinessMediaAsset(b,a){return a;},
  async finishMediaProcessingJob(...x){finished.push(x);}};
- const out=await processNextMediaJob(repo,async()=>({success:true,deliveryUrl:"https://media.example/a"}));
+ const out=await processNextMediaJob(repo,async()=>({success:true,deliveryUrl:"https://media.example/a",width:1200,height:800}));
  assert.equal(out.status,"completed");assert.deepEqual(finished,[[7,true]]);
 });
 test("worker failure is bounded and persisted without blocking the request path",async function(){
