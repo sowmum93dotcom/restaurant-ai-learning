@@ -35,7 +35,7 @@ async function invoke({
   method = "PUT", businessId = "business-a", campaignId = "campaign-a",
   campaign = completeCampaign(), authenticated = true, allowed = true,
   createAllowed = allowed, approvedCampaign = { approvalStatus: "Approved" },
-  saveCampaignResult
+  saveCampaignResult, recommendationDecisions = []
 } = {}) {
   const authorization = require(authorizationPath);
   const persistence = require(persistencePath);
@@ -45,6 +45,9 @@ async function invoke({
   const savedCampaigns = [];
   const approvalCalls = [];
   const repository = {
+    async getKnownBusiness(requestedBusinessId) {
+      return { businessProfile: { businessId: requestedBusinessId }, recommendationDecisions };
+    },
     async saveCampaign(savedCampaign) {
       savedCampaigns.push(savedCampaign);
       return saveCampaignResult === undefined ? savedCampaign : saveCampaignResult;
@@ -423,5 +426,41 @@ test("unsupported methods and missing route identifiers preserve existing respon
     });
     assert.deepEqual(invalid.authorizationCalls, []);
     assert.deepEqual(invalid.savedCampaigns, []);
+  }
+});
+
+
+test("campaign persistence verifies trusted recommendation provenance on the server", async function () {
+  const decision = {
+    decisionId: "decision-1", businessId: "business-a", recommendationId: "recommendation-1",
+    suggestedCampaignType: "social", decision: "used"
+  };
+  const result = await invoke({
+    campaign: completeCampaign({
+      recommendationDecisionId: "decision-1", recommendationId: "recommendation-1",
+      recommendationAction: "browser-supplied"
+    }),
+    recommendationDecisions: [decision]
+  });
+  assert.equal(result.response.statusCode, 204);
+  assert.equal(result.savedCampaigns[0].recommendationDecisionId, "decision-1");
+  assert.equal(result.savedCampaigns[0].recommendationId, "recommendation-1");
+  assert.equal(result.savedCampaigns[0].recommendationAction, "used");
+});
+
+test("campaign persistence rejects untrusted or mismatched recommendation provenance", async function () {
+  const trusted = {
+    decisionId: "decision-1", businessId: "business-a", recommendationId: "recommendation-1",
+    suggestedCampaignType: "social", decision: "used"
+  };
+  for (const campaign of [
+    completeCampaign({ recommendationDecisionId: "missing-decision" }),
+    completeCampaign({ recommendationDecisionId: "decision-1", campaignType: "email" }),
+    completeCampaign({ recommendationDecisionId: "decision-1", recommendationId: "different-recommendation" })
+  ]) {
+    const result = await invoke({ campaign, recommendationDecisions: [trusted] });
+    assert.equal(result.response.statusCode, 409);
+    assert.deepEqual(result.response.body, { error: "Campaign recommendation provenance could not be verified." });
+    assert.deepEqual(result.savedCampaigns, []);
   }
 });
