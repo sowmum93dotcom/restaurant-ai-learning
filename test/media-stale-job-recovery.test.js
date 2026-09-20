@@ -6,7 +6,5 @@ test("stale running jobs use a bounded lease and concurrency safe recovery",()=>
  assert.match(m,/attempts < \$1 THEN 'queued' ELSE 'failed'/);assert.match(m,/claimed_at = NULL/);
 });
 test("worker recovers stale leases before reconciliation and claim",()=>{
- const source=fs.readFileSync(require.resolve("../api/_lib/media-worker.js"),"utf8");
- assert.ok(source.indexOf("recoverStaleMediaProcessingJobs")<source.indexOf("reconcileMediaProcessingQueue"));
- assert.ok(source.indexOf("reconcileMediaProcessingQueue")<source.indexOf("processNextMediaJob"));
+ const source=fs.readFileSync(require.resolve("../api/_lib/media-worker.js"),"utf8");\n const body=source.slice(source.indexOf("return async function runMediaWorker"));\n assert.ok(body.indexOf("recoverStaleMediaProcessingJobs")<body.indexOf("reconcileMediaProcessingQueue"));\n assert.ok(body.indexOf("reconcileMediaProcessingQueue")<body.indexOf("processNextMediaJob"));
 });
