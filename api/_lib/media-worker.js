@@ -7,7 +7,20 @@ function createMediaWorker({repository,drivers,createProcessingRead,createProces
   const expiresAt=new Date(Date.now()+5*60*1000).toISOString();
   const delegated=await createProcessingRead({storageKey:asset.storageKey,expiresAt});
   if(!delegated||!delegated.readUrl)throw new Error("Private media source could not be delegated for processing.");
-  let outputDestinations;\n  if(typeof createProcessingWrite==="function"){\n   const contentType=asset.kind==="image"?"image/webp":"video/mp4";\n   const roles=asset.kind==="image"?["master","thumbnail","customer","marketing"]:["master","customer","marketing"];\n   outputDestinations=[];\n   for(const role of roles){\n    const storageKey=["businesses",encodeURIComponent(asset.businessId),"media",encodeURIComponent(asset.assetId),"processed",role+(asset.kind==="image"?".webp":".mp4")].join("/");\n    const maximumSizeInBytes=asset.kind==="image"?15*1024*1024:250*1024*1024;\n    const destination=await createProcessingWrite({storageKey,contentType,maximumSizeInBytes,expiresAt});\n    if(!destination||!destination.uploadUrl)throw new Error("Private media output could not be delegated for processing.");\n    outputDestinations.push({role,storageKey:destination.storageKey,uploadUrl:destination.uploadUrl,contentType});\n   }\n  }\n  return baseProcessor(asset,{...(context||{}),sourceUrl:delegated.readUrl,sourceExpiresAt:delegated.expiresAt||expiresAt,...(outputDestinations?{outputDestinations}:{})});
+  let outputDestinations;
+  if(typeof createProcessingWrite==="function"){
+   const contentType=asset.kind==="image"?"image/webp":"video/mp4";
+   const roles=asset.kind==="image"?["master","thumbnail","customer","marketing"]:["master","customer","marketing"];
+   outputDestinations=[];
+   for(const role of roles){
+    const storageKey=["businesses",encodeURIComponent(asset.businessId),"media",encodeURIComponent(asset.assetId),"processed",role+(asset.kind==="image"?".webp":".mp4")].join("/");
+    const maximumSizeInBytes=asset.kind==="image"?15*1024*1024:250*1024*1024;
+    const destination=await createProcessingWrite({storageKey,contentType,maximumSizeInBytes,expiresAt});
+    if(!destination||!destination.uploadUrl)throw new Error("Private media output could not be delegated for processing.");
+    outputDestinations.push({role,storageKey:destination.storageKey,uploadUrl:destination.uploadUrl,contentType});
+   }
+  }
+  return baseProcessor(asset,{...(context||{}),sourceUrl:delegated.readUrl,sourceExpiresAt:delegated.expiresAt||expiresAt,...(outputDestinations?{outputDestinations}:{})});
  };
  return async function runMediaWorker(){
   if(!repository)return{status:"not-configured"};
