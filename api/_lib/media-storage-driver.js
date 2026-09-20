@@ -25,7 +25,13 @@ function createHttpObjectStorageDriver({baseUrl,token,fetchImpl=globalThis.fetch
  };
 }
 function getConfiguredMediaStorageAdapter(env=process.env,fetchImpl=globalThis.fetch){
+ const provider=clean(env.DEMEOS_MEDIA_STORAGE_PROVIDER)||"http";
+ if(provider!=="http")return null;
  const driver=createHttpObjectStorageDriver({baseUrl:env.DEMEOS_MEDIA_STORAGE_URL,token:env.DEMEOS_MEDIA_STORAGE_TOKEN,fetchImpl});
  return driver?createMediaStorageAdapter(driver):null;
 }
-module.exports={createHttpObjectStorageDriver,getConfiguredMediaStorageAdapter};
+function getMediaStorageConfiguration(env=process.env){
+ const provider=clean(env.DEMEOS_MEDIA_STORAGE_PROVIDER)||"http";
+ return{provider,configured:provider==="http"&&Boolean(clean(env.DEMEOS_MEDIA_STORAGE_URL)&&clean(env.DEMEOS_MEDIA_STORAGE_TOKEN))};
+}
+module.exports={createHttpObjectStorageDriver,getConfiguredMediaStorageAdapter,getMediaStorageConfiguration};
