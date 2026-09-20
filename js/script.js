@@ -1341,7 +1341,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
 
   function getMarketingReadiness(profile) {
     const labels = { name: "Business Name", type: "Business Type", location: "Business Location / Service Area",
-      productsServices: "Products & services", brandVoice: "Brand Voice", targetCustomer: "Target Customer",
+      brandVoice: "Brand Voice", targetCustomer: "Target Customer",
       goal: "Primary Marketing Goal" };
     if (!profile || typeof profile !== "object") return { ready: false, missing: Object.values(labels) };
     const missing = Object.keys(labels).filter(function (key) {
