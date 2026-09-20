@@ -1413,6 +1413,12 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     const profile = activeProfile(); const promo = promoInput.value.trim();
     if (!profile) { alert("Please complete and save your Business Manager Profile before creating marketing work."); return; }
     if (!promo) { alert("Please tell DEMEOS what you would like to achieve first."); return; }
+    const recommendationDecision = selectedRecommendationDecision ? await selectedRecommendationDecision : null;
+    selectedRecommendationDecision = null;
+    if (recommendationDecision && recommendationDecision.businessId !== profile.businessId) {
+      alert("This recommendation belongs to a different business. Please request a recommendation for the active business.");
+      return;
+    }
     generateBtn.disabled = true; generateBtn.textContent = "DEMEOS is working..."; resultsArea.hidden = false;
     currentCampaignText = ""; resultsContent.textContent = "DEMEOS is creating your marketing work..."; copyBtn.hidden = true; approveBtn.hidden = true;
     campaignApprovalStatus.hidden = true; revisionControls.hidden = true; openCampaignId = null; clearRevisionTarget();
@@ -1421,8 +1427,6 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     try {
       const text = await requestCampaign({ businessId: profile.businessId, promoText: promo, campaignType: campaignType.value, businessProfile: profile });
       renderCampaign({ campaignText: text, campaignType: campaignType.value }); copyBtn.hidden = false;
-      const recommendationDecision = selectedRecommendationDecision ? await selectedRecommendationDecision : null;
-      selectedRecommendationDecision = null;
       const saved = await saveCampaign(text, promo, campaignType.value, campaignType.options[campaignType.selectedIndex].text, profile, undefined, recommendationDecision);
       showApprovalStatus("Unapproved"); revisionControls.hidden = false;
       resultsArea.scrollIntoView({ behavior: "smooth", block: "start" });
