@@ -4,6 +4,7 @@ const MEDIA_ASSET_PURPOSES = Object.freeze(["brand", "product", "service", "mark
 const IMAGE_CONTENT_TYPES = Object.freeze(["image/jpeg", "image/png", "image/webp"]);
 const VIDEO_CONTENT_TYPES = Object.freeze(["video/mp4", "video/quicktime"]);
 const MAX_IMAGE_BYTES = 15 * 1024 * 1024;
+const MAX_VIDEO_BYTES = 250 * 1024 * 1024;
 const MAX_VIDEO_DURATION_SECONDS = 60;
 const RECOMMENDED_VIDEO_DURATION_SECONDS = Object.freeze({ min: 15, max: 30 });
 const RECOMMENDED_IMAGE_MIN_WIDTH = 1200;
@@ -26,7 +27,7 @@ function normalizeMediaAsset(asset, businessId) {
     normalized.contentType = contentType;
   }
   const sizeBytes = normalizePositiveInteger(asset.sizeBytes);
-  if (sizeBytes) { if (kind === "image" && sizeBytes > MAX_IMAGE_BYTES) return null; normalized.sizeBytes = sizeBytes; }
+  if (sizeBytes) { if (kind === "image" && sizeBytes > MAX_IMAGE_BYTES) return null; if (kind === "video" && sizeBytes > MAX_VIDEO_BYTES) return null; normalized.sizeBytes = sizeBytes; }
   const width = normalizePositiveInteger(asset.width); if (width) normalized.width = width;
   const height = normalizePositiveInteger(asset.height); if (height) normalized.height = height;
   const durationSeconds = typeof asset.durationSeconds === "number" && asset.durationSeconds > 0 ? asset.durationSeconds : null;
@@ -63,5 +64,5 @@ function getMediaGuidance(asset) {
   return guidance;
 }
 module.exports = { MEDIA_ASSET_KINDS, MEDIA_ASSET_STATES, MEDIA_ASSET_PURPOSES, IMAGE_CONTENT_TYPES, VIDEO_CONTENT_TYPES,
-  MAX_IMAGE_BYTES, MAX_VIDEO_DURATION_SECONDS, RECOMMENDED_VIDEO_DURATION_SECONDS, RECOMMENDED_IMAGE_MIN_WIDTH,
+  MAX_IMAGE_BYTES, MAX_VIDEO_BYTES, MAX_VIDEO_DURATION_SECONDS, RECOMMENDED_VIDEO_DURATION_SECONDS, RECOMMENDED_IMAGE_MIN_WIDTH,
   normalizeMediaAsset, toPublicMediaAsset, getMediaGuidance };
