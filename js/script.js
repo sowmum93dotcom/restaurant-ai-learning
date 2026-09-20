@@ -628,6 +628,10 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       const approval = detail("Approval", recommendation.approvalState === "pending" ? "Pending" : recommendation.approvalState);
       const decisionStatus = document.createElement("p"); decisionStatus.className = "recommendation-decision";
       decisionStatus.setAttribute("aria-live", "polite");
+      const hasRequiredInput = Array.isArray(recommendation.requiredInput) && recommendation.requiredInput.length > 0;
+      if (hasRequiredInput) {
+        decisionStatus.textContent = "DEMEOS needs the required information above before this recommendation can become marketing work.";
+      }
       async function recordDecision(decision) {
         try {
           const response = await fetch(`/api/businesses/${encodeURIComponent(businessId)}/recommendation-decisions`, {
@@ -654,6 +658,8 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       }
       const use = document.createElement("button"); use.type = "button"; use.className = "demeos-secondary-button";
       use.textContent = "Use This Recommendation";
+      use.disabled = hasRequiredInput;
+      if (hasRequiredInput) use.setAttribute("aria-describedby", "recommendations-status");
       use.addEventListener("click", async function () {
         if (recommendationBusinessId !== state.activeBusinessId || addingBusiness) return;
         const savedDecision = await recordDecision("used");
@@ -666,9 +672,15 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
         return selectedRecommendationDecision;
       });
       const modify = document.createElement("button"); modify.type = "button"; modify.className = "demeos-secondary-button";
-      modify.textContent = "Modify";
+      modify.textContent = hasRequiredInput ? "Complete Required Information" : "Modify";
       modify.addEventListener("click", async function () {
         if (recommendationBusinessId !== state.activeBusinessId || addingBusiness) return;
+        if (hasRequiredInput) {
+          businessSituation.value = recommendation.requiredInput.join("\n");
+          recommendationsStatus.textContent = "Add the required information for this recommendation, then ask DEMEOS to review again.";
+          if (typeof businessSituation.focus === "function") businessSituation.focus();
+          return;
+        }
         const savedDecision = await recordDecision("modified");
         if (!savedDecision) { decisionStatus.textContent = "Could not record your decision. Please try again."; return; }
         promoInput.value = recommendation.suggestedRequest;
