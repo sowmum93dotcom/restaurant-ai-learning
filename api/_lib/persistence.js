@@ -471,6 +471,56 @@ function createPersistenceRepository(database) {
       return result.rows.length ? result.rows[0].asset : null;
     },
 
+    async enqueueMediaProcessingJob(businessId, assetId) {
+      if (!isNonEmptyString(businessId) || !isNonEmptyString(assetId)) return null;
+      await database.ensureSchema();
+      const result = await database.query(
+        `INSERT INTO demeos_media_processing_jobs (asset_id, business_id)
+         SELECT a.asset_id, a.business_id FROM demeos_business_media_assets a
+         WHERE a.asset_id = $2 AND a.business_id = $1 AND a.asset->>'state' = 'processing'
+         ON CONFLICT (asset_id) DO UPDATE SET
+           status = CASE WHEN demeos_media_processing_jobs.status = 'failed' THEN 'queued' ELSE demeos_media_processing_jobs.status END,
+           available_at = CASE WHEN demeos_media_processing_jobs.status = 'failed' THEN NOW() ELSE demeos_media_processing_jobs.available_at END,
+           updated_at = NOW()
+         RETURNING job_id, asset_id, business_id, status, attempts`,
+        [businessId, assetId]);
+      return result.rows.length ? result.rows[0] : null;
+    },
+
+    async claimNextMediaProcessingJob(maxAttempts = 5) {
+      await database.ensureSchema();
+      const safeMaxAttempts = Math.max(1, Math.min(10, Number(maxAttempts) || 5));
+      const result = await database.query(
+        `WITH next_job AS (
+           SELECT job_id FROM demeos_media_processing_jobs
+           WHERE status = 'queued' AND available_at <= NOW() AND attempts < $1
+           ORDER BY available_at ASC, job_id ASC
+           FOR UPDATE SKIP LOCKED LIMIT 1
+         )
+         UPDATE demeos_media_processing_jobs j
+         SET status = 'running', attempts = attempts + 1, claimed_at = NOW(), updated_at = NOW()
+         FROM next_job WHERE j.job_id = next_job.job_id
+         RETURNING j.job_id, j.asset_id, j.business_id, j.status, j.attempts`,
+        [safeMaxAttempts]);
+      return result.rows.length ? result.rows[0] : null;
+    },
+
+    async finishMediaProcessingJob(jobId, succeeded, errorMessage = null) {
+      if (!jobId) return null;
+      await database.ensureSchema();
+      const safeError = isNonEmptyString(errorMessage) ? errorMessage.trim().slice(0, 500) : null;
+      const result = await database.query(
+        `UPDATE demeos_media_processing_jobs SET
+           status = CASE WHEN $2 THEN 'completed' ELSE 'failed' END,
+           completed_at = CASE WHEN $2 THEN NOW() ELSE NULL END,
+           last_error = CASE WHEN $2 THEN NULL ELSE $3 END,
+           updated_at = NOW()
+         WHERE job_id = $1 AND status = 'running'
+         RETURNING job_id, asset_id, business_id, status, attempts, last_error`,
+        [jobId, succeeded === true, safeError]);
+      return result.rows.length ? result.rows[0] : null;
+    },
+
     async getBusinessMediaAsset(businessId, assetId) {
       if (!isNonEmptyString(businessId) || !isNonEmptyString(assetId)) return null;
       await database.ensureSchema();
