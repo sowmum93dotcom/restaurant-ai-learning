@@ -2,6 +2,9 @@ const { normalizeProcessingResult }=require("./media-processing-result.js");
 const { transitionMediaAsset }=require("./media-processing-lifecycle.js");
 async function enqueueVerifiedMediaForProcessing(repository,asset){
  if(!repository||!asset||asset.state!=="processing")return null;
+ if(typeof repository.saveProcessingMediaAndEnqueue==="function"){
+  return repository.saveProcessingMediaAndEnqueue(asset.businessId,asset);
+ }
  return repository.enqueueMediaProcessingJob(asset.businessId,asset.assetId);
 }
 async function processNextMediaJob(repository,processor,{maxAttempts=5}={}){
