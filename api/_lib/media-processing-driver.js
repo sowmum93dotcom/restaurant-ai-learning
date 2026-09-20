@@ -11,7 +11,11 @@ function createHttpMediaProcessingDrivers({baseUrl,token,fetchImpl=globalThis.fe
   }catch{return null;}finally{clearTimeout(timer);}
  }
  const source=(context)=>context&&typeof context.sourceUrl==="string"&&/^https:\/\//i.test(context.sourceUrl)?{sourceUrl:context.sourceUrl,sourceExpiresAt:context.sourceExpiresAt}:{};
- const outputs=(context)=>context&&Array.isArray(context.outputDestinations)?{outputDestinations:context.outputDestinations}:{};
+ const outputs=(context)=>{
+  if(!context||!Array.isArray(context.outputDestinations)||!context.outputDestinations.length)return{};
+  const safe=context.outputDestinations.map(d=>d&&typeof d.role==="string"&&typeof d.storageKey==="string"&&typeof d.uploadUrl==="string"&&/^https:\/\//i.test(d.uploadUrl)&&typeof d.contentType==="string"?{role:d.role,storageKey:d.storageKey,uploadUrl:d.uploadUrl,contentType:d.contentType}:null);
+  return safe.every(Boolean)?{outputDestinations:safe}:{};
+ };
  const inspect=(kind)=>(asset,context)=>call("/inspect/"+kind,{assetId:asset.assetId,businessId:asset.businessId,storageKey:asset.storageKey,contentType:asset.contentType,...source(context)});
  return{
   inspectImage:inspect("image"),inspectVideo:inspect("video"),
