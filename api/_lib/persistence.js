@@ -531,6 +531,22 @@ function createPersistenceRepository(database) {
       return result.rows.length ? result.rows[0] : null;
     },
 
+    async getMediaProcessingHealth() {
+      await database.ensureSchema();
+      const result = await database.query(
+        `SELECT
+           COUNT(*) FILTER (WHERE status = 'queued')::int AS queued,
+           COUNT(*) FILTER (WHERE status = 'running')::int AS running,
+           COUNT(*) FILTER (WHERE status = 'failed')::int AS failed,
+           COUNT(*) FILTER (WHERE status = 'completed')::int AS completed,
+           COUNT(*) FILTER (WHERE status = 'running' AND claimed_at < NOW() - INTERVAL '15 minutes')::int AS stale_running,
+           COUNT(*) FILTER (WHERE status = 'queued' AND available_at < NOW() - INTERVAL '15 minutes')::int AS delayed_queued
+         FROM demeos_media_processing_jobs`);
+      const row=result.rows[0]||{};
+      return {queued:Number(row.queued)||0,running:Number(row.running)||0,failed:Number(row.failed)||0,
+        completed:Number(row.completed)||0,staleRunning:Number(row.stale_running)||0,delayedQueued:Number(row.delayed_queued)||0};
+    },
+
     async reconcileUnqueuedProcessingMedia(limit = 50) {
       await database.ensureSchema();
       const safeLimit = Math.min(200, Math.max(1, Number.isInteger(limit) ? limit : 50));
