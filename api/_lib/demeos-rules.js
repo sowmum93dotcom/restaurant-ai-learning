@@ -7,6 +7,7 @@ const DEMEOS_ACTOR_SCOPES = Object.freeze({
 
 const DEMEOS_ACTIONS = Object.freeze({
   MANAGE_BUSINESS_PROFILE: "manage-business-profile",
+  MANAGE_BUSINESS_MEDIA: "manage-business-media",
   CREATE_MARKETING: "create-marketing",
   APPROVE_OWN_MARKETING: "approve-own-marketing",
   RECORD_CAMPAIGN_OUTCOME: "record-campaign-outcome",
@@ -38,6 +39,7 @@ const permissionsByActorScope = Object.freeze({
   ]),
   [DEMEOS_ACTOR_SCOPES.BUSINESS_OWNER]: Object.freeze([
     DEMEOS_ACTIONS.MANAGE_BUSINESS_PROFILE,
+    DEMEOS_ACTIONS.MANAGE_BUSINESS_MEDIA,
     DEMEOS_ACTIONS.CREATE_MARKETING,
     DEMEOS_ACTIONS.APPROVE_OWN_MARKETING,
     DEMEOS_ACTIONS.RECORD_CAMPAIGN_OUTCOME,

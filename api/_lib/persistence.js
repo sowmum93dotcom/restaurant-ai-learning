@@ -457,6 +457,31 @@ function createPersistenceRepository(database) {
         }) };
     },
 
+    async saveBusinessMediaAsset(businessId, asset) {
+      if (!isNonEmptyString(businessId) || !asset || asset.businessId !== businessId || !isNonEmptyString(asset.assetId)) return null;
+      await database.ensureSchema();
+      const result = await database.query(
+        `INSERT INTO demeos_business_media_assets (asset_id, business_id, asset)
+         SELECT $1, $2, $3::jsonb
+         WHERE EXISTS (SELECT 1 FROM demeos_businesses WHERE business_id = $2)
+         ON CONFLICT (asset_id) DO UPDATE SET asset = EXCLUDED.asset, updated_at = NOW()
+         WHERE demeos_business_media_assets.business_id = EXCLUDED.business_id
+         RETURNING asset`,
+        [asset.assetId, businessId, JSON.stringify(asset)]);
+      return result.rows.length ? result.rows[0].asset : null;
+    },
+
+    async getBusinessMediaAssets(businessId, limit = 100) {
+      if (!isNonEmptyString(businessId)) return [];
+      await database.ensureSchema();
+      const safeLimit = Math.min(100, Math.max(1, Number.isInteger(limit) ? limit : 100));
+      const result = await database.query(
+        `SELECT asset FROM demeos_business_media_assets
+         WHERE business_id = $1 ORDER BY created_at DESC, asset_id DESC LIMIT $2`,
+        [businessId, safeLimit]);
+      return result.rows.map(function (row) { return row.asset; });
+    },
+
     async saveBusiness(profile) {
       await database.ensureSchema();
       await database.query(
