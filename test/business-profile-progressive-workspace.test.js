@@ -41,3 +41,10 @@ test("Business Profile makes marketing understanding an explicit onboarding step
   assert.match(html, /id="business-goal"/);
   assert.match(html, /<span>Step 6<\/span>[\s\S]*?<h4>Review &amp; save<\/h4>/);
 });
+
+
+test("new business onboarding leads directly to the first DEMEOS marketing value moment", function () {
+  assert.match(script, /if \(wasAddingBusiness\) \{[\s\S]*?showWorkspaceView\("recommends"\)/);
+  assert.match(script, /Your Business Profile is ready\. DEMEOS can now review your business and recommend the first marketing action\./);
+  assert.match(script, /recommendationsBtn\.focus/);
+});
