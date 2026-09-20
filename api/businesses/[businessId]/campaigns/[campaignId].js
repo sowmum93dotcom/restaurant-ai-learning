@@ -101,7 +101,27 @@ module.exports = async function handler(req, res) {
         campaignCapability.supportedOutputType !== campaign.campaignType) {
       return res.status(400).json({ error: "DEMEOS received invalid campaign data." });
     }
-    const campaignForPersistence = { ...campaign, campaignTypeLabel: campaignCapability.ownerFacingName };
+    let campaignForPersistence = { ...campaign, campaignTypeLabel: campaignCapability.ownerFacingName };
+    if (campaign.recommendationDecisionId) {
+      const record = await repository.getKnownBusiness(businessId);
+      const decisions = record && Array.isArray(record.recommendationDecisions) ? record.recommendationDecisions : [];
+      const trustedDecision = decisions.find(function (decision) {
+        return decision && decision.decisionId === String(campaign.recommendationDecisionId) &&
+          decision.businessId === businessId;
+      });
+      if (!trustedDecision || trustedDecision.decision === "rejected" ||
+          trustedDecision.suggestedCampaignType !== campaign.campaignType ||
+          (campaign.recommendationId && trustedDecision.recommendationId &&
+            campaign.recommendationId !== trustedDecision.recommendationId)) {
+        return res.status(409).json({ error: "Campaign recommendation provenance could not be verified." });
+      }
+      campaignForPersistence = {
+        ...campaignForPersistence,
+        recommendationDecisionId: trustedDecision.decisionId,
+        ...(trustedDecision.recommendationId ? { recommendationId: trustedDecision.recommendationId } : {}),
+        recommendationAction: trustedDecision.decision
+      };
+    }
 
     if (isApprovalRequest) {
       let approvedCampaign = await repository.approveCampaign(businessId, campaignId);
