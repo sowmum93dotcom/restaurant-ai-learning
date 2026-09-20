@@ -21,7 +21,17 @@ async function processNextMediaJob(repository,processor,{maxAttempts=5}={}){
   await repository.finishMediaProcessingJob(job.job_id,true);
   return {jobId:String(job.job_id),assetId:job.asset_id,businessId:job.business_id,status:"completed",asset:saved,result};
  }catch(error){
+  const retry=typeof repository.retryMediaProcessingJob==="function"
+    ?await repository.retryMediaProcessingJob(job.job_id,error&&error.message,maxAttempts):null;
+  if(retry&&retry.status==="queued"){
+    return {jobId:String(job.job_id),assetId:job.asset_id,businessId:job.business_id,status:"retrying",attempt:job.attempts,error:error&&error.message};
+  }
   await repository.finishMediaProcessingJob(job.job_id,false,error&&error.message);
+  const asset=await repository.getBusinessMediaAsset(job.business_id,job.asset_id);
+  if(asset&&asset.state==="processing"){
+    const failed=transitionMediaAsset(asset,job.business_id,"failed",{failureReason:"Media processing could not be completed."});
+    if(failed)await repository.saveBusinessMediaAsset(job.business_id,failed);
+  }
   return {jobId:String(job.job_id),assetId:job.asset_id,businessId:job.business_id,status:"failed",error:error&&error.message};
  }
 }
