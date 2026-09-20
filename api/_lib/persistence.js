@@ -471,6 +471,18 @@ function createPersistenceRepository(database) {
       return result.rows.length ? result.rows[0].asset : null;
     },
 
+    async getBusinessMediaAssetsByIds(businessId, assetIds) {
+      if (!isNonEmptyString(businessId) || !Array.isArray(assetIds) || !assetIds.length) return [];
+      const safeIds = Array.from(new Set(assetIds.filter(isNonEmptyString))).slice(0, 20);
+      if (!safeIds.length) return [];
+      await database.ensureSchema();
+      const result = await database.query(
+        `SELECT asset FROM demeos_business_media_assets
+         WHERE business_id = $1 AND asset_id = ANY($2::text[])
+         ORDER BY created_at ASC, asset_id ASC`, [businessId, safeIds]);
+      return result.rows.map(function (row) { return row.asset; });
+    },
+
     async enqueueMediaProcessingJob(businessId, assetId) {
       if (!isNonEmptyString(businessId) || !isNonEmptyString(assetId)) return null;
       await database.ensureSchema();
