@@ -18,6 +18,7 @@ function permittedActionsFor(actorScope) {
 test("business owners can perform only the defined business-owner actions", function () {
   assert.deepEqual(permittedActionsFor(DEMEOS_ACTOR_SCOPES.BUSINESS_OWNER), [
     DEMEOS_ACTIONS.MANAGE_BUSINESS_PROFILE,
+    DEMEOS_ACTIONS.MANAGE_BUSINESS_MEDIA,
     DEMEOS_ACTIONS.CREATE_MARKETING,
     DEMEOS_ACTIONS.APPROVE_OWN_MARKETING,
     DEMEOS_ACTIONS.RECORD_CAMPAIGN_OUTCOME,
@@ -95,6 +96,7 @@ test("supported scopes and actions are immutable constants", function () {
   ]);
   assert.deepEqual(Object.values(DEMEOS_ACTIONS), [
     "manage-business-profile",
+    "manage-business-media",
     "create-marketing",
     "approve-own-marketing",
     "record-campaign-outcome",
