@@ -34,6 +34,8 @@ function normalizeMediaAsset(asset, businessId) {
   const deliveryUrl = normalizeText(asset.deliveryUrl);
   if (deliveryUrl) { if (!isHttpsUrl(deliveryUrl)) return null; normalized.deliveryUrl = deliveryUrl; }
   const createdAt = normalizeText(asset.createdAt); if (createdAt) normalized.createdAt = createdAt;
+  const updatedAt = normalizeText(asset.updatedAt); if (updatedAt) normalized.updatedAt = updatedAt;
+  const failureReason = normalizeText(asset.failureReason); if (failureReason && state === "failed") normalized.failureReason = failureReason.slice(0, 500);
   return normalized;
 }
 function toPublicMediaAsset(asset, businessId) {
