@@ -12,3 +12,7 @@ test("owner lifecycle updates cannot inject delivery or processor metadata",()=>
  const lifecycle=source.slice(source.indexOf("const nextState=req.body&&req.body.state"));
  assert.doesNotMatch(lifecycle,/\["deliveryUrl"/);assert.doesNotMatch(lifecycle,/storageKey/);assert.doesNotMatch(lifecycle,/durationSeconds/);
 });
+
+test("repeated verified upload completion returns existing processing state without another queue handoff",()=>{
+ assert.match(source,/processing\.uploadCompletionReplay/);assert.match(source,/replayed:true/);assert.match(source,/processing\.state==="ready"\?"completed":"queued"/);
+});
