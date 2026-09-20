@@ -531,6 +531,27 @@ function createPersistenceRepository(database) {
       return result.rows.length ? result.rows[0] : null;
     },
 
+    async reconcileUnqueuedProcessingMedia(limit = 50) {
+      await database.ensureSchema();
+      const safeLimit = Math.min(200, Math.max(1, Number.isInteger(limit) ? limit : 50));
+      const result = await database.query(
+        `WITH missing AS (
+           SELECT a.asset_id, a.business_id
+           FROM demeos_business_media_assets a
+           LEFT JOIN demeos_media_processing_jobs j ON j.asset_id = a.asset_id
+           WHERE a.asset->>'state' = 'processing' AND j.asset_id IS NULL
+           ORDER BY a.updated_at ASC, a.asset_id ASC
+           LIMIT $1
+           FOR UPDATE OF a SKIP LOCKED
+         )
+         INSERT INTO demeos_media_processing_jobs (asset_id, business_id)
+         SELECT asset_id, business_id FROM missing
+         ON CONFLICT (asset_id) DO NOTHING
+         RETURNING job_id, asset_id, business_id, status, attempts`,
+        [safeLimit]);
+      return result.rows;
+    },
+
     async claimNextMediaProcessingJob(maxAttempts = 5) {
       await database.ensureSchema();
       const safeMaxAttempts = Math.max(1, Math.min(10, Number(maxAttempts) || 5));

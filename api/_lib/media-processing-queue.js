@@ -7,6 +7,10 @@ async function enqueueVerifiedMediaForProcessing(repository,asset){
  }
  return repository.enqueueMediaProcessingJob(asset.businessId,asset.assetId);
 }
+async function reconcileMediaProcessingQueue(repository,{limit=50}={}){
+ if(!repository||typeof repository.reconcileUnqueuedProcessingMedia!=="function")return [];
+ return repository.reconcileUnqueuedProcessingMedia(limit);
+}
 async function processNextMediaJob(repository,processor,{maxAttempts=5}={}){
  if(!repository||typeof processor!=="function")return null;
  const job=await repository.claimNextMediaProcessingJob(maxAttempts); if(!job)return null;
@@ -38,4 +42,4 @@ async function processNextMediaJob(repository,processor,{maxAttempts=5}={}){
   return {jobId:String(job.job_id),assetId:job.asset_id,businessId:job.business_id,status:"failed",error:error&&error.message};
  }
 }
-module.exports={enqueueVerifiedMediaForProcessing,processNextMediaJob};
+module.exports={enqueueVerifiedMediaForProcessing,reconcileMediaProcessingQueue,processNextMediaJob};
