@@ -484,6 +484,37 @@ function createPersistenceRepository(database) {
       return result.rows.map(function (row) { return row.asset; });
     },
 
+    async saveProcessingMediaAndEnqueue(businessId, asset) {
+      if (!isNonEmptyString(businessId) || !asset || asset.businessId !== businessId ||
+          !isNonEmptyString(asset.assetId) || asset.state !== "processing") return null;
+      await database.ensureSchema();
+      const result = await database.query(
+        `WITH locked_business AS (
+           SELECT business_id FROM demeos_businesses WHERE business_id = $2 FOR UPDATE
+         ), saved AS (
+           INSERT INTO demeos_business_media_assets (asset_id, business_id, asset)
+           SELECT $1, $2, $3::jsonb FROM locked_business
+           ON CONFLICT (asset_id) DO UPDATE SET asset = EXCLUDED.asset, updated_at = NOW()
+           WHERE demeos_business_media_assets.business_id = EXCLUDED.business_id
+           RETURNING asset_id, business_id, asset
+         ), queued AS (
+           INSERT INTO demeos_media_processing_jobs (asset_id, business_id)
+           SELECT asset_id, business_id FROM saved WHERE asset->>'state' = 'processing'
+           ON CONFLICT (asset_id) DO UPDATE SET
+             status = CASE WHEN demeos_media_processing_jobs.status = 'failed' THEN 'queued' ELSE demeos_media_processing_jobs.status END,
+             available_at = CASE WHEN demeos_media_processing_jobs.status = 'failed' THEN NOW() ELSE demeos_media_processing_jobs.available_at END,
+             updated_at = NOW()
+           RETURNING job_id, asset_id, business_id, status, attempts
+         )
+         SELECT saved.asset, queued.job_id, queued.status, queued.attempts
+         FROM saved JOIN queued USING (asset_id, business_id)`,
+        [asset.assetId, businessId, JSON.stringify(asset)]);
+      if (!result.rows.length) return null;
+      return { asset: result.rows[0].asset, job: { job_id: result.rows[0].job_id,
+        asset_id: asset.assetId, business_id: businessId, status: result.rows[0].status,
+        attempts: result.rows[0].attempts } };
+    },
+
     async enqueueMediaProcessingJob(businessId, assetId) {
       if (!isNonEmptyString(businessId) || !isNonEmptyString(assetId)) return null;
       await database.ensureSchema();
