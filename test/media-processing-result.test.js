@@ -3,14 +3,14 @@ const {normalizeProcessingResult}=require("../api/_lib/media-processing-result.j
 const {processNextMediaJob}=require("../api/_lib/media-processing-queue.js");
 const image={assetId:"a1",businessId:"b1",kind:"image",state:"processing",contentType:"image/webp",createdAt:"2026-09-20T09:00:00Z"};
 test("optimized image results require secure delivery and dimensions",function(){
- assert.deepEqual(normalizeProcessingResult(image,{success:true,deliveryUrl:"https://cdn.example/a.webp",width:1200,height:800}),{deliveryUrl:"https://cdn.example/a.webp",width:1200,height:800});
- assert.equal(normalizeProcessingResult(image,{success:true,deliveryUrl:"http://cdn.example/a.webp",width:1200,height:800}),null);
- assert.equal(normalizeProcessingResult(image,{success:true,deliveryUrl:"https://cdn.example/a.webp"}),null);
+ assert.deepEqual(normalizeProcessingResult(image,{success:true,storageKey:"businesses/b1/media/a1/processed/master.webp",deliveryUrl:"https://cdn.example/a.webp",width:1200,height:800}),{deliveryUrl:"https://cdn.example/a.webp",processedStorageKey:"businesses/b1/media/a1/processed/master.webp",width:1200,height:800});
+ assert.equal(normalizeProcessingResult(image,{success:true,storageKey:"businesses/b1/media/a1/processed/master.webp",deliveryUrl:"http://cdn.example/a.webp",width:1200,height:800}),null);
+ assert.equal(normalizeProcessingResult(image,{success:true,storageKey:"businesses/b1/media/a1/processed/master.webp",deliveryUrl:"https://cdn.example/a.webp"}),null);
 });
 test("optimized video results require dimensions and bounded duration",function(){
  const video={...image,kind:"video",contentType:"video/mp4"};
- assert.ok(normalizeProcessingResult(video,{success:true,deliveryUrl:"https://cdn.example/a.mp4",width:1080,height:1920,durationSeconds:30}));
- assert.equal(normalizeProcessingResult(video,{success:true,deliveryUrl:"https://cdn.example/a.mp4",width:1080,height:1920,durationSeconds:61}),null);
+ assert.ok(normalizeProcessingResult(video,{success:true,storageKey:"businesses/b1/media/a1/processed/master.mp4",deliveryUrl:"https://cdn.example/a.mp4",width:1080,height:1920,durationSeconds:30}));
+ assert.equal(normalizeProcessingResult(video,{success:true,storageKey:"businesses/b1/media/a1/processed/master.mp4",deliveryUrl:"https://cdn.example/a.mp4",width:1080,height:1920,durationSeconds:61}),null);
 });
 test("worker persists ready asset before completing durable job",async function(){
  const events=[];const repo={
@@ -19,7 +19,7 @@ test("worker persists ready asset before completing durable job",async function(
   async saveBusinessMediaAsset(b,a){events.push(["asset",b,a.state,a.deliveryUrl]);return a;},
   async finishMediaProcessingJob(id,ok){events.push(["job",id,ok]);}
  };
- const out=await processNextMediaJob(repo,async()=>({success:true,deliveryUrl:"https://cdn.example/a.webp",width:1600,height:900}));
+ const out=await processNextMediaJob(repo,async()=>({success:true,storageKey:"businesses/b1/media/a1/processed/master.webp",deliveryUrl:"https://cdn.example/a.webp",width:1600,height:900}));
  assert.equal(out.status,"completed");assert.equal(out.asset.state,"ready");
  assert.deepEqual(events,[["asset","b1","ready","https://cdn.example/a.webp"],["job",9,true]]);
 });
