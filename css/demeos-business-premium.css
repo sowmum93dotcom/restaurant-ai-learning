@@ -97,6 +97,5 @@
 #recommends .recommendation-panel,#recommends .recommendation-card{max-width:980px;padding:clamp(1.35rem,2.6vw,2.2rem)}
 #recommends .recommendation-card h3{margin:.25rem 0 .7rem;font-size:clamp(1.65rem,3vw,2.35rem)}
 #recommends .recommendation-card p{max-width:68ch}
-#recommends .recommendation-actions{display:flex;flex-wrap:wrap;gap:.65rem;margin-top:1.1rem}
-#recommends .recommendation-actions button{min-height:46px}
-@media(max-width:760px){#recommends .recommendation-actions{display:grid;grid-template-columns:1fr}#recommends .recommendation-actions button{width:100%}}
+#recommends .recommendation-card>.demeos-secondary-button{min-height:46px;margin:.45rem .45rem 0 0}
+@media(max-width:760px){#recommends .recommendation-card>.demeos-secondary-button{display:block;width:100%;margin:.5rem 0 0}}
