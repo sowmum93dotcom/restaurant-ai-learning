@@ -116,3 +116,18 @@
 #create .demeos-primary-button,
 #create .demeos-secondary-button{border-radius:10px;box-shadow:none}
 @media(max-width:760px){#create .view-heading{margin-bottom:1.5rem}}
+
+/* Campaigns — make active marketing work easy to scan without dashboard noise. */
+#campaigns .view-heading{max-width:820px;margin-bottom:2.75rem}
+#campaigns .view-heading h2{font-size:clamp(2.2rem,4.5vw,3.8rem);font-weight:560;letter-spacing:-.05em}
+#campaigns .view-heading p:last-child{max-width:650px;color:#626d77;line-height:1.65}
+#campaigns .dashboard-card,
+#campaigns .campaign-card,
+#campaigns .campaign-item{border:1px solid #e1e5e9;border-radius:16px;background:#fff;box-shadow:none}
+#campaigns .campaign-card h3,
+#campaigns .campaign-item h3{color:#111820;font-weight:600;letter-spacing:-.025em}
+#campaigns .campaign-card p,
+#campaigns .campaign-item p{line-height:1.6}
+#campaigns .demeos-primary-button,
+#campaigns .demeos-secondary-button{border-radius:10px;box-shadow:none}
+@media(max-width:760px){#campaigns .view-heading{margin-bottom:1.5rem}}
