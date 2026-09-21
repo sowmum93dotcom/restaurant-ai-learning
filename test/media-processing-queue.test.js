@@ -10,7 +10,7 @@ test("worker claims one job and records successful completion",async function(){
  async getBusinessMediaAsset(){return{assetId:"a1",businessId:"b1",kind:"image",state:"processing"};},
  async saveBusinessMediaAsset(b,a){return a;},
  async finishMediaProcessingJob(...x){finished.push(x);}};
- const out=await processNextMediaJob(repo,async()=>({success:true,deliveryUrl:"https://media.example/a",width:1200,height:800}));
+ const out=await processNextMediaJob(repo,async()=>({success:true,storageKey:"businesses/b1/media/a1/processed/master.webp",deliveryUrl:"https://media.example/a",width:1200,height:800}));
  assert.equal(out.status,"completed");assert.deepEqual(finished,[[7,true]]);
 });
 test("worker failure is bounded and persisted without blocking the request path",async function(){

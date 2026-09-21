@@ -4,14 +4,15 @@ function normalizeMediaDerivative(asset,derivative){
  if(!asset||asset.state!=="processing"||!derivative||typeof derivative!=="object")return null;
  const role=typeof derivative.role==="string"?derivative.role.trim():"";
  const deliveryUrl=typeof derivative.deliveryUrl==="string"?derivative.deliveryUrl.trim():"";
- if(!MEDIA_DERIVATIVE_ROLES.includes(role)||!/^https:\/\//i.test(deliveryUrl))return null;
+ const storageKey=typeof derivative.storageKey==="string"?derivative.storageKey.trim():"";
+ if(!MEDIA_DERIVATIVE_ROLES.includes(role)||!storageKey||!/^https:\/\//i.test(deliveryUrl))return null;
  const candidate=normalizeMediaAsset({...asset,state:"processing",deliveryUrl,
    contentType:derivative.contentType||asset.contentType,width:derivative.width,height:derivative.height,
    durationSeconds:derivative.durationSeconds},asset.businessId);
  if(!candidate)return null;
  if(asset.kind==="image"&&(!candidate.width||!candidate.height))return null;
  if(asset.kind==="video"&&(!candidate.width||!candidate.height||!candidate.durationSeconds))return null;
- return {role,deliveryUrl,...(candidate.contentType?{contentType:candidate.contentType}:{}),
+ return {role,storageKey,deliveryUrl,...(candidate.contentType?{contentType:candidate.contentType}:{}),
    width:candidate.width,height:candidate.height,...(candidate.durationSeconds?{durationSeconds:candidate.durationSeconds}:{})};
 }
 function normalizeMediaDerivatives(asset,items){
