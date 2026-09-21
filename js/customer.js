@@ -805,6 +805,15 @@ function toCustomerWorkItem(item) {
 
   const publicItem = { workItemId, businessName, content, participationAction: "Interested" };
   if (typeof item.location === "string" && item.location.trim()) publicItem.location = item.location.trim();
+  if (Array.isArray(item.media)) {
+    publicItem.media = item.media.filter(function (asset) {
+      return asset && typeof asset === "object" && ["image", "video"].includes(asset.kind) &&
+        ["primary", "supporting"].includes(asset.role) && /^https:\/\//i.test(asset.deliveryUrl || "");
+    }).slice(0, 10).map(function (asset) {
+      return { assetId: normalizedRequiredString(asset.assetId) || "", kind: asset.kind, role: asset.role,
+        deliveryUrl: asset.deliveryUrl, contentType: normalizedRequiredString(asset.contentType) || "" };
+    });
+  }
   return publicItem;
 }
 
@@ -832,6 +841,20 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
   message.setAttribute("aria-label", `Message from ${work.businessName}`);
   addText(document, message, "p", "customer-message-label", "Customer message");
   addText(document, message, "p", "customer-work-content", work.content);
+
+  if (Array.isArray(work.media) && work.media.length) {
+    const mediaRegion = document.createElement("div");
+    mediaRegion.className = "customer-work-media";
+    work.media.forEach(function (asset) {
+      const media = asset.kind === "video" ? document.createElement("video") : document.createElement("img");
+      media.className = "customer-work-media-item " + (asset.role === "primary" ? "is-primary" : "is-supporting");
+      media.src = asset.deliveryUrl;
+      if (asset.kind === "video") { media.controls = true; media.preload = "metadata"; media.playsInline = true; }
+      else media.alt = `Approved media from ${work.businessName}`;
+      mediaRegion.appendChild(media);
+    });
+    message.appendChild(mediaRegion);
+  }
 
   const choice = document.createElement("section");
   choice.className = "customer-choice";
