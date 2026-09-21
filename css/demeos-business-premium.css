@@ -143,3 +143,11 @@
 .business-media-item>span{display:block;margin:.3rem 0 .8rem;color:var(--bo-muted)}
 .business-media-item img,.business-media-item video{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px;background:#020b18}
 @media(max-width:760px){.business-media-list{grid-template-columns:1fr}.business-media-upload .demeos-secondary-button{width:100%}}
+
+
+/* Marketing workspace — remove legacy light/purple/green profile presentation. */
+#business-profile .profile-long-field,#business-profile .profile-choice-group,#business-profile .profile-accuracy-confirmation{border-color:var(--bo-line)!important;background:var(--bo-panel)!important}
+#business-profile .profile-long-field label,#business-profile .profile-long-field p,#business-profile .profile-choice-group legend,#business-profile .profile-choice-grid label,#business-profile .profile-accuracy-confirmation label{color:#e7edf5!important}
+#business-profile .profile-long-field textarea{border-color:rgba(174,187,208,.32)!important;background:#020d1c!important;color:#fff!important;box-shadow:none!important}
+#business-profile .profile-long-field textarea:focus{border-color:var(--bo-gold)!important;box-shadow:none!important}
+#business-profile .profile-choice-grid input,#business-profile .profile-accuracy-confirmation input{accent-color:var(--bo-gold)}
