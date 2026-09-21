@@ -3,7 +3,7 @@ const fs = require("node:fs");
 const test = require("node:test");
 const vm = require("node:vm");
 
-const html = fs.readFileSync(require.resolve("../index.html"), "utf8");
+const html = fs.readFileSync(require.resolve("../marketing.html"), "utf8");
 
 test("DEMEOS Recommends presents the optional Business Situation field", () => {
   assert.match(html, /<label for="business-situation">What is happening in your business right now\?<\/label>/);
