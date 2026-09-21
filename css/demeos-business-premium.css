@@ -1,0 +1,32 @@
+/* DEMEOS Business Owner Workspace — premium simplicity layer. */
+.owner-workspace-body{background:#f7f8fa;color:#111820}
+.owner-workspace-header{min-height:96px;padding:1.25rem clamp(1.25rem,4vw,4rem);border-bottom:1px solid #e4e7eb;background:#fff;box-shadow:none}
+.owner-workspace-header .demeos-logo{width:112px;height:auto}
+.owner-workspace-header .workspace-identity{margin-left:clamp(1rem,3vw,2.5rem)}
+.owner-workspace-header .agent-label{margin-bottom:.2rem;color:#66717d;font-size:.72rem;letter-spacing:.16em;text-transform:uppercase}
+.owner-workspace-header .restaurant-name{margin:0;color:#111820;font-size:clamp(1.25rem,2.2vw,1.8rem);font-weight:620;letter-spacing:-.035em}
+.owner-workspace-header .cuisine-type{margin-top:.2rem;color:#7a848e}
+.owner-workspace-shell{background:#f7f8fa}
+.owner-workspace-sidebar{border-right:1px solid #e4e7eb;background:#fff}
+.owner-workspace-navigation{padding:2rem 1.25rem}
+.owner-workspace-navigation a{margin:.2rem 0;padding:.8rem 1rem;border-radius:8px;color:#4f5963;font-weight:620}
+.owner-workspace-navigation a:hover,.owner-workspace-navigation a:focus-visible{background:#f2f4f6;color:#111820}
+.owner-workspace-navigation a.is-active{background:#111820;color:#fff}
+.owner-workspace-main{padding:clamp(2rem,5vw,5rem);background:#f7f8fa}
+.owner-overview-heading{max-width:920px;margin-bottom:clamp(2.5rem,5vw,4.5rem)}
+.owner-overview-heading .workspace-eyebrow{color:#6d7680;font-size:.75rem;letter-spacing:.16em;text-transform:uppercase}
+.owner-overview-heading h2{margin:.4rem 0 .8rem;color:#111820;font-size:clamp(2.5rem,5vw,4.75rem);font-weight:560;line-height:1;letter-spacing:-.055em}
+.owner-overview-heading p:last-child{max-width:650px;color:#626d77;font-size:1.05rem;line-height:1.65}
+.owner-identity-card{max-width:920px;padding:clamp(1.5rem,3vw,2.5rem);border:1px solid #e1e5e9;border-radius:18px;background:#fff;box-shadow:none}
+.owner-identity-card .card-kicker{color:#747e88;letter-spacing:.12em;text-transform:uppercase}
+.owner-auth-panel{max-width:680px;margin:clamp(4rem,10vw,8rem) auto;padding:clamp(2rem,5vw,4rem);border:1px solid #e1e5e9;border-radius:18px;background:#fff;box-shadow:none;text-align:center}
+.owner-auth-panel h2{font-size:clamp(2rem,4vw,3.5rem);font-weight:560;letter-spacing:-.045em}
+@media(max-width:760px){
+ .owner-workspace-header{min-height:78px;padding:1rem}
+ .owner-workspace-header .demeos-logo{width:88px}
+ .owner-workspace-header .workspace-identity{margin-left:.75rem}
+ .owner-workspace-sidebar{border-right:0;border-bottom:1px solid #e4e7eb}
+ .owner-workspace-navigation{padding:.75rem;overflow-x:auto}
+ .owner-workspace-main{padding:2rem 1rem 3rem}
+ .owner-overview-heading h2{font-size:clamp(2.25rem,11vw,3.5rem)}
+}
