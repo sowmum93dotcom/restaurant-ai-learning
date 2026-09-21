@@ -169,3 +169,9 @@
 .customer-intention-option,.customer-intention-option:nth-child(n){min-height:72px;border:1px solid rgba(229,189,89,.28);border-radius:14px;background:#06172d;box-shadow:none}
 .customer-intention-option:before{display:none}
 @media(max-width:680px){.customer-intention{padding:2.5rem 1rem 4rem}.customer-intention-options{grid-template-columns:1fr}.customer-intention-option:nth-child(n){min-height:60px}}
+
+
+/* Customer controls — keep location readable and self-contained at every size. */
+.customer-location-button{display:inline-flex;align-items:center;justify-content:center;gap:.7rem;padding:.75rem 1.25rem!important;white-space:nowrap}
+.customer-location-button:before{position:static!important;left:auto!important;flex:0 0 auto}
+@media(max-width:680px){.customer-location-button{width:100%;min-width:0}}
