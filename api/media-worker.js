@@ -11,7 +11,7 @@ module.exports=async function handler(req,res){
  if(!drivers)return res.status(503).json({error:"Media processing drivers are not configured."});
  try{
   const storage=process.env.DEMEOS_MEDIA_STORAGE_PROVIDER==="vercel-blob"?createVercelBlobStorageDriver({token:process.env.BLOB_READ_WRITE_TOKEN}):null;
-  const worker=createMediaWorker({repository:getRepository(),drivers,createProcessingRead:storage&&storage.createProcessingRead,createProcessingWrite:storage&&storage.createProcessingWrite,maxAttempts:5,reconcileLimit:50});
+  const worker=createMediaWorker({repository:getRepository(),drivers,createProcessingRead:storage&&storage.createProcessingRead,createProcessingWrite:storage&&storage.createProcessingWrite,verifyProcessedOutput:storage&&storage.verifyUpload,maxAttempts:5,reconcileLimit:50});
   const result=await worker();
   return res.status(result.status==="not-configured"?503:200).json({status:result.status,recovered:result.recovered,
    ...(result.processed?{job:{jobId:result.processed.jobId,assetId:result.processed.assetId,status:result.processed.status}}:{})});

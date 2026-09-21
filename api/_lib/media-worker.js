@@ -1,6 +1,6 @@
 const {processNextMediaJob,reconcileMediaProcessingQueue}=require("./media-processing-queue.js");
 const {createMediaProcessor}=require("./media-processor.js");
-function createMediaWorker({repository,drivers,createProcessingRead,createProcessingWrite,maxAttempts=5,reconcileLimit=50}={}){
+function createMediaWorker({repository,drivers,createProcessingRead,createProcessingWrite,verifyProcessedOutput,maxAttempts=5,reconcileLimit=50}={}){
  const baseProcessor=createMediaProcessor(drivers||{});
  const processor=async(asset,context)=>{
   if(typeof createProcessingRead!=="function")return baseProcessor(asset,context);
@@ -20,7 +20,13 @@ function createMediaWorker({repository,drivers,createProcessingRead,createProces
     outputDestinations.push({role,storageKey:destination.storageKey,uploadUrl:destination.uploadUrl,contentType});
    }
   }
-  return baseProcessor(asset,{...(context||{}),sourceUrl:delegated.readUrl,sourceExpiresAt:delegated.expiresAt||expiresAt,...(outputDestinations?{outputDestinations}:{})});
+  const result=await baseProcessor(asset,{...(context||{}),sourceUrl:delegated.readUrl,sourceExpiresAt:delegated.expiresAt||expiresAt,...(outputDestinations?{outputDestinations}:{})});
+  if(!result||!result.success||!outputDestinations||typeof verifyProcessedOutput!=="function")return result;
+  for(const expected of outputDestinations){
+   const stored=await verifyProcessedOutput({storageKey:expected.storageKey});
+   if(!stored||!stored.exists||stored.storageKey!==expected.storageKey||stored.contentType!==expected.contentType)return{success:false,error:"Processed media output verification failed."};
+  }
+  return result;
  };
  return async function runMediaWorker(){
   if(!repository)return{status:"not-configured"};
