@@ -110,3 +110,14 @@
 #create .demeos-secondary-button{min-height:46px}
 #create .campaign-workspace-section{border-color:rgba(229,189,89,.22);background:rgba(2,13,28,.72);box-shadow:none}
 @media(max-width:760px){#create .demeos-primary-button,#create .demeos-secondary-button{width:100%}}
+
+
+/* Campaigns — separate work needing attention from completed history. */
+#campaigns .view-heading{margin-bottom:2rem}
+#campaigns .active-marketing-work,#campaigns .campaign-history{max-width:1040px;padding:clamp(1.35rem,2.6vw,2.2rem)}
+#campaigns .active-marketing-work{border-color:rgba(240,207,114,.5);background:rgba(6,23,45,.94)}
+#campaigns .active-marketing-work h3,#campaigns .campaign-history h3{margin:.2rem 0 .55rem;font-size:clamp(1.6rem,3vw,2.3rem)}
+#campaigns .active-marketing-work-helper{max-width:62ch}
+#campaigns .campaign-history{margin-top:1rem;background:rgba(2,13,28,.72)}
+#campaigns .compact-list{gap:.7rem}
+@media(max-width:760px){#campaigns .active-marketing-work,#campaigns .campaign-history{padding:1.2rem}}
