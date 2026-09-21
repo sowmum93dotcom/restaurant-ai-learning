@@ -18,7 +18,7 @@ function createMediaProcessor({inspectImage,inspectVideo,optimizeImage,transcode
    const optimized=await optimizeImage(asset,inspected,context);
    if(!optimized||!isHttps(optimized.deliveryUrl)||!outputMatches(asset,context,optimized))
     return{success:false,error:"Image optimization failed."};
-   return{success:true,deliveryUrl:optimized.deliveryUrl,width:inspected.width,height:inspected.height,derivatives:optimized.derivatives};
+   return{success:true,storageKey:optimized.storageKey,deliveryUrl:optimized.deliveryUrl,width:inspected.width,height:inspected.height,derivatives:optimized.derivatives};
   }
   if(asset.kind==="video"){
    if(typeof inspectVideo!=="function"||typeof transcodeVideo!=="function")return{success:false,error:"Video processing is not configured."};
@@ -29,7 +29,7 @@ function createMediaProcessor({inspectImage,inspectVideo,optimizeImage,transcode
    const optimized=await transcodeVideo(asset,inspected,context);
    if(!optimized||!isHttps(optimized.deliveryUrl)||!outputMatches(asset,context,optimized))
     return{success:false,error:"Video processing failed."};
-   return{success:true,deliveryUrl:optimized.deliveryUrl,width:inspected.width,height:inspected.height,
+   return{success:true,storageKey:optimized.storageKey,deliveryUrl:optimized.deliveryUrl,width:inspected.width,height:inspected.height,
     durationSeconds:inspected.durationSeconds,derivatives:optimized.derivatives};
   }
   return{success:false,error:"Unsupported media kind."};
