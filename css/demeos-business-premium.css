@@ -151,3 +151,13 @@
 #business-profile .profile-long-field textarea{border-color:rgba(174,187,208,.32)!important;background:#020d1c!important;color:#fff!important;box-shadow:none!important}
 #business-profile .profile-long-field textarea:focus{border-color:var(--bo-gold)!important;box-shadow:none!important}
 #business-profile .profile-choice-grid input,#business-profile .profile-accuracy-confirmation input{accent-color:var(--bo-gold)}
+
+
+/* Results — simple evidence surface, no dashboard-style visual weight. */
+.business-results-main{max-width:1120px;margin:0 auto}
+.business-results-intro{margin-bottom:2rem}
+.business-results-evidence{max-width:1040px;margin:0 0 1rem;padding:clamp(1.35rem,3vw,2rem);border:1px solid rgba(174,187,208,.3);border-radius:14px;background:#031326;box-shadow:none}
+.business-results-evidence h3{margin:.1rem 0 .6rem;color:#fff;font-family:inherit;font-size:clamp(1.5rem,3vw,2rem);font-weight:750}
+.demeos-understanding-summary{gap:.75rem}
+.demeos-understanding-summary>div{border-color:rgba(174,187,208,.24);background:#020d1c;box-shadow:none}
+@media(max-width:760px){.business-results-evidence{padding:1.2rem}}
