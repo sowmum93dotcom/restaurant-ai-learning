@@ -26,6 +26,25 @@ function hasControlledManagedIdentity(asset){
  const prefix=`businesses/${asset.businessId}/media/${asset.assetId}/processed/`;
  return asset.processedStorageKey.startsWith(prefix);
 }
+function managedStorageKey(asset,variant){
+ if(!asset||!asset.processedStorageKey)return null;
+ if(variant&&typeof variant.storageKey==="string")return variant.storageKey;
+ return asset.processedStorageKey;
+}
+async function resolveApprovedMarketingMediaForDelivery(campaign,businessId,assets,createDeliveryRead,{ttlMs=10*60*1000}={}){
+ const media=resolveApprovedMarketingMedia(campaign,businessId,assets);if(!media.length)return media;
+ if(typeof createDeliveryRead!=="function")return media.filter(item=>{const asset=assets.find(a=>a&&a.assetId===item.assetId);return !asset||!asset.processedStorageKey;});
+ const expiresAt=new Date(Date.now()+Math.max(60*1000,Math.min(60*60*1000,Number(ttlMs)||10*60*1000))).toISOString();
+ const out=[];
+ for(const item of media){
+  const asset=assets.find(a=>a&&a.assetId===item.assetId);if(!asset||!asset.processedStorageKey){out.push(item);continue;}
+  const variant=selectCustomerMediaVariant(asset),storageKey=managedStorageKey(asset,variant);
+  const delegated=storageKey&&await createDeliveryRead({storageKey,expiresAt});
+  if(!delegated||delegated.storageKey!==storageKey||!/^https:\/\//i.test(delegated.deliveryUrl||""))continue;
+  out.push({...item,deliveryUrl:delegated.deliveryUrl});
+ }
+ return out;
+}
 function resolveApprovedMarketingMedia(campaign,businessId,assets){
  if(!campaign||campaign.approvalStatus!=="Approved")return [];
  const links=normalizeMarketingMediaLinks(campaign.media,businessId,assets);if(!links)return [];
@@ -39,4 +58,4 @@ function resolveApprovedMarketingMedia(campaign,businessId,assets){
  });
  return resolved.every(Boolean)?resolved:[];
 }
-module.exports={normalizeMarketingMediaLinks,resolveApprovedMarketingMedia,selectCustomerMediaVariant};
+module.exports={normalizeMarketingMediaLinks,resolveApprovedMarketingMedia,resolveApprovedMarketingMediaForDelivery,selectCustomerMediaVariant};
