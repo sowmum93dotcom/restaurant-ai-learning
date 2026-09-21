@@ -40,7 +40,7 @@ test("Customer Interface maps visits from visitAddress, never the general possib
 });
 
 test("Business Profile makes visit address a route-specific control", function () {
-  const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
+  const html = fs.readFileSync(path.join(__dirname, "..", "marketing.html"), "utf8");
   const script = fs.readFileSync(path.join(__dirname, "..", "js", "script.js"), "utf8");
   assert.match(html, /Customer visit address/);
   assert.match(html, /separate from your general location or service area/);
