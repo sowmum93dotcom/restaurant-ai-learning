@@ -857,6 +857,13 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       visitAddress: continuationDetails.visitAddress.value.trim()
     };
   }
+  const businessMediaFile = byId("business-media-file");
+  const businessMediaUploadBtn = byId("business-media-upload-btn");
+  const businessMediaStatus = byId("business-media-status");
+  const businessMediaList = byId("business-media-list");
+  const businessMediaEmpty = byId("business-media-empty");
+  let businessMediaAssets = [];
+
   const productFields = {
     id: byId("business-product-id"), name: byId("business-product-name"), price: byId("business-product-price"), priceMode: byId("business-product-price-mode"),
     description: byId("business-product-description"), image: byId("business-product-image"),
@@ -875,6 +882,65 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   const productsVisible = byId("business-products-visible");
   const productsImages = byId("business-products-images");
   let draftProducts = [];
+
+  function renderBusinessMedia() {
+    if (!businessMediaList || !businessMediaEmpty) return;
+    businessMediaList.textContent = "";
+    businessMediaEmpty.hidden = businessMediaAssets.length > 0;
+    businessMediaAssets.forEach(function (asset) {
+      const item = document.createElement("article"); item.className = "business-media-item";
+      const title = document.createElement("strong"); title.textContent = asset.kind === "video" ? "Video" : "Image";
+      const stateLabel = document.createElement("span"); stateLabel.textContent = asset.state === "ready" ? "Ready" : asset.state === "failed" ? "Could not process" : "Processing";
+      item.append(title, stateLabel);
+      if (asset.state === "ready" && asset.deliveryUrl) {
+        const preview = asset.kind === "video" ? document.createElement("video") : document.createElement("img");
+        preview.src = asset.deliveryUrl;
+        if (asset.kind === "video") { preview.controls = true; preview.preload = "metadata"; }
+        else preview.alt = "Business media preview";
+        item.appendChild(preview);
+      }
+      businessMediaList.appendChild(item);
+    });
+  }
+  async function loadBusinessMedia() {
+    if (!state.activeBusinessId || !businessMediaList) return;
+    try {
+      const response = await fetch(`/api/businesses/${encodeURIComponent(state.activeBusinessId)}/media`, { credentials: "same-origin" });
+      const payload = response.ok ? await response.json() : { assets: [] };
+      businessMediaAssets = Array.isArray(payload.assets) ? payload.assets : [];
+    } catch (_error) { businessMediaAssets = []; }
+    renderBusinessMedia();
+  }
+  async function uploadBusinessMedia() {
+    const file = businessMediaFile && businessMediaFile.files && businessMediaFile.files[0];
+    if (!file || !state.activeBusinessId) { businessMediaStatus.textContent = "Choose an image or video first."; return; }
+    const kind = file.type.startsWith("video/") ? "video" : file.type.startsWith("image/") ? "image" : "";
+    if (!kind) { businessMediaStatus.textContent = "Choose a supported image or video."; return; }
+    const maxBytes = kind === "video" ? 250 * 1024 * 1024 : 15 * 1024 * 1024;
+    if (file.size > maxBytes) { businessMediaStatus.textContent = kind === "video" ? "Video must be 250 MB or smaller." : "Image must be 15 MB or smaller."; return; }
+    businessMediaUploadBtn.disabled = true; businessMediaStatus.textContent = "Preparing secure upload…";
+    try {
+      const register = await fetch(`/api/businesses/${encodeURIComponent(state.activeBusinessId)}/media`, {
+        method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ asset: { kind, purpose: "marketing", contentType: file.type, sizeBytes: file.size } })
+      });
+      const registered = await register.json();
+      if (!register.ok || !registered.asset || !registered.uploadSession) throw new Error(registered.error || "Secure media storage is unavailable.");
+      businessMediaStatus.textContent = "Uploading securely…";
+      const upload = await fetch(registered.uploadSession.uploadUrl, { method: "PUT", headers: { "Content-Type": file.type }, body: file });
+      if (!upload.ok) throw new Error("The media upload did not complete.");
+      businessMediaStatus.textContent = "Processing media…";
+      const complete = await fetch(`/api/businesses/${encodeURIComponent(state.activeBusinessId)}/media/${encodeURIComponent(registered.asset.assetId)}`, {
+        method: "PATCH", credentials: "same-origin", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "complete-upload", uploadToken: registered.uploadSession.uploadToken, storageKey: registered.uploadSession.storageKey })
+      });
+      if (!complete.ok) { const failure = await complete.json(); throw new Error(failure.error || "DEMEOS could not process this media."); }
+      businessMediaFile.value = ""; businessMediaStatus.textContent = "Media received. DEMEOS is processing it safely.";
+      await loadBusinessMedia();
+    } catch (error) { businessMediaStatus.textContent = error.message || "DEMEOS could not add this media."; }
+    finally { businessMediaUploadBtn.disabled = false; }
+  }
+  if (businessMediaUploadBtn) businessMediaUploadBtn.addEventListener("click", uploadBusinessMedia);
 
   function selectedProductFulfilment() {
     return productFulfilmentOptions && typeof productFulfilmentOptions.querySelectorAll === "function" ? Array.from(productFulfilmentOptions.querySelectorAll("input[type=checkbox]")).filter(function (input) { return input.checked; }).map(function (input) { return input.value; }) : [];
@@ -1047,7 +1113,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     else localStorage.removeItem("demeosActiveBusinessId");
     renderSelector(); fillProfile(activeProfile()); renderActiveMarketingWork();
     renderCustomerParticipationResults(); renderCampaignHistory();
-    if (state.activeBusinessId) hydrateActiveBusiness();
+    if (state.activeBusinessId) { hydrateActiveBusiness(); loadBusinessMedia(); }
   }
   function clearCampaignWorkspace() {
     clearRevisionTarget();
