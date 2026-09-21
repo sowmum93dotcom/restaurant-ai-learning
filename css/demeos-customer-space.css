@@ -129,3 +129,11 @@
 .customer-intention-detail{margin-top:1.5rem}
 @media(max-width:900px){.customer-intention-form fieldset,.customer-intention-options{min-height:0}.customer-intention-options{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:680px){.customer-intention-options{grid-template-columns:1fr}.customer-intention-option:nth-child(n){min-height:64px}}
+
+/* My DEMEOS — simple relationship access, no orbit/dashboard complexity. */
+.my-demeos-areas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:auto;gap:1.25rem;min-height:0}
+.my-demeos-areas:before{display:none}
+.my-demeos-area:nth-child(n){position:relative;inset:auto;grid-column:auto;grid-row:auto;width:100%;min-height:170px;transform:none}
+.my-demeos-area:nth-child(5){grid-column:1/-1;min-height:150px}
+.my-demeos-area-active:hover,.my-demeos-area-active:focus-visible{transform:none}
+@media(max-width:760px){.my-demeos-areas{grid-template-columns:1fr}.my-demeos-area:nth-child(5){grid-column:auto}.my-demeos-area:nth-child(n){min-height:0}}
