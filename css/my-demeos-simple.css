@@ -1,34 +1,36 @@
-/* My DEMEOS — approved simple working interface. Functionality remains in my-demeos.js. */
+/* My DEMEOS — approved interface applied to the working relationship system. */
 .my-demeos-body{background:#020b18;color:#fff}
+.my-demeos-body .customer-header{background:#031326;border-bottom:1px solid rgba(174,187,208,.28)}
+.my-demeos-body .customer-brand{display:flex;align-items:center;gap:.8rem;color:#f0cf72;font-size:1.25rem;font-weight:800;letter-spacing:.22em;text-decoration:none}
+.my-demeos-body .customer-brand .demeos-logo{width:58px;height:58px;object-fit:contain}
 .my-demeos-main{width:min(1120px,calc(100% - 64px));margin:0 auto;padding:clamp(3.5rem,7vw,6rem) 0 5rem;background:#020b18}
-.my-demeos-main:before{display:none!important}
+.my-demeos-main:before,.my-demeos-areas:before,.my-demeos-area:before,.my-demeos-area:after{display:none!important}
 .my-demeos-introduction{text-align:center}
+.my-demeos-introduction .customer-eyebrow{color:#e5bd59}
 .my-demeos-introduction h1{margin:.55rem 0;font-size:clamp(3rem,7vw,5rem);line-height:1;color:#fff}
+.my-demeos-introduction h1::first-letter{color:#fff}
 .my-demeos-lead{margin:0;color:#c6d0df;font-size:1.2rem}
 .my-demeos-sign-in-status{max-width:1040px;margin:3rem auto 0;padding:2.2rem;border:1px solid rgba(229,189,89,.38);border-radius:16px;background:#031326;box-shadow:none}
 .my-demeos-sign-in-status h2{margin:.1rem 0 .65rem;color:#fff;font-size:1.8rem}
 .my-demeos-sign-in-status p{color:#c6d0df}
 .my-demeos-sign-in-status .demeos-primary-button{min-width:320px;min-height:58px;border-radius:999px}
-.my-demeos-future{margin-top:3.2rem}
+.my-demeos-sign-in-status .demeos-primary-button span{margin-left:1.2rem;font-size:1.5rem}
+.my-demeos-future{margin-top:3rem}
 .my-demeos-section-heading{max-width:720px;margin:0 auto 1.5rem;text-align:center}
-.my-demeos-section-heading .customer-eyebrow{color:#e5bd59}
-.my-demeos-section-heading h2{margin:.35rem 0;color:#fff;font-size:clamp(1.8rem,4vw,2.5rem)}
-.my-demeos-section-heading p:last-child{color:#aebbd0}
+.my-demeos-section-heading .customer-eyebrow{margin-bottom:.55rem;color:#e5bd59;font-size:.82rem;font-weight:800;letter-spacing:.18em;text-transform:uppercase}
+.my-demeos-section-heading p:last-child{margin:0;color:#c6d0df;font-size:1.05rem}
 .my-demeos-areas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;min-height:0;margin-top:1.75rem}
-.my-demeos-areas:before{display:none!important}
-.my-demeos-area:nth-child(n){position:relative!important;inset:auto!important;grid-column:auto;grid-row:auto;width:100%!important;min-height:190px;transform:none!important}
-.my-demeos-area:nth-child(5){grid-column:1/-1;min-height:150px}
-.my-demeos-area{display:flex;flex-direction:column;align-items:flex-start;padding:1.7rem;border:1px solid rgba(174,187,208,.38);border-radius:14px;background:#031326;color:#fff;text-align:left;box-shadow:none}
-.my-demeos-area:before,.my-demeos-area:after{display:none!important}
-.my-demeos-area:hover,.my-demeos-area:focus-visible{transform:none!important;border-color:#e5bd59}
-.my-demeos-area-status{color:#e5bd59;font-size:.72rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase}
-.my-demeos-area-title{margin:.65rem 0 .4rem;color:#fff;font-family:inherit;font-size:1.55rem;font-weight:750}
-.my-demeos-area-copy{max-width:34rem;color:#c6d0df;line-height:1.5}
-.my-demeos-area-enter{margin-top:auto;padding-top:1rem;color:#f0cf72;font-weight:800}
-.my-demeos-evidence{display:none}
+.my-demeos-area:nth-child(n){position:relative!important;inset:auto!important;display:grid;grid-template-columns:72px 1fr;grid-template-rows:auto auto 1fr;column-gap:1rem;width:100%!important;min-height:200px;padding:1.7rem;border:1px solid rgba(174,187,208,.38);border-radius:14px;background:#031326;color:#fff;text-align:left;box-shadow:none;transform:none!important}
+.my-demeos-area:nth-child(5){grid-column:1/-1;min-height:155px}
+.my-demeos-area:hover,.my-demeos-area:focus-visible{border-color:#e5bd59;transform:none!important}
+.my-demeos-area-icon{grid-column:1;grid-row:1/4;color:#f0cf72;font-size:2.7rem;line-height:1}
+.my-demeos-area-title{grid-column:2;margin:0 0 .4rem;color:#fff;font-family:inherit;font-size:1.45rem;font-weight:750}
+.my-demeos-area-copy{grid-column:2;max-width:34rem;color:#c6d0df;line-height:1.5}
+.my-demeos-area-enter{grid-column:2;margin-top:auto;padding-top:1rem;color:#f0cf72;font-weight:800}
 .my-demeos-relationship-view{margin-top:2rem;padding:clamp(1.4rem,4vw,2.2rem);border:1px solid rgba(229,189,89,.3);border-radius:16px;background:#031326}
 .my-demeos-relationship-view[hidden]{display:none}
 .my-demeos-relationship-view h2{color:#fff!important;font-size:clamp(2rem,5vw,3rem)}
 .my-demeos-back{margin-bottom:1.5rem;border:1px solid rgba(229,189,89,.35);border-radius:999px;background:transparent;color:#fff;padding:.75rem 1.1rem}
 .my-demeos-meaning,.my-demeos-relationship-view p{color:#c6d0df}
-@media(max-width:760px){.my-demeos-main{width:min(100% - 28px,1120px);padding:2.5rem 0 4rem}.my-demeos-sign-in-status{margin-top:2rem;padding:1.5rem}.my-demeos-sign-in-status .demeos-primary-button{width:100%;min-width:0}.my-demeos-areas{grid-template-columns:1fr}.my-demeos-area:nth-child(5){grid-column:auto}.my-demeos-area:nth-child(n){min-height:0}}
+.my-demeos-body .customer-footer{border-top:1px solid rgba(174,187,208,.24);background:#020b18}
+@media(max-width:760px){.my-demeos-body .customer-brand span{display:none}.my-demeos-main{width:min(100% - 28px,1120px);padding:2.5rem 0 4rem}.my-demeos-sign-in-status{margin-top:2rem;padding:1.5rem}.my-demeos-sign-in-status .demeos-primary-button{width:100%;min-width:0}.my-demeos-areas{grid-template-columns:1fr}.my-demeos-area:nth-child(5){grid-column:auto}.my-demeos-area:nth-child(n){grid-template-columns:52px 1fr;min-height:0;padding:1.25rem}.my-demeos-area-icon{font-size:2rem}}
