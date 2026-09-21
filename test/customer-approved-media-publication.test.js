@@ -1,5 +1,5 @@
 const test=require("node:test"),assert=require("node:assert/strict");
-const {resolveApprovedMarketingMedia}=require("../api/_lib/marketing-media-link.js");
+const {resolveApprovedMarketingMedia,resolveApprovedMarketingMediaForDelivery}=require("../api/_lib/marketing-media-link.js");
 const {toPublicCustomerWorkItem}=require("../api/_lib/customer-public-work-contract.js");
 const asset={assetId:"a1",businessId:"b1",kind:"image",state:"ready",deliveryUrl:"https://cdn.example/master.webp",width:1600,height:1200,derivatives:[
  {role:"customer",deliveryUrl:"https://cdn.example/customer.webp",contentType:"image/webp",width:1200,height:900},
@@ -31,4 +31,19 @@ test("managed media publishes only derivatives belonging to its controlled DEMEO
 test("managed media with a foreign processed master identity fails closed",function(){
  const managed={...asset,processedStorageKey:"businesses/other/media/a1/processed/master.webp"};
  assert.deepEqual(resolveApprovedMarketingMedia({approvalStatus:"Approved",media:[{assetId:"a1",role:"primary"}]},"b1",[managed]),[]);
+});
+
+test("managed customer media receives a short-lived controlled delivery URL",async function(){
+ const managed={...asset,processedStorageKey:"businesses/b1/media/a1/processed/master.webp",derivatives:[
+  {role:"customer",storageKey:"businesses/b1/media/a1/processed/customer.webp",deliveryUrl:"https://expired.example/customer.webp",contentType:"image/webp",width:1200,height:900}
+ ]};let requested;
+ const media=await resolveApprovedMarketingMediaForDelivery({approvalStatus:"Approved",media:[{assetId:"a1",role:"primary"}]},"b1",[managed],async input=>{requested=input;return{storageKey:input.storageKey,deliveryUrl:"https://private.example/signed-customer.webp"};});
+ assert.equal(requested.storageKey,"businesses/b1/media/a1/processed/customer.webp");assert.equal(media[0].deliveryUrl,"https://private.example/signed-customer.webp");
+});
+test("managed customer media fails closed when controlled delivery cannot be delegated",async function(){
+ const managed={...asset,processedStorageKey:"businesses/b1/media/a1/processed/master.webp",derivatives:[
+  {role:"customer",storageKey:"businesses/b1/media/a1/processed/customer.webp",deliveryUrl:"https://expired.example/customer.webp",contentType:"image/webp",width:1200,height:900}
+ ]};
+ const media=await resolveApprovedMarketingMediaForDelivery({approvalStatus:"Approved",media:[{assetId:"a1",role:"primary"}]},"b1",[managed],async()=>null);
+ assert.deepEqual(media,[]);
 });
