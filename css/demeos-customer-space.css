@@ -155,3 +155,17 @@
 .customer-work-card .customer-choice,.customer-work-card .customer-participation{border-top-color:rgba(217,173,67,.22)}
 .customer-work-card .customer-participation-button{min-height:48px}
 @media(max-width:680px){.customer-work-card .customer-message{padding:1.1rem}.customer-work-card .customer-work-content{font-size:1rem}}
+
+
+/* Customer Experience — match the approved DEMEOS entry simplicity. */
+.customer-main{background:#020b18}
+.customer-main:before,.customer-intention:after,.customer-intention-glow{display:none}
+.customer-intention{min-height:calc(100vh - 92px);padding:clamp(3rem,8vw,7rem) 1.5rem;background:#020b18}
+.customer-intention-inner{width:min(920px,100%)}
+.customer-intention h1{max-width:760px;margin:.45rem auto .8rem;font-size:clamp(2.5rem,6vw,4.6rem);font-weight:650}
+.customer-trust-copy{max-width:620px;color:#c6d0df}
+.customer-intention-form{margin-top:clamp(2.5rem,6vw,4.5rem)}
+.customer-intention-options{grid-template-columns:repeat(2,minmax(0,1fr));gap:.85rem}
+.customer-intention-option,.customer-intention-option:nth-child(n){min-height:72px;border:1px solid rgba(229,189,89,.28);border-radius:14px;background:#06172d;box-shadow:none}
+.customer-intention-option:before{display:none}
+@media(max-width:680px){.customer-intention{padding:2.5rem 1rem 4rem}.customer-intention-options{grid-template-columns:1fr}.customer-intention-option:nth-child(n){min-height:60px}}
