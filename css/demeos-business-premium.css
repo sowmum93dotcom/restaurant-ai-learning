@@ -116,3 +116,11 @@
 #create .demeos-primary-button,
 #create .demeos-secondary-button{border-radius:10px;box-shadow:none}
 @media(max-width:760px){#create .view-heading{margin-bottom:1.5rem}}
+
+
+/* Account control — keep authentication state unmistakable on the light workspace. */
+.owner-workspace-header .owner-account-control{gap:.75rem;color:#06172d;font-weight:650}
+.owner-workspace-header .owner-account-control>span{color:#536170}
+.owner-workspace-header .owner-account-button{border:1px solid #c99a2e;background:#06172d;color:#fff;font-weight:700;box-shadow:none}
+.owner-workspace-header .owner-account-button:hover,
+.owner-workspace-header .owner-account-button:focus-visible{border-color:#e5bd59;background:#0b2b52;color:#fff;outline:2px solid rgba(201,154,46,.22);outline-offset:2px}
