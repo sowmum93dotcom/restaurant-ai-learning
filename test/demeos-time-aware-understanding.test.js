@@ -5,7 +5,7 @@ const test = require("node:test");
 const { getDemeosUnderstanding } = require("../js/demeos-understanding.js");
 const databaseSource = fs.readFileSync(require.resolve("../api/_lib/database.js"), "utf8");
 const recommendSource = fs.readFileSync(require.resolve("../api/recommend.js"), "utf8");
-const html = fs.readFileSync(require.resolve("../index.html"), "utf8");
+const html = fs.readFileSync(require.resolve("../marketing.html"), "utf8");
 const script = fs.readFileSync(require.resolve("../js/script.js"), "utf8");
 
 const profile = { businessId: "business-a", name: "A", type: "Cafe", location: "York",

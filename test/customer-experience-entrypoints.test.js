@@ -4,7 +4,7 @@ const path = require("node:path");
 const test = require("node:test");
 
 const root = path.join(__dirname, "..");
-const ownerPages = ["business-workspace.html", "index.html", "business-results.html"];
+const ownerPages = ["business-workspace.html", "marketing.html", "business-results.html"];
 
 function read(file) {
   return fs.readFileSync(path.join(root, file), "utf8");
