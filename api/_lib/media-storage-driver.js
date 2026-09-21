@@ -50,7 +50,7 @@ function createVercelBlobStorageDriver({token,blobSdkLoader}={}){
     return result&&/^https:\/\//i.test(result.presignedUrl||"")?{storageKey,readUrl:result.presignedUrl,expiresAt}:null;
    }catch{return null;}
   },
-  async createProcessingWrite({storageKey,contentType,maximumSizeInBytes,expiresAt}){
+  async createDeliveryRead({storageKey,expiresAt}){\n   const sdk=await loadVercelBlobSdk(blobSdkLoader);if(!sdk||typeof sdk.issueSignedToken!=="function"||typeof sdk.presignUrl!=="function")return null;\n   const validUntil=Date.parse(expiresAt);if(!Number.isFinite(validUntil)||validUntil<=Date.now()||!clean(storageKey))return null;\n   try{\n    const signed=await sdk.issueSignedToken({pathname:storageKey,operations:["get"],validUntil,token:secret});\n    const result=await sdk.presignUrl(signed,{operation:"get",pathname:storageKey,access:"private",validUntil,useCache:true});\n    return result&&/^https:\\/\\//i.test(result.presignedUrl||"")?{storageKey,deliveryUrl:result.presignedUrl,expiresAt}:null;\n   }catch{return null;}\n  },\n  async createProcessingWrite({storageKey,contentType,maximumSizeInBytes,expiresAt}){
    const sdk=await loadVercelBlobSdk(blobSdkLoader);if(!sdk||typeof sdk.issueSignedToken!=="function"||typeof sdk.presignUrl!=="function")return null;
    const validUntil=Date.parse(expiresAt),max=Number(maximumSizeInBytes);if(!Number.isFinite(validUntil)||validUntil<=Date.now()||!clean(storageKey)||!clean(contentType)||!Number.isFinite(max)||max<=0)return null;
    try{
