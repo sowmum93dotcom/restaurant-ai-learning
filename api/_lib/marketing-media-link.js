@@ -1,4 +1,5 @@
 const {toPublicMediaAsset}=require("./media-asset-contract.js");
+const {MAX_PUBLIC_CUSTOMER_MEDIA}=require("./customer-public-work-contract.js");
 function normalizeMarketingMediaLinks(links,businessId,assets){
  if(links===undefined)return [];
  if(!Array.isArray(links))return null;
@@ -32,18 +33,17 @@ function managedStorageKey(asset,variant){
  return asset.processedStorageKey;
 }
 async function resolveApprovedMarketingMediaForDelivery(campaign,businessId,assets,createDeliveryRead,{ttlMs=10*60*1000}={}){
- const media=resolveApprovedMarketingMedia(campaign,businessId,assets);if(!media.length)return media;
+ const media=resolveApprovedMarketingMedia(campaign,businessId,assets).slice(0,MAX_PUBLIC_CUSTOMER_MEDIA);if(!media.length)return media;
  if(typeof createDeliveryRead!=="function")return media.filter(item=>{const asset=assets.find(a=>a&&a.assetId===item.assetId);return !asset||!asset.processedStorageKey;});
  const expiresAt=new Date(Date.now()+Math.max(60*1000,Math.min(60*60*1000,Number(ttlMs)||10*60*1000))).toISOString();
- const out=[];
- for(const item of media){
-  const asset=assets.find(a=>a&&a.assetId===item.assetId);if(!asset||!asset.processedStorageKey){out.push(item);continue;}
+ const out=await Promise.all(media.map(async item=>{
+  const asset=assets.find(a=>a&&a.assetId===item.assetId);if(!asset||!asset.processedStorageKey)return item;
   const variant=selectCustomerMediaVariant(asset),storageKey=managedStorageKey(asset,variant);
   const delegated=storageKey&&await createDeliveryRead({storageKey,expiresAt});
-  if(!delegated||delegated.storageKey!==storageKey||!/^https:\/\//i.test(delegated.deliveryUrl||""))continue;
-  out.push({...item,deliveryUrl:delegated.deliveryUrl});
- }
- return out;
+  if(!delegated||delegated.storageKey!==storageKey||!/^https:\/\//i.test(delegated.deliveryUrl||""))return null;
+  return {...item,deliveryUrl:delegated.deliveryUrl};
+ }));
+ return out.filter(Boolean);
 }
 function resolveApprovedMarketingMedia(campaign,businessId,assets){
  if(!campaign||campaign.approvalStatus!=="Approved")return [];
