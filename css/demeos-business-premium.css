@@ -84,3 +84,18 @@
 #business-profile .profile-long-field.target-customer-field label,
 #business-profile .profile-long-field.target-customer-field p{color:#4f5963}
 @media(max-width:760px){#business-profile .view-heading{margin-bottom:1.5rem}}
+
+/* DEMEOS Recommends — intelligence first, interface second. */
+#recommends .view-heading{max-width:820px;margin-bottom:2.75rem}
+#recommends .view-heading h2{font-size:clamp(2.2rem,4.5vw,3.8rem);font-weight:560;letter-spacing:-.05em}
+#recommends .view-heading p:last-child{max-width:650px;color:#626d77;line-height:1.65}
+#recommends .dashboard-card,
+#recommends .recommendation-card,
+#recommends .recommendation-panel{border:1px solid #e1e5e9;border-radius:16px;background:#fff;box-shadow:none}
+#recommends .recommendation-card h3,
+#recommends .recommendation-panel h3{color:#111820;font-weight:600;letter-spacing:-.025em}
+#recommends .recommendation-card p,
+#recommends .recommendation-panel p{line-height:1.6}
+#recommends .demeos-primary-button{border-radius:10px;box-shadow:none}
+#recommends .demeos-secondary-button{border-radius:10px;box-shadow:none}
+@media(max-width:760px){#recommends .view-heading{margin-bottom:1.5rem}}
