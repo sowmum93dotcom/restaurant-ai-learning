@@ -119,3 +119,13 @@
   .my-demeos-future{margin-top:3.5rem}
   .my-demeos-areas{margin-top:2rem}
 }
+
+/* Customer intention — simple on the surface, intelligence stays underneath. */
+.customer-intention-form fieldset{min-height:0}
+.customer-intention-form fieldset:before,.customer-intention-form fieldset:after{display:none}
+.customer-intention-options{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;min-height:0}
+.customer-intention-option,.customer-intention-option:nth-child(n){position:relative;inset:auto;width:100%;min-height:96px;transform:none;border-radius:18px}
+.customer-intention-option:nth-child(6){border-color:rgba(217,173,67,.72)}
+.customer-intention-detail{margin-top:1.5rem}
+@media(max-width:900px){.customer-intention-form fieldset,.customer-intention-options{min-height:0}.customer-intention-options{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:680px){.customer-intention-options{grid-template-columns:1fr}.customer-intention-option:nth-child(n){min-height:64px}}
