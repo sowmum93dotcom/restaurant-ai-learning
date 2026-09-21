@@ -3,7 +3,7 @@ const fs = require("node:fs");
 const test = require("node:test");
 
 const { getDemeosUnderstanding } = require("../js/demeos-understanding.js");
-const html = fs.readFileSync(require.resolve("../index.html"), "utf8");
+const html = fs.readFileSync(require.resolve("../marketing.html"), "utf8");
 const script = fs.readFileSync(require.resolve("../js/script.js"), "utf8");
 
 const profile = { businessId: "business-a", name: "A", type: "Cafe", location: "York",
