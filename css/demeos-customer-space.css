@@ -98,3 +98,24 @@
   .customer-intention-detail{margin-top:1rem}
   .customer-continue-button{min-width:0}
 }
+
+
+/* My DEMEOS premium simplicity — relationship first, controls second. */
+.my-demeos-introduction{max-width:900px;margin-inline:auto;padding-top:clamp(2rem,5vw,4.5rem)}
+.my-demeos-introduction h1{font-size:clamp(3.6rem,8vw,7rem);font-weight:560;letter-spacing:-.06em}
+.my-demeos-lead{max-width:560px;line-height:1.65}
+.my-demeos-sign-in-status{margin-top:2.75rem;box-shadow:none}
+.my-demeos-future{margin-top:clamp(5rem,9vw,8rem)}
+.my-demeos-section-heading{max-width:680px;margin-inline:auto}
+.my-demeos-section-heading h2{font-weight:560;letter-spacing:-.045em}
+.my-demeos-section-heading>p:last-child{line-height:1.65}
+.my-demeos-areas{margin-top:3.5rem}
+.my-demeos-area{box-shadow:0 12px 34px rgba(0,4,15,.24)}
+.my-demeos-evidence{box-shadow:none}
+@media(max-width:680px){
+  .my-demeos-introduction{padding-top:1rem}
+  .my-demeos-introduction h1{font-size:clamp(3rem,16vw,4.5rem)}
+  .my-demeos-sign-in-status{margin-top:1.75rem}
+  .my-demeos-future{margin-top:3.5rem}
+  .my-demeos-areas{margin-top:2rem}
+}
