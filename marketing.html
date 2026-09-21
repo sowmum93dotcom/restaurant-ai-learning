@@ -322,6 +322,19 @@
                 <p id="business-products-empty">No individual products or services added yet. Your general products/services description will still be used.</p>
               </div>
 
+              <section class="profile-long-field business-media-manager" aria-labelledby="business-media-heading">
+                <div class="profile-step-heading"><div><h4 id="business-media-heading">Business images &amp; videos</h4><p>Add media owned or controlled by this business for approved DEMEOS marketing work.</p></div></div>
+                <div class="business-media-upload">
+                  <label for="business-media-file">Choose an image or video</label>
+                  <input id="business-media-file" type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime" />
+                  <p>Images: JPG, PNG or WebP up to 15 MB. Videos: MP4 or MOV up to 250 MB and 60 seconds.</p>
+                  <button id="business-media-upload-btn" class="demeos-secondary-button" type="button">Add media</button>
+                  <p id="business-media-status" role="status" aria-live="polite"></p>
+                </div>
+                <div id="business-media-list" class="business-media-list" aria-live="polite"></div>
+                <p id="business-media-empty">No business images or videos added yet.</p>
+              </section>
+
               <section id="business-profile-continuation" class="profile-step profile-long-field"><div class="profile-step-heading"><span>Step 3</span><div><h4>How customers continue</h4><p>Choose the direct routes your business actually supports.</p></div></div></section>
               <fieldset class="profile-choice-group profile-long-field">
                 <legend>How can customers continue with your business?</legend>

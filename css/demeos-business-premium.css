@@ -132,3 +132,14 @@
 #business-profile .business-products-customer-connection{max-width:72ch;color:#c6d0df}
 #business-profile .business-product-form-actions{display:flex;flex-wrap:wrap;gap:.65rem}
 @media(max-width:760px){#business-profile .business-product-image-preview{display:block}#business-profile .business-product-image-preview img{width:100%}#business-profile .business-product-form-actions{display:grid;grid-template-columns:1fr}}
+
+
+/* Business media library — simple upload, clear processing state, trusted preview. */
+.business-media-manager{max-width:1040px}
+.business-media-upload{padding:1.2rem;border:1px solid rgba(229,189,89,.28);border-radius:14px;background:rgba(2,13,28,.72)}
+.business-media-upload input[type=file]{display:block;width:100%;margin:.7rem 0}
+.business-media-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;margin-top:1rem}
+.business-media-item{padding:1rem;border:1px solid rgba(229,189,89,.22);border-radius:14px;background:rgba(2,13,28,.72)}
+.business-media-item>span{display:block;margin:.3rem 0 .8rem;color:var(--bo-muted)}
+.business-media-item img,.business-media-item video{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px;background:#020b18}
+@media(max-width:760px){.business-media-list{grid-template-columns:1fr}.business-media-upload .demeos-secondary-button{width:100%}}
