@@ -8,9 +8,9 @@ test("worker reconciles missing work then processes one durable job",async()=>{
   getBusinessMediaAsset:async()=>asset,
   saveBusinessMediaAsset:async(_b,a)=>a,finishMediaProcessingJob:async()=>({status:"completed"})
  };
- const worker=createMediaWorker({repository,drivers:{
+ const worker=createMediaWorker({repository,createProcessingRead:async({storageKey,expiresAt})=>({storageKey,readUrl:"https://private.example/read",expiresAt}),createProcessingWrite:async(o)=>({...o,uploadUrl:"https://private.example/write"}),drivers:{
   inspectImage:async()=>({contentType:"image/jpeg",width:1600,height:1200}),
-  optimizeImage:async()=>({deliveryUrl:"https://cdn.example/master.webp",derivatives:[{role:"customer",deliveryUrl:"https://cdn.example/customer.webp",width:1200,height:900}]})
+  optimizeImage:async(_a,_i,context)=>({storageKey:context.outputDestinations.find(x=>x.role==="master").storageKey,deliveryUrl:"https://cdn.example/master.webp",derivatives:[{role:"customer",storageKey:context.outputDestinations.find(x=>x.role==="customer").storageKey,deliveryUrl:"https://cdn.example/customer.webp",width:1200,height:900}]})
  }});
  const result=await worker();assert.equal(result.status,"completed");assert.equal(result.recovered,1);assert.deepEqual(events.slice(0,2),["reconcile","claim"]);
 });
