@@ -3,7 +3,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 
-const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
+const html = fs.readFileSync(path.join(__dirname, "..", "marketing.html"), "utf8");
 const client = fs.readFileSync(path.join(__dirname, "..", "js", "script.js"), "utf8");
 const api = fs.readFileSync(path.join(__dirname, "..", "api", "businesses", "[businessId].js"), "utf8");
 const publicWork = fs.readFileSync(path.join(__dirname, "..", "api", "_lib", "customer-public-work-contract.js"), "utf8");
