@@ -62,3 +62,20 @@
   .customer-footer img{width:48px}
   .customer-footer p{font-size:.72rem;letter-spacing:.06em}
 }
+
+
+/* Premium simplicity refinement — quiet surface, DEMEOS intelligence remains underneath. */
+@media (min-width:681px){
+  .customer-intention{padding-top:clamp(4.5rem,8vw,7.5rem)}
+  .customer-intention-inner{max-width:1120px}
+  .customer-eyebrow{margin-bottom:1.25rem}
+  .customer-intention h1{max-width:900px;margin-inline:auto;font-size:clamp(3.25rem,6vw,5.8rem);font-weight:560;line-height:.98;letter-spacing:-.055em}
+  .customer-trust-copy{max-width:650px;margin-top:1.35rem;line-height:1.65}
+  .customer-intention-form{margin-top:4.5rem}
+  .customer-intention-form fieldset,.customer-intention-options{min-height:360px}
+  .customer-intention-form fieldset:before,.customer-intention-form fieldset:after{opacity:.45}
+  .customer-intention-option{min-height:70px;border-radius:999px;background:rgba(3,22,45,.82);box-shadow:0 12px 34px rgba(0,4,15,.25);font-weight:680}
+  .customer-intention-option:before{display:none}
+  .customer-understanding,.customer-possibilities{margin-top:5.5rem;background:rgba(2,16,34,.62);box-shadow:none}
+  .customer-footer{min-height:96px}
+}
