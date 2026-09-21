@@ -4,7 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const root = path.join(__dirname, "..");
-const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+const html = fs.readFileSync(path.join(root, "marketing.html"), "utf8");
 const script = fs.readFileSync(path.join(root, "js", "script.js"), "utf8");
 const css = fs.readFileSync(path.join(root, "css", "style.css"), "utf8");
 
