@@ -33,6 +33,7 @@ function normalizeMediaAsset(asset, businessId) {
   const durationSeconds = typeof asset.durationSeconds === "number" && asset.durationSeconds > 0 ? asset.durationSeconds : null;
   if (durationSeconds) { if (kind !== "video" || durationSeconds > MAX_VIDEO_DURATION_SECONDS) return null; normalized.durationSeconds = durationSeconds; }
   const storageKey = normalizeText(asset.storageKey); if (storageKey) normalized.storageKey = storageKey;
+  const processedStorageKey = normalizeText(asset.processedStorageKey); if (processedStorageKey) normalized.processedStorageKey = processedStorageKey;
   const etag = normalizeText(asset.etag); if (etag) normalized.etag = etag;
   if (Array.isArray(asset.derivatives) && asset.derivatives.length) normalized.derivatives = asset.derivatives.map(function (item) { return { ...item }; });
   const deliveryUrl = normalizeText(asset.deliveryUrl);
@@ -49,7 +50,7 @@ function toPublicMediaAsset(asset, businessId) {
     ...(normalized.contentType ? { contentType: normalized.contentType } : {}),
     ...(normalized.width ? { width: normalized.width } : {}), ...(normalized.height ? { height: normalized.height } : {}),
     ...(normalized.durationSeconds ? { durationSeconds: normalized.durationSeconds } : {}),
-    ...(normalized.derivatives ? { derivatives: normalized.derivatives.map(function (item) { return { ...item }; }) } : {}) };
+    ...(normalized.derivatives ? { derivatives: normalized.derivatives.map(function (item) { const { storageKey, ...publicDerivative } = item; return publicDerivative; }) } : {}) };
 }
 function getMediaGuidance(asset) {
   const guidance = [];
