@@ -47,3 +47,13 @@
 #business-profile input:focus,#business-profile select:focus,#business-profile textarea:focus,#create input:focus,#create select:focus,#create textarea:focus{border-color:var(--bo-gold);outline:2px solid rgba(240,207,114,.16);outline-offset:1px}
 .business-results-main{max-width:none}.business-results-intro{max-width:900px;margin-bottom:clamp(2.5rem,5vw,4.5rem)}.business-results-intro h2{color:#fff;font-family:Georgia,'Times New Roman',serif;font-size:clamp(2.5rem,5vw,4.75rem);font-weight:500}.business-results-intro>p:last-child,.business-results-status,.business-results-zero p,.demeos-understanding-intro,.demeos-understanding-caution{color:#c6d0df;line-height:1.6}.business-results-evidence{max-width:1100px;margin-top:1.25rem;padding:clamp(1.5rem,3vw,2.5rem);border:1px solid var(--bo-line);border-radius:18px;background:var(--bo-panel);box-shadow:none}
 @media(max-width:760px){.owner-workspace-header{min-height:78px;padding:1rem}.owner-workspace-header .demeos-logo{width:72px}.owner-workspace-header .workspace-identity{margin-left:.75rem}.owner-workspace-sidebar{border-right:0;border-bottom:1px solid var(--bo-line)}.owner-workspace-navigation{padding:.75rem;overflow-x:auto}.owner-workspace-main{padding:2rem 1rem 3rem}.owner-overview-heading h2{font-size:clamp(2.25rem,11vw,3.5rem)}.marketing-capability-heading h2,.marketing-workspace-main .view-heading h2{font-size:clamp(2.4rem,12vw,3.6rem)}}
+
+/* Business Owner overview — keep the first signed-in view as simple as the DEMEOS entrance. */
+.owner-workspace-main>section{max-width:1120px;margin:0 auto}
+.owner-overview-heading{margin-bottom:2.25rem}
+.owner-identity-card,.owner-next-action,.owner-current-work,.owner-customer-experience-card{padding:clamp(1.4rem,2.6vw,2.1rem)}
+.owner-next-action,.owner-current-work{display:inline-block;width:calc(50% - .8rem);vertical-align:top}
+.owner-next-action{margin-right:1.2rem}
+.owner-customer-experience-card{clear:both}
+.owner-card-action{display:inline-flex;align-items:center;justify-content:center;min-height:48px;margin-top:.75rem;padding:.75rem 1.15rem}
+@media(max-width:760px){.owner-next-action,.owner-current-work{display:block;width:100%;margin-right:0}.owner-overview-heading{margin-bottom:1.5rem}}
