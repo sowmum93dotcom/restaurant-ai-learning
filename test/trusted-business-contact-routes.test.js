@@ -4,7 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { toPublicCustomerWorkItem } = require("../api/_lib/customer-public-work-contract.js");
 
-const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
+const html = fs.readFileSync(path.join(__dirname, "..", "marketing.html"), "utf8");
 const api = fs.readFileSync(path.join(__dirname, "..", "api", "businesses", "[businessId].js"), "utf8");
 const customer = fs.readFileSync(path.join(__dirname, "..", "js", "customer.js"), "utf8");
 
