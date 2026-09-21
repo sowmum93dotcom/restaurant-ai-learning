@@ -137,3 +137,11 @@
 .my-demeos-area:nth-child(5){grid-column:1/-1;min-height:150px}
 .my-demeos-area-active:hover,.my-demeos-area-active:focus-visible{transform:none}
 @media(max-width:760px){.my-demeos-areas{grid-template-columns:1fr}.my-demeos-area:nth-child(5){grid-column:auto}.my-demeos-area:nth-child(n){min-height:0}}
+
+
+/* Approved customer media — business imagery and video stay simple and prominent. */
+.customer-work-media{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.8rem;margin-top:1.25rem}
+.customer-work-media-item{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;border:1px solid rgba(217,173,67,.3);border-radius:16px;background:#020b18}
+.customer-work-media-item.is-primary{grid-column:1/-1;aspect-ratio:16/8}
+.customer-work-media video{background:#000}
+@media(max-width:680px){.customer-work-media{grid-template-columns:1fr}.customer-work-media-item.is-primary{grid-column:auto;aspect-ratio:16/9}}
