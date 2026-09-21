@@ -99,3 +99,20 @@
 #recommends .demeos-primary-button{border-radius:10px;box-shadow:none}
 #recommends .demeos-secondary-button{border-radius:10px;box-shadow:none}
 @media(max-width:760px){#recommends .view-heading{margin-bottom:1.5rem}}
+
+/* Create Marketing — keep the owner's action focused and deliberate. */
+#create .view-heading{max-width:820px;margin-bottom:2.75rem}
+#create .view-heading h2{font-size:clamp(2.2rem,4.5vw,3.8rem);font-weight:560;letter-spacing:-.05em}
+#create .view-heading p:last-child{max-width:650px;color:#626d77;line-height:1.65}
+#create .dashboard-card,
+#create fieldset{border:1px solid #e1e5e9;border-radius:16px;background:#fff;box-shadow:none}
+#create label{color:#303942;font-weight:620}
+#create input,
+#create select,
+#create textarea{border:1px solid #d9dee3;border-radius:10px;background:#fff;color:#111820;box-shadow:none}
+#create input:focus,
+#create select:focus,
+#create textarea:focus{border-color:#111820;outline:2px solid rgba(17,24,32,.12);outline-offset:1px}
+#create .demeos-primary-button,
+#create .demeos-secondary-button{border-radius:10px;box-shadow:none}
+@media(max-width:760px){#create .view-heading{margin-bottom:1.5rem}}
