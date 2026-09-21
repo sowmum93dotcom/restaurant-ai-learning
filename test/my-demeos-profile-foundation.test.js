@@ -26,8 +26,8 @@ test("My DEMEOS uses the official logo and accessible, current-section navigatio
 
 test("profile foundation presents trusted DEMEOS entry language and honest empty relationship areas", function () {
   const html = read("my-demeos.html");
-  assert.match(html, /<h2>Enter My DEMEOS<\/h2>/);
-  assert.match(html, /type="button">Enter My DEMEOS<\/button>/);
+  assert.match(html, /<h2>Sign in to My DEMEOS<\/h2>/);
+  assert.match(html, /type="button">Sign in <span aria-hidden="true">→<\/span><\/button>/);
   assert.match(html, /type="button">Leave My DEMEOS<\/button>/);
   assert.match(html, /Checking your DEMEOS relationship securely\./);
   assert.match(html, /Enter My DEMEOS to keep and see your intentions across visits\./);
