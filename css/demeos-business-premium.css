@@ -121,3 +121,14 @@
 #campaigns .campaign-history{margin-top:1rem;background:rgba(2,13,28,.72)}
 #campaigns .compact-list{gap:.7rem}
 @media(max-width:760px){#campaigns .active-marketing-work,#campaigns .campaign-history{padding:1.2rem}}
+
+
+/* Business media — make business-provided customer imagery clear and trustworthy. */
+#business-profile .business-products-manager{max-width:1040px}
+#business-profile .business-products-manager-summary{gap:.75rem}
+#business-profile .business-product-image-preview{margin-top:1rem;padding:1rem;border:1px solid rgba(229,189,89,.28);border-radius:14px;background:rgba(2,13,28,.72)}
+#business-profile .business-product-image-preview img{width:min(220px,100%);aspect-ratio:4/3;object-fit:cover;border-radius:10px}
+#business-profile .business-product-image-preview strong{color:#fff}
+#business-profile .business-products-customer-connection{max-width:72ch;color:#c6d0df}
+#business-profile .business-product-form-actions{display:flex;flex-wrap:wrap;gap:.65rem}
+@media(max-width:760px){#business-profile .business-product-image-preview{display:block}#business-profile .business-product-image-preview img{width:100%}#business-profile .business-product-form-actions{display:grid;grid-template-columns:1fr}}
