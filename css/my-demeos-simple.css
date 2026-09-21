@@ -1,0 +1,28 @@
+/* My DEMEOS — simple relationship interface. Functionality remains in my-demeos.js. */
+.my-demeos-body{background:#020b18;color:#fff}
+.my-demeos-main{width:min(1100px,calc(100% - 48px));margin:0 auto;padding:clamp(3rem,7vw,6rem) 0}
+.my-demeos-introduction{text-align:center}
+.my-demeos-introduction h1{margin:.5rem 0;font-size:clamp(2.6rem,7vw,4.6rem);line-height:1;color:#fff}
+.my-demeos-lead{margin:0;color:#c6d0df;font-size:1.15rem}
+.my-demeos-sign-in-status{max-width:720px;margin:2.5rem auto 0;padding:1.7rem;border:1px solid rgba(229,189,89,.32);border-radius:18px;background:#06172d}
+.my-demeos-sign-in-status h2{margin:.15rem 0 .6rem;color:#fff}
+.my-demeos-future{margin-top:3rem}
+.my-demeos-section-heading{max-width:720px;margin:0 auto 1.5rem;text-align:center}
+.my-demeos-section-heading h2{margin:.35rem 0;color:#fff;font-size:clamp(1.8rem,4vw,2.6rem)}
+.my-demeos-section-heading p:last-child{color:#aebbd0}
+.my-demeos-areas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;min-height:0}
+.my-demeos-areas:before{display:none!important}
+.my-demeos-area:nth-child(n){position:relative!important;inset:auto!important;grid-column:auto;grid-row:auto;width:100%!important;min-height:160px;transform:none!important}
+.my-demeos-area:nth-child(5){grid-column:1/-1;min-height:135px}
+.my-demeos-area{display:flex;flex-direction:column;align-items:flex-start;padding:1.35rem;border:1px solid rgba(229,189,89,.32);border-radius:16px;background:#06172d;color:#fff;text-align:left}
+.my-demeos-area:hover,.my-demeos-area:focus-visible{transform:none!important;border-color:#e5bd59}
+.my-demeos-area-status{color:#e5bd59;font-size:.72rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+.my-demeos-area-title{margin:.45rem 0;color:#fff;font-size:1.45rem;font-weight:700}
+.my-demeos-area-copy{color:#aebbd0;line-height:1.5}
+.my-demeos-area-enter{margin-top:auto;padding-top:1rem;color:#f0cf72;font-weight:700}
+.my-demeos-relationship-view{margin-top:2rem;padding:clamp(1.4rem,4vw,2.2rem);border:1px solid rgba(229,189,89,.3);border-radius:18px;background:#06172d}
+.my-demeos-relationship-view[hidden]{display:none}
+.my-demeos-relationship-view h2{color:#fff!important;font-size:clamp(2rem,5vw,3rem)}
+.my-demeos-back{margin-bottom:1.5rem;border:1px solid rgba(229,189,89,.35);border-radius:999px;background:transparent;color:#fff;padding:.75rem 1.1rem}
+.my-demeos-meaning,.my-demeos-relationship-view p{color:#c6d0df}
+@media(max-width:760px){.my-demeos-main{width:min(100% - 28px,1100px);padding:2.5rem 0}.my-demeos-areas{grid-template-columns:1fr}.my-demeos-area:nth-child(5){grid-column:auto}.my-demeos-area:nth-child(n){min-height:0}.my-demeos-sign-in-status{margin-top:1.7rem}}
