@@ -19,3 +19,16 @@ test("customer public contract carries only secure approved resolved media field
    {assetId:"bad",kind:"image",role:"supporting",deliveryUrl:"http://unsafe.example/x"}]});
  assert.equal(item.media.length,1);assert.deepEqual(item.media[0],{assetId:"a1",kind:"image",role:"primary",deliveryUrl:"https://cdn.example/customer.webp",contentType:"image/webp"});
 });
+
+test("managed media publishes only derivatives belonging to its controlled DEMEOS storage identity",function(){
+ const managed={...asset,processedStorageKey:"businesses/b1/media/a1/processed/master.webp",derivatives:[
+  {role:"customer",storageKey:"businesses/other/media/x/processed/customer.webp",deliveryUrl:"https://cdn.example/wrong.webp",contentType:"image/webp",width:1200,height:900},
+  {role:"marketing",storageKey:"businesses/b1/media/a1/processed/marketing.webp",deliveryUrl:"https://cdn.example/marketing.webp",contentType:"image/webp",width:1600,height:1200}
+ ]};
+ const media=resolveApprovedMarketingMedia({approvalStatus:"Approved",media:[{assetId:"a1",role:"primary"}]},"b1",[managed]);
+ assert.equal(media[0].deliveryUrl,"https://cdn.example/marketing.webp");
+});
+test("managed media with a foreign processed master identity fails closed",function(){
+ const managed={...asset,processedStorageKey:"businesses/other/media/a1/processed/master.webp"};
+ assert.deepEqual(resolveApprovedMarketingMedia({approvalStatus:"Approved",media:[{assetId:"a1",role:"primary"}]},"b1",[managed]),[]);
+});
