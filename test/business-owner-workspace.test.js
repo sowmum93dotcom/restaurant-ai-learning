@@ -28,9 +28,9 @@ test("workspace navigation contains the five owner-facing sections", function ()
 });
 
 test("owner navigation reuses existing owner functionality", function () {
-  assert.match(html, /href="index\.html#business-profile">Business Profile<\/a>/);
-  assert.match(html, /href="index\.html#recommends">DEMEOS Recommends<\/a>/);
-  assert.match(html, /href="index\.html">Marketing<\/a>/);
+  assert.match(html, /href="marketing\.html#business-profile">Business Profile<\/a>/);
+  assert.match(html, /href="marketing\.html#recommends">DEMEOS Recommends<\/a>/);
+  assert.match(html, /href="marketing\.html">Marketing<\/a>/);
   assert.match(html, /href="business-results\.html">Results<\/a>/);
   assert.doesNotMatch(html, /iframe|data-workspace-view|id="recommendations-btn"|id="generate-btn"/);
 });
