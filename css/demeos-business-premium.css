@@ -39,3 +39,25 @@
 .business-results-evidence h3{color:#111820;font-weight:600;letter-spacing:-.025em}
 .business-results-status,.business-results-zero p,.demeos-understanding-intro,.demeos-understanding-caution{color:#626d77;line-height:1.6}
 @media(max-width:760px){.business-results-intro h2{font-size:clamp(2.25rem,11vw,3.5rem)}.business-results-evidence{padding:1.25rem}}
+
+/* Marketing Agent — preserve capability while making the working surface quieter. */
+.marketing-capability-main{background:#f7f8fa}
+.marketing-capability-heading{max-width:900px;margin-bottom:clamp(2.5rem,5vw,4rem)}
+.marketing-capability-heading h2{margin:.4rem 0 .8rem;color:#111820;font-size:clamp(2.75rem,5vw,4.8rem);font-weight:560;line-height:1;letter-spacing:-.055em}
+.marketing-capability-heading>p:last-child{max-width:650px;color:#626d77;font-size:1.05rem;line-height:1.65}
+.marketing-secondary-sidebar{border:1px solid #e1e5e9;border-radius:14px;background:#fff;box-shadow:none}
+.workspace-navigation{gap:.25rem}
+.workspace-nav-item{border-radius:8px;background:transparent;color:#59636d;font-weight:620}
+.workspace-nav-item:hover,.workspace-nav-item:focus-visible{background:#f2f4f6;color:#111820}
+.workspace-nav-item.is-active{background:#111820;color:#fff}
+.marketing-workspace-main{min-width:0}
+.marketing-workspace-main .view-heading{max-width:820px;margin-bottom:2rem}
+.marketing-workspace-main .view-heading h2{color:#111820;font-size:clamp(2rem,4vw,3.4rem);font-weight:580;letter-spacing:-.045em}
+.marketing-workspace-main .view-heading p:last-child{color:#626d77;line-height:1.6}
+.marketing-workspace-main .dashboard-card{border:1px solid #e1e5e9;border-radius:16px;background:#fff;box-shadow:none}
+.marketing-workspace-main .card-kicker{color:#747e88;letter-spacing:.12em;text-transform:uppercase}
+@media(max-width:760px){
+ .marketing-capability-heading h2{font-size:clamp(2.4rem,12vw,3.6rem)}
+ .marketing-secondary-sidebar{border-radius:10px}
+ .marketing-workspace-main .view-heading{margin-bottom:1.5rem}
+}
