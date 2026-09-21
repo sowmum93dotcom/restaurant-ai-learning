@@ -1,3 +1,4 @@
+const MAX_PUBLIC_CUSTOMER_MEDIA = 10;
 const CUSTOMER_PARTICIPATION_ACTION = "Interested";
 const ALLOWED_CONTINUATION_ROUTES = new Set(["website", "phone", "whatsapp", "email", "visit", "booking", "quote"]);
 const ALLOWED_FULFILMENT_METHODS = new Set(["collection", "delivery", "shipping", "premises", "customer-location", "appointment", "digital"]);
@@ -88,7 +89,7 @@ function toPublicCustomerWorkItem(item) {
     const media = item.media.filter(function (asset) {
       return asset && typeof asset === "object" && ["image", "video"].includes(asset.kind) &&
         ["primary", "supporting"].includes(asset.role) && /^https:\/\//i.test(asset.deliveryUrl || "");
-    }).slice(0, 10).map(function (asset) {
+    }).slice(0, MAX_PUBLIC_CUSTOMER_MEDIA).map(function (asset) {
       return { assetId: asset.assetId, kind: asset.kind, role: asset.role, deliveryUrl: asset.deliveryUrl,
         ...(asset.contentType ? { contentType: asset.contentType } : {}) };
     });
@@ -119,6 +120,7 @@ function getValidPublicCustomerWork(work, limit = 20) {
 }
 
 module.exports = {
+  MAX_PUBLIC_CUSTOMER_MEDIA,
   CUSTOMER_PARTICIPATION_ACTION,
   getValidPublicCustomerWork,
   toPublicCustomerWorkItem

@@ -19,6 +19,14 @@ function createMediaStorageAdapter(driver){
    if(asset.contentType&&result.contentType!==asset.contentType)return null;
    if(asset.sizeBytes&&Number(result.sizeBytes)!==Number(asset.sizeBytes))return null;
    return {storageKey:expected,contentType:result.contentType||asset.contentType||null,sizeBytes:Number(result.sizeBytes)||asset.sizeBytes||null,etag:clean(result.etag)};
+  },
+  async createDeliveryRead({storageKey,expiresAt}){
+   if(!clean(storageKey)||!Number.isFinite(Date.parse(expiresAt))||Date.parse(expiresAt)<=Date.now()||typeof driver.createDeliveryRead!=="function")return null;
+   try{
+    const result=await driver.createDeliveryRead({storageKey,expiresAt});
+    if(!result||result.storageKey!==storageKey||!/^https:\/\//i.test(result.deliveryUrl||""))return null;
+    return {storageKey,deliveryUrl:result.deliveryUrl,expiresAt};
+   }catch{return null;}
   }
  });
 }

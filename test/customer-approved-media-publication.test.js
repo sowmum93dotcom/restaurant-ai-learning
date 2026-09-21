@@ -47,3 +47,29 @@ test("managed customer media fails closed when controlled delivery cannot be del
  const media=await resolveApprovedMarketingMediaForDelivery({approvalStatus:"Approved",media:[{assetId:"a1",role:"primary"}]},"b1",[managed],async()=>null);
  assert.deepEqual(media,[]);
 });
+
+test("customer delivery caps provider calls before delegation and preserves order under concurrency",async()=>{
+ const assets=Array.from({length:200},(_,i)=>({...asset,assetId:`a${i}`,derivatives:[],
+  processedStorageKey:`businesses/b1/media/a${i}/processed/master.webp`}));
+ const campaign={approvalStatus:"Approved",media:assets.map((a,i)=>({assetId:a.assetId,role:i===0?"primary":"supporting"}))};
+ const pending=[];
+ const result=resolveApprovedMarketingMediaForDelivery(campaign,"b1",assets,input=>new Promise(resolve=>pending.push({input,resolve})));
+ // All permitted calls must start without waiting for an earlier provider response.
+ assert.equal(pending.length,10);
+ for(const {input,resolve} of pending.reverse())resolve({storageKey:input.storageKey,deliveryUrl:`https://private.example/${input.storageKey}`});
+ const media=await result;
+ assert.deepEqual(media.map(a=>a.assetId),assets.slice(0,10).map(a=>a.assetId));
+ assert.equal(toPublicCustomerWorkItem({workItemId:"w1",businessName:"Business",content:"Offer",participationAction:"Interested",media}).media.length,10);
+});
+
+test("delivery budget includes external images and does not refill failed private reads",async()=>{
+ const assets=Array.from({length:12},(_,i)=>({...asset,assetId:`a${i}`,derivatives:[],
+  ...(i===0?{}:{processedStorageKey:`businesses/b1/media/a${i}/processed/master.webp`})}));
+ const campaign={approvalStatus:"Approved",media:assets.map((a,i)=>({assetId:a.assetId,role:i===0?"primary":"supporting"}))};
+ const calls=[];
+ const media=await resolveApprovedMarketingMediaForDelivery(campaign,"b1",assets,async input=>{calls.push(input);return null;});
+ assert.equal(calls.length,9);
+ assert.deepEqual(media.map(a=>a.assetId),["a0"]);
+ campaign.media.push({assetId:"foreign",role:"supporting"});
+ assert.deepEqual(await resolveApprovedMarketingMediaForDelivery(campaign,"b1",assets,async()=>{throw Error("must validate all links before delegation");}),[]);
+});

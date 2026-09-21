@@ -5,6 +5,73 @@ const persistencePath = require.resolve("../api/_lib/persistence.js");
 const rulesPath = require.resolve("../api/_lib/demeos-rules.js");
 const customerAuthPath = require.resolve("../api/_lib/demeos-customer-authentication.js");
 
+function mediaRepository(driver, overrides = {}) {
+  const { createMediaStorageAdapter } = require("../api/_lib/media-storage-adapter.js");
+  const asset = {
+    assetId: "a1", businessId: "b1", kind: "image", state: "ready", contentType: "image/webp",
+    processedStorageKey: "businesses/b1/media/a1/processed/master.webp",
+    deliveryUrl: "https://expired.example/master.webp", ...overrides
+  };
+  const database = {
+    async ensureSchema() {},
+    async query(sql, params) {
+      if (sql.includes("FROM demeos_business_media_assets")) {
+        assert.deepEqual(params, ["b1", ["a1"]]);
+        return { rows: [{ asset }] };
+      }
+      assert.match(sql, /FROM demeos_campaigns/);
+      return { rows: [{ campaign_id: "w1", business_id: "b1", profile: { name: "Business" },
+        campaign: { approvalStatus: "Approved", campaignType: "social", campaignText: "A meal together",
+          media: [{ assetId: "a1", role: "primary" }] } }] };
+    }
+  };
+  return require(persistencePath).createPersistenceRepository(database, {
+    getMediaStorageAdapter: () => driver ? createMediaStorageAdapter({
+      async createUpload() {}, async verifyUpload() {}, ...driver
+    }) : null
+  });
+}
+
+test("customer work endpoint issues fresh managed media delivery through the storage adapter", async () => {
+  const requests = [];
+  const repository = mediaRepository({ async createDeliveryRead(input) {
+    requests.push(input);
+    return { storageKey: input.storageKey, deliveryUrl: `https://private.example/read-${requests.length}` };
+  } }, { derivatives: [{ role: "customer", storageKey: "businesses/b1/media/a1/processed/customer.webp",
+    deliveryUrl: "https://expired.example/customer.webp", contentType: "image/webp", width: 1200, height: 900 }] });
+  for (let i = 1; i <= 2; i++) {
+    const res = await runHandler("../api/customer/work.js", repository, { method: "GET" });
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.work[0].media[0].deliveryUrl, `https://private.example/read-${i}`);
+    assert.doesNotMatch(JSON.stringify(res.body), /expired\.example|storageKey|processedStorageKey/);
+  }
+  assert.equal(requests.length, 2);
+  assert.equal(requests[0].storageKey, "businesses/b1/media/a1/processed/customer.webp");
+  assert.ok(Date.parse(requests[0].expiresAt) > Date.now());
+  assert.ok(Date.parse(requests[0].expiresAt) <= Date.now() + 10 * 60 * 1000);
+});
+
+test("customer feed omits managed media on missing failed or invalid delivery without dropping work", async () => {
+  for (const driver of [null, {}, { async createDeliveryRead() { return null; } },
+    { async createDeliveryRead() { throw new Error("provider unavailable"); } },
+    { async createDeliveryRead(input) { return { storageKey: "foreign", deliveryUrl: "https://private.example/read" }; } },
+    { async createDeliveryRead(input) { return { storageKey: input.storageKey, deliveryUrl: "http://unsafe.example/read" }; } }]) {
+    const res = await runHandler("../api/customer/work.js", mediaRepository(driver), { method: "GET" });
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.work.length, 1);
+    assert.equal((res.body.work[0].media || []).length, 0);
+    assert.doesNotMatch(JSON.stringify(res.body), /expired\.example|private\.example|unsafe\.example/);
+  }
+});
+
+test("customer feed preserves legacy external images without a private storage provider", async () => {
+  const res = await runHandler("../api/customer/work.js", mediaRepository(null, {
+    processedStorageKey: undefined, deliveryUrl: "https://business.example/photo.webp"
+  }), { method: "GET" });
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.work[0].media[0].deliveryUrl, "https://business.example/photo.webp");
+});
+
 function response() {
   return {
     statusCode: null, body: null, headers: {},

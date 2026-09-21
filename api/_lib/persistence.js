@@ -1,4 +1,5 @@
-const { resolveApprovedMarketingMedia } = require("./marketing-media-link.js");
+const { resolveApprovedMarketingMediaForDelivery } = require("./marketing-media-link.js");
+const { getConfiguredMediaStorageAdapter } = require("./media-storage-driver.js");
 const { getDatabase } = require("./database.js");
 const {
   canPublishToDemeosCustomerExperience,
@@ -6,7 +7,7 @@ const {
 } = require("./customer-publication-rules.js");
 const { toPublicCustomerWorkItem } = require("./customer-public-work-contract.js");
 
-function createPersistenceRepository(database) {
+function createPersistenceRepository(database, { getMediaStorageAdapter = getConfiguredMediaStorageAdapter } = {}) {
   function isNonEmptyString(value) {
     return typeof value === "string" && value.trim().length > 0;
   }
@@ -751,6 +752,9 @@ function createPersistenceRepository(database) {
 
     async getCustomerWork() {
       await database.ensureSchema();
+      const mediaStorage = getMediaStorageAdapter();
+      const createDeliveryRead = mediaStorage && typeof mediaStorage.createDeliveryRead === "function"
+        ? mediaStorage.createDeliveryRead.bind(mediaStorage) : undefined;
       const pageSize = 50;
       const publicWork = [];
       let offset = 0;
@@ -777,9 +781,10 @@ function createPersistenceRepository(database) {
             products: row.profile && row.profile.profileVersion >= 4 ? row.profile.products : undefined,
             businessId: row.business_id,
             informationSource: row.profile && row.profile.profileVersion >= 2 && row.profile.informationStatus && row.profile.informationStatus.status === "business-provided" ? "business-provided" : undefined,
-            media: Array.isArray(row.campaign.media) && row.campaign.media.length ? resolveApprovedMarketingMedia(
+            media: Array.isArray(row.campaign.media) && row.campaign.media.length ? await resolveApprovedMarketingMediaForDelivery(
               row.campaign, row.business_id,
-              await this.getBusinessMediaAssetsByIds(row.business_id, row.campaign.media.map(function (link) { return link.assetId; }))
+              await this.getBusinessMediaAssetsByIds(row.business_id, row.campaign.media.map(function (link) { return link.assetId; })),
+              createDeliveryRead
             ) : []
           });
           if (!publicItem) continue;
