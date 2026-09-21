@@ -79,3 +79,22 @@
   .customer-understanding,.customer-possibilities{margin-top:5.5rem;background:rgba(2,16,34,.62);box-shadow:none}
   .customer-footer{min-height:96px}
 }
+
+
+/* Customer entry refinement — make the first decision obvious without changing the journey. */
+.customer-intention-inner{display:flex;flex-direction:column;align-items:center}
+.customer-intention-inner>.customer-eyebrow,
+.customer-intention-inner>.customer-stage-label,
+.customer-intention-inner>.customer-greeting,
+.customer-intention-inner>#customer-title,
+.customer-intention-inner>.customer-trust-copy{width:100%}
+.customer-intention-form{width:min(980px,100%)}
+.customer-intention-detail{margin-top:1.75rem}
+.customer-context-actions{margin-top:1.35rem}
+.customer-continue-button{min-width:190px}
+@media(max-width:680px){
+  .customer-intention-inner{align-items:stretch}
+  .customer-intention-form{width:100%}
+  .customer-intention-detail{margin-top:1rem}
+  .customer-continue-button{min-width:0}
+}
