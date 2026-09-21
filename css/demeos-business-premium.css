@@ -99,3 +99,14 @@
 #recommends .recommendation-card p{max-width:68ch}
 #recommends .recommendation-card>.demeos-secondary-button{min-height:46px;margin:.45rem .45rem 0 0}
 @media(max-width:760px){#recommends .recommendation-card>.demeos-secondary-button{display:block;width:100%;margin:.5rem 0 0}}
+
+
+/* Create Marketing — keep creation focused on one clear owner task. */
+#create .view-heading{margin-bottom:2rem}
+#create>form,#create .campaign-builder,#create .create-marketing-form{max-width:980px}
+#create fieldset{padding:clamp(1.25rem,2.6vw,2rem);margin-bottom:1rem}
+#create fieldset legend{color:var(--bo-gold-light);font-weight:750}
+#create .demeos-primary-button{min-height:48px;min-width:180px}
+#create .demeos-secondary-button{min-height:46px}
+#create .campaign-workspace-section{border-color:rgba(229,189,89,.22);background:rgba(2,13,28,.72);box-shadow:none}
+@media(max-width:760px){#create .demeos-primary-button,#create .demeos-secondary-button{width:100%}}
