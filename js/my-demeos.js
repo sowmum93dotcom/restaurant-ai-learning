@@ -3,6 +3,7 @@
 
   function elements(documentObject) {
     return {
+      status: documentObject.getElementById("customer-auth-status"),
       loading: documentObject.getElementById("customer-auth-loading"),
       signedOut: documentObject.getElementById("customer-auth-signed-out"),
       signedIn: documentObject.getElementById("customer-auth-signed-in"),
@@ -13,6 +14,7 @@
   }
 
   function showState(authElements, state) {
+    authElements.status.hidden = state === "signedIn";
     for (const name of ["loading", "signedOut", "signedIn", "unavailable"]) {
       authElements[name].hidden = name !== state;
     }
