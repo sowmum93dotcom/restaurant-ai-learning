@@ -1,126 +1,49 @@
-/* DEMEOS Business Owner Workspace — premium simplicity layer. */
-.owner-workspace-body{background:#f7f8fa;color:#111820}
-.owner-workspace-header{min-height:96px;padding:1.25rem clamp(1.25rem,4vw,4rem);border-bottom:1px solid #e4e7eb;background:#fff;box-shadow:none}
-.owner-workspace-header .demeos-logo{width:112px;height:auto}
+/* DEMEOS Business Owner Workspace — premium DEMEOS system. */
+:root{--bo-ink:#020b18;--bo-navy:#06172d;--bo-blue:#0b2b52;--bo-gold:#c99a2e;--bo-gold-light:#f0cf72;--bo-white:#fff;--bo-muted:#aebbd0;--bo-line:rgba(229,189,89,.34);--bo-panel:rgba(6,23,45,.88)}
+.owner-workspace-body{background:radial-gradient(circle at 72% 12%,#123f75 0,#071b35 25%,#020b18 62%);color:var(--bo-white)}
+.owner-workspace-header{min-height:96px;padding:1.15rem clamp(1.4rem,5vw,5rem);border-bottom:1px solid var(--bo-line);background:rgba(2,11,24,.94);box-shadow:none}
+.owner-workspace-header .demeos-logo{width:92px;height:auto}
 .owner-workspace-header .workspace-identity{margin-left:clamp(1rem,3vw,2.5rem)}
-.owner-workspace-header .agent-label{margin-bottom:.2rem;color:#66717d;font-size:.72rem;letter-spacing:.16em;text-transform:uppercase}
-.owner-workspace-header .restaurant-name{margin:0;color:#111820;font-size:clamp(1.25rem,2.2vw,1.8rem);font-weight:620;letter-spacing:-.035em}
-.owner-workspace-header .cuisine-type{margin-top:.2rem;color:#7a848e}
-.owner-workspace-shell{background:#f7f8fa}
-.owner-workspace-sidebar{border-right:1px solid #e4e7eb;background:#fff}
+.owner-workspace-header .agent-label{margin-bottom:.2rem;color:var(--bo-gold-light);font-size:.72rem;font-weight:800;letter-spacing:.18em;text-transform:uppercase}
+.owner-workspace-header .restaurant-name{margin:0;color:var(--bo-white);font-family:Georgia,'Times New Roman',serif;font-size:clamp(1.4rem,2.4vw,2rem);font-weight:500;letter-spacing:-.025em}
+.owner-workspace-header .cuisine-type{margin-top:.2rem;color:var(--bo-muted)}
+.owner-workspace-shell{background:transparent}
+.owner-workspace-sidebar{border-right:1px solid var(--bo-line);background:rgba(2,11,24,.88)}
 .owner-workspace-navigation{padding:2rem 1.25rem}
-.owner-workspace-navigation a{margin:.2rem 0;padding:.8rem 1rem;border-radius:8px;color:#4f5963;font-weight:620}
-.owner-workspace-navigation a:hover,.owner-workspace-navigation a:focus-visible{background:#f2f4f6;color:#111820}
-.owner-workspace-navigation a.is-active{background:#111820;color:#fff}
-.owner-workspace-main{padding:clamp(2rem,5vw,5rem);background:#f7f8fa}
+.owner-workspace-navigation a{margin:.25rem 0;padding:.9rem 1rem;border:1px solid transparent;border-radius:10px;color:#d6e0ec;font-weight:650}
+.owner-workspace-navigation a:hover,.owner-workspace-navigation a:focus-visible{border-color:rgba(229,189,89,.28);background:rgba(11,43,82,.72);color:#fff}
+.owner-workspace-navigation a.is-active{border-color:var(--bo-gold);background:linear-gradient(100deg,rgba(201,154,46,.2),rgba(11,43,82,.86));color:var(--bo-gold-light)}
+.owner-workspace-main{padding:clamp(2rem,5vw,5rem);background:transparent}
 .owner-overview-heading{max-width:920px;margin-bottom:clamp(2.5rem,5vw,4.5rem)}
-.owner-overview-heading .workspace-eyebrow{color:#6d7680;font-size:.75rem;letter-spacing:.16em;text-transform:uppercase}
-.owner-overview-heading h2{margin:.4rem 0 .8rem;color:#111820;font-size:clamp(2.5rem,5vw,4.75rem);font-weight:560;line-height:1;letter-spacing:-.055em}
-.owner-overview-heading p:last-child{max-width:650px;color:#626d77;font-size:1.05rem;line-height:1.65}
-.owner-identity-card{max-width:920px;padding:clamp(1.5rem,3vw,2.5rem);border:1px solid #e1e5e9;border-radius:18px;background:#fff;box-shadow:none}
-.owner-identity-card .card-kicker{color:#747e88;letter-spacing:.12em;text-transform:uppercase}
-.owner-auth-panel{max-width:680px;margin:clamp(4rem,10vw,8rem) auto;padding:clamp(2rem,5vw,4rem);border:1px solid #e1e5e9;border-radius:18px;background:#fff;box-shadow:none;text-align:center}
-.owner-auth-panel h2{font-size:clamp(2rem,4vw,3.5rem);font-weight:560;letter-spacing:-.045em}
-@media(max-width:760px){
- .owner-workspace-header{min-height:78px;padding:1rem}
- .owner-workspace-header .demeos-logo{width:88px}
- .owner-workspace-header .workspace-identity{margin-left:.75rem}
- .owner-workspace-sidebar{border-right:0;border-bottom:1px solid #e4e7eb}
- .owner-workspace-navigation{padding:.75rem;overflow-x:auto}
- .owner-workspace-main{padding:2rem 1rem 3rem}
- .owner-overview-heading h2{font-size:clamp(2.25rem,11vw,3.5rem)}
-}
+.owner-overview-heading .workspace-eyebrow{color:var(--bo-gold-light);font-size:.75rem;font-weight:800;letter-spacing:.18em;text-transform:uppercase}
+.owner-overview-heading h2{margin:.4rem 0 .8rem;color:#fff;font-family:Georgia,'Times New Roman',serif;font-size:clamp(2.7rem,5vw,5rem);font-weight:500;line-height:1;letter-spacing:-.045em}
+.owner-overview-heading p:last-child{max-width:650px;color:#c6d0df;font-size:1.05rem;line-height:1.65}
+.owner-identity-card,.owner-next-action,.owner-current-work,.owner-customer-experience-card{max-width:1100px;margin-bottom:1.4rem;padding:clamp(1.5rem,3vw,2.5rem);border:1px solid var(--bo-line);border-radius:20px;background:linear-gradient(145deg,rgba(10,42,79,.82),rgba(2,13,28,.94));box-shadow:0 24px 70px rgba(0,0,0,.16)}
+.owner-workspace-main h3{color:#fff;font-family:Georgia,'Times New Roman',serif;font-size:clamp(1.65rem,3vw,2.35rem);font-weight:500}
+.owner-workspace-main p{color:#c6d0df;line-height:1.6}
+.owner-workspace-main .card-kicker{color:var(--bo-gold-light);font-size:.72rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase}
+.owner-workspace-main .demeos-primary-button,.owner-workspace-main .demeos-secondary-button{border-radius:10px;box-shadow:none;font-weight:800}
+.owner-workspace-main .demeos-primary-button{border:1px solid var(--bo-gold-light);background:linear-gradient(90deg,#c79527,#f0cf72);color:#071326}
+.owner-workspace-main .demeos-secondary-button{border:1px solid var(--bo-gold);background:transparent;color:var(--bo-gold-light)}
+.owner-auth-panel{max-width:680px;margin:clamp(4rem,10vw,8rem) auto;padding:clamp(2rem,5vw,4rem);border:1px solid var(--bo-line);border-radius:20px;background:linear-gradient(145deg,rgba(10,42,79,.88),rgba(2,13,28,.96));box-shadow:0 30px 90px rgba(0,0,0,.28);text-align:center}
+.owner-auth-panel .workspace-eyebrow{color:var(--bo-gold-light);font-weight:800;letter-spacing:.18em;text-transform:uppercase}
+.owner-auth-panel h2{color:#fff;font-family:Georgia,'Times New Roman',serif;font-size:clamp(2rem,4vw,3.5rem);font-weight:500;letter-spacing:-.035em}
+.owner-auth-panel p{color:#c6d0df}
+.owner-workspace-header .owner-account-control{gap:.75rem;color:#fff;font-weight:650}
+.owner-workspace-header .owner-account-control>span{color:var(--bo-muted)}
+.owner-workspace-header .owner-account-button{border:1px solid var(--bo-gold);border-radius:999px;background:transparent;color:var(--bo-gold-light);font-weight:700;box-shadow:none}
+.owner-workspace-header .owner-account-button:hover,.owner-workspace-header .owner-account-button:focus-visible{background:var(--bo-blue);color:#fff;outline:2px solid rgba(240,207,114,.28);outline-offset:2px}
 
-.business-results-main{max-width:none}
-.business-results-intro{max-width:900px;margin-bottom:clamp(2.5rem,5vw,4.5rem)}
-.business-results-intro h2{margin:.4rem 0 .8rem;color:#111820;font-size:clamp(2.5rem,5vw,4.75rem);font-weight:560;line-height:1;letter-spacing:-.055em}
-.business-results-intro>p:last-child{max-width:700px;color:#626d77;font-size:1.05rem;line-height:1.65}
-.business-results-evidence{max-width:1100px;margin-top:1.25rem;padding:clamp(1.5rem,3vw,2.5rem);border:1px solid #e1e5e9;border-radius:18px;background:#fff;box-shadow:none}
-.business-results-evidence h3{color:#111820;font-weight:600;letter-spacing:-.025em}
-.business-results-status,.business-results-zero p,.demeos-understanding-intro,.demeos-understanding-caution{color:#626d77;line-height:1.6}
-@media(max-width:760px){.business-results-intro h2{font-size:clamp(2.25rem,11vw,3.5rem)}.business-results-evidence{padding:1.25rem}}
-
-/* Marketing Agent — preserve capability while making the working surface quieter. */
-.marketing-capability-main{background:#f7f8fa}
-.marketing-capability-heading{max-width:900px;margin-bottom:clamp(2.5rem,5vw,4rem)}
-.marketing-capability-heading h2{margin:.4rem 0 .8rem;color:#111820;font-size:clamp(2.75rem,5vw,4.8rem);font-weight:560;line-height:1;letter-spacing:-.055em}
-.marketing-capability-heading>p:last-child{max-width:650px;color:#626d77;font-size:1.05rem;line-height:1.65}
-.marketing-secondary-sidebar{border:1px solid #e1e5e9;border-radius:14px;background:#fff;box-shadow:none}
-.workspace-navigation{gap:.25rem}
-.workspace-nav-item{border-radius:8px;background:transparent;color:#59636d;font-weight:620}
-.workspace-nav-item:hover,.workspace-nav-item:focus-visible{background:#f2f4f6;color:#111820}
-.workspace-nav-item.is-active{background:#111820;color:#fff}
-.marketing-workspace-main{min-width:0}
-.marketing-workspace-main .view-heading{max-width:820px;margin-bottom:2rem}
-.marketing-workspace-main .view-heading h2{color:#111820;font-size:clamp(2rem,4vw,3.4rem);font-weight:580;letter-spacing:-.045em}
-.marketing-workspace-main .view-heading p:last-child{color:#626d77;line-height:1.6}
-.marketing-workspace-main .dashboard-card{border:1px solid #e1e5e9;border-radius:16px;background:#fff;box-shadow:none}
-.marketing-workspace-main .card-kicker{color:#747e88;letter-spacing:.12em;text-transform:uppercase}
-@media(max-width:760px){
- .marketing-capability-heading h2{font-size:clamp(2.4rem,12vw,3.6rem)}
- .marketing-secondary-sidebar{border-radius:10px}
- .marketing-workspace-main .view-heading{margin-bottom:1.5rem}
-}
-
-/* Business Profile — one calm source of business truth. */
-#business-profile .view-heading{max-width:820px;margin-bottom:2.5rem}
-#business-profile .view-heading h2{font-size:clamp(2.2rem,4.5vw,3.8rem);font-weight:560;letter-spacing:-.05em}
-#business-profile .business-profile-card,
-#business-profile .profile-card,
-#business-profile fieldset{border:1px solid #e1e5e9;border-radius:16px;background:#fff;box-shadow:none}
-#business-profile label{color:#303942;font-weight:620}
-#business-profile input,
-#business-profile select,
-#business-profile textarea{border:1px solid #d9dee3;border-radius:10px;background:#fff;color:#111820;box-shadow:none}
-#business-profile input:focus,
-#business-profile select:focus,
-#business-profile textarea:focus{border-color:#111820;outline:2px solid rgba(17,24,32,.12);outline-offset:1px}
-#business-profile .profile-long-field.brand-voice-field,
-#business-profile .profile-long-field.target-customer-field,
-#business-profile .profile-choice-group,
-#business-profile .profile-accuracy-confirmation{border-color:#e1e5e9;background:#fff}
-#business-profile .profile-long-field.brand-voice-field label,
-#business-profile .profile-long-field.brand-voice-field p,
-#business-profile .profile-long-field.target-customer-field label,
-#business-profile .profile-long-field.target-customer-field p{color:#4f5963}
-@media(max-width:760px){#business-profile .view-heading{margin-bottom:1.5rem}}
-
-/* DEMEOS Recommends — intelligence first, interface second. */
-#recommends .view-heading{max-width:820px;margin-bottom:2.75rem}
-#recommends .view-heading h2{font-size:clamp(2.2rem,4.5vw,3.8rem);font-weight:560;letter-spacing:-.05em}
-#recommends .view-heading p:last-child{max-width:650px;color:#626d77;line-height:1.65}
-#recommends .dashboard-card,
-#recommends .recommendation-card,
-#recommends .recommendation-panel{border:1px solid #e1e5e9;border-radius:16px;background:#fff;box-shadow:none}
-#recommends .recommendation-card h3,
-#recommends .recommendation-panel h3{color:#111820;font-weight:600;letter-spacing:-.025em}
-#recommends .recommendation-card p,
-#recommends .recommendation-panel p{line-height:1.6}
-#recommends .demeos-primary-button{border-radius:10px;box-shadow:none}
-#recommends .demeos-secondary-button{border-radius:10px;box-shadow:none}
-@media(max-width:760px){#recommends .view-heading{margin-bottom:1.5rem}}
-
-/* Create Marketing — keep the owner's action focused and deliberate. */
-#create .view-heading{max-width:820px;margin-bottom:2.75rem}
-#create .view-heading h2{font-size:clamp(2.2rem,4.5vw,3.8rem);font-weight:560;letter-spacing:-.05em}
-#create .view-heading p:last-child{max-width:650px;color:#626d77;line-height:1.65}
-#create .dashboard-card,
-#create fieldset{border:1px solid #e1e5e9;border-radius:16px;background:#fff;box-shadow:none}
-#create label{color:#303942;font-weight:620}
-#create input,
-#create select,
-#create textarea{border:1px solid #d9dee3;border-radius:10px;background:#fff;color:#111820;box-shadow:none}
-#create input:focus,
-#create select:focus,
-#create textarea:focus{border-color:#111820;outline:2px solid rgba(17,24,32,.12);outline-offset:1px}
-#create .demeos-primary-button,
-#create .demeos-secondary-button{border-radius:10px;box-shadow:none}
-@media(max-width:760px){#create .view-heading{margin-bottom:1.5rem}}
-
-
-/* Account control — keep authentication state unmistakable on the light workspace. */
-.owner-workspace-header .owner-account-control{gap:.75rem;color:#06172d;font-weight:650}
-.owner-workspace-header .owner-account-control>span{color:#536170}
-.owner-workspace-header .owner-account-button{border:1px solid #c99a2e;background:#06172d;color:#fff;font-weight:700;box-shadow:none}
-.owner-workspace-header .owner-account-button:hover,
-.owner-workspace-header .owner-account-button:focus-visible{border-color:#e5bd59;background:#0b2b52;color:#fff;outline:2px solid rgba(201,154,46,.22);outline-offset:2px}
+/* Marketing Agent remains functionally complete behind the same DEMEOS identity. */
+.marketing-capability-main{background:transparent}
+.marketing-capability-heading,.marketing-workspace-main .view-heading{max-width:900px;margin-bottom:clamp(2.5rem,5vw,4rem)}
+.marketing-capability-heading h2,.marketing-workspace-main .view-heading h2{margin:.4rem 0 .8rem;color:#fff;font-family:Georgia,'Times New Roman',serif;font-size:clamp(2.4rem,5vw,4.8rem);font-weight:500;line-height:1;letter-spacing:-.045em}
+.marketing-capability-heading>p:last-child,.marketing-workspace-main .view-heading p:last-child{max-width:680px;color:#c6d0df;line-height:1.65}
+.marketing-secondary-sidebar,.marketing-workspace-main .dashboard-card,#business-profile .business-profile-card,#business-profile .profile-card,#business-profile fieldset,#recommends .recommendation-card,#recommends .recommendation-panel,#create fieldset{border:1px solid var(--bo-line);border-radius:16px;background:var(--bo-panel);box-shadow:none}
+.workspace-navigation{gap:.25rem}.workspace-nav-item{border-radius:8px;background:transparent;color:#c6d0df;font-weight:650}.workspace-nav-item:hover,.workspace-nav-item:focus-visible{background:rgba(11,43,82,.72);color:#fff}.workspace-nav-item.is-active{background:linear-gradient(100deg,rgba(201,154,46,.2),rgba(11,43,82,.86));color:var(--bo-gold-light)}
+.marketing-workspace-main{min-width:0}.marketing-workspace-main .card-kicker,#business-profile .view-heading .workspace-eyebrow,#recommends .view-heading .workspace-eyebrow,#create .view-heading .workspace-eyebrow{color:var(--bo-gold-light);letter-spacing:.12em;text-transform:uppercase}
+#business-profile label,#create label{color:#e7edf5;font-weight:650}
+#business-profile input,#business-profile select,#business-profile textarea,#create input,#create select,#create textarea{border:1px solid rgba(174,187,208,.32);border-radius:10px;background:#020d1c;color:#fff;box-shadow:none}
+#business-profile input:focus,#business-profile select:focus,#business-profile textarea:focus,#create input:focus,#create select:focus,#create textarea:focus{border-color:var(--bo-gold);outline:2px solid rgba(240,207,114,.16);outline-offset:1px}
+.business-results-main{max-width:none}.business-results-intro{max-width:900px;margin-bottom:clamp(2.5rem,5vw,4.5rem)}.business-results-intro h2{color:#fff;font-family:Georgia,'Times New Roman',serif;font-size:clamp(2.5rem,5vw,4.75rem);font-weight:500}.business-results-intro>p:last-child,.business-results-status,.business-results-zero p,.demeos-understanding-intro,.demeos-understanding-caution{color:#c6d0df;line-height:1.6}.business-results-evidence{max-width:1100px;margin-top:1.25rem;padding:clamp(1.5rem,3vw,2.5rem);border:1px solid var(--bo-line);border-radius:18px;background:var(--bo-panel);box-shadow:none}
+@media(max-width:760px){.owner-workspace-header{min-height:78px;padding:1rem}.owner-workspace-header .demeos-logo{width:72px}.owner-workspace-header .workspace-identity{margin-left:.75rem}.owner-workspace-sidebar{border-right:0;border-bottom:1px solid var(--bo-line)}.owner-workspace-navigation{padding:.75rem;overflow-x:auto}.owner-workspace-main{padding:2rem 1rem 3rem}.owner-overview-heading h2{font-size:clamp(2.25rem,11vw,3.5rem)}.marketing-capability-heading h2,.marketing-workspace-main .view-heading h2{font-size:clamp(2.4rem,12vw,3.6rem)}}
