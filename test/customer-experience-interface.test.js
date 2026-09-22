@@ -197,6 +197,21 @@ test("Discover keeps business media and options in horizontal navigation lanes",
   assert.match(css, /overscroll-behavior-inline:contain/);
 });
 
+test("Discover keeps quiet business position context while navigating", function () {
+  const document = fakeDocument();
+  const work = ["a", "b"].map(function (id) {
+    return { workItemId: id, businessName: "Business " + id.toUpperCase(), content: "Approved " + id, participationAction: "Interested" };
+  });
+  renderCustomerWork(document, work, [], async function () {});
+  const firstCard = document.elements["customer-work-list"].children[0];
+  const position = firstCard.children[0].children.find(function (child) { return child.className === "customer-discover-position"; });
+  assert.equal(position.textContent, "1 / 2");
+  assert.equal(position.attributes["aria-hidden"], "true");
+  assert.match(firstCard.attributes["aria-label"], /Business A — Discover item 1 of 2/);
+  const css = fs.readFileSync(path.join(__dirname, "..", "css/demeos-customer-space.css"), "utf8");
+  assert.match(css, /\.customer-work-context\{position:sticky;top:0/);
+});
+
 test("empty approved feed has a professional empty state", function () {
   const document = fakeDocument();
   renderCustomerWork(document, [], [], async function () {});

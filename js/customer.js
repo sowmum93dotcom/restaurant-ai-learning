@@ -844,7 +844,11 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
   addText(document, identity, "h3", "customer-business-name", work.businessName);
   if (work.location) addText(document, identity, "p", "customer-work-location", work.location);
   context.appendChild(identity);
+  const position = document.createElement("div");
+  position.className = "customer-discover-position";
+  position.setAttribute("aria-hidden", "true");
   addText(document, context, "span", "customer-approved-mark", "Available on DEMEOS");
+  context.appendChild(position);
 
   const message = document.createElement("section");
   message.className = "customer-message";
@@ -992,6 +996,9 @@ function renderCustomerWork(document, work, customerPackages, participationRecor
     card.setAttribute("data-discover-position", String(index + 1));
     card.setAttribute("tabindex", "0");
     card.setAttribute("aria-label", `${item.businessName} — Discover item ${index + 1} of ${validWork.length}`);
+    const context = card.firstElementChild || card.children[0];
+    const position = context && Array.from(context.children || []).find(function (child) { return child.className === "customer-discover-position"; });
+    if (position) position.textContent = `${index + 1} / ${validWork.length}`;
     list.appendChild(card);
   });
 }

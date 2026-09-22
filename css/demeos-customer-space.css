@@ -148,7 +148,7 @@
 
 
 /* Customer approved work — let the business experience lead, controls stay secondary. */
-.customer-work-card{overflow:hidden}
+.customer-work-card{overflow:clip}
 .customer-work-card .customer-message{padding:clamp(1.25rem,3vw,2rem)}
 .customer-work-card .customer-work-content{max-width:68ch;font-size:clamp(1.05rem,2vw,1.25rem);line-height:1.6}
 .customer-work-card .customer-work-media{margin-top:1.5rem}
@@ -199,3 +199,9 @@
 .customer-work-card .customer-work-media-item,.customer-work-card .customer-discover-option{flex:0 0 min(86%,560px);scroll-snap-align:start}
 .customer-work-card .customer-work-media-item.is-primary{grid-column:auto;aspect-ratio:16/9}
 @media(min-width:900px){.customer-work-card .customer-work-media-item,.customer-work-card .customer-discover-option{flex-basis:min(72%,620px)}}
+
+
+/* Discover position context — keep business identity and place visible without adding controls. */
+.customer-work-context{position:sticky;top:0;z-index:2;background:rgba(2,11,24,.96);backdrop-filter:blur(12px)}
+.customer-discover-position{margin-left:auto;color:#c6d0df;font-size:.78rem;font-weight:700;letter-spacing:.08em;white-space:nowrap}
+@media(max-width:680px){.customer-work-context{top:0}.customer-discover-position{font-size:.72rem}}
