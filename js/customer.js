@@ -879,6 +879,7 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
   boundaryMeaning.className = "customer-visually-hidden";
   boundaryMeaning.textContent = "Personal interest is recorded only after DEMEOS has matched an approved possibility.";
   message.appendChild(boundaryMeaning);
+  addText(document, message, "p", "customer-work-content", work.content);
 
   if (Array.isArray(work.media) && work.media.length) {
     const mediaRegion = document.createElement("div");
