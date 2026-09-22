@@ -50,6 +50,8 @@ function toPublicMediaAsset(asset, businessId) {
     ...(normalized.contentType ? { contentType: normalized.contentType } : {}),
     ...(normalized.width ? { width: normalized.width } : {}), ...(normalized.height ? { height: normalized.height } : {}),
     ...(normalized.durationSeconds ? { durationSeconds: normalized.durationSeconds } : {}),
+    ...(normalized.purpose ? { purpose: normalized.purpose } : {}),
+    ...(normalized.relatedEntityId ? { relatedEntityId: normalized.relatedEntityId } : {}),
     ...(normalized.derivatives ? { derivatives: normalized.derivatives.map(function (item) { const { storageKey, ...publicDerivative } = item; return publicDerivative; }) } : {}) };
 }
 function getMediaGuidance(asset) {
