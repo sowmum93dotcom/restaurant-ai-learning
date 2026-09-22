@@ -223,8 +223,8 @@ test("Discover campaign media remains view-only until a validated item continuat
   const mediaRegion = message.children.find(function (child) { return child.className === "customer-work-media"; });
   assert.ok(mediaRegion);
   assert.equal(mediaRegion.children.length, 1);
-  assert.equal(mediaRegion.children[0].tagName, "IMG");
-  assert.equal(mediaRegion.children[0].attributes.href, undefined);
+  assert.equal(mediaRegion.children[0].tag, "img");
+  assert.equal(mediaRegion.children[0].href, undefined);
   assert.equal(mediaRegion.children[0].children.length, 0);
 });
 
