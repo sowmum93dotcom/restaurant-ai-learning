@@ -941,7 +941,7 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
   const participationCopy = document.createElement("div");
   addText(document, participationCopy, "p", "customer-step", "Your choice");
   addText(document, participationCopy, "h4", "customer-participation-title", "Interested in something you see?");
-  addText(document, participationCopy, "p", "customer-participation-copy", "Use the business options above to continue. Personal interest is recorded only after DEMEOS has matched an approved possibility to your request.");
+  addText(document, participationCopy, "p", "customer-participation-copy", "Continue with an available business option, or tell DEMEOS what you want. Personal interest is recorded only after DEMEOS has matched an approved possibility to your request.");
   const intentionAction = document.createElement("a");
   intentionAction.className = "customer-participation-button";
   intentionAction.href = "#intention";
