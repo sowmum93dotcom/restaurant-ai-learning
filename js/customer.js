@@ -887,6 +887,15 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
       else if (route === "whatsapp" && detail) href = "https://wa.me/" + detail.replace(/\D/g, "");
       else if (route === "email" && detail) href = "mailto:" + detail;
       else if (route === "visit" && detail) href = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(detail);
+      else if (route === "quote" && work.customerContinuation && work.customerContinuation.quoteVia) {
+        const quoteRoute = work.customerContinuation.quoteVia;
+        const quoteField = { website: "website", phone: "phone", whatsapp: "whatsapp", email: "email", booking: "bookingLink" }[quoteRoute];
+        const quoteDetail = quoteField ? work.customerContinuation[quoteField] : null;
+        if (quoteRoute === "email" && quoteDetail) href = "mailto:" + quoteDetail;
+        else if (quoteRoute === "phone" && quoteDetail) href = "tel:" + quoteDetail;
+        else if (quoteRoute === "whatsapp" && quoteDetail) href = "https://wa.me/" + quoteDetail.replace(/\D/g, "");
+        else if ((quoteRoute === "website" || quoteRoute === "booking") && /^https?:\/\//i.test(quoteDetail)) href = quoteDetail;
+      }
       if (product.availability === "unavailable") href = null;
       if (/^https:\/\//i.test(product.imageUrl || "")) {
         const image = document.createElement("img");
