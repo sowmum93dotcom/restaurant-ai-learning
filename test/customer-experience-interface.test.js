@@ -245,6 +245,7 @@ test("Discover media matches only its exact validated related product", function
     ],
     media: [
       { assetId: "media-1", kind: "image", role: "primary", deliveryUrl: "https://cdn.example/one.jpg", purpose: "product", relatedEntityId: "product-1" },
+      { assetId: "video-1", kind: "video", role: "supporting", deliveryUrl: "https://cdn.example/one.mp4", purpose: "product", relatedEntityId: "product-1" },
       { assetId: "media-2", kind: "image", role: "supporting", deliveryUrl: "https://cdn.example/unknown.jpg", purpose: "product", relatedEntityId: "product-9" }
     ]
   });
@@ -279,8 +280,10 @@ test("Discover makes only exactly matched available media actionable", function 
   assert.equal(mediaRegion.children[0].tag, "a");
   assert.equal(mediaRegion.children[0].href, "https://business.example/product");
   assert.equal(mediaRegion.children[0].children[0].attributes["data-related-product-id"], "product-1");
-  assert.equal(mediaRegion.children[1].tag, "img");
+  assert.equal(mediaRegion.children[1].tag, "video");
+  assert.equal(mediaRegion.children[1].controls, true);
   assert.equal(mediaRegion.children[2].tag, "img");
+  assert.equal(mediaRegion.children[3].tag, "img");
 });
 
 test("empty approved feed has a professional empty state", function () {
