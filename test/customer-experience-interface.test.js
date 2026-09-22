@@ -194,10 +194,10 @@ test("Customer Interface retains responsive layouts for intentions and participa
 
 test("Customer surface routing keeps Discover public and separates intention", function () {
   const document = fakeDocument();
-  const discover = document.elements.discover;
-  const intention = document.elements.intention;
-  const discoverLink = new Element("a"); discoverLink.setAttribute("href", "#discover");
-  const intentionLink = new Element("a"); intentionLink.setAttribute("href", "#intention");
+  const discover = document.elements.discover = new Element("section");
+  const intention = document.elements.intention = new Element("section");
+  const discoverLink = new Element("a"); discoverLink.classList = { toggle() {} }; discoverLink.removeAttribute = function (name) { delete this.attributes[name]; }; discoverLink.getAttribute = function (name) { return this.attributes[name]; }; discoverLink.setAttribute("href", "#discover");
+  const intentionLink = new Element("a"); intentionLink.classList = { toggle() {} }; intentionLink.removeAttribute = function (name) { delete this.attributes[name]; }; intentionLink.getAttribute = function (name) { return this.attributes[name]; }; intentionLink.setAttribute("href", "#intention");
   document.querySelectorAll = function (selector) {
     return selector === ".customer-journey-nav a[href^='#']" ? [discoverLink, intentionLink] : [];
   };
