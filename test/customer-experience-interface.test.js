@@ -258,6 +258,30 @@ test("Discover media matches only its exact validated related product", function
   assert.equal(mediaRegion.children[1].href, undefined);
 });
 
+test("Discover makes only exactly matched available media actionable", function () {
+  const document = fakeDocument();
+  const work = toCustomerWorkItem({
+    workItemId: "work-actionable-media", businessName: "Business A", content: "Approved content", participationAction: "Interested",
+    customerContinuation: { routes: ["website"], website: "https://business.example/product" },
+    products: [
+      { productId: "product-1", name: "One", description: "First", continuationRoute: "website", availability: "available" },
+      { productId: "product-2", name: "Two", description: "Second", continuationRoute: "website", availability: "unavailable" }
+    ],
+    media: [
+      { assetId: "media-1", kind: "image", role: "primary", deliveryUrl: "https://cdn.example/one.jpg", purpose: "product", relatedEntityId: "product-1" },
+      { assetId: "media-2", kind: "image", role: "supporting", deliveryUrl: "https://cdn.example/two.jpg", purpose: "product", relatedEntityId: "product-2" },
+      { assetId: "media-3", kind: "image", role: "supporting", deliveryUrl: "https://cdn.example/unknown.jpg", purpose: "product", relatedEntityId: "product-9" }
+    ]
+  });
+  const card = createCustomerWorkCard(document, work, [], async function () {});
+  const mediaRegion = card.children[1].children.find(function (child) { return child.className === "customer-work-media"; });
+  assert.equal(mediaRegion.children[0].tag, "a");
+  assert.equal(mediaRegion.children[0].href, "https://business.example/product");
+  assert.equal(mediaRegion.children[0].children[0].attributes["data-related-product-id"], "product-1");
+  assert.equal(mediaRegion.children[1].tag, "img");
+  assert.equal(mediaRegion.children[2].tag, "img");
+});
+
 test("empty approved feed has a professional empty state", function () {
   const document = fakeDocument();
   renderCustomerWork(document, [], [], async function () {});
