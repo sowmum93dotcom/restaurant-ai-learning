@@ -212,6 +212,28 @@ test("Discover keeps quiet business position context while navigating", function
   assert.match(css, /\.customer-work-context\{position:sticky;top:0/);
 });
 
+test("Discover campaign media remains view-only until a validated item continuation exists", function () {
+  const document = fakeDocument();
+  const card = createCustomerWorkCard(document, {
+    workItemId: "work-media-boundary", businessName: "Business A", content: "Approved content", participationAction: "Interested",
+    customerContinuation: { routes: ["website"], website: "https://business.example" },
+    media: [
+      { assetId: "media-1", kind: "image", role: "primary", deliveryUrl: "https://cdn.example/media.jpg" },
+      { assetId: "media-2", kind: "video", role: "supporting", deliveryUrl: "https://cdn.example/media.mp4" }
+    ]
+  }, [], async function () {});
+  const message = card.children[1];
+  const mediaRegion = message.children.find(function (child) { return child.className === "customer-work-media"; });
+  assert.ok(mediaRegion);
+  assert.equal(mediaRegion.children.length, 2);
+  assert.equal(mediaRegion.children[0].tag, "img");
+  assert.equal(mediaRegion.children[0].href, undefined);
+  assert.equal(mediaRegion.children[0].children.length, 0);
+  assert.equal(mediaRegion.children[1].tag, "video");
+  assert.equal(mediaRegion.children[1].href, undefined);
+  assert.equal(mediaRegion.children[1].children.length, 0);
+});
+
 test("empty approved feed has a professional empty state", function () {
   const document = fakeDocument();
   renderCustomerWork(document, [], [], async function () {});
