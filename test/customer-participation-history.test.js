@@ -112,7 +112,7 @@ test("My Participation states and rendering are truthful, separate, safe, and co
   const js = fs.readFileSync(require.resolve("../js/my-demeos.js"), "utf8");
   const customer = fs.readFileSync(require.resolve("../js/customer.js"), "utf8");
   const vercel = fs.readFileSync(require.resolve("../vercel.json"), "utf8");
-  assert.match(html, /Enter My DEMEOS to see your participation across visits/);
+  assert.match(html, /Sign in to My DEMEOS to see your participation across visits/);
   assert.match(html, /No participation recorded yet/);
   assert.match(html, /When you choose Interested on a possibility while your DEMEOS relationship is active, it can appear here/);
   assert.match(html, /Interested is an interest signal only\. It is not a purchase, booking or sale/);
