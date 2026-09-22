@@ -192,6 +192,18 @@ test("Customer Interface retains responsive layouts for intentions and participa
   assert.match(css, /prefers-reduced-motion: reduce/);
 });
 
+test("Customer Experience keeps Discover, products and My DEMEOS responsive", function () {
+  const customerCss = fs.readFileSync(path.join(__dirname, "..", "css/demeos-customer-space.css"), "utf8");
+  const productCss = fs.readFileSync(path.join(__dirname, "..", "css/customer-product-gallery.css"), "utf8");
+  const myDemeosCss = fs.readFileSync(path.join(__dirname, "..", "css/my-demeos-simple.css"), "utf8");
+
+  assert.match(customerCss, /@media\(max-width:680px\)[^{]*\{\.customer-work-media\{grid-template-columns:1fr\}/);
+  assert.match(customerCss, /@media\(max-width:680px\)[^{]*\{\.customer-discover-option\{padding:\.9rem\}[\s\S]*?customer-product-continue-action\{width:100%/);
+  assert.match(productCss, /@media\(max-width:700px\)[^{]*\{[\s\S]*?\.customer-product-grid\{display:flex[\s\S]*?overflow-x:auto/);
+  assert.match(myDemeosCss, /@media\(max-width:760px\)[^{]*\{[\s\S]*?\.my-demeos-areas\{grid-template-columns:1fr\}/);
+  assert.match(myDemeosCss, /@media\(max-width:760px\)[^{]*\{[\s\S]*?\.my-demeos-sign-in-status \.demeos-primary-button\{width:100%;min-width:0\}/);
+});
+
 test("Customer surface routing keeps Discover public and separates intention", function () {
   const document = fakeDocument();
   const discover = document.elements.discover = new Element("section");
