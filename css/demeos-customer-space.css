@@ -396,3 +396,13 @@
   .customer-participation-copy{margin-bottom:.65rem}
   .customer-participation-button{background:#e5bd59;border-color:#e5bd59;color:#061326;font-weight:800}
 }
+
+@media(max-width:680px){
+  .customer-work-card .customer-work-media-link{height:270px}
+  .customer-work-card .customer-work-media-link .customer-work-media-item{height:270px}
+  .customer-work-card .customer-discover-option:not(.has-image){grid-template-columns:minmax(0,1fr)}
+  .customer-work-card .customer-discover-option:not(.has-image) .customer-discover-option-name,
+  .customer-work-card .customer-discover-option:not(.has-image) .customer-discover-option-description,
+  .customer-work-card .customer-discover-option:not(.has-image) .customer-discover-option-price,
+  .customer-work-card .customer-discover-option:not(.has-image) .customer-product-continue-action{grid-column:1}
+}
