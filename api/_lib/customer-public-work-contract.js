@@ -1,4 +1,5 @@
 const MAX_PUBLIC_CUSTOMER_MEDIA = 10;
+const DEFAULT_PUBLIC_CUSTOMER_WORK_LIMIT = 20;
 const CUSTOMER_PARTICIPATION_ACTION = "Interested";
 const ALLOWED_CONTINUATION_ROUTES = new Set(["website", "phone", "whatsapp", "email", "visit", "booking", "quote"]);
 const ALLOWED_FULFILMENT_METHODS = new Set(["collection", "delivery", "shipping", "premises", "customer-location", "appointment", "digital"]);
@@ -108,19 +109,37 @@ function toPublicCustomerWorkItem(item) {
   return publicItem;
 }
 
-function getValidPublicCustomerWork(work, limit = 20) {
+function getValidPublicCustomerWork(work, limit = DEFAULT_PUBLIC_CUSTOMER_WORK_LIMIT) {
   if (!Array.isArray(work)) return [];
   const validWork = [];
+  const deferredByBusiness = new Map();
+  const firstBusinessPass = new Set();
   for (const item of work) {
     const publicItem = toPublicCustomerWorkItem(item);
-    if (publicItem) validWork.push(publicItem);
-    if (validWork.length === limit) break;
+    if (!publicItem) continue;
+    const businessKey = normalizedRequiredString(item.businessId) || `work:${publicItem.workItemId}`;
+    if (!firstBusinessPass.has(businessKey)) {
+      firstBusinessPass.add(businessKey);
+      validWork.push(publicItem);
+    } else {
+      const deferred = deferredByBusiness.get(businessKey) || [];
+      deferred.push(publicItem);
+      deferredByBusiness.set(businessKey, deferred);
+    }
+    if (validWork.length === limit) return validWork;
+  }
+  for (const deferred of deferredByBusiness.values()) {
+    for (const publicItem of deferred) {
+      validWork.push(publicItem);
+      if (validWork.length === limit) return validWork;
+    }
   }
   return validWork;
 }
 
 module.exports = {
   MAX_PUBLIC_CUSTOMER_MEDIA,
+  DEFAULT_PUBLIC_CUSTOMER_WORK_LIMIT,
   CUSTOMER_PARTICIPATION_ACTION,
   getValidPublicCustomerWork,
   toPublicCustomerWorkItem
