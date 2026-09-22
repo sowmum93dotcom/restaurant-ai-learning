@@ -878,18 +878,6 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
     work.products.forEach(function (product) {
       const option = document.createElement("article");
       option.className = "customer-discover-option";
-      if (/^https:\/\//i.test(product.imageUrl || "")) {
-        const image = document.createElement("img");
-        image.className = "customer-discover-option-image";
-        image.src = product.imageUrl;
-        image.alt = product.name;
-        image.loading = "lazy";
-        image.addEventListener("error", function () { image.remove(); });
-        option.appendChild(image);
-      }
-      addText(document, option, "h5", "customer-discover-option-name", product.name);
-      addText(document, option, "p", "customer-discover-option-description", product.description);
-      if (product.price) addText(document, option, "p", "customer-discover-option-price", product.priceMode === "from" ? "From " + product.price : product.priceMode === "range" ? "Price range: " + product.price : product.price);
       const route = product.continuationRoute;
       const field = { website: "website", phone: "phone", whatsapp: "whatsapp", email: "email", booking: "bookingLink", visit: "visitAddress" }[route];
       const detail = work.customerContinuation && field ? work.customerContinuation[field] : null;
@@ -899,6 +887,30 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
       else if (route === "whatsapp" && detail) href = "https://wa.me/" + detail.replace(/\D/g, "");
       else if (route === "email" && detail) href = "mailto:" + detail;
       else if (route === "visit" && detail) href = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(detail);
+      if (product.availability === "unavailable") href = null;
+      if (/^https:\/\//i.test(product.imageUrl || "")) {
+        const image = document.createElement("img");
+        image.className = "customer-discover-option-image";
+        image.src = product.imageUrl;
+        image.alt = product.name;
+        image.loading = "lazy";
+        image.decoding = "async";
+        let imageContainer = option;
+        if (href) {
+          const imageLink = document.createElement("a");
+          imageLink.href = href;
+          imageLink.setAttribute("aria-label", product.name + " — continue with " + work.businessName);
+          if (/^https?:\/\//i.test(href)) { imageLink.target = "_blank"; imageLink.rel = "noopener noreferrer"; }
+          imageLink.appendChild(image);
+          option.appendChild(imageLink);
+          imageContainer = imageLink;
+        } else option.appendChild(image);
+        image.addEventListener("error", function () { imageContainer.remove(); }, { once: true });
+      }
+      addText(document, option, "h5", "customer-discover-option-name", product.name);
+      addText(document, option, "p", "customer-discover-option-description", product.description);
+      if (product.price) addText(document, option, "p", "customer-discover-option-price", product.priceMode === "from" ? "From " + product.price : product.priceMode === "range" ? "Price range: " + product.price : product.price);
+
       if (product.availability !== "unavailable" && href) {
         const continueAction = document.createElement("a");
         continueAction.className = "customer-product-continue-action";
