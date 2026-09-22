@@ -830,16 +830,16 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
   context.className = "customer-work-context";
   if (anchorJourney) context.id = "understand";
   const identity = document.createElement("div");
-  addText(document, identity, "p", "customer-step", "02 · Understand");
+  addText(document, identity, "p", "customer-step", "Business");
   addText(document, identity, "h3", "customer-business-name", work.businessName);
   if (work.location) addText(document, identity, "p", "customer-work-location", work.location);
   context.appendChild(identity);
-  addText(document, context, "span", "customer-approved-mark", "Approved for customers");
+  addText(document, context, "span", "customer-approved-mark", "Available on DEMEOS");
 
   const message = document.createElement("section");
   message.className = "customer-message";
   message.setAttribute("aria-label", `Message from ${work.businessName}`);
-  addText(document, message, "p", "customer-message-label", "Customer message");
+  addText(document, message, "p", "customer-message-label", "From the business");
   addText(document, message, "p", "customer-work-content", work.content);
 
   if (Array.isArray(work.media) && work.media.length) {
@@ -859,7 +859,7 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
   const choice = document.createElement("section");
   choice.className = "customer-choice";
   if (anchorJourney) choice.id = "choose";
-  addText(document, choice, "p", "customer-step", "03 · Choose");
+  addText(document, choice, "p", "customer-step", "Options");
   addText(document, choice, "h4", "customer-choice-title", "Customer options");
   const packageRegion = document.createElement("div");
   packageRegion.className = "customer-package-region";
@@ -873,7 +873,7 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
   participation.className = "customer-participation";
   if (anchorJourney) participation.id = "participate";
   const participationCopy = document.createElement("div");
-  addText(document, participationCopy, "p", "customer-step", "04 · Participate");
+  addText(document, participationCopy, "p", "customer-step", "Your choice");
   addText(document, participationCopy, "h4", "customer-participation-title", "Interested in this work?");
   addText(document, participationCopy, "p", "customer-participation-copy", "Interested is an interest signal only. It is not a purchase, booking or sale.");
   const action = document.createElement("button");
@@ -947,7 +947,7 @@ async function loadCustomerWork(document, fetcher) {
     renderCustomerWork(document, data.work, getServerCustomerPackages(data), recordParticipation);
   } catch (error) {
     status.className = "customer-empty-state customer-load-error";
-    status.textContent = "DEMEOS could not load approved work. Please try again.";
+    status.textContent = "DEMEOS could not load Discover right now. Please try again.";
   }
 }
 
