@@ -821,7 +821,8 @@ function toCustomerWorkItem(item) {
         ["primary", "supporting"].includes(asset.role) && /^https:\/\//i.test(asset.deliveryUrl || "");
     }).slice(0, 10).map(function (asset) {
       return { assetId: normalizedRequiredString(asset.assetId) || "", kind: asset.kind, role: asset.role,
-        deliveryUrl: asset.deliveryUrl, contentType: normalizedRequiredString(asset.contentType) || "" };
+        deliveryUrl: asset.deliveryUrl, contentType: normalizedRequiredString(asset.contentType) || "",
+        purpose: normalizedRequiredString(asset.purpose) || "", relatedEntityId: normalizedRequiredString(asset.relatedEntityId) || "" };
     });
   }
   return publicItem;
@@ -868,6 +869,9 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
       media.src = asset.deliveryUrl;
       if (asset.kind === "video") { media.controls = true; media.preload = "metadata"; media.playsInline = true; }
       else media.alt = `Approved media from ${work.businessName}`;
+      const relatedProduct = asset.purpose === "product" && asset.relatedEntityId && Array.isArray(work.products)
+        ? work.products.find(function (product) { return product.productId === asset.relatedEntityId; }) : null;
+      if (relatedProduct) media.setAttribute("data-related-product-id", relatedProduct.productId);
       mediaRegion.appendChild(media);
     });
     message.appendChild(mediaRegion);

@@ -4,7 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { createCustomerWorkCard, getServerCustomerPackages, getValidCustomerWork,
   getLocalGreeting, getPreferredLanguage, normalizedCustomerIntention, recordParticipation,
-  renderCustomerWork, requestCustomerLocation, selectCustomerIntention, applyCustomerSurfaceRoute, loadCustomerWork } = require("../js/customer.js");
+  renderCustomerWork, requestCustomerLocation, selectCustomerIntention, applyCustomerSurfaceRoute, loadCustomerWork, toCustomerWorkItem } = require("../js/customer.js");
 const { confirmTrustedCustomer } = require("../js/my-demeos.js");
 
 class Element {
@@ -232,6 +232,30 @@ test("Discover campaign media remains view-only until a validated item continuat
   assert.equal(mediaRegion.children[1].tag, "video");
   assert.equal(mediaRegion.children[1].href, undefined);
   assert.equal(mediaRegion.children[1].children.length, 0);
+});
+
+test("Discover media matches only its exact validated related product", function () {
+  const document = fakeDocument();
+  const work = toCustomerWorkItem({
+    workItemId: "work-product-media", businessName: "Business A", content: "Approved content", participationAction: "Interested",
+    customerContinuation: { routes: ["website"], website: "https://business.example" },
+    products: [
+      { productId: "product-1", name: "One", description: "First", continuationRoute: "website" },
+      { productId: "product-2", name: "Two", description: "Second", continuationRoute: "website" }
+    ],
+    media: [
+      { assetId: "media-1", kind: "image", role: "primary", deliveryUrl: "https://cdn.example/one.jpg", purpose: "product", relatedEntityId: "product-1" },
+      { assetId: "media-2", kind: "image", role: "supporting", deliveryUrl: "https://cdn.example/unknown.jpg", purpose: "product", relatedEntityId: "product-9" }
+    ]
+  });
+  assert.equal(work.media[0].purpose, "product");
+  assert.equal(work.media[0].relatedEntityId, "product-1");
+  const card = createCustomerWorkCard(document, work, [], async function () {});
+  const mediaRegion = card.children[1].children.find(function (child) { return child.className === "customer-work-media"; });
+  assert.equal(mediaRegion.children[0].attributes["data-related-product-id"], "product-1");
+  assert.equal(mediaRegion.children[1].attributes["data-related-product-id"], undefined);
+  assert.equal(mediaRegion.children[0].href, undefined);
+  assert.equal(mediaRegion.children[1].href, undefined);
 });
 
 test("empty approved feed has a professional empty state", function () {
