@@ -115,7 +115,7 @@ test("save UX is explicit, distinct, safe, and consolidated into an existing fun
   assert.match(customer, /Save to My DEMEOS/); assert.match(customer, /Saved to My Possibilities\./);
   assert.match(customer, /saveButton\.addEventListener\("click"/);
   assert.match(customer, /authenticated === true/); assert.match(customer, /Enter My DEMEOS if you want to keep this possibility across visits/);
-  assert.match(fs.readFileSync(require.resolve("../customer.html"), "utf8"), /Enter My DEMEOS if you want to keep this intention across visits/);
+  assert.match(fs.readFileSync(require.resolve("../customer.html"), "utf8"), /Sign in to My DEMEOS if you want to keep this intention across visits/);
   assert.match(customer, /Interested is an interest signal only/); assert.match(customer, /customer-feedback/);
   assert.doesNotMatch(customer.slice(customer.indexOf("function showFocused"), customer.indexOf("valid.forEach")), /saveCustomerPossibility\(possibility\)(?!;\n)/);
   assert.match(myDemeos, /\.textContent = possibility\.content/); assert.doesNotMatch(myDemeos, /innerHTML/);
