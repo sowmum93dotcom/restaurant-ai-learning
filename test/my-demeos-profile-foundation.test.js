@@ -9,7 +9,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 test("Customer Interface exposes simple relationship navigation without changing its journey scripts", function () {
   const html = read("customer.html");
   assert.match(html, /<nav class="customer-journey-nav" aria-label="Customer navigation">/);
-  assert.match(html, /href="#customer-intention-form">New intention<\/a>/);
+  assert.match(html, /href="#customer-intention-form">I know what I want<\/a>/);
   assert.match(html, /href="my-demeos\.html">My DEMEOS<\/a>/);
   assert.match(html, /<script src="js\/customer-understanding\.js"><\/script>[\s\S]*<script src="js\/customer\.js"><\/script>[\s\S]*<script src="js\/customer-continuation\.js"><\/script>/);
 });
