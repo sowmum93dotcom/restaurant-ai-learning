@@ -874,7 +874,33 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
   const packageRegion = document.createElement("div");
   packageRegion.className = "customer-package-region";
   packageRegion.setAttribute("aria-live", "polite");
-  if (!customerPackages.length) {
+  if (Array.isArray(work.products) && work.products.length) {
+    work.products.forEach(function (product) {
+      const option = document.createElement("article");
+      option.className = "customer-discover-option";
+      addText(document, option, "h5", "customer-discover-option-name", product.name);
+      addText(document, option, "p", "customer-discover-option-description", product.description);
+      if (product.price) addText(document, option, "p", "customer-discover-option-price", product.priceMode === "from" ? "From " + product.price : product.priceMode === "range" ? "Price range: " + product.price : product.price);
+      const route = product.continuationRoute;
+      const field = { website: "website", phone: "phone", whatsapp: "whatsapp", email: "email", booking: "bookingLink", visit: "visitAddress" }[route];
+      const detail = work.customerContinuation && field ? work.customerContinuation[field] : null;
+      let href = null;
+      if ((route === "website" || route === "booking") && /^https?:\/\//i.test(detail)) href = detail;
+      else if (route === "phone" && detail) href = "tel:" + detail;
+      else if (route === "whatsapp" && detail) href = "https://wa.me/" + detail.replace(/\D/g, "");
+      else if (route === "email" && detail) href = "mailto:" + detail;
+      else if (route === "visit" && detail) href = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(detail);
+      if (product.availability !== "unavailable" && href) {
+        const continueAction = document.createElement("a");
+        continueAction.className = "customer-product-continue-action";
+        continueAction.href = href;
+        continueAction.textContent = "Continue with " + work.businessName;
+        if (/^https?:\/\//i.test(href)) { continueAction.target = "_blank"; continueAction.rel = "noopener noreferrer"; }
+        option.appendChild(continueAction);
+      }
+      packageRegion.appendChild(option);
+    });
+  } else if (!customerPackages.length) {
     addText(document, packageRegion, "p", "customer-package-empty", "Customer options will appear here when available.");
   }
   choice.appendChild(packageRegion);
