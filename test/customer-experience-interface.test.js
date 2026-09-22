@@ -101,7 +101,7 @@ test("Discover does not record personal interest before an issued possibility ex
     participationCalls += 1;
   });
   const action = card.children[3].children[1];
-  assert.equal(action.tagName, "A");
+  assert.equal(action.tag, "a");
   assert.equal(action.href, "#intention");
   assert.equal(participationCalls, 0);
   assert.match(card.textContent, /matched an approved possibility/i);
