@@ -865,7 +865,6 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
   const identity = document.createElement("div");
   addText(document, identity, "p", "customer-step", "Business");
   addText(document, identity, "h3", "customer-business-name", work.businessName);
-  if (work.location) addText(document, identity, "p", "customer-work-location", work.location);
   context.appendChild(identity);
   const position = document.createElement("div");
   position.className = "customer-discover-position";
@@ -875,8 +874,11 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
 
   const message = document.createElement("section");
   message.className = "customer-message";
-  message.setAttribute("aria-label", `Message from ${work.businessName}`);
-  addText(document, message, "p", "customer-message-label", "From the business");
+  message.setAttribute("aria-label", `Media from ${work.businessName}`);
+  const boundaryMeaning = document.createElement("span");
+  boundaryMeaning.className = "customer-visually-hidden";
+  boundaryMeaning.textContent = "Personal interest is recorded only after DEMEOS has matched an approved possibility.";
+  message.appendChild(boundaryMeaning);
   addText(document, message, "p", "customer-work-content", work.content);
 
   if (Array.isArray(work.media) && work.media.length) {
@@ -958,7 +960,7 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
       packageRegion.appendChild(option);
     });
   } else if (!customerPackages.length) {
-    addText(document, packageRegion, "p", "customer-package-empty", "Customer options will appear here when available.");
+    addText(document, packageRegion, "p", "customer-package-empty customer-visually-hidden", "Customer options will appear here when available.");
   }
   choice.appendChild(packageRegion);
 
@@ -966,9 +968,7 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
   participation.className = "customer-participation";
   if (anchorJourney) participation.id = "participate";
   const participationCopy = document.createElement("div");
-  addText(document, participationCopy, "p", "customer-step", "Your choice");
   addText(document, participationCopy, "h4", "customer-participation-title", "Interested in something you see?");
-  addText(document, participationCopy, "p", "customer-participation-copy", "Continue with an available business option, or tell DEMEOS what you want. Personal interest is recorded only after DEMEOS has matched an approved possibility to your request.");
   const intentionAction = document.createElement("a");
   intentionAction.className = "customer-participation-button";
   intentionAction.href = "#intention";
