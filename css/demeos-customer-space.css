@@ -433,7 +433,7 @@
   .customer-product-continue-action{background:#e8bf55!important;border-color:#e8bf55!important;color:#071326!important}
   .customer-package-empty{color:#68758a}
   .customer-work-card .customer-participation{border-top:1px solid #e2e4e8}
-  .customer-participation-title{color:#071326}
-  .customer-participation-copy{color:#59677c}
-  .customer-participation-button{background:#e8bf55;border-color:#e8bf55;color:#071326}
+  .customer-work-card .customer-participation-title{color:#071326}
+  .customer-work-card .customer-participation-copy{color:#59677c}
+  .customer-work-card .customer-participation-button{background:#e8bf55;border-color:#e8bf55;color:#071326}
 }
