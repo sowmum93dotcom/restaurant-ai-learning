@@ -18,7 +18,8 @@ test("My DEMEOS uses the official logo and accessible, current-section navigatio
   const html = read("my-demeos.html");
   assert.match(html, /href="customer\.html" aria-label="Return to the DEMEOS Customer Interface">\s*<img src="images\/demeos-logo\.png" alt="DEMEOS"/);
   assert.match(html, /<nav class="customer-journey-nav" aria-label="Customer navigation">/);
-  assert.match(html, /href="customer\.html#customer-intention-form">New intention<\/a>/);
+  assert.match(html, /href="customer\.html#discover">Discover<\/a>/);
+  assert.match(html, /href="customer\.html#customer-intention-form">I know what I want<\/a>/);
   assert.match(html, /class="is-current" href="my-demeos\.html" aria-current="page">My DEMEOS<\/a>/);
   assert.match(html, /<main class="my-demeos-main">/);
   assert.match(html, /<h1>My DEMEOS<\/h1>/);
