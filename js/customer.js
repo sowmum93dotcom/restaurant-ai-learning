@@ -953,13 +953,30 @@ async function loadCustomerWork(document, fetcher) {
 
 if (typeof module !== "undefined" && module.exports) {
   module.exports = { CUSTOMER_STAGE_ONE_COPY, CUSTOMER_STAGE_TWO_COPY, CUSTOMER_STAGE_THREE_COPY, CUSTOMER_STAGE_SIX_COPY, CUSTOMER_NO_POSSIBILITIES_COPY, createCustomerWorkCard, getLocalGreeting, getPreferredLanguage,
-    getServerCustomerPackages, getValidCustomerPossibilities, getValidCustomerWork, initializeCustomerIntention, loadCustomerWork,
+    applyCustomerSurfaceRoute, getServerCustomerPackages, getValidCustomerPossibilities, getValidCustomerWork, initializeCustomerIntention, loadCustomerWork,
     normalizedCustomerIntention, recordCustomerFeedback, recordParticipation, renderCustomerPossibilities, renderCustomerWork,
     requestCustomerLocation, requestCustomerPossibilities,
     saveCustomerPossibility, selectCustomerIntention, toCustomerPossibility, toCustomerWorkItem };
 }
 
+function applyCustomerSurfaceRoute(document, hash) {
+  const discover = document.getElementById("discover");
+  const intention = document.getElementById("intention");
+  if (!discover || !intention) return;
+  const showIntention = hash === "#intention" || hash === "#customer-intention-form";
+  discover.hidden = showIntention;
+  intention.hidden = !showIntention;
+  document.querySelectorAll(".customer-journey-nav a[href^='#']").forEach(function (link) {
+    const current = showIntention ? link.getAttribute("href") === "#intention" : link.getAttribute("href") === "#discover";
+    link.classList.toggle("is-current", current);
+    if (current) link.setAttribute("aria-current", "page");
+    else link.removeAttribute("aria-current");
+  });
+}
+
 if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", function () {
   initializeCustomerIntention(document, navigator, new Date());
   loadCustomerWork(document, fetch);
+  applyCustomerSurfaceRoute(document, window.location.hash);
+  window.addEventListener("hashchange", function () { applyCustomerSurfaceRoute(document, window.location.hash); });
 });
