@@ -959,6 +959,8 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
       }
       packageRegion.appendChild(option);
     });
+  } else if (!customerPackages.length) {
+    addText(document, packageRegion, "p", "customer-package-empty customer-visually-hidden", "Customer options will appear here when available.");
   }
   choice.appendChild(packageRegion);
 
