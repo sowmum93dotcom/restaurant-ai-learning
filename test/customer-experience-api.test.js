@@ -412,7 +412,9 @@ test("Discover controlled test content exercises validated unavailable unmatched
   assert.equal(bistro.products[1].availability, "unavailable");
   assert.equal(bistro.media[0].relatedEntityId, "test-bistro-meal");
   assert.equal(bistro.media[1].relatedEntityId, undefined);
-  assert.equal(studio.media[1].relatedEntityId, "missing-test-product");
+  assert.equal(studio.media[1].kind, "video");
+  assert.equal(studio.media[1].relatedEntityId, "test-studio-service");
+  assert.equal(studio.media[2].relatedEntityId, "missing-test-product");
   assert.equal(market.customerContinuation, undefined);
   assert.equal(market.products, undefined);
 });
