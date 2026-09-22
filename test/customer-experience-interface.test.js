@@ -152,7 +152,7 @@ test("participation remains Interested and is expressly not a commercial outcome
 test("page presents Stage 1 before approved work and no owner interface", function () {
   const html = fs.readFileSync(path.join(__dirname, "..", "customer.html"), "utf8");
   assert.match(html, /images\/demeos-logo\.png/);
-  assert.ok(html.indexOf("customer-intention") < html.indexOf('id="discover"'));
+  assert.ok(html.indexOf('id="discover"') < html.indexOf('id="intention"'));
   assert.match(html, /customer-intention-options|customer-intention-text|customer-location-button/);
   assert.doesNotMatch(html, /business profile|recommendation|campaign strategy|email strategy|approval controls|capability registry|dashboard|ratings|prices|discounts|opening hours/i);
 });
