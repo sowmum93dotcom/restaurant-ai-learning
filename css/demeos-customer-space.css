@@ -443,3 +443,10 @@
 
 /* Discover mobile position — align each active business directly below the sticky DEMEOS header. */
 @media(max-width:680px){.customer-work-card{scroll-margin-top:142px}}
+
+
+/* Discover mobile horizontal paging — show one complete customer option at a time. */
+@media(max-width:680px){
+  .customer-work-card .customer-package-region{gap:0;scroll-padding-inline:0}
+  .customer-work-card .customer-discover-option{flex:0 0 100%;max-width:100%}
+}
