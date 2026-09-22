@@ -93,14 +93,18 @@ test("malformed work cannot send participation and valid participation is always
   assert.deepEqual(JSON.parse(requests[0].options.body), { action: "Interested" });
 });
 
-test("participation gives accurate signal confirmation", async function () {
+test("Discover does not record personal interest before an issued possibility exists", function () {
   const document = fakeDocument();
+  let participationCalls = 0;
   const card = createCustomerWorkCard(document, { workItemId: "a", businessName: "North Star",
-    location: "Leeds", content: "Approved message", participationAction: "Interested" }, [], async function () {});
-  const button = card.children[3].children[1];
-  await button.listeners.click();
-  assert.match(card.textContent, /participation signal has been shared/);
-  assert.doesNotMatch(card.textContent, /unique customer|customer count/i);
+    location: "Leeds", content: "Approved message", participationAction: "Interested" }, [], async function () {
+    participationCalls += 1;
+  });
+  const action = card.children[3].children[1];
+  assert.equal(action.tagName, "A");
+  assert.equal(action.href, "#intention");
+  assert.equal(participationCalls, 0);
+  assert.match(card.textContent, /matched an approved possibility/i);
 });
 
 test("empty approved feed has a professional empty state", function () {
@@ -144,9 +148,9 @@ test("participation remains Interested and is expressly not a commercial outcome
   const card = createCustomerWorkCard(document, { workItemId: "a", businessName: "North Star",
     content: "Approved message", participationAction: "Interested" }, [], async function () {});
 
-  assert.match(card.textContent, /04 · Participate|Interested|interest signal only/i);
-  assert.match(card.textContent, /not a purchase, booking or sale/i);
-  assert.doesNotMatch(card.textContent, /buy now|checkout|converted|subscribe now|package accepted/i);
+  assert.match(card.textContent, /Your choice|Interested in something you see/i);
+  assert.match(card.textContent, /Personal interest is recorded only after DEMEOS has matched an approved possibility/i);
+  assert.doesNotMatch(card.textContent, /interest shared|participation signal has been shared|buy now|checkout|converted|subscribe now|package accepted/i);
 });
 
 test("page presents Stage 1 before approved work and no owner interface", function () {
