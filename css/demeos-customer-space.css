@@ -186,3 +186,9 @@
 @media(max-width:680px){.customer-discover-option{padding:.9rem}.customer-discover-option .customer-product-continue-action{width:100%;box-sizing:border-box}}
 
 .customer-discover-option-image{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;margin:0 0 .9rem;border-radius:10px;background:#020b18}
+
+
+/* Discover navigation foundation — vertical movement follows distributed business work. */
+.customer-work-list{display:grid;gap:1.25rem;scroll-snap-type:y proximity}
+.customer-work-card{scroll-snap-align:start;scroll-margin-top:110px}
+.customer-work-card:focus-visible{outline:2px solid #e5bd59;outline-offset:4px}
