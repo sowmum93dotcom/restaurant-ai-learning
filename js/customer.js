@@ -924,7 +924,7 @@ function renderCustomerWork(document, work, customerPackages, participationRecor
   const validPackages = Array.isArray(customerPackages) ? customerPackages : [];
   if (!validWork.length) {
     status.className = "customer-empty-state";
-    status.innerHTML = "<strong>Nothing to discover just yet</strong><span>No approved customer work is available. Please check back soon.</span>";
+    status.innerHTML = "<strong>Nothing to discover just yet</strong><span>There is nothing new to explore right now. Please check back soon.</span>";
     return;
   }
   status.textContent = "";
