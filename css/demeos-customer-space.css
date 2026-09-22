@@ -148,7 +148,7 @@
 
 
 /* Customer approved work — let the business experience lead, controls stay secondary. */
-.customer-work-card{overflow:hidden}
+.customer-work-card{overflow:clip}
 .customer-work-card .customer-message{padding:clamp(1.25rem,3vw,2rem)}
 .customer-work-card .customer-work-content{max-width:68ch;font-size:clamp(1.05rem,2vw,1.25rem);line-height:1.6}
 .customer-work-card .customer-work-media{margin-top:1.5rem}
