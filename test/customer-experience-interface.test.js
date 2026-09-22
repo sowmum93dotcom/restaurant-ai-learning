@@ -459,3 +459,14 @@ test("available location exposes only neutral session state", function () {
     (state) => states.push(state));
   assert.deepEqual(states, ["available"]);
 });
+
+
+test("Discover populated surface is organised as a responsive business experience", function () {
+  const css = fs.readFileSync(path.join(__dirname, "..", "css/demeos-customer-space.css"), "utf8");
+  assert.match(css, /Discover populated surface — one organised business experience per vertical step/);
+  assert.match(css, /\.customer-work-card\{min-height:min\(760px,calc\(100vh - 130px\)\)/);
+  assert.match(css, /\.customer-work-context\{top:92px;display:flex;align-items:center/);
+  assert.match(css, /\.customer-work-card \.customer-work-media-item,\.customer-work-card \.customer-work-media-link\{flex-basis:min\(82%,720px\)\}/);
+  assert.match(css, /\.customer-work-card \.customer-discover-option\{flex-basis:min\(68%,430px\);min-width:280px\}/);
+  assert.match(css, /@media\(max-width:680px\)[\s\S]*\.customer-work-card \.customer-discover-option\{flex-basis:88%;min-width:240px\}/);
+});
