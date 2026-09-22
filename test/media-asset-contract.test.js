@@ -52,3 +52,15 @@ test("media guidance recommends strong image originals and 15 to 30 second marke
   assert.match(getMediaGuidance({ kind: "video", durationSeconds: 45 })[0], /15 to 30 second/);
   assert.deepEqual(getMediaGuidance({ kind: "video", durationSeconds: 20 }), []);
 });
+
+
+test("public media preserves only its validated business entity relationship", function () {
+  const asset = toPublicMediaAsset({
+    assetId: "product-media-1", businessId: "business-a", kind: "image", state: "ready",
+    purpose: "product", relatedEntityId: "product-1", deliveryUrl: "https://media.example/product.webp"
+  }, "business-a");
+  assert.equal(asset.purpose, "product");
+  assert.equal(asset.relatedEntityId, "product-1");
+  assert.equal(Object.hasOwn(asset, "businessId"), false);
+  assert.equal(Object.hasOwn(asset, "storageKey"), false);
+});
