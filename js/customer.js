@@ -855,9 +855,12 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
   if (Array.isArray(work.media) && work.media.length) {
     const mediaRegion = document.createElement("div");
     mediaRegion.className = "customer-work-media";
+    mediaRegion.setAttribute("role", "list");
+    mediaRegion.setAttribute("aria-label", `Media from ${work.businessName}`);
     work.media.forEach(function (asset) {
       const media = asset.kind === "video" ? document.createElement("video") : document.createElement("img");
       media.className = "customer-work-media-item " + (asset.role === "primary" ? "is-primary" : "is-supporting");
+      media.setAttribute("role", "listitem");
       media.src = asset.deliveryUrl;
       if (asset.kind === "video") { media.controls = true; media.preload = "metadata"; media.playsInline = true; }
       else media.alt = `Approved media from ${work.businessName}`;
@@ -873,11 +876,14 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
   addText(document, choice, "h4", "customer-choice-title", "Customer options");
   const packageRegion = document.createElement("div");
   packageRegion.className = "customer-package-region";
+  packageRegion.setAttribute("role", "list");
+  packageRegion.setAttribute("aria-label", `Products and services from ${work.businessName}`);
   packageRegion.setAttribute("aria-live", "polite");
   if (Array.isArray(work.products) && work.products.length) {
     work.products.forEach(function (product) {
       const option = document.createElement("article");
       option.className = "customer-discover-option";
+      option.setAttribute("role", "listitem");
       const route = product.continuationRoute;
       const field = { website: "website", phone: "phone", whatsapp: "whatsapp", email: "email", booking: "bookingLink", visit: "visitAddress" }[route];
       const detail = work.customerContinuation && field ? work.customerContinuation[field] : null;
