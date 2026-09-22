@@ -4,7 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { createCustomerWorkCard, getServerCustomerPackages, getValidCustomerWork,
   getLocalGreeting, getPreferredLanguage, normalizedCustomerIntention, recordParticipation,
-  renderCustomerWork, requestCustomerLocation, selectCustomerIntention } = require("../js/customer.js");
+  renderCustomerWork, requestCustomerLocation, selectCustomerIntention, applyCustomerSurfaceRoute } = require("../js/customer.js");
 const { confirmTrustedCustomer } = require("../js/my-demeos.js");
 
 class Element {
@@ -190,6 +190,33 @@ test("Customer Interface retains responsive layouts for intentions and participa
   assert.match(css, /@media \(max-width: 700px\)[\s\S]*?\.customer-participation[\s\S]*?flex-direction: column/);
   assert.match(css, /@media \(max-width: 700px\)[\s\S]*?\.customer-participation-button \{ width: 100%; \}/);
   assert.match(css, /prefers-reduced-motion: reduce/);
+});
+
+test("Customer surface routing keeps Discover public and separates intention", function () {
+  const document = fakeDocument();
+  const discover = document.elements.discover;
+  const intention = document.elements.intention;
+  const discoverLink = new Element("a"); discoverLink.setAttribute("href", "#discover");
+  const intentionLink = new Element("a"); intentionLink.setAttribute("href", "#intention");
+  document.querySelectorAll = function (selector) {
+    return selector === ".customer-journey-nav a[href^='#']" ? [discoverLink, intentionLink] : [];
+  };
+
+  applyCustomerSurfaceRoute(document, "#discover");
+  assert.equal(discover.hidden, false);
+  assert.equal(intention.hidden, true);
+  assert.equal(discoverLink.attributes["aria-current"], "page");
+  assert.equal(intentionLink.attributes["aria-current"], undefined);
+
+  applyCustomerSurfaceRoute(document, "#intention");
+  assert.equal(discover.hidden, true);
+  assert.equal(intention.hidden, false);
+  assert.equal(discoverLink.attributes["aria-current"], undefined);
+  assert.equal(intentionLink.attributes["aria-current"], "page");
+
+  applyCustomerSurfaceRoute(document, "#customer-intention-form");
+  assert.equal(discover.hidden, true);
+  assert.equal(intention.hidden, false);
 });
 
 test("My DEMEOS trusts only the server-confirmed customer identity", async function () {
