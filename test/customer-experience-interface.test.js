@@ -107,6 +107,28 @@ test("Discover does not record personal interest before an issued possibility ex
   assert.match(card.textContent, /matched an approved possibility/i);
 });
 
+test("Discover renders approved media as viewing content without inventing continuation", function () {
+  const document = fakeDocument();
+  const card = createCustomerWorkCard(document, {
+    workItemId: "a", businessName: "North Star", content: "Approved message",
+    participationAction: "Interested",
+    media: [
+      { assetId: "image-a", kind: "image", role: "primary", deliveryUrl: "https://cdn.example.com/a.webp", contentType: "image/webp" },
+      { assetId: "video-a", kind: "video", role: "supporting", deliveryUrl: "https://cdn.example.com/a.mp4", contentType: "video/mp4" }
+    ]
+  }, [], async function () {});
+
+  const mediaRegion = card.children[1].children[2];
+  assert.equal(mediaRegion.children.length, 2);
+  assert.equal(mediaRegion.children[0].tag, "img");
+  assert.equal(mediaRegion.children[0].src, "https://cdn.example.com/a.webp");
+  assert.equal(mediaRegion.children[1].tag, "video");
+  assert.equal(mediaRegion.children[1].src, "https://cdn.example.com/a.mp4");
+  assert.equal(mediaRegion.children[1].controls, true);
+  assert.equal(mediaRegion.children[1].playsInline, true);
+  assert.doesNotMatch(card.textContent, /buy now|checkout|purchase now/i);
+});
+
 test("empty approved feed has a professional empty state", function () {
   const document = fakeDocument();
   renderCustomerWork(document, [], [], async function () {});
