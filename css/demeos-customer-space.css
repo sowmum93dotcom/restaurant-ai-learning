@@ -278,3 +278,46 @@
   .customer-work-card .customer-work-media-item{height:auto}
   .customer-test-content-status{display:flex;width:100%;max-width:100%;box-sizing:border-box;border-radius:14px;white-space:normal;overflow-wrap:anywhere}
 }
+
+
+/* Discover premium customer surface — present each business as one coherent experience, not stacked system panels. */
+.customer-work-card{overflow:hidden;background:linear-gradient(180deg,#06172d 0%,#041226 100%)}
+.customer-work-context{padding:1.25rem 1.4rem;background:#031023}
+.customer-business-name{color:#f7f4ec}
+.customer-work-card .customer-message{padding:1.1rem 1.4rem 1.4rem}
+.customer-work-card .customer-work-content{max-width:760px;color:#c6d0df;line-height:1.55}
+.customer-work-card .customer-choice{margin:0 1.4rem;padding:1.15rem 0 1.35rem;border-top:1px solid rgba(229,189,89,.22);background:transparent}
+.customer-work-card .customer-choice>.customer-step{margin-bottom:.25rem}
+.customer-work-card .customer-choice-title{color:#f7f4ec}
+.customer-work-card .customer-discover-option{border:1px solid rgba(229,189,89,.25);background:#020d1d;box-shadow:none}
+.customer-work-card .customer-participation{margin:0 1.4rem;padding:1.25rem 0 1.5rem;background:transparent}
+.customer-participation-title{color:#f7f4ec}
+.customer-participation-button{border:1px solid #d8b65e;background:transparent;color:#f3d77d}
+.customer-package-empty{width:100%;margin:0;padding:1rem 0;color:#9fb0c5}
+@media(max-width:680px){
+  .customer-section-heading{padding:.25rem 0 1rem}
+  .customer-section-heading h2{font-size:clamp(2rem,10vw,2.7rem);line-height:1.05}
+  .customer-section-heading>p{font-size:1rem;line-height:1.45}
+  .customer-test-content-status{min-height:0;margin-bottom:.75rem;padding:.55rem .7rem;font-size:.66rem;letter-spacing:.06em}
+  .customer-work-card{border-radius:20px}
+  .customer-work-context{top:72px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.55rem .8rem;padding:1rem}
+  .customer-work-context>div{grid-column:1 / -1}
+  .customer-approved-mark{order:initial;grid-column:1;margin:0;justify-self:start}
+  .customer-discover-position{grid-column:2;margin:0;align-self:center;justify-self:end}
+  .customer-business-name{font-size:1.35rem;line-height:1.2}
+  .customer-work-card .customer-message{padding:.9rem 1rem 1.1rem}
+  .customer-work-card .customer-work-content{margin:.15rem 0 .75rem;font-size:.96rem;line-height:1.45}
+  .customer-work-card .customer-work-media{margin-top:.75rem}
+  .customer-work-card .customer-work-media-item,.customer-work-card .customer-work-media-link{flex-basis:calc(100% - 2.25rem);max-width:calc(100% - 2.25rem)}
+  .customer-work-card .customer-work-media-item{max-height:330px;border-radius:14px}
+  .customer-work-card .customer-choice{margin:0 1rem;padding:1rem 0 1.15rem}
+  .customer-work-card .customer-choice-title{font-size:1.25rem}
+  .customer-work-card .customer-package-region{margin-top:.65rem}
+  .customer-work-card .customer-discover-option{flex-basis:calc(100% - 2rem);max-width:calc(100% - 2rem);padding:1rem}
+  .customer-discover-option-name{font-size:1.05rem}
+  .customer-discover-option-description{font-size:.94rem;line-height:1.45}
+  .customer-work-card .customer-participation{margin:0 1rem;padding:1.05rem 0 1.2rem;gap:.9rem}
+  .customer-participation-title{font-size:1.35rem;line-height:1.2}
+  .customer-participation-copy{font-size:.94rem;line-height:1.45}
+  .customer-participation-button{width:100%;box-sizing:border-box;text-align:center}
+}
