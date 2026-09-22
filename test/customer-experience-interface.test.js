@@ -162,6 +162,22 @@ test("Discover fails safely when the server response is malformed", async functi
   assert.equal(document.elements["customer-work-list"].children.length, 0);
 });
 
+test("Discover distributed work is vertically navigable in customer order", function () {
+  const document = fakeDocument();
+  const work = ["a", "b"].map(function (id) {
+    return { workItemId: id, businessName: "Business " + id.toUpperCase(), content: "Approved " + id, participationAction: "Interested" };
+  });
+  renderCustomerWork(document, work, [], async function () {});
+  const cards = document.elements["customer-work-list"].children;
+  assert.equal(cards[0].attributes["data-discover-position"], "1");
+  assert.equal(cards[1].attributes["data-discover-position"], "2");
+  assert.equal(cards[0].attributes.tabindex, "0");
+  assert.match(cards[0].attributes["aria-label"], /Discover item 1 of 2/);
+  const css = fs.readFileSync(path.join(__dirname, "..", "css/demeos-customer-space.css"), "utf8");
+  assert.match(css, /\.customer-work-list\{display:grid;gap:1\.25rem;scroll-snap-type:y proximity\}/);
+  assert.match(css, /\.customer-work-card\{scroll-snap-align:start;scroll-margin-top:110px\}/);
+});
+
 test("empty approved feed has a professional empty state", function () {
   const document = fakeDocument();
   renderCustomerWork(document, [], [], async function () {});
