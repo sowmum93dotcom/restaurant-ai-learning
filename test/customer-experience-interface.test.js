@@ -130,6 +130,18 @@ test("Discover renders approved media as viewing content without inventing conti
   assert.doesNotMatch(card.textContent, /buy now|checkout|purchase now/i);
 });
 
+
+test("Discover public contract gives different businesses a first distribution pass", function () {
+  const { getValidPublicCustomerWork } = require("../api/_lib/customer-public-work-contract.js");
+  const work = [
+    { workItemId: "a1", businessId: "a", businessName: "Business A", content: "A first", participationAction: "Interested" },
+    { workItemId: "a2", businessId: "a", businessName: "Business A", content: "A second", participationAction: "Interested" },
+    { workItemId: "b1", businessId: "b", businessName: "Business B", content: "B first", participationAction: "Interested" }
+  ];
+  assert.deepEqual(getValidPublicCustomerWork(work, 3).map(function (item) { return item.workItemId; }), ["a1", "b1", "a2"]);
+  assert.deepEqual(getValidPublicCustomerWork(work, 2).map(function (item) { return item.workItemId; }), ["a1", "b1"]);
+});
+
 test("Discover fails safely when approved work cannot be loaded", async function () {
   const document = fakeDocument();
   await loadCustomerWork(document, async function () {
