@@ -375,3 +375,44 @@ test("repository returns not found for unknown, unapproved, and non-publishable 
     assert.equal(queryCount, 1);
   }
 });
+
+
+test("Discover controlled test content requires the exact private preview signal and never replaces the normal feed", async function () {
+  let repositoryCalls = 0;
+  const repository = { async getCustomerWork() { repositoryCalls += 1; return []; } };
+
+  const normal = await runHandler("../api/customer/work.js", repository, { method: "GET", query: {}, headers: {} });
+  assert.equal(normal.statusCode, 200);
+  assert.deepEqual(normal.body.work, []);
+  assert.equal(normal.body.testMode, undefined);
+  assert.equal(repositoryCalls, 1);
+
+  const queryOnly = await runHandler("../api/customer/work.js", repository,
+    { method: "GET", query: { "demeos-test": "1" }, headers: {} });
+  assert.deepEqual(queryOnly.body.work, []);
+  assert.equal(repositoryCalls, 2);
+
+  const controlled = await runHandler("../api/customer/work.js", repository, {
+    method: "GET", query: { "demeos-test": "1" }, headers: { "x-demeos-discover-test": "controlled-preview" }
+  });
+  assert.equal(controlled.statusCode, 200);
+  assert.equal(controlled.body.testMode, true);
+  assert.equal(controlled.body.work.length, 3);
+  assert.deepEqual(controlled.body.work.map(item => item.businessName),
+    ["DEMEOS Test Bistro", "DEMEOS Test Studio", "DEMEOS Test Market"]);
+  assert.equal(repositoryCalls, 2);
+});
+
+test("Discover controlled test content exercises validated unavailable unmatched and view-only states", async function () {
+  const res = await runHandler("../api/customer/work.js", { async getCustomerWork() { throw new Error("must not read production"); } }, {
+    method: "GET", query: { "demeos-test": "1" }, headers: { "x-demeos-discover-test": "controlled-preview" }
+  });
+  const [bistro, studio, market] = res.body.work;
+  assert.equal(bistro.products[0].availability, "available");
+  assert.equal(bistro.products[1].availability, "unavailable");
+  assert.equal(bistro.media[0].relatedEntityId, "test-bistro-meal");
+  assert.equal(bistro.media[1].relatedEntityId, undefined);
+  assert.equal(studio.media[1].relatedEntityId, "missing-test-product");
+  assert.equal(market.customerContinuation, undefined);
+  assert.equal(market.products, undefined);
+});
