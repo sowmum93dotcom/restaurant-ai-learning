@@ -494,3 +494,13 @@ test("Discover controlled preview visibly identifies populated test content", as
   assert.match(document.elements["customer-work-status"].textContent, /CONTROLLED TEST CONTENT/);
   assert.match(document.elements["customer-work-list"].textContent, /DEMEOS Test Bistro/);
 });
+
+
+test("Discover mobile surface stays inside the viewport while horizontal lanes remain self-contained", function () {
+  const css = fs.readFileSync(path.join(__dirname, "..", "css/demeos-customer-space.css"), "utf8");
+  assert.match(css, /Discover mobile viewport containment — keep the business surface inside the phone while lanes scroll internally/);
+  assert.match(css, /\.customer-main\{overflow-x:hidden\}/);
+  assert.match(css, /\.customer-work-card\{width:100%;min-width:0;overflow:hidden\}/);
+  assert.match(css, /\.customer-work-card \.customer-work-media,\.customer-work-card \.customer-package-region\{width:100%;max-width:100%;min-width:0;box-sizing:border-box\}/);
+  assert.match(css, /\.customer-work-card \.customer-discover-option\{flex-basis:calc\(100% - 1rem\);max-width:calc\(100% - 1rem\);min-width:0;box-sizing:border-box\}/);
+});
