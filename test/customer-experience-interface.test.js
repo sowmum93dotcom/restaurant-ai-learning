@@ -178,6 +178,25 @@ test("Discover distributed work is vertically navigable in customer order", func
   assert.match(css, /\.customer-work-card\{scroll-snap-align:start;scroll-margin-top:110px\}/);
 });
 
+test("Discover keeps business media and options in horizontal navigation lanes", function () {
+  const document = fakeDocument();
+  const card = createCustomerWorkCard(document, {
+    workItemId: "work-1", businessName: "Business A", content: "Approved content", participationAction: "Interested",
+    media: [{ assetId: "image-1", kind: "image", role: "primary", deliveryUrl: "https://example.com/image.jpg" }],
+    customerContinuation: { routes: ["website"], website: "https://example.com" },
+    products: [{ productId: "p1", name: "Product", description: "Description", continuationRoute: "website", availability: "available" }]
+  }, [], async function () {});
+  const media = card.children[1].children.find(function (child) { return child.className === "customer-work-media"; });
+  const options = card.children[2].children.find(function (child) { return child.className === "customer-package-region"; });
+  assert.equal(media.attributes.role, "list");
+  assert.match(media.attributes["aria-label"], /Media from Business A/);
+  assert.equal(options.attributes.role, "list");
+  assert.match(options.attributes["aria-label"], /Products and services from Business A/);
+  const css = fs.readFileSync(path.join(__dirname, "..", "css/demeos-customer-space.css"), "utf8");
+  assert.match(css, /scroll-snap-type:x mandatory/);
+  assert.match(css, /overscroll-behavior-inline:contain/);
+});
+
 test("empty approved feed has a professional empty state", function () {
   const document = fakeDocument();
   renderCustomerWork(document, [], [], async function () {});
