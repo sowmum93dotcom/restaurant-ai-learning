@@ -179,7 +179,8 @@ test("Customer Interface makes Stage 3 primary, keeps its copy centralized, and 
   const source = fs.readFileSync(path.join(__dirname, "..", "js/customer.js"), "utf8");
   const css = fs.readFileSync(path.join(__dirname, "..", "css/style.css"), "utf8");
   assert.match(html, /customer-focused-possibility[^>]*role="region"[^>]*aria-live="polite"/);
-  assert.match(html, /customer-approved-work-fallback[^>]*hidden/);
+  assert.match(html, /<section id="discover" class="customer-experience customer-approved-work-fallback"/);
+  assert.doesNotMatch(html, /<section id="discover"[^>]*hidden/);
   assert.match(html, /images\/demeos-logo\.png/);
   assert.match(source, /understandingPanel\.hidden = true;[\s\S]*requestCustomerPossibilities/);
   assert.match(source, /currentUnderstanding = null;[\s\S]*possibilityRegion\.hidden = true/);
