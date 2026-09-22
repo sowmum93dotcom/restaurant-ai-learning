@@ -878,6 +878,15 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
     work.products.forEach(function (product) {
       const option = document.createElement("article");
       option.className = "customer-discover-option";
+      if (/^https:\/\//i.test(product.imageUrl || "")) {
+        const image = document.createElement("img");
+        image.className = "customer-discover-option-image";
+        image.src = product.imageUrl;
+        image.alt = product.name;
+        image.loading = "lazy";
+        image.addEventListener("error", function () { image.remove(); });
+        option.appendChild(image);
+      }
       addText(document, option, "h5", "customer-discover-option-name", product.name);
       addText(document, option, "p", "customer-discover-option-description", product.description);
       if (product.price) addText(document, option, "p", "customer-discover-option-price", product.priceMode === "from" ? "From " + product.price : product.priceMode === "range" ? "Price range: " + product.price : product.price);
