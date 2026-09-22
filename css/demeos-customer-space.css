@@ -263,3 +263,18 @@
 
 /* Controlled Discover preview — unmistakably separate test content from live businesses. */
 .customer-test-content-status{display:inline-flex;align-items:center;min-height:36px;margin:0 0 1rem;padding:.45rem .75rem;border:1px solid rgba(229,189,89,.55);border-radius:999px;background:#241b07;color:#f3d77d;font-size:.74rem;font-weight:800;letter-spacing:.08em}
+
+
+/* Discover mobile viewport containment — keep the business surface inside the phone while lanes scroll internally. */
+@media(max-width:680px){
+  .customer-main{overflow-x:hidden}
+  .customer-experience,.customer-work-list,.customer-work-card,.customer-work-context,.customer-work-card .customer-message,.customer-work-card .customer-choice,.customer-work-card .customer-participation{max-width:100%;box-sizing:border-box}
+  .customer-work-card{width:100%;min-width:0;overflow:hidden}
+  .customer-work-context>div,.customer-work-card .customer-message,.customer-work-card .customer-choice,.customer-work-card .customer-participation{min-width:0}
+  .customer-business-name,.customer-work-location,.customer-work-content,.customer-choice-title,.customer-participation-title,.customer-participation-copy{overflow-wrap:anywhere}
+  .customer-work-card .customer-work-media,.customer-work-card .customer-package-region{width:100%;max-width:100%;min-width:0;box-sizing:border-box}
+  .customer-work-card .customer-work-media-item,.customer-work-card .customer-work-media-link{flex-basis:calc(100% - 1rem);max-width:calc(100% - 1rem);min-width:0}
+  .customer-work-card .customer-discover-option{flex-basis:calc(100% - 1rem);max-width:calc(100% - 1rem);min-width:0;box-sizing:border-box}
+  .customer-work-card .customer-work-media-item{height:auto}
+  .customer-test-content-status{display:flex;width:100%;max-width:100%;box-sizing:border-box;border-radius:14px;white-space:normal;overflow-wrap:anywhere}
+}
