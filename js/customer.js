@@ -805,6 +805,16 @@ function toCustomerWorkItem(item) {
 
   const publicItem = { workItemId, businessName, content, participationAction: "Interested" };
   if (typeof item.location === "string" && item.location.trim()) publicItem.location = item.location.trim();
+  if (item.customerContinuation && typeof item.customerContinuation === "object" && !Array.isArray(item.customerContinuation) && Array.isArray(item.customerContinuation.routes)) {
+    publicItem.customerContinuation = item.customerContinuation;
+  }
+  if (Array.isArray(item.products)) {
+    publicItem.products = item.products.filter(function (product) {
+      return product && typeof product === "object" && !Array.isArray(product) &&
+        normalizedRequiredString(product.productId) && normalizedRequiredString(product.name) &&
+        normalizedRequiredString(product.description) && normalizedRequiredString(product.continuationRoute);
+    }).slice(0, 100);
+  }
   if (Array.isArray(item.media)) {
     publicItem.media = item.media.filter(function (asset) {
       return asset && typeof asset === "object" && ["image", "video"].includes(asset.kind) &&
