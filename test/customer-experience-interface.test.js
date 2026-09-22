@@ -515,3 +515,15 @@ test("Discover presents each business as one coherent responsive customer surfac
   assert.match(css, /@media\(max-width:680px\)[\s\S]*\.customer-work-context\{top:72px;display:grid;grid-template-columns:minmax\(0,1fr\) auto/);
   assert.match(css, /\.customer-work-card \.customer-discover-option\{flex-basis:calc\(100% - 2rem\);max-width:calc\(100% - 2rem\);padding:1rem\}/);
 });
+
+
+test("Discover mobile is content first instead of stacked development panels", function () {
+  const css = fs.readFileSync(path.join(__dirname, "..", "css/demeos-customer-space.css"), "utf8");
+  assert.match(css, /Discover immersive mobile — content first, compact controls, no development-panel presentation/);
+  assert.match(css, /\.customer-work-card\{border:0;border-radius:0;box-shadow:none;background:#041226\}/);
+  assert.match(css, /\.customer-work-context\{position:relative;top:auto;z-index:1/);
+  assert.match(css, /\.customer-message-label\{display:none\}/);
+  assert.match(css, /\.customer-work-card \.customer-choice>\.customer-step\{display:none\}/);
+  assert.match(css, /\.customer-work-card \.customer-discover-option\{flex-basis:82%;max-width:82%;min-width:0/);
+  assert.match(css, /\.customer-participation \.customer-step\{display:none\}/);
+});
