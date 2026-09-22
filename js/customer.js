@@ -895,8 +895,9 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
         ? work.products.find(function (product) { return product.productId === asset.relatedEntityId; }) : null;
       if (relatedProduct) media.setAttribute("data-related-product-id", relatedProduct.productId);
       const mediaHref = relatedProduct ? getCustomerProductContinuationHref(work, relatedProduct) : null;
-      if (mediaHref) {
+      if (mediaHref && asset.kind === "image") {
         const mediaLink = document.createElement("a");
+        mediaLink.className = "customer-work-media-link";
         mediaLink.href = mediaHref;
         mediaLink.setAttribute("aria-label", relatedProduct.name + " — continue with " + work.businessName);
         if (/^https?:\/\//i.test(mediaHref)) { mediaLink.target = "_blank"; mediaLink.rel = "noopener noreferrer"; }
