@@ -406,3 +406,34 @@
   .customer-work-card .customer-discover-option:not(.has-image) .customer-discover-option-price,
   .customer-work-card .customer-discover-option:not(.has-image) .customer-product-continue-action{grid-column:1}
 }
+
+
+/* Discover approved light reference surface — navy DEMEOS top, clean light business content. */
+@media(max-width:680px){
+  .customer-main{background:#f8f8f6}
+  .customer-experience{background:#f8f8f6}
+  .customer-section-heading{background:#031326;color:#fff}
+  .customer-section-heading h2{color:#fff}
+  .customer-section-heading>p{color:#c2cada}
+  .customer-test-content-status{background:#241b07;color:#f3d77d;border-color:#b99137}
+  .customer-work-list{background:#f8f8f6}
+  .customer-work-card{background:#fff;color:#071326;border-bottom:1px solid #e1e4e8}
+  .customer-work-card .customer-work-content{color:#59677c}
+  .customer-work-context{background:transparent}
+  .customer-business-name{color:#071326}
+  .customer-work-location{color:#68758a}
+  .customer-discover-position{color:#071326}
+  .customer-approved-mark{color:#8b650d;border-color:#c9a448}
+  .customer-work-card .customer-choice{border-top:1px solid #e2e4e8}
+  .customer-work-card .customer-choice-title{color:#9a6d08}
+  .customer-work-card .customer-discover-option{background:#fff;border-color:#d9dde4;color:#071326}
+  .customer-discover-option-name{color:#071326}
+  .customer-discover-option-description{color:#59677c}
+  .customer-discover-option-price{color:#9a6d08}
+  .customer-product-continue-action{background:#e8bf55!important;border-color:#e8bf55!important;color:#071326!important}
+  .customer-package-empty{color:#68758a}
+  .customer-work-card .customer-participation{border-top:1px solid #e2e4e8}
+  .customer-participation-title{color:#071326}
+  .customer-participation-copy{color:#59677c}
+  .customer-participation-button{background:#e8bf55;border-color:#e8bf55;color:#071326}
+}
