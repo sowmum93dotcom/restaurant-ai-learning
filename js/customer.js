@@ -982,7 +982,11 @@ function renderCustomerWork(document, work, customerPackages, participationRecor
   status.textContent = "";
   status.className = "customer-work-status";
   validWork.forEach(function (item, index) {
-    list.appendChild(createCustomerWorkCard(document, item, validPackages, participationRecorder, index === 0));
+    const card = createCustomerWorkCard(document, item, validPackages, participationRecorder, index === 0);
+    card.setAttribute("data-discover-position", String(index + 1));
+    card.setAttribute("tabindex", "0");
+    card.setAttribute("aria-label", `${item.businessName} — Discover item ${index + 1} of ${validWork.length}`);
+    list.appendChild(card);
   });
 }
 
