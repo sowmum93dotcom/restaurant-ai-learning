@@ -205,3 +205,7 @@
 .customer-work-context{position:sticky;top:0;z-index:2;background:rgba(2,11,24,.96);backdrop-filter:blur(12px)}
 .customer-discover-position{margin-left:auto;color:#c6d0df;font-size:.78rem;font-weight:700;letter-spacing:.08em;white-space:nowrap}
 @media(max-width:680px){.customer-work-context{top:0}.customer-discover-position{font-size:.72rem}}
+
+.customer-work-card .customer-work-media-link{display:block;flex:0 0 min(86%,560px);scroll-snap-align:start;text-decoration:none}
+.customer-work-card .customer-work-media-link .customer-work-media-item{width:100%;height:100%;display:block}
+@media(min-width:900px){.customer-work-card .customer-work-media-link{flex-basis:min(72%,620px)}}

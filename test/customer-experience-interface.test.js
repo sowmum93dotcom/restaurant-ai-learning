@@ -245,6 +245,7 @@ test("Discover media matches only its exact validated related product", function
     ],
     media: [
       { assetId: "media-1", kind: "image", role: "primary", deliveryUrl: "https://cdn.example/one.jpg", purpose: "product", relatedEntityId: "product-1" },
+      { assetId: "video-1", kind: "video", role: "supporting", deliveryUrl: "https://cdn.example/one.mp4", purpose: "product", relatedEntityId: "product-1" },
       { assetId: "media-2", kind: "image", role: "supporting", deliveryUrl: "https://cdn.example/unknown.jpg", purpose: "product", relatedEntityId: "product-9" }
     ]
   });
@@ -252,10 +253,38 @@ test("Discover media matches only its exact validated related product", function
   assert.equal(work.media[0].relatedEntityId, "product-1");
   const card = createCustomerWorkCard(document, work, [], async function () {});
   const mediaRegion = card.children[1].children.find(function (child) { return child.className === "customer-work-media"; });
-  assert.equal(mediaRegion.children[0].attributes["data-related-product-id"], "product-1");
-  assert.equal(mediaRegion.children[1].attributes["data-related-product-id"], undefined);
-  assert.equal(mediaRegion.children[0].href, undefined);
+  assert.equal(mediaRegion.children[0].tag, "a");
+  assert.equal(mediaRegion.children[0].children[0].attributes["data-related-product-id"], "product-1");
+  assert.equal(mediaRegion.children[1].tag, "video");
+  assert.equal(mediaRegion.children[1].attributes["data-related-product-id"], "product-1");
+  assert.equal(mediaRegion.children[2].attributes["data-related-product-id"], undefined);
+  assert.equal(mediaRegion.children[0].href, "https://business.example");
   assert.equal(mediaRegion.children[1].href, undefined);
+  assert.equal(mediaRegion.children[2].href, undefined);
+});
+
+test("Discover makes only exactly matched available media actionable", function () {
+  const document = fakeDocument();
+  const work = toCustomerWorkItem({
+    workItemId: "work-actionable-media", businessName: "Business A", content: "Approved content", participationAction: "Interested",
+    customerContinuation: { routes: ["website"], website: "https://business.example/product" },
+    products: [
+      { productId: "product-1", name: "One", description: "First", continuationRoute: "website", availability: "available" },
+      { productId: "product-2", name: "Two", description: "Second", continuationRoute: "website", availability: "unavailable" }
+    ],
+    media: [
+      { assetId: "media-1", kind: "image", role: "primary", deliveryUrl: "https://cdn.example/one.jpg", purpose: "product", relatedEntityId: "product-1" },
+      { assetId: "media-2", kind: "image", role: "supporting", deliveryUrl: "https://cdn.example/two.jpg", purpose: "product", relatedEntityId: "product-2" },
+      { assetId: "media-3", kind: "image", role: "supporting", deliveryUrl: "https://cdn.example/unknown.jpg", purpose: "product", relatedEntityId: "product-9" }
+    ]
+  });
+  const card = createCustomerWorkCard(document, work, [], async function () {});
+  const mediaRegion = card.children[1].children.find(function (child) { return child.className === "customer-work-media"; });
+  assert.equal(mediaRegion.children[0].tag, "a");
+  assert.equal(mediaRegion.children[0].href, "https://business.example/product");
+  assert.equal(mediaRegion.children[0].children[0].attributes["data-related-product-id"], "product-1");
+  assert.equal(mediaRegion.children[1].tag, "img");
+  assert.equal(mediaRegion.children[2].tag, "img");
 });
 
 test("empty approved feed has a professional empty state", function () {
