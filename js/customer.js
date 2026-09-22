@@ -833,6 +833,28 @@ function getValidCustomerWork(work) {
   return work.map(toCustomerWorkItem).filter(Boolean);
 }
 
+function getCustomerProductContinuationHref(work, product) {
+  if (!product || product.availability === "unavailable") return null;
+  const route = product.continuationRoute;
+  const field = { website: "website", phone: "phone", whatsapp: "whatsapp", email: "email", booking: "bookingLink", visit: "visitAddress" }[route];
+  const detail = work.customerContinuation && field ? work.customerContinuation[field] : null;
+  if ((route === "website" || route === "booking") && /^https?:\/\//i.test(detail)) return detail;
+  if (route === "phone" && detail) return "tel:" + detail;
+  if (route === "whatsapp" && detail) return "https://wa.me/" + detail.replace(/\D/g, "");
+  if (route === "email" && detail) return "mailto:" + detail;
+  if (route === "visit" && detail) return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(detail);
+  if (route === "quote" && work.customerContinuation && work.customerContinuation.quoteVia) {
+    const quoteRoute = work.customerContinuation.quoteVia;
+    const quoteField = { website: "website", phone: "phone", whatsapp: "whatsapp", email: "email", booking: "bookingLink" }[quoteRoute];
+    const quoteDetail = quoteField ? work.customerContinuation[quoteField] : null;
+    if (quoteRoute === "email" && quoteDetail) return "mailto:" + quoteDetail;
+    if (quoteRoute === "phone" && quoteDetail) return "tel:" + quoteDetail;
+    if (quoteRoute === "whatsapp" && quoteDetail) return "https://wa.me/" + quoteDetail.replace(/\D/g, "");
+    if ((quoteRoute === "website" || quoteRoute === "booking") && /^https?:\/\//i.test(quoteDetail)) return quoteDetail;
+  }
+  return null;
+}
+
 function createCustomerWorkCard(document, work, customerPackages, recordParticipation, anchorJourney) {
   const card = document.createElement("article");
   card.className = "customer-work-card";
@@ -872,7 +894,15 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
       const relatedProduct = asset.purpose === "product" && asset.relatedEntityId && Array.isArray(work.products)
         ? work.products.find(function (product) { return product.productId === asset.relatedEntityId; }) : null;
       if (relatedProduct) media.setAttribute("data-related-product-id", relatedProduct.productId);
-      mediaRegion.appendChild(media);
+      const mediaHref = relatedProduct ? getCustomerProductContinuationHref(work, relatedProduct) : null;
+      if (mediaHref) {
+        const mediaLink = document.createElement("a");
+        mediaLink.href = mediaHref;
+        mediaLink.setAttribute("aria-label", relatedProduct.name + " — continue with " + work.businessName);
+        if (/^https?:\/\//i.test(mediaHref)) { mediaLink.target = "_blank"; mediaLink.rel = "noopener noreferrer"; }
+        mediaLink.appendChild(media);
+        mediaRegion.appendChild(mediaLink);
+      } else mediaRegion.appendChild(media);
     });
     message.appendChild(mediaRegion);
   }
@@ -892,25 +922,7 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
       const option = document.createElement("article");
       option.className = "customer-discover-option";
       option.setAttribute("role", "listitem");
-      const route = product.continuationRoute;
-      const field = { website: "website", phone: "phone", whatsapp: "whatsapp", email: "email", booking: "bookingLink", visit: "visitAddress" }[route];
-      const detail = work.customerContinuation && field ? work.customerContinuation[field] : null;
-      let href = null;
-      if ((route === "website" || route === "booking") && /^https?:\/\//i.test(detail)) href = detail;
-      else if (route === "phone" && detail) href = "tel:" + detail;
-      else if (route === "whatsapp" && detail) href = "https://wa.me/" + detail.replace(/\D/g, "");
-      else if (route === "email" && detail) href = "mailto:" + detail;
-      else if (route === "visit" && detail) href = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(detail);
-      else if (route === "quote" && work.customerContinuation && work.customerContinuation.quoteVia) {
-        const quoteRoute = work.customerContinuation.quoteVia;
-        const quoteField = { website: "website", phone: "phone", whatsapp: "whatsapp", email: "email", booking: "bookingLink" }[quoteRoute];
-        const quoteDetail = quoteField ? work.customerContinuation[quoteField] : null;
-        if (quoteRoute === "email" && quoteDetail) href = "mailto:" + quoteDetail;
-        else if (quoteRoute === "phone" && quoteDetail) href = "tel:" + quoteDetail;
-        else if (quoteRoute === "whatsapp" && quoteDetail) href = "https://wa.me/" + quoteDetail.replace(/\D/g, "");
-        else if ((quoteRoute === "website" || quoteRoute === "booking") && /^https?:\/\//i.test(quoteDetail)) href = quoteDetail;
-      }
-      if (product.availability === "unavailable") href = null;
+      const href = getCustomerProductContinuationHref(work, product);
       if (/^https:\/\//i.test(product.imageUrl || "")) {
         const image = document.createElement("img");
         image.className = "customer-discover-option-image";
@@ -1025,7 +1037,7 @@ async function loadCustomerWork(document, fetcher) {
 }
 
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { CUSTOMER_STAGE_ONE_COPY, CUSTOMER_STAGE_TWO_COPY, CUSTOMER_STAGE_THREE_COPY, CUSTOMER_STAGE_SIX_COPY, CUSTOMER_NO_POSSIBILITIES_COPY, createCustomerWorkCard, getLocalGreeting, getPreferredLanguage,
+  module.exports = { getCustomerProductContinuationHref, CUSTOMER_STAGE_ONE_COPY, CUSTOMER_STAGE_TWO_COPY, CUSTOMER_STAGE_THREE_COPY, CUSTOMER_STAGE_SIX_COPY, CUSTOMER_NO_POSSIBILITIES_COPY, createCustomerWorkCard, getLocalGreeting, getPreferredLanguage,
     applyCustomerSurfaceRoute, getServerCustomerPackages, getValidCustomerPossibilities, getValidCustomerWork, initializeCustomerIntention, loadCustomerWork,
     normalizedCustomerIntention, recordCustomerFeedback, recordParticipation, renderCustomerPossibilities, renderCustomerWork,
     requestCustomerLocation, requestCustomerPossibilities,
