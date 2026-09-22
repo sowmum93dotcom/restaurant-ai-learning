@@ -209,3 +209,53 @@
 .customer-work-card .customer-work-media-link{display:block;flex:0 0 min(86%,560px);scroll-snap-align:start;text-decoration:none}
 .customer-work-card .customer-work-media-link .customer-work-media-item{width:100%;height:100%;display:block}
 @media(min-width:900px){.customer-work-card .customer-work-media-link{flex-basis:min(72%,620px)}}
+
+
+/* Discover populated surface — one organised business experience per vertical step. */
+.customer-experience{width:min(1180px,calc(100% - 48px));margin:0 auto;padding:clamp(2rem,4vw,3.5rem) 0 5rem}
+.customer-section-heading{display:flex;align-items:end;justify-content:space-between;gap:2rem;margin-bottom:1.5rem;padding-bottom:1.25rem;border-bottom:1px solid rgba(229,189,89,.22)}
+.customer-section-heading h2{max-width:760px;margin:.25rem 0 0;font-size:clamp(1.8rem,4vw,3rem);letter-spacing:-.03em}
+.customer-section-heading>p{max-width:430px;margin:0;color:#9fb0c5;line-height:1.55}
+.customer-work-list{gap:2rem}
+.customer-work-card{min-height:min(760px,calc(100vh - 130px));border:1px solid rgba(113,177,255,.2);border-radius:24px;background:#041226;box-shadow:0 24px 70px rgba(0,0,0,.24)}
+.customer-work-context{top:92px;display:flex;align-items:center;gap:1rem;padding:1rem 1.25rem;border-bottom:1px solid rgba(229,189,89,.2);border-radius:24px 24px 0 0}
+.customer-work-context .customer-step{margin:0 0 .25rem;color:#e5bd59;font-size:.7rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase}
+.customer-business-name{margin:0;font-size:clamp(1.2rem,2.4vw,1.65rem)}
+.customer-work-location{margin:.25rem 0 0;color:#9fb0c5;font-size:.88rem}
+.customer-approved-mark{margin-left:auto;padding:.4rem .65rem;border:1px solid rgba(229,189,89,.3);border-radius:999px;color:#e5bd59;font-size:.72rem;font-weight:750;white-space:nowrap}
+.customer-discover-position{margin-left:0}
+.customer-work-card .customer-message{padding:1.4rem 1.25rem 1.1rem}
+.customer-message-label,.customer-choice>.customer-step,.customer-participation .customer-step{margin:0 0 .45rem;color:#e5bd59;font-size:.7rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+.customer-work-card .customer-work-content{margin:.2rem 0 1rem}
+.customer-work-card .customer-work-media{margin-top:1rem;gap:.85rem;padding:0 0 .75rem}
+.customer-work-card .customer-work-media-item,.customer-work-card .customer-work-media-link{flex-basis:min(82%,720px)}
+.customer-work-card .customer-work-media-item{max-height:440px;border-radius:16px}
+.customer-work-card .customer-choice{padding:1.15rem 1.25rem 1.35rem;border-top:1px solid rgba(229,189,89,.18)}
+.customer-choice-title{margin:.15rem 0 .35rem;font-size:1.2rem}
+.customer-work-card .customer-package-region{gap:.85rem;margin-top:.85rem;padding-bottom:.65rem}
+.customer-work-card .customer-discover-option{flex-basis:min(68%,430px);min-width:280px}
+.customer-work-card .customer-participation{display:flex;align-items:center;justify-content:space-between;gap:1.5rem;padding:1.15rem 1.25rem 1.35rem;border-top:1px solid rgba(229,189,89,.18)}
+.customer-participation-title{margin:.15rem 0 .35rem}
+.customer-participation-copy{max-width:720px;margin:0;color:#9fb0c5;line-height:1.5}
+.customer-participation-button{flex:0 0 auto}
+@media(max-width:900px){
+  .customer-experience{width:min(100% - 32px,1180px)}
+  .customer-section-heading{align-items:start;flex-direction:column;gap:.65rem}
+  .customer-work-card{min-height:0}
+  .customer-work-context{top:82px}
+  .customer-work-card .customer-work-media-item,.customer-work-card .customer-work-media-link{flex-basis:88%}
+  .customer-work-card .customer-discover-option{flex-basis:78%}
+  .customer-work-card .customer-participation{align-items:stretch;flex-direction:column}
+}
+@media(max-width:680px){
+  .customer-experience{width:calc(100% - 24px);padding:1.5rem 0 3rem}
+  .customer-section-heading{margin-bottom:1rem;padding-bottom:1rem}
+  .customer-work-list{gap:1.25rem}
+  .customer-work-card{border-radius:18px}
+  .customer-work-context{top:72px;flex-wrap:wrap;padding:.85rem 1rem;border-radius:18px 18px 0 0}
+  .customer-approved-mark{order:3;margin-left:0}
+  .customer-discover-position{margin-left:auto}
+  .customer-work-card .customer-message,.customer-work-card .customer-choice,.customer-work-card .customer-participation{padding:1rem}
+  .customer-work-card .customer-work-media-item,.customer-work-card .customer-work-media-link{flex-basis:92%}
+  .customer-work-card .customer-discover-option{flex-basis:88%;min-width:240px}
+}
