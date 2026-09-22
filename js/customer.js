@@ -996,7 +996,7 @@ function renderCustomerWork(document, work, customerPackages, participationRecor
     card.setAttribute("data-discover-position", String(index + 1));
     card.setAttribute("tabindex", "0");
     card.setAttribute("aria-label", `${item.businessName} — Discover item ${index + 1} of ${validWork.length}`);
-    const position = card.children[0] && card.children[0].children.find(function (child) { return child.className === "customer-discover-position"; });
+    const position = card.querySelector(".customer-discover-position");
     if (position) position.textContent = `${index + 1} / ${validWork.length}`;
     list.appendChild(card);
   });
