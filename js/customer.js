@@ -940,31 +940,15 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
   if (anchorJourney) participation.id = "participate";
   const participationCopy = document.createElement("div");
   addText(document, participationCopy, "p", "customer-step", "Your choice");
-  addText(document, participationCopy, "h4", "customer-participation-title", "Interested in this work?");
-  addText(document, participationCopy, "p", "customer-participation-copy", "Interested is an interest signal only. It is not a purchase, booking or sale.");
-  const action = document.createElement("button");
-  action.className = "customer-participation-button";
-  action.textContent = work.participationAction;
-  action.type = "button";
-  participation.append(participationCopy, action);
+  addText(document, participationCopy, "h4", "customer-participation-title", "Interested in something you see?");
+  addText(document, participationCopy, "p", "customer-participation-copy", "Continue with an available business option, or tell DEMEOS what you want. Personal interest is recorded only after DEMEOS has matched an approved possibility to your request.");
+  const intentionAction = document.createElement("a");
+  intentionAction.className = "customer-participation-button";
+  intentionAction.href = "#intention";
+  intentionAction.textContent = "Tell DEMEOS what I want";
+  participation.append(participationCopy, intentionAction);
 
-  const result = document.createElement("p");
-  result.className = "customer-participation-confirmation";
-  result.setAttribute("aria-live", "polite");
-  action.addEventListener("click", async function () {
-    action.disabled = true;
-    try {
-      await recordParticipation(work);
-      action.textContent = "Interest shared";
-      result.textContent = "Thank you. Your participation signal has been shared with this business.";
-      card.className += " is-participating";
-    } catch (error) {
-      action.disabled = false;
-      result.textContent = error.message;
-    }
-  });
-
-  card.append(context, message, choice, participation, result);
+  card.append(context, message, choice, participation);
   return card;
 }
 
