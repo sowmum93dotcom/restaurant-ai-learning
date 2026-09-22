@@ -949,6 +949,8 @@ async function recordParticipation(work) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ action: "Interested" })
   });
+  if (response.status === 401) throw new Error("Sign in to My DEMEOS to share your interest.");
+  if (response.status === 403) throw new Error("This action is available to customer accounts only.");
   if (!response.ok) throw new Error("DEMEOS could not share your interest. Please try again.");
 }
 
