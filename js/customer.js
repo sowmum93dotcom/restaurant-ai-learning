@@ -876,6 +876,8 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
   addText(document, choice, "h4", "customer-choice-title", "Customer options");
   const packageRegion = document.createElement("div");
   packageRegion.className = "customer-package-region";
+  packageRegion.setAttribute("role", "list");
+  packageRegion.setAttribute("aria-label", `Products and services from ${work.businessName}`);
   packageRegion.setAttribute("aria-live", "polite");
   if (Array.isArray(work.products) && work.products.length) {
     work.products.forEach(function (product) {
