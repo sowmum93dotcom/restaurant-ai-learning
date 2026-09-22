@@ -959,7 +959,24 @@ if (typeof module !== "undefined" && module.exports) {
     saveCustomerPossibility, selectCustomerIntention, toCustomerPossibility, toCustomerWorkItem };
 }
 
+function applyCustomerSurfaceRoute(document, hash) {
+  const discover = document.getElementById("discover");
+  const intention = document.getElementById("intention");
+  if (!discover || !intention) return;
+  const showIntention = hash === "#intention" || hash === "#customer-intention-form";
+  discover.hidden = showIntention;
+  intention.hidden = !showIntention;
+  document.querySelectorAll(".customer-journey-nav a[href^='#']").forEach(function (link) {
+    const current = showIntention ? link.getAttribute("href") === "#intention" : link.getAttribute("href") === "#discover";
+    link.classList.toggle("is-current", current);
+    if (current) link.setAttribute("aria-current", "page");
+    else link.removeAttribute("aria-current");
+  });
+}
+
 if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", function () {
   initializeCustomerIntention(document, navigator, new Date());
   loadCustomerWork(document, fetch);
+  applyCustomerSurfaceRoute(document, window.location.hash);
+  window.addEventListener("hashchange", function () { applyCustomerSurfaceRoute(document, window.location.hash); });
 });
