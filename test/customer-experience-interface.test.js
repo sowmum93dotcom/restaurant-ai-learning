@@ -4,7 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { createCustomerWorkCard, getServerCustomerPackages, getValidCustomerWork,
   getLocalGreeting, getPreferredLanguage, normalizedCustomerIntention, recordParticipation,
-  renderCustomerWork, requestCustomerLocation, selectCustomerIntention, applyCustomerSurfaceRoute } = require("../js/customer.js");
+  renderCustomerWork, requestCustomerLocation, selectCustomerIntention, applyCustomerSurfaceRoute, loadCustomerWork } = require("../js/customer.js");
 const { confirmTrustedCustomer } = require("../js/my-demeos.js");
 
 class Element {
@@ -128,6 +128,26 @@ test("Discover renders approved media as viewing content without inventing conti
   assert.equal(mediaRegion.children[1].controls, true);
   assert.equal(mediaRegion.children[1].playsInline, true);
   assert.doesNotMatch(card.textContent, /buy now|checkout|purchase now/i);
+});
+
+test("Discover fails safely when approved work cannot be loaded", async function () {
+  const document = fakeDocument();
+  await loadCustomerWork(document, async function () {
+    return { ok: false, async json() { return { error: "Unavailable" }; } };
+  });
+  const status = document.elements["customer-work-status"];
+  assert.equal(status.className, "customer-empty-state customer-load-error");
+  assert.equal(status.textContent, "DEMEOS could not load Discover right now. Please try again.");
+  assert.equal(document.elements["customer-work-list"].children.length, 0);
+});
+
+test("Discover fails safely when the server response is malformed", async function () {
+  const document = fakeDocument();
+  await loadCustomerWork(document, async function () {
+    return { ok: true, async json() { return { work: { private: "not a public list" } }; } };
+  });
+  assert.match(document.elements["customer-work-status"].textContent, /could not load Discover/i);
+  assert.equal(document.elements["customer-work-list"].children.length, 0);
 });
 
 test("empty approved feed has a professional empty state", function () {
