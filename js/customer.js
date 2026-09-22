@@ -874,7 +874,11 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
 
   const message = document.createElement("section");
   message.className = "customer-message";
-  message.setAttribute("aria-label", `Message from ${work.businessName}`);
+  message.setAttribute("aria-label", `Media from ${work.businessName}`);
+  const boundaryMeaning = document.createElement("span");
+  boundaryMeaning.className = "customer-visually-hidden";
+  boundaryMeaning.textContent = "Personal interest is recorded only after DEMEOS has matched an approved possibility.";
+  message.appendChild(boundaryMeaning);
 
   if (Array.isArray(work.media) && work.media.length) {
     const mediaRegion = document.createElement("div");
