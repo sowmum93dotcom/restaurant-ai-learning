@@ -527,3 +527,16 @@ test("Discover mobile is content first instead of stacked development panels", f
   assert.match(css, /\.customer-work-card \.customer-discover-option\{flex-basis:82%;max-width:82%;min-width:0/);
   assert.match(css, /\.customer-participation \.customer-step\{display:none\}/);
 });
+
+
+test("Discover mobile follows the approved image-first reference layout", function () {
+  const css = fs.readFileSync(path.join(__dirname, "..", "css/demeos-customer-space.css"), "utf8");
+  assert.match(css, /Discover approved reference layout — image first, compact business identity, options and action kept close/);
+  assert.match(css, /\.customer-work-card\{display:flex;flex-direction:column/);
+  assert.match(css, /\.customer-work-card \.customer-message\{order:1;display:flex;flex-direction:column/);
+  assert.match(css, /\.customer-work-card \.customer-work-media\{order:1/);
+  assert.match(css, /\.customer-work-context\{order:2/);
+  assert.match(css, /\.customer-work-card \.customer-choice\{order:3/);
+  assert.match(css, /\.customer-work-card \.customer-participation\{order:4/);
+  assert.match(css, /grid-template-columns:92px minmax\(0,1fr\)/);
+});
