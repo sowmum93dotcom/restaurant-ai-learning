@@ -89,11 +89,11 @@ test("native buttons provide keyboard operation and detail entry reuses the exis
 });
 
 test("signed-out detail states are truthful for every implemented relationship area", function () {
-  assert.match(html, /Enter My DEMEOS to keep and see your intentions across visits\./);
-  assert.match(html, /Enter My DEMEOS to keep and see your possibilities across visits\./);
-  assert.match(html, /Enter My DEMEOS to see your participation across visits\./);
-  assert.match(html, /Enter My DEMEOS to add and manage your preferences\./);
-  assert.match(html, /Enter My DEMEOS to control how your stored relationship evidence may guide future understanding\./);
+  assert.match(html, /Sign in to My DEMEOS to keep and see your intentions across visits\./);
+  assert.match(html, /Sign in to My DEMEOS to keep and see your possibilities across visits\./);
+  assert.match(html, /Sign in to My DEMEOS to see your participation across visits\./);
+  assert.match(html, /Sign in to My DEMEOS to add and manage your preferences\./);
+  assert.match(html, /Sign in to My DEMEOS to control how your stored relationship evidence may guide future understanding\./);
   assert.equal((html.match(/class="demeos-primary-button relationship-sign-in"/g) || []).length, 5);
 });
 
