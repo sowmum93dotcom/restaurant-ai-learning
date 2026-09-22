@@ -175,3 +175,12 @@
 .customer-location-button{display:inline-flex;align-items:center;justify-content:center;gap:.7rem;padding:.75rem 1.25rem!important;white-space:nowrap}
 .customer-location-button:before{position:static!important;left:auto!important;flex:0 0 auto}
 @media(max-width:680px){.customer-location-button{width:100%;min-width:0}}
+
+/* Discover options — keep business-provided choices readable and touch-friendly. */
+.customer-package-region{display:grid;gap:.85rem;margin-top:1rem}
+.customer-discover-option{padding:1rem;border:1px solid rgba(217,173,67,.24);border-radius:14px;background:#06172d}
+.customer-discover-option-name{margin:0;color:#fff;font-size:1.05rem}
+.customer-discover-option-description{margin:.45rem 0 0;color:#c6d0df;line-height:1.55}
+.customer-discover-option-price{margin:.65rem 0 0;color:#e5bd59;font-weight:700}
+.customer-discover-option .customer-product-continue-action{display:inline-flex;align-items:center;justify-content:center;min-height:44px;margin-top:.85rem;padding:.65rem 1rem;border-radius:10px;text-decoration:none}
+@media(max-width:680px){.customer-discover-option{padding:.9rem}.customer-discover-option .customer-product-continue-action{width:100%;box-sizing:border-box}}
