@@ -504,3 +504,14 @@ test("Discover mobile surface stays inside the viewport while horizontal lanes r
   assert.match(css, /\.customer-work-card \.customer-work-media,\.customer-work-card \.customer-package-region\{width:100%;max-width:100%;min-width:0;box-sizing:border-box\}/);
   assert.match(css, /\.customer-work-card \.customer-discover-option\{flex-basis:calc\(100% - 1rem\);max-width:calc\(100% - 1rem\);min-width:0;box-sizing:border-box\}/);
 });
+
+
+test("Discover presents each business as one coherent responsive customer surface", function () {
+  const css = fs.readFileSync(path.join(__dirname, "..", "css/demeos-customer-space.css"), "utf8");
+  assert.match(css, /Discover premium customer surface — present each business as one coherent experience, not stacked system panels/);
+  assert.match(css, /\.customer-work-card\{overflow:hidden;background:linear-gradient/);
+  assert.match(css, /\.customer-work-card \.customer-choice\{margin:0 1\.4rem;padding:1\.15rem 0 1\.35rem;border-top/);
+  assert.match(css, /\.customer-work-card \.customer-participation\{margin:0 1\.4rem;padding:1\.25rem 0 1\.5rem;background:transparent\}/);
+  assert.match(css, /@media\(max-width:680px\)[\s\S]*\.customer-work-context\{top:72px;display:grid;grid-template-columns:minmax\(0,1fr\) auto/);
+  assert.match(css, /\.customer-work-card \.customer-discover-option\{flex-basis:calc\(100% - 2rem\);max-width:calc\(100% - 2rem\);padding:1rem\}/);
+});
