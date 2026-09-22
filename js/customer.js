@@ -1024,13 +1024,30 @@ function getServerCustomerPackages(data) {
   return Array.isArray(data.customerPackages) ? data.customerPackages : [];
 }
 
-async function loadCustomerWork(document, fetcher) {
+function getDiscoverRequest(location) {
+  const search = location && typeof location.search === "string" ? location.search : "";
+  const testMode = new URLSearchParams(search).get("demeos-test") === "1";
+  return testMode
+    ? { url: "/api/customer/work?demeos-test=1", options: { headers: { "x-demeos-discover-test": "controlled-preview" } }, testMode: true }
+    : { url: "/api/customer/work", options: undefined, testMode: false };
+}
+
+async function loadCustomerWork(document, fetcher, location) {
   const status = document.getElementById("customer-work-status");
+  const request = getDiscoverRequest(location);
   try {
-    const response = await fetcher("/api/customer/work");
+    const response = await fetcher(request.url, request.options);
     const data = await response.json();
     if (!response.ok || !data || !Array.isArray(data.work)) throw new Error();
+    if (request.testMode && data.testMode === true) {
+      status.className = "customer-work-status customer-test-content-status";
+      status.textContent = "CONTROLLED TEST CONTENT — not live business content";
+    }
     renderCustomerWork(document, data.work, getServerCustomerPackages(data), recordParticipation);
+    if (request.testMode && data.testMode === true) {
+      status.className = "customer-work-status customer-test-content-status";
+      status.textContent = "CONTROLLED TEST CONTENT — not live business content";
+    }
   } catch (error) {
     status.className = "customer-empty-state customer-load-error";
     status.textContent = "DEMEOS could not load Discover right now. Please try again.";
@@ -1039,7 +1056,7 @@ async function loadCustomerWork(document, fetcher) {
 
 if (typeof module !== "undefined" && module.exports) {
   module.exports = { getCustomerProductContinuationHref, CUSTOMER_STAGE_ONE_COPY, CUSTOMER_STAGE_TWO_COPY, CUSTOMER_STAGE_THREE_COPY, CUSTOMER_STAGE_SIX_COPY, CUSTOMER_NO_POSSIBILITIES_COPY, createCustomerWorkCard, getLocalGreeting, getPreferredLanguage,
-    applyCustomerSurfaceRoute, getServerCustomerPackages, getValidCustomerPossibilities, getValidCustomerWork, initializeCustomerIntention, loadCustomerWork,
+    applyCustomerSurfaceRoute, getDiscoverRequest, getServerCustomerPackages, getValidCustomerPossibilities, getValidCustomerWork, initializeCustomerIntention, loadCustomerWork,
     normalizedCustomerIntention, recordCustomerFeedback, recordParticipation, renderCustomerPossibilities, renderCustomerWork,
     requestCustomerLocation, requestCustomerPossibilities,
     saveCustomerPossibility, selectCustomerIntention, toCustomerPossibility, toCustomerWorkItem };
@@ -1062,7 +1079,7 @@ function applyCustomerSurfaceRoute(document, hash) {
 
 if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", function () {
   initializeCustomerIntention(document, navigator, new Date());
-  loadCustomerWork(document, fetch);
+  loadCustomerWork(document, fetch, window.location);
   applyCustomerSurfaceRoute(document, window.location.hash);
   window.addEventListener("hashchange", function () { applyCustomerSurfaceRoute(document, window.location.hash); });
 });

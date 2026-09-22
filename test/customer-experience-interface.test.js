@@ -4,7 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { createCustomerWorkCard, getServerCustomerPackages, getValidCustomerWork,
   getLocalGreeting, getPreferredLanguage, normalizedCustomerIntention, recordParticipation,
-  renderCustomerWork, requestCustomerLocation, selectCustomerIntention, applyCustomerSurfaceRoute, loadCustomerWork, toCustomerWorkItem } = require("../js/customer.js");
+  renderCustomerWork, requestCustomerLocation, selectCustomerIntention, applyCustomerSurfaceRoute, getDiscoverRequest, loadCustomerWork, toCustomerWorkItem } = require("../js/customer.js");
 const { confirmTrustedCustomer } = require("../js/my-demeos.js");
 
 class Element {
@@ -469,4 +469,28 @@ test("Discover populated surface is organised as a responsive business experienc
   assert.match(css, /\.customer-work-card \.customer-work-media-item,\.customer-work-card \.customer-work-media-link\{flex-basis:min\(82%,720px\)\}/);
   assert.match(css, /\.customer-work-card \.customer-discover-option\{flex-basis:min\(68%,430px\);min-width:280px\}/);
   assert.match(css, /@media\(max-width:680px\)[\s\S]*\.customer-work-card \.customer-discover-option\{flex-basis:88%;min-width:240px\}/);
+});
+
+
+test("Discover controlled preview is explicit and normal requests stay unchanged", function () {
+  assert.deepEqual(getDiscoverRequest({ search: "" }), { url: "/api/customer/work", options: undefined, testMode: false });
+  assert.deepEqual(getDiscoverRequest({ search: "?demeos-test=1" }), {
+    url: "/api/customer/work?demeos-test=1",
+    options: { headers: { "x-demeos-discover-test": "controlled-preview" } },
+    testMode: true
+  });
+  assert.equal(getDiscoverRequest({ search: "?demeos-test=0" }).testMode, false);
+});
+
+test("Discover controlled preview visibly identifies populated test content", async function () {
+  const document = fakeDocument();
+  await loadCustomerWork(document, async function (url, options) {
+    assert.equal(url, "/api/customer/work?demeos-test=1");
+    assert.equal(options.headers["x-demeos-discover-test"], "controlled-preview");
+    return { ok: true, async json() { return { testMode: true, work: [
+      { workItemId: "test-a", businessName: "DEMEOS Test Bistro", content: "Controlled preview content", participationAction: "Interested" }
+    ] }; } };
+  }, { search: "?demeos-test=1" });
+  assert.match(document.elements["customer-work-status"].textContent, /CONTROLLED TEST CONTENT/);
+  assert.match(document.elements["customer-work-list"].textContent, /DEMEOS Test Bistro/);
 });

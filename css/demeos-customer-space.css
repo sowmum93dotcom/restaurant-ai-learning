@@ -259,3 +259,7 @@
   .customer-work-card .customer-work-media-item,.customer-work-card .customer-work-media-link{flex-basis:92%}
   .customer-work-card .customer-discover-option{flex-basis:88%;min-width:240px}
 }
+
+
+/* Controlled Discover preview — unmistakably separate test content from live businesses. */
+.customer-test-content-status{display:inline-flex;align-items:center;min-height:36px;margin:0 0 1rem;padding:.45rem .75rem;border:1px solid rgba(229,189,89,.55);border-radius:999px;background:#241b07;color:#f3d77d;font-size:.74rem;font-weight:800;letter-spacing:.08em}
