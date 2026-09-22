@@ -921,7 +921,7 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
   if (Array.isArray(work.products) && work.products.length) {
     work.products.forEach(function (product) {
       const option = document.createElement("article");
-      option.className = "customer-discover-option";
+      option.className = "customer-discover-option" + (/^https:\/\//i.test(product.imageUrl || "") ? " has-image" : "");
       option.setAttribute("role", "listitem");
       const href = getCustomerProductContinuationHref(work, product);
       if (/^https:\/\//i.test(product.imageUrl || "")) {

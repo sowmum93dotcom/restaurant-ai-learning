@@ -360,3 +360,49 @@
   .customer-participation-copy{font-size:.82rem;line-height:1.35}
   .customer-participation-button{padding:.72rem .8rem;font-size:.88rem}
 }
+
+
+/* Discover approved reference layout — image first, compact business identity, options and action kept close. */
+@media(max-width:680px){
+  .customer-main{background:#020b18}
+  .customer-section-heading{padding:1rem 1.25rem .9rem;background:#020b18;color:#f7f4ec}
+  .customer-section-heading h2{max-width:none;margin:.15rem 0 .35rem;color:#f7f4ec;font-size:1.9rem}
+  .customer-section-heading>p{margin:0;color:#aebbd0}
+  .customer-test-content-status{margin:.35rem 1.25rem .9rem;background:#201905}
+  .customer-work-card{display:flex;flex-direction:column;padding:0 1rem 1.15rem;background:#020b18}
+  .customer-work-card .customer-message{order:1;display:flex;flex-direction:column;padding:0}
+  .customer-work-card .customer-work-media{order:1;margin:0;padding:0;gap:.55rem}
+  .customer-work-card .customer-work-content{order:2;margin:.65rem 0 0;padding:0 .15rem;color:#aebbd0}
+  .customer-work-card .customer-work-media-item,.customer-work-card .customer-work-media-link{flex-basis:100%;max-width:100%}
+  .customer-work-card .customer-work-media-item{width:100%;height:270px;max-height:none;object-fit:cover;border:1px solid rgba(229,189,89,.28);border-radius:14px}
+  .customer-work-context{order:2;margin:.75rem 0 0;padding:.2rem .15rem .55rem;background:transparent}
+  .customer-work-context .customer-step{color:#e5bd59}
+  .customer-business-name{color:#f7f4ec;font-size:1.45rem}
+  .customer-approved-mark{border-color:rgba(229,189,89,.48);color:#e5bd59}
+  .customer-discover-position{color:#f7f4ec}
+  .customer-work-card .customer-choice{order:3;margin:0;padding:.8rem .15rem .9rem}
+  .customer-work-card .customer-choice-title{margin:0 0 .65rem;color:#e5bd59;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase}
+  .customer-work-card .customer-package-region{gap:.55rem}
+  .customer-work-card .customer-discover-option{display:grid;grid-template-columns:92px minmax(0,1fr);grid-template-rows:auto auto auto 1fr;column-gap:.75rem;flex-basis:88%;max-width:88%;padding:.65rem;border-radius:12px}
+  .customer-discover-option>a:has(.customer-discover-option-image),.customer-discover-option>.customer-discover-option-image{grid-column:1;grid-row:1 / span 4}
+  .customer-discover-option-image{width:92px;height:112px;object-fit:cover;border-radius:9px}
+  .customer-discover-option-name,.customer-discover-option-description,.customer-discover-option-price,.customer-product-continue-action{grid-column:2}
+  .customer-discover-option-name{margin:0}
+  .customer-discover-option-description{margin:.25rem 0}
+  .customer-discover-option-price{margin:.15rem 0;color:#e5bd59}
+  .customer-product-continue-action{align-self:end;margin-top:.35rem;padding:.55rem .65rem;background:#e5bd59;border-color:#e5bd59;color:#061326;text-align:center}
+  .customer-work-card .customer-participation{order:4;margin:0;padding:.85rem .15rem 0}
+  .customer-participation-title{color:#f7f4ec}
+  .customer-participation-copy{margin-bottom:.65rem}
+  .customer-participation-button{background:#e5bd59;border-color:#e5bd59;color:#061326;font-weight:800}
+}
+
+@media(max-width:680px){
+  .customer-work-card .customer-work-media-link{height:270px}
+  .customer-work-card .customer-work-media-link .customer-work-media-item{height:270px}
+  .customer-work-card .customer-discover-option:not(.has-image){grid-template-columns:minmax(0,1fr)}
+  .customer-work-card .customer-discover-option:not(.has-image) .customer-discover-option-name,
+  .customer-work-card .customer-discover-option:not(.has-image) .customer-discover-option-description,
+  .customer-work-card .customer-discover-option:not(.has-image) .customer-discover-option-price,
+  .customer-work-card .customer-discover-option:not(.has-image) .customer-product-continue-action{grid-column:1}
+}
