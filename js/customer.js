@@ -961,4 +961,5 @@ if (typeof module !== "undefined" && module.exports) {
 
 if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", function () {
   initializeCustomerIntention(document, navigator, new Date());
+  loadCustomerWork(document, fetch);
 });
