@@ -5,6 +5,7 @@ const path = require("node:path");
 const { createCustomerWorkCard, getServerCustomerPackages, getValidCustomerWork,
   getLocalGreeting, getPreferredLanguage, normalizedCustomerIntention, recordParticipation,
   renderCustomerWork, requestCustomerLocation, selectCustomerIntention } = require("../js/customer.js");
+const { confirmTrustedCustomer } = require("../js/my-demeos.js");
 
 class Element {
   constructor(tag = "div") { this.tag = tag; this.children = []; this.listeners = {}; this.attributes = {}; this._text = ""; this.innerHTML = ""; }
@@ -189,6 +190,35 @@ test("Customer Interface retains responsive layouts for intentions and participa
   assert.match(css, /@media \(max-width: 700px\)[\s\S]*?\.customer-participation[\s\S]*?flex-direction: column/);
   assert.match(css, /@media \(max-width: 700px\)[\s\S]*?\.customer-participation-button \{ width: 100%; \}/);
   assert.match(css, /prefers-reduced-motion: reduce/);
+});
+
+test("My DEMEOS trusts only the server-confirmed customer identity", async function () {
+  let requests = 0;
+  const authenticated = await confirmTrustedCustomer(async function (url, options) {
+    requests += 1;
+    assert.equal(url, "/api/customer/identity");
+    assert.equal(options.credentials, "same-origin");
+    return { ok: true, async json() { return { authenticated: true }; } };
+  });
+  assert.equal(requests, 1);
+  assert.equal(authenticated, true);
+
+  assert.equal(await confirmTrustedCustomer(async function () {
+    return { ok: true, async json() { return { authenticated: false }; } };
+  }), false);
+  assert.equal(await confirmTrustedCustomer(async function () {
+    return { ok: false };
+  }), false);
+});
+
+test("My DEMEOS keeps private relationship areas behind sign-in language", function () {
+  const html = fs.readFileSync(path.join(__dirname, "..", "my-demeos.html"), "utf8");
+  assert.match(html, /Sign in to My DEMEOS to keep and see your intentions across visits/);
+  assert.match(html, /Sign in to My DEMEOS to keep and see your possibilities across visits/);
+  assert.match(html, /Sign in to My DEMEOS to see your participation across visits/);
+  assert.match(html, /Sign in to My DEMEOS to add and manage your preferences/);
+  assert.match(html, /id="privacy-control-signed-out"/);
+  assert.match(html, /id="privacy-controls-form"[^>]*hidden/);
 });
 
 test("local greeting follows morning, afternoon and evening boundaries", function () {
