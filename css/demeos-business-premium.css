@@ -470,3 +470,15 @@
 #business-profile .profile-step{margin-top:1.4rem;padding-top:1.2rem;border-top:1px solid #e6e9ec}
 #business-profile .profile-step-heading p{max-width:64ch}
 @media(max-width:760px){#business-profile .business-profile-progress{grid-template-columns:repeat(2,minmax(0,1fr))}#business-profile .business-profile-progress a{justify-content:flex-start;text-align:left}}
+
+
+/* AREA 2 — focused Business Results page.
+   Keep evidence types separate while making the owner-facing reading order clear. */
+.business-results-main{max-width:980px;margin:0 auto}
+.business-results-intro{max-width:720px;margin-bottom:1.25rem}
+.business-results-main>.business-results-evidence{padding:1.2rem 1.3rem;margin-bottom:.9rem;border:1px solid #e2e6ea;border-radius:12px;background:#fff}
+.business-results-main>.demeos-understanding{background:#fafbfc}
+.business-results-main>.recommendation-decisions{background:#fafbfc}
+.demeos-understanding-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem}
+.demeos-understanding-summary>div{padding:.85rem;border:1px solid #e6e9ec;border-radius:9px;background:#fff}
+@media(max-width:760px){.business-results-main>.business-results-evidence{padding:1rem}.demeos-understanding-summary{grid-template-columns:1fr}}
