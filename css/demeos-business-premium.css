@@ -459,3 +459,14 @@
 #results-view>.recommendation-decisions-results,#results-view>.customer-participation-results{background:#fafbfc}
 #results-view>.workspace-link{display:block;width:max-content;margin-top:.9rem}
 @media(max-width:760px){#results-view>.content-card{padding:1rem}#results-view>.workspace-link{width:100%;box-sizing:border-box;text-align:center}}
+
+
+/* AREA 2 — clearer Business Profile progress.
+   Keep the six existing profile steps, but make the path compact and easy to scan. */
+#business-profile>.view-heading,#business-profile>.business-profile-section{max-width:980px;margin-left:auto;margin-right:auto}
+#business-profile .business-profile-progress{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:.4rem;margin:1rem 0 1.25rem}
+#business-profile .business-profile-progress a{display:flex;align-items:center;justify-content:center;min-height:44px;padding:.55rem .45rem;border:1px solid #e2e6ea;border-radius:8px;background:#fafbfc;text-align:center;font-size:.88rem;line-height:1.2}
+#business-profile .business-selector{margin-bottom:1.25rem}
+#business-profile .profile-step{margin-top:1.4rem;padding-top:1.2rem;border-top:1px solid #e6e9ec}
+#business-profile .profile-step-heading p{max-width:64ch}
+@media(max-width:760px){#business-profile .business-profile-progress{grid-template-columns:repeat(2,minmax(0,1fr))}#business-profile .business-profile-progress a{justify-content:flex-start;text-align:left}}
