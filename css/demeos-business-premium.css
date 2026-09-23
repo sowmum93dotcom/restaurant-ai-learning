@@ -436,3 +436,15 @@
 #create #generate-btn{width:100%;min-height:48px}
 #create>#results{margin-top:1rem}
 @media(max-width:760px){#create>.assistant-section{padding:1rem}#create #promo-input{min-height:110px}}
+
+
+/* AREA 2 — simple Campaigns workspace.
+   Current work leads; earlier campaign history remains available without competing for attention. */
+#campaigns>.view-heading,#campaigns>.active-marketing-work,#campaigns>.campaign-history{max-width:920px;margin-left:auto;margin-right:auto}
+#campaigns>.active-marketing-work{padding:clamp(1.25rem,3vw,1.8rem);border-color:#d5dce2;background:#fff}
+#campaigns>.active-marketing-work h3{margin-top:0;font-size:clamp(1.25rem,2vw,1.5rem)}
+#campaigns>.active-marketing-work .active-marketing-work-helper{max-width:60ch;margin-bottom:1rem}
+#campaigns>.campaign-history{padding:1rem 1.15rem;background:#fafbfc}
+#campaigns>.campaign-history h3{margin-top:0;font-size:1.05rem}
+#campaigns #campaign-history-list{margin-top:.65rem}
+@media(max-width:760px){#campaigns>.active-marketing-work,#campaigns>.campaign-history{padding:1rem}}
