@@ -44,13 +44,13 @@ test("trusted action rules use their exact priority and destinations", function 
     campaign({ approvalStatus: "Unapproved" })
   ]), "business-a");
   assert.deepEqual([unapproved.title, unapproved.destination],
-    ["Review your campaign", "index.html#campaigns"]);
+    ["Review your campaign", "marketing.html#campaigns"]);
 
   const missingOutcome = getTrustedOwnerNextAction(record([
     campaign({ approvalStatus: "Approved" })
   ]), "business-a");
   assert.equal(missingOutcome.title, "Record what happened");
-  assert.equal(missingOutcome.destination, "index.html#campaigns");
+  assert.equal(missingOutcome.destination, "marketing.html#campaigns");
 
   const notUsed = getTrustedOwnerNextAction(record([
     campaign({ approvalStatus: "Approved", outcome: { outcome: "Not used yet" } })
@@ -62,12 +62,12 @@ test("trusted action rules use their exact priority and destinations", function 
       campaign({ approvalStatus: "Approved", outcome: { outcome } })
     ]), "business-a");
     assert.equal(recommendation.title, "Ask DEMEOS what to do next", outcome);
-    assert.equal(recommendation.destination, "index.html#recommends", outcome);
+    assert.equal(recommendation.destination, "marketing.html#recommends", outcome);
   }
 
   const first = getTrustedOwnerNextAction(record([]), "business-a");
   assert.equal(first.title, "Create your first marketing work");
-  assert.equal(first.destination, "index.html#create");
+  assert.equal(first.destination, "marketing.html#create");
 });
 
 test("only matching campaigns from a matching trusted business record are considered", function () {
@@ -102,7 +102,7 @@ test("protected server business record determines Next Action instead of browser
     url: "/api/businesses/business-a",
     options: { method: "GET", credentials: "same-origin" }
   });
-  assert.equal(documentObject.container.children[2].href, "index.html#create");
+  assert.equal(documentObject.container.children[2].href, "marketing.html#create");
 });
 
 test("failed protected load stays unavailable and never infers from browser cache", async function () {
@@ -123,7 +123,7 @@ test("failed protected load stays unavailable and never infers from browser cach
     title: "Next action unavailable",
     explanation: "DEMEOS could not confirm your current marketing state.",
     action: "Open Marketing",
-    destination: "index.html"
+    destination: "marketing.html"
   });
   assert.equal(documentObject.container.children[0].textContent, "Next action unavailable");
 });
