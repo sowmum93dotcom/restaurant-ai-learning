@@ -465,3 +465,10 @@
   .customer-journey-nav{gap:.55rem}
   .customer-journey-nav a{font-size:.66rem;letter-spacing:0}
 }
+
+
+/* AREA 1 test entry — visible only as a deliberate development path; live Discover remains unchanged. */
+.customer-preview-entry{display:flex;align-items:center;justify-content:center;gap:.75rem;flex-wrap:wrap;margin:1rem auto 0;padding:0 1rem;color:#68758a;font-size:.78rem;text-align:center}
+.customer-preview-entry a{display:inline-flex;align-items:center;min-height:38px;padding:.5rem .75rem;border:1px solid #c9a448;border-radius:8px;color:#7d5b0a;font-weight:800;text-decoration:none}
+.customer-preview-entry a:hover,.customer-preview-entry a:focus-visible{text-decoration:underline}
+@media(max-width:680px){.customer-preview-entry{flex-direction:column;margin:.85rem auto 0;gap:.45rem}.customer-preview-entry a{width:100%;box-sizing:border-box;justify-content:center}}
