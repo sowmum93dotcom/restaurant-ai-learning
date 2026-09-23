@@ -423,3 +423,16 @@
 #overview .overview-grid>.dashboard-card:nth-of-type(4),#overview .overview-grid>.dashboard-card:nth-of-type(5){padding:.9rem 1rem;background:#fafbfc}
 #overview .overview-grid>.dashboard-card:nth-of-type(4) h3,#overview .overview-grid>.dashboard-card:nth-of-type(5) h3{font-size:1rem}
 @media(max-width:760px){#overview .overview-grid{grid-template-columns:1fr}#overview .recommendation-summary,#overview .overview-grid>.dashboard-card:nth-of-type(2),#overview .dashboard-card-wide,#overview .overview-grid>.dashboard-card:nth-of-type(4),#overview .overview-grid>.dashboard-card:nth-of-type(5){grid-column:1;grid-row:auto}#overview .quick-create-actions{grid-template-columns:1fr}#overview .quick-create-actions button{min-height:48px}}
+
+
+/* AREA 2 — simple Create Marketing workspace.
+   Keep the owner focused on one request, one format choice and one clear action. */
+#create>.view-heading,#create>.assistant-section,#create>#results{max-width:860px;margin-left:auto;margin-right:auto}
+#create>.assistant-section{padding:clamp(1.25rem,3vw,2rem);border:1px solid #e2e6ea;border-radius:12px;background:#fff}
+#create>.assistant-section>label{display:block;margin:0 0 .4rem;color:#14202b;font-size:1.08rem;font-weight:700}
+#create>.assistant-section>.assistant-intro{margin:0 0 .65rem}
+#create #promo-input{width:100%;min-height:120px;margin:0 0 1.25rem;box-sizing:border-box}
+#create #campaign-type{width:100%;min-height:46px;margin:0 0 1.25rem}
+#create #generate-btn{width:100%;min-height:48px}
+#create>#results{margin-top:1rem}
+@media(max-width:760px){#create>.assistant-section{padding:1rem}#create #promo-input{min-height:110px}}
