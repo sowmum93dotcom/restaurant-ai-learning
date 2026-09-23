@@ -448,3 +448,14 @@
 #campaigns>.campaign-history h3{margin-top:0;font-size:1.05rem}
 #campaigns #campaign-history-list{margin-top:.65rem}
 @media(max-width:760px){#campaigns>.active-marketing-work,#campaigns>.campaign-history{padding:1rem}}
+
+
+/* AREA 2 — simple Results workspace.
+   Preserve evidence categories while presenting them as one clear, readable results path. */
+#results-view>.view-heading,#results-view>.content-card,#results-view>.workspace-link{max-width:920px;margin-left:auto;margin-right:auto}
+#results-view>.content-card{padding:1.15rem 1.25rem;margin-bottom:.8rem;background:#fff}
+#results-view>.content-card h3{margin-top:0;font-size:1.08rem}
+#results-view>.content-card p{max-width:68ch}
+#results-view>.recommendation-decisions-results,#results-view>.customer-participation-results{background:#fafbfc}
+#results-view>.workspace-link{display:block;width:max-content;margin-top:.9rem}
+@media(max-width:760px){#results-view>.content-card{padding:1rem}#results-view>.workspace-link{width:100%;box-sizing:border-box;text-align:center}}
