@@ -477,7 +477,9 @@ function installOwnerBusinessSecurity(windowObject, documentObject, localStorage
 
       clerk.addListener(handleTrustedSessionChange);
       handleTrustedSessionChange({ user: clerk.user });
-      return originalBindOwnerClerkSession(clerk, ownerDocument, storage, elements, fetchFunction);
+      const boundSession = originalBindOwnerClerkSession(clerk, ownerDocument, storage, elements, fetchFunction);
+      if (clerk.user) resolveOwnerAuthReady();
+      return boundSession;
     };
   }
 
