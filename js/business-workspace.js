@@ -210,7 +210,7 @@ function getTrustedOwnerNextAction(record, activeBusinessId) {
       title: "Record what happened",
       explanation: "Approved marketing is waiting for your real-world outcome before DEMEOS can learn from it.",
       action: "Record Outcome",
-      destination: "index.html#campaigns"
+      destination: "marketing.html#campaigns"
     };
   }
   const meaningfulOutcomes = new Set(["Positive", "Mixed", "No noticeable result"]);
