@@ -284,7 +284,13 @@ function bindOwnerClerkSession(clerk, documentObject, storage, elements, fetchFu
     showOwnerAuthenticationState(elements, "signed-out");
   };
 
-  elements.signIn.addEventListener("click", function () { clerk.openSignIn(); });
+  elements.signIn.addEventListener("click", async function () {
+    try {
+      await clerk.openSignIn();
+    } catch (_error) {
+      showOwnerAuthenticationState(elements, "error");
+    }
+  });
   elements.signOut.addEventListener("click", function () {
     showOwnerAuthenticationState(elements, "signed-out");
     return clerk.signOut();
