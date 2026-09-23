@@ -482,3 +482,15 @@
 .demeos-understanding-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem}
 .demeos-understanding-summary>div{padding:.85rem;border:1px solid #e6e9ec;border-radius:9px;background:#fff}
 @media(max-width:760px){.business-results-main>.business-results-evidence{padding:1rem}.demeos-understanding-summary{grid-template-columns:1fr}}
+
+
+/* AREA 2 — focused DEMEOS Recommends workspace.
+   The owner action leads; trusted evidence remains available as supporting context. */
+#recommends>.view-heading,#recommends>.recommendations-section,#recommends>.recommends-understanding{max-width:920px;margin-left:auto;margin-right:auto}
+#recommends>.recommendations-section{padding:clamp(1.25rem,3vw,1.7rem);border-color:#d5dce2;background:#fff}
+#recommends>.recommendations-section label{display:block;font-size:1.08rem;font-weight:700;margin-bottom:.35rem}
+#recommends #business-situation{width:100%;min-height:110px;box-sizing:border-box;margin:.35rem 0 1rem}
+#recommends #recommendations-btn{min-height:48px;width:100%}
+#recommends>.recommends-understanding{padding:1rem 1.15rem;background:#fafbfc}
+#recommends>.recommends-understanding .demeos-understanding-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:760px){#recommends>.recommendations-section,#recommends>.recommends-understanding{padding:1rem}#recommends>.recommends-understanding .demeos-understanding-summary{grid-template-columns:1fr}}
