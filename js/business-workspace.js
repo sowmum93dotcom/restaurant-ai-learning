@@ -181,7 +181,7 @@ const unavailableOwnerNextAction = {
   title: "Next action unavailable",
   explanation: "DEMEOS could not confirm your current marketing state.",
   action: "Open Marketing",
-  destination: "index.html"
+  destination: "marketing.html"
 };
 
 function getTrustedOwnerNextAction(record, activeBusinessId) {
@@ -198,7 +198,7 @@ function getTrustedOwnerNextAction(record, activeBusinessId) {
       title: "Review your campaign",
       explanation: "Marketing work is waiting for your approval or revision.",
       action: "Review Campaign",
-      destination: "index.html#campaigns"
+      destination: "marketing.html#campaigns"
     };
   }
   if (campaigns.some(function (campaign) {
@@ -221,7 +221,7 @@ function getTrustedOwnerNextAction(record, activeBusinessId) {
       title: "Ask DEMEOS what to do next",
       explanation: "DEMEOS can use your Business Profile, recorded outcomes and previous owner decisions to recommend the next marketing action.",
       action: "Get Recommendations",
-      destination: "index.html#recommends"
+      destination: "marketing.html#recommends"
     };
   }
   if (!campaigns.length) {
@@ -229,7 +229,7 @@ function getTrustedOwnerNextAction(record, activeBusinessId) {
       title: "Create your first marketing work",
       explanation: "Your Business Profile is ready. Start supported marketing when you are ready.",
       action: "Create Marketing",
-      destination: "index.html#create"
+      destination: "marketing.html#create"
     };
   }
   return unavailableOwnerNextAction;
