@@ -409,3 +409,17 @@
 .owner-current-work .owner-card-action,.owner-customer-experience-card .owner-card-action,.owner-identity-card .owner-card-action{margin-top:.75rem}
 @media(min-width:900px){.owner-workspace-main>section{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(280px,.55fr);gap:1rem}.owner-overview-heading,.owner-next-action{grid-column:1/-1;margin-bottom:0}.owner-identity-card,.owner-current-work,.owner-customer-experience-card{margin-bottom:0}.owner-current-work{grid-column:1;grid-row:3/5}.owner-identity-card{grid-column:2;grid-row:3}.owner-customer-experience-card{grid-column:2;grid-row:4}}
 @media(max-width:760px){.owner-next-action{padding:1.25rem}.owner-identity-card,.owner-current-work,.owner-customer-experience-card{padding:1rem}.owner-workspace-main .owner-card-action{width:100%;box-sizing:border-box;justify-content:center;text-align:center}}
+
+
+/* AREA 2 — simple Marketing overview.
+   Recommendation and current work lead; creation is one clear next step; history stays secondary. */
+#overview .overview-grid{grid-template-columns:minmax(0,1.35fr) minmax(280px,.65fr);align-items:start}
+#overview .recommendation-summary{grid-column:1;grid-row:1;padding:clamp(1.35rem,2.6vw,1.8rem);border-color:#d5dce2}
+#overview .overview-grid>.dashboard-card:nth-of-type(2){grid-column:2;grid-row:1;padding:1.2rem}
+#overview .dashboard-card-wide{grid-column:1/-1;padding:1.2rem}
+#overview .quick-create-actions{grid-template-columns:repeat(3,minmax(0,1fr));gap:.65rem}
+#overview .quick-create-actions button{min-height:58px;padding:.75rem .85rem;text-align:left}
+#overview .quick-create-actions button span{display:none}
+#overview .overview-grid>.dashboard-card:nth-of-type(4),#overview .overview-grid>.dashboard-card:nth-of-type(5){padding:.9rem 1rem;background:#fafbfc}
+#overview .overview-grid>.dashboard-card:nth-of-type(4) h3,#overview .overview-grid>.dashboard-card:nth-of-type(5) h3{font-size:1rem}
+@media(max-width:760px){#overview .overview-grid{grid-template-columns:1fr}#overview .recommendation-summary,#overview .overview-grid>.dashboard-card:nth-of-type(2),#overview .dashboard-card-wide,#overview .overview-grid>.dashboard-card:nth-of-type(4),#overview .overview-grid>.dashboard-card:nth-of-type(5){grid-column:1;grid-row:auto}#overview .quick-create-actions{grid-template-columns:1fr}#overview .quick-create-actions button{min-height:48px}}
