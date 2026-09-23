@@ -331,3 +331,67 @@
   }
   #overview .quick-create-actions{grid-template-columns:1fr}
 }
+
+
+/* AREA 2 — recommendations are action-first.
+   Detailed evidence remains available, but it must not dominate the owner's daily decision. */
+#recommends{
+  display:flex;
+  flex-direction:column;
+}
+#recommends>.view-heading{order:1}
+#recommends>.recommendations-section{
+  order:2;
+  max-width:980px;
+  margin-bottom:1rem;
+  padding:clamp(1.35rem,2.6vw,2rem);
+  border:1px solid #e2e6ea;
+  border-radius:12px;
+  background:#fff;
+}
+#recommends>.demeos-understanding{
+  order:3;
+  max-width:980px;
+  padding:1.1rem 1.25rem;
+  border:1px solid #e2e6ea;
+  border-radius:12px;
+  background:#fff;
+}
+#recommends>.demeos-understanding .card-kicker{
+  margin-bottom:.2rem;
+  color:#687582;
+}
+#recommends>.demeos-understanding h3{
+  margin:.15rem 0 .45rem;
+  font-size:1.15rem;
+}
+#recommends>.demeos-understanding>p,
+#recommends>.demeos-understanding .recommendations-helper{
+  max-width:72ch;
+  font-size:.9rem;
+}
+#recommends .demeos-understanding-summary{
+  margin-top:.8rem;
+}
+#recommends .recommendations-section>label{
+  display:block;
+  margin-bottom:.35rem;
+  color:#14202b;
+  font-size:1.2rem;
+  font-weight:700;
+}
+#recommends .recommendations-section textarea{
+  width:100%;
+  margin:.5rem 0 .75rem;
+}
+#recommends #recommendations-btn{
+  min-height:46px;
+  border-color:#14202b;
+  background:#14202b;
+  color:#fff;
+}
+@media(max-width:760px){
+  #recommends>.recommendations-section,
+  #recommends>.demeos-understanding{padding:1rem}
+  #recommends #recommendations-btn{width:100%}
+}
