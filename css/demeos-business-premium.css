@@ -395,3 +395,17 @@
   #recommends>.demeos-understanding{padding:1rem}
   #recommends #recommendations-btn{width:100%}
 }
+
+
+/* AREA 2 — focused Business Owner Overview.
+   Next Action leads the daily workspace; supporting information stays clear and secondary. */
+.owner-workspace-main>section{max-width:1080px;margin:0 auto}
+.owner-next-action{padding:clamp(1.4rem,3vw,2.1rem);border-color:#d5dce2}
+.owner-next-action h3{margin-top:0;font-size:clamp(1.4rem,2.4vw,1.8rem)}
+.owner-next-action-content>strong{display:block;margin:.2rem 0 .4rem;color:#14202b;font-size:clamp(1.2rem,2vw,1.5rem);line-height:1.25}
+.owner-next-action-content>p{max-width:62ch;margin:.35rem 0 1rem}
+.owner-identity-card,.owner-current-work,.owner-customer-experience-card{padding:1.15rem 1.25rem}
+.owner-identity-card h3,.owner-current-work h3,.owner-customer-experience-card h3{margin-top:0;font-size:1.15rem}
+.owner-current-work .owner-card-action,.owner-customer-experience-card .owner-card-action,.owner-identity-card .owner-card-action{margin-top:.75rem}
+@media(min-width:900px){.owner-workspace-main>section{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(280px,.55fr);gap:1rem}.owner-overview-heading,.owner-next-action{grid-column:1/-1;margin-bottom:0}.owner-identity-card,.owner-current-work,.owner-customer-experience-card{margin-bottom:0}.owner-current-work{grid-column:1;grid-row:3/5}.owner-identity-card{grid-column:2;grid-row:3}.owner-customer-experience-card{grid-column:2;grid-row:4}}
+@media(max-width:760px){.owner-next-action{padding:1.25rem}.owner-identity-card,.owner-current-work,.owner-customer-experience-card{padding:1rem}.owner-workspace-main .owner-card-action{width:100%;box-sizing:border-box;justify-content:center;text-align:center}}
