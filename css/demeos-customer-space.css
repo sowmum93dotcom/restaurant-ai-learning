@@ -450,3 +450,18 @@
   .customer-work-card .customer-package-region{gap:0;scroll-padding-inline:0}
   .customer-work-card .customer-discover-option{flex:0 0 100%;max-width:100%}
 }
+
+
+/* AREA 1 regression fix — keep every Customer Experience path reachable on mobile. */
+@media(max-width:680px){
+  .customer-header-inner{gap:.75rem}
+  .customer-journey-nav{display:flex;align-items:center;justify-content:flex-end;gap:.75rem;min-width:0}
+  .customer-journey-nav a:nth-child(2),.customer-journey-nav a:nth-child(3){display:inline-flex}
+  .customer-journey-nav a{padding:.7rem 0;font-size:.72rem;line-height:1.15;white-space:nowrap}
+}
+@media(max-width:430px){
+  .customer-header-inner{align-items:center}
+  .customer-brand .demeos-logo{width:64px}
+  .customer-journey-nav{gap:.55rem}
+  .customer-journey-nav a{font-size:.66rem;letter-spacing:0}
+}
