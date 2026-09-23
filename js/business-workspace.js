@@ -274,11 +274,11 @@ async function loadOwnerNextAction(documentObject, storage, fetchFunction) {
 function bindOwnerClerkSession(clerk, documentObject, storage, elements, fetchFunction) {
   const update = function (auth) {
     if (auth && auth.user) {
-      renderOwnerWorkspace(documentObject, storage);
-      if (typeof fetchFunction === "function") {
-        loadOwnerNextAction(documentObject, storage, fetchFunction);
-      }
       showOwnerAuthenticationState(elements, "signed-in");
+      syncAuthorizedOwnerBusinessContext(storage, fetchFunction).then(function () {
+        renderOwnerWorkspace(documentObject, storage);
+        if (typeof fetchFunction === "function") loadOwnerNextAction(documentObject, storage, fetchFunction);
+      });
       return;
     }
     showOwnerAuthenticationState(elements, "signed-out");
@@ -385,6 +385,29 @@ function mergeServerAuthorizedProfiles(cachedProfiles, serverBusinesses, selecte
   const activeBusinessId = profiles.some(function (profile) { return profile.businessId === selectedBusinessId; })
     ? selectedBusinessId : (profiles[0] ? profiles[0].businessId : null);
   return { profiles, activeBusinessId };
+}
+
+async function syncAuthorizedOwnerBusinessContext(storage, fetchFunction) {
+  if (!storage || typeof storage.getItem !== "function" || typeof storage.setItem !== "function" ||
+      typeof fetchFunction !== "function") return { profiles: [], activeBusinessId: null };
+  try {
+    const response = await fetchFunction("/api/businesses", { credentials: "same-origin" });
+    if (!response.ok) return { profiles: [], activeBusinessId: null };
+    const payload = await response.json();
+    const cached = parseWorkspaceValue(storage, "demeosBusinessProfiles", []);
+    const merged = mergeServerAuthorizedProfiles(
+      cached,
+      payload && Array.isArray(payload.businesses) ? payload.businesses : [],
+      storage.getItem("demeosActiveBusinessId"),
+      readOwnerPendingSyncIds(storage)
+    );
+    storage.setItem("demeosBusinessProfiles", JSON.stringify(merged.profiles));
+    if (merged.activeBusinessId) storage.setItem("demeosActiveBusinessId", merged.activeBusinessId);
+    else if (typeof storage.removeItem === "function") storage.removeItem("demeosActiveBusinessId");
+    return merged;
+  } catch (_error) {
+    return { profiles: [], activeBusinessId: null };
+  }
 }
 
 function getStickyNewBusinessId(storage, createId) {
@@ -511,7 +534,7 @@ if (typeof module !== "undefined" && module.exports) {
     renderOwnerWorkspace, bindOwnerClerkSession, initialiseOwnerAuthentication,
     getTrustedOwnerNextAction, renderOwnerNextAction, loadOwnerNextAction,
     getOwnerNavigationSection, updateOwnerNavigation, syncOwnerWorkspaceFromLocation,
-    readOwnerPendingSyncIds, mergeServerAuthorizedProfiles, getStickyNewBusinessId, clearStickyNewBusinessId
+    readOwnerPendingSyncIds, mergeServerAuthorizedProfiles, syncAuthorizedOwnerBusinessContext, getStickyNewBusinessId, clearStickyNewBusinessId
   };
 }
 
