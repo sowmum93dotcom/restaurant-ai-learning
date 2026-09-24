@@ -672,3 +672,59 @@
 @media(max-width:380px){
   #business-profile .business-profile-progress{grid-template-columns:1fr}
 }
+
+
+/* Products and media: readable owner work surfaces, preserving existing controls. */
+#business-profile .business-products-manager,
+#business-profile .business-media-manager{
+  min-width:0;max-width:none;margin:1.2rem 0;padding:clamp(1rem,2.4vw,1.5rem);
+  border:1px solid #dce4eb;border-radius:14px;background:#f8fafc;
+  box-shadow:0 4px 16px rgba(4,22,42,.04);
+}
+#business-profile .business-products-manager>.profile-step-heading,
+#business-profile .business-media-manager>.profile-step-heading{
+  padding-bottom:.85rem;margin-bottom:1rem;border-bottom:1px solid #dce4eb;
+}
+#business-profile .business-products-manager-summary{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.65rem;
+}
+#business-profile .business-products-manager-summary>div{
+  min-width:0;padding:1rem;border:1px solid #dce4eb;border-radius:10px;
+  background:#fff;box-shadow:0 2px 6px rgba(4,22,42,.035);
+}
+#business-profile .business-products-manager-summary strong{display:block;color:#09233f;font-size:1.65rem;line-height:1.15}
+#business-profile .business-products-manager-summary span{display:block;color:#42566b;font-size:.85rem;line-height:1.4}
+#business-profile .business-products-customer-connection{
+  padding:.9rem 1rem;border-left:3px solid #c99a2e;border-radius:8px;
+  background:#fff;color:#233d55;line-height:1.55;
+}
+#business-profile .business-product-form,
+#business-profile .business-media-upload{
+  min-width:0;padding:clamp(1rem,2vw,1.4rem);border:1px solid #d9e2ea;
+  border-radius:12px;background:#fff;color:#102b46;
+}
+#business-profile .business-product-form label,
+#business-profile .business-media-upload label{color:#102b46;font-weight:700}
+#business-profile .business-product-form p,
+#business-profile .business-media-upload p{color:#465a6e}
+#business-profile .business-product-form-actions{
+  display:flex;flex-wrap:wrap;gap:.65rem;align-items:center;
+  padding-top:1rem;border-top:1px solid #e3e8ed;
+}
+#business-profile .business-products-list,
+#business-profile .business-media-list{min-width:0;margin-top:1rem}
+#business-profile .business-product-image-preview{max-width:100%;overflow:hidden}
+#business-profile .business-product-image-preview img{max-width:100%;height:auto;object-fit:contain}
+#business-profile .business-media-upload input[type=file]{max-width:100%;color:#102b46}
+#business-profile .business-media-upload .demeos-secondary-button{
+  border-color:#b48a30;color:#09233f;background:#fff8e8;
+}
+@media(max-width:760px){
+  #business-profile .business-products-manager,
+  #business-profile .business-media-manager{padding:1rem;margin:1rem 0}
+  #business-profile .business-products-manager-summary{grid-template-columns:1fr}
+  #business-profile .business-products-manager-summary>div{padding:.8rem}
+  #business-profile .business-product-form-actions{display:grid;grid-template-columns:minmax(0,1fr)}
+  #business-profile .business-product-form-actions button,
+  #business-profile .business-media-upload button{width:100%;max-width:100%}
+}
