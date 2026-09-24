@@ -244,7 +244,7 @@ test("owner Google sign-in bypasses email-first modal and has an OAuth callback"
   assert.match(script, /strategy: "oauth_google"/);
   assert.match(script, /clerk\.client\.signIn\.authenticateWithRedirect/);
   assert.match(script, /clerk\.handleRedirectCallback/);
-  assert.match(script, /redirectUrlComplete: "\\/business-workspace\\.html"/);
+  assert.ok(script.includes('redirectUrlComplete: "/business-workspace.html"'));
 });
 
 test("Clerk browser SDK uses current v6 bundle with Clerk UI support", function () {
