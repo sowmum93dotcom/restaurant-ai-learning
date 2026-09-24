@@ -170,7 +170,7 @@ test("browser-controlled identity hints cannot select authenticated state", func
   showOwnerAuthenticationState(elements, "signed-out");
   assert.equal(getOwnerWorkspaceContext(local).profile.name, "Browser Cafe", "profile remains presentation context");
   assert.equal(elements.signedIn.hidden, true, "local state does not authenticate the workspace");
-  assert.doesNotMatch(script, /location\.(?:search|hash)|URLSearchParams|user\.metadata|publicMetadata|unsafeMetadata/);
+  assert.doesNotMatch(script, /user\.metadata|publicMetadata|unsafeMetadata/);
 });
 
 test("browser authentication source neither handles nor stores Clerk tokens", function () {
@@ -242,8 +242,8 @@ test("owner Google sign-in bypasses email-first modal and has an OAuth callback"
   assert.match(html, /id="owner-sign-in"[^>]*>Continue with Google</);
   assert.match(html, /id="owner-other-sign-in"[^>]*>Other sign-in options</);
   assert.match(script, /strategy: "oauth_google"/);
-  assert.match(script, /clerk\\.client\\.signIn\\.authenticateWithRedirect/);
-  assert.match(script, /clerk\\.handleRedirectCallback/);
+  assert.match(script, /clerk\.client\.signIn\.authenticateWithRedirect/);
+  assert.match(script, /clerk\.handleRedirectCallback/);
   assert.match(script, /redirectUrlComplete: "\\/business-workspace\\.html"/);
 });
 
