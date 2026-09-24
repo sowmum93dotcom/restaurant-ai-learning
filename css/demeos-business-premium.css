@@ -581,3 +581,49 @@
 @media(prefers-reduced-motion:reduce){
   .owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-navigation a{transition:none}
 }
+
+
+/* Overview organisation: one clear action, compact supporting context.
+   CSS-only: preserve every existing dynamic content target and link. */
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-main>section[aria-labelledby="owner-overview-heading"]{
+  display:grid;grid-template-columns:minmax(0,1.3fr) minmax(280px,1fr);
+  gap:1.1rem;max-width:1160px;margin:0 auto;align-items:start;
+}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-overview-heading{
+  grid-column:1/-1;margin:0 0 .55rem;max-width:none;
+}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-overview-heading h2{
+  font-size:clamp(2.2rem,4vw,3.7rem);line-height:1.08;
+}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-overview-heading p:last-child{margin-bottom:0}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-next-action{
+  grid-column:1;grid-row:2;border-color:rgba(240,207,114,.57);
+  background:linear-gradient(135deg,#173a61,#0a2342 56%,#06162c);
+}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-identity-card{
+  grid-column:2;grid-row:2;
+}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-current-work{
+  grid-column:1;grid-row:3;
+}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-customer-experience-card{
+  grid-column:2;grid-row:3;
+}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) :is(.owner-next-action,.owner-identity-card,.owner-current-work,.owner-customer-experience-card){
+  width:100%;min-width:0;max-width:none;margin:0;box-sizing:border-box;
+}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) :is(.owner-next-action,.owner-identity-card,.owner-current-work,.owner-customer-experience-card) h3{
+  margin-top:0;font-size:clamp(1.45rem,2.1vw,1.9rem);
+}
+@media(max-width:980px){
+  .owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-main>section[aria-labelledby="owner-overview-heading"]{
+    grid-template-columns:minmax(0,1fr);
+  }
+  .owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) :is(.owner-overview-heading,.owner-next-action,.owner-identity-card,.owner-current-work,.owner-customer-experience-card){
+    grid-column:1;grid-row:auto;
+  }
+  .owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-next-action{order:1}
+  .owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-identity-card{order:2}
+  .owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-current-work{order:3}
+  .owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-customer-experience-card{order:4}
+}
