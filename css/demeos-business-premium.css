@@ -627,3 +627,48 @@
   .owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-current-work{order:3}
   .owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-customer-experience-card{order:4}
 }
+
+
+/* Business Profile: six recognisable sections, without changing fields or save logic. */
+#business-profile>.view-heading{margin-bottom:1rem}
+#business-profile>.view-heading h2{margin-bottom:.35rem}
+#business-profile>.business-profile-section{border:1px solid #dce3e9;border-radius:18px;background:#fff;box-shadow:0 12px 32px rgba(4,22,42,.08);overflow:visible}
+#business-profile .business-profile-intro{max-width:68ch}
+#business-profile .business-profile-progress{
+  grid-template-columns:repeat(3,minmax(0,1fr));gap:.6rem;
+  padding:.8rem;border:1px solid #e3e8ed;border-radius:14px;background:#f5f7fa;
+}
+#business-profile .business-profile-progress a{
+  justify-content:flex-start;min-height:54px;padding:.7rem .85rem;
+  border:1px solid #d9e1e8;border-radius:10px;background:#fff;
+  color:#112a45;text-align:left;font-weight:700;text-decoration:none;
+  box-shadow:0 2px 5px rgba(4,22,42,.04);
+}
+#business-profile .business-profile-progress a:hover,
+#business-profile .business-profile-progress a:focus-visible{
+  border-color:#b48a30;background:#fff9e9;color:#06172d;
+}
+#business-profile .business-profile-progress a:focus-visible{outline:3px solid #c99a2e;outline-offset:2px}
+#business-profile .profile-step{
+  scroll-margin-top:1.5rem;margin:2rem 0 1rem;padding:1.1rem 1.2rem;
+  border:1px solid #d9e2ea;border-left:4px solid #c99a2e;
+  border-radius:12px;background:linear-gradient(110deg,#f7f9fc,#fff);
+}
+#business-profile .profile-step-heading{align-items:start}
+#business-profile .profile-step-heading h4{margin:.1rem 0 .35rem;color:#09233f}
+#business-profile .profile-step-heading p{margin:0;color:#44566a;line-height:1.5}
+#business-profile .profile-fields :is(input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),select,textarea){
+  max-width:100%;box-sizing:border-box;
+}
+#business-profile .profile-fields :is(input,select,textarea):focus-visible{
+  outline:2px solid #b48a30;outline-offset:2px;
+}
+@media(max-width:760px){
+  #business-profile>.business-profile-section{padding:1rem;border-radius:14px}
+  #business-profile .business-profile-progress{grid-template-columns:repeat(2,minmax(0,1fr));gap:.45rem;padding:.55rem}
+  #business-profile .business-profile-progress a{min-height:54px;padding:.6rem;font-size:.82rem}
+  #business-profile .profile-step{margin:1.6rem 0 .9rem;padding:.9rem}
+}
+@media(max-width:380px){
+  #business-profile .business-profile-progress{grid-template-columns:1fr}
+}
