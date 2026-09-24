@@ -290,8 +290,16 @@ function bindOwnerClerkSession(clerk, documentObject, storage, elements, fetchFu
   };
 
   elements.signIn.addEventListener("click", async function () {
+    const guidance = documentObject.getElementById("owner-auth-guidance");
+    if (guidance) guidance.textContent = "Complete sign-in in the secure window. Your workspace will open when the session is confirmed.";
     try {
       await clerk.openSignIn();
+      // Closing the sign-in window is not evidence that a session was created.
+      // Recheck Clerk's authoritative state without granting browser-side access.
+      update({ user: clerk.user });
+      if (!clerk.user && !clerk.session && guidance) {
+        guidance.textContent = "No active sign-in was returned. Please finish the verification step in the secure sign-in window.";
+      }
     } catch (_error) {
       showOwnerAuthenticationState(elements, "error");
     }
