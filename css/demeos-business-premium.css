@@ -728,3 +728,45 @@
   #business-profile .business-product-form-actions button,
   #business-profile .business-media-upload button{width:100%;max-width:100%}
 }
+
+
+/* Business Profile: customer routes, operations and review stay distinct and readable. */
+#business-profile .profile-route-details{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.8rem;
+  margin-top:1rem;min-width:0;
+}
+#business-profile .profile-route-details>[hidden]{display:none}
+#business-profile .profile-route-details>div:not([hidden]){
+  min-width:0;padding:1rem;border:1px solid #dce4eb;border-radius:10px;background:#fff;
+}
+#business-profile .profile-route-details>div:not([hidden]) label{display:block;color:#102b46;font-weight:700}
+#business-profile .profile-route-details>div:not([hidden]) :is(input,textarea){width:100%;max-width:100%;box-sizing:border-box}
+#business-profile .profile-choice-group{
+  min-width:0;margin:1rem 0;padding:clamp(1rem,2vw,1.4rem);
+  border:1px solid #dce4eb;border-radius:12px;background:#fbfcfe;color:#102b46;
+}
+#business-profile .profile-choice-group legend{
+  max-width:100%;padding:0 .35rem;color:#102b46;font-weight:800;line-height:1.45;
+}
+#business-profile .profile-choice-group>p{color:#42566b;line-height:1.55}
+#business-profile .profile-choice-grid{gap:.65rem}
+#business-profile .profile-choice-grid label{
+  min-width:0;padding:.75rem .85rem;border:1px solid #dce4eb;border-radius:9px;
+  background:#fff;color:#17334f;line-height:1.4;
+}
+#business-profile .profile-choice-grid input[type=checkbox]{accent-color:#ad7e20}
+#business-profile .profile-choice-grid label:has(input:checked){
+  border-color:#b48a30;background:#fff8e8;color:#09233f;
+}
+#business-profile .profile-choice-grid label:has(input:focus-visible){
+  outline:3px solid #c99a2e;outline-offset:2px;
+}
+#business-profile #business-profile-confirmation{
+  border-left-color:#1f785b;background:linear-gradient(110deg,#f0faf5,#fff);
+}
+@media(max-width:760px){
+  #business-profile .profile-route-details{grid-template-columns:minmax(0,1fr)}
+  #business-profile .profile-route-details>div:not([hidden]){padding:.85rem}
+  #business-profile .profile-choice-group{padding:1rem}
+  #business-profile .profile-choice-grid{grid-template-columns:minmax(0,1fr)}
+}
