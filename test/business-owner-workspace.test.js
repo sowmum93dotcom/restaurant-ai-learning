@@ -241,9 +241,9 @@ test("restoring Clerk session keeps workspace private without showing another si
 test("owner sign-in uses supported Clerk UI with redirect OAuth", function () {
   assert.match(html, /id="owner-sign-in"[^>]*>Sign in</);
   assert.doesNotMatch(html, /id="owner-other-sign-in"/);
-  assert.match(script, /clerk\\.openSignIn\\(/);
-  assert.match(script, /oauthFlow: "redirect"/);
-  assert.doesNotMatch(script, /client\\.signIn\\.authenticateWithRedirect/);
+  assert.ok(script.includes("clerk.openSignIn("));
+  assert.ok(script.includes('oauthFlow: "redirect"'));
+  assert.ok(!script.includes("client.signIn.authenticateWithRedirect"));
 });
 
 test("Clerk browser SDK uses current v6 bundle with Clerk UI support", function () {
