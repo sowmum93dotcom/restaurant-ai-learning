@@ -27,7 +27,7 @@ test("Marketing shares the Business Owner Workspace shell and primary navigation
   assert.match(html, /<h1 class="restaurant-name">Business Owner Workspace<\/h1>/);
   assert.match(html, /<h2>Marketing Agent<\/h2>/);
   assert.deepEqual(primaryNavigationLabels(html), ["Overview", "Business Profile", "DEMEOS Recommends", "Marketing", "Results"]);
-  assert.match(html, /class="is-active" href="marketing.html" aria-current="page">Marketing/);
+  assert.match(html, /class="is-active" href="marketing.html#overview" aria-current="page">Marketing/);
   assert.doesNotMatch(html, /Business Marketing Intelligence|<p class="agent-label">DEMEOS<\/p>/);
 });
 
