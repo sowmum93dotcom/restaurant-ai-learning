@@ -21,5 +21,5 @@ test("simple sign-in presentation is limited to the unauthenticated workspace st
 
 test("existing functional sign-in control remains present", function () {
   assert.match(html, /id="owner-sign-in"/);
-  assert.match(html, /type="button">Sign in<\/button>/);
+  assert.match(html, /type="button">Continue with Google<\/button>/);
 });
