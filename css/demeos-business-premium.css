@@ -770,3 +770,30 @@
   #business-profile .profile-choice-group{padding:1rem}
   #business-profile .profile-choice-grid{grid-template-columns:minmax(0,1fr)}
 }
+
+
+/* Resolve legacy dark-profile !important rules against the new light work surfaces.
+   This is a visual correction only; no field state or validation changes. */
+#business-profile .business-products-manager,
+#business-profile .business-media-manager,
+#business-profile .profile-choice-group{
+  border-color:#dce4eb!important;background:#f8fafc!important;
+}
+#business-profile .business-products-manager .business-product-form,
+#business-profile .business-media-manager .business-media-upload{
+  border-color:#d9e2ea!important;background:#fff!important;
+}
+#business-profile .business-products-manager :is(label,p),
+#business-profile .business-media-manager :is(label,p),
+#business-profile .profile-choice-group :is(legend,label,p),
+#business-profile .profile-choice-grid label{
+  color:#17334f!important;
+}
+#business-profile .business-products-manager textarea,
+#business-profile .profile-choice-group textarea{
+  border-color:#bfcbd7!important;background:#fff!important;color:#102b46!important;
+}
+#business-profile .business-products-manager textarea:focus-visible,
+#business-profile .profile-choice-group textarea:focus-visible{
+  border-color:#b48a30!important;outline:2px solid #b48a30;outline-offset:2px;
+}
