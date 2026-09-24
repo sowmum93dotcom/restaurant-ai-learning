@@ -676,3 +676,47 @@
 .owner-workspace-body [data-workspace-panel][hidden],
 .owner-workspace-body .owner-auth-panel[hidden],
 .owner-workspace-body #owner-account-control[hidden]{display:none!important}
+
+
+/* Owner mobile repair: compact primary navigation, visible marketing tools and
+   legible profile fields. Preserve hidden panels and all existing interactions. */
+@media(max-width:760px){
+ .owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-sidebar{
+   padding:0;overflow:hidden;
+ }
+ .owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-navigation{
+   display:flex;flex-direction:row;flex-wrap:nowrap;width:100%;min-width:0;
+   overflow-x:auto;gap:8px;padding:10px 12px;box-sizing:border-box;
+ }
+ .owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-navigation a{
+   display:flex;flex:0 0 auto;min-height:40px;width:auto;margin:0;padding:8px 12px;
+   font-size:13px;line-height:1.3;text-align:center;white-space:nowrap;
+ }
+ .owner-workspace-body .marketing-capability-heading{margin:0 0 1rem}
+ .owner-workspace-body .marketing-capability-heading h2,
+ .owner-workspace-body .marketing-workspace-main .view-heading h2{
+   font-size:clamp(1.8rem,8vw,2.5rem);line-height:1.15;letter-spacing:-.025em;
+ }
+ .owner-workspace-body .marketing-capability-heading>p:last-child,
+ .owner-workspace-body .marketing-workspace-main .view-heading p:last-child{line-height:1.45}
+ .owner-workspace-body .marketing-secondary-sidebar{margin:0 0 1rem;padding:.5rem}
+ .owner-workspace-body .marketing-secondary-sidebar .workspace-menu-toggle{display:flex;min-height:42px}
+ .owner-workspace-body .marketing-secondary-sidebar .workspace-navigation:not(.is-open){display:none}
+ .owner-workspace-body .marketing-secondary-sidebar .workspace-navigation.is-open{
+   display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;
+ }
+}
+.owner-workspace-body #business-profile .profile-step{
+ background:#f7f9fc!important;border-color:#d9e2ea!important;border-left:4px solid #c99a2e!important;
+}
+.owner-workspace-body #business-profile .profile-step-heading :is(h4,p,span),
+.owner-workspace-body #business-profile .profile-long-field :is(label,p),
+.owner-workspace-body #business-profile .profile-choice-group legend,
+.owner-workspace-body #business-profile .profile-choice-grid label,
+.owner-workspace-body #business-profile .profile-accuracy-confirmation label{
+ color:#17334f!important;
+}
+.owner-workspace-body #business-profile :is(input:not([type="checkbox"]):not([type="radio"]),select,textarea){
+ background:#fff!important;color:#14202b!important;border:1px solid #bac8d7!important;
+}
+.owner-workspace-body #business-profile :is(input,textarea)::placeholder{color:#657589!important;opacity:1}
