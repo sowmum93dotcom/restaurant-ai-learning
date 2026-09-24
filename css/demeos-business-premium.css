@@ -539,3 +539,12 @@
   .owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-main h3{font-size:20px;line-height:1.25}
   .owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-card-action{min-height:44px}
 }
+
+/* Security and navigation visibility: explicit display rules must never reveal
+   hidden authenticated shells or inactive marketing panels on mobile. */
+.owner-workspace-body #owner-authenticated-workspace[hidden],
+.owner-workspace-body [data-workspace-panel][hidden],
+.owner-workspace-body .owner-auth-panel[hidden],
+.owner-workspace-body #owner-account-control[hidden] {
+  display:none!important;
+}
