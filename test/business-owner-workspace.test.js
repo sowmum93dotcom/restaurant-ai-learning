@@ -214,6 +214,30 @@ test("Clerk session changes alone control workspace visibility and sign-out", as
   assert.equal(elements.signedIn.hidden, true, "sign-out immediately conceals the workspace");
 });
 
+test("restoring Clerk session keeps workspace private without showing another sign-in", function () {
+  const elements = authenticationElements();
+  elements.signIn = { addEventListener: function () {} };
+  elements.signOut = { addEventListener: function () {} };
+  const clerk = {
+    user: null,
+    session: { id: "restoring-session" },
+    addListener: function (listener) { this.listener = listener; }
+  };
+  const documentObject = { getElementById: function () { return null; } };
+  bindOwnerClerkSession(clerk, documentObject, storage({}), elements);
+  assert.equal(elements.loading.hidden, false);
+  assert.equal(elements.signedOut.hidden, true);
+  assert.equal(elements.signedIn.hidden, true);
+  clerk.user = { id: "restored-owner" };
+  clerk.listener({ user: clerk.user });
+  assert.equal(elements.signedIn.hidden, false);
+  clerk.session = null;
+  clerk.user = null;
+  clerk.listener({ user: null });
+  assert.equal(elements.signedOut.hidden, false);
+  assert.equal(elements.signedIn.hidden, true);
+});
+
 test("Clerk browser SDK uses current v6 bundle with Clerk UI support", function () {
   assert.match(script, /@clerk\/ui@1\/dist\/ui\.browser\.js/);
   assert.match(script, /@clerk\/clerk-js@6\/dist\/clerk\.browser\.js/);
