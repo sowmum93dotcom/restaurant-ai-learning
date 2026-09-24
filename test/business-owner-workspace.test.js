@@ -145,7 +145,7 @@ test("signed-out authentication state hides workspace and presents sign-in", fun
   showOwnerAuthenticationState(elements, "signed-out");
   assert.equal(elements.signedIn.hidden, true);
   assert.equal(elements.signedOut.hidden, false);
-  assert.match(html, /id="owner-sign-in"[^>]*>Sign in</);
+  assert.match(html, /id="owner-sign-in"[^>]*>Continue with Google</);
 });
 
 test("signed-in authentication state reveals workspace and sign-out control", function () {
@@ -236,6 +236,15 @@ test("restoring Clerk session keeps workspace private without showing another si
   clerk.listener({ user: null });
   assert.equal(elements.signedOut.hidden, false);
   assert.equal(elements.signedIn.hidden, true);
+});
+
+test("owner Google sign-in bypasses email-first modal and has an OAuth callback", function () {
+  assert.match(html, /id="owner-sign-in"[^>]*>Continue with Google</);
+  assert.match(html, /id="owner-other-sign-in"[^>]*>Other sign-in options</);
+  assert.match(script, /strategy: "oauth_google"/);
+  assert.match(script, /clerk\\.client\\.signIn\\.authenticateWithRedirect/);
+  assert.match(script, /clerk\\.handleRedirectCallback/);
+  assert.match(script, /redirectUrlComplete: "\\/business-workspace\\.html"/);
 });
 
 test("Clerk browser SDK uses current v6 bundle with Clerk UI support", function () {
