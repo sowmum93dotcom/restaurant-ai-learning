@@ -291,21 +291,22 @@ function bindOwnerClerkSession(clerk, documentObject, storage, elements, fetchFu
 
   elements.signIn.addEventListener("click", async function () {
     const guidance = documentObject.getElementById("owner-auth-guidance");
-    if (guidance) guidance.textContent = "Opening secure Google sign-in…";
+    if (guidance) guidance.textContent = "Opening secure sign-in…";
     try {
-      // Go straight to Google instead of opening Clerk's email-first modal.
-      await clerk.client.signIn.authenticateWithRedirect({
-        strategy: "oauth_google",
-        redirectUrl: "/business-workspace.html?clerk_oauth_callback=1",
-        redirectUrlComplete: "/business-workspace.html"
+      // Clerk owns the sign-in UI and provider selection. Do not assume a
+      // sign-in resource exists before Clerk has created one.
+      await clerk.openSignIn({
+        oauthFlow: "redirect",
+        forceRedirectUrl: "/business-workspace.html",
+        signUpForceRedirectUrl: "/business-workspace.html"
       });
-    } catch (_error) {
-      if (guidance) guidance.textContent = "Google sign-in could not start. Use Other sign-in options or contact support.";
+    } catch (error) {
+      const clerkError = error && Array.isArray(error.errors) && error.errors[0];
+      const detail = clerkError && (clerkError.longMessage || clerkError.message || clerkError.code);
+      if (guidance) guidance.textContent = detail
+        ? "Sign-in error: " + String(detail).slice(0, 220)
+        : "Secure sign-in could not open. Please contact support.";
     }
-  });
-  const otherSignIn = documentObject.getElementById("owner-other-sign-in");
-  if (otherSignIn && typeof otherSignIn.addEventListener === "function") otherSignIn.addEventListener("click", function () {
-    return clerk.openSignIn();
   });
   elements.signOut.addEventListener("click", function () {
     showOwnerAuthenticationState(elements, "signed-out");
