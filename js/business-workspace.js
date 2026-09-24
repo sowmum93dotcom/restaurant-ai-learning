@@ -291,18 +291,21 @@ function bindOwnerClerkSession(clerk, documentObject, storage, elements, fetchFu
 
   elements.signIn.addEventListener("click", async function () {
     const guidance = documentObject.getElementById("owner-auth-guidance");
-    if (guidance) guidance.textContent = "Complete sign-in in the secure window. Your workspace will open when the session is confirmed.";
+    if (guidance) guidance.textContent = "Opening secure Google sign-in…";
     try {
-      await clerk.openSignIn();
-      // Closing the sign-in window is not evidence that a session was created.
-      // Recheck Clerk's authoritative state without granting browser-side access.
-      update({ user: clerk.user });
-      if (!clerk.user && !clerk.session && guidance) {
-        guidance.textContent = "No active sign-in was returned. Please finish the verification step in the secure sign-in window.";
-      }
+      // Go straight to Google instead of opening Clerk's email-first modal.
+      await clerk.client.signIn.authenticateWithRedirect({
+        strategy: "oauth_google",
+        redirectUrl: "/business-workspace.html?clerk_oauth_callback=1",
+        redirectUrlComplete: "/business-workspace.html"
+      });
     } catch (_error) {
-      showOwnerAuthenticationState(elements, "error");
+      if (guidance) guidance.textContent = "Google sign-in could not start. Use Other sign-in options or contact support.";
     }
+  });
+  const otherSignIn = documentObject.getElementById("owner-other-sign-in");
+  if (otherSignIn) otherSignIn.addEventListener("click", function () {
+    return clerk.openSignIn();
   });
   elements.signOut.addEventListener("click", function () {
     showOwnerAuthenticationState(elements, "signed-out");
@@ -361,6 +364,12 @@ async function initialiseOwnerAuthentication(windowObject, documentObject, stora
       throw new Error("Clerk did not load");
     }
     await clerk.load({ ui: { ClerkUI: windowObject.__internal_ClerkUICtor } });
+    if (windowObject.location && new URLSearchParams(windowObject.location.search).get("clerk_oauth_callback") === "1") {
+      await clerk.handleRedirectCallback({
+        signInFallbackRedirectUrl: "/business-workspace.html",
+        signUpFallbackRedirectUrl: "/business-workspace.html"
+      });
+    }
     bindOwnerClerkSession(clerk, documentObject, storage, elements, fetchFunction);
   } catch (error) {
     showOwnerAuthenticationState(elements, "error");
