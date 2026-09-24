@@ -275,7 +275,10 @@ function bindOwnerClerkSession(clerk, documentObject, storage, elements, fetchFu
   const update = function (auth) {
     if (auth && auth.user) {
       showOwnerAuthenticationState(elements, "signed-in");
+      const authenticatedUserId = auth.user.id;
       syncAuthorizedOwnerBusinessContext(storage, fetchFunction).then(function () {
+        // An earlier request must not render after sign-out or an account switch.
+        if (!clerk.user || clerk.user.id !== authenticatedUserId) return;
         renderOwnerWorkspace(documentObject, storage);
         if (typeof fetchFunction === "function") loadOwnerNextAction(documentObject, storage, fetchFunction);
       });
