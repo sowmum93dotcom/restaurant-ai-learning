@@ -737,3 +737,23 @@
  background:#fff7e5!important;border-color:#b48a30!important;
 }
 .owner-workspace-body #business-profile :is(.profile-choice-grid,.profile-accuracy-confirmation) input[type="checkbox"]{accent-color:#a77a19}
+
+
+/* Screenshot regression: all authenticated Overview text must contrast with
+   the dimensional navy cards and header. */
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-header :is(.agent-label,.restaurant-name,.cuisine-type,.owner-account-control>span){color:#f3f6fb!important}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) :is(.owner-next-action,.owner-identity-card,.owner-current-work,.owner-customer-experience-card) :is(h2,h3,h4,strong,p,span,small){
+ color:#f4f7fc!important;
+}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) :is(.owner-next-action,.owner-identity-card,.owner-current-work,.owner-customer-experience-card) :is(p,small){
+ color:#d5e1ef!important;
+}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) :is(.owner-next-action,.owner-identity-card,.owner-current-work,.owner-customer-experience-card) :is(a,button){
+ color:#172b43;
+}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) :is(.owner-next-action,.owner-identity-card,.owner-current-work,.owner-customer-experience-card) .demeos-primary-button{
+ background:#e7bc61!important;color:#10243c!important;border-color:#e7bc61!important;
+}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) :is(.owner-next-action,.owner-identity-card,.owner-current-work,.owner-customer-experience-card) .demeos-secondary-button{
+ background:#fff!important;color:#172b43!important;border-color:#d7e0eb!important;
+}
