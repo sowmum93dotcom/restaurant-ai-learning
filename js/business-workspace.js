@@ -304,7 +304,7 @@ function bindOwnerClerkSession(clerk, documentObject, storage, elements, fetchFu
     }
   });
   const otherSignIn = documentObject.getElementById("owner-other-sign-in");
-  if (otherSignIn) otherSignIn.addEventListener("click", function () {
+  if (otherSignIn && typeof otherSignIn.addEventListener === "function") otherSignIn.addEventListener("click", function () {
     return clerk.openSignIn();
   });
   elements.signOut.addEventListener("click", function () {
