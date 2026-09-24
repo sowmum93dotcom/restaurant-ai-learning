@@ -275,13 +275,18 @@ function bindOwnerClerkSession(clerk, documentObject, storage, elements, fetchFu
   const update = function (auth) {
     if (auth && auth.user) {
       showOwnerAuthenticationState(elements, "signed-in");
+      const authenticatedUserId = auth.user.id;
       syncAuthorizedOwnerBusinessContext(storage, fetchFunction).then(function () {
+        // An earlier request must not render after sign-out or an account switch.
+        if (!clerk.user || clerk.user.id !== authenticatedUserId) return;
         renderOwnerWorkspace(documentObject, storage);
         if (typeof fetchFunction === "function") loadOwnerNextAction(documentObject, storage, fetchFunction);
       });
       return;
     }
-    showOwnerAuthenticationState(elements, "signed-out");
+    // A temporarily missing user while Clerk still has a session is not a sign-out.
+    // Keep private content hidden while the session finishes restoring.
+    showOwnerAuthenticationState(elements, clerk.session ? "loading" : "signed-out");
   };
 
   elements.signIn.addEventListener("click", async function () {
@@ -480,11 +485,12 @@ function installOwnerBusinessSecurity(windowObject, documentObject, localStorage
             selector.textContent = "";
             selector.disabled = true;
           }
-          if (authenticatedOnThisPage) currentIdentityId = null;
+          // Clerk can emit a temporary empty user while restoring a session.
+          // Do not discard the previous identity or force a reload on restoration.
           return;
         }
 
-        if (authenticatedOnThisPage && (currentIdentityId === null || currentIdentityId !== identityId)) {
+        if (authenticatedOnThisPage && currentIdentityId !== null && currentIdentityId !== identityId) {
           if (selector) {
             selector.textContent = "";
             selector.disabled = true;
