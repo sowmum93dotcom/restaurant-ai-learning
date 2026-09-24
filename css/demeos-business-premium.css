@@ -506,3 +506,338 @@
   .owner-workspace-navigation a.is-active{font-weight:700;background:#f5f7f8}
   .owner-workspace-main{width:100%;box-sizing:border-box}
 }
+
+
+/* DEMEOS dimensional workspace foundation — authenticated Overview only.
+   Restrained depth follows the approved navy/gold identity; no decorative animation.
+   Business logic, Clerk, navigation and form controls are unchanged. */
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])){
+  --demeos-depth-line:rgba(229,189,89,.24);
+  --demeos-depth-shadow:0 18px 42px rgba(0,7,20,.28),0 2px 8px rgba(0,7,20,.16);
+  background:radial-gradient(ellipse at 78% 0%,#14345b 0%,#071a31 36%,#020b18 76%);
+}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-header{
+  border-bottom:1px solid var(--demeos-depth-line);
+  background:linear-gradient(115deg,#020b18,#071a31 72%,#0b2544);
+}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-sidebar{
+  border-right:1px solid var(--demeos-depth-line);
+  background:linear-gradient(180deg,#07172c,#020b18);
+}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-navigation a{
+  transition:background-color .18s ease,border-color .18s ease,box-shadow .18s ease;
+}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-navigation a.is-active{
+  border-color:rgba(229,189,89,.65);
+  background:linear-gradient(110deg,rgba(201,154,46,.19),rgba(11,43,82,.74));
+  box-shadow:inset 3px 0 0 #e5bd59,0 5px 16px rgba(0,0,0,.13);
+}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-identity-card,
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-next-action,
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-current-work,
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-customer-experience-card{
+  position:relative;
+  overflow:hidden;
+  border:1px solid var(--demeos-depth-line);
+  border-radius:18px;
+  background:linear-gradient(145deg,rgba(14,43,77,.96),rgba(5,20,39,.98) 62%,#061326);
+  box-shadow:var(--demeos-depth-shadow);
+}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-identity-card::before,
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-next-action::before,
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-current-work::before,
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-customer-experience-card::before{
+  content:"";position:absolute;inset:0 0 auto;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(240,207,114,.65),transparent);
+  pointer-events:none;
+}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-main{
+  min-width:0;
+}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-main :is(a,button):focus-visible,
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-navigation a:focus-visible{
+  outline:3px solid #f0cf72;outline-offset:3px;
+}
+@media(max-width:760px){
+  .owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-sidebar{
+    background:#06172d;border-right:0;border-bottom:1px solid var(--demeos-depth-line);
+  }
+  .owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-navigation a{
+    background:#0a2543;color:#f0f4f8;border-color:rgba(229,189,89,.24);
+  }
+  .owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-navigation a.is-active{
+    background:#183753;color:#f0cf72;box-shadow:inset 0 -3px 0 #e5bd59;
+  }
+  .owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-main{
+    padding:1.25rem 1rem 2rem;
+  }
+  .owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-identity-card,
+  .owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-next-action,
+  .owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-current-work,
+  .owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-customer-experience-card{
+    padding:1.25rem;box-shadow:0 10px 24px rgba(0,7,20,.2);
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  .owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-navigation a{transition:none}
+}
+
+
+/* Overview organisation: one clear action, compact supporting context.
+   CSS-only: preserve every existing dynamic content target and link. */
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-main>section[aria-labelledby="owner-overview-heading"]{
+  display:grid;grid-template-columns:minmax(0,1.3fr) minmax(280px,1fr);
+  gap:1.1rem;max-width:1160px;margin:0 auto;align-items:start;
+}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-overview-heading{
+  grid-column:1/-1;margin:0 0 .55rem;max-width:none;
+}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-overview-heading h2{
+  font-size:clamp(2.2rem,4vw,3.7rem);line-height:1.08;
+}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-overview-heading p:last-child{margin-bottom:0}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-next-action{
+  grid-column:1;grid-row:2;border-color:rgba(240,207,114,.57);
+  background:linear-gradient(135deg,#173a61,#0a2342 56%,#06162c);
+}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-identity-card{
+  grid-column:2;grid-row:2;
+}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-current-work{
+  grid-column:1;grid-row:3;
+}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-customer-experience-card{
+  grid-column:2;grid-row:3;
+}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) :is(.owner-next-action,.owner-identity-card,.owner-current-work,.owner-customer-experience-card){
+  width:100%;min-width:0;max-width:none;margin:0;box-sizing:border-box;
+}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) :is(.owner-next-action,.owner-identity-card,.owner-current-work,.owner-customer-experience-card) h3{
+  margin-top:0;font-size:clamp(1.45rem,2.1vw,1.9rem);
+}
+@media(max-width:980px){
+  .owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-main>section[aria-labelledby="owner-overview-heading"]{
+    grid-template-columns:minmax(0,1fr);
+  }
+  .owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) :is(.owner-overview-heading,.owner-next-action,.owner-identity-card,.owner-current-work,.owner-customer-experience-card){
+    grid-column:1;grid-row:auto;
+  }
+  .owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-next-action{order:1}
+  .owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-identity-card{order:2}
+  .owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-current-work{order:3}
+  .owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-customer-experience-card{order:4}
+}
+
+
+/* Business Profile: six recognisable sections, without changing fields or save logic. */
+#business-profile>.view-heading{margin-bottom:1rem}
+#business-profile>.view-heading h2{margin-bottom:.35rem}
+#business-profile>.business-profile-section{border:1px solid #dce3e9;border-radius:18px;background:#fff;box-shadow:0 12px 32px rgba(4,22,42,.08);overflow:visible}
+#business-profile .business-profile-intro{max-width:68ch}
+#business-profile .business-profile-progress{
+  grid-template-columns:repeat(3,minmax(0,1fr));gap:.6rem;
+  padding:.8rem;border:1px solid #e3e8ed;border-radius:14px;background:#f5f7fa;
+}
+#business-profile .business-profile-progress a{
+  justify-content:flex-start;min-height:54px;padding:.7rem .85rem;
+  border:1px solid #d9e1e8;border-radius:10px;background:#fff;
+  color:#112a45;text-align:left;font-weight:700;text-decoration:none;
+  box-shadow:0 2px 5px rgba(4,22,42,.04);
+}
+#business-profile .business-profile-progress a:hover,
+#business-profile .business-profile-progress a:focus-visible{
+  border-color:#b48a30;background:#fff9e9;color:#06172d;
+}
+#business-profile .business-profile-progress a:focus-visible{outline:3px solid #c99a2e;outline-offset:2px}
+#business-profile .profile-step{
+  scroll-margin-top:1.5rem;margin:2rem 0 1rem;padding:1.1rem 1.2rem;
+  border:1px solid #d9e2ea;border-left:4px solid #c99a2e;
+  border-radius:12px;background:linear-gradient(110deg,#f7f9fc,#fff);
+}
+#business-profile .profile-step-heading{align-items:start}
+#business-profile .profile-step-heading h4{margin:.1rem 0 .35rem;color:#09233f}
+#business-profile .profile-step-heading p{margin:0;color:#44566a;line-height:1.5}
+#business-profile .profile-fields :is(input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),select,textarea){
+  max-width:100%;box-sizing:border-box;
+}
+#business-profile .profile-fields :is(input,select,textarea):focus-visible{
+  outline:2px solid #b48a30;outline-offset:2px;
+}
+@media(max-width:760px){
+  #business-profile>.business-profile-section{padding:1rem;border-radius:14px}
+  #business-profile .business-profile-progress{grid-template-columns:repeat(2,minmax(0,1fr));gap:.45rem;padding:.55rem}
+  #business-profile .business-profile-progress a{min-height:54px;padding:.6rem;font-size:.82rem}
+  #business-profile .profile-step{margin:1.6rem 0 .9rem;padding:.9rem}
+}
+@media(max-width:380px){
+  #business-profile .business-profile-progress{grid-template-columns:1fr}
+}
+
+
+/* Products and media: readable owner work surfaces, preserving existing controls. */
+#business-profile .business-products-manager,
+#business-profile .business-media-manager{
+  min-width:0;max-width:none;margin:1.2rem 0;padding:clamp(1rem,2.4vw,1.5rem);
+  border:1px solid #dce4eb;border-radius:14px;background:#f8fafc;
+  box-shadow:0 4px 16px rgba(4,22,42,.04);
+}
+#business-profile .business-products-manager>.profile-step-heading,
+#business-profile .business-media-manager>.profile-step-heading{
+  padding-bottom:.85rem;margin-bottom:1rem;border-bottom:1px solid #dce4eb;
+}
+#business-profile .business-products-manager-summary{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.65rem;
+}
+#business-profile .business-products-manager-summary>div{
+  min-width:0;padding:1rem;border:1px solid #dce4eb;border-radius:10px;
+  background:#fff;box-shadow:0 2px 6px rgba(4,22,42,.035);
+}
+#business-profile .business-products-manager-summary strong{display:block;color:#09233f;font-size:1.65rem;line-height:1.15}
+#business-profile .business-products-manager-summary span{display:block;color:#42566b;font-size:.85rem;line-height:1.4}
+#business-profile .business-products-customer-connection{
+  padding:.9rem 1rem;border-left:3px solid #c99a2e;border-radius:8px;
+  background:#fff;color:#233d55;line-height:1.55;
+}
+#business-profile .business-product-form,
+#business-profile .business-media-upload{
+  min-width:0;padding:clamp(1rem,2vw,1.4rem);border:1px solid #d9e2ea;
+  border-radius:12px;background:#fff;color:#102b46;
+}
+#business-profile .business-product-form label,
+#business-profile .business-media-upload label{color:#102b46;font-weight:700}
+#business-profile .business-product-form p,
+#business-profile .business-media-upload p{color:#465a6e}
+#business-profile .business-product-form-actions{
+  display:flex;flex-wrap:wrap;gap:.65rem;align-items:center;
+  padding-top:1rem;border-top:1px solid #e3e8ed;
+}
+#business-profile .business-products-list,
+#business-profile .business-media-list{min-width:0;margin-top:1rem}
+#business-profile .business-product-image-preview{max-width:100%;overflow:hidden}
+#business-profile .business-product-image-preview img{max-width:100%;height:auto;object-fit:contain}
+#business-profile .business-media-upload input[type=file]{max-width:100%;color:#102b46}
+#business-profile .business-media-upload .demeos-secondary-button{
+  border-color:#b48a30;color:#09233f;background:#fff8e8;
+}
+@media(max-width:760px){
+  #business-profile .business-products-manager,
+  #business-profile .business-media-manager{padding:1rem;margin:1rem 0}
+  #business-profile .business-products-manager-summary{grid-template-columns:1fr}
+  #business-profile .business-products-manager-summary>div{padding:.8rem}
+  #business-profile .business-product-form-actions{display:grid;grid-template-columns:minmax(0,1fr)}
+  #business-profile .business-product-form-actions button,
+  #business-profile .business-media-upload button{width:100%;max-width:100%}
+}
+
+
+/* Business Profile: customer routes, operations and review stay distinct and readable. */
+#business-profile .profile-route-details{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.8rem;
+  margin-top:1rem;min-width:0;
+}
+#business-profile .profile-route-details>[hidden]{display:none}
+#business-profile .profile-route-details>div:not([hidden]){
+  min-width:0;padding:1rem;border:1px solid #dce4eb;border-radius:10px;background:#fff;
+}
+#business-profile .profile-route-details>div:not([hidden]) label{display:block;color:#102b46;font-weight:700}
+#business-profile .profile-route-details>div:not([hidden]) :is(input,textarea){width:100%;max-width:100%;box-sizing:border-box}
+#business-profile .profile-choice-group{
+  min-width:0;margin:1rem 0;padding:clamp(1rem,2vw,1.4rem);
+  border:1px solid #dce4eb;border-radius:12px;background:#fbfcfe;color:#102b46;
+}
+#business-profile .profile-choice-group legend{
+  max-width:100%;padding:0 .35rem;color:#102b46;font-weight:800;line-height:1.45;
+}
+#business-profile .profile-choice-group>p{color:#42566b;line-height:1.55}
+#business-profile .profile-choice-grid{gap:.65rem}
+#business-profile .profile-choice-grid label{
+  min-width:0;padding:.75rem .85rem;border:1px solid #dce4eb;border-radius:9px;
+  background:#fff;color:#17334f;line-height:1.4;
+}
+#business-profile .profile-choice-grid input[type=checkbox]{accent-color:#ad7e20}
+#business-profile .profile-choice-grid label:has(input:checked){
+  border-color:#b48a30;background:#fff8e8;color:#09233f;
+}
+#business-profile .profile-choice-grid label:has(input:focus-visible){
+  outline:3px solid #c99a2e;outline-offset:2px;
+}
+#business-profile #business-profile-confirmation{
+  border-left-color:#1f785b;background:linear-gradient(110deg,#f0faf5,#fff);
+}
+@media(max-width:760px){
+  #business-profile .profile-route-details{grid-template-columns:minmax(0,1fr)}
+  #business-profile .profile-route-details>div:not([hidden]){padding:.85rem}
+  #business-profile .profile-choice-group{padding:1rem}
+  #business-profile .profile-choice-grid{grid-template-columns:minmax(0,1fr)}
+}
+
+
+/* Resolve legacy dark-profile !important rules against the new light work surfaces.
+   This is a visual correction only; no field state or validation changes. */
+#business-profile .business-products-manager,
+#business-profile .business-media-manager,
+#business-profile .profile-choice-group{
+  border-color:#dce4eb!important;background:#f8fafc!important;
+}
+#business-profile .business-products-manager .business-product-form,
+#business-profile .business-media-manager .business-media-upload{
+  border-color:#d9e2ea!important;background:#fff!important;
+}
+#business-profile .business-products-manager :is(label,p),
+#business-profile .business-media-manager :is(label,p),
+#business-profile .profile-choice-group :is(legend,label,p),
+#business-profile .profile-choice-grid label{
+  color:#17334f!important;
+}
+#business-profile .business-products-manager textarea,
+#business-profile .profile-choice-group textarea{
+  border-color:#bfcbd7!important;background:#fff!important;color:#102b46!important;
+}
+#business-profile .business-products-manager textarea:focus-visible,
+#business-profile .profile-choice-group textarea:focus-visible{
+  border-color:#b48a30!important;outline:2px solid #b48a30;outline-offset:2px;
+}
+
+
+/* Authenticated Overview contrast: the dimensional dark surfaces must not inherit
+   text colours from the earlier light workspace. Signed-out panels stay light. */
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-header :is(.agent-label,.cuisine-type,.owner-account-control>span){color:#d1ddeb}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-header .restaurant-name{color:#fff}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-navigation a{color:#dce6f0}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-navigation a:hover,
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-navigation a:focus-visible{
+  background:#163656;color:#fff;
+}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-navigation a.is-active,
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-navigation .owner-public-destination{color:#f0cf72}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) :is(.owner-identity-card,.owner-next-action,.owner-current-work,.owner-customer-experience-card) :is(h3,strong){color:#fff}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) :is(.owner-identity-card,.owner-next-action,.owner-current-work,.owner-customer-experience-card) :is(p,li,span){color:#dce6f0}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-overview-heading h2{color:#102b46}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-overview-heading p{color:#42566b}
+
+
+/* Final profile contrast pass: section headings and helper text sit on light cards. */
+#business-profile .profile-step{
+  border-color:#d9e2ea!important;border-left-color:#c99a2e!important;
+  background:linear-gradient(110deg,#f7f9fc,#fff)!important;
+}
+#business-profile .profile-step .profile-step-heading :is(h4,p,span){
+  color:#102b46!important;
+}
+#business-profile #business-profile-confirmation{
+  border-left-color:#1f785b!important;
+  background:linear-gradient(110deg,#f0faf5,#fff)!important;
+}
+#business-profile .business-products-manager-summary>div,
+#business-profile .business-products-customer-connection,
+#business-profile .profile-choice-grid label{
+  background:#fff!important;
+}
+#business-profile .profile-choice-grid label:has(input:checked){
+  background:#fff8e8!important;border-color:#b48a30!important;
+}
+#business-profile .business-products-manager-summary :is(strong,span),
+#business-profile .business-products-customer-connection,
+#business-profile .business-products-customer-connection strong{
+  color:#17334f!important;
+}
