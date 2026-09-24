@@ -720,3 +720,45 @@
  background:#fff!important;color:#14202b!important;border:1px solid #bac8d7!important;
 }
 .owner-workspace-body #business-profile :is(input,textarea)::placeholder{color:#657589!important;opacity:1}
+
+
+/* Reference-design restoration: scoped to the owner overview; no authentication or data changes. */
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-main{
+  background:radial-gradient(ellipse at 85% 0%,#173c5b 0%,#091d32 44%,#051321 100%)!important;
+  color:#f7f9fd!important;
+}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-overview-heading h2,
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-main h3,
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-next-action-content>strong{
+  color:#fff!important;
+}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-main p,
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-overview-heading p:last-child,
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-business-identity{
+  color:#d3dfed!important;
+}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) :is(.owner-next-action,.owner-identity-card,.owner-current-work,.owner-customer-experience-card){
+  background:linear-gradient(145deg,#173750 0%,#0c2339 58%,#071727 100%)!important;
+  border:1px solid rgba(231,188,99,.43)!important;
+  border-radius:18px!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.13),0 16px 35px rgba(0,0,0,.23)!important;
+}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-main .demeos-primary-button{
+  background:linear-gradient(115deg,#f5d98c,#c9963c)!important;
+  border:1px solid #f4d58a!important;
+  color:#112337!important;
+}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-main .demeos-secondary-button{
+  background:rgba(9,30,49,.8)!important;
+  border:1px solid rgba(237,198,110,.65)!important;
+  color:#fff!important;
+}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-header .restaurant-name{
+  color:#fff!important;
+}
+@media(max-width:760px){
+ .owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-main{padding:20px 14px 30px!important}
+ .owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) :is(.owner-next-action,.owner-identity-card,.owner-current-work,.owner-customer-experience-card){padding:20px!important;margin-bottom:12px!important}
+ .owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-main h3{font-size:19px!important}
+ .owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-overview-heading h2{font-size:30px!important}
+}
