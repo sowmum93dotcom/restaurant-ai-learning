@@ -281,7 +281,9 @@ function bindOwnerClerkSession(clerk, documentObject, storage, elements, fetchFu
       });
       return;
     }
-    showOwnerAuthenticationState(elements, "signed-out");
+    // A temporarily missing user while Clerk still has a session is not a sign-out.
+    // Keep private content hidden while the session finishes restoring.
+    showOwnerAuthenticationState(elements, clerk.session ? "loading" : "signed-out");
   };
 
   elements.signIn.addEventListener("click", async function () {
