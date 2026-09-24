@@ -797,3 +797,20 @@
 #business-profile .profile-choice-group textarea:focus-visible{
   border-color:#b48a30!important;outline:2px solid #b48a30;outline-offset:2px;
 }
+
+
+/* Authenticated Overview contrast: the dimensional dark surfaces must not inherit
+   text colours from the earlier light workspace. Signed-out panels stay light. */
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-header :is(.agent-label,.cuisine-type,.owner-account-control>span){color:#d1ddeb}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-header .restaurant-name{color:#fff}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-navigation a{color:#dce6f0}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-navigation a:hover,
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-navigation a:focus-visible{
+  background:#163656;color:#fff;
+}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-navigation a.is-active,
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-navigation .owner-public-destination{color:#f0cf72}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) :is(.owner-identity-card,.owner-next-action,.owner-current-work,.owner-customer-experience-card) :is(h3,strong){color:#fff}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) :is(.owner-identity-card,.owner-next-action,.owner-current-work,.owner-customer-experience-card) :is(p,li,span){color:#dce6f0}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-overview-heading h2{color:#102b46}
+.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-overview-heading p{color:#42566b}
