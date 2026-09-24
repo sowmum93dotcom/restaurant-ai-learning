@@ -480,11 +480,12 @@ function installOwnerBusinessSecurity(windowObject, documentObject, localStorage
             selector.textContent = "";
             selector.disabled = true;
           }
-          if (authenticatedOnThisPage) currentIdentityId = null;
+          // Clerk can emit a temporary empty user while restoring a session.
+          // Do not discard the previous identity or force a reload on restoration.
           return;
         }
 
-        if (authenticatedOnThisPage && (currentIdentityId === null || currentIdentityId !== identityId)) {
+        if (authenticatedOnThisPage && currentIdentityId !== null && currentIdentityId !== identityId) {
           if (selector) {
             selector.textContent = "";
             selector.disabled = true;
