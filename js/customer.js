@@ -947,9 +947,14 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
         } else option.appendChild(image);
         image.addEventListener("error", function () { imageContainer.remove(); }, { once: true });
       }
-      addText(document, option, "h5", "customer-discover-option-name", product.name);
-      addText(document, option, "p", "customer-discover-option-description", product.description);
-      if (product.price) addText(document, option, "p", "customer-discover-option-price", product.priceMode === "from" ? "From " + product.price : product.priceMode === "range" ? "Price range: " + product.price : product.price);
+      const productName = addText(document, option, "h5", "customer-discover-option-name", product.name);
+      productName.setAttribute("dir", "auto");
+      const productDescription = addText(document, option, "p", "customer-discover-option-description", product.description);
+      productDescription.setAttribute("dir", "auto");
+      if (product.price) {
+        const productPrice = addText(document, option, "p", "customer-discover-option-price", product.priceMode === "from" ? "From " + product.price : product.priceMode === "range" ? "Price range: " + product.price : product.price);
+        productPrice.setAttribute("dir", "auto");
+      }
 
       if (product.availability !== "unavailable" && href) {
         const continueAction = document.createElement("a");
