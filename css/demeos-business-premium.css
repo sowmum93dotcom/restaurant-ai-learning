@@ -836,3 +836,41 @@
  .owner-workspace-body.marketing-capability-body .marketing-secondary-sidebar .workspace-nav-item{min-height:46px!important}
  .owner-workspace-body.marketing-capability-body #overview .quick-create-actions button{min-height:70px!important;text-align:left!important}
 }
+
+
+/* Results page: shared reference chrome, readable evidence remains on light surfaces. */
+.owner-workspace-body.business-results-body:has(#owner-authenticated-workspace:not([hidden])) .business-results-main{
+ background:radial-gradient(ellipse at 85% 0%,#173c5b 0%,#091d32 44%,#051321 100%)!important;
+ color:#f8faff!important;
+}
+.owner-workspace-body.business-results-body .business-results-intro{
+ background:linear-gradient(145deg,#173750,#0a2033)!important;
+ border:1px solid rgba(231,188,99,.43)!important;border-radius:16px!important;
+ padding:24px!important;box-shadow:inset 0 1px rgba(255,255,255,.12)!important;
+}
+.owner-workspace-body.business-results-body .business-results-intro h2{
+ color:#fff!important;font-family:Arial,Helvetica,sans-serif!important;font-weight:800!important;letter-spacing:-.035em!important;
+}
+.owner-workspace-body.business-results-body .business-results-intro p{color:#d3dfed!important}
+.owner-workspace-body.business-results-body .business-results-intro .workspace-eyebrow{color:#f4d58a!important}
+.owner-workspace-body.business-results-body .business-results-evidence{
+ background:#f7f9fc!important;color:#17334f!important;border:1px solid #d9e2ea!important;
+ border-radius:16px!important;box-shadow:0 12px 30px rgba(0,0,0,.18)!important;
+}
+.owner-workspace-body.business-results-body .business-results-evidence :is(h3,h4,dt,strong){
+ color:#17334f!important;
+}
+.owner-workspace-body.business-results-body .business-results-evidence :is(p,dd,span){
+ color:#334d66!important;
+}
+.owner-workspace-body.business-results-body .business-results-evidence .workspace-eyebrow{color:#87601d!important}
+.owner-workspace-body.business-results-body .business-results-zero{
+ background:#edf3f8!important;color:#17334f!important;border:1px solid #d9e2ea!important;border-radius:12px!important;
+}
+@media(max-width:760px){
+ .owner-workspace-body.business-results-body .business-results-main{padding:18px 12px 30px!important}
+ .owner-workspace-body.business-results-body .business-results-intro{padding:20px!important}
+ .owner-workspace-body.business-results-body .business-results-evidence{padding:16px!important;margin-bottom:12px!important}
+ .owner-workspace-body.business-results-body .demeos-understanding-summary{display:grid!important;grid-template-columns:1fr!important;gap:10px!important}
+ .owner-workspace-body.business-results-body .demeos-understanding-summary>div{min-width:0!important}
+}
