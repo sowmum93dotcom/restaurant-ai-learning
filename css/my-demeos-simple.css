@@ -58,3 +58,6 @@
  .my-demeos-area-enter span{flex:none;font-size:20px}
  .my-demeos-area:nth-child(5){grid-column:1;min-height:0}
 }
+
+/* Visible relationship heading on the dark My DEMEOS surface. */
+.my-demeos-body #relationship-areas-heading{color:#fff;font-family:inherit;font-weight:700;line-height:1.2;text-align:center}
