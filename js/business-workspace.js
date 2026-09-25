@@ -289,22 +289,8 @@ function bindOwnerClerkSession(clerk, documentObject, storage, elements, fetchFu
     showOwnerAuthenticationState(elements, clerk.session ? "loading" : "signed-out");
   };
 
-  elements.signIn.addEventListener("click", async function () {
-    const guidance = documentObject.getElementById("owner-auth-guidance");
-    if (guidance) guidance.textContent = "Opening secure Google sign-in…";
-    try {
-      // Go straight to Google instead of opening Clerk's email-first modal.
-      await clerk.client.signIn.authenticateWithRedirect({
-        strategy: "oauth_google",
-        redirectUrl: "/business-workspace.html?clerk_oauth_callback=1",
-        redirectUrlComplete: "/business-workspace.html"
-      });
-    } catch (_error) {
-      if (guidance) guidance.textContent = "Google sign-in could not start. Use Other sign-in options or contact support.";
-    }
-  });
-  const otherSignIn = documentObject.getElementById("owner-other-sign-in");
-  if (otherSignIn && typeof otherSignIn.addEventListener === "function") otherSignIn.addEventListener("click", function () {
+  // One sign-in entry point: Clerk presents the configured account methods in one dialog.
+  elements.signIn.addEventListener("click", function () {
     return clerk.openSignIn();
   });
   elements.signOut.addEventListener("click", function () {
