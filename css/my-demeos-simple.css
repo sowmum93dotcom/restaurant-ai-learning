@@ -26,7 +26,7 @@
 .my-demeos-area-icon{grid-column:1;grid-row:1/4;color:#f0cf72;font-size:2.7rem;line-height:1}
 .my-demeos-area-title{grid-column:2;margin:0 0 .4rem;color:#fff;font-family:inherit;font-size:1.45rem;font-weight:750}
 .my-demeos-area-copy{grid-column:2;max-width:34rem;color:#c6d0df;line-height:1.5}
-.my-demeos-area-enter{grid-column:2;margin-top:auto;padding-top:1rem;color:#f0cf72;font-weight:800}
+.my-demeos-area-enter{position:static;inset:auto;grid-column:2;margin-top:auto;padding-top:1rem;color:#f0cf72;font-weight:800}
 .my-demeos-relationship-view{margin-top:2rem;padding:clamp(1.4rem,4vw,2.2rem);border:1px solid rgba(229,189,89,.3);border-radius:16px;background:#031326}
 .my-demeos-relationship-view[hidden]{display:none}
 .my-demeos-relationship-view h2{color:#fff!important;font-size:clamp(2rem,5vw,3rem)}
@@ -54,7 +54,7 @@
  .my-demeos-area-icon{grid-column:1;grid-row:1/4;font-size:27px;line-height:1.25}
  .my-demeos-area-title{grid-column:2;grid-row:1;margin:0;font-size:clamp(1.2rem,5vw,1.5rem);line-height:1.25}
  .my-demeos-area-copy{grid-column:2;grid-row:2;display:block;margin:0;max-width:none;font-size:14px;line-height:1.5}
- .my-demeos-area-enter{grid-column:2;grid-row:3;display:flex;justify-content:space-between;align-items:center;gap:12px;margin:6px 0 0;padding:11px 0 0;border-top:1px solid rgba(229,189,89,.28);font-size:11px;line-height:1.35;letter-spacing:.08em}
+ .my-demeos-area-enter{position:static!important;inset:auto!important;grid-column:2;grid-row:3;display:flex;justify-content:space-between;align-items:center;gap:12px;margin:6px 0 0;padding:11px 0 0;border-top:1px solid rgba(229,189,89,.28);font-size:11px;line-height:1.35;letter-spacing:.08em}
  .my-demeos-area-enter span{flex:none;font-size:20px}
  .my-demeos-area:nth-child(5){grid-column:1;min-height:0}
 }
