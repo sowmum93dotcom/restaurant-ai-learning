@@ -926,6 +926,30 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
         mediaPosition.textContent = (closest + 1) + " / " + items.length;
         mediaPosition.setAttribute("aria-label", "Media " + (closest + 1) + " of " + items.length);
       }, { passive: true });
+      const controls = document.createElement("div");
+      controls.className = "customer-media-controls";
+      controls.setAttribute("aria-label", "Browse business media");
+      [["Previous image or video", -1, "←"], ["Next image or video", 1, "→"]].forEach(function (control) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "customer-media-control";
+        button.setAttribute("aria-label", control[0]);
+        button.textContent = control[2];
+        button.addEventListener("click", function () {
+          const items = Array.from(mediaRegion.children);
+          const regionStart = mediaRegion.getBoundingClientRect().left;
+          let closest = 0;
+          let distance = Infinity;
+          items.forEach(function (item, index) {
+            const difference = Math.abs(item.getBoundingClientRect().left - regionStart);
+            if (difference < distance) { distance = difference; closest = index; }
+          });
+          const target = items[Math.max(0, Math.min(items.length - 1, closest + control[1]))];
+          if (target) mediaRegion.scrollBy({ left: target.getBoundingClientRect().left - regionStart, behavior: "smooth" });
+        });
+        controls.appendChild(button);
+      });
+      message.appendChild(controls);
     }
   }
 
