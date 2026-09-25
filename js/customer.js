@@ -886,13 +886,13 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
     mediaRegion.className = "customer-work-media";
     mediaRegion.setAttribute("role", "list");
     mediaRegion.setAttribute("aria-label", `Media from ${work.businessName}`);
-    work.media.forEach(function (asset) {
+    work.media.forEach(function (asset, mediaIndex) {
       const media = asset.kind === "video" ? document.createElement("video") : document.createElement("img");
       media.className = "customer-work-media-item " + (asset.role === "primary" ? "is-primary" : "is-supporting");
       media.setAttribute("role", "listitem");
       media.src = asset.deliveryUrl;
       if (asset.kind === "video") { media.controls = true; media.preload = "metadata"; media.playsInline = true; }
-      else { media.alt = `Approved media from ${work.businessName}`; media.loading = "lazy"; media.decoding = "async"; }
+      else { media.alt = `Approved media from ${work.businessName}`; media.loading = anchorJourney && mediaIndex === 0 ? "eager" : "lazy"; media.decoding = "async"; if (anchorJourney && mediaIndex === 0) media.fetchPriority = "high"; }
       const relatedProduct = asset.purpose === "product" && asset.relatedEntityId && Array.isArray(work.products)
         ? work.products.find(function (product) { return product.productId === asset.relatedEntityId; }) : null;
       if (relatedProduct) media.setAttribute("data-related-product-id", relatedProduct.productId);
