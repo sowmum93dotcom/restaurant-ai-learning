@@ -892,7 +892,7 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
       media.setAttribute("role", "listitem");
       media.src = asset.deliveryUrl;
       if (asset.kind === "video") { media.controls = true; media.preload = "metadata"; media.playsInline = true; }
-      else media.alt = `Approved media from ${work.businessName}`;
+      else { media.alt = `Approved media from ${work.businessName}`; media.loading = "lazy"; media.decoding = "async"; }
       const relatedProduct = asset.purpose === "product" && asset.relatedEntityId && Array.isArray(work.products)
         ? work.products.find(function (product) { return product.productId === asset.relatedEntityId; }) : null;
       if (relatedProduct) media.setAttribute("data-related-product-id", relatedProduct.productId);
