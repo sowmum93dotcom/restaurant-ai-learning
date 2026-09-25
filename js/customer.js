@@ -1020,6 +1020,22 @@ function renderCustomerWork(document, work, customerPackages, participationRecor
     const card = createCustomerWorkCard(document, item, validPackages, participationRecorder, index === 0);
     card.setAttribute("data-discover-position", String(index + 1));
     card.setAttribute("tabindex", "0");
+    card.addEventListener("keydown", function (event) {
+      if (event.target !== card || !["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) return;
+      if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+        const next = list.children[index + (event.key === "ArrowDown" ? 1 : -1)];
+        if (!next) return;
+        event.preventDefault();
+        next.focus();
+        next.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        return;
+      }
+      const mediaRegion = card.querySelector(".customer-work-media");
+      if (!mediaRegion || mediaRegion.children.length < 2) return;
+      event.preventDefault();
+      const direction = event.key === "ArrowRight" ? 1 : -1;
+      mediaRegion.scrollBy({ left: direction * mediaRegion.clientWidth, behavior: "smooth" });
+    });
     card.setAttribute("aria-label", `${item.businessName} — Discover item ${index + 1} of ${validWork.length}`);
     const context = card.firstElementChild || card.children[0];
     const position = context && Array.from(context.children || []).find(function (child) { return child.className === "customer-discover-position"; });
