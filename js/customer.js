@@ -1022,7 +1022,7 @@ async function recordParticipation(work) {
 function renderCustomerWork(document, work, customerPackages, participationRecorder) {
   const status = document.getElementById("customer-work-status");
   const list = document.getElementById("customer-work-list");
-  const navigationHint = document.querySelector(".customer-discover-navigation-hint");
+  const navigationHint = typeof document.querySelector === "function" ? document.querySelector(".customer-discover-navigation-hint") : null;
   list.textContent = "";
   const validWork = getValidCustomerWork(work);
   if (navigationHint) navigationHint.hidden = !validWork.length;
@@ -1099,7 +1099,7 @@ async function loadCustomerWork(document, fetcher, location) {
     if (discoverRequestVersions.get(document) !== version) return;
     // A failed refresh must not leave previously rendered business content visible.
     document.getElementById("customer-work-list").textContent = "";
-    const navigationHint = document.querySelector(".customer-discover-navigation-hint");
+    const navigationHint = typeof document.querySelector === "function" ? document.querySelector(".customer-discover-navigation-hint") : null;
     if (navigationHint) navigationHint.hidden = true;
     status.className = "customer-empty-state customer-load-error";
     status.textContent = "DEMEOS could not load Discover right now. ";
