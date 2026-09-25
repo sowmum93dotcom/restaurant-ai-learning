@@ -92,3 +92,7 @@
 .customer-body #discover .customer-discover-option-image {display:block;aspect-ratio:1 / 1;object-fit:cover;max-width:100%}
 .customer-body #discover .customer-discover-option-name,.customer-body #discover .customer-discover-option-description {overflow-wrap:anywhere}
 .customer-body #discover .customer-product-continue-action {margin-top:auto;min-height:44px;display:flex;align-items:center;justify-content:center;text-align:center}
+
+/* Match navigation guidance to the available input method. */
+.customer-body .customer-discover-touch-hint {display:none}
+@media(hover:none) and (pointer:coarse){.customer-body .customer-discover-keyboard-hint {display:none}.customer-body .customer-discover-touch-hint {display:inline}}
