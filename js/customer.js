@@ -1072,12 +1072,17 @@ function getDiscoverRequest(location) {
     : { url: "/api/customer/work", options: undefined, testMode: false };
 }
 
+const discoverRequestVersions = new WeakMap();
+
 async function loadCustomerWork(document, fetcher, location) {
+  const version = (discoverRequestVersions.get(document) || 0) + 1;
+  discoverRequestVersions.set(document, version);
   const status = document.getElementById("customer-work-status");
   const request = getDiscoverRequest(location);
   try {
     const response = await fetcher(request.url, request.options);
     const data = await response.json();
+    if (discoverRequestVersions.get(document) !== version) return;
     if (!response.ok || !data || !Array.isArray(data.work) || (request.testMode ? data.testMode !== true : data.testMode === true)) throw new Error();
     if (request.testMode && data.testMode === true) {
       status.className = "customer-work-status customer-test-content-status";
@@ -1089,6 +1094,7 @@ async function loadCustomerWork(document, fetcher, location) {
       status.textContent = "CONTROLLED TEST CONTENT — not live business content";
     }
   } catch (error) {
+    if (discoverRequestVersions.get(document) !== version) return;
     // A failed refresh must not leave previously rendered business content visible.
     document.getElementById("customer-work-list").textContent = "";
     status.className = "customer-empty-state customer-load-error";
