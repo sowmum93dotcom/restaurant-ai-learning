@@ -918,8 +918,9 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
         const items = Array.from(mediaRegion.children);
         let closest = 0;
         let distance = Infinity;
+        const regionStart = mediaRegion.getBoundingClientRect().left;
         items.forEach(function (item, index) {
-          const difference = Math.abs(item.offsetLeft - items[0].offsetLeft - mediaRegion.scrollLeft);
+          const difference = Math.abs(item.getBoundingClientRect().left - regionStart);
           if (difference < distance) { distance = difference; closest = index; }
         });
         mediaPosition.textContent = (closest + 1) + " / " + items.length;
