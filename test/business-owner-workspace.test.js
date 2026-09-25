@@ -238,12 +238,11 @@ test("restoring Clerk session keeps workspace private without showing another si
   assert.equal(elements.signedIn.hidden, true);
 });
 
-test("owner sign-in control retains OAuth callback integration", function () {
+test("owner sign-in uses configured Clerk dialog and retains callback handling", function () {
   assert.match(html, /id="owner-sign-in"[^>]*>Sign in</);
-  assert.match(script, /strategy: "oauth_google"/);
-  assert.match(script, /clerk\.client\.signIn\.authenticateWithRedirect/);
+  assert.match(script, /clerk\.openSignIn\(\)/);
   assert.match(script, /clerk\.handleRedirectCallback/);
-  assert.ok(script.includes('redirectUrlComplete: "/business-workspace.html"'));
+  assert.match(script, /signInFallbackRedirectUrl: "\/business-workspace\.html"/);
 });
 
 test("Clerk browser SDK uses current v6 bundle with Clerk UI support", function () {
