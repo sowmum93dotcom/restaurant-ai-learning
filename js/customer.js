@@ -603,7 +603,8 @@ function getLocalGreeting(value) {
 function getPreferredLanguage(navigatorValue) {
   if (!navigatorValue || typeof navigatorValue !== "object") return "en";
   const languages = Array.isArray(navigatorValue.languages) ? navigatorValue.languages : [];
-  return normalizedRequiredString(languages[0]) || normalizedRequiredString(navigatorValue.language) || "en";
+  const preferred = languages.map(normalizedRequiredString).find(Boolean);
+  return preferred || normalizedRequiredString(navigatorValue.language) || "en";
 }
 
 function normalizedCustomerIntention(value) {
