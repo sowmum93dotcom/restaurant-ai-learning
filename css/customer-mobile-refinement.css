@@ -1,0 +1,32 @@
+/* Customer Experience mobile presentation. Loaded last to resolve earlier layout overrides. */
+@media (max-width: 680px) {
+ .customer-body .customer-header-inner {display:grid;grid-template-columns:64px minmax(0,1fr);gap:10px;align-items:center;width:100%;padding:10px 14px;min-height:76px}
+ .customer-body .customer-brand .demeos-logo {width:62px;height:auto}
+ .customer-body .customer-journey-nav {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch;gap:5px;min-width:0;width:100%}
+ .customer-body .customer-journey-nav a,
+ .customer-body .customer-journey-nav a:nth-child(2),
+ .customer-body .customer-journey-nav a:nth-child(3) {display:flex;align-items:center;justify-content:center;min-width:0;min-height:44px;padding:8px 4px;border:1px solid rgba(205,166,93,.38);border-radius:9px;background:#0d2745;color:#f5f7fc;font-size:clamp(10px,2.65vw,12px);font-weight:700;line-height:1.25;letter-spacing:0;white-space:normal;text-align:center;text-decoration:none;overflow-wrap:normal}
+ .customer-body .customer-journey-nav a:after {content:none!important;display:none!important}
+ .customer-body .customer-journey-nav a.is-current,
+ .customer-body .customer-journey-nav a[aria-current="page"] {background:#d4aa61;color:#10253c;border-color:#e8c785}
+ .customer-body .customer-journey-nav a:focus-visible {outline:3px solid #f0ca7c;outline-offset:2px}
+ .customer-body .customer-intention {padding:24px 14px 36px;min-height:0}
+ .customer-body .customer-intention-inner {width:100%}
+ .customer-body .customer-intention-form {width:100%;margin:20px auto 0}
+ .customer-body .customer-intention-form fieldset,
+ .customer-body .customer-intention-options {display:block;min-height:0;padding:0;margin:0}
+ .customer-body .customer-intention-form fieldset:before,
+ .customer-body .customer-intention-form fieldset:after,
+ .customer-body .customer-intention-options:before,
+ .customer-body .customer-intention-options:after {content:none!important;display:none!important}
+ .customer-body .customer-intention-options {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ .customer-body .customer-intention-option:nth-child(n) {position:relative;inset:auto;display:flex;align-items:center;justify-content:center;transform:none;width:100%;min-width:0;min-height:70px;margin:0;padding:12px 10px;border:1px solid #547394;border-radius:12px;background:linear-gradient(155deg,#12395f,#0a2340);color:#f5f8fc;font-size:14px;line-height:1.35;box-shadow:none}
+ .customer-body .customer-intention-option:nth-child(6) {grid-column:auto}
+ .customer-body .customer-intention-option:before {content:none;display:none}
+ .customer-body .customer-intention-option[aria-pressed="true"] {background:#173e69;border:2px solid #e4b963;box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
+ .customer-body .customer-intention-detail {width:100%;margin:16px 0 0;padding:0;text-align:left}
+ .customer-body .customer-intention-detail label {margin-bottom:8px;font-size:14px;line-height:1.4}
+ .customer-body .customer-intention-detail textarea {display:block;width:100%;min-height:96px;padding:13px 14px;border-radius:12px;font-size:16px;line-height:1.45;resize:vertical}
+ .customer-body .customer-context-actions {width:100%;margin:14px 0 0;gap:10px}
+ .customer-body .customer-location-button,.customer-body .customer-continue-button {min-height:48px}
+}
