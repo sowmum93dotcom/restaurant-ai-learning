@@ -874,3 +874,65 @@
  .owner-workspace-body.business-results-body .demeos-understanding-summary{display:grid!important;grid-template-columns:1fr!important;gap:10px!important}
  .owner-workspace-body.business-results-body .demeos-understanding-summary>div{min-width:0!important}
 }
+
+
+/* Business Profile iPhone accessibility correction: consistent light form surfaces.
+   Scoped to the authenticated owner profile; does not change data or authentication. */
+.owner-workspace-body #business-profile .business-profile-section,
+.owner-workspace-body #business-profile .business-profile-card,
+.owner-workspace-body #business-profile .profile-card,
+.owner-workspace-body #business-profile .profile-long-field,
+.owner-workspace-body #business-profile .profile-choice-group,
+.owner-workspace-body #business-profile .profile-accuracy-confirmation,
+.owner-workspace-body #business-profile .business-products-manager,
+.owner-workspace-body #business-profile .business-media-manager{
+  background:#f7f9fc!important;color:#17334f!important;
+  border-color:#d9e2ea!important;
+}
+.owner-workspace-body #business-profile .profile-step{
+  background:#f7f9fc!important;color:#17334f!important;
+}
+.owner-workspace-body #business-profile :is(
+  .profile-long-field,.profile-choice-group,.profile-accuracy-confirmation,
+  .business-products-manager,.business-media-manager
+) :is(label,legend,h3,h4,strong,p,small,span),
+.owner-workspace-body #business-profile .profile-choice-grid label,
+.owner-workspace-body #business-profile .business-products-customer-connection{
+  color:#17334f!important;
+}
+.owner-workspace-body #business-profile .profile-long-field>p,
+.owner-workspace-body #business-profile .profile-step-heading p{
+  color:#435970!important;
+}
+.owner-workspace-body #business-profile .profile-choice-grid label,
+.owner-workspace-body #business-profile .profile-accuracy-confirmation label{
+  background:#fff!important;border:1px solid #d9e2ea!important;
+  border-radius:10px!important;padding:10px 12px!important;
+  display:flex!important;align-items:center!important;gap:12px!important;
+  line-height:1.4!important;min-height:46px!important;
+}
+.owner-workspace-body #business-profile :is(input[type="checkbox"],input[type="radio"]){
+  flex:0 0 auto!important;accent-color:#b88932!important;
+}
+.owner-workspace-body #business-profile :is(input:not([type="checkbox"]):not([type="radio"]),select,textarea){
+  background:#fff!important;color:#14283d!important;border:1px solid #aebed0!important;
+  border-radius:10px!important;max-width:100%!important;
+}
+.owner-workspace-body #business-profile :is(input,textarea)::placeholder{color:#617187!important;opacity:1!important}
+.owner-workspace-body #business-profile :is(input,select,textarea):focus-visible{
+  outline:3px solid #bd8c36!important;outline-offset:2px!important;
+}
+.owner-workspace-body #business-profile .business-product-form-actions button{
+  color:#17334f!important;background:#fff!important;border:1px solid #b88932!important;
+}
+@media(max-width:760px){
+  .owner-workspace-body #business-profile .business-profile-section{padding:16px 12px!important}
+  .owner-workspace-body #business-profile .profile-long-field,
+  .owner-workspace-body #business-profile .profile-choice-group,
+  .owner-workspace-body #business-profile .profile-accuracy-confirmation{
+    padding:14px!important;margin-bottom:12px!important;
+  }
+  .owner-workspace-body #business-profile textarea{min-height:104px!important;height:auto!important}
+  .owner-workspace-body #business-profile .profile-choice-grid{display:grid!important;grid-template-columns:1fr!important;gap:8px!important}
+  .owner-workspace-body #business-profile .profile-choice-grid label{margin:0!important}
+}
