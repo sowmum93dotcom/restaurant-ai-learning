@@ -65,6 +65,6 @@ test("public customer requests retain the minimized server-authoritative contrac
   assert.match(source, /body: JSON\.stringify\(\{ action: "Interested" \}\)/);
   assert.doesNotMatch(source, /businessId|ownerId|campaignId|localStorage/);
   assert.match(source, /Nothing to discover just yet/);
-  assert.match(source, /DEMEOS could not load Discover right now\\. /);
+  assert.ok(source.includes("DEMEOS could not load Discover right now."));
   assert.match(source, /retry.textContent = "Try again"/);
 });
