@@ -30,3 +30,17 @@
  .customer-body .customer-context-actions {width:100%;margin:14px 0 0;gap:10px}
  .customer-body .customer-location-button,.customer-body .customer-continue-button {min-height:48px}
 }
+
+/* Discover product photography: consistent square crops without stretching business media. */
+.customer-body .customer-product-image-frame,
+.customer-body .customer-product-no-image {aspect-ratio:1 / 1}
+.customer-body .customer-product-image-frame img {width:100%;height:100%;object-fit:cover}
+@media(max-width:680px){
+ .customer-body .customer-discover-option-image {width:92px;height:92px;aspect-ratio:1 / 1;object-fit:cover}
+ .customer-body .customer-work-card .customer-discover-option {grid-template-rows:auto auto auto auto;align-content:start}
+ .customer-body .customer-product-image-frame,
+ .customer-body .customer-product-no-image {aspect-ratio:1 / 1}
+}
+@media(prefers-reduced-motion:reduce){
+ .customer-body .customer-product-image-frame img {transition:none}
+}
