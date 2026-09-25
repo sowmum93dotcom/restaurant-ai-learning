@@ -107,3 +107,8 @@
 /* A visible direction cue beside the existing live media counter. */
 .customer-body #discover .customer-media-position {display:flex;align-items:center;justify-content:flex-end;gap:.65rem;color:#26384e;opacity:1}
 .customer-body #discover .customer-media-position::after {content:"← swipe →";font-size:.78rem;font-weight:700;letter-spacing:0;color:#26384e}
+
+/* Explicit gallery controls supplement swipe and keyboard navigation. */
+.customer-body #discover .customer-media-controls {display:flex;justify-content:flex-end;gap:10px;margin:8px 0 0}
+.customer-body #discover .customer-media-control {display:grid;place-items:center;width:48px;height:44px;border:1px solid #b78d38;border-radius:12px;background:#102c4b;color:#fff;font:inherit;font-size:1.4rem;font-weight:700;cursor:pointer}
+.customer-body #discover .customer-media-control:focus-visible {outline:3px solid #e5bd59;outline-offset:3px}
