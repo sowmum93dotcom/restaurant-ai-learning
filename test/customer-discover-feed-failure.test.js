@@ -10,7 +10,9 @@ function createDiscoverDocument() {
     children: [],
     appendChild(child) { this.children.push(child); }
   };
+  const navigationHint = { hidden: true };
   const document = {
+    querySelector(selector) { return selector === ".customer-discover-navigation-hint" ? navigationHint : null; },
     getElementById(id) {
       return id === "customer-work-list" ? list : id === "customer-work-status" ? status : null;
     },
@@ -19,7 +21,7 @@ function createDiscoverDocument() {
       return { type: "", className: "", textContent: "", disabled: false, addEventListener(event, callback) { this[event] = callback; } };
     }
   };
-  return { document, list, status };
+  return { document, list, status, navigationHint };
 }
 
 test("failed Discover request clears previously displayed cards and offers retry", async () => {
@@ -66,4 +68,36 @@ test("older successful response cannot replace newer Discover state", async () =
   await older;
   assert.equal(status.className, "customer-empty-state");
   assert.equal(status.children.length, 0);
+});
+
+test("empty Discover keeps navigation guidance hidden", async () => {
+  const { document, navigationHint } = createDiscoverDocument();
+  navigationHint.hidden = false;
+  await loadCustomerWork(document, async () => ({
+    ok: true,
+    json: async () => ({ work: [] })
+  }), { search: "" });
+  assert.equal(navigationHint.hidden, true);
+});
+
+test("failed Discover refresh hides previously visible navigation guidance", async () => {
+  const { document, navigationHint } = createDiscoverDocument();
+  navigationHint.hidden = false;
+  await loadCustomerWork(document, async () => { throw new Error("offline"); }, { search: "" });
+  assert.equal(navigationHint.hidden, true);
+});
+
+test("outdated failed request cannot hide newer navigation state", async () => {
+  const { document, navigationHint } = createDiscoverDocument();
+  let rejectOlder;
+  const older = loadCustomerWork(document, () => new Promise((resolve, reject) => { rejectOlder = reject; }), { search: "" });
+  const newer = loadCustomerWork(document, async () => ({
+    ok: true,
+    json: async () => ({ work: [] })
+  }), { search: "" });
+  await newer;
+  navigationHint.hidden = false;
+  rejectOlder(new Error("late failure"));
+  await older;
+  assert.equal(navigationHint.hidden, false);
 });
