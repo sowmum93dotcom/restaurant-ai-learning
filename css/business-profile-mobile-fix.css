@@ -27,3 +27,27 @@ body.owner-workspace-body #business-profile .business-products-manager-summary>*
  body.owner-workspace-body #business-profile .profile-choice-grid {grid-template-columns:1fr!important}
  body.owner-workspace-body #business-profile .business-media-manager {padding:14px!important}
 }
+
+/* Screenshot follow-up: target the actual nested upload element, not only its parent. */
+body.owner-workspace-body #business-profile .business-media-upload {
+ background:#eef3f9!important;border:1px solid #ccd9e8!important;border-radius:12px!important;
+ padding:16px!important;color:#19334f!important;box-shadow:none!important;
+}
+body.owner-workspace-body #business-profile .business-media-upload :is(label,p,small,strong),
+body.owner-workspace-body #business-profile .business-media-upload #business-media-status {
+ color:#19334f!important;opacity:1!important;text-shadow:none!important;
+}
+body.owner-workspace-body #business-profile .business-media-upload label {display:block!important;font-weight:700!important;margin-bottom:10px!important}
+body.owner-workspace-body #business-profile .business-media-upload input[type=file] {
+ display:block!important;box-sizing:border-box!important;width:100%!important;max-width:100%!important;
+ padding:12px!important;border:1px solid #b9c9db!important;border-radius:10px!important;
+ background:#fff!important;color:#19334f!important;font-size:16px!important;
+}
+body.owner-workspace-body #business-profile .business-media-upload p {line-height:1.5!important;margin:10px 0!important}
+body.owner-workspace-body #business-profile .business-media-upload button {width:100%!important;min-height:48px!important;margin-top:8px!important;background:#19334f!important;color:#fff!important;border:1px solid #19334f!important;border-radius:10px!important;font-weight:700!important}
+body.owner-workspace-body #business-profile .business-media-upload button:disabled {opacity:.55!important}
+@media(max-width:760px) {
+ body.owner-workspace-body #business-profile .business-media-upload {padding:14px!important}
+ body.owner-workspace-body #business-profile .business-media-manager {margin-bottom:8px!important}
+ body.owner-workspace-body #business-profile .business-media-manager #business-media-empty {margin:12px 0 0!important}
+}
