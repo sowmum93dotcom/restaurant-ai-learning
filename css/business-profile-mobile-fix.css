@@ -51,3 +51,18 @@ body.owner-workspace-body #business-profile .business-media-upload button:disabl
  body.owner-workspace-body #business-profile .business-media-manager {margin-bottom:8px!important}
  body.owner-workspace-body #business-profile .business-media-manager #business-media-empty {margin:12px 0 0!important}
 }
+
+/* Marketing workspace readability: screenshots show dark text inherited on navy surfaces. */
+body.owner-workspace-body.marketing-capability-body .owner-workspace-header .workspace-identity :is(.agent-label,.restaurant-name,.cuisine-type){color:#f4f7fc!important;opacity:1!important}
+body.owner-workspace-body.marketing-capability-body .marketing-workspace-main .view-heading h2,
+body.owner-workspace-body.marketing-capability-body .marketing-workspace-main .view-heading p,
+body.owner-workspace-body.marketing-capability-body .marketing-workspace-main .view-heading .workspace-eyebrow,
+body.owner-workspace-body.marketing-capability-body .marketing-workspace-main #overview .view-heading h2,
+body.owner-workspace-body.marketing-capability-body .marketing-workspace-main #recommends .view-heading h2{color:#f4f7fc!important;opacity:1!important;text-shadow:none!important}
+body.owner-workspace-body.marketing-capability-body .marketing-workspace-main .view-heading .workspace-eyebrow{color:#f0cc7b!important}
+body.owner-workspace-body.marketing-capability-body .marketing-workspace-main .view-heading p{color:#d5e0ed!important}
+@media(max-width:760px){
+ body.owner-workspace-body.marketing-capability-body .marketing-workspace-main .view-heading{margin-bottom:20px!important}
+ body.owner-workspace-body.marketing-capability-body .marketing-workspace-main .view-heading h2{font-size:clamp(30px,8vw,42px)!important;line-height:1.13!important;overflow-wrap:anywhere}
+ body.owner-workspace-body.marketing-capability-body .marketing-workspace-main .view-heading p{font-size:15px!important;line-height:1.5!important}
+}
