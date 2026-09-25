@@ -1050,7 +1050,18 @@ async function loadCustomerWork(document, fetcher, location) {
     }
   } catch (error) {
     status.className = "customer-empty-state customer-load-error";
-    status.textContent = "DEMEOS could not load Discover right now. Please try again.";
+    status.textContent = "DEMEOS could not load Discover right now. ";
+    const retry = document.createElement("button");
+    retry.type = "button";
+    retry.className = "customer-discover-retry";
+    retry.textContent = "Try again";
+    retry.addEventListener("click", async function () {
+      retry.disabled = true;
+      status.className = "customer-work-status";
+      status.textContent = "Loading Discover…";
+      await loadCustomerWork(document, fetcher, location);
+    });
+    status.appendChild(retry);
   }
 }
 
