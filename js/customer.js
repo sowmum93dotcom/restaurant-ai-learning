@@ -1038,7 +1038,7 @@ async function loadCustomerWork(document, fetcher, location) {
   try {
     const response = await fetcher(request.url, request.options);
     const data = await response.json();
-    if (!response.ok || !data || !Array.isArray(data.work)) throw new Error();
+    if (!response.ok || !data || !Array.isArray(data.work) || (request.testMode && data.testMode !== true)) throw new Error();
     if (request.testMode && data.testMode === true) {
       status.className = "customer-work-status customer-test-content-status";
       status.textContent = "CONTROLLED TEST CONTENT — not live business content";
