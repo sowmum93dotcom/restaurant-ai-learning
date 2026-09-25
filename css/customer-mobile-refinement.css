@@ -86,3 +86,9 @@
 
 /* Let each Discover business card follow its content instead of reserving a near-screen-height empty panel. */
 .customer-body #discover .customer-work-card {min-height:0;height:auto}
+
+/* Consistent product tile alignment across varied business descriptions. */
+.customer-body #discover .customer-discover-option {display:flex;flex-direction:column;align-items:stretch;min-width:0;box-sizing:border-box}
+.customer-body #discover .customer-discover-option-image {display:block;aspect-ratio:1 / 1;object-fit:cover;max-width:100%}
+.customer-body #discover .customer-discover-option-name,.customer-body #discover .customer-discover-option-description {overflow-wrap:anywhere}
+.customer-body #discover .customer-product-continue-action {margin-top:auto;min-height:44px;display:flex;align-items:center;justify-content:center;text-align:center}
