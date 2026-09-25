@@ -149,7 +149,7 @@ test("Discover fails safely when approved work cannot be loaded", async function
   });
   const status = document.elements["customer-work-status"];
   assert.equal(status.className, "customer-empty-state customer-load-error");
-  assert.equal(status.textContent, "DEMEOS could not load Discover right now. Please try again.");
+  assert.equal(status.textContent, "DEMEOS could not load Discover right now. Try again");
   assert.equal(document.elements["customer-work-list"].children.length, 0);
 });
 
