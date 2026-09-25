@@ -34,3 +34,27 @@
 .my-demeos-meaning,.my-demeos-relationship-view p{color:#c6d0df}
 .my-demeos-body .customer-footer{border-top:1px solid rgba(174,187,208,.24);background:#020b18}
 @media(max-width:760px){.my-demeos-body .customer-brand span{display:none}.my-demeos-main{width:min(100% - 28px,1120px);padding:2.5rem 0 4rem}.my-demeos-sign-in-status{margin-top:2rem;padding:1.5rem}.my-demeos-sign-in-status .demeos-primary-button{width:100%;min-width:0}.my-demeos-areas{grid-template-columns:1fr}.my-demeos-area:nth-child(5){grid-column:auto}.my-demeos-area:nth-child(n){grid-template-columns:52px 1fr;min-height:0;padding:1.25rem}.my-demeos-area-icon{font-size:2rem}}
+
+/* Mobile screenshot correction: separate card text/actions and remove crossed navigation underline. */
+@media(max-width:760px){
+ .my-demeos-body .customer-header-inner{display:grid;grid-template-columns:64px minmax(0,1fr);align-items:center;gap:10px;width:100%;min-height:76px;padding:9px 14px}
+ .my-demeos-body .customer-brand .demeos-logo{width:62px;height:62px}
+ .my-demeos-body .customer-journey-nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;min-width:0;width:100%;align-items:stretch}
+ .my-demeos-body .customer-journey-nav a,.my-demeos-body .customer-journey-nav a:nth-child(2),.my-demeos-body .customer-journey-nav a:nth-child(3){display:flex;align-items:center;justify-content:center;min-width:0;min-height:44px;padding:8px 3px;border:1px solid rgba(205,166,93,.38);border-radius:9px;background:#0d2745;color:#f5f7fc;font-size:clamp(10px,2.65vw,12px);font-weight:700;line-height:1.25;letter-spacing:0;white-space:normal;text-align:center;text-decoration:none}
+ .my-demeos-body .customer-journey-nav a:after{content:none!important;display:none!important}
+ .my-demeos-body .customer-journey-nav a.is-current{background:#d4aa61;border-color:#e8c785;color:#10253c}
+ .my-demeos-body .customer-journey-nav a:focus-visible{outline:3px solid #f0ca7c;outline-offset:2px}
+ .my-demeos-main{width:calc(100% - 28px);padding:36px 0 54px}
+ .my-demeos-introduction h1{font-size:clamp(2.6rem,10vw,4rem);line-height:1.12}
+ .my-demeos-sign-in-status{padding:22px 16px}
+ .my-demeos-sign-in-status h2{font-size:clamp(1.45rem,6vw,1.8rem);line-height:1.25}
+ .my-demeos-section-heading h2:not(.sr-only){color:#fff}
+ .my-demeos-areas{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;padding:0;margin-top:22px;min-height:0}
+ .my-demeos-area:nth-child(n){position:relative!important;inset:auto!important;display:grid;grid-template-columns:40px minmax(0,1fr);grid-template-rows:auto auto auto;column-gap:13px;row-gap:7px;align-items:start;width:100%!important;min-height:0;padding:18px 16px;border-radius:14px;transform:none!important}
+ .my-demeos-area-icon{grid-column:1;grid-row:1/4;font-size:27px;line-height:1.25}
+ .my-demeos-area-title{grid-column:2;grid-row:1;margin:0;font-size:clamp(1.2rem,5vw,1.5rem);line-height:1.25}
+ .my-demeos-area-copy{grid-column:2;grid-row:2;display:block;margin:0;max-width:none;font-size:14px;line-height:1.5}
+ .my-demeos-area-enter{grid-column:2;grid-row:3;display:flex;justify-content:space-between;align-items:center;gap:12px;margin:6px 0 0;padding:11px 0 0;border-top:1px solid rgba(229,189,89,.28);font-size:11px;line-height:1.35;letter-spacing:.08em}
+ .my-demeos-area-enter span{flex:none;font-size:20px}
+ .my-demeos-area:nth-child(5){grid-column:1;min-height:0}
+}
