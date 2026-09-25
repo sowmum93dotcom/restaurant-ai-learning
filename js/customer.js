@@ -999,6 +999,8 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
   intentionAction.textContent = "Tell DEMEOS what I want";
   participation.append(participationCopy, intentionAction);
 
+  // Preserve the journey anchor and honest empty-state copy while compacting media-only options.
+  if (!Array.isArray(work.products) || !work.products.length) choice.className += " customer-choice-empty";
   card.append(context, message, choice, participation);
   return card;
 }

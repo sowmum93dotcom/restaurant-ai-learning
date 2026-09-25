@@ -96,3 +96,7 @@
 /* Match navigation guidance to the available input method. */
 .customer-body .customer-discover-touch-hint {display:none}
 @media(hover:none) and (pointer:coarse){.customer-body .customer-discover-keyboard-hint {display:none}.customer-body .customer-discover-touch-hint {display:inline}}
+
+/* Compact the honest empty options state without removing its journey anchor. */
+.customer-body #discover .customer-choice-empty {padding-top:.65rem;padding-bottom:.65rem}
+.customer-body #discover .customer-choice-empty .customer-package-region {margin-top:0;padding-bottom:0}
