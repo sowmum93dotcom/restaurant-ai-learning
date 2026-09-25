@@ -41,3 +41,29 @@ test("invalid live response clears stale cards rather than showing test content"
   assert.equal(status.className, "customer-empty-state customer-load-error");
   assert.equal(status.children[0].textContent, "Try again");
 });
+
+test("older failed request cannot clear a newer successful Discover state", async () => {
+  const { document, list, status } = createDiscoverDocument();
+  let rejectOlder;
+  const older = loadCustomerWork(document, () => new Promise((resolve, reject) => { rejectOlder = reject; }), { search: "" });
+  const newer = loadCustomerWork(document, async () => ({ ok: true, json: async () => ({ work: [] }) }), { search: "" });
+  await newer;
+  assert.equal(status.className, "customer-empty-state");
+  rejectOlder(new Error("older network failure"));
+  await older;
+  assert.equal(status.className, "customer-empty-state");
+  assert.equal(status.children.length, 0);
+  assert.equal(list.textContent, "");
+});
+
+test("older successful response cannot replace newer Discover state", async () => {
+  const { document, status } = createDiscoverDocument();
+  let resolveOlder;
+  const older = loadCustomerWork(document, () => new Promise(resolve => { resolveOlder = resolve; }), { search: "" });
+  const newer = loadCustomerWork(document, async () => ({ ok: true, json: async () => ({ work: [] }) }), { search: "" });
+  await newer;
+  resolveOlder({ ok: true, json: async () => ({ work: [{ businessName: "Stale business" }] }) });
+  await older;
+  assert.equal(status.className, "customer-empty-state");
+  assert.equal(status.children.length, 0);
+});
