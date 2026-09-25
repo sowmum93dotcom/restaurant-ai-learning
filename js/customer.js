@@ -1089,6 +1089,8 @@ async function loadCustomerWork(document, fetcher, location) {
       status.textContent = "CONTROLLED TEST CONTENT — not live business content";
     }
   } catch (error) {
+    // A failed refresh must not leave previously rendered business content visible.
+    document.getElementById("customer-work-list").textContent = "";
     status.className = "customer-empty-state customer-load-error";
     status.textContent = "DEMEOS could not load Discover right now. ";
     const retry = document.createElement("button");
