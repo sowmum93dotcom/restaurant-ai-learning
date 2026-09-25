@@ -720,3 +720,157 @@
  background:#fff!important;color:#14202b!important;border:1px solid #bac8d7!important;
 }
 .owner-workspace-body #business-profile :is(input,textarea)::placeholder{color:#657589!important;opacity:1}
+
+
+/* Reference-design restoration: scoped to the owner overview; no authentication or data changes. */
+.owner-workspace-body:has(#owner-overview-heading):has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-main{
+  background:radial-gradient(ellipse at 85% 0%,#173c5b 0%,#091d32 44%,#051321 100%)!important;
+  color:#f7f9fd!important;
+}
+.owner-workspace-body:has(#owner-overview-heading):has(#owner-authenticated-workspace:not([hidden])) .owner-overview-heading h2,
+.owner-workspace-body:has(#owner-overview-heading):has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-main h3,
+.owner-workspace-body:has(#owner-overview-heading):has(#owner-authenticated-workspace:not([hidden])) .owner-next-action-content>strong{
+  color:#fff!important;
+}
+.owner-workspace-body:has(#owner-overview-heading):has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-main p,
+.owner-workspace-body:has(#owner-overview-heading):has(#owner-authenticated-workspace:not([hidden])) .owner-overview-heading p:last-child,
+.owner-workspace-body:has(#owner-overview-heading):has(#owner-authenticated-workspace:not([hidden])) .owner-business-identity{
+  color:#d3dfed!important;
+}
+.owner-workspace-body:has(#owner-overview-heading):has(#owner-authenticated-workspace:not([hidden])) :is(.owner-next-action,.owner-identity-card,.owner-current-work,.owner-customer-experience-card){
+  background:linear-gradient(145deg,#173750 0%,#0c2339 58%,#071727 100%)!important;
+  border:1px solid rgba(231,188,99,.43)!important;
+  border-radius:18px!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.13),0 16px 35px rgba(0,0,0,.23)!important;
+}
+.owner-workspace-body:has(#owner-overview-heading):has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-main .demeos-primary-button{
+  background:linear-gradient(115deg,#f5d98c,#c9963c)!important;
+  border:1px solid #f4d58a!important;
+  color:#112337!important;
+}
+.owner-workspace-body:has(#owner-overview-heading):has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-main .demeos-secondary-button{
+  background:rgba(9,30,49,.8)!important;
+  border:1px solid rgba(237,198,110,.65)!important;
+  color:#fff!important;
+}
+.owner-workspace-body:has(#owner-overview-heading):has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-header .restaurant-name{
+  color:#fff!important;
+}
+@media(max-width:760px){
+ .owner-workspace-body:has(#owner-overview-heading):has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-main{padding:20px 14px 30px!important}
+ .owner-workspace-body:has(#owner-overview-heading):has(#owner-authenticated-workspace:not([hidden])) :is(.owner-next-action,.owner-identity-card,.owner-current-work,.owner-customer-experience-card){padding:20px!important;margin-bottom:12px!important}
+ .owner-workspace-body:has(#owner-overview-heading):has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-main h3{font-size:19px!important}
+ .owner-workspace-body:has(#owner-overview-heading):has(#owner-authenticated-workspace:not([hidden])) .owner-overview-heading h2{font-size:30px!important}
+}
+
+
+/* Authenticated overview composition: approved preview translated to real routes and data. */
+.owner-workspace-body:has(#owner-overview-heading) .owner-workspace-main>section[aria-labelledby="owner-overview-heading"]{
+ display:grid!important;grid-template-columns:minmax(0,1.45fr) minmax(270px,1fr)!important;gap:14px!important;max-width:1240px!important;align-items:stretch;
+}
+.owner-workspace-body:has(#owner-overview-heading) :is(.owner-overview-heading,.owner-identity-card,.owner-explore){grid-column:1/-1!important;grid-row:auto!important;width:100%!important;margin:0!important}
+.owner-workspace-body:has(#owner-overview-heading) .owner-overview-heading{margin:0 0 5px!important}
+.owner-workspace-body:has(#owner-overview-heading) .owner-overview-heading h2{font-family:Arial,Helvetica,sans-serif!important;font-weight:800!important;letter-spacing:-.035em!important}
+.owner-workspace-body:has(#owner-overview-heading) .owner-next-action{grid-column:1!important;grid-row:auto!important;width:100%!important;min-height:240px!important;margin:0!important}
+.owner-workspace-body:has(#owner-overview-heading) .owner-current-work{grid-column:2!important;grid-row:auto!important;width:100%!important;min-height:240px!important;margin:0!important}
+.owner-workspace-body:has(#owner-overview-heading) .owner-customer-experience-card{grid-column:1/-1!important;grid-row:auto!important;width:100%!important;margin:0!important}
+.owner-workspace-body:has(#owner-overview-heading) .owner-explore{padding:10px 0 0}
+.owner-workspace-body:has(#owner-overview-heading) .owner-explore h3{margin:0 0 4px!important;font-size:21px!important;color:#fff!important}
+.owner-workspace-body:has(#owner-overview-heading) .owner-explore>p{margin:0 0 15px!important;color:#d3dfed!important}
+.owner-workspace-body:has(#owner-overview-heading) .owner-explore-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.owner-workspace-body:has(#owner-overview-heading) .owner-explore-grid a{display:flex;flex-direction:column;align-items:center;text-align:center;gap:9px;justify-content:center;min-height:175px;padding:16px 10px;border:1px solid rgba(231,188,99,.48);border-radius:14px;background:linear-gradient(145deg,#18394e,#0a2033 75%,#243444);color:#fff;box-shadow:inset 0 1px rgba(255,255,255,.12)}
+.owner-workspace-body:has(#owner-overview-heading) .owner-explore-grid a:hover,.owner-workspace-body:has(#owner-overview-heading) .owner-explore-grid a:focus-visible{border-color:#f4d58a;background:#1c425b;outline:2px solid #f4d58a;outline-offset:2px}
+.owner-workspace-body:has(#owner-overview-heading) .owner-explore-grid span{font-size:30px;color:#f5cf83}
+.owner-workspace-body:has(#owner-overview-heading) .owner-explore-grid strong{font-size:13px;line-height:1.3}
+.owner-workspace-body:has(#owner-overview-heading) .owner-explore-grid small{font-size:11px;color:#d3dfed;line-height:1.4}
+.owner-workspace-body:has(#owner-overview-heading) .owner-explore-grid b{border:1px solid #e8bd72;border-radius:50%;width:25px;height:25px;line-height:23px;color:#f5cf83;font-size:16px}
+@media(max-width:980px){
+.owner-workspace-body:has(#owner-overview-heading) .owner-workspace-main>section[aria-labelledby="owner-overview-heading"]{grid-template-columns:1fr!important}
+.owner-workspace-body:has(#owner-overview-heading) :is(.owner-overview-heading,.owner-identity-card,.owner-next-action,.owner-current-work,.owner-explore,.owner-customer-experience-card){grid-column:1!important;grid-row:auto!important;order:initial!important}
+.owner-workspace-body:has(#owner-overview-heading) .owner-explore-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.owner-workspace-body:has(#owner-overview-heading) .owner-explore-grid a{min-height:155px}
+}
+
+
+/* Shared owner marketing chrome: navy and gold outside the readable form/evidence surfaces. */
+.owner-workspace-body.marketing-capability-body:has(#owner-authenticated-workspace:not([hidden])) .marketing-capability-main{
+ background:radial-gradient(ellipse at 85% 0%,#173c5b 0%,#091d32 44%,#051321 100%)!important;
+ color:#f8faff!important;
+}
+.owner-workspace-body.marketing-capability-body .marketing-capability-heading{
+ padding:0 0 12px!important;margin-bottom:14px!important;
+}
+.owner-workspace-body.marketing-capability-body .marketing-capability-heading h2{
+ color:#fff!important;font-family:Arial,Helvetica,sans-serif!important;font-weight:800!important;letter-spacing:-.035em!important;
+}
+.owner-workspace-body.marketing-capability-body .marketing-capability-heading>p{color:#d3dfed!important}
+.owner-workspace-body.marketing-capability-body .marketing-secondary-sidebar{
+ border:1px solid rgba(231,188,99,.4)!important;border-radius:14px!important;
+ background:linear-gradient(145deg,#173750,#0a2033)!important;box-shadow:inset 0 1px rgba(255,255,255,.12)!important;
+}
+.owner-workspace-body.marketing-capability-body .marketing-secondary-sidebar .workspace-menu-toggle{
+ color:#f6d38d!important;border-color:#c9a063!important;background:#102a40!important;
+}
+.owner-workspace-body.marketing-capability-body .marketing-secondary-sidebar .workspace-nav-item{
+ color:#e7eef7!important;background:#112a40!important;border:1px solid rgba(231,188,99,.25)!important;border-radius:9px!important;
+}
+.owner-workspace-body.marketing-capability-body .marketing-secondary-sidebar .workspace-nav-item.is-active,
+.owner-workspace-body.marketing-capability-body .marketing-secondary-sidebar .workspace-nav-item[aria-current="page"]{
+ color:#112337!important;background:linear-gradient(110deg,#ffe2a1,#c58d36)!important;border-color:#f4d58a!important;
+}
+.owner-workspace-body.marketing-capability-body #overview .quick-create-actions button{
+ background:linear-gradient(145deg,#173750,#0a2033)!important;border:1px solid rgba(231,188,99,.5)!important;
+ color:#fff!important;border-radius:12px!important;min-height:88px!important;
+}
+.owner-workspace-body.marketing-capability-body #overview .quick-create-actions button :is(strong,span){
+ color:#fff!important;
+}
+.owner-workspace-body.marketing-capability-body #overview .quick-create-actions button span{color:#d3dfed!important}
+.owner-workspace-body.marketing-capability-body #overview .quick-create-actions button:focus-visible{
+ outline:3px solid #f4d58a!important;outline-offset:3px!important;
+}
+@media(max-width:760px){
+ .owner-workspace-body.marketing-capability-body .marketing-capability-main{padding:18px 12px 28px!important}
+ .owner-workspace-body.marketing-capability-body .marketing-secondary-sidebar{padding:10px!important}
+ .owner-workspace-body.marketing-capability-body .marketing-secondary-sidebar .workspace-navigation.is-open{gap:8px!important}
+ .owner-workspace-body.marketing-capability-body .marketing-secondary-sidebar .workspace-nav-item{min-height:46px!important}
+ .owner-workspace-body.marketing-capability-body #overview .quick-create-actions button{min-height:70px!important;text-align:left!important}
+}
+
+
+/* Results page: shared reference chrome, readable evidence remains on light surfaces. */
+.owner-workspace-body.business-results-body:has(#owner-authenticated-workspace:not([hidden])) .business-results-main{
+ background:radial-gradient(ellipse at 85% 0%,#173c5b 0%,#091d32 44%,#051321 100%)!important;
+ color:#f8faff!important;
+}
+.owner-workspace-body.business-results-body .business-results-intro{
+ background:linear-gradient(145deg,#173750,#0a2033)!important;
+ border:1px solid rgba(231,188,99,.43)!important;border-radius:16px!important;
+ padding:24px!important;box-shadow:inset 0 1px rgba(255,255,255,.12)!important;
+}
+.owner-workspace-body.business-results-body .business-results-intro h2{
+ color:#fff!important;font-family:Arial,Helvetica,sans-serif!important;font-weight:800!important;letter-spacing:-.035em!important;
+}
+.owner-workspace-body.business-results-body .business-results-intro p{color:#d3dfed!important}
+.owner-workspace-body.business-results-body .business-results-intro .workspace-eyebrow{color:#f4d58a!important}
+.owner-workspace-body.business-results-body .business-results-evidence{
+ background:#f7f9fc!important;color:#17334f!important;border:1px solid #d9e2ea!important;
+ border-radius:16px!important;box-shadow:0 12px 30px rgba(0,0,0,.18)!important;
+}
+.owner-workspace-body.business-results-body .business-results-evidence :is(h3,h4,dt,strong){
+ color:#17334f!important;
+}
+.owner-workspace-body.business-results-body .business-results-evidence :is(p,dd,span){
+ color:#334d66!important;
+}
+.owner-workspace-body.business-results-body .business-results-evidence .workspace-eyebrow{color:#87601d!important}
+.owner-workspace-body.business-results-body .business-results-zero{
+ background:#edf3f8!important;color:#17334f!important;border:1px solid #d9e2ea!important;border-radius:12px!important;
+}
+@media(max-width:760px){
+ .owner-workspace-body.business-results-body .business-results-main{padding:18px 12px 30px!important}
+ .owner-workspace-body.business-results-body .business-results-intro{padding:20px!important}
+ .owner-workspace-body.business-results-body .business-results-evidence{padding:16px!important;margin-bottom:12px!important}
+ .owner-workspace-body.business-results-body .demeos-understanding-summary{display:grid!important;grid-template-columns:1fr!important;gap:10px!important}
+ .owner-workspace-body.business-results-body .demeos-understanding-summary>div{min-width:0!important}
+}
