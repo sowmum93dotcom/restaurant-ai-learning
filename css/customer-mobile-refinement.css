@@ -81,3 +81,5 @@
 .customer-body .customer-discover-navigation-hint {display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 18px;margin:10px auto 18px;padding:10px 14px;width:fit-content;max-width:100%;border:1px solid rgba(205,166,93,.35);border-radius:12px;background:rgba(13,39,69,.06);font-size:.86rem;font-weight:650;line-height:1.4;text-align:center}
 .customer-body .customer-discover-navigation-hint span {white-space:normal}
 @media(max-width:680px){.customer-body .customer-discover-navigation-hint {width:100%;gap:6px 12px;font-size:.78rem;padding:10px}}
+
+.customer-body .customer-discover-navigation-hint[hidden] {display:none!important}
