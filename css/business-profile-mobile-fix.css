@@ -66,3 +66,19 @@ body.owner-workspace-body.marketing-capability-body .marketing-workspace-main .v
  body.owner-workspace-body.marketing-capability-body .marketing-workspace-main .view-heading h2{font-size:clamp(30px,8vw,42px)!important;line-height:1.13!important;overflow-wrap:anywhere}
  body.owner-workspace-body.marketing-capability-body .marketing-workspace-main .view-heading p{font-size:15px!important;line-height:1.5!important}
 }
+
+/* Authenticated Marketing header: override inherited dark title on navy. */
+body.owner-workspace-body.marketing-capability-body .owner-workspace-header .workspace-identity h1.restaurant-name {
+ color:#ffffff!important;-webkit-text-fill-color:#ffffff!important;opacity:1!important;text-shadow:none!important;
+}
+body.owner-workspace-body.marketing-capability-body .owner-workspace-header .workspace-identity p.agent-label {
+ color:#d6e1ee!important;-webkit-text-fill-color:#d6e1ee!important;opacity:1!important;
+}
+body.owner-workspace-body.marketing-capability-body .owner-workspace-header .workspace-identity p.cuisine-type {
+ color:#d6e1ee!important;-webkit-text-fill-color:#d6e1ee!important;opacity:1!important;
+}
+@media(max-width:760px){
+ body.owner-workspace-body.marketing-capability-body .owner-workspace-header .workspace-identity{min-width:0!important;flex:1 1 auto!important}
+ body.owner-workspace-body.marketing-capability-body .owner-workspace-header .workspace-identity h1.restaurant-name{font-size:16px!important;line-height:1.3!important;overflow-wrap:break-word}
+ body.owner-workspace-body.marketing-capability-body .owner-workspace-header .workspace-identity p.agent-label{font-size:10px!important;line-height:1.3!important;letter-spacing:.07em!important}
+}
