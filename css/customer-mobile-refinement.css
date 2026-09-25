@@ -83,3 +83,6 @@
 @media(max-width:680px){.customer-body .customer-discover-navigation-hint {width:100%;gap:6px 12px;font-size:.78rem;padding:10px}}
 
 .customer-body .customer-discover-navigation-hint[hidden] {display:none!important}
+
+/* Let each Discover business card follow its content instead of reserving a near-screen-height empty panel. */
+.customer-body #discover .customer-work-card {min-height:0;height:auto}
