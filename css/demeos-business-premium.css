@@ -936,3 +936,43 @@
   .owner-workspace-body #business-profile .profile-choice-grid{display:grid!important;grid-template-columns:1fr!important;gap:8px!important}
   .owner-workspace-body #business-profile .profile-choice-grid label{margin:0!important}
 }
+
+
+/* Business Profile structure V2: scoped presentation only, no field or data changes. */
+#business-profile .view-heading h2{color:#fff!important}
+#business-profile .view-heading p{color:#d4e1ee!important}
+#business-profile .business-profile-section{background:#f7f9fc!important;color:#172b42!important;border:1px solid #d9e2ed!important;border-radius:20px!important;box-shadow:0 16px 38px rgba(4,18,36,.13)!important}
+#business-profile .business-profile-section>h3{color:#152e48!important;font-size:clamp(1.35rem,3vw,1.75rem)!important;letter-spacing:-.025em!important}
+#business-profile .business-profile-intro{color:#465a70!important}
+#business-profile .business-profile-progress{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important;margin:22px 0!important}
+#business-profile .business-profile-progress a{display:flex!important;align-items:center!important;min-height:54px!important;padding:12px 14px!important;background:#fff!important;color:#17324e!important;border:1px solid #d8e1ed!important;border-left:3px solid #bd9143!important;border-radius:10px!important;font-weight:700!important;text-decoration:none!important;line-height:1.3!important}
+#business-profile .business-profile-progress a:focus-visible{outline:3px solid #bd9143!important;outline-offset:3px!important}
+#business-profile .business-selector{background:#edf3f9!important;border:1px solid #d4dfeb!important;border-radius:14px!important;padding:16px!important;gap:12px!important}
+#business-profile .business-selector label,#business-profile .profile-fields>div>label{color:#17324e!important;font-weight:700!important}
+#business-profile .profile-fields>div:not(.profile-long-field):not(.profile-accuracy-confirmation){min-width:0!important}
+#business-profile .profile-fields>div:not(.profile-long-field):not(.profile-accuracy-confirmation)>input{width:100%!important}
+#business-profile .profile-step{background:#152b44!important;border:1px solid #ad843c!important;border-left:4px solid #d6a951!important;border-radius:14px!important;padding:18px!important;margin:26px 0 14px!important}
+#business-profile .profile-step .profile-step-heading h4{color:#fff!important;font-size:1.12rem!important}
+#business-profile .profile-step .profile-step-heading p{color:#d9e4ef!important}
+#business-profile .profile-step .profile-step-heading>span{color:#172b42!important;background:#f7eacb!important}
+#business-profile .profile-fields>div>label{display:block!important;margin:0 0 8px!important}
+#business-profile .profile-fields :is(select,input:not([type="checkbox"]):not([type="radio"])){min-height:46px!important;font-size:1rem!important}
+#business-profile .profile-fields select,#business-profile .business-selector select{width:100%!important;max-width:100%!important;min-height:46px!important;padding:10px 12px!important;background:#fff!important;color:#172b42!important;border:1px solid #aebed0!important;border-radius:10px!important}
+#business-profile .profile-fields textarea{min-height:100px!important;resize:vertical!important}
+#business-profile .profile-long-field{border-radius:12px!important}
+#business-profile .business-products-manager-summary{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important}
+#business-profile .business-products-manager-summary>*{min-width:0!important;margin:0!important}
+#business-profile .business-media-manager :is(label,p,small,strong){color:#17324e!important}
+@media(max-width:760px){
+ #business-profile .view-heading{margin-bottom:16px!important}
+ #business-profile .business-profile-section{padding:18px 14px!important}
+ #business-profile .business-profile-progress{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+ #business-profile .business-profile-progress a{min-height:52px!important;padding:10px!important;font-size:.88rem!important}
+ #business-profile .business-selector{display:grid!important;grid-template-columns:1fr!important}
+ #business-profile .business-selector>*{width:100%!important;min-width:0!important}
+ #business-profile .profile-fields{gap:12px!important}
+ #business-profile .profile-step{padding:15px!important;margin:20px 0 8px!important}
+ #business-profile .business-products-manager-summary{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important}
+ #business-profile .business-products-manager-summary>*{padding:10px 7px!important}
+ #business-profile .profile-fields textarea{min-height:96px!important}
+}
