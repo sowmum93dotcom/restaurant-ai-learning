@@ -540,3 +540,31 @@ test("Discover mobile follows the approved image-first reference layout", functi
   assert.match(css, /\.customer-work-card \.customer-participation\{order:4/);
   assert.match(css, /grid-template-columns:92px minmax\(0,1fr\)/);
 });
+
+
+test("Discover gallery buttons move to the adjacent media item without leaving the gallery", function () {
+  const document = fakeDocument();
+  const card = createCustomerWorkCard(document, {
+    workItemId: "gallery-a", businessName: "North Star", content: "Approved media",
+    participationAction: "Interested",
+    media: [
+      { assetId: "a", kind: "image", role: "primary", deliveryUrl: "https://cdn.example.com/a.webp" },
+      { assetId: "b", kind: "image", role: "supporting", deliveryUrl: "https://cdn.example.com/b.webp" }
+    ]
+  }, [], async function () {});
+  const message = card.children[1];
+  const region = message.children.find((child) => child.className === "customer-work-media");
+  const controls = message.children.find((child) => child.className === "customer-media-controls");
+  assert.equal(controls.children.length, 2);
+  assert.equal(controls.children[0].attributes["aria-label"], "Previous image or video");
+  assert.equal(controls.children[1].attributes["aria-label"], "Next image or video");
+  region.getBoundingClientRect = () => ({ left: 0 });
+  region.children[0].getBoundingClientRect = () => ({ left: 0 });
+  region.children[1].getBoundingClientRect = () => ({ left: 300 });
+  const moves = [];
+  region.scrollBy = (options) => moves.push(options);
+  controls.children[1].listeners.click();
+  assert.deepEqual(moves[0], { left: 300, behavior: "smooth" });
+  controls.children[0].listeners.click();
+  assert.deepEqual(moves[1], { left: 0, behavior: "smooth" });
+});
