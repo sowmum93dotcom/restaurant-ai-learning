@@ -73,3 +73,6 @@
 .customer-body .customer-discover-retry {min-height:44px;padding:10px 18px;border:1px solid #b78d38;border-radius:10px;background:#e8bf55;color:#071326;font:inherit;font-weight:800;cursor:pointer}
 .customer-body .customer-discover-retry:focus-visible {outline:3px solid #245e9a;outline-offset:3px}
 .customer-body .customer-discover-retry:disabled {opacity:.65;cursor:wait}
+
+/* Compact media position beneath each multi-item business gallery. */
+.customer-body .customer-media-position {margin:6px 0 0;text-align:end;font-size:.8rem;font-weight:700;letter-spacing:.06em;font-variant-numeric:tabular-nums;color:inherit;opacity:.8}

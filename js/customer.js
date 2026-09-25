@@ -911,6 +911,21 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
       } else mediaRegion.appendChild(media);
     });
     message.appendChild(mediaRegion);
+    if (work.media.length > 1) {
+      const mediaPosition = addText(document, message, "p", "customer-media-position", "1 / " + work.media.length);
+      mediaPosition.setAttribute("aria-label", "Media 1 of " + work.media.length);
+      mediaRegion.addEventListener("scroll", function () {
+        const items = Array.from(mediaRegion.children);
+        let closest = 0;
+        let distance = Infinity;
+        items.forEach(function (item, index) {
+          const difference = Math.abs(item.offsetLeft - items[0].offsetLeft - mediaRegion.scrollLeft);
+          if (difference < distance) { distance = difference; closest = index; }
+        });
+        mediaPosition.textContent = (closest + 1) + " / " + items.length;
+        mediaPosition.setAttribute("aria-label", "Media " + (closest + 1) + " of " + items.length);
+      }, { passive: true });
+    }
   }
 
   const choice = document.createElement("section");
