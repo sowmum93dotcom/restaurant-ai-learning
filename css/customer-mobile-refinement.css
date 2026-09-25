@@ -100,3 +100,10 @@
 /* Compact the honest empty options state without removing its journey anchor. */
 .customer-body #discover .customer-choice-empty {padding-top:.65rem;padding-bottom:.65rem}
 .customer-body #discover .customer-choice-empty .customer-package-region {margin-top:0;padding-bottom:0}
+
+/* Make swipe instructions legible against the light Discover surface. */
+.customer-body #discover .customer-discover-navigation-hint {background:#102c4b;color:#fff;border-color:#b78d38;box-shadow:0 3px 12px rgba(7,19,38,.14)}
+.customer-body #discover .customer-discover-navigation-hint span {color:inherit;opacity:1}
+/* A visible direction cue beside the existing live media counter. */
+.customer-body #discover .customer-media-position {display:flex;align-items:center;justify-content:flex-end;gap:.65rem;color:#26384e;opacity:1}
+.customer-body #discover .customer-media-position::after {content:"← swipe →";font-size:.78rem;font-weight:700;letter-spacing:0;color:#26384e}
