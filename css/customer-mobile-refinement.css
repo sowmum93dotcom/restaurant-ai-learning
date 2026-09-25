@@ -44,3 +44,26 @@
 @media(prefers-reduced-motion:reduce){
  .customer-body .customer-product-image-frame img {transition:none}
 }
+
+/* Discover media carousel: deliberate horizontal paging and visible keyboard focus. */
+.customer-body .customer-work-media {
+  scroll-snap-type:x mandatory;
+  scroll-padding-inline:0;
+  overscroll-behavior-inline:contain;
+  -webkit-overflow-scrolling:touch;
+}
+.customer-body .customer-work-media > .customer-work-media-link,
+.customer-body .customer-work-media > .customer-work-media-item {
+  scroll-snap-align:start;
+  scroll-snap-stop:always;
+}
+.customer-body .customer-work-media-link:focus-visible {
+  outline:3px solid #d4aa61;
+  outline-offset:-3px;
+  border-radius:14px;
+}
+@media(max-width:680px){
+ .customer-body .customer-work-media {gap:10px}
+ .customer-body .customer-work-media > .customer-work-media-link,
+ .customer-body .customer-work-media > .customer-work-media-item {flex:0 0 100%;max-width:100%;min-width:0}
+}
