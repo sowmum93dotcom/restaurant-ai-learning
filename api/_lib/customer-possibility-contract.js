@@ -219,7 +219,12 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
     if (work.fulfilment) possibility.fulfilment = work.fulfilment;
     if (work.operationalAvailability) possibility.operationalAvailability = work.operationalAvailability;
     if (Array.isArray(work.products) && work.products.length) {
-      const relevantProducts = relevantProductsForCustomer(work.products, customerTerms);
+      const relevantProducts = relevantProductsForCustomer(work.products, customerTerms)
+        .filter(function (product) {
+          if (!additionalRequirements.size) return true;
+          const productTerms = meaningfulTerms([product.name, product.description].join(" "));
+          return [...additionalRequirements, ...primaryRequirements].every(function (term) { return productTerms.has(term); });
+        });
       if (relevantProducts.length) possibility.products = relevantProducts;
     }
     if (work.informationSource === "business-provided") possibility.informationSource = "business-provided";
