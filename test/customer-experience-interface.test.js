@@ -755,3 +755,8 @@ test("tablet intention layout removes orbital lines and keeps six choices in a t
   assert.match(rules, /\.customer-intention-options\s*\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
   assert.match(rules, /\.customer-intention-option:nth-child\(n\)\s*\{position:relative;inset:auto;transform:none/);
 });
+
+test("Discover touch guidance explains both business and media navigation", function () {
+  const html = fs.readFileSync(path.join(__dirname, "..", "customer.html"), "utf8");
+  assert.match(html, /Swipe up or down between businesses · swipe left or right through media/);
+});
