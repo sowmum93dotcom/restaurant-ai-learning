@@ -87,6 +87,19 @@ function excludedCustomerTerms(customerText) {
   return excluded;
 }
 
+// An explicit "with" clause states additional customer requirements, not merely
+// optional ranking preferences. Require published evidence for each meaningful
+// term; otherwise leave the offer out rather than imply the requirement is met.
+function explicitAdditionalRequirements(customerText) {
+  const words = String(customerText || "").toLocaleLowerCase("en").match(/[\p{L}\p{N}]+/gu) || [];
+  const index = words.indexOf("with");
+  if (index < 0) return new Set();
+  const end = words.findIndex(function (word, position) {
+    return position > index && ["without", "excluding", "avoid", "except"].includes(word);
+  });
+  return meaningfulTerms(words.slice(index + 1, end < 0 ? undefined : end).join(" "));
+}
+
 function evidencedConcepts(customerTerms, contentTerms) {
   return SOLUTION_CONCEPTS.filter(function (concept) {
     return concept.terms.some(function (term) { return customerTerms.has(term); }) &&
@@ -144,6 +157,7 @@ function stablePossibilityId(workItemId) {
 
 function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_POSSIBILITIES, storedPreferences = [], storedFeedback = []) {
   const excludedTerms = excludedCustomerTerms(understanding.customerText);
+  const additionalRequirements = explicitAdditionalRequirements(understanding.customerText);
   const customerTerms = meaningfulTerms([understanding.intention, understanding.customerText].join(" "));
   excludedTerms.forEach(function (term) { customerTerms.delete(term); });
   const guidanceTerms = preferenceTerms(storedPreferences);
@@ -161,6 +175,7 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
     // Validated product information is also business evidence. A specific product
     // can satisfy a request even when the campaign headline is generic.
     const offerTerms = new Set([...contentTerms, ...productTerms]);
+    if (Array.from(additionalRequirements).some(function (term) { return !offerTerms.has(term); })) return;
     const evidence = Array.from(customerTerms).filter(function (term) { return offerTerms.has(term); }).sort();
     const concepts = evidencedConcepts(customerTerms, offerTerms);
     // Generic token overlap alone is not a defensible connection. Require either
@@ -197,5 +212,5 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
 
 module.exports = {
   FIELD_LIMITS, MAX_POSSIBILITIES, SUPPORTED_INTENTIONS, findCustomerPossibilities,
-  evidencedConcepts, excludedCustomerTerms, feedbackGuidance, meaningfulTerms, preferenceTerms, productRelevance, relevantProductsForCustomer, stablePossibilityId, validateConfirmedUnderstanding
+  evidencedConcepts, explicitAdditionalRequirements, excludedCustomerTerms, feedbackGuidance, meaningfulTerms, preferenceTerms, productRelevance, relevantProductsForCustomer, stablePossibilityId, validateConfirmedUnderstanding
 };

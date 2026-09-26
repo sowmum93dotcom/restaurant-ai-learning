@@ -103,9 +103,25 @@ test("multiple customer requirements are not represented as fully satisfied by p
   const results = findCustomerPossibilities(request("bicycle repair with home collection and weekend service"), [
     offer("partial-repair", "Bicycle repair and servicing", "Bicycle repair", "Repair service")
   ]);
-  assert.equal(results.length, 1);
-  const message = customerRelevanceMessage(results[0]);
+  assert.equal(results.length, 0);
+  const message = customerRelevanceMessage({ relevance: { evidence: ["bicycle", "repair"] } });
   assert.match(message, /Matching evidence/);
   assert.match(message, /not confirmation that all your requirements are met/);
   assert.doesNotMatch(message, /home collection confirmed|weekend service confirmed/i);
+});
+
+test("explicit additional requirements need matching business evidence", function () {
+  const results = findCustomerPossibilities(request("bicycle repair with home collection and weekend service"), [
+    offer("partial", "Bicycle repair service", "Bicycle repair", "Repair service"),
+    offer("complete", "Bicycle repair service with home collection and weekend service", "Bicycle repair", "Repair service")
+  ]);
+  assert.deepEqual(results.map(item => item.workItemId), ["complete"]);
+});
+
+test("an exclusion after a with clause is not treated as a positive requirement", function () {
+  const results = findCustomerPossibilities(request("dinner with family without peanuts"), [
+    offer("safe", "Family dinner", "Family dinner", "Seasonal dishes"),
+    offer("unsafe", "Family dinner with peanuts", "Family dinner", "Peanut dishes")
+  ]);
+  assert.deepEqual(results.map(item => item.workItemId), ["safe"]);
 });
