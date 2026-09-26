@@ -178,9 +178,25 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
     // Validated product information is also business evidence. A specific product
     // can satisfy a request even when the campaign headline is generic.
     const offerTerms = new Set([...contentTerms, ...productTerms]);
-    if (Array.from(additionalRequirements).some(function (term) { return !offerTerms.has(term); })) return;
-    const evidence = Array.from(customerTerms).filter(function (term) { return offerTerms.has(term); }).sort();
-    const concepts = evidencedConcepts(customerTerms, offerTerms);
+    // A collection of unrelated products is not proof that one offer satisfies
+    // every explicit requirement. Use a single validated evidence source.
+    const evidenceSources = [contentTerms].concat((Array.isArray(work.products) ? work.products : [])
+      .filter(function (product) { return product && product.availability !== "unavailable"; })
+      .map(function (product) { return meaningfulTerms([product.name, product.description].join(" ")); }));
+    const matchingSources = additionalRequirements.size
+      ? evidenceSources.filter(function (terms) {
+        return Array.from(additionalRequirements).every(function (term) { return terms.has(term); });
+      })
+      : [offerTerms];
+    if (!matchingSources.length) return;
+    const matchedTerms = matchingSources.reduce(function (best, terms) {
+      const evidence = Array.from(customerTerms).filter(function (term) { return terms.has(term); }).sort();
+      const concepts = evidencedConcepts(customerTerms, terms);
+      const strength = evidence.length + concepts.length;
+      return !best || strength > best.strength ? { evidence, concepts, strength } : best;
+    }, null);
+    const evidence = matchedTerms.evidence;
+    const concepts = matchedTerms.concepts;
     // Generic token overlap alone is not a defensible connection. Require either
     // two specific shared expressions or a transparent DEMEOS solution concept.
     if (evidence.length < 2 && concepts.length === 0) return;
