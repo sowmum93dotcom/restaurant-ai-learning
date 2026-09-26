@@ -4,7 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { createCustomerWorkCard, getServerCustomerPackages, getValidCustomerWork,
   getLocalGreeting, getPreferredLanguage, normalizedCustomerIntention, recordParticipation,
-  renderCustomerWork, requestCustomerLocation, selectCustomerIntention, applyCustomerSurfaceRoute, getDiscoverRequest, loadCustomerWork, toCustomerWorkItem } = require("../js/customer.js");
+  renderCustomerWork, requestCustomerPossibilities, requestCustomerLocation, selectCustomerIntention, applyCustomerSurfaceRoute, getDiscoverRequest, loadCustomerWork, toCustomerWorkItem } = require("../js/customer.js");
 const { confirmTrustedCustomer } = require("../js/my-demeos.js");
 
 class Element {
@@ -567,4 +567,26 @@ test("Discover gallery buttons move to the adjacent media item without leaving t
   assert.deepEqual(moves[0], { left: 300, behavior: "smooth" });
   controls.children[0].listeners.click();
   assert.deepEqual(moves[1], { left: 0, behavior: "smooth" });
+});
+
+
+test("a late possibilities response cannot replace the latest customer request", async function () {
+  const document = fakeDocument();
+  const ids = ["customer-possibilities", "customer-possibilities-heading", "customer-possibilities-list",
+    "customer-focused-possibility", "customer-possibility-intention"];
+  ids.forEach((id) => { document.elements[id] = new Element(); });
+  const pending = [];
+  const fetcher = (url) => {
+    if (url === "/api/customer/possibilities") return new Promise((resolve) => pending.push(resolve));
+    throw new Error("Unexpected request");
+  };
+  const first = requestCustomerPossibilities(document, { intention: "First", confidenceState: "confirmed" }, fetcher, {});
+  const second = requestCustomerPossibilities(document, { intention: "Second", confidenceState: "confirmed" }, fetcher, {});
+  assert.equal(pending.length, 2);
+  pending[0]({ ok: true, json: async () => ({ possibilities: [] }) });
+  await first;
+  assert.equal(document.elements["customer-possibilities-heading"].textContent, "DEMEOS is preparing your possibilities…");
+  pending[1]({ ok: false, json: async () => ({ possibilities: [] }) });
+  await second;
+  assert.notEqual(document.elements["customer-possibilities-heading"].textContent, "DEMEOS is preparing your possibilities…");
 });
