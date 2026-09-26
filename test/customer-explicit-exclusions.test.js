@@ -25,3 +25,9 @@ test("understands explicit alternatives and modifiers without excluding positive
   assert.deepEqual(Array.from(excludedCustomerTerms("Food with no added sugar")).sort(), ["sugar"]);
   assert.deepEqual(Array.from(excludedCustomerTerms("Without peanuts and a drink")).sort(), ["peanuts"]);
 });
+
+test("recognises not as a direct exclusion without treating unrelated words as exclusions", function () {
+  assert.deepEqual(Array.from(excludedCustomerTerms("I want dinner, not spicy food")).sort(), ["spicy"]);
+  assert.deepEqual(Array.from(excludedCustomerTerms("A meal that is not spicy or salty")).sort(), ["salty", "spicy"]);
+  assert.deepEqual(Array.from(excludedCustomerTerms("I am not looking for dinner")).sort(), []);
+});
