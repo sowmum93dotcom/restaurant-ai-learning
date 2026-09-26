@@ -133,3 +133,6 @@
 .customer-body .customer-connection-steps span {display:block;padding:13px 14px;border:1px solid #b78d38;border-radius:12px;background:#fff;color:#26384e;line-height:1.45}
 .customer-body .customer-connection-steps strong {color:#102c4b}
 @media(max-width:680px){.customer-body .customer-connection-steps {grid-template-columns:1fr;gap:8px}.customer-body .customer-connection-steps span {padding:11px 13px}}
+
+/* Make the existing validated relevance explanation visible before opening a possibility. */
+.customer-body .customer-possibility-relevance-preview {display:block;margin-top:8px;padding-top:9px;border-top:1px solid rgba(183,141,56,.4);font-size:.85rem;line-height:1.5;overflow-wrap:anywhere}
