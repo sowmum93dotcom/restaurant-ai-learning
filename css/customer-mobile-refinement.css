@@ -142,3 +142,27 @@
 .customer-body .customer-possibilities-error-note {margin:12px 0;color:#26384e;line-height:1.55}
 .customer-body .customer-possibilities-retry {min-height:44px;padding:10px 18px;border:1px solid #b78d38;border-radius:10px;background:#102c4b;color:#fff;font:inherit;font-weight:700;cursor:pointer}
 .customer-body .customer-possibilities-retry:focus-visible {outline:3px solid #e5bd59;outline-offset:3px}
+
+
+/* Tablet intention: use an intentional grid rather than the desktop orbital decoration. */
+@media (min-width:681px) and (max-width:1180px) {
+  .customer-body .customer-intention {padding:28px 24px 48px;min-height:0}
+  .customer-body .customer-intention-inner {width:min(960px,100%)}
+  .customer-body .customer-intention h1 {font-size:clamp(2.5rem,5vw,3.7rem);line-height:1.12}
+  .customer-body .customer-connection-steps {gap:10px;margin:18px 0 24px}
+  .customer-body .customer-connection-steps span {padding:12px;min-height:70px}
+  .customer-body .customer-intention-form {width:100%;margin:18px auto 0}
+  .customer-body .customer-intention-form fieldset,
+  .customer-body .customer-intention-options {display:block;min-height:0;padding:0;margin:0}
+  .customer-body .customer-intention-form fieldset::before,
+  .customer-body .customer-intention-form fieldset::after,
+  .customer-body .customer-intention-options::before,
+  .customer-body .customer-intention-options::after {content:none!important;display:none!important}
+  .customer-body .customer-intention-options {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .customer-body .customer-intention-option:nth-child(n) {position:relative;inset:auto;transform:none;display:flex;align-items:center;justify-content:center;width:100%;min-width:0;min-height:90px;margin:0;padding:14px;border-radius:16px}
+  .customer-body .customer-intention-option:nth-child(n):hover,
+  .customer-body .customer-intention-option:nth-child(n):focus-visible {transform:none}
+  .customer-body .customer-intention-detail {width:100%;margin:20px auto 0;padding:16px;border-radius:18px}
+  .customer-body .customer-intention-detail textarea {min-height:96px;padding:14px 16px}
+  .customer-body .customer-context-actions {width:100%;margin:18px auto 0}
+}
