@@ -199,6 +199,12 @@ function getValidCustomerPossibilities(possibilities) {
   return Array.isArray(possibilities) ? possibilities.map(toCustomerPossibility).filter(Boolean).slice(0, 5) : [];
 }
 
+function customerRelevanceMessage(possibility) {
+  const evidence = possibility && possibility.relevance && possibility.relevance.evidence;
+  if (!Array.isArray(evidence) || !evidence.length) return "Matched against published business information; confirm the details with the business.";
+  return "Published business information matches these terms in your request: " + evidence.join(", ") + ". This does not confirm every requirement; check the business details before proceeding.";
+}
+
 function customerAvailabilityMessage(possibility) {
   const status = possibility.operationalAvailability && possibility.operationalAvailability.status;
   if (status === "available") return "Business reports availability for enquiries; confirm before proceeding.";
@@ -269,7 +275,7 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
     addText(document, focusRegion, "p", "customer-possibility-label", CUSTOMER_STAGE_THREE_COPY.possibilityLabel);
     addText(document, focusRegion, "h3", "customer-focused-content", possibility.content);
     addText(document, focusRegion, "h4", "customer-evidence-heading", CUSTOMER_STAGE_THREE_COPY.why);
-    addText(document, focusRegion, "p", "customer-possibility-evidence", possibility.relevance.explanation);
+    addText(document, focusRegion, "p", "customer-possibility-evidence", customerRelevanceMessage(possibility));
     addText(document, focusRegion, "p", "customer-provider-label", CUSTOMER_STAGE_THREE_COPY.providedBy);
     addText(document, focusRegion, "p", "customer-possibility-provider", possibility.businessName);
     if (possibility.location) addText(document, focusRegion, "p", "customer-possibility-location", possibility.location);
@@ -555,7 +561,7 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
     addText(document, surface, "span", "customer-possibility-preview", possibility.content);
     addText(document, surface, "span", "customer-possibility-provider", CUSTOMER_STAGE_THREE_COPY.providedBy + " " + possibility.businessName);
     addText(document, surface, "span", "customer-availability-status", customerAvailabilityMessage(possibility));
-    if (possibility.relevance && possibility.relevance.explanation) addText(document, surface, "span", "customer-possibility-relevance-preview", "Why this relates to your request: " + possibility.relevance.explanation);
+    addText(document, surface, "span", "customer-possibility-relevance-preview", customerRelevanceMessage(possibility));
     surface.addEventListener("click", function () { showFocused(possibility); });
     list.appendChild(surface);
   });
@@ -1196,7 +1202,7 @@ async function loadCustomerWork(document, fetcher, location) {
 }
 
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { getCustomerProductContinuationHref, CUSTOMER_STAGE_ONE_COPY, CUSTOMER_STAGE_TWO_COPY, CUSTOMER_STAGE_THREE_COPY, CUSTOMER_STAGE_SIX_COPY, CUSTOMER_NO_POSSIBILITIES_COPY, createCustomerWorkCard, getLocalGreeting, getPreferredLanguage,
+  module.exports = { customerRelevanceMessage, customerAvailabilityMessage, getCustomerProductContinuationHref, CUSTOMER_STAGE_ONE_COPY, CUSTOMER_STAGE_TWO_COPY, CUSTOMER_STAGE_THREE_COPY, CUSTOMER_STAGE_SIX_COPY, CUSTOMER_NO_POSSIBILITIES_COPY, createCustomerWorkCard, getLocalGreeting, getPreferredLanguage,
     applyCustomerSurfaceRoute, getDiscoverRequest, getServerCustomerPackages, getValidCustomerPossibilities, getValidCustomerWork, initializeCustomerIntention, loadCustomerWork,
     normalizedCustomerIntention, recordCustomerFeedback, recordParticipation, renderCustomerPossibilities, renderCustomerWork,
     requestCustomerLocation, requestCustomerPossibilities,

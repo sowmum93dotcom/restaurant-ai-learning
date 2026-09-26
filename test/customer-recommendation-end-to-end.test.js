@@ -84,3 +84,16 @@ test("explicit business unavailability blocks matching while unknown status rema
   assert.equal(results[0].operationalAvailability.status, "contact");
   assert.notEqual(results[0].operationalAvailability.status, "available");
 });
+
+test("customer-facing explanation uses only validated matching terms without promising suitability", function () {
+  const { customerRelevanceMessage } = require("../js/customer.js");
+  const matches = findCustomerPossibilities(request("I need bicycle repair"), [
+    offer("repair-explanation", "Our services for local customers", "Bicycle repair", "Bicycle servicing")
+  ]);
+  assert.equal(matches.length, 1);
+  const message = customerRelevanceMessage(matches[0]);
+  assert.match(message, /bicycle/);
+  assert.match(message, /repair/);
+  assert.match(message, /does not confirm every requirement/);
+  assert.doesNotMatch(message, /guaranteed|fully suitable|available now/i);
+});
