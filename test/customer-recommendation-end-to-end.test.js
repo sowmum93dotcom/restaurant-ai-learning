@@ -261,3 +261,12 @@ test("explicit delivery does not attach category-only products to service result
   const results = findCustomerPossibilities(request("bicycle delivery"), [work]);
   assert.deepEqual(results[0].products.map(product => product.productId), ["product-delivery-gallery"]);
 });
+
+test("equal-score possibilities have stable locale-independent identifier order", function () {
+  const first = offer("z-item", "Garden repair service", "Garden repair", "Garden repair service");
+  const second = offer("a-item", "Garden repair service", "Garden repair", "Garden repair service");
+  const results = findCustomerPossibilities(request("garden repair"), [first, second]);
+  assert.deepEqual(results.map(item => item.workItemId), ["a-item", "z-item"]);
+  assert.deepEqual(findCustomerPossibilities(request("garden repair"), [second, first])
+    .map(item => item.workItemId), ["a-item", "z-item"]);
+});
