@@ -6,14 +6,14 @@ body{font-family:Arial,Helvetica,sans-serif}
 .demeos-entry-header{height:104px;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(2rem,6vw,5.5rem)}
 .demeos-entry-brand img{display:block;width:250px;max-height:72px;object-fit:contain;object-position:left center}
 .demeos-entry-signin{padding:.85rem 2rem;border:1px solid var(--gold);border-radius:999px;color:var(--gold2);font-weight:700;text-decoration:none}
-.demeos-entry-hero{min-height:560px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:3rem 1.5rem 4rem}
+.demeos-entry-hero{min-height:420px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2rem 1.5rem 2.5rem}
 .demeos-entry-hero-logo{width:min(320px,55vw);aspect-ratio:1;object-fit:cover;border-radius:30px;box-shadow:0 28px 90px rgba(0,0,0,.35)}
-.demeos-entry-tagline{margin:1.25rem 0 4rem;color:var(--gold2);font-size:.85rem;font-weight:800;letter-spacing:.3em;text-transform:uppercase}
+.demeos-entry-tagline{margin:1.25rem 0 2rem;color:var(--gold2);font-size:.85rem;font-weight:800;letter-spacing:.3em;text-transform:uppercase}
 .demeos-entry-hero h1{margin:0;font-size:clamp(2.8rem,6vw,5.8rem);font-weight:500;letter-spacing:-.055em}
 .demeos-entry-hero h1 span{color:var(--gold2)}
 .demeos-entry-lead{margin:1rem 0 0;color:var(--muted);font-size:clamp(1.1rem,2vw,1.55rem)}
-.demeos-entry-paths{width:min(1080px,calc(100% - 3rem));margin:0 auto;padding:1rem 0 7rem;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1.5rem}
-.demeos-entry-path{min-height:350px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2.5rem;border:1px solid var(--line);border-radius:18px;background:linear-gradient(145deg,rgba(5,29,54,.72),rgba(1,11,23,.78))}
+.demeos-entry-paths{width:min(1080px,calc(100% - 3rem));margin:0 auto;padding:1rem 0 4rem;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1.5rem}
+.demeos-entry-path{min-height:270px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2.5rem;border:1px solid var(--line);border-radius:18px;background:linear-gradient(145deg,rgba(5,29,54,.72),rgba(1,11,23,.78))}
 .demeos-entry-icon{width:64px;height:64px;display:grid;place-items:center;margin-bottom:1.4rem;color:var(--gold2);border:2px solid var(--gold);border-radius:18px;font-size:2rem}
 .demeos-entry-path h2{margin:0;font-size:clamp(1.8rem,3vw,2.7rem);font-weight:500}
 .demeos-entry-path p{margin:.8rem 0 2rem;color:var(--muted);font-size:1.05rem}
@@ -24,4 +24,4 @@ body{font-family:Arial,Helvetica,sans-serif}
 .demeos-entry-footer p{margin:.65rem 0 0}
 .demeos-entry-footer-links{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:1.2rem}
 .demeos-entry-footer-links small{flex-basis:100%;text-align:right}
-@media(max-width:760px){.demeos-entry-header{height:82px;padding:0 1.25rem}.demeos-entry-brand img{width:160px;height:58px}.demeos-entry-signin{padding:.7rem 1.25rem}.demeos-entry-hero{min-height:480px}.demeos-entry-hero-logo{width:min(250px,62vw)}.demeos-entry-tagline{margin-bottom:3rem}.demeos-entry-paths{grid-template-columns:1fr;width:min(92%,620px);padding-bottom:4rem}.demeos-entry-path{min-height:300px}.demeos-entry-footer{align-items:flex-start;flex-direction:column}.demeos-entry-footer-links{justify-content:flex-start}.demeos-entry-footer-links small{text-align:left}}
+@media(max-width:760px){.demeos-entry-header{height:82px;padding:0 1.25rem}.demeos-entry-brand img{width:160px;height:58px}.demeos-entry-signin{padding:.7rem 1.25rem}.demeos-entry-hero{min-height:350px}.demeos-entry-hero-logo{width:min(250px,62vw)}.demeos-entry-tagline{margin-bottom:1.5rem}.demeos-entry-paths{grid-template-columns:1fr;width:min(92%,620px);padding-bottom:4rem}.demeos-entry-path{min-height:250px}.demeos-entry-footer{align-items:flex-start;flex-direction:column}.demeos-entry-footer-links{justify-content:flex-start}.demeos-entry-footer-links small{text-align:left}}
