@@ -202,7 +202,7 @@ function getValidCustomerPossibilities(possibilities) {
 function customerRelevanceMessage(possibility) {
   const evidence = possibility && possibility.relevance && possibility.relevance.evidence;
   if (!Array.isArray(evidence) || !evidence.length) return "Matched against published business information; confirm the details with the business.";
-  return "Published business information matches these terms in your request: " + evidence.join(", ") + ". This does not confirm every requirement; check the business details before proceeding.";
+  return "Matching evidence from published business information: " + evidence.join(", ") + ". This is a possible connection, not confirmation that all your requirements are met. Check any additional requirements directly with the business.";
 }
 
 function customerAvailabilityMessage(possibility) {
