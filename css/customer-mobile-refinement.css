@@ -117,3 +117,13 @@
 .customer-body #discover .customer-media-position {justify-content:flex-start;margin:10px 0 2px;font-size:.9rem;font-weight:800;color:#102c4b}
 .customer-body #discover .customer-media-position::after {content:"· Swipe or use arrows";font-size:.78rem;font-weight:600;color:#334b67}
 @media(max-width:380px){.customer-body #discover .customer-media-position::after {content:"· Swipe →"}}
+
+/* Business–Customer Connection: a clear route from browsing to a specific need. */
+.customer-body #discover .customer-connection-entry {display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 22px;padding:18px 20px;border:1px solid #b78d38;border-radius:18px;background:#102c4b;color:#fff;box-shadow:0 8px 24px rgba(7,19,38,.12)}
+.customer-body #discover .customer-connection-entry > div {display:grid;gap:5px;min-width:0}
+.customer-body #discover .customer-connection-entry strong {font-size:1.05rem;color:#fff}
+.customer-body #discover .customer-connection-entry span {color:#e5edf7;line-height:1.45}
+.customer-body #discover .customer-connection-action {display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:48px;padding:11px 16px;border-radius:11px;background:#e5bd59;color:#071326;font-weight:800;text-decoration:none;white-space:nowrap}
+.customer-body #discover .customer-connection-action span {color:inherit}
+.customer-body #discover .customer-connection-action:focus-visible {outline:3px solid #fff;outline-offset:3px}
+@media(max-width:680px){.customer-body #discover .customer-connection-entry {flex-direction:column;align-items:stretch;padding:16px}.customer-body #discover .customer-connection-action {width:100%;white-space:normal}}
