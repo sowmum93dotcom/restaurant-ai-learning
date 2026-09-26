@@ -670,6 +670,7 @@ function initializeCustomerIntention(document, navigatorValue, now) {
   });
 
   function changeIntention() {
+    ++customerPossibilitiesRequestSequence;
     currentUnderstanding = null;
     const possibilityRegion = document.getElementById("customer-possibilities");
     possibilityRegion.hidden = true;
