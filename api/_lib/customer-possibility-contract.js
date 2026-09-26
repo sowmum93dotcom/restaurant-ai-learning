@@ -70,8 +70,19 @@ function excludedCustomerTerms(customerText) {
   const excluded = new Set();
   for (let index = 0; index < words.length - 1; index += 1) {
     if (![ "without", "exclude", "excluding", "avoid", "no" ].includes(words[index])) continue;
-    const next = words[index + 1];
-    if (next && next.length >= 3 && !STOP_WORDS.has(next)) excluded.add(next);
+    let position = index + 1;
+    if (["any", "added"].includes(words[position])) position += 1;
+    const next = words[position];
+    if (!next || next.length < 3 || STOP_WORDS.has(next)) continue;
+    excluded.add(next);
+    // Only an explicit "or" extends the same exclusion. "And" may introduce
+    // a positive requirement, so it must not silently exclude the next item.
+    while (words[position + 1] === "or") {
+      position += 2;
+      const alternative = words[position];
+      if (!alternative || alternative.length < 3 || STOP_WORDS.has(alternative)) break;
+      excluded.add(alternative);
+    }
   }
   return excluded;
 }
