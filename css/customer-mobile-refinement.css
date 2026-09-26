@@ -112,3 +112,8 @@
 .customer-body #discover .customer-media-controls {display:flex;justify-content:flex-end;gap:10px;margin:8px 0 0}
 .customer-body #discover .customer-media-control {display:grid;place-items:center;width:48px;height:44px;border:1px solid #b78d38;border-radius:12px;background:#102c4b;color:#fff;font:inherit;font-size:1.4rem;font-weight:700;cursor:pointer}
 .customer-body #discover .customer-media-control:focus-visible {outline:3px solid #e5bd59;outline-offset:3px}
+
+/* Keep the current gallery position readable next to the navigation controls. */
+.customer-body #discover .customer-media-position {justify-content:flex-start;margin:10px 0 2px;font-size:.9rem;font-weight:800;color:#102c4b}
+.customer-body #discover .customer-media-position::after {content:"· Swipe or use arrows";font-size:.78rem;font-weight:600;color:#334b67}
+@media(max-width:380px){.customer-body #discover .customer-media-position::after {content:"· Swipe →"}}
