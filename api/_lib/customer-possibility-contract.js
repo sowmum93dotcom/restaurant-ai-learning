@@ -91,7 +91,7 @@ function excludedCustomerTerms(customerText) {
 // optional ranking preferences. Require published evidence for each meaningful
 // term; otherwise leave the offer out rather than imply the requirement is met.
 function explicitAdditionalRequirements(customerText) {
-  const words = String(customerText || "").toLocaleLowerCase("en").match(/[\\p{L}\\p{N}]+/gu) || [];
+  const words = String(customerText || "").toLocaleLowerCase("en").match(/[\p{L}\p{N}]+/gu) || [];
   const index = words.indexOf("with");
   if (index < 0) return new Set();
   const end = words.findIndex(function (word, position) {
