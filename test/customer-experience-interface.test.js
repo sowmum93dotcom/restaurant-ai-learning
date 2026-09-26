@@ -590,3 +590,35 @@ test("a late possibilities response cannot replace the latest customer request",
   await second;
   assert.notEqual(document.elements["customer-possibilities-heading"].textContent, "Preparing possibilities connected to what you asked for…");
 });
+
+
+test("customer possibilities failure offers retry for the same confirmed request", async function () {
+  const document = fakeDocument();
+  ["customer-possibilities", "customer-possibilities-heading", "customer-possibilities-list",
+    "customer-focused-possibility", "customer-possibility-intention"].forEach((id) => {
+    document.elements[id] = new Element();
+  });
+  const requests = [];
+  let resolveRetry;
+  const fetcher = (url, options) => {
+    if (url !== "/api/customer/possibilities") throw new Error("Unexpected request");
+    requests.push(JSON.parse(options.body).understanding);
+    if (requests.length === 1) return Promise.resolve({ ok: false, json: async () => ({}) });
+    return new Promise((resolve) => { resolveRetry = resolve; });
+  };
+  const understanding = { intention: "Birthday cake", customerText: "For Saturday", confidenceState: "confirmed" };
+  await requestCustomerPossibilities(document, understanding, fetcher, {});
+  const list = document.elements["customer-possibilities-list"];
+  const note = list.children.find((child) => child.className === "customer-possibilities-error-note");
+  const retry = list.children.find((child) => child.className === "customer-possibilities-retry");
+  assert.ok(note);
+  assert.match(note.textContent, /temporary loading problem/);
+  assert.equal(retry.textContent, "Try again");
+  retry.listeners.click();
+  assert.equal(retry.disabled, true);
+  assert.deepEqual(requests[1], requests[0]);
+  assert.equal(list.children.length, 0);
+  resolveRetry({ ok: false, json: async () => ({}) });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(list.children.filter((child) => child.className === "customer-possibilities-retry").length, 1);
+});
