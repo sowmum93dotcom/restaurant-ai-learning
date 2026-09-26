@@ -710,3 +710,35 @@ test("confirmed customer intention renders only validated business possibilities
   assert.match(focus.textContent, /This authorized possibility connects to your current request/);
   assert.equal(focus.children.some((child) => child.className === "customer-business-continuation"), false);
 });
+
+
+test("customer continuation uses supplied business routes and excludes unsupported routes", function () {
+  const { renderCustomerPossibilities } = require("../js/customer.js");
+  const document = fakeDocument();
+  ["customer-possibilities", "customer-possibilities-heading", "customer-possibilities-list",
+    "customer-focused-possibility", "customer-possibility-intention", "customer-possibilities-header",
+    "customer-possibility-space", "customer-change-intention", "customer-no-possibilities"].forEach((id) => {
+    document.elements[id] = new Element();
+  });
+  document.elements["customer-possibilities-heading"].focus = () => {};
+  const possibility = { possibilityId: "p1", workItemId: "w1", businessName: "Example business",
+    content: "Approved business offering", participationAction: "Interested",
+    relevance: { basis: "current-intention-authorized-work", evidence: ["cake"],
+      explanation: "This authorized possibility connects to your current request." },
+    customerContinuation: { routes: ["website", "booking", "unknown", "email"],
+      website: "https://business.example/products", email: "hello@business.example" } };
+  renderCustomerPossibilities(document, [possibility],
+    { intention: "Cake", understanding: "Looking for cake", confidenceState: "confirmed" },
+    async () => {}, async () => {}, {}, {});
+  document.elements["customer-possibilities-list"].children[0].listeners.click();
+  const focus = document.elements["customer-focused-possibility"];
+  const continuation = focus.children.find((child) => child.className === "customer-business-continuation");
+  assert.ok(continuation);
+  const actions = continuation.children.find((child) => child.className === "customer-continuation-actions");
+  const links = actions.children.filter((child) => child.tag === "a");
+  assert.equal(links.length, 2);
+  assert.deepEqual(links.map((child) => child.href),
+    ["https://business.example/products", "mailto:hello@business.example"]);
+  assert.equal(links[0].rel, "noopener noreferrer");
+  assert.equal(actions.children.some((child) => child.textContent === "Book / order"), false);
+});
