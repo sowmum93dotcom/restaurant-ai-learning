@@ -679,3 +679,34 @@ test("customer relevance preview only accepts the validated explanation", functi
   assert.equal(getValidCustomerPossibilities([{ ...valid, relevance: {
     ...valid.relevance, basis: "unverified" } }]).length, 0);
 });
+
+
+test("confirmed customer intention renders only validated business possibilities and their approved relevance", function () {
+  const { renderCustomerPossibilities } = require("../js/customer.js");
+  const document = fakeDocument();
+  ["customer-possibilities", "customer-possibilities-heading", "customer-possibilities-list",
+    "customer-focused-possibility", "customer-possibility-intention", "customer-possibilities-header",
+    "customer-possibility-space", "customer-change-intention", "customer-no-possibilities"].forEach((id) => {
+    document.elements[id] = new Element();
+  });
+  document.elements["customer-possibilities-heading"].focus = () => {};
+  const valid = { possibilityId: "p1", workItemId: "w1", businessName: "Example business",
+    content: "Approved business offering", participationAction: "Interested",
+    relevance: { basis: "current-intention-authorized-work", evidence: ["cake"],
+      explanation: "This authorized possibility connects to your current request." } };
+  const invalid = { ...valid, possibilityId: "p2", relevance: {
+    ...valid.relevance, explanation: "Guaranteed perfect match." } };
+  renderCustomerPossibilities(document, [invalid, valid],
+    { intention: "Cake", understanding: "Looking for a cake", confidenceState: "confirmed" },
+    async () => {}, async () => {}, {}, {});
+  const cards = document.elements["customer-possibilities-list"].children;
+  assert.equal(cards.length, 1);
+  assert.match(cards[0].textContent, /Why this relates to your request: This authorized possibility connects to your current request/);
+  assert.doesNotMatch(cards[0].textContent, /Guaranteed perfect match/);
+  cards[0].listeners.click();
+  const focus = document.elements["customer-focused-possibility"];
+  assert.equal(focus.hidden, false);
+  assert.match(focus.textContent, /Approved business offering/);
+  assert.match(focus.textContent, /This authorized possibility connects to your current request/);
+  assert.equal(focus.children.some((child) => child.className === "customer-business-continuation"), false);
+});
