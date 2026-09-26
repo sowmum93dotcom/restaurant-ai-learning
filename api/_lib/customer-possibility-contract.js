@@ -161,6 +161,10 @@ function stablePossibilityId(workItemId) {
 function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_POSSIBILITIES, storedPreferences = [], storedFeedback = []) {
   const excludedTerms = excludedCustomerTerms(understanding.customerText);
   const additionalRequirements = explicitAdditionalRequirements(understanding.customerText);
+  const requestWords = understanding.customerText.toLocaleLowerCase("en").match(/[\p{L}\p{N}]+/gu) || [];
+  const requirementStart = requestWords.findIndex(function (word) { return ["with", "including", "offering"].includes(word); });
+  const primaryRequirements = additionalRequirements.size && requirementStart >= 0
+    ? meaningfulTerms(requestWords.slice(0, requirementStart).join(" ")) : new Set();
   const customerTerms = meaningfulTerms([understanding.intention, understanding.customerText].join(" "));
   excludedTerms.forEach(function (term) { customerTerms.delete(term); });
   const guidanceTerms = preferenceTerms(storedPreferences);
@@ -185,7 +189,7 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
       .map(function (product) { return meaningfulTerms([product.name, product.description].join(" ")); }));
     const matchingSources = additionalRequirements.size
       ? evidenceSources.filter(function (terms) {
-        return Array.from(additionalRequirements).every(function (term) { return terms.has(term); });
+        return [...additionalRequirements, ...primaryRequirements].every(function (term) { return terms.has(term); });
       })
       : [offerTerms];
     if (!matchingSources.length) return;
