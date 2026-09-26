@@ -94,6 +94,18 @@ test("customer-facing explanation uses only validated matching terms without pro
   const message = customerRelevanceMessage(matches[0]);
   assert.match(message, /bicycle/);
   assert.match(message, /repair/);
-  assert.match(message, /does not confirm every requirement/);
+  assert.match(message, /not confirmation that all your requirements are met/);
   assert.doesNotMatch(message, /guaranteed|fully suitable|available now/i);
+});
+
+test("multiple customer requirements are not represented as fully satisfied by partial evidence", function () {
+  const { customerRelevanceMessage } = require("../js/customer.js");
+  const results = findCustomerPossibilities(request("bicycle repair with home collection and weekend service"), [
+    offer("partial-repair", "Bicycle repair and servicing", "Bicycle repair", "Repair service")
+  ]);
+  assert.equal(results.length, 1);
+  const message = customerRelevanceMessage(results[0]);
+  assert.match(message, /Matching evidence/);
+  assert.match(message, /not confirmation that all your requirements are met/);
+  assert.doesNotMatch(message, /home collection confirmed|weekend service confirmed/i);
 });
