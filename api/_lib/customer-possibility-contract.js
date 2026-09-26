@@ -143,6 +143,12 @@ function hasRequirementEvidence(term, sourceTerms) {
   return family ? family.some(function (form) { return sourceTerms.has(form); }) : sourceTerms.has(term);
 }
 
+function hasExcludedEvidence(excludedTerms, sourceTerms) {
+  return Array.from(excludedTerms).some(function (term) {
+    return hasRequirementEvidence(term, sourceTerms);
+  });
+}
+
 function supportsExplicitService(customerTerms, sourceTerms) {
   return SERVICE_WORD_FAMILIES.every(function (forms) {
     return !forms.some(function (term) { return customerTerms.has(term); }) ||
@@ -187,7 +193,10 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
   const primaryRequirements = additionalRequirements.size && requirementStart >= 0
     ? meaningfulTerms(requestWords.slice(0, requirementStart).join(" ")) : new Set();
   const customerTerms = meaningfulTerms([understanding.intention, understanding.customerText].join(" "));
-  excludedTerms.forEach(function (term) { customerTerms.delete(term); });
+  excludedTerms.forEach(function (term) {
+    const family = SERVICE_WORD_FAMILIES.find(function (forms) { return forms.includes(term); });
+    (family || [term]).forEach(function (form) { customerTerms.delete(form); });
+  });
   const guidanceTerms = preferenceTerms(storedPreferences);
   const feedbackSignals = feedbackGuidance(storedFeedback);
   const candidates = [];
@@ -199,7 +208,7 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
     const productTerms = meaningfulTerms((Array.isArray(work.products) ? work.products : []).map(function (product) {
       return product && product.availability !== "unavailable" && [product.name, product.description].join(" ");
     }).join(" "));
-    if (Array.from(excludedTerms).some(function (term) { return contentTerms.has(term) || productTerms.has(term); })) return;
+    if (hasExcludedEvidence(excludedTerms, contentTerms) || hasExcludedEvidence(excludedTerms, productTerms)) return;
     // Validated product information is also business evidence. A specific product
     // can satisfy a request even when the campaign headline is generic.
     const offerTerms = new Set([...contentTerms, ...productTerms]);
