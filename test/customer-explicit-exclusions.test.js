@@ -25,3 +25,12 @@ test("understands explicit alternatives and modifiers without excluding positive
   assert.deepEqual(Array.from(excludedCustomerTerms("Food with no added sugar")).sort(), ["sugar"]);
   assert.deepEqual(Array.from(excludedCustomerTerms("Without peanuts and a drink")).sort(), ["peanuts"]);
 });
+
+test("validated product evidence contributes to possibility matching", function () {
+  const fs = require("node:fs");
+  const path = require("node:path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "api/_lib/customer-possibility-contract.js"), "utf8");
+  assert.match(source, /const offerTerms = new Set\(\[\.\.\.contentTerms, \.\.\.productTerms\]\)/);
+  assert.match(source, /evidencedConcepts\(customerTerms, offerTerms\)/);
+  assert.match(source, /getValidPublicCustomerWork\(repositoryWork\)/);
+});
