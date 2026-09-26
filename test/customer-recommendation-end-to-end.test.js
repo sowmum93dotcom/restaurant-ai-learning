@@ -235,3 +235,29 @@ test("repairing and repaired requests require repair evidence rather than catego
       .map(item => item.workItemId), ["repair-variant-service"]);
   }
 });
+
+test("explicit service types cannot be inferred from category-only offers", function () {
+  const cases = [
+    ["bicycle cleaning", "Bicycle accessories", "Bicycle cleaning"],
+    ["bicycle installation", "Bicycle accessories", "Bicycle installing"],
+    ["bicycle rental", "Bicycle accessories", "Bicycle renting"],
+    ["bicycle delivery", "Bicycle accessories", "Bicycle deliveries"]
+  ];
+  for (const [phrase, categoryOnly, evidenced] of cases) {
+    const unrelated = offer("category-only", categoryOnly, "Bicycle accessories", "Cycling accessories");
+    const service = offer("service", evidenced, evidenced, evidenced);
+    assert.deepEqual(findCustomerPossibilities(request(phrase), [unrelated, service])
+      .map(item => item.workItemId), ["service"], phrase);
+  }
+});
+
+test("explicit delivery does not attach category-only products to service result", function () {
+  const work = offer("delivery-gallery", "Bicycle delivery", "Bicycle delivery", "Bicycle deliveries");
+  work.products.push({
+    productId: "accessory-only", businessId: work.businessId, name: "Bicycle helmet",
+    description: "Cycling accessory", continuationRoute: "website", customerVisible: true,
+    availability: "available"
+  });
+  const results = findCustomerPossibilities(request("bicycle delivery"), [work]);
+  assert.deepEqual(results[0].products.map(product => product.productId), ["product-delivery-gallery"]);
+});
