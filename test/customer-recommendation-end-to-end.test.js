@@ -169,3 +169,24 @@ test("a product unavailable for enquiries cannot supply required features", func
     request("bicycle repair with home collection and weekend service"), [unavailable]
   ), []);
 });
+
+test("result product gallery does not present partial products as full requirement matches", function () {
+  const work = offer("gallery", "Bicycle repair with home collection and weekend service",
+    "Bicycle repair with home collection", "Weekend service");
+  work.products.push({
+    productId: "partial-product", businessId: work.businessId, name: "Bicycle repair",
+    description: "Standard workshop service", continuationRoute: "website",
+    customerVisible: true, availability: "available"
+  });
+  const results = findCustomerPossibilities(request("bicycle repair with home collection and weekend service"), [work]);
+  assert.equal(results.length, 1);
+  assert.deepEqual(results[0].products.map(product => product.productId), ["product-gallery"]);
+});
+
+test("business-copy match does not attach unrelated partial product continuations", function () {
+  const work = offer("copy-only", "Bicycle repair with home collection and weekend service",
+    "Bicycle repair", "Standard workshop service");
+  const results = findCustomerPossibilities(request("bicycle repair with home collection and weekend service"), [work]);
+  assert.equal(results.length, 1);
+  assert.equal(Object.hasOwn(results[0], "products"), false);
+});
