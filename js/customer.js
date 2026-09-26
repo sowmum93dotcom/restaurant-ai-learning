@@ -548,6 +548,15 @@ async function requestCustomerPossibilities(document, understanding, fetcher, co
   const region = document.getElementById("customer-possibilities");
   const heading = document.getElementById("customer-possibilities-heading");
   region.hidden = false;
+  region.setAttribute("aria-labelledby", "customer-possibilities-heading");
+  const standardHeader = document.getElementById("customer-possibilities-header");
+  if (standardHeader) standardHeader.hidden = false;
+  const possibilitySpace = document.getElementById("customer-possibility-space");
+  if (possibilitySpace) possibilitySpace.hidden = false;
+  const emptyState = document.getElementById("customer-no-possibilities");
+  if (emptyState) emptyState.hidden = true;
+  const changeAction = document.getElementById("customer-change-intention");
+  if (changeAction) changeAction.hidden = false;
   heading.textContent = CUSTOMER_STAGE_THREE_COPY.preparing;
   document.getElementById("customer-possibilities-list").textContent = "";
   const focused = document.getElementById("customer-focused-possibility");
