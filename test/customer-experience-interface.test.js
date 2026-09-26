@@ -760,3 +760,14 @@ test("Discover touch guidance explains both business and media navigation", func
   const html = fs.readFileSync(path.join(__dirname, "..", "customer.html"), "utf8");
   assert.match(html, /Swipe up or down between businesses · swipe left or right through media/);
 });
+
+test("Discover tablet presentation keeps business and media lanes contained", function () {
+  const css = fs.readFileSync(path.join(__dirname, "..", "css/customer-mobile-refinement.css"), "utf8");
+  const tablet = css.split("/* Tablet Discover: a compact, usable business surface rather than stretched desktop panels. */")[1];
+  assert.ok(tablet, "tablet Discover presentation must exist");
+  assert.match(tablet, /min-width:681px/);
+  assert.match(tablet, /max-width:1180px/);
+  assert.match(tablet, /#discover \.customer-work-card\s*\{[^}]*min-height:0/);
+  assert.match(tablet, /#discover \.customer-work-media\s*\{[^}]*overflow-x:auto/);
+  assert.match(tablet, /#discover \.customer-discover-option-image\s*\{[^}]*aspect-ratio:1 \/ 1/);
+});
