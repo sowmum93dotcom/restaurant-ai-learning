@@ -742,3 +742,16 @@ test("customer continuation uses supplied business routes and excludes unsupport
   assert.equal(links[0].rel, "noopener noreferrer");
   assert.equal(actions.children.some((child) => child.textContent === "Book / order"), false);
 });
+
+
+test("tablet intention layout removes orbital lines and keeps six choices in a two-column grid", function () {
+  const css = fs.readFileSync(path.join(__dirname, "..", "css/customer-mobile-refinement.css"), "utf8");
+  const tablet = css.match(/\/\* Tablet intention: use an intentional grid rather than the desktop orbital decoration\. \*\/([\s\S]*?)\n\}/);
+  assert.ok(tablet, "tablet-specific intention rules must exist");
+  const rules = tablet[1];
+  assert.match(rules, /min-width:681px/);
+  assert.match(rules, /max-width:1180px/);
+  assert.match(rules, /\.customer-intention-form fieldset::before,[\s\S]*?\.customer-intention-options::after\s*\{content:none!important;display:none!important\}/);
+  assert.match(rules, /\.customer-intention-options\s*\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(rules, /\.customer-intention-option:nth-child\(n\)\s*\{position:relative;inset:auto;transform:none/);
+});
