@@ -128,7 +128,7 @@ function productRelevance(product, customerTerms) {
 function relevantProductsForCustomer(products, customerTerms) {
   if (!Array.isArray(products)) return [];
   return products.reduce(function (matches, product) {
-    if (!product) return matches;
+    if (!product || product.availability === "unavailable") return matches;
     const relevance = productRelevance(product, customerTerms);
     if (!relevance) return matches;
     const publicProduct = { ...product, relevance }; delete publicProduct.customerVisible;
@@ -152,7 +152,7 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
   getValidPublicCustomerWork(repositoryWork).forEach(function (work) {
     const contentTerms = meaningfulTerms(work.content);
     const productTerms = meaningfulTerms((Array.isArray(work.products) ? work.products : []).map(function (product) {
-      return product && [product.name, product.description].join(" ");
+      return product && product.availability !== "unavailable" && [product.name, product.description].join(" ");
     }).join(" "));
     if (Array.from(excludedTerms).some(function (term) { return contentTerms.has(term) || productTerms.has(term); })) return;
     // Validated product information is also business evidence. A specific product
