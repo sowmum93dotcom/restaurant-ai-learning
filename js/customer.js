@@ -912,7 +912,7 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
     });
     message.appendChild(mediaRegion);
     if (work.media.length > 1) {
-      const mediaPosition = addText(document, message, "p", "customer-media-position", "1 / " + work.media.length);
+      const mediaPosition = addText(document, message, "p", "customer-media-position", "Media 1 of " + work.media.length);
       mediaPosition.setAttribute("aria-label", "Media 1 of " + work.media.length);
       mediaRegion.addEventListener("scroll", function () {
         const items = Array.from(mediaRegion.children);
@@ -923,7 +923,7 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
           const difference = Math.abs(item.getBoundingClientRect().left - regionStart);
           if (difference < distance) { distance = difference; closest = index; }
         });
-        mediaPosition.textContent = (closest + 1) + " / " + items.length;
+        mediaPosition.textContent = "Media " + (closest + 1) + " of " + items.length;
         mediaPosition.setAttribute("aria-label", "Media " + (closest + 1) + " of " + items.length);
       }, { passive: true });
       const controls = document.createElement("div");
