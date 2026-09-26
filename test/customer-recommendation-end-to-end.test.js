@@ -146,3 +146,26 @@ test("including requirement ends at an explicit exclusion clause", function () {
   ]);
   assert.deepEqual(results.map(item => item.workItemId), ["safe-seating"]);
 });
+
+test("separate products cannot combine to satisfy one explicit multi-feature request", function () {
+  const split = offer("split", "Bicycle repair services", "Bicycle repair", "Standard service");
+  split.products.push({
+    productId: "collection-only", businessId: split.businessId, name: "Home collection",
+    description: "Weekend collection service", continuationRoute: "website",
+    customerVisible: true, availability: "available"
+  });
+  const complete = offer("single", "Our services", "Bicycle repair with home collection",
+    "Weekend bicycle repair service with home collection");
+  const results = findCustomerPossibilities(request("bicycle repair with home collection and weekend service"), [split, complete]);
+  assert.deepEqual(results.map(item => item.workItemId), ["single"]);
+  assert.ok(results[0].relevance.evidence.includes("collection"));
+});
+
+test("a product unavailable for enquiries cannot supply required features", function () {
+  const unavailable = offer("unavailable-feature", "Bicycle repair services", "Bicycle repair with home collection",
+    "Weekend service");
+  unavailable.products[0].availability = "unavailable";
+  assert.deepEqual(findCustomerPossibilities(
+    request("bicycle repair with home collection and weekend service"), [unavailable]
+  ), []);
+});
