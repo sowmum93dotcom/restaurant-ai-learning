@@ -578,6 +578,15 @@ async function requestCustomerPossibilities(document, understanding, fetcher, co
   } catch (error) {
     if (requestSequence !== customerPossibilitiesRequestSequence) return;
     heading.textContent = CUSTOMER_STAGE_THREE_COPY.error;
+    const list = document.getElementById("customer-possibilities-list");
+    const note = addText(document, list, "p", "customer-possibilities-error-note", "This is a temporary loading problem, not a confirmed absence of suitable businesses. Your request has not changed.");
+    note.setAttribute("role", "status");
+    const retry = addText(document, list, "button", "customer-possibilities-retry", "Try again");
+    retry.type = "button";
+    retry.addEventListener("click", function () {
+      retry.disabled = true;
+      requestCustomerPossibilities(document, understanding, fetcher, continuationActions);
+    });
   }
 }
 
