@@ -71,3 +71,16 @@ test("unavailable products do not create a recommendation or appear as relevant 
   assert.equal(results.length, 1);
   assert.deepEqual(results[0].products.map(product => product.productId), ["available-product"]);
 });
+
+test("explicit business unavailability blocks matching while unknown status remains labelled", function () {
+  const unavailable = offer("closed", "Bicycle care and repair", "Bicycle repair", "Cycle servicing", {
+    operationalAvailability: { status: "unavailable", notes: "Temporarily closed" }
+  });
+  const contact = offer("ask", "Bicycle care and repair", "Bicycle repair", "Cycle servicing", {
+    operationalAvailability: { status: "contact", notes: "Ask business to confirm" }
+  });
+  const results = findCustomerPossibilities(request("bicycle repair"), [unavailable, contact]);
+  assert.deepEqual(results.map(item => item.workItemId), ["ask"]);
+  assert.equal(results[0].operationalAvailability.status, "contact");
+  assert.notEqual(results[0].operationalAvailability.status, "available");
+});

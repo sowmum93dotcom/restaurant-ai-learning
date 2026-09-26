@@ -150,6 +150,9 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
   const feedbackSignals = feedbackGuidance(storedFeedback);
   const candidates = [];
   getValidPublicCustomerWork(repositoryWork).forEach(function (work) {
+    // An explicitly unavailable business cannot be presented as a current possibility.
+    // Unknown/contact status is not treated as confirmed availability.
+    if (work.operationalAvailability && work.operationalAvailability.status === "unavailable") return;
     const contentTerms = meaningfulTerms(work.content);
     const productTerms = meaningfulTerms((Array.isArray(work.products) ? work.products : []).map(function (product) {
       return product && product.availability !== "unavailable" && [product.name, product.description].join(" ");
