@@ -63,8 +63,8 @@ test("unavailable products do not create a recommendation or appear as relevant 
   const mixed = offer("mixed", "Bicycle care and repair", "Bicycle repair", "Bicycle servicing");
   mixed.products[0].availability = "unavailable";
   mixed.products.push({
-    productId: "available-product", businessId: "business-mixed", name: "Bicycle servicing",
-    description: "Cycle maintenance", continuationRoute: "website", customerVisible: true,
+    productId: "available-product", businessId: "business-mixed", name: "Bicycle repair and servicing",
+    description: "Cycle repair and maintenance", continuationRoute: "website", customerVisible: true,
     availability: "available"
   });
   const results = findCustomerPossibilities(request("bicycle repair"), [mixed]);
