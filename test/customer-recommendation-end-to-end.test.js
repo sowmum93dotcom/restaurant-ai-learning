@@ -261,3 +261,20 @@ test("explicit delivery does not attach category-only products to service result
   const results = findCustomerPossibilities(request("bicycle delivery"), [work]);
   assert.deepEqual(results[0].products.map(product => product.productId), ["product-delivery-gallery"]);
 });
+
+test("except excludes explicitly unwanted offer terms rather than treating them as preferences", function () {
+  const excluded = offer("except-excluded", "Bicycle repair with delivery", "Bicycle repair", "Delivery available");
+  const relevant = offer("except-relevant", "Bicycle repair workshop service", "Bicycle repair", "Workshop service");
+  const results = findCustomerPossibilities(request("bicycle repair except delivery"), [excluded, relevant]);
+  assert.deepEqual(results.map(item => item.workItemId), ["except-relevant"]);
+  assert.ok(!results[0].relevance.evidence.includes("delivery"));
+});
+
+test("except exclusions do not become additional requirements", function () {
+  const relevant = offer("except-with", "Bicycle repair with collection", "Bicycle repair with collection", "Workshop service");
+  const excluded = offer("except-with-delivery", "Bicycle repair with collection and delivery",
+    "Bicycle repair with collection and delivery", "Delivery available");
+  assert.deepEqual(findCustomerPossibilities(
+    request("bicycle repair with collection except delivery"), [relevant, excluded]
+  ).map(item => item.workItemId), ["except-with"]);
+});
