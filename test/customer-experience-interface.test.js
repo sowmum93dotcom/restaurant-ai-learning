@@ -585,8 +585,8 @@ test("a late possibilities response cannot replace the latest customer request",
   assert.equal(pending.length, 2);
   pending[0]({ ok: true, json: async () => ({ possibilities: [] }) });
   await first;
-  assert.equal(document.elements["customer-possibilities-heading"].textContent, "DEMEOS is preparing your possibilities…");
+  assert.equal(document.elements["customer-possibilities-heading"].textContent, "Preparing possibilities connected to what you asked for…");
   pending[1]({ ok: false, json: async () => ({ possibilities: [] }) });
   await second;
-  assert.notEqual(document.elements["customer-possibilities-heading"].textContent, "DEMEOS is preparing your possibilities…");
+  assert.notEqual(document.elements["customer-possibilities-heading"].textContent, "Preparing possibilities connected to what you asked for…");
 });
