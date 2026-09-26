@@ -132,7 +132,9 @@ function feedbackGuidance(storedFeedback) {
 // A broad category concept must not substitute for an explicitly requested
 // service. Bicycle accessories alone do not evidence bicycle repair.
 function supportsExplicitService(customerTerms, sourceTerms) {
-  if (customerTerms.has("repair") && !sourceTerms.has("repair") && !sourceTerms.has("repairs")) return false;
+  const repairForms = ["repair", "repairs", "repaired", "repairing"];
+  if (repairForms.some(function (term) { return customerTerms.has(term); }) &&
+      !repairForms.some(function (term) { return sourceTerms.has(term); })) return false;
   return true;
 }
 
