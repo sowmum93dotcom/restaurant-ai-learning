@@ -12,6 +12,16 @@ function normalizedRequiredString(value) {
   return normalized || null;
 }
 
+function validatedCustomerWebUrl(value) {
+  const candidate = normalizedRequiredString(value);
+  if (!candidate || /\\s/.test(candidate)) return null;
+  try {
+    const url = new URL(candidate);
+    if (!["http:", "https:"].includes(url.protocol) || !url.hostname || url.username || url.password) return null;
+    return url.href;
+  } catch (_error) { return null; }
+}
+
 const CUSTOMER_STAGE_ONE_COPY = Object.freeze({
   stageLabel: "Stage 1 · Your intention",
   question: "What would you like to do today?",
@@ -126,6 +136,7 @@ function toCustomerPossibility(value) {
       if (field) {
         const detail = normalizedRequiredString(value.customerContinuation[field]);
         if (!detail) return;
+        if ((route === "website" || route === "booking") && !validatedCustomerWebUrl(detail)) return;
         safe[field] = detail;
       }
       safe.routes.push(route);
