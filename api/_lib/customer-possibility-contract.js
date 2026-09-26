@@ -250,7 +250,8 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
   candidates.sort(function (left, right) {
     return right.strength - left.strength || right.guidanceOverlap - left.guidanceOverlap ||
       right.feedbackGuidanceScore - left.feedbackGuidanceScore ||
-      left.possibility.workItemId.localeCompare(right.possibility.workItemId);
+      (left.possibility.workItemId < right.possibility.workItemId ? -1 :
+        left.possibility.workItemId > right.possibility.workItemId ? 1 : 0);
   });
   return candidates.slice(0, Math.min(MAX_POSSIBILITIES, Math.max(0, limit))).map(function (item) { return item.possibility; });
 }
