@@ -140,7 +140,10 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
   const candidates = [];
   getValidPublicCustomerWork(repositoryWork).forEach(function (work) {
     const contentTerms = meaningfulTerms(work.content);
-    if (Array.from(excludedTerms).some(function (term) { return contentTerms.has(term); })) return;
+    const productTerms = meaningfulTerms((Array.isArray(work.products) ? work.products : []).map(function (product) {
+      return product && [product.name, product.description].join(" ");
+    }).join(" "));
+    if (Array.from(excludedTerms).some(function (term) { return contentTerms.has(term) || productTerms.has(term); })) return;
     const evidence = Array.from(customerTerms).filter(function (term) { return contentTerms.has(term); }).sort();
     const concepts = evidencedConcepts(customerTerms, contentTerms);
     // Generic token overlap alone is not a defensible connection. Require either
