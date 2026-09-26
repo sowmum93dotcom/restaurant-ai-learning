@@ -182,8 +182,9 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
     // Validated product information is also business evidence. A specific product
     // can satisfy a request even when the campaign headline is generic.
     const offerTerms = new Set([...contentTerms, ...productTerms]);
-    // A collection of unrelated products is not proof that one offer satisfies
-    // every explicit requirement. Use a single validated evidence source.
+    // Never combine unrelated products into a single match, even when the
+    // customer did not use an explicit additional-requirement phrase.
+    // Evaluate each validated source independently.
     const evidenceSources = [contentTerms].concat((Array.isArray(work.products) ? work.products : [])
       .filter(function (product) { return product && product.availability !== "unavailable"; })
       .map(function (product) { return meaningfulTerms([product.name, product.description].join(" ")); }));
@@ -191,7 +192,7 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
       ? evidenceSources.filter(function (terms) {
         return [...additionalRequirements, ...primaryRequirements].every(function (term) { return terms.has(term); });
       })
-      : [offerTerms];
+      : evidenceSources;
     if (!matchingSources.length) return;
     const matchedTerms = matchingSources.reduce(function (best, terms) {
       const evidence = Array.from(customerTerms).filter(function (term) { return terms.has(term); }).sort();
