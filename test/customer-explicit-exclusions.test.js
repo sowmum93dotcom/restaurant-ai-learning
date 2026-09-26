@@ -10,3 +10,12 @@ test("explicit customer exclusions are extracted without treating them as prefer
 test("exclusion terms are not inferred from unrelated words", function () {
   assert.deepEqual(Array.from(excludedCustomerTerms("I need a quiet meal for two")).sort(), []);
 });
+
+test("possibility matching checks exclusions against product details, not only campaign copy", function () {
+  const fs = require("node:fs");
+  const path = require("node:path");
+  const source = fs.readFileSync(path.join(__dirname, "..", "api/_lib/customer-possibility-contract.js"), "utf8");
+  assert.match(source, /const productTerms = meaningfulTerms\(\(Array\.isArray\(work\.products\)/);
+  assert.match(source, /product\.name, product\.description/);
+  assert.match(source, /contentTerms\.has\(term\) \|\| productTerms\.has\(term\)/);
+});
