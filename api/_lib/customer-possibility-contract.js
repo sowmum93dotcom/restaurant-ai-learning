@@ -155,8 +155,11 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
       return product && [product.name, product.description].join(" ");
     }).join(" "));
     if (Array.from(excludedTerms).some(function (term) { return contentTerms.has(term) || productTerms.has(term); })) return;
-    const evidence = Array.from(customerTerms).filter(function (term) { return contentTerms.has(term); }).sort();
-    const concepts = evidencedConcepts(customerTerms, contentTerms);
+    // Validated product information is also business evidence. A specific product
+    // can satisfy a request even when the campaign headline is generic.
+    const offerTerms = new Set([...contentTerms, ...productTerms]);
+    const evidence = Array.from(customerTerms).filter(function (term) { return offerTerms.has(term); }).sort();
+    const concepts = evidencedConcepts(customerTerms, offerTerms);
     // Generic token overlap alone is not a defensible connection. Require either
     // two specific shared expressions or a transparent DEMEOS solution concept.
     if (evidence.length < 2 && concepts.length === 0) return;
