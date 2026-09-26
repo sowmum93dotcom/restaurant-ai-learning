@@ -63,8 +63,8 @@ test("unavailable products do not create a recommendation or appear as relevant 
   const mixed = offer("mixed", "Bicycle care and repair", "Bicycle repair", "Bicycle servicing");
   mixed.products[0].availability = "unavailable";
   mixed.products.push({
-    productId: "available-product", businessId: "business-mixed", name: "Bicycle servicing",
-    description: "Cycle maintenance", continuationRoute: "website", customerVisible: true,
+    productId: "available-product", businessId: "business-mixed", name: "Bicycle repair and servicing",
+    description: "Cycle repair and maintenance", continuationRoute: "website", customerVisible: true,
     availability: "available"
   });
   const results = findCustomerPossibilities(request("bicycle repair"), [mixed]);
@@ -206,4 +206,23 @@ test("ordinary requests cannot be matched by stitching together unrelated produc
 test("a generic business headline does not borrow evidence from separate products", function () {
   const split = offer("headline-split", "Garden accessories", "Repair tools", "Workshop supplies");
   assert.deepEqual(findCustomerPossibilities(request("garden repair"), [split]), []);
+});
+
+test("bicycle category alone cannot stand in for an explicit repair service", function () {
+  const results = findCustomerPossibilities(request("bicycle repair"), [
+    offer("accessories", "Bicycle accessories", "Bicycle helmets", "Accessories for cycling"),
+    offer("repair-evidenced", "Local bicycle services", "Bicycle repair", "Repair enquiries")
+  ]);
+  assert.deepEqual(results.map(item => item.workItemId), ["repair-evidenced"]);
+});
+
+test("bicycle accessories are not displayed as repair-relevant products", function () {
+  const work = offer("repair-gallery", "Bicycle repair", "Bicycle repair", "Repair enquiries");
+  work.products.push({
+    productId: "accessory-only", businessId: work.businessId, name: "Bicycle helmet",
+    description: "Cycling accessory", continuationRoute: "website", customerVisible: true,
+    availability: "available"
+  });
+  const results = findCustomerPossibilities(request("bicycle repair"), [work]);
+  assert.deepEqual(results[0].products.map(product => product.productId), ["product-repair-gallery"]);
 });

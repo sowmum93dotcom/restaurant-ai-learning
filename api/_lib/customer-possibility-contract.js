@@ -129,12 +129,19 @@ function feedbackGuidance(storedFeedback) {
   }, new Map());
 }
 
+// A broad category concept must not substitute for an explicitly requested
+// service. Bicycle accessories alone do not evidence bicycle repair.
+function supportsExplicitService(customerTerms, sourceTerms) {
+  if (customerTerms.has("repair") && !sourceTerms.has("repair") && !sourceTerms.has("repairs")) return false;
+  return true;
+}
+
 function productRelevance(product, customerTerms) {
   if (!product || typeof product !== "object") return null;
   const productTerms = meaningfulTerms([product.name, product.description].join(" "));
   const evidence = Array.from(customerTerms).filter(function (term) { return productTerms.has(term); }).sort();
   const concepts = evidencedConcepts(customerTerms, productTerms);
-  if (evidence.length < 2 && concepts.length === 0) return null;
+  if (!supportsExplicitService(customerTerms, productTerms) || (evidence.length < 2 && concepts.length === 0)) return null;
   return Object.freeze({
     basis: "current-intention-product-information",
     evidence: (evidence.length >= 2 ? evidence : concepts).slice(0, 5)
@@ -197,14 +204,14 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
     const matchedTerms = matchingSources.reduce(function (best, terms) {
       const evidence = Array.from(customerTerms).filter(function (term) { return terms.has(term); }).sort();
       const concepts = evidencedConcepts(customerTerms, terms);
-      const strength = evidence.length + concepts.length;
+      const strength = supportsExplicitService(customerTerms, terms) ? evidence.length + concepts.length : -1;
       return !best || strength > best.strength ? { evidence, concepts, strength } : best;
     }, null);
     const evidence = matchedTerms.evidence;
     const concepts = matchedTerms.concepts;
     // Generic token overlap alone is not a defensible connection. Require either
     // two specific shared expressions or a transparent DEMEOS solution concept.
-    if (evidence.length < 2 && concepts.length === 0) return;
+    if (matchedTerms.strength < 0 || (evidence.length < 2 && concepts.length === 0)) return;
     const guidanceOverlap = Array.from(guidanceTerms).filter(function (term) { return contentTerms.has(term); }).length;
     const feedbackGuidanceScore = Array.from(contentTerms).reduce(function (score, term) {
       return score + (feedbackSignals.get(term) || 0);
