@@ -92,7 +92,10 @@ function excludedCustomerTerms(customerText) {
 // term; otherwise leave the offer out rather than imply the requirement is met.
 function explicitAdditionalRequirements(customerText) {
   const words = String(customerText || "").toLocaleLowerCase("en").match(/[\p{L}\p{N}]+/gu) || [];
-  const index = words.indexOf("with");
+  // These phrases explicitly introduce required features, not preference signals.
+  // Keep the vocabulary narrow so ordinary descriptive prose is not over-read.
+  const introducers = new Set(["with", "including", "offering"]);
+  const index = words.findIndex(function (word) { return introducers.has(word); });
   if (index < 0) return new Set();
   const end = words.findIndex(function (word, position) {
     return position > index && ["without", "excluding", "avoid", "except"].includes(word);

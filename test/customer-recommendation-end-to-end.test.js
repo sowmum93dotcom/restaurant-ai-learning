@@ -125,3 +125,24 @@ test("an exclusion after a with clause is not treated as a positive requirement"
   ]);
   assert.deepEqual(results.map(item => item.workItemId), ["safe"]);
 });
+
+test("including and offering clauses require actual public business evidence", function () {
+  for (const wording of [
+    "bicycle repair including home collection and weekend service",
+    "bicycle repair offering home collection and weekend service"
+  ]) {
+    const results = findCustomerPossibilities(request(wording), [
+      offer("partial-phrasing", "Bicycle repair service", "Bicycle repair", "Repair service"),
+      offer("complete-phrasing", "Bicycle repair including home collection and weekend service", "Bicycle repair", "Repair service")
+    ]);
+    assert.deepEqual(results.map(item => item.workItemId), ["complete-phrasing"], wording);
+  }
+});
+
+test("including requirement ends at an explicit exclusion clause", function () {
+  const results = findCustomerPossibilities(request("dinner including family seating without peanuts"), [
+    offer("safe-seating", "Family dinner with family seating", "Family dinner", "Seasonal dishes"),
+    offer("unsafe-seating", "Family dinner with family seating and peanuts", "Family dinner", "Peanut dishes")
+  ]);
+  assert.deepEqual(results.map(item => item.workItemId), ["safe-seating"]);
+});
