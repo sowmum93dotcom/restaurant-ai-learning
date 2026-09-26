@@ -199,6 +199,14 @@ function getValidCustomerPossibilities(possibilities) {
   return Array.isArray(possibilities) ? possibilities.map(toCustomerPossibility).filter(Boolean).slice(0, 5) : [];
 }
 
+function customerAvailabilityMessage(possibility) {
+  const status = possibility.operationalAvailability && possibility.operationalAvailability.status;
+  if (status === "available") return "Business reports availability for enquiries; confirm before proceeding.";
+  if (status === "limited") return "Limited availability reported — contact the business first.";
+  if (status === "contact") return "Availability not confirmed — contact the business.";
+  return "Current availability has not been provided — confirm with the business.";
+}
+
 function renderCustomerPossibilities(document, possibilities, understanding, participationRecorder, feedbackRecorder, continuationActions, saveOptions) {
   const region = document.getElementById("customer-possibilities");
   const heading = document.getElementById("customer-possibilities-heading");
@@ -265,6 +273,7 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
     addText(document, focusRegion, "p", "customer-provider-label", CUSTOMER_STAGE_THREE_COPY.providedBy);
     addText(document, focusRegion, "p", "customer-possibility-provider", possibility.businessName);
     if (possibility.location) addText(document, focusRegion, "p", "customer-possibility-location", possibility.location);
+    addText(document, focusRegion, "p", "customer-availability-status", customerAvailabilityMessage(possibility));
     if (Array.isArray(possibility.products) && possibility.products.length) {
       const products = document.createElement("section"); products.className = "customer-product-gallery";
       const galleryHeader = document.createElement("div"); galleryHeader.className = "customer-product-gallery-header";
@@ -545,6 +554,7 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
     }
     addText(document, surface, "span", "customer-possibility-preview", possibility.content);
     addText(document, surface, "span", "customer-possibility-provider", CUSTOMER_STAGE_THREE_COPY.providedBy + " " + possibility.businessName);
+    addText(document, surface, "span", "customer-availability-status", customerAvailabilityMessage(possibility));
     if (possibility.relevance && possibility.relevance.explanation) addText(document, surface, "span", "customer-possibility-relevance-preview", "Why this relates to your request: " + possibility.relevance.explanation);
     surface.addEventListener("click", function () { showFocused(possibility); });
     list.appendChild(surface);
