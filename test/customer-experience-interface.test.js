@@ -661,3 +661,21 @@ test("a new customer request clears the old no-match state before its response a
   resolveRequest({ ok: false, json: async () => ({}) });
   await pending;
 });
+
+
+test("customer relevance preview only accepts the validated explanation", function () {
+  const valid = {
+    possibilityId: "p1", workItemId: "w1", businessName: "Example business",
+    content: "Approved customer content", participationAction: "Interested",
+    relevance: { basis: "current-intention-authorized-work", evidence: ["cake"],
+      explanation: "This authorized possibility connects to your current request." }
+  };
+  const { getValidCustomerPossibilities } = require("../js/customer.js");
+  const accepted = getValidCustomerPossibilities([valid]);
+  assert.equal(accepted.length, 1);
+  assert.equal(accepted[0].relevance.explanation, valid.relevance.explanation);
+  assert.equal(getValidCustomerPossibilities([{ ...valid, relevance: {
+    ...valid.relevance, explanation: "Guaranteed perfect match for you." } }]).length, 0);
+  assert.equal(getValidCustomerPossibilities([{ ...valid, relevance: {
+    ...valid.relevance, basis: "unverified" } }]).length, 0);
+});
