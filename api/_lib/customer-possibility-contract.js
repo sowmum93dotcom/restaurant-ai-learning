@@ -62,6 +62,20 @@ function meaningfulTerms(value) {
   return new Set(matches.filter(function (term) { return term.length >= 3 && !STOP_WORDS.has(term); }));
 }
 
+// Explicit exclusions are constraints, not positive evidence for a recommendation.
+// Be conservative: an excluded term in business copy makes the offer unsuitable
+// for automatic recommendation, even when other terms happen to overlap.
+function excludedCustomerTerms(customerText) {
+  const words = String(customerText || "").toLocaleLowerCase("en").match(/[\p{L}\p{N}]+/gu) || [];
+  const excluded = new Set();
+  for (let index = 0; index < words.length - 1; index += 1) {
+    if (![ "without", "exclude", "excluding", "avoid", "no" ].includes(words[index])) continue;
+    const next = words[index + 1];
+    if (next && next.length >= 3 && !STOP_WORDS.has(next)) excluded.add(next);
+  }
+  return excluded;
+}
+
 function evidencedConcepts(customerTerms, contentTerms) {
   return SOLUTION_CONCEPTS.filter(function (concept) {
     return concept.terms.some(function (term) { return customerTerms.has(term); }) &&
@@ -118,12 +132,15 @@ function stablePossibilityId(workItemId) {
 }
 
 function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_POSSIBILITIES, storedPreferences = [], storedFeedback = []) {
+  const excludedTerms = excludedCustomerTerms(understanding.customerText);
   const customerTerms = meaningfulTerms([understanding.intention, understanding.customerText].join(" "));
+  excludedTerms.forEach(function (term) { customerTerms.delete(term); });
   const guidanceTerms = preferenceTerms(storedPreferences);
   const feedbackSignals = feedbackGuidance(storedFeedback);
   const candidates = [];
   getValidPublicCustomerWork(repositoryWork).forEach(function (work) {
     const contentTerms = meaningfulTerms(work.content);
+    if (Array.from(excludedTerms).some(function (term) { return contentTerms.has(term); })) return;
     const evidence = Array.from(customerTerms).filter(function (term) { return contentTerms.has(term); }).sort();
     const concepts = evidencedConcepts(customerTerms, contentTerms);
     // Generic token overlap alone is not a defensible connection. Require either
@@ -160,5 +177,5 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
 
 module.exports = {
   FIELD_LIMITS, MAX_POSSIBILITIES, SUPPORTED_INTENTIONS, findCustomerPossibilities,
-  evidencedConcepts, feedbackGuidance, meaningfulTerms, preferenceTerms, productRelevance, relevantProductsForCustomer, stablePossibilityId, validateConfirmedUnderstanding
+  evidencedConcepts, excludedCustomerTerms, feedbackGuidance, meaningfulTerms, preferenceTerms, productRelevance, relevantProductsForCustomer, stablePossibilityId, validateConfirmedUnderstanding
 };
