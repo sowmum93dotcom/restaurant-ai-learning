@@ -19,3 +19,9 @@ test("possibility matching checks exclusions against product details, not only c
   assert.match(source, /product\.name, product\.description/);
   assert.match(source, /contentTerms\.has\(term\) \|\| productTerms\.has\(term\)/);
 });
+
+test("understands explicit alternatives and modifiers without excluding positive requests", function () {
+  assert.deepEqual(Array.from(excludedCustomerTerms("Dinner without any peanuts or dairy")).sort(), ["dairy", "peanuts"]);
+  assert.deepEqual(Array.from(excludedCustomerTerms("Food with no added sugar")).sort(), ["sugar"]);
+  assert.deepEqual(Array.from(excludedCustomerTerms("Without peanuts and a drink")).sort(), ["peanuts"]);
+});
