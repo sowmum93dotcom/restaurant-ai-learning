@@ -707,7 +707,7 @@ test("confirmed customer intention renders only validated business possibilities
   const focus = document.elements["customer-focused-possibility"];
   assert.equal(focus.hidden, false);
   assert.match(focus.textContent, /Approved business offering/);
-  assert.match(focus.textContent, /This authorized possibility connects to your current request/);
+  assert.match(focus.textContent, /Published business information matches these terms in your request: cake. This does not confirm every requirement/);
   assert.equal(focus.children.some((child) => child.className === "customer-business-continuation"), false);
 });
 
