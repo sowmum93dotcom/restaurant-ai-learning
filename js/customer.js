@@ -541,11 +541,19 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
   heading.focus();
 }
 
+let customerPossibilitiesRequestSequence = 0;
 async function requestCustomerPossibilities(document, understanding, fetcher, continuationActions) {
+  const requestSequence = ++customerPossibilitiesRequestSequence;
   const region = document.getElementById("customer-possibilities");
   const heading = document.getElementById("customer-possibilities-heading");
   region.hidden = false;
   heading.textContent = CUSTOMER_STAGE_THREE_COPY.preparing;
+  document.getElementById("customer-possibilities-list").textContent = "";
+  const focused = document.getElementById("customer-focused-possibility");
+  focused.textContent = "";
+  focused.hidden = true;
+  const previousIntention = document.getElementById("customer-possibility-intention");
+  previousIntention.textContent = "";
   try {
     const currentIntention = { intention: understanding.intention, customerText: understanding.customerText,
       understanding: understanding.understanding, source: understanding.source,
@@ -556,15 +564,18 @@ async function requestCustomerPossibilities(document, understanding, fetcher, co
     });
     const data = await response.json();
     if (!response.ok || !data || !Array.isArray(data.possibilities)) throw new Error();
+    if (requestSequence !== customerPossibilitiesRequestSequence) return;
     let authenticated = false;
     try {
       const identityResponse = await fetcher("/api/customer/identity", { credentials: "same-origin", headers: { Accept: "application/json" } });
       const identity = identityResponse.ok ? await identityResponse.json() : null;
       authenticated = Boolean(identity && identity.authenticated === true);
     } catch (_error) { authenticated = false; }
+    if (requestSequence !== customerPossibilitiesRequestSequence) return;
     renderCustomerPossibilities(document, data.possibilities, understanding, recordParticipation,
       recordCustomerFeedback, continuationActions, { authenticated, record: saveCustomerPossibility });
   } catch (error) {
+    if (requestSequence !== customerPossibilitiesRequestSequence) return;
     heading.textContent = CUSTOMER_STAGE_THREE_COPY.error;
   }
 }
