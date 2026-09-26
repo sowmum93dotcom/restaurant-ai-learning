@@ -66,7 +66,7 @@ function meaningfulTerms(value) {
 // Be conservative: an excluded term in business copy makes the offer unsuitable
 // for automatic recommendation, even when other terms happen to overlap.
 function excludedCustomerTerms(customerText) {
-  const words = String(customerText || "").toLocaleLowerCase("en").match(/[\\p{L}\\p{N}]+/gu) || [];
+  const words = String(customerText || "").toLocaleLowerCase("en").match(/[\p{L}\p{N}]+/gu) || [];
   const excluded = new Set();
   for (let index = 0; index < words.length - 1; index += 1) {
     if (![ "without", "exclude", "excluding", "avoid", "no" ].includes(words[index])) continue;
