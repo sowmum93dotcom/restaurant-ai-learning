@@ -55,3 +55,19 @@ test("excluded words never become positive product evidence", function () {
   ]);
   assert.deepEqual(results, []);
 });
+
+test("unavailable products do not create a recommendation or appear as relevant products", function () {
+  const unavailable = offer("unavailable", "Our services for local customers", "Bicycle repair", "Bicycle servicing");
+  unavailable.products[0].availability = "unavailable";
+  assert.deepEqual(findCustomerPossibilities(request("bicycle repair"), [unavailable]), []);
+  const mixed = offer("mixed", "Bicycle care and repair", "Bicycle repair", "Bicycle servicing");
+  mixed.products[0].availability = "unavailable";
+  mixed.products.push({
+    productId: "available-product", businessId: "business-mixed", name: "Bicycle servicing",
+    description: "Cycle maintenance", continuationRoute: "website", customerVisible: true,
+    availability: "available"
+  });
+  const results = findCustomerPossibilities(request("bicycle repair"), [mixed]);
+  assert.equal(results.length, 1);
+  assert.deepEqual(results[0].products.map(product => product.productId), ["available-product"]);
+});
