@@ -632,3 +632,32 @@ test("changing customer intention invalidates outstanding possibility responses 
   assert.ok(invalidate >= 0 && hide > invalidate, "invalidate pending requests before hiding old results");
   assert.match(source, /if \(requestSequence !== customerPossibilitiesRequestSequence\) return;/);
 });
+
+
+test("a new customer request clears the old no-match state before its response arrives", async function () {
+  const document = fakeDocument();
+  ["customer-possibilities", "customer-possibilities-heading", "customer-possibilities-header",
+    "customer-possibility-space", "customer-no-possibilities", "customer-change-intention",
+    "customer-possibilities-list", "customer-focused-possibility", "customer-possibility-intention"].forEach((id) => {
+    document.elements[id] = new Element();
+  });
+  document.elements["customer-possibilities-header"].hidden = true;
+  document.elements["customer-possibility-space"].hidden = true;
+  document.elements["customer-no-possibilities"].hidden = false;
+  document.elements["customer-change-intention"].hidden = true;
+  const region = document.elements["customer-possibilities"];
+  region.attributes["aria-labelledby"] = "customer-no-possibilities-heading";
+  let resolveRequest;
+  const fetcher = () => new Promise((resolve) => { resolveRequest = resolve; });
+  const pending = requestCustomerPossibilities(document,
+    { intention: "Fresh request", confidenceState: "confirmed" }, fetcher, {});
+  assert.equal(document.elements["customer-no-possibilities"].hidden, true);
+  assert.equal(document.elements["customer-possibilities-header"].hidden, false);
+  assert.equal(document.elements["customer-possibility-space"].hidden, false);
+  assert.equal(document.elements["customer-change-intention"].hidden, false);
+  assert.equal(region.attributes["aria-labelledby"], "customer-possibilities-heading");
+  assert.equal(document.elements["customer-possibilities-heading"].textContent,
+    "Preparing possibilities connected to what you asked for…");
+  resolveRequest({ ok: false, json: async () => ({}) });
+  await pending;
+});
