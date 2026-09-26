@@ -136,3 +136,5 @@
 
 /* Make the existing validated relevance explanation visible before opening a possibility. */
 .customer-body .customer-possibility-relevance-preview {display:block;margin-top:8px;padding-top:9px;border-top:1px solid rgba(183,141,56,.4);font-size:.85rem;line-height:1.5;overflow-wrap:anywhere}
+
+.customer-body .customer-no-match-guidance {margin:12px 0 16px;padding:13px 15px;border-left:3px solid #b78d38;border-radius:8px;background:#f4f7fb;color:#26384e;line-height:1.55}
