@@ -190,3 +190,20 @@ test("business-copy match does not attach unrelated partial product continuation
   assert.equal(results.length, 1);
   assert.equal(Object.hasOwn(results[0], "products"), false);
 });
+
+test("ordinary requests cannot be matched by stitching together unrelated products", function () {
+  const split = offer("ordinary-split", "Explore our services", "Garden accessories", "Accessories only");
+  split.products.push({
+    productId: "repair-only", businessId: split.businessId, name: "Repair tools",
+    description: "Workshop supplies", continuationRoute: "website",
+    customerVisible: true, availability: "available"
+  });
+  const complete = offer("ordinary-complete", "Explore our services", "Garden repair", "Garden repair service");
+  assert.deepEqual(findCustomerPossibilities(request("garden repair"), [split, complete])
+    .map(item => item.workItemId), ["ordinary-complete"]);
+});
+
+test("a generic business headline does not borrow evidence from separate products", function () {
+  const split = offer("headline-split", "Garden accessories", "Repair tools", "Workshop supplies");
+  assert.deepEqual(findCustomerPossibilities(request("garden repair"), [split]), []);
+});
