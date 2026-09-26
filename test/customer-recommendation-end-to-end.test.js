@@ -207,3 +207,22 @@ test("a generic business headline does not borrow evidence from separate product
   const split = offer("headline-split", "Garden accessories", "Repair tools", "Workshop supplies");
   assert.deepEqual(findCustomerPossibilities(request("garden repair"), [split]), []);
 });
+
+test("bicycle category alone cannot stand in for an explicit repair service", function () {
+  const results = findCustomerPossibilities(request("bicycle repair"), [
+    offer("accessories", "Bicycle accessories", "Bicycle helmets", "Accessories for cycling"),
+    offer("repair-evidenced", "Local bicycle services", "Bicycle repair", "Repair enquiries")
+  ]);
+  assert.deepEqual(results.map(item => item.workItemId), ["repair-evidenced"]);
+});
+
+test("bicycle accessories are not displayed as repair-relevant products", function () {
+  const work = offer("repair-gallery", "Bicycle repair", "Bicycle repair", "Repair enquiries");
+  work.products.push({
+    productId: "accessory-only", businessId: work.businessId, name: "Bicycle helmet",
+    description: "Cycling accessory", continuationRoute: "website", customerVisible: true,
+    availability: "available"
+  });
+  const results = findCustomerPossibilities(request("bicycle repair"), [work]);
+  assert.deepEqual(results[0].products.map(product => product.productId), ["product-repair-gallery"]);
+});
