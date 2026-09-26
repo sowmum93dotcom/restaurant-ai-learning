@@ -278,3 +278,21 @@ test("except exclusions do not become additional requirements", function () {
     request("bicycle repair with collection except delivery"), [relevant, excluded]
   ).map(item => item.workItemId), ["except-with"]);
 });
+
+test("explicit requirements recognize evidenced service word forms in the same product", function () {
+  const work = offer("forms", "Bicycle services", "Bicycle repairs with collection",
+    "Bicycles repaired with home collection");
+  const results = findCustomerPossibilities(request("bicycle repair with home collection"), [work]);
+  assert.equal(results.length, 1);
+  assert.deepEqual(results[0].products.map(product => product.productId), ["product-forms"]);
+});
+
+test("service word forms cannot combine across products to satisfy a required feature", function () {
+  const work = offer("forms-split", "Bicycle services", "Bicycle repairs", "Workshop repair");
+  work.products.push({
+    productId: "collection-only", businessId: work.businessId, name: "Home collection",
+    description: "Collection enquiries", continuationRoute: "website", customerVisible: true,
+    availability: "available"
+  });
+  assert.deepEqual(findCustomerPossibilities(request("bicycle repair with home collection"), [work]), []);
+});

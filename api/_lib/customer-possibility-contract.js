@@ -138,6 +138,11 @@ const SERVICE_WORD_FAMILIES = Object.freeze([
   Object.freeze(["rent", "rents", "rental", "rentals", "renting"]),
   Object.freeze(["deliver", "delivers", "delivered", "delivery", "deliveries", "delivering"])
 ]);
+function hasRequirementEvidence(term, sourceTerms) {
+  const family = SERVICE_WORD_FAMILIES.find(function (forms) { return forms.includes(term); });
+  return family ? family.some(function (form) { return sourceTerms.has(form); }) : sourceTerms.has(term);
+}
+
 function supportsExplicitService(customerTerms, sourceTerms) {
   return SERVICE_WORD_FAMILIES.every(function (forms) {
     return !forms.some(function (term) { return customerTerms.has(term); }) ||
@@ -206,7 +211,7 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
       .map(function (product) { return meaningfulTerms([product.name, product.description].join(" ")); }));
     const matchingSources = additionalRequirements.size
       ? evidenceSources.filter(function (terms) {
-        return [...additionalRequirements, ...primaryRequirements].every(function (term) { return terms.has(term); });
+        return [...additionalRequirements, ...primaryRequirements].every(function (term) { return hasRequirementEvidence(term, terms); });
       })
       : evidenceSources;
     if (!matchingSources.length) return;
@@ -240,7 +245,7 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
         .filter(function (product) {
           if (!additionalRequirements.size) return true;
           const productTerms = meaningfulTerms([product.name, product.description].join(" "));
-          return [...additionalRequirements, ...primaryRequirements].every(function (term) { return productTerms.has(term); });
+          return [...additionalRequirements, ...primaryRequirements].every(function (term) { return hasRequirementEvidence(term, productTerms); });
         });
       if (relevantProducts.length) possibility.products = relevantProducts;
     }
