@@ -132,12 +132,15 @@ function stablePossibilityId(workItemId) {
 }
 
 function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_POSSIBILITIES, storedPreferences = [], storedFeedback = []) {
-  const excludedTerms = excludedCustomerTerms(understanding.customerText);\n  const customerTerms = meaningfulTerms([understanding.intention, understanding.customerText].join(" "));\n  excludedTerms.forEach(function (term) { customerTerms.delete(term); });
+  const excludedTerms = excludedCustomerTerms(understanding.customerText);
+  const customerTerms = meaningfulTerms([understanding.intention, understanding.customerText].join(" "));
+  excludedTerms.forEach(function (term) { customerTerms.delete(term); });
   const guidanceTerms = preferenceTerms(storedPreferences);
   const feedbackSignals = feedbackGuidance(storedFeedback);
   const candidates = [];
   getValidPublicCustomerWork(repositoryWork).forEach(function (work) {
-    const contentTerms = meaningfulTerms(work.content);\n    if (Array.from(excludedTerms).some(function (term) { return contentTerms.has(term); })) return;
+    const contentTerms = meaningfulTerms(work.content);
+    if (Array.from(excludedTerms).some(function (term) { return contentTerms.has(term); })) return;
     const evidence = Array.from(customerTerms).filter(function (term) { return contentTerms.has(term); }).sort();
     const concepts = evidencedConcepts(customerTerms, contentTerms);
     // Generic token overlap alone is not a defensible connection. Require either
