@@ -127,3 +127,9 @@
 .customer-body #discover .customer-connection-action span {color:inherit}
 .customer-body #discover .customer-connection-action:focus-visible {outline:3px solid #fff;outline-offset:3px}
 @media(max-width:680px){.customer-body #discover .customer-connection-entry {flex-direction:column;align-items:stretch;padding:16px}.customer-body #discover .customer-connection-action {width:100%;white-space:normal}}
+
+/* Explain the verified connection journey without implying guaranteed matches. */
+.customer-body .customer-connection-steps {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:18px 0 22px}
+.customer-body .customer-connection-steps span {display:block;padding:13px 14px;border:1px solid #b78d38;border-radius:12px;background:#fff;color:#26384e;line-height:1.45}
+.customer-body .customer-connection-steps strong {color:#102c4b}
+@media(max-width:680px){.customer-body .customer-connection-steps {grid-template-columns:1fr;gap:8px}.customer-body .customer-connection-steps span {padding:11px 13px}}
