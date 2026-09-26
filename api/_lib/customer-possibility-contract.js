@@ -69,7 +69,7 @@ function excludedCustomerTerms(customerText) {
   const words = String(customerText || "").toLocaleLowerCase("en").match(/[\p{L}\p{N}]+/gu) || [];
   const excluded = new Set();
   for (let index = 0; index < words.length - 1; index += 1) {
-    if (![ "without", "exclude", "excluding", "avoid", "no" ].includes(words[index])) continue;
+    if (![ "without", "exclude", "excluding", "avoid", "no", "except" ].includes(words[index])) continue;
     let position = index + 1;
     if (["any", "added"].includes(words[position])) position += 1;
     const next = words[position];
