@@ -31,6 +31,6 @@ test("validated product evidence contributes to possibility matching", function 
   const path = require("node:path");
   const source = fs.readFileSync(path.join(__dirname, "..", "api/_lib/customer-possibility-contract.js"), "utf8");
   assert.match(source, /const offerTerms = new Set\(\[\.\.\.contentTerms, \.\.\.productTerms\]\)/);
-  assert.match(source, /evidencedConcepts\(customerTerms, offerTerms\)/);
+  assert.match(source, /evidencedConcepts\(customerTerms, terms\)/);
   assert.match(source, /getValidPublicCustomerWork\(repositoryWork\)/);
 });
