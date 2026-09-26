@@ -129,13 +129,20 @@ function feedbackGuidance(storedFeedback) {
   }, new Map());
 }
 
-// A broad category concept must not substitute for an explicitly requested
-// service. Bicycle accessories alone do not evidence bicycle repair.
+// Broad category overlap cannot substitute for a specifically requested service.
+// Use only narrow, reviewable word families rather than inferring capabilities.
+const SERVICE_WORD_FAMILIES = Object.freeze([
+  Object.freeze(["repair", "repairs", "repaired", "repairing"]),
+  Object.freeze(["clean", "cleans", "cleaned", "cleaning"]),
+  Object.freeze(["install", "installs", "installed", "installation", "installing"]),
+  Object.freeze(["rent", "rents", "rental", "rentals", "renting"]),
+  Object.freeze(["deliver", "delivers", "delivered", "delivery", "deliveries", "delivering"])
+]);
 function supportsExplicitService(customerTerms, sourceTerms) {
-  const repairForms = ["repair", "repairs", "repaired", "repairing"];
-  if (repairForms.some(function (term) { return customerTerms.has(term); }) &&
-      !repairForms.some(function (term) { return sourceTerms.has(term); })) return false;
-  return true;
+  return SERVICE_WORD_FAMILIES.every(function (forms) {
+    return !forms.some(function (term) { return customerTerms.has(term); }) ||
+      forms.some(function (term) { return sourceTerms.has(term); });
+  });
 }
 
 function productRelevance(product, customerTerms) {
