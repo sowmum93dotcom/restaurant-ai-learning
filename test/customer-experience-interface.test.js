@@ -701,7 +701,7 @@ test("confirmed customer intention renders only validated business possibilities
     async () => {}, async () => {}, {}, {});
   const cards = document.elements["customer-possibilities-list"].children;
   assert.equal(cards.length, 1);
-  assert.match(cards[0].textContent, /Why this relates to your request: This authorized possibility connects to your current request/);
+  assert.match(cards[0].textContent, /Published business information matches these terms in your request: cake. This does not confirm every requirement/);
   assert.doesNotMatch(cards[0].textContent, /Guaranteed perfect match/);
   cards[0].listeners.click();
   const focus = document.elements["customer-focused-possibility"];
