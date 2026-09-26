@@ -226,3 +226,12 @@ test("bicycle accessories are not displayed as repair-relevant products", functi
   const results = findCustomerPossibilities(request("bicycle repair"), [work]);
   assert.deepEqual(results[0].products.map(product => product.productId), ["product-repair-gallery"]);
 });
+
+test("repairing and repaired requests require repair evidence rather than category overlap", function () {
+  const accessory = offer("repair-variant-accessory", "Bicycle accessories", "Bicycle helmet", "Cycling accessories");
+  const repair = offer("repair-variant-service", "Bicycle services", "Bicycle repairs", "Bicycles repaired locally");
+  for (const phrase of ["bicycle repairing", "bicycle repaired", "bicycle repairs"]) {
+    assert.deepEqual(findCustomerPossibilities(request(phrase), [accessory, repair])
+      .map(item => item.workItemId), ["repair-variant-service"]);
+  }
+});
