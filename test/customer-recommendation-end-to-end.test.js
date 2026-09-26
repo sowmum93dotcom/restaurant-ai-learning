@@ -296,3 +296,16 @@ test("service word forms cannot combine across products to satisfy a required fe
   });
   assert.deepEqual(findCustomerPossibilities(request("bicycle repair with home collection"), [work]), []);
 });
+
+test("excluding delivery also excludes delivered and deliveries evidence", function () {
+  const delivered = offer("delivered-excluded", "Bicycle repairs delivered locally", "Bicycle repairs", "Delivered to customers");
+  const deliveries = offer("deliveries-excluded", "Bicycle repairs with deliveries", "Bicycle repairs", "Deliveries available");
+  const workshop = offer("delivery-workshop", "Bicycle repair workshop", "Bicycle repairs", "Workshop service");
+  const results = findCustomerPossibilities(request("bicycle repair without delivery"), [delivered, deliveries, workshop]);
+  assert.deepEqual(results.map(item => item.workItemId), ["delivery-workshop"]);
+});
+
+test("excluded service word forms cannot be reused as positive matching evidence", function () {
+  const work = offer("excluded-positive", "Bicycle delivery", "Bicycle delivery", "Delivered locally");
+  assert.deepEqual(findCustomerPossibilities(request("bicycle without deliveries"), [work]), []);
+});
