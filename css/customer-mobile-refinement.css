@@ -166,3 +166,19 @@
   .customer-body .customer-intention-detail textarea {min-height:96px;padding:14px 16px}
   .customer-body .customer-context-actions {width:100%;margin:18px auto 0}
 }
+
+
+/* Tablet Discover: a compact, usable business surface rather than stretched desktop panels. */
+@media (min-width:681px) and (max-width:1180px) {
+  .customer-body #discover {width:100%;min-width:0;box-sizing:border-box}
+  .customer-body #discover .customer-section-heading {display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+  .customer-body #discover .customer-connection-entry {display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:18px}
+  .customer-body #discover .customer-work-list {width:100%;min-width:0;gap:16px}
+  .customer-body #discover .customer-work-card {width:100%;min-width:0;max-width:100%;height:auto;min-height:0;box-sizing:border-box}
+  .customer-body #discover .customer-work-media {width:100%;min-width:0;max-width:100%;overflow-x:auto}
+  .customer-body #discover .customer-work-media > .customer-work-media-link,
+  .customer-body #discover .customer-work-media > .customer-work-media-item {flex:0 0 min(100%,640px);min-width:0;max-width:100%}
+  .customer-body #discover .customer-package-region {max-width:100%;min-width:0;overflow-x:auto}
+  .customer-body #discover .customer-discover-option {flex:0 0 min(46%,320px);min-width:0}
+  .customer-body #discover .customer-discover-option-image {width:100%;height:auto;aspect-ratio:1 / 1;object-fit:cover}
+}
