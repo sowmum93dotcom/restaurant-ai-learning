@@ -534,6 +534,7 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
     }
     addText(document, surface, "span", "customer-possibility-preview", possibility.content);
     addText(document, surface, "span", "customer-possibility-provider", CUSTOMER_STAGE_THREE_COPY.providedBy + " " + possibility.businessName);
+    if (possibility.relevance && possibility.relevance.explanation) addText(document, surface, "span", "customer-possibility-relevance-preview", "Why this relates to your request: " + possibility.relevance.explanation);
     surface.addEventListener("click", function () { showFocused(possibility); });
     list.appendChild(surface);
   });
