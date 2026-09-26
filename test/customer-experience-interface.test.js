@@ -701,13 +701,13 @@ test("confirmed customer intention renders only validated business possibilities
     async () => {}, async () => {}, {}, {});
   const cards = document.elements["customer-possibilities-list"].children;
   assert.equal(cards.length, 1);
-  assert.match(cards[0].textContent, /Published business information matches these terms in your request: cake. This does not confirm every requirement/);
+  assert.match(cards[0].textContent, /Matching evidence from published business information: cake. This is a possible connection, not confirmation that all your requirements are met/);
   assert.doesNotMatch(cards[0].textContent, /Guaranteed perfect match/);
   cards[0].listeners.click();
   const focus = document.elements["customer-focused-possibility"];
   assert.equal(focus.hidden, false);
   assert.match(focus.textContent, /Approved business offering/);
-  assert.match(focus.textContent, /Published business information matches these terms in your request: cake. This does not confirm every requirement/);
+  assert.match(focus.textContent, /Matching evidence from published business information: cake. This is a possible connection, not confirmation that all your requirements are met/);
   assert.equal(focus.children.some((child) => child.className === "customer-business-continuation"), false);
 });
 
