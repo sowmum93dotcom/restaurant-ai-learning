@@ -17,7 +17,7 @@ test("possibility matching checks exclusions against product details, not only c
   const source = fs.readFileSync(path.join(__dirname, "..", "api/_lib/customer-possibility-contract.js"), "utf8");
   assert.match(source, /const productTerms = meaningfulTerms\(\(Array\.isArray\(work\.products\)/);
   assert.match(source, /product\.name, product\.description/);
-  assert.match(source, /contentTerms\.has\(term\) \|\| productTerms\.has\(term\)/);
+  assert.match(source, /hasExcludedEvidence\(excludedTerms, contentTerms\) \|\| hasExcludedEvidence\(excludedTerms, productTerms\)/);
 });
 
 test("understands explicit alternatives and modifiers without excluding positive requests", function () {
