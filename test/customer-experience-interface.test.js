@@ -622,3 +622,13 @@ test("customer possibilities failure offers retry for the same confirmed request
   await new Promise((resolve) => setImmediate(resolve));
   assert.equal(list.children.filter((child) => child.className === "customer-possibilities-retry").length, 1);
 });
+
+test("changing customer intention invalidates outstanding possibility responses before hiding results", function () {
+  const source = fs.readFileSync(path.join(__dirname, "..", "js/customer.js"), "utf8");
+  const change = source.match(/function changeIntention\(\) \{([\s\S]*?)\n  \}/);
+  assert.ok(change, "customer intention reset must exist");
+  const invalidate = change[1].indexOf("++customerPossibilitiesRequestSequence;");
+  const hide = change[1].indexOf("possibilityRegion.hidden = true;");
+  assert.ok(invalidate >= 0 && hide > invalidate, "invalidate pending requests before hiding old results");
+  assert.match(source, /if \(requestSequence !== customerPossibilitiesRequestSequence\) return;/);
+});
