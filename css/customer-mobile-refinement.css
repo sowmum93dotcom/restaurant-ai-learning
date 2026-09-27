@@ -243,3 +243,12 @@
  .customer-body #discover .customer-work-card .customer-package-region {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible;gap:14px}
  .customer-body #discover .customer-work-card .customer-discover-option {min-width:0;max-width:none;width:auto;flex-basis:auto}
 }
+
+/* Compact tablet customer navigation without changing the three public/private routes. */
+@media(min-width:681px) and (max-width:1180px){
+ .customer-body .customer-header-inner {width:calc(100% - 32px);min-height:64px;gap:20px}
+ .customer-body .customer-brand .demeos-logo {width:58px;height:auto}
+ .customer-body .customer-journey-nav {display:flex;align-items:center;justify-content:flex-end;gap:clamp(12px,3vw,32px);flex-wrap:wrap}
+ .customer-body .customer-journey-nav a {padding:10px 2px;font-size:clamp(13px,1.55vw,16px);line-height:1.2;letter-spacing:0}
+ .customer-body .customer-journey-nav a:after {bottom:4px}
+}
