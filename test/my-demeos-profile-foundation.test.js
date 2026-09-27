@@ -258,3 +258,10 @@ test("invalid possibilities payload does not erase the saved possibilities view"
   assert.match(script, /The saved possibility was removed, but your possibilities could not be verified\. Please refresh the page\./);
   assert.match(script, /renderPossibilities\(documentObject, result\.possibilities,/);
 });
+
+test("invalid participation payload is not displayed as an empty history", function () {
+  const script = read("js/my-demeos.js");
+  assert.match(script, /if \(!result \|\| !Array\.isArray\(result\.participations\)\)/);
+  assert.match(script, /Your participation could not be verified\. Please refresh the page\./);
+  assert.match(script, /renderParticipations\(documentObject, result\.participations\)/);
+});
