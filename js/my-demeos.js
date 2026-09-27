@@ -231,7 +231,11 @@
       loading.textContent = "Your participation could not be loaded. Please refresh to try again.";
       return;
     }
-    renderParticipations(documentObject, Array.isArray(result.participations) ? result.participations : []);
+    if (!result || !Array.isArray(result.participations)) {
+      loading.textContent = "Your participation could not be verified. Please refresh the page.";
+      return;
+    }
+    renderParticipations(documentObject, result.participations);
   }
 
   function renderPreferences(documentObject, preferences, removePreference) {
