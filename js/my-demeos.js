@@ -175,7 +175,7 @@
       result = await response.json();
     } catch (_error) {
       loading.hidden = true;
-      status.textContent = "Your possibilities could not be loaded. Please refresh to try again.";
+      status.textContent = successMessage ? "The saved possibility was removed, but your possibilities could not be refreshed. Please refresh the page." : "Your possibilities could not be loaded. Please refresh to try again.";
       return;
     }
     renderPossibilities(documentObject, Array.isArray(result.possibilities) ? result.possibilities : [], async function (savedPossibilityId, button) {
