@@ -156,3 +156,9 @@ test("preference save confirmation follows a successful list refresh", function 
   assert.match(script, /if \(successMessage\) status\.textContent = successMessage;/);
   assert.match(script, /input\.value = "";\s+await loadPreferences\(documentObject, fetchFunction, "Preference saved\."\);/);
 });
+
+test("preference removal confirmation follows a successful list refresh", function () {
+  const script = read("js/my-demeos.js");
+  assert.match(script, /if \(!removed\.ok\) throw new Error\("Removal failed"\);\s+await loadPreferences\(documentObject, fetchFunction, "Preference removed\."\);/);
+  assert.match(script, /if \(successMessage\) status\.textContent = successMessage;/);
+});
