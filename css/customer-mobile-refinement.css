@@ -284,3 +284,24 @@
  .customer-body #discover .customer-discover-meta {justify-content:flex-start;gap:6px}
  .customer-body #discover .customer-discover-toolbar h2 {font-size:1.2rem}
 }
+
+/* Customer navigation: one slim active indicator, no inherited oversized tablet header. */
+.customer-body .customer-header-inner {min-height:60px}
+.customer-body .customer-brand .demeos-logo {width:52px;height:auto}
+.customer-body .customer-journey-nav {align-items:center;gap:clamp(12px,2.5vw,28px)}
+.customer-body .customer-journey-nav a {padding:10px 0 9px;font-size:clamp(.78rem,1.25vw,.96rem);line-height:1.2;letter-spacing:0;border:0;text-decoration:none;box-shadow:none}
+.customer-body .customer-journey-nav a.is-current {text-decoration:none;border:0;box-shadow:none}
+.customer-body .customer-journey-nav a:after {height:2px;bottom:3px}
+@media(min-width:681px) and (max-width:1180px){
+ .customer-body .customer-header-inner {min-height:60px}
+ .customer-body .customer-brand .demeos-logo {width:52px}
+ .customer-body .customer-journey-nav {gap:clamp(12px,2.5vw,28px)}
+ .customer-body .customer-journey-nav a {padding:10px 0 9px;font-size:clamp(.78rem,1.25vw,.96rem)}
+ .customer-body .customer-journey-nav a:after {bottom:3px}
+}
+@media(max-width:680px){
+ .customer-body .customer-header-inner {min-height:58px}
+ .customer-body .customer-brand .demeos-logo {width:44px}
+ .customer-body .customer-journey-nav {gap:8px}
+ .customer-body .customer-journey-nav a {font-size:clamp(.65rem,2.5vw,.8rem);padding:8px 0}
+}
