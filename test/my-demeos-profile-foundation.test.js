@@ -124,3 +124,9 @@ test("privacy controls cannot be saved when existing settings fail to load", fun
   assert.match(script, /if \(submit\) submit\.disabled = true;\s+status\.textContent = "Loading your privacy controls…";/);
   assert.match(script, /if \(response\.ok\) await loadPrivacyControls\(documentObject, fetchFunction\);\s+else if \(submit\) submit\.disabled = false;/);
 });
+
+test("privacy controls save recovers from a network failure", function () {
+  const script = read("js/my-demeos.js");
+  assert.match(script, /status\.textContent = "Your privacy controls could not be saved\. Please try again\.";\s+if \(submit\) submit\.disabled = false;\s+return;/);
+  assert.match(script, /if \(response\.ok\) await loadPrivacyControls\(documentObject, fetchFunction\);\s+else if \(submit\) submit\.disabled = false;/);
+});
