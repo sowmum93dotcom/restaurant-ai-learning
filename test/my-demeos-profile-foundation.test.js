@@ -122,13 +122,13 @@ test("privacy controls cannot be saved when existing settings fail to load", fun
   const script = read("js/my-demeos.js");
   assert.match(script, /status\.textContent = "Your privacy controls could not be loaded\. Please refresh to try again\.";\s+return;/);
   assert.match(script, /if \(submit\) submit\.disabled = true;\s+status\.textContent = "Loading your privacy controls…";/);
-  assert.match(script, /if \(response\.ok\) await loadPrivacyControls\(documentObject, fetchFunction\);\s+else if \(submit\) submit\.disabled = false;/);
+  assert.match(script, /if \(response\.ok\) await loadPrivacyControls\(documentObject, fetchFunction, "Privacy controls saved\."\);\s+else status\.textContent = "Your privacy controls could not be saved\.";\s+if \(!response\.ok && submit\) submit\.disabled = false;/);
 });
 
 test("privacy controls save recovers from a network failure", function () {
   const script = read("js/my-demeos.js");
   assert.match(script, /status\.textContent = "Your privacy controls could not be saved\. Please try again\.";\s+if \(submit\) submit\.disabled = false;\s+return;/);
-  assert.match(script, /if \(response\.ok\) await loadPrivacyControls\(documentObject, fetchFunction\);\s+else if \(submit\) submit\.disabled = false;/);
+  assert.match(script, /if \(response\.ok\) await loadPrivacyControls\(documentObject, fetchFunction, "Privacy controls saved\."\);\s+else status\.textContent = "Your privacy controls could not be saved\.";\s+if \(!response\.ok && submit\) submit\.disabled = false;/);
 });
 
 test("preference creation recovers from a network failure without clearing input", function () {
@@ -189,4 +189,11 @@ test("saved possibility removal prevents duplicate clicks", function () {
   assert.match(script, /if \(!remove\.disabled\) removePossibility\(possibility\.savedPossibilityId, remove\);/);
   assert.match(script, /button\.disabled = true; status\.textContent = "Removing saved possibility…";/);
   assert.match(script, /button\.disabled = false; status\.textContent = "The saved possibility could not be removed\.";/);
+});
+
+test("privacy save confirmation follows successful refresh", function () {
+  const script = read("js/my-demeos.js");
+  assert.match(script, /async function loadPrivacyControls\(documentObject, fetchFunction, successMessage\)/);
+  assert.match(script, /status\.textContent = successMessage \|\| "";/);
+  assert.match(script, /await loadPrivacyControls\(documentObject, fetchFunction, "Privacy controls saved\."\);/);
 });
