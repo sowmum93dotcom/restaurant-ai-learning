@@ -173,7 +173,7 @@ test("customer feed returns only the deliberately public work shape", async func
   }];
   const res = await runHandler("../api/customer/work.js", { async getCustomerWork() { return work; } }, { method: "GET" });
   assert.equal(res.statusCode, 200);
-  assert.deepEqual(res.body, { work, customerPackages: [] });
+  assert.deepEqual(res.body, { work, customerPackages: [], testMode: false });
   assert.deepEqual(Object.keys(res.body.work[0]).sort(), [
     "businessName", "content", "location", "participationAction", "workItemId"
   ]);
@@ -199,7 +199,7 @@ test("customer feed excludes malformed repository items and minimizes every retu
 
   assert.equal(res.statusCode, 200);
   assert.deepEqual(res.body, { work: [{ workItemId: "campaign-a", businessName: "North Star",
-    location: "Leeds", content: "Come and see us.", participationAction: "Interested" }], customerPackages: [] });
+    location: "Leeds", content: "Come and see us.", participationAction: "Interested" }], customerPackages: [], testMode: false });
   assert.doesNotMatch(JSON.stringify(res.body), /private|Purchase|not public text/);
 });
 
@@ -222,8 +222,10 @@ test("customer package availability has an explicit server-owned empty boundary"
   }, { method: "GET", query: { customerPackages: "browser-package" } });
 
   assert.equal(res.statusCode, 200);
-  assert.deepEqual(res.body, { work: [], customerPackages: [] });
-  assert.doesNotMatch(JSON.stringify(res.body), /browser-package|price|discount|membership|benefit/i);
+  assert.equal(res.body.testMode, true);
+  assert.ok(res.body.work.length > 0);
+  assert.deepEqual(res.body.customerPackages, []);
+  assert.doesNotMatch(JSON.stringify(res.body.customerPackages), /browser-package|price|discount|membership|benefit/i);
 });
 
 test("Interested uses the route campaign identity and exposes only the safe action", async function () {
@@ -383,13 +385,14 @@ test("Discover controlled test content requires the exact private preview signal
 
   const normal = await runHandler("../api/customer/work.js", repository, { method: "GET", query: {}, headers: {} });
   assert.equal(normal.statusCode, 200);
-  assert.deepEqual(normal.body.work, []);
-  assert.equal(normal.body.testMode, undefined);
+  assert.equal(normal.body.testMode, true);
+  assert.equal(normal.body.work.length, 3);
   assert.equal(repositoryCalls, 1);
 
   const queryOnly = await runHandler("../api/customer/work.js", repository,
     { method: "GET", query: { "demeos-test": "1" }, headers: {} });
-  assert.deepEqual(queryOnly.body.work, []);
+  assert.equal(queryOnly.body.testMode, true);
+  assert.equal(queryOnly.body.work.length, 3);
   assert.equal(repositoryCalls, 2);
 
   const controlled = await runHandler("../api/customer/work.js", repository, {

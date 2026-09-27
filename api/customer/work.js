@@ -95,8 +95,11 @@ module.exports = async function handler(req, res) {
   }
   try {
     const work = await getRepository().getCustomerWork();
+    const publicWork = getValidPublicCustomerWork(work);
+    const useSamples = publicWork.length === 0 && process.env.DEMEOS_DISCOVER_SAMPLE_CONTENT !== "off";
     return res.status(200).json({
-      work: getValidPublicCustomerWork(work),
+      work: useSamples ? getValidPublicCustomerWork(discoverTestContent()) : publicWork,
+      testMode: useSamples,
       // Customer package availability is server-owned. No package definitions exist yet.
       customerPackages: []
     });
