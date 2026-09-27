@@ -117,3 +117,10 @@ test("preferences load failure replaces loading with recoverable message", funct
   assert.match(script, /status\.textContent = "Your preferences could not be loaded\. Please refresh to try again\."/);
   assert.match(script, /loading\.textContent = "Loading your preferences…";\s+loading\.hidden = false;/);
 });
+
+test("privacy controls cannot be saved when existing settings fail to load", function () {
+  const script = read("js/my-demeos.js");
+  assert.match(script, /status\.textContent = "Your privacy controls could not be loaded\. Please refresh to try again\.";\s+return;/);
+  assert.match(script, /if \(submit\) submit\.disabled = true;\s+status\.textContent = "Loading your privacy controls…";/);
+  assert.match(script, /if \(response\.ok\) await loadPrivacyControls\(documentObject, fetchFunction\);\s+else if \(submit\) submit\.disabled = false;/);
+});

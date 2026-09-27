@@ -288,12 +288,25 @@
   }
 
   async function loadPrivacyControls(documentObject, fetchFunction) {
-    const response = await fetchFunction("/api/customer/privacy-controls", { credentials: "same-origin", headers: { Accept: "application/json" } });
-    if (!response.ok) throw new Error("Could not load privacy controls");
-    const result = await response.json();
+    const form = documentObject.getElementById("privacy-controls-form");
+    const submit = form.querySelector('button[type="submit"]');
+    const status = documentObject.getElementById("privacy-controls-status");
+    if (submit) submit.disabled = true;
+    status.textContent = "Loading your privacy controls…";
+    let result;
+    try {
+      const response = await fetchFunction("/api/customer/privacy-controls", { credentials: "same-origin", headers: { Accept: "application/json" } });
+      if (!response.ok) throw new Error("Could not load privacy controls");
+      result = await response.json();
+    } catch (_error) {
+      status.textContent = "Your privacy controls could not be loaded. Please refresh to try again.";
+      return;
+    }
     const controls = result.controls || {};
     documentObject.getElementById("use-preferences-as-guidance").checked = controls.usePreferencesAsGuidance === true;
     documentObject.getElementById("use-feedback-as-guidance").checked = controls.useFeedbackAsGuidance === true;
+    status.textContent = "";
+    if (submit) submit.disabled = false;
   }
 
   function setupPrivacyControls(documentObject, fetchFunction) {
@@ -312,7 +325,7 @@
         headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify(controls) });
       status.textContent = response.ok ? "Privacy controls saved." : "Your privacy controls could not be saved.";
       if (response.ok) await loadPrivacyControls(documentObject, fetchFunction);
-      if (submit) submit.disabled = false;
+      else if (submit) submit.disabled = false;
     });
   }
 
