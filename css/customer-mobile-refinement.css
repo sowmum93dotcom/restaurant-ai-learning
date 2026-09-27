@@ -311,3 +311,18 @@
  .customer-body #discover .customer-work-card .customer-package-region:has(> .customer-discover-option:only-child){display:flex;justify-content:flex-start;overflow:visible;scroll-snap-type:none;width:100%;padding:0;margin-top:.55rem;box-sizing:border-box}
  .customer-body #discover .customer-work-card .customer-package-region>.customer-discover-option:only-child{flex:0 1 min(100%,460px);width:min(100%,460px);max-width:460px;min-width:0;box-sizing:border-box}
 }
+
+/* One Discover visual identity on phone and tablet; supersedes legacy mobile light theme. */
+@media(max-width:680px){
+ .customer-body,.customer-body .customer-main,.customer-body .customer-experience,.customer-body #discover,.customer-body #discover .customer-work-list{background:#07172a;color:#f2f5fa}
+ .customer-body #discover .customer-work-card{background:#0b1d33;color:#f2f5fa;border:1px solid rgba(229,189,89,.18)}
+ .customer-body #discover .customer-work-context{background:#0b1d33}
+ .customer-body #discover .customer-business-name,.customer-body #discover .customer-discover-position,.customer-body #discover .customer-work-card .customer-choice-title,.customer-body #discover .customer-work-card .customer-participation-title{color:#f2f5fa}
+ .customer-body #discover .customer-work-location,.customer-body #discover .customer-work-card .customer-work-content,.customer-body #discover .customer-work-card .customer-participation-copy{color:#c6d0df}
+ .customer-body #discover .customer-approved-mark{color:#f0cd7a;border-color:rgba(229,189,89,.5)}
+ .customer-body #discover .customer-work-card .customer-choice,.customer-body #discover .customer-work-card .customer-participation{border-color:rgba(229,189,89,.2)}
+ .customer-body #discover .customer-work-card .customer-discover-option{background:#081a30;color:#f2f5fa;border-color:rgba(229,189,89,.32)}
+ .customer-body #discover .customer-work-card .customer-discover-option-name{color:#fff}
+ .customer-body #discover .customer-work-card .customer-discover-option-description,.customer-body #discover .customer-package-empty{color:#c6d0df}
+ .customer-body #discover .customer-work-card .customer-discover-option-price{color:#f0cd7a}
+}
