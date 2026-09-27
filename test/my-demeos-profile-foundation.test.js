@@ -101,7 +101,7 @@ test("saved possibilities failure replaces loading with recoverable message", fu
 
 test("saved intentions failure replaces loading with recoverable message", function () {
   const script = read("js/my-demeos.js");
-  assert.match(script, /loading\.hidden = true;\s+status\.textContent = "Your intentions could not be loaded\. Please refresh to try again\."/);
+  assert.match(script, /loading\.hidden = true;\s+status\.textContent = successMessage \? "The saved intention was removed, but your intentions could not be refreshed\. Please refresh the page\." : "Your intentions could not be loaded\. Please refresh to try again\."/);
 });
 
 test("participation load failure is announced and can be retried", function () {
