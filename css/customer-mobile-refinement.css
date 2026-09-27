@@ -305,3 +305,9 @@
  .customer-body .customer-journey-nav {gap:8px}
  .customer-body .customer-journey-nav a {font-size:clamp(.65rem,2.5vw,.8rem);padding:8px 0}
 }
+
+/* One validated option must not look like a half-empty two-column carousel. */
+@media(min-width:681px){
+ .customer-body #discover .customer-work-card .customer-package-region:has(> .customer-discover-option:only-child){display:flex;justify-content:flex-start;overflow:visible;scroll-snap-type:none;width:100%;padding:0;margin-top:.55rem;box-sizing:border-box}
+ .customer-body #discover .customer-work-card .customer-package-region>.customer-discover-option:only-child{flex:0 1 min(100%,460px);width:min(100%,460px);max-width:460px;min-width:0;box-sizing:border-box}
+}
