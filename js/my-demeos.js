@@ -305,7 +305,7 @@
     });
   }
 
-  async function loadPrivacyControls(documentObject, fetchFunction) {
+  async function loadPrivacyControls(documentObject, fetchFunction, successMessage) {
     const form = documentObject.getElementById("privacy-controls-form");
     const submit = form.querySelector('button[type="submit"]');
     const status = documentObject.getElementById("privacy-controls-status");
@@ -323,7 +323,7 @@
     const controls = result.controls || {};
     documentObject.getElementById("use-preferences-as-guidance").checked = controls.usePreferencesAsGuidance === true;
     documentObject.getElementById("use-feedback-as-guidance").checked = controls.useFeedbackAsGuidance === true;
-    status.textContent = "";
+    status.textContent = successMessage || "";
     if (submit) submit.disabled = false;
   }
 
@@ -348,9 +348,9 @@
         if (submit) submit.disabled = false;
         return;
       }
-      status.textContent = response.ok ? "Privacy controls saved." : "Your privacy controls could not be saved.";
-      if (response.ok) await loadPrivacyControls(documentObject, fetchFunction);
-      else if (submit) submit.disabled = false;
+      if (response.ok) await loadPrivacyControls(documentObject, fetchFunction, "Privacy controls saved.");
+      else status.textContent = "Your privacy controls could not be saved.";
+      if (!response.ok && submit) submit.disabled = false;
     });
   }
 
