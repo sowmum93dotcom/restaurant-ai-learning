@@ -78,7 +78,7 @@
     });
   }
 
-  async function loadIntentions(documentObject, fetchFunction) {
+  async function loadIntentions(documentObject, fetchFunction, successMessage) {
     const loading = documentObject.getElementById("my-intentions-loading");
     const status = documentObject.getElementById("my-intentions-status");
     status.textContent = "";
@@ -98,9 +98,10 @@
         const removed = await fetchFunction("/api/customer/intentions", { method: "DELETE", credentials: "same-origin",
           headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify({ intentionId }) });
         if (!removed.ok) throw new Error("Removal failed");
-        status.textContent = "Saved intention removed."; await loadIntentions(documentObject, fetchFunction);
+        await loadIntentions(documentObject, fetchFunction, "Saved intention removed.");
       } catch (_error) { button.disabled = false; status.textContent = "The saved intention could not be removed."; }
     });
+    if (successMessage) status.textContent = successMessage;
   }
 
   function renderPossibilities(documentObject, possibilities, removePossibility) {
