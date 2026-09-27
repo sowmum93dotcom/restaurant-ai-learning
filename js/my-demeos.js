@@ -92,7 +92,12 @@
       status.textContent = successMessage ? "The saved intention was removed, but your intentions could not be refreshed. Please refresh the page." : "Your intentions could not be loaded. Please refresh to try again.";
       return;
     }
-    renderIntentions(documentObject, Array.isArray(result.intentions) ? result.intentions : [], async function (intentionId, button) {
+    if (!result || !Array.isArray(result.intentions)) {
+      loading.hidden = true;
+      status.textContent = successMessage ? "The saved intention was removed, but your intentions could not be verified. Please refresh the page." : "Your intentions could not be verified. Please refresh the page.";
+      return;
+    }
+    renderIntentions(documentObject, result.intentions, async function (intentionId, button) {
       const status = documentObject.getElementById("my-intentions-status"); button.disabled = true; status.textContent = "Removing saved intention…";
       try {
         const removed = await fetchFunction("/api/customer/intentions", { method: "DELETE", credentials: "same-origin",
