@@ -95,7 +95,7 @@ test("issued customer possibilities query uses the actual issuance schema", func
 
 test("saved possibilities failure replaces loading with recoverable message", function () {
   const script = read("js/my-demeos.js");
-  assert.match(script, /loading\.hidden = true;\s+status\.textContent = "Your possibilities could not be loaded\. Please refresh to try again\."/);
+  assert.match(script, /loading\.hidden = true;\s+status\.textContent = successMessage \? "The saved possibility was removed, but your possibilities could not be refreshed\. Please refresh the page\." : "Your possibilities could not be loaded\. Please refresh to try again\."/);
   assert.match(script, /status\.textContent = "";\s+let result;/);
 });
 
@@ -207,4 +207,9 @@ test("preference mutation distinguishes successful write from failed refresh", f
 test("intention removal distinguishes successful delete from failed refresh", function () {
   const script = read("js/my-demeos.js");
   assert.match(script, /successMessage \? "The saved intention was removed, but your intentions could not be refreshed\. Please refresh the page\." : "Your intentions could not be loaded\. Please refresh to try again\."/);
+});
+
+test("possibility removal distinguishes successful delete from failed refresh", function () {
+  const script = read("js/my-demeos.js");
+  assert.match(script, /successMessage \? "The saved possibility was removed, but your possibilities could not be refreshed\. Please refresh the page\." : "Your possibilities could not be loaded\. Please refresh to try again\."/);
 });
