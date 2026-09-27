@@ -197,3 +197,9 @@ test("privacy save confirmation follows successful refresh", function () {
   assert.match(script, /status\.textContent = successMessage \|\| "";/);
   assert.match(script, /await loadPrivacyControls\(documentObject, fetchFunction, "Privacy controls saved\."\);/);
 });
+
+test("preference mutation distinguishes successful write from failed refresh", function () {
+  const script = read("js/my-demeos.js");
+  assert.match(script, /successMessage \? "Your change was saved, but your preferences could not be refreshed\. Please refresh the page\." : "Your preferences could not be loaded\. Please refresh to try again\."/);
+  assert.match(script, /if \(successMessage\) status\.textContent = successMessage;\s+return true;/);
+});
