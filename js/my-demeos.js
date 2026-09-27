@@ -183,7 +183,12 @@
       status.textContent = successMessage ? "The saved possibility was removed, but your possibilities could not be refreshed. Please refresh the page." : "Your possibilities could not be loaded. Please refresh to try again.";
       return;
     }
-    renderPossibilities(documentObject, Array.isArray(result.possibilities) ? result.possibilities : [], async function (savedPossibilityId, button) {
+    if (!result || !Array.isArray(result.possibilities)) {
+      loading.hidden = true;
+      status.textContent = successMessage ? "The saved possibility was removed, but your possibilities could not be verified. Please refresh the page." : "Your possibilities could not be verified. Please refresh the page.";
+      return;
+    }
+    renderPossibilities(documentObject, result.possibilities, async function (savedPossibilityId, button) {
       const status = documentObject.getElementById("my-possibilities-status"); button.disabled = true; status.textContent = "Removing saved possibility…";
       try {
         const removed = await fetchFunction("/api/customer/possibilities/saved", { method: "DELETE", credentials: "same-origin",
