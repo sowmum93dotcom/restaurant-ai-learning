@@ -34,7 +34,7 @@ test("profile foundation presents trusted DEMEOS entry language and honest empty
   assert.match(html, /Sign in to My DEMEOS to keep and see your intentions across visits\./);
   assert.match(html, /Sign in to My DEMEOS to keep and see your possibilities across visits\./);
   assert.match(html, /Sign in to My DEMEOS to see your participation across visits\./);
-  assert.match(html, /Your secure DEMEOS relationship is active\./);
+  assert.match(html, /Your sign-in session is active\. Relationship data is shown only after verification\./);
   assert.match(html, /Customer sign-in is not available yet\./);
   assert.match(html, /requires Clerk provider configuration before it can be activated\./);
   for (const heading of ["My Intentions", "My Possibilities", "My Participation", "My Preferences"]) {
