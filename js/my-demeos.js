@@ -158,7 +158,7 @@
       }
       if (removePossibility && possibility.savedPossibilityId) {
         const remove = documentObject.createElement("button"); remove.type = "button"; remove.className = "demeos-secondary-button"; remove.textContent = "Remove";
-        remove.addEventListener("click", function () { removePossibility(possibility.savedPossibilityId, remove); }); article.appendChild(remove);
+        remove.addEventListener("click", function () { if (!remove.disabled) removePossibility(possibility.savedPossibilityId, remove); }); article.appendChild(remove);
       }
       list.appendChild(article);
     });
