@@ -149,3 +149,10 @@ test("preference removal prevents duplicate requests and permits retry after fai
   assert.match(script, /async function \(preferenceId, button\) \{\s+button\.disabled = true;\s+status\.textContent = "Removing preference…";/);
   assert.match(script, /button\.disabled = false;\s+status\.textContent = "Your preference could not be removed\. Please try again\.";/);
 });
+
+test("preference save confirmation follows a successful list refresh", function () {
+  const script = read("js/my-demeos.js");
+  assert.match(script, /async function loadPreferences\(documentObject, fetchFunction, successMessage\)/);
+  assert.match(script, /if \(successMessage\) status\.textContent = successMessage;/);
+  assert.match(script, /input\.value = "";\s+await loadPreferences\(documentObject, fetchFunction, "Preference saved\."\);/);
+});
