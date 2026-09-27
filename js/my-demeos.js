@@ -207,9 +207,16 @@
   }
 
   async function loadParticipations(documentObject, fetchFunction) {
-    const response = await fetchFunction("/api/customer/participation", { credentials: "same-origin", headers: { Accept: "application/json" } });
-    if (!response.ok) throw new Error("Could not load participation");
-    const result = await response.json();
+    const loading = documentObject.getElementById("my-participation-loading");
+    let result;
+    try {
+      const response = await fetchFunction("/api/customer/participation", { credentials: "same-origin", headers: { Accept: "application/json" } });
+      if (!response.ok) throw new Error("Could not load participation");
+      result = await response.json();
+    } catch (_error) {
+      loading.textContent = "Your participation could not be loaded. Please refresh to try again.";
+      return;
+    }
     renderParticipations(documentObject, Array.isArray(result.participations) ? result.participations : []);
   }
 
