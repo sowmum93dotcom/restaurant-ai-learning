@@ -257,8 +257,8 @@
       result = await response.json();
     } catch (_error) {
       loading.hidden = true;
-      status.textContent = "Your preferences could not be loaded. Please refresh to try again.";
-      return;
+      status.textContent = successMessage ? "Preference saved, but your preferences could not be refreshed. Please refresh the page." : "Your preferences could not be loaded. Please refresh to try again.";
+      return false;
     }
     renderPreferences(documentObject, Array.isArray(result.preferences) ? result.preferences : [], async function (preferenceId, button) {
       button.disabled = true;
@@ -274,6 +274,7 @@
       }
     });
     if (successMessage) status.textContent = successMessage;
+    return true;
   }
 
   function setupPreferenceCreation(documentObject, fetchFunction) {
