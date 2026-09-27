@@ -230,3 +230,15 @@ test("invalid preferences payload is not displayed as an empty saved list", func
   assert.match(script, /if \(!result \|\| !Array\.isArray\(result\.preferences\)\)/);
   assert.match(script, /Your preferences could not be verified\. Please refresh the page\./);
 });
+
+test("customer continuation URLs reject embedded whitespace", function () {
+  const script = read("js/customer.js");
+  const functionSource = script.match(/function validatedCustomerWebUrl\(value\) \{[\s\S]*?\n\}/);
+  assert.ok(functionSource);
+  const normalizeSource = script.match(/function normalizedRequiredString\(value\) \{[\s\S]*?\n\}/);
+  assert.ok(normalizeSource);
+  const validate = new Function(normalizeSource[0] + "\n" + functionSource[0] + "\nreturn validatedCustomerWebUrl;")();
+  assert.equal(validate("https://example.com/a b"), null);
+  assert.equal(validate("https://example.com/a\\tb"), null);
+  assert.equal(validate("https://example.com/valid"), "https://example.com/valid");
+});
