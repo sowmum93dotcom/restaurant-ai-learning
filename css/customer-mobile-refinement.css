@@ -219,3 +219,13 @@
  .customer-body #discover .customer-work-card .customer-participation {padding:16px 20px}
  .customer-body #discover .customer-media-position {color:#e8edf5}
 }
+
+/* Keep product options integrated with the business surface, never a white placeholder strip. */
+.customer-body #discover .customer-work-card .customer-choice,
+.customer-body #discover .customer-work-card .customer-package-region {background:transparent;color:#f2f5fa}
+.customer-body #discover .customer-work-card .customer-choice-empty {display:none}
+.customer-body #discover .customer-work-card .customer-package-region:empty {display:none}
+.customer-body #discover .customer-work-card .customer-discover-option {background:#081a30;color:#f2f5fa;border:1px solid rgba(229,189,89,.32);box-shadow:none}
+.customer-body #discover .customer-work-card .customer-discover-option-name {color:#fff}
+.customer-body #discover .customer-work-card .customer-discover-option-description {color:#c6d0df}
+.customer-body #discover .customer-work-card .customer-media-position {color:#dce5f2}
