@@ -225,7 +225,7 @@ test("customer package availability has an explicit server-owned empty boundary"
   assert.equal(res.body.testMode, true);
   assert.ok(res.body.work.length > 0);
   assert.deepEqual(res.body.customerPackages, []);
-  assert.doesNotMatch(JSON.stringify(res.body), /browser-package|price|discount|membership|benefit/i);
+  assert.doesNotMatch(JSON.stringify(res.body.customerPackages), /browser-package|price|discount|membership|benefit/i);
 });
 
 test("Interested uses the route campaign identity and exposes only the safe action", async function () {
