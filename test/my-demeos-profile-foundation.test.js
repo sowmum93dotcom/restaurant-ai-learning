@@ -86,3 +86,9 @@ test("customer relationship data errors cannot replace sign-in state", function 
   assert.match(script, /if \(authenticated\) await Promise\.allSettled\(\[loadIntentions/);
   assert.doesNotMatch(script, /if \(authenticated\) await Promise\.all\(\[loadIntentions/);
 });
+
+test("issued customer possibilities query uses the actual issuance schema", function () {
+  const persistence = read("api/_lib/persistence.js");
+  assert.match(persistence, /WHERE i\.trusted_customer_identity_id = \$1\s+ORDER BY i\.issued_at DESC/);
+  assert.doesNotMatch(persistence, /i\.delivery_confirmed/);
+});
