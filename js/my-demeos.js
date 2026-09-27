@@ -14,7 +14,7 @@
   }
 
   function showState(authElements, state) {
-    authElements.status.hidden = state === "signedIn";
+    authElements.status.hidden = false;
     for (const name of ["loading", "signedOut", "signedIn", "unavailable"]) {
       authElements[name].hidden = name !== state;
     }
