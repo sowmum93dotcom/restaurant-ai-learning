@@ -80,3 +80,9 @@ test("sign out follows provider session while relationship data remains trusted-
   assert.match(script, /getElementById\("my-intentions-signed-in"\)\.hidden = !authenticated/);
   assert.match(script, /authElements\.signOut\.addEventListener\("click", function \(\) \{ clerk\.signOut\(\); \}\)/);
 });
+
+test("customer relationship data errors cannot replace sign-in state", function () {
+  const script = read("js/my-demeos.js");
+  assert.match(script, /if \(authenticated\) await Promise\.allSettled\(\[loadIntentions/);
+  assert.doesNotMatch(script, /if \(authenticated\) await Promise\.all\(\[loadIntentions/);
+});
