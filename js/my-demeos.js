@@ -350,7 +350,7 @@
       }
       if (response.ok) await loadPrivacyControls(documentObject, fetchFunction, "Privacy controls saved.");
       else status.textContent = "Your privacy controls could not be saved.";
-      else if (submit) submit.disabled = false;
+      if (!response.ok && submit) submit.disabled = false;
     });
   }
 
