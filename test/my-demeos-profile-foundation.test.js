@@ -162,3 +162,10 @@ test("preference removal confirmation follows a successful list refresh", functi
   assert.match(script, /if \(!removed\.ok\) throw new Error\("Removal failed"\);\s+await loadPreferences\(documentObject, fetchFunction, "Preference removed\."\);/);
   assert.match(script, /if \(successMessage\) status\.textContent = successMessage;/);
 });
+
+test("saved possibility removal confirmation follows a successful refresh", function () {
+  const script = read("js/my-demeos.js");
+  assert.match(script, /async function loadPossibilities\(documentObject, fetchFunction, successMessage\)/);
+  assert.match(script, /await loadPossibilities\(documentObject, fetchFunction, "Saved possibility removed\."\);/);
+  assert.match(script, /if \(successMessage\) status\.textContent = successMessage;/);
+});
