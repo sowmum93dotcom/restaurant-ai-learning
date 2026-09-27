@@ -259,9 +259,14 @@
       return;
     }
     renderPreferences(documentObject, Array.isArray(result.preferences) ? result.preferences : [], async function (preferenceId) {
-      const removed = await fetchFunction("/api/customer/preferences", { method: "DELETE", credentials: "same-origin",
-        headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify({ preferenceId }) });
-      if (removed.ok) await loadPreferences(documentObject, fetchFunction);
+      try {
+        const removed = await fetchFunction("/api/customer/preferences", { method: "DELETE", credentials: "same-origin",
+          headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify({ preferenceId }) });
+        if (!removed.ok) throw new Error("Removal failed");
+        await loadPreferences(documentObject, fetchFunction);
+      } catch (_error) {
+        status.textContent = "Your preference could not be removed. Please try again.";
+      }
     });
   }
 
