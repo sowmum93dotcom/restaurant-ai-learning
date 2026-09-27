@@ -278,8 +278,15 @@
       if (!preference) return;
       status.textContent = "Saving your preference…";
       if (submit) submit.disabled = true;
-      const response = await fetchFunction("/api/customer/preferences", { method: "POST", credentials: "same-origin",
-        headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify({ preference }) });
+      let response;
+      try {
+        response = await fetchFunction("/api/customer/preferences", { method: "POST", credentials: "same-origin",
+          headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify({ preference }) });
+      } catch (_error) {
+        status.textContent = "Your preference could not be saved. Please try again.";
+        if (submit) submit.disabled = false;
+        return;
+      }
       if (!response.ok) { status.textContent = "Your preference could not be saved."; if (submit) submit.disabled = false; return; }
       input.value = ""; status.textContent = "Preference saved.";
       await loadPreferences(documentObject, fetchFunction);
