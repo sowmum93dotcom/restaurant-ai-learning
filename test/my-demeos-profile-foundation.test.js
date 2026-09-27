@@ -92,3 +92,9 @@ test("issued customer possibilities query uses the actual issuance schema", func
   assert.match(persistence, /WHERE i\.trusted_customer_identity_id = \$1\s+ORDER BY i\.issued_at DESC/);
   assert.doesNotMatch(persistence, /i\.delivery_confirmed/);
 });
+
+test("saved possibilities failure replaces loading with recoverable message", function () {
+  const script = read("js/my-demeos.js");
+  assert.match(script, /loading\.hidden = true;\s+status\.textContent = "Your possibilities could not be loaded\. Please refresh to try again\."/);
+  assert.match(script, /status\.textContent = "";\s+let result;/);
+});

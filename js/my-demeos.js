@@ -154,9 +154,19 @@
   }
 
   async function loadPossibilities(documentObject, fetchFunction) {
-    const response = await fetchFunction("/api/customer/possibilities/saved", { credentials: "same-origin", headers: { Accept: "application/json" } });
-    if (!response.ok) throw new Error("Could not load possibilities");
-    const result = await response.json();
+    const loading = documentObject.getElementById("my-possibilities-loading");
+    const status = documentObject.getElementById("my-possibilities-status");
+    status.textContent = "";
+    let result;
+    try {
+      const response = await fetchFunction("/api/customer/possibilities/saved", { credentials: "same-origin", headers: { Accept: "application/json" } });
+      if (!response.ok) throw new Error("Could not load possibilities");
+      result = await response.json();
+    } catch (_error) {
+      loading.hidden = true;
+      status.textContent = "Your possibilities could not be loaded. Please refresh to try again.";
+      return;
+    }
     renderPossibilities(documentObject, Array.isArray(result.possibilities) ? result.possibilities : [], async function (savedPossibilityId, button) {
       const status = documentObject.getElementById("my-possibilities-status"); button.disabled = true; status.textContent = "Removing saved possibility…";
       try {
