@@ -229,3 +229,17 @@
 .customer-body #discover .customer-work-card .customer-discover-option-name {color:#fff}
 .customer-body #discover .customer-work-card .customer-discover-option-description {color:#c6d0df}
 .customer-body #discover .customer-work-card .customer-media-position {color:#dce5f2}
+
+/* Content-sized business experiences across desktop and tablet, with no artificial empty band. */
+.customer-body #discover .customer-work-card {min-height:0;height:auto}
+.customer-body #discover .customer-work-card .customer-message {min-height:0}
+.customer-body #discover .customer-work-card .customer-choice {min-height:0}
+.customer-body #discover .customer-work-card .customer-work-media {scroll-padding-inline:0}
+.customer-body #discover .customer-work-card .customer-participation {min-height:0}
+@media(min-width:1181px){
+ .customer-body #discover .customer-work-card .customer-work-media-item,
+ .customer-body #discover .customer-work-card .customer-work-media-link {flex:0 0 100%;max-width:100%;min-width:100%;scroll-snap-align:start}
+ .customer-body #discover .customer-work-card .customer-work-media-item {width:100%;aspect-ratio:16/9;object-fit:cover}
+ .customer-body #discover .customer-work-card .customer-package-region {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible;gap:14px}
+ .customer-body #discover .customer-work-card .customer-discover-option {min-width:0;max-width:none;width:auto;flex-basis:auto}
+}
