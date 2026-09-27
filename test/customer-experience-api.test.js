@@ -173,7 +173,7 @@ test("customer feed returns only the deliberately public work shape", async func
   }];
   const res = await runHandler("../api/customer/work.js", { async getCustomerWork() { return work; } }, { method: "GET" });
   assert.equal(res.statusCode, 200);
-  assert.deepEqual(res.body, { work, customerPackages: [] });
+  assert.deepEqual(res.body, { work, customerPackages: [], testMode: false });
   assert.deepEqual(Object.keys(res.body.work[0]).sort(), [
     "businessName", "content", "location", "participationAction", "workItemId"
   ]);
@@ -199,7 +199,7 @@ test("customer feed excludes malformed repository items and minimizes every retu
 
   assert.equal(res.statusCode, 200);
   assert.deepEqual(res.body, { work: [{ workItemId: "campaign-a", businessName: "North Star",
-    location: "Leeds", content: "Come and see us.", participationAction: "Interested" }], customerPackages: [] });
+    location: "Leeds", content: "Come and see us.", participationAction: "Interested" }], customerPackages: [], testMode: false });
   assert.doesNotMatch(JSON.stringify(res.body), /private|Purchase|not public text/);
 });
 
@@ -222,7 +222,9 @@ test("customer package availability has an explicit server-owned empty boundary"
   }, { method: "GET", query: { customerPackages: "browser-package" } });
 
   assert.equal(res.statusCode, 200);
-  assert.deepEqual(res.body, { work: [], customerPackages: [] });
+  assert.equal(res.body.testMode, true);
+  assert.ok(res.body.work.length > 0);
+  assert.deepEqual(res.body.customerPackages, []);
   assert.doesNotMatch(JSON.stringify(res.body), /browser-package|price|discount|membership|benefit/i);
 });
 
