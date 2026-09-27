@@ -14,7 +14,7 @@ function normalizedRequiredString(value) {
 
 function validatedCustomerWebUrl(value) {
   const candidate = normalizedRequiredString(value);
-  if (!candidate || /\\s/.test(candidate)) return null;
+  if (!candidate || /\s/.test(candidate)) return null;
   try {
     const url = new URL(candidate);
     if (!["http:", "https:"].includes(url.protocol) || !url.hostname || url.username || url.password) return null;
