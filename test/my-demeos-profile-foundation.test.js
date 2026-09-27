@@ -120,7 +120,7 @@ test("preferences load failure replaces loading with recoverable message", funct
 
 test("privacy controls cannot be saved when existing settings fail to load", function () {
   const script = read("js/my-demeos.js");
-  assert.match(script, /status\.textContent = "Your privacy controls could not be loaded\. Please refresh to try again\.";\s+return;/);
+  assert.match(script, /status\.textContent = successMessage \? "Your privacy controls were saved, but could not be refreshed\. Please refresh the page before making further changes\." : "Your privacy controls could not be loaded\. Please refresh to try again\.";\s+return;/);
   assert.match(script, /if \(submit\) submit\.disabled = true;\s+status\.textContent = "Loading your privacy controls…";/);
   assert.match(script, /if \(response\.ok\) await loadPrivacyControls\(documentObject, fetchFunction, "Privacy controls saved\."\);\s+else status\.textContent = "Your privacy controls could not be saved\.";\s+if \(!response\.ok && submit\) submit\.disabled = false;/);
 });
@@ -212,4 +212,9 @@ test("intention removal distinguishes successful delete from failed refresh", fu
 test("possibility removal distinguishes successful delete from failed refresh", function () {
   const script = read("js/my-demeos.js");
   assert.match(script, /successMessage \? "The saved possibility was removed, but your possibilities could not be refreshed\. Please refresh the page\." : "Your possibilities could not be loaded\. Please refresh to try again\."/);
+});
+
+test("privacy save distinguishes successful write from failed refresh", function () {
+  const script = read("js/my-demeos.js");
+  assert.match(script, /successMessage \? "Your privacy controls were saved, but could not be refreshed\. Please refresh the page before making further changes\." : "Your privacy controls could not be loaded\. Please refresh to try again\."/);
 });
