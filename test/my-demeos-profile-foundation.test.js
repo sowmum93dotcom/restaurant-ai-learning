@@ -224,3 +224,9 @@ test("privacy controls reject malformed response before enabling save", function
   assert.match(script, /typeof controls\.usePreferencesAsGuidance !== "boolean" \|\| typeof controls\.useFeedbackAsGuidance !== "boolean"/);
   assert.match(script, /Your privacy controls could not be verified\. Please refresh before making changes\./);
 });
+
+test("invalid preferences payload is not displayed as an empty saved list", function () {
+  const script = read("js/my-demeos.js");
+  assert.match(script, /if \(!result \|\| !Array\.isArray\(result\.preferences\)\)/);
+  assert.match(script, /Your preferences could not be verified\. Please refresh the page\./);
+});
