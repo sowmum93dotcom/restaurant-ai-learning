@@ -142,3 +142,10 @@ test("preference removal reports failed requests without removing the displayed 
   assert.match(script, /if \(!removed\.ok\) throw new Error\("Removal failed"\);\s+await loadPreferences\(documentObject, fetchFunction\);/);
   assert.match(script, /status\.textContent = "Your preference could not be removed\. Please try again\.";/);
 });
+
+test("preference removal prevents duplicate requests and permits retry after failure", function () {
+  const script = read("js/my-demeos.js");
+  assert.match(script, /if \(!remove\.disabled\) removePreference\(preference\.preferenceId, remove\);/);
+  assert.match(script, /async function \(preferenceId, button\) \{\s+button\.disabled = true;\s+status\.textContent = "Removing preference…";/);
+  assert.match(script, /button\.disabled = false;\s+status\.textContent = "Your preference could not be removed\. Please try again\.";/);
+});
