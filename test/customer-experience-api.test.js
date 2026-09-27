@@ -418,8 +418,8 @@ test("Discover controlled test content exercises validated unavailable unmatched
   assert.equal(bistro.media[1].relatedEntityId, undefined);
   assert.equal(studio.media[0].relatedEntityId, undefined);
   assert.equal(studio.media[0].purpose, "business");
-  assert.equal(studio.media.some(media => media.kind === "video"), false);
-  assert.equal(studio.media[1].relatedEntityId, "missing-test-product");
+  assert.equal(studio.media.some(media => media.kind === "video" && media.purpose === "business" && media.relatedEntityId === undefined), true);
+  assert.equal(studio.media[2].relatedEntityId, "missing-test-product");
   assert.equal(market.customerContinuation, undefined);
   assert.equal(market.products, undefined);
 });
