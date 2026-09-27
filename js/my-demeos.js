@@ -321,7 +321,11 @@
       status.textContent = successMessage ? "Your privacy controls were saved, but could not be refreshed. Please refresh the page before making further changes." : "Your privacy controls could not be loaded. Please refresh to try again.";
       return;
     }
-    const controls = result.controls || {};
+    const controls = result && result.controls;
+    if (!controls || typeof controls.usePreferencesAsGuidance !== "boolean" || typeof controls.useFeedbackAsGuidance !== "boolean") {
+      status.textContent = "Your privacy controls could not be verified. Please refresh before making changes.";
+      return;
+    }
     documentObject.getElementById("use-preferences-as-guidance").checked = controls.usePreferencesAsGuidance === true;
     documentObject.getElementById("use-feedback-as-guidance").checked = controls.useFeedbackAsGuidance === true;
     status.textContent = successMessage || "";
