@@ -208,6 +208,8 @@
 
   async function loadParticipations(documentObject, fetchFunction) {
     const loading = documentObject.getElementById("my-participation-loading");
+    loading.textContent = "Loading your participation…";
+    loading.hidden = false;
     let result;
     try {
       const response = await fetchFunction("/api/customer/participation", { credentials: "same-origin", headers: { Accept: "application/json" } });
