@@ -242,7 +242,7 @@
     });
   }
 
-  async function loadPreferences(documentObject, fetchFunction) {
+  async function loadPreferences(documentObject, fetchFunction, successMessage) {
     const loading = documentObject.getElementById("my-preferences-loading");
     const status = documentObject.getElementById("my-preferences-status");
     status.textContent = "";
@@ -271,6 +271,7 @@
         status.textContent = "Your preference could not be removed. Please try again.";
       }
     });
+    if (successMessage) status.textContent = successMessage;
   }
 
   function setupPreferenceCreation(documentObject, fetchFunction) {
@@ -296,8 +297,8 @@
         return;
       }
       if (!response.ok) { status.textContent = "Your preference could not be saved."; if (submit) submit.disabled = false; return; }
-      input.value = ""; status.textContent = "Preference saved.";
-      await loadPreferences(documentObject, fetchFunction);
+      input.value = "";
+      await loadPreferences(documentObject, fetchFunction, "Preference saved.");
       if (submit) submit.disabled = false;
     });
   }
