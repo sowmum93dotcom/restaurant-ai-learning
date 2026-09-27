@@ -71,3 +71,12 @@ test("signed-in account controls remain visible while inactive auth states stay 
   assert.equal(elements.signedIn.hidden, true);
   assert.equal(elements.signedOut.hidden, false);
 });
+
+test("sign out follows provider session while relationship data remains trusted-only", function () {
+  const script = read("js/my-demeos.js");
+  assert.match(script, /const hasProviderSession = Boolean\(clerk\.user\)/);
+  assert.match(script, /const authenticated = hasProviderSession \? await confirmTrustedCustomer\(fetchFunction\) : false/);
+  assert.match(script, /showState\(authElements, hasProviderSession \? "signedIn" : "signedOut"\)/);
+  assert.match(script, /getElementById\("my-intentions-signed-in"\)\.hidden = !authenticated/);
+  assert.match(script, /authElements\.signOut\.addEventListener\("click", function \(\) \{ clerk\.signOut\(\); \}\)/);
+});
