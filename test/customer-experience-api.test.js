@@ -413,8 +413,11 @@ test("Discover controlled test content exercises validated unavailable unmatched
   const [bistro, studio, market] = res.body.work;
   assert.equal(bistro.products[0].availability, "available");
   assert.equal(bistro.products[1].availability, "unavailable");
-  assert.equal(bistro.media[0].relatedEntityId, "test-bistro-meal");
+  assert.equal(bistro.media[0].relatedEntityId, undefined);
+  assert.equal(bistro.media[0].purpose, "business");
   assert.equal(bistro.media[1].relatedEntityId, undefined);
+  assert.equal(studio.media[0].relatedEntityId, undefined);
+  assert.equal(studio.media[0].purpose, "business");
   assert.equal(studio.media[1].kind, "video");
   assert.equal(studio.media[1].relatedEntityId, undefined);
   assert.equal(studio.media[1].purpose, "business");
