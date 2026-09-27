@@ -320,8 +320,9 @@
       await clerk.load({ ui: { ClerkUI: windowObject.__internal_ClerkUICtor } });
 
       async function update() {
-        const authenticated = clerk.user ? await confirmTrustedCustomer(fetchFunction) : false;
-        showState(authElements, authenticated ? "signedIn" : "signedOut");
+        const hasProviderSession = Boolean(clerk.user);
+        const authenticated = hasProviderSession ? await confirmTrustedCustomer(fetchFunction) : false;
+        showState(authElements, hasProviderSession ? "signedIn" : "signedOut");
         documentObject.getElementById("my-intentions-signed-out").hidden = authenticated;
         documentObject.getElementById("my-intentions-signed-in").hidden = !authenticated;
         documentObject.getElementById("my-possibilities-signed-out").hidden = authenticated;
