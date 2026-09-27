@@ -243,9 +243,21 @@
   }
 
   async function loadPreferences(documentObject, fetchFunction) {
-    const response = await fetchFunction("/api/customer/preferences", { credentials: "same-origin", headers: { Accept: "application/json" } });
-    if (!response.ok) throw new Error("Could not load preferences");
-    const result = await response.json();
+    const loading = documentObject.getElementById("my-preferences-loading");
+    const status = documentObject.getElementById("my-preferences-status");
+    status.textContent = "";
+    loading.textContent = "Loading your preferences…";
+    loading.hidden = false;
+    let result;
+    try {
+      const response = await fetchFunction("/api/customer/preferences", { credentials: "same-origin", headers: { Accept: "application/json" } });
+      if (!response.ok) throw new Error("Could not load preferences");
+      result = await response.json();
+    } catch (_error) {
+      loading.hidden = true;
+      status.textContent = "Your preferences could not be loaded. Please refresh to try again.";
+      return;
+    }
     renderPreferences(documentObject, Array.isArray(result.preferences) ? result.preferences : [], async function (preferenceId) {
       const removed = await fetchFunction("/api/customer/preferences", { method: "DELETE", credentials: "same-origin",
         headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify({ preferenceId }) });

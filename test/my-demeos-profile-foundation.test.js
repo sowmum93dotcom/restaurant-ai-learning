@@ -111,3 +111,9 @@ test("participation load failure is announced and can be retried", function () {
   assert.match(script, /loading\.textContent = "Loading your participation…";\s+loading\.hidden = false;/);
   assert.match(html, /id="my-participation-loading" role="status" aria-live="polite"/);
 });
+
+test("preferences load failure replaces loading with recoverable message", function () {
+  const script = read("js/my-demeos.js");
+  assert.match(script, /status\.textContent = "Your preferences could not be loaded\. Please refresh to try again\."/);
+  assert.match(script, /loading\.textContent = "Loading your preferences…";\s+loading\.hidden = false;/);
+});
