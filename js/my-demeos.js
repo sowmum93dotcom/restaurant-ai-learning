@@ -265,7 +265,7 @@
         const removed = await fetchFunction("/api/customer/preferences", { method: "DELETE", credentials: "same-origin",
           headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify({ preferenceId }) });
         if (!removed.ok) throw new Error("Removal failed");
-        await loadPreferences(documentObject, fetchFunction);
+        await loadPreferences(documentObject, fetchFunction, "Preference removed.");
       } catch (_error) {
         button.disabled = false;
         status.textContent = "Your preference could not be removed. Please try again.";

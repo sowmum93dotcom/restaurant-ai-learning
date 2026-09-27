@@ -139,7 +139,7 @@ test("preference creation recovers from a network failure without clearing input
 
 test("preference removal reports failed requests without removing the displayed item", function () {
   const script = read("js/my-demeos.js");
-  assert.match(script, /if \(!removed\.ok\) throw new Error\("Removal failed"\);\s+await loadPreferences\(documentObject, fetchFunction\);/);
+  assert.match(script, /if \(!removed\.ok\) throw new Error\("Removal failed"\);\s+await loadPreferences\(documentObject, fetchFunction, "Preference removed\."\);/);
   assert.match(script, /status\.textContent = "Your preference could not be removed\. Please try again\.";/);
 });
 
@@ -155,4 +155,10 @@ test("preference save confirmation follows a successful list refresh", function 
   assert.match(script, /async function loadPreferences\(documentObject, fetchFunction, successMessage\)/);
   assert.match(script, /if \(successMessage\) status\.textContent = successMessage;/);
   assert.match(script, /input\.value = "";\s+await loadPreferences\(documentObject, fetchFunction, "Preference saved\."\);/);
+});
+
+test("preference removal confirmation follows a successful list refresh", function () {
+  const script = read("js/my-demeos.js");
+  assert.match(script, /if \(!removed\.ok\) throw new Error\("Removal failed"\);\s+await loadPreferences\(documentObject, fetchFunction, "Preference removed\."\);/);
+  assert.match(script, /if \(successMessage\) status\.textContent = successMessage;/);
 });
