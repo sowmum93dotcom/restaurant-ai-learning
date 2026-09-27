@@ -277,3 +277,12 @@ test("normal Discover rejects a controlled test feed response", function () {
   assert.match(script, /\(request\.testMode && data\.testMode !== true\)/);
   assert.match(script, /CONTROLLED TEST CONTENT — not live business content/);
 });
+
+test("normal Discover returns only published work and an honest empty state", function () {
+  const api = read("api/customer/work.js");
+  assert.match(api, /if \(isDiscoverTestMode\(req\)\) \{[\s\S]*?work: getValidPublicCustomerWork\(discoverTestContent\(\)\),[\s\S]*?testMode: true/);
+  assert.match(api, /work: publicWork,\s+testMode: false/);
+  assert.doesNotMatch(api, /work: useSamples \? getValidPublicCustomerWork\(discoverTestContent\(\)\) : publicWork/);
+  const customer = read("js/customer.js");
+  assert.match(customer, /Nothing to discover just yet/);
+});
