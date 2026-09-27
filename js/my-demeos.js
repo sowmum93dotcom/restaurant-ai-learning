@@ -318,7 +318,7 @@
       if (!response.ok) throw new Error("Could not load privacy controls");
       result = await response.json();
     } catch (_error) {
-      status.textContent = "Your privacy controls could not be loaded. Please refresh to try again.";
+      status.textContent = successMessage ? "Your privacy controls were saved, but could not be refreshed. Please refresh the page before making further changes." : "Your privacy controls could not be loaded. Please refresh to try again.";
       return;
     }
     const controls = result.controls || {};
