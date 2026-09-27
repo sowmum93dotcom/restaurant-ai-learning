@@ -237,7 +237,7 @@
       }
       const remove = documentObject.createElement("button"); remove.type = "button"; remove.className = "demeos-secondary-button";
       remove.textContent = "Remove";
-      remove.addEventListener("click", function () { removePreference(preference.preferenceId); });
+      remove.addEventListener("click", function () { if (!remove.disabled) removePreference(preference.preferenceId, remove); });
       article.appendChild(remove); list.appendChild(article);
     });
   }
@@ -258,13 +258,16 @@
       status.textContent = "Your preferences could not be loaded. Please refresh to try again.";
       return;
     }
-    renderPreferences(documentObject, Array.isArray(result.preferences) ? result.preferences : [], async function (preferenceId) {
+    renderPreferences(documentObject, Array.isArray(result.preferences) ? result.preferences : [], async function (preferenceId, button) {
+      button.disabled = true;
+      status.textContent = "Removing preference…";
       try {
         const removed = await fetchFunction("/api/customer/preferences", { method: "DELETE", credentials: "same-origin",
           headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify({ preferenceId }) });
         if (!removed.ok) throw new Error("Removal failed");
         await loadPreferences(documentObject, fetchFunction);
       } catch (_error) {
+        button.disabled = false;
         status.textContent = "Your preference could not be removed. Please try again.";
       }
     });
