@@ -321,8 +321,15 @@
         useFeedbackAsGuidance: documentObject.getElementById("use-feedback-as-guidance").checked };
       status.textContent = "Saving your privacy controls…";
       if (submit) submit.disabled = true;
-      const response = await fetchFunction("/api/customer/privacy-controls", { method: "POST", credentials: "same-origin",
-        headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify(controls) });
+      let response;
+      try {
+        response = await fetchFunction("/api/customer/privacy-controls", { method: "POST", credentials: "same-origin",
+          headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify(controls) });
+      } catch (_error) {
+        status.textContent = "Your privacy controls could not be saved. Please try again.";
+        if (submit) submit.disabled = false;
+        return;
+      }
       status.textContent = response.ok ? "Privacy controls saved." : "Your privacy controls could not be saved.";
       if (response.ok) await loadPrivacyControls(documentObject, fetchFunction);
       else if (submit) submit.disabled = false;
