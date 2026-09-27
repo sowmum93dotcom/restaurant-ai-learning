@@ -260,7 +260,12 @@
       status.textContent = successMessage ? "Your change was saved, but your preferences could not be refreshed. Please refresh the page." : "Your preferences could not be loaded. Please refresh to try again.";
       return false;
     }
-    renderPreferences(documentObject, Array.isArray(result.preferences) ? result.preferences : [], async function (preferenceId, button) {
+    if (!result || !Array.isArray(result.preferences)) {
+      loading.hidden = true;
+      status.textContent = "Your preferences could not be verified. Please refresh the page.";
+      return false;
+    }
+    renderPreferences(documentObject, result.preferences, async function (preferenceId, button) {
       button.disabled = true;
       status.textContent = "Removing preference…";
       try {
