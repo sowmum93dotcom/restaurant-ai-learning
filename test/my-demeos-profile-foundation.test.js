@@ -183,3 +183,10 @@ test("saved intention removal prevents duplicate clicks", function () {
   assert.match(script, /button\.disabled = true; status\.textContent = "Removing saved intention…";/);
   assert.match(script, /button\.disabled = false; status\.textContent = "The saved intention could not be removed\.";/);
 });
+
+test("saved possibility removal prevents duplicate clicks", function () {
+  const script = read("js/my-demeos.js");
+  assert.match(script, /if \(!remove\.disabled\) removePossibility\(possibility\.savedPossibilityId, remove\);/);
+  assert.match(script, /button\.disabled = true; status\.textContent = "Removing saved possibility…";/);
+  assert.match(script, /button\.disabled = false; status\.textContent = "The saved possibility could not be removed\.";/);
+});
