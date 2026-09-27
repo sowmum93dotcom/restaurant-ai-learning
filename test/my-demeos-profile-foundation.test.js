@@ -218,3 +218,9 @@ test("privacy save distinguishes successful write from failed refresh", function
   const script = read("js/my-demeos.js");
   assert.match(script, /successMessage \? "Your privacy controls were saved, but could not be refreshed\. Please refresh the page before making further changes\." : "Your privacy controls could not be loaded\. Please refresh to try again\."/);
 });
+
+test("privacy controls reject malformed response before enabling save", function () {
+  const script = read("js/my-demeos.js");
+  assert.match(script, /typeof controls\.usePreferencesAsGuidance !== "boolean" \|\| typeof controls\.useFeedbackAsGuidance !== "boolean"/);
+  assert.match(script, /Your privacy controls could not be verified\. Please refresh before making changes\./);
+});
