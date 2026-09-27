@@ -72,7 +72,7 @@
       const date = documentObject.createElement("time"); date.dateTime = intention.createdAt; date.textContent = "Saved " + new Date(intention.createdAt).toLocaleDateString(); article.appendChild(date);
       if (removeIntention && intention.intentionId) {
         const remove = documentObject.createElement("button"); remove.type = "button"; remove.className = "demeos-secondary-button"; remove.textContent = "Remove";
-        remove.addEventListener("click", function () { removeIntention(intention.intentionId, remove); }); article.appendChild(remove);
+        remove.addEventListener("click", function () { if (!remove.disabled) removeIntention(intention.intentionId, remove); }); article.appendChild(remove);
       }
       list.appendChild(article);
     });
