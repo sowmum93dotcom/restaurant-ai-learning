@@ -176,3 +176,10 @@ test("saved intention removal confirmation follows a successful refresh", functi
   assert.match(script, /await loadIntentions\(documentObject, fetchFunction, "Saved intention removed\."\);/);
   assert.match(script, /if \(successMessage\) status\.textContent = successMessage;/);
 });
+
+test("saved intention removal prevents duplicate clicks", function () {
+  const script = read("js/my-demeos.js");
+  assert.match(script, /if \(!remove\.disabled\) removeIntention\(intention\.intentionId, remove\);/);
+  assert.match(script, /button\.disabled = true; status\.textContent = "Removing saved intention…";/);
+  assert.match(script, /button\.disabled = false; status\.textContent = "The saved intention could not be removed\.";/);
+});
