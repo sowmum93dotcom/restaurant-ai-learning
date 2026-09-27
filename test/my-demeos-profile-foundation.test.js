@@ -239,6 +239,6 @@ test("customer continuation URLs reject embedded whitespace", function () {
   assert.ok(normalizeSource);
   const validate = new Function(normalizeSource[0] + "\n" + functionSource[0] + "\nreturn validatedCustomerWebUrl;")();
   assert.equal(validate("https://example.com/a b"), null);
-  assert.equal(validate("https://example.com/a\\tb"), null);
+  assert.equal(validate("https://example.com/a\tb"), null);
   assert.equal(validate("https://example.com/valid"), "https://example.com/valid");
 });
