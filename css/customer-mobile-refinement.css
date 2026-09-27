@@ -201,3 +201,21 @@
  .customer-body #discover .customer-media-controls {margin:4px 0 0;gap:7px}
  .customer-body #discover .customer-media-control {width:44px;height:44px}
 }
+
+/* AREA 1 tablet Discover: remove artificial vertical gaps and show one focused media frame. */
+@media (min-width:681px) and (max-width:1180px) {
+ .customer-body #discover .customer-work-list {gap:18px}
+ .customer-body #discover .customer-work-card {min-height:0;height:auto;padding:0;overflow:hidden}
+ .customer-body #discover .customer-work-context {top:0}
+ .customer-body #discover .customer-work-card .customer-message {padding:0 20px 12px}
+ .customer-body #discover .customer-work-card .customer-work-media {display:flex;gap:0;overflow-x:auto;scroll-snap-type:x mandatory;padding:0;margin:0;width:100%;scrollbar-width:none}
+ .customer-body #discover .customer-work-card .customer-work-media::-webkit-scrollbar {display:none}
+ .customer-body #discover .customer-work-card .customer-work-media > .customer-work-media-item,
+ .customer-body #discover .customer-work-card .customer-work-media > .customer-work-media-link {flex:0 0 100%;width:100%;max-width:100%;min-width:100%;height:auto;aspect-ratio:16/9;scroll-snap-align:start;box-sizing:border-box}
+ .customer-body #discover .customer-work-card .customer-work-media-item {width:100%;max-height:none;aspect-ratio:16/9;object-fit:cover;border-radius:12px}
+ .customer-body #discover .customer-work-card .customer-choice {padding:16px 20px}
+ .customer-body #discover .customer-work-card .customer-package-region {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;overflow:visible;padding:0;margin-top:12px}
+ .customer-body #discover .customer-work-card .customer-discover-option {width:auto;min-width:0;max-width:none;flex-basis:auto;box-sizing:border-box}
+ .customer-body #discover .customer-work-card .customer-participation {padding:16px 20px}
+ .customer-body #discover .customer-media-position {color:#e8edf5}
+}
