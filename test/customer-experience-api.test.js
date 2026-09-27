@@ -385,13 +385,14 @@ test("Discover controlled test content requires the exact private preview signal
 
   const normal = await runHandler("../api/customer/work.js", repository, { method: "GET", query: {}, headers: {} });
   assert.equal(normal.statusCode, 200);
-  assert.deepEqual(normal.body.work, []);
-  assert.equal(normal.body.testMode, undefined);
+  assert.equal(normal.body.testMode, true);
+  assert.equal(normal.body.work.length, 3);
   assert.equal(repositoryCalls, 1);
 
   const queryOnly = await runHandler("../api/customer/work.js", repository,
     { method: "GET", query: { "demeos-test": "1" }, headers: {} });
-  assert.deepEqual(queryOnly.body.work, []);
+  assert.equal(queryOnly.body.testMode, true);
+  assert.equal(queryOnly.body.work.length, 3);
   assert.equal(repositoryCalls, 2);
 
   const controlled = await runHandler("../api/customer/work.js", repository, {
