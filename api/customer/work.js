@@ -29,7 +29,7 @@ function discoverTestContent() {
       ],
       media: [
         { assetId: "test-bistro-image", kind: "image", role: "primary", deliveryUrl: "https://picsum.photos/seed/demeos-bistro/1200/900",
-          purpose: "product", relatedEntityId: "test-bistro-meal" },
+          purpose: "business" },
         { assetId: "test-bistro-view-only", kind: "image", role: "supporting", deliveryUrl: "https://picsum.photos/seed/demeos-bistro-view/1200/900" }
       ]
     },
@@ -48,7 +48,7 @@ function discoverTestContent() {
       ],
       media: [
         { assetId: "test-studio-image", kind: "image", role: "primary", deliveryUrl: "https://picsum.photos/seed/demeos-studio/1200/900",
-          purpose: "product", relatedEntityId: "test-studio-service" },
+          purpose: "business" },
         { assetId: "test-studio-video", kind: "video", role: "supporting", deliveryUrl: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
           purpose: "business" },
         { assetId: "test-studio-missing-match", kind: "image", role: "supporting", deliveryUrl: "https://picsum.photos/seed/demeos-unmatched/1200/900",
