@@ -89,7 +89,7 @@
       result = await response.json();
     } catch (_error) {
       loading.hidden = true;
-      status.textContent = "Your intentions could not be loaded. Please refresh to try again.";
+      status.textContent = successMessage ? "The saved intention was removed, but your intentions could not be refreshed. Please refresh the page." : "Your intentions could not be loaded. Please refresh to try again.";
       return;
     }
     renderIntentions(documentObject, Array.isArray(result.intentions) ? result.intentions : [], async function (intentionId, button) {
