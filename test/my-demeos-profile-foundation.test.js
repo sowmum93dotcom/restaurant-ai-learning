@@ -130,3 +130,9 @@ test("privacy controls save recovers from a network failure", function () {
   assert.match(script, /status\.textContent = "Your privacy controls could not be saved\. Please try again\.";\s+if \(submit\) submit\.disabled = false;\s+return;/);
   assert.match(script, /if \(response\.ok\) await loadPrivacyControls\(documentObject, fetchFunction\);\s+else if \(submit\) submit\.disabled = false;/);
 });
+
+test("preference creation recovers from a network failure without clearing input", function () {
+  const script = read("js/my-demeos.js");
+  assert.match(script, /status\.textContent = "Your preference could not be saved\. Please try again\.";\s+if \(submit\) submit\.disabled = false;\s+return;/);
+  assert.match(script, /if \(!response\.ok\) \{ status\.textContent = "Your preference could not be saved\."; if \(submit\) submit\.disabled = false; return; \}/);
+});
