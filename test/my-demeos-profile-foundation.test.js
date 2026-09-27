@@ -203,3 +203,8 @@ test("preference mutation distinguishes successful write from failed refresh", f
   assert.match(script, /successMessage \? "Your change was saved, but your preferences could not be refreshed\. Please refresh the page\." : "Your preferences could not be loaded\. Please refresh to try again\."/);
   assert.match(script, /if \(successMessage\) status\.textContent = successMessage;\s+return true;/);
 });
+
+test("intention removal distinguishes successful delete from failed refresh", function () {
+  const script = read("js/my-demeos.js");
+  assert.match(script, /successMessage \? "The saved intention was removed, but your intentions could not be refreshed\. Please refresh the page\." : "Your intentions could not be loaded\. Please refresh to try again\."/);
+});
