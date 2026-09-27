@@ -163,7 +163,7 @@
     });
   }
 
-  async function loadPossibilities(documentObject, fetchFunction) {
+  async function loadPossibilities(documentObject, fetchFunction, successMessage) {
     const loading = documentObject.getElementById("my-possibilities-loading");
     const status = documentObject.getElementById("my-possibilities-status");
     status.textContent = "";
@@ -183,9 +183,10 @@
         const removed = await fetchFunction("/api/customer/possibilities/saved", { method: "DELETE", credentials: "same-origin",
           headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify({ savedPossibilityId }) });
         if (!removed.ok) throw new Error("Removal failed");
-        status.textContent = "Saved possibility removed."; await loadPossibilities(documentObject, fetchFunction);
+        await loadPossibilities(documentObject, fetchFunction, "Saved possibility removed.");
       } catch (_error) { button.disabled = false; status.textContent = "The saved possibility could not be removed."; }
     });
+    if (successMessage) status.textContent = successMessage;
   }
 
   function renderParticipations(documentObject, participations) {
