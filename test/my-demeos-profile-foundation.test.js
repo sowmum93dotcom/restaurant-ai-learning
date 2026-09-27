@@ -29,7 +29,7 @@ test("profile foundation presents trusted DEMEOS entry language and honest empty
   const html = read("my-demeos.html");
   assert.match(html, /<h2>Sign in to My DEMEOS<\/h2>/);
   assert.match(html, /type="button">Sign in <span aria-hidden="true">→<\/span><\/button>/);
-  assert.match(html, /type="button">Leave My DEMEOS<\/button>/);
+  assert.match(html, /type="button">Sign out<\/button>/);
   assert.match(html, /Checking your DEMEOS relationship securely\./);
   assert.match(html, /Sign in to My DEMEOS to keep and see your intentions across visits\./);
   assert.match(html, /Sign in to My DEMEOS to keep and see your possibilities across visits\./);
@@ -56,4 +56,18 @@ test("My DEMEOS responsive styles preserve focus visibility and a single-column 
   assert.match(css, /\.my-demeos-area \{[^}]*min-width: 0;[^}]*min-height: 210px;/);
   assert.match(css, /\.my-demeos-area-active:focus-visible[^}]*outline: 3px solid #8fc1ff;/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.my-demeos-area-active \{ transition: none; \}/);
+});
+
+test("signed-in account controls remain visible while inactive auth states stay hidden", function () {
+  const { showState } = require("../js/my-demeos.js");
+  const elements = { status: { hidden: true }, loading: { hidden: false }, signedOut: { hidden: true }, signedIn: { hidden: true }, unavailable: { hidden: true } };
+  showState(elements, "signedIn");
+  assert.equal(elements.status.hidden, false);
+  assert.equal(elements.signedIn.hidden, false);
+  assert.equal(elements.signedOut.hidden, true);
+  assert.equal(elements.loading.hidden, true);
+  showState(elements, "signedOut");
+  assert.equal(elements.status.hidden, false);
+  assert.equal(elements.signedIn.hidden, true);
+  assert.equal(elements.signedOut.hidden, false);
 });
