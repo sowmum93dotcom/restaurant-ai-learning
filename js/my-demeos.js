@@ -333,7 +333,7 @@
         documentObject.getElementById("my-preferences-signed-in").hidden = !authenticated;
         documentObject.getElementById("privacy-control-signed-out").hidden = authenticated;
         documentObject.getElementById("privacy-controls-form").hidden = !authenticated;
-        if (authenticated) await Promise.all([loadIntentions(documentObject, fetchFunction), loadPossibilities(documentObject, fetchFunction), loadParticipations(documentObject, fetchFunction), loadPreferences(documentObject, fetchFunction), loadPrivacyControls(documentObject, fetchFunction)]);
+        if (authenticated) await Promise.allSettled([loadIntentions(documentObject, fetchFunction), loadPossibilities(documentObject, fetchFunction), loadParticipations(documentObject, fetchFunction), loadPreferences(documentObject, fetchFunction), loadPrivacyControls(documentObject, fetchFunction)]);
       }
       authElements.signIn.addEventListener("click", function () { clerk.openSignIn(); });
       authElements.signOut.addEventListener("click", function () { clerk.signOut(); });
