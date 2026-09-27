@@ -79,9 +79,19 @@
   }
 
   async function loadIntentions(documentObject, fetchFunction) {
-    const response = await fetchFunction("/api/customer/intentions", { credentials: "same-origin", headers: { Accept: "application/json" } });
-    if (!response.ok) throw new Error("Could not load intentions");
-    const result = await response.json();
+    const loading = documentObject.getElementById("my-intentions-loading");
+    const status = documentObject.getElementById("my-intentions-status");
+    status.textContent = "";
+    let result;
+    try {
+      const response = await fetchFunction("/api/customer/intentions", { credentials: "same-origin", headers: { Accept: "application/json" } });
+      if (!response.ok) throw new Error("Could not load intentions");
+      result = await response.json();
+    } catch (_error) {
+      loading.hidden = true;
+      status.textContent = "Your intentions could not be loaded. Please refresh to try again.";
+      return;
+    }
     renderIntentions(documentObject, Array.isArray(result.intentions) ? result.intentions : [], async function (intentionId, button) {
       const status = documentObject.getElementById("my-intentions-status"); button.disabled = true; status.textContent = "Removing saved intention…";
       try {

@@ -98,3 +98,8 @@ test("saved possibilities failure replaces loading with recoverable message", fu
   assert.match(script, /loading\.hidden = true;\s+status\.textContent = "Your possibilities could not be loaded\. Please refresh to try again\."/);
   assert.match(script, /status\.textContent = "";\s+let result;/);
 });
+
+test("saved intentions failure replaces loading with recoverable message", function () {
+  const script = read("js/my-demeos.js");
+  assert.match(script, /loading\.hidden = true;\s+status\.textContent = "Your intentions could not be loaded\. Please refresh to try again\."/);
+});
