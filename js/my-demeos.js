@@ -325,7 +325,7 @@
         headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify(controls) });
       status.textContent = response.ok ? "Privacy controls saved." : "Your privacy controls could not be saved.";
       if (response.ok) await loadPrivacyControls(documentObject, fetchFunction);
-      if (submit) submit.disabled = false;
+      else if (submit) submit.disabled = false;
     });
   }
 
