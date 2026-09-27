@@ -265,3 +265,8 @@ test("invalid participation payload is not displayed as an empty history", funct
   assert.match(script, /Your participation could not be verified\. Please refresh the page\./);
   assert.match(script, /renderParticipations\(documentObject, result\.participations\)/);
 });
+
+test("invalid preferences refresh preserves confirmation that a change was saved", function () {
+  const script = read("js/my-demeos.js");
+  assert.match(script, /successMessage \? "Your change was saved, but your preferences could not be verified\. Please refresh the page\." : "Your preferences could not be verified\. Please refresh the page\."/);
+});

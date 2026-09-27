@@ -276,7 +276,7 @@
     }
     if (!result || !Array.isArray(result.preferences)) {
       loading.hidden = true;
-      status.textContent = "Your preferences could not be verified. Please refresh the page.";
+      status.textContent = successMessage ? "Your change was saved, but your preferences could not be verified. Please refresh the page." : "Your preferences could not be verified. Please refresh the page.";
       return false;
     }
     renderPreferences(documentObject, result.preferences, async function (preferenceId, button) {
