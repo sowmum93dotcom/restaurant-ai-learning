@@ -261,7 +261,7 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
              AND campaign_id = i.work_item_id AND feedback_type = 'possibility-relevance'
            ORDER BY created_at DESC, feedback_id DESC LIMIT 1
          ) f ON TRUE
-         WHERE i.trusted_customer_identity_id = $1 AND i.delivery_confirmed = TRUE
+         WHERE i.trusted_customer_identity_id = $1
          ORDER BY i.issued_at DESC, i.work_item_id DESC LIMIT $2`,
         [trustedCustomerIdentityId, safeLimit]);
       return result.rows.map(function (row) {
