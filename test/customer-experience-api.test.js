@@ -222,8 +222,8 @@ test("customer package availability has an explicit server-owned empty boundary"
   }, { method: "GET", query: { customerPackages: "browser-package" } });
 
   assert.equal(res.statusCode, 200);
-  assert.equal(res.body.testMode, true);
-  assert.ok(res.body.work.length > 0);
+  assert.equal(res.body.testMode, false);
+  assert.deepEqual(res.body.work, []);
   assert.deepEqual(res.body.customerPackages, []);
   assert.doesNotMatch(JSON.stringify(res.body.customerPackages), /browser-package|price|discount|membership|benefit/i);
 });
@@ -385,14 +385,14 @@ test("Discover controlled test content requires the exact private preview signal
 
   const normal = await runHandler("../api/customer/work.js", repository, { method: "GET", query: {}, headers: {} });
   assert.equal(normal.statusCode, 200);
-  assert.equal(normal.body.testMode, true);
-  assert.equal(normal.body.work.length, 3);
+  assert.equal(normal.body.testMode, false);
+  assert.deepEqual(normal.body.work, []);
   assert.equal(repositoryCalls, 1);
 
   const queryOnly = await runHandler("../api/customer/work.js", repository,
     { method: "GET", query: { "demeos-test": "1" }, headers: {} });
-  assert.equal(queryOnly.body.testMode, true);
-  assert.equal(queryOnly.body.work.length, 3);
+  assert.equal(queryOnly.body.testMode, false);
+  assert.deepEqual(queryOnly.body.work, []);
   assert.equal(repositoryCalls, 2);
 
   const controlled = await runHandler("../api/customer/work.js", repository, {
