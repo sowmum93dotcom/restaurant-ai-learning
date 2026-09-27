@@ -1170,10 +1170,6 @@ async function loadCustomerWork(document, fetcher, location) {
     const data = await response.json();
     if (discoverRequestVersions.get(document) !== version) return;
     if (!response.ok || !data || !Array.isArray(data.work) || (request.testMode && data.testMode !== true)) throw new Error();
-    if (data.testMode === true) {
-      status.className = "customer-work-status customer-test-content-status";
-      status.textContent = "CONTROLLED TEST CONTENT — not live business content";
-    }
     renderCustomerWork(document, data.work, getServerCustomerPackages(data), recordParticipation);
     if (data.testMode === true) {
       status.className = "customer-work-status customer-test-content-status";
