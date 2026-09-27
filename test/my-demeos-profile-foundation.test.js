@@ -242,3 +242,11 @@ test("customer continuation URLs reject embedded whitespace", function () {
   assert.equal(validate("https://example.com/a\tb"), null);
   assert.equal(validate("https://example.com/valid"), "https://example.com/valid");
 });
+
+test("invalid intentions payload does not erase the saved intentions view", function () {
+  const script = read("js/my-demeos.js");
+  assert.match(script, /if \(!result \|\| !Array\.isArray\(result\.intentions\)\)/);
+  assert.match(script, /Your intentions could not be verified\. Please refresh the page\./);
+  assert.match(script, /The saved intention was removed, but your intentions could not be verified\. Please refresh the page\./);
+  assert.match(script, /renderIntentions\(documentObject, result\.intentions,/);
+});
