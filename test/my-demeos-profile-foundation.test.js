@@ -136,3 +136,9 @@ test("preference creation recovers from a network failure without clearing input
   assert.match(script, /status\.textContent = "Your preference could not be saved\. Please try again\.";\s+if \(submit\) submit\.disabled = false;\s+return;/);
   assert.match(script, /if \(!response\.ok\) \{ status\.textContent = "Your preference could not be saved\."; if \(submit\) submit\.disabled = false; return; \}/);
 });
+
+test("preference removal reports failed requests without removing the displayed item", function () {
+  const script = read("js/my-demeos.js");
+  assert.match(script, /if \(!removed\.ok\) throw new Error\("Removal failed"\);\s+await loadPreferences\(documentObject, fetchFunction\);/);
+  assert.match(script, /status\.textContent = "Your preference could not be removed\. Please try again\.";/);
+});
