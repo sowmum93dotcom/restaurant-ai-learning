@@ -270,3 +270,10 @@ test("invalid preferences refresh preserves confirmation that a change was saved
   const script = read("js/my-demeos.js");
   assert.match(script, /successMessage \? "Your change was saved, but your preferences could not be verified\. Please refresh the page\." : "Your preferences could not be verified\. Please refresh the page\."/);
 });
+
+test("normal Discover rejects a controlled test feed response", function () {
+  const script = read("js/customer.js");
+  assert.match(script, /\(!request\.testMode && data\.testMode === true\)/);
+  assert.match(script, /\(request\.testMode && data\.testMode !== true\)/);
+  assert.match(script, /CONTROLLED TEST CONTENT — not live business content/);
+});
