@@ -50,7 +50,7 @@ function discoverTestContent() {
         { assetId: "test-studio-image", kind: "image", role: "primary", deliveryUrl: "https://picsum.photos/seed/demeos-studio/1200/900",
           purpose: "product", relatedEntityId: "test-studio-service" },
         { assetId: "test-studio-video", kind: "video", role: "supporting", deliveryUrl: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
-          purpose: "product", relatedEntityId: "test-studio-service" },
+          purpose: "business" },
         { assetId: "test-studio-missing-match", kind: "image", role: "supporting", deliveryUrl: "https://picsum.photos/seed/demeos-unmatched/1200/900",
           purpose: "product", relatedEntityId: "missing-test-product" }
       ]
