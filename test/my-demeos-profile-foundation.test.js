@@ -250,3 +250,11 @@ test("invalid intentions payload does not erase the saved intentions view", func
   assert.match(script, /The saved intention was removed, but your intentions could not be verified\. Please refresh the page\./);
   assert.match(script, /renderIntentions\(documentObject, result\.intentions,/);
 });
+
+test("invalid possibilities payload does not erase the saved possibilities view", function () {
+  const script = read("js/my-demeos.js");
+  assert.match(script, /if \(!result \|\| !Array\.isArray\(result\.possibilities\)\)/);
+  assert.match(script, /Your possibilities could not be verified\. Please refresh the page\./);
+  assert.match(script, /The saved possibility was removed, but your possibilities could not be verified\. Please refresh the page\./);
+  assert.match(script, /renderPossibilities\(documentObject, result\.possibilities,/);
+});
