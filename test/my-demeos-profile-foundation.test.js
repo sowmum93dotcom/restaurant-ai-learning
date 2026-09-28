@@ -333,3 +333,13 @@ test("Discover tablet images use full width and natural uncropped height", funct
   assert.match(css, /customer-work-media-link > img\.customer-work-media-item\{width:100%;height:auto;max-height:none;aspect-ratio:auto;object-fit:contain\}/);
   assert.match(css, /@media\(max-width:680px\)\{\s*\.customer-body #discover \.customer-work-card \.customer-work-media > \.customer-work-media-link\{height:min\(54vw,260px\);aspect-ratio:auto\}/);
 });
+
+
+test("Mobile Discover keeps media, controls, description and business identity close together", function () {
+  const css = read("css/customer-mobile-refinement.css");
+  assert.match(css, /@media\(max-width:680px\)\{[\s\S]*?customer-work-card \.customer-work-media\{order:1;margin:0;padding:0\}/);
+  assert.match(css, /customer-work-card \.customer-media-position\{order:2;margin:7px 0 0\}/);
+  assert.match(css, /customer-work-card \.customer-media-controls\{order:3;margin:4px 0 0\}/);
+  assert.match(css, /customer-work-card \.customer-work-content\{order:4;margin:8px 0 0;padding:0\}/);
+  assert.match(css, /customer-work-card \.customer-work-context\{margin:8px 0 0;padding:4px 12px 8px\}/);
+});
