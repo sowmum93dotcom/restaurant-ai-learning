@@ -983,6 +983,14 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
       } else mediaRegion.appendChild(media);
     });
     message.appendChild(mediaRegion);
+    // A video must not keep playing after its media frame is no longer active.
+    mediaRegion.addEventListener("scroll", function () {
+      const regionStart = mediaRegion.getBoundingClientRect().left;
+      Array.from(mediaRegion.children).forEach(function (item) {
+        const video = item.tagName === "VIDEO" ? item : item.querySelector && item.querySelector("video");
+        if (video && Math.abs(item.getBoundingClientRect().left - regionStart) > item.getBoundingClientRect().width / 2) video.pause();
+      });
+    }, { passive: true });
     if (work.media.length > 1) {
       const mediaPosition = addText(document, message, "p", "customer-media-position", "Media 1 of " + work.media.length);
       mediaPosition.setAttribute("aria-label", "Media 1 of " + work.media.length);
@@ -1158,6 +1166,15 @@ function renderCustomerWork(document, work, customerPackages, participationRecor
     if (position) position.textContent = `${index + 1} / ${validWork.length}`;
     list.appendChild(card);
   });
+  // Stop playback when a business leaves the customer viewport.
+  if (typeof IntersectionObserver !== "undefined") {
+    const observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) entry.target.querySelectorAll("video").forEach(function (video) { video.pause(); });
+      });
+    }, { threshold: 0.1 });
+    Array.from(list.children).forEach(function (card) { observer.observe(card); });
+  }
 }
 
 function getServerCustomerPackages(data) {
