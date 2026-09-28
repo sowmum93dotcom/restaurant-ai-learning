@@ -1154,8 +1154,9 @@ function renderCustomerWork(document, work, customerPackages, participationRecor
   const status = document.getElementById("customer-work-status");
   const list = document.getElementById("customer-work-list");
   const navigationHint = typeof document.querySelector === "function" ? document.querySelector(".customer-discover-navigation-hint") : null;
-  if (typeof list.querySelectorAll === "function") list.querySelectorAll(".customer-work-media").forEach(function (region) {
-    if (region.discoverResizeObserver) region.discoverResizeObserver.disconnect();
+  Array.from(list.children || []).forEach(function (card) {
+    const region = typeof card.querySelector === "function" ? card.querySelector(".customer-work-media") : null;
+    if (region && region.discoverResizeObserver) region.discoverResizeObserver.disconnect();
   });
   const previousObserver = discoverMediaObservers.get(list);
   if (previousObserver) { previousObserver.disconnect(); discoverMediaObservers.delete(list); }
