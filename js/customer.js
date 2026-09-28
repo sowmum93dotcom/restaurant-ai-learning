@@ -1238,7 +1238,7 @@ if (typeof module !== "undefined" && module.exports) {
 
 function pauseDiscoverVideos(document) {
   const discover = document.getElementById("discover");
-  if (!discover) return;
+  if (!discover || typeof discover.querySelectorAll !== "function") return;
   discover.querySelectorAll("video").forEach(function (video) { video.pause(); });
 }
 
