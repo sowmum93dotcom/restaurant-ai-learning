@@ -389,6 +389,48 @@ test("Customer surface routing keeps Discover public and separates intention", f
   assert.equal(intention.hidden, false);
 });
 
+test("Leaving Discover pauses actual video elements and returning does not resume them", function () {
+  const document = fakeDocument();
+  const discover = document.elements.discover = new Element("section");
+  const intention = document.elements.intention = new Element("section");
+  let pauses = 0;
+  const video = { pause() { pauses += 1; } };
+  discover.querySelectorAll = function (selector) { assert.equal(selector, "video"); return [video]; };
+  document.querySelectorAll = function () { return []; };
+  applyCustomerSurfaceRoute(document, "#discover");
+  assert.equal(pauses, 0);
+  applyCustomerSurfaceRoute(document, "#intention");
+  assert.equal(pauses, 1);
+  assert.equal(discover.hidden, true);
+  applyCustomerSurfaceRoute(document, "#discover");
+  assert.equal(pauses, 1);
+  assert.equal(discover.hidden, false);
+});
+
+test("Refreshing Discover pauses old video and disconnects previous visibility observer", function () {
+  const originalObserver = global.IntersectionObserver;
+  const observers = [];
+  global.IntersectionObserver = class {
+    constructor(callback) { this.callback = callback; this.disconnected = false; observers.push(this); }
+    observe() {}
+    disconnect() { this.disconnected = true; }
+  };
+  try {
+    const document = fakeDocument();
+    const list = document.elements["customer-work-list"];
+    let pauses = 0;
+    list.querySelectorAll = function (selector) { assert.equal(selector, "video"); return [{ pause() { pauses += 1; } }]; };
+    const work = [{ workItemId: "approved-a", businessName: "North Star", content: "Approved message", participationAction: "Interested" }];
+    renderCustomerWork(document, work, [], async function () {});
+    assert.equal(observers.length, 1);
+    assert.equal(observers[0].disconnected, false);
+    renderCustomerWork(document, [], [], async function () {});
+    assert.equal(observers[0].disconnected, true);
+    assert.equal(observers.length, 1);
+    assert.equal(pauses, 2);
+  } finally { global.IntersectionObserver = originalObserver; }
+});
+
 test("My DEMEOS trusts only the server-confirmed customer identity", async function () {
   let requests = 0;
   const authenticated = await confirmTrustedCustomer(async function (url, options) {
