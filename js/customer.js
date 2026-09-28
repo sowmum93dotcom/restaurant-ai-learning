@@ -1008,7 +1008,7 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
     if (work.media.length > 1) {
       const mediaPosition = addText(document, message, "p", "customer-media-position", "Media 1 of " + work.media.length);
       mediaPosition.setAttribute("aria-label", "Media 1 of " + work.media.length);
-      mediaRegion.addEventListener("scroll", function () {
+      function updateMediaPosition() {
         const items = Array.from(mediaRegion.children);
         let closest = 0;
         let distance = Infinity;
@@ -1019,7 +1019,13 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
         });
         mediaPosition.textContent = "Media " + (closest + 1) + " of " + items.length;
         mediaPosition.setAttribute("aria-label", "Media " + (closest + 1) + " of " + items.length);
-      }, { passive: true });
+      }
+      mediaRegion.addEventListener("scroll", updateMediaPosition, { passive: true });
+      if (typeof ResizeObserver !== "undefined") {
+        const resizeObserver = new ResizeObserver(updateMediaPosition);
+        resizeObserver.observe(mediaRegion);
+        mediaRegion.discoverResizeObserver = resizeObserver;
+      }
       const controls = document.createElement("div");
       controls.className = "customer-media-controls";
       controls.setAttribute("aria-label", "Browse business media");
@@ -1148,6 +1154,10 @@ function renderCustomerWork(document, work, customerPackages, participationRecor
   const status = document.getElementById("customer-work-status");
   const list = document.getElementById("customer-work-list");
   const navigationHint = typeof document.querySelector === "function" ? document.querySelector(".customer-discover-navigation-hint") : null;
+  Array.from(list.children || []).forEach(function (card) {
+    const region = typeof card.querySelector === "function" ? card.querySelector(".customer-work-media") : null;
+    if (region && region.discoverResizeObserver) region.discoverResizeObserver.disconnect();
+  });
   const previousObserver = discoverMediaObservers.get(list);
   if (previousObserver) { previousObserver.disconnect(); discoverMediaObservers.delete(list); }
   if (typeof list.querySelectorAll === "function") list.querySelectorAll("video").forEach(function (video) { video.pause(); });
