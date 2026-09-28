@@ -360,3 +360,12 @@ test("Discover pauses videos when their media or business leaves view", function
   assert.match(script, /new IntersectionObserver\(function \(entries\)/);
   assert.match(script, /if \(!entry\.isIntersecting\) entry\.target\.querySelectorAll\("video"\)\.forEach\(function \(video\) \{ video\.pause\(\); \}\)/);
 });
+
+
+test("Discover videos pause when customer leaves Discover or browser page", function () {
+  const script = read("js/customer.js");
+  assert.match(script, /function pauseDiscoverVideos\(document\) \{[\s\S]*?discover\.querySelectorAll\("video"\)\.forEach\(function \(video\) \{ video\.pause\(\); \}\)/);
+  assert.match(script, /if \(showIntention\) pauseDiscoverVideos\(document\);/);
+  assert.match(script, /document\.addEventListener\("visibilitychange", function \(\) \{ if \(document\.hidden\) pauseDiscoverVideos\(document\); \}\)/);
+  assert.match(script, /window\.addEventListener\("pagehide", function \(\) \{ pauseDiscoverVideos\(document\); \}\)/);
+});
