@@ -121,8 +121,9 @@ test("Discover renders approved media as viewing content without inventing conti
 
   const mediaRegion = card.children[1].children[2];
   assert.equal(mediaRegion.children.length, 2);
-  assert.equal(mediaRegion.children[0].tag, "img");
-  assert.equal(mediaRegion.children[0].src, "https://cdn.example.com/a.webp");
+  assert.equal(mediaRegion.children[0].tag, "a");
+  assert.equal(mediaRegion.children[0].href, "https://cdn.example.com/a.webp");
+  assert.equal(mediaRegion.children[0].children[0].src, "https://cdn.example.com/a.webp");
   assert.equal(mediaRegion.children[1].tag, "video");
   assert.equal(mediaRegion.children[1].src, "https://cdn.example.com/a.mp4");
   assert.equal(mediaRegion.children[1].controls, true);
@@ -226,9 +227,9 @@ test("Discover campaign media remains view-only until a validated item continuat
   const mediaRegion = message.children.find(function (child) { return child.className === "customer-work-media"; });
   assert.ok(mediaRegion);
   assert.equal(mediaRegion.children.length, 2);
-  assert.equal(mediaRegion.children[0].tag, "img");
-  assert.equal(mediaRegion.children[0].href, undefined);
-  assert.equal(mediaRegion.children[0].children.length, 0);
+  assert.equal(mediaRegion.children[0].tag, "a");
+  assert.equal(mediaRegion.children[0].href, "https://cdn.example/media.jpg");
+  assert.equal(mediaRegion.children[0].children[0].tag, "img");
   assert.equal(mediaRegion.children[1].tag, "video");
   assert.equal(mediaRegion.children[1].href, undefined);
   assert.equal(mediaRegion.children[1].children.length, 0);
@@ -257,10 +258,10 @@ test("Discover media matches only its exact validated related product", function
   assert.equal(mediaRegion.children[0].children[0].attributes["data-related-product-id"], "product-1");
   assert.equal(mediaRegion.children[1].tag, "video");
   assert.equal(mediaRegion.children[1].attributes["data-related-product-id"], "product-1");
-  assert.equal(mediaRegion.children[2].attributes["data-related-product-id"], undefined);
-  assert.equal(mediaRegion.children[0].href, "https://business.example");
+  assert.equal(mediaRegion.children[2].children[0].attributes["data-related-product-id"], undefined);
+  assert.equal(mediaRegion.children[0].href, "https://cdn.example/one.jpg");
   assert.equal(mediaRegion.children[1].href, undefined);
-  assert.equal(mediaRegion.children[2].href, undefined);
+  assert.equal(mediaRegion.children[2].href, "https://cdn.example/unknown.jpg");
 });
 
 test("Discover makes only exactly matched available media actionable", function () {
@@ -281,10 +282,10 @@ test("Discover makes only exactly matched available media actionable", function 
   const card = createCustomerWorkCard(document, work, [], async function () {});
   const mediaRegion = card.children[1].children.find(function (child) { return child.className === "customer-work-media"; });
   assert.equal(mediaRegion.children[0].tag, "a");
-  assert.equal(mediaRegion.children[0].href, "https://business.example/product");
+  assert.equal(mediaRegion.children[0].href, "https://cdn.example/one.jpg");
   assert.equal(mediaRegion.children[0].children[0].attributes["data-related-product-id"], "product-1");
-  assert.equal(mediaRegion.children[1].tag, "img");
-  assert.equal(mediaRegion.children[2].tag, "img");
+  assert.equal(mediaRegion.children[1].href, "https://cdn.example/two.jpg");
+  assert.equal(mediaRegion.children[2].href, "https://cdn.example/unknown.jpg");
 });
 
 test("empty approved feed has a professional empty state", function () {
