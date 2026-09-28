@@ -288,6 +288,23 @@ test("Discover makes only exactly matched available media actionable", function 
   assert.equal(mediaRegion.children[2].href, "https://cdn.example/unknown.jpg");
 });
 
+test("Discover continuation uses only the validated available product route", function () {
+  const { getCustomerProductContinuationHref } = require("../js/customer.js");
+  const work = toCustomerWorkItem({
+    workItemId: "controlled-journey", businessName: "Controlled Test Business", content: "Approved test content", participationAction: "Interested",
+    customerContinuation: { routes: ["website"], website: "https://business.example/approved" },
+    products: [
+      { productId: "available", name: "Available item", description: "Approved item", continuationRoute: "website", availability: "available" },
+      { productId: "unavailable", name: "Unavailable item", description: "Not available", continuationRoute: "website", availability: "unavailable" }
+    ]
+  });
+  assert.equal(getCustomerProductContinuationHref(work, work.products[0]), "https://business.example/approved");
+  assert.equal(getCustomerProductContinuationHref(work, work.products[1]), null);
+  assert.equal(getCustomerProductContinuationHref(work, { continuationRoute: "booking", availability: "available" }), null);
+  assert.equal(getCustomerProductContinuationHref(work, { continuationRoute: "website", availability: "available" }), "https://business.example/approved");
+  assert.equal(getCustomerProductContinuationHref({ customerContinuation: { website: "javascript:alert(1)" } }, { continuationRoute: "website" }), null);
+});
+
 test("empty approved feed has a professional empty state", function () {
   const document = fakeDocument();
   renderCustomerWork(document, [], [], async function () {});
