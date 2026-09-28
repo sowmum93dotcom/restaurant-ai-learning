@@ -613,6 +613,28 @@ test("Discover gallery buttons move to the adjacent media item without leaving t
 });
 
 
+test("Playing one Discover video pauses the other video in its business gallery", function () {
+  const document = fakeDocument();
+  const card = createCustomerWorkCard(document, {
+    workItemId: "video-gallery", businessName: "North Star", content: "Approved media", participationAction: "Interested",
+    media: [
+      { assetId: "a", kind: "video", role: "primary", deliveryUrl: "https://cdn.example.com/a.mp4" },
+      { assetId: "b", kind: "video", role: "supporting", deliveryUrl: "https://cdn.example.com/b.mp4" }
+    ]
+  }, [], async function () {});
+  const region = card.children[1].children.find((child) => child.className === "customer-work-media");
+  let firstPauses = 0; let secondPauses = 0;
+  region.children[0].pause = function () { firstPauses += 1; };
+  region.children[1].pause = function () { secondPauses += 1; };
+  region.querySelectorAll = function () { return region.children; };
+  region.children[0].listeners.play();
+  assert.equal(firstPauses, 0);
+  assert.equal(secondPauses, 1);
+  region.children[1].listeners.play();
+  assert.equal(firstPauses, 1);
+  assert.equal(secondPauses, 1);
+});
+
 test("a late possibilities response cannot replace the latest customer request", async function () {
   const document = fakeDocument();
   const ids = ["customer-possibilities", "customer-possibilities-heading", "customer-possibilities-list",
