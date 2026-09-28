@@ -352,3 +352,11 @@ test("Mobile Discover images fill width without fixed-height side bars", functio
   assert.match(css, /customer-work-context>div\{grid-column:1;grid-row:1\}/);
   assert.match(css, /customer-discover-position\{grid-column:2;grid-row:1;align-self:start;margin:0\}/);
 });
+
+
+test("Discover pauses videos when their media or business leaves view", function () {
+  const script = read("js/customer.js");
+  assert.match(script, /mediaRegion\.addEventListener\("scroll",[\s\S]*?video\.pause\(\)/);
+  assert.match(script, /new IntersectionObserver\(function \(entries\)/);
+  assert.match(script, /if \(!entry\.isIntersecting\) entry\.target\.querySelectorAll\("video"\)\.forEach\(function \(video\) \{ video\.pause\(\); \}\)/);
+});
