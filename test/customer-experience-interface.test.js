@@ -132,6 +132,33 @@ test("Discover renders approved media as viewing content without inventing conti
 });
 
 
+test("Discover ignores unverified commission and checkout claims from public work", function () {
+  const document = fakeDocument();
+  const card = createCustomerWorkCard(document, {
+    workItemId: "commission-claim", businessName: "Example Vendor", content: "Approved product",
+    participationAction: "Interested",
+    commercialMode: "commission", commissionRate: 7, paymentReady: true,
+    checkoutUrl: "https://unverified.example/checkout",
+    customerContinuation: { website: "https://business.example/approved" },
+    products: [{
+      productId: "product-1", name: "Approved product", description: "Product information",
+      continuationRoute: "website", availability: "available", price: "£100",
+      paymentReady: true, checkoutUrl: "https://unverified.example/checkout"
+    }]
+  }, [], async function () {});
+  const option = card.children.find(function (child) { return child.className === "customer-choice"; });
+  assert.ok(option);
+  assert.doesNotMatch(card.textContent, /buy now|checkout|pay with demeos/i);
+  const links = [];
+  function collect(node) {
+    if (node.tag === "a") links.push(node.href);
+    (node.children || []).forEach(collect);
+  }
+  collect(option);
+  assert.ok(links.includes("https://business.example/approved"));
+  assert.ok(!links.includes("https://unverified.example/checkout"));
+});
+
 test("Discover public contract gives different businesses a first distribution pass", function () {
   const { getValidPublicCustomerWork } = require("../api/_lib/customer-public-work-contract.js");
   const work = [
