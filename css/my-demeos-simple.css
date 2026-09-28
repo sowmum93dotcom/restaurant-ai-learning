@@ -32,6 +32,9 @@
 .my-demeos-relationship-view h2{color:#fff!important;font-size:clamp(2rem,5vw,3rem)}
 .my-demeos-back{margin-bottom:1.5rem;border:1px solid rgba(229,189,89,.35);border-radius:999px;background:transparent;color:#fff;padding:.75rem 1.1rem}
 .my-demeos-meaning,.my-demeos-relationship-view p{color:#c6d0df}
+/* Keep participation guidance readable on its pale information panel. */
+.my-demeos-body .my-demeos-relationship-view p.my-demeos-meaning{color:#263a53}
+
 .my-demeos-body .customer-footer{border-top:1px solid rgba(174,187,208,.24);background:#020b18}
 @media(max-width:760px){.my-demeos-body .customer-brand span{display:none}.my-demeos-main{width:min(100% - 28px,1120px);padding:2.5rem 0 4rem}.my-demeos-sign-in-status{margin-top:2rem;padding:1.5rem}.my-demeos-sign-in-status .demeos-primary-button{width:100%;min-width:0}.my-demeos-areas{grid-template-columns:1fr}.my-demeos-area:nth-child(5){grid-column:auto}.my-demeos-area:nth-child(n){grid-template-columns:52px 1fr;min-height:0;padding:1.25rem}.my-demeos-area-icon{font-size:2rem}}
 
