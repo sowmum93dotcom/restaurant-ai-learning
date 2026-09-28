@@ -970,12 +970,14 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
         ? work.products.find(function (product) { return product.productId === asset.relatedEntityId; }) : null;
       if (relatedProduct) media.setAttribute("data-related-product-id", relatedProduct.productId);
       const mediaHref = relatedProduct ? getCustomerProductContinuationHref(work, relatedProduct) : null;
-      if (mediaHref && asset.kind === "image") {
+      if (asset.kind === "image") {
+        // Opening an approved image is view-only; product continuation remains a separate validated action.
         const mediaLink = document.createElement("a");
         mediaLink.className = "customer-work-media-link";
-        mediaLink.href = mediaHref;
-        mediaLink.setAttribute("aria-label", relatedProduct.name + " — continue with " + work.businessName);
-        if (/^https?:\/\//i.test(mediaHref)) { mediaLink.target = "_blank"; mediaLink.rel = "noopener noreferrer"; }
+        mediaLink.href = asset.deliveryUrl;
+        mediaLink.target = "_blank";
+        mediaLink.rel = "noopener noreferrer";
+        mediaLink.setAttribute("aria-label", "Open full image from " + work.businessName);
         mediaLink.appendChild(media);
         mediaRegion.appendChild(mediaLink);
       } else mediaRegion.appendChild(media);
