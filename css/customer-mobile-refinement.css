@@ -335,8 +335,8 @@
  .customer-body #discover .customer-work-card .customer-work-media-link > img.customer-work-media-item{width:100%;height:auto;max-height:none;aspect-ratio:auto;object-fit:contain}
 }
 @media(max-width:680px){
- .customer-body #discover .customer-work-card .customer-work-media > .customer-work-media-link{height:min(54vw,260px);aspect-ratio:auto}
- .customer-body #discover .customer-work-card .customer-work-media-link > img.customer-work-media-item{height:100%;aspect-ratio:auto}
+ .customer-body #discover .customer-work-card .customer-work-media > .customer-work-media-link{height:auto;aspect-ratio:auto}
+ .customer-body #discover .customer-work-card .customer-work-media-link > img.customer-work-media-item{width:100%;height:auto;max-height:none;aspect-ratio:auto;object-fit:contain}
 }
 
 /* Mobile Discover: media first, then controls and description, with no reserved empty band. */
@@ -348,4 +348,12 @@
  .customer-body #discover .customer-work-card .customer-work-content{order:4;margin:8px 0 0;padding:0}
  .customer-body #discover .customer-work-card .customer-work-context{margin:8px 0 0;padding:4px 12px 8px}
  .customer-body #discover .customer-work-card .customer-choice{padding:10px 12px 12px}
+}
+
+/* Keep the mobile business position beside its identity instead of reserving a separate row. */
+@media(max-width:680px){
+ .customer-body #discover .customer-work-card .customer-work-context{grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;align-items:start;column-gap:8px;row-gap:4px}
+ .customer-body #discover .customer-work-card .customer-work-context>div{grid-column:1;grid-row:1}
+ .customer-body #discover .customer-work-card .customer-discover-position{grid-column:2;grid-row:1;align-self:start;margin:0}
+ .customer-body #discover .customer-work-card .customer-approved-mark{grid-column:1 / -1;grid-row:2;justify-self:start;margin:0}
 }
