@@ -651,6 +651,36 @@ test("Playing a Discover video pauses a video in another business card", functio
   assert.equal(otherPauses, 1);
 });
 
+test("Discover media position follows horizontal scroll on narrow screens", function () {
+  const document = fakeDocument();
+  const card = createCustomerWorkCard(document, {
+    workItemId: "gallery-position", businessName: "North Star", content: "Approved media", participationAction: "Interested",
+    media: [
+      { assetId: "a", kind: "image", role: "primary", deliveryUrl: "https://cdn.example.com/a.webp" },
+      { assetId: "b", kind: "video", role: "supporting", deliveryUrl: "https://cdn.example.com/b.mp4" },
+      { assetId: "c", kind: "image", role: "supporting", deliveryUrl: "https://cdn.example.com/c.webp" }
+    ]
+  }, [], async function () {});
+  const message = card.children[1];
+  const region = message.children.find((child) => child.className === "customer-work-media");
+  const position = message.children.find((child) => child.className === "customer-media-position");
+  let left = 0;
+  region.getBoundingClientRect = () => ({ left: 0 });
+  region.children.forEach((item, index) => { item.getBoundingClientRect = () => ({ left: index * 240 - left, width: 240 }); });
+  region.children[1].pause = function () {};
+  assert.equal(position.textContent, "Media 1 of 3");
+  left = 245;
+  region.listeners.scroll();
+  assert.equal(position.textContent, "Media 2 of 3");
+  assert.equal(position.attributes["aria-label"], "Media 2 of 3");
+  left = 480;
+  region.listeners.scroll();
+  assert.equal(position.textContent, "Media 3 of 3");
+  left = 0;
+  region.listeners.scroll();
+  assert.equal(position.textContent, "Media 1 of 3");
+});
+
 test("a late possibilities response cannot replace the latest customer request", async function () {
   const document = fakeDocument();
   const ids = ["customer-possibilities", "customer-possibilities-heading", "customer-possibilities-list",
