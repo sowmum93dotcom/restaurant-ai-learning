@@ -307,3 +307,11 @@ test("confirmed intention keeps explicit save available when identity check is u
   assert.match(script, /Please sign in to My DEMEOS before saving this intention/);
   assert.match(script, /Your intention could not be saved\. Please try again/);
 });
+
+
+test("My Participation guidance has readable dark text on its pale panel", function () {
+  const html = read("my-demeos.html");
+  const css = read("css/my-demeos-simple.css");
+  assert.match(html, /class="my-demeos-meaning"/);
+  assert.match(css, /\.my-demeos-body \.my-demeos-relationship-view p\.my-demeos-meaning\{color:#263a53\}/);
+});
