@@ -964,7 +964,12 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
       media.className = "customer-work-media-item " + (asset.role === "primary" ? "is-primary" : "is-supporting");
       media.setAttribute("role", "listitem");
       media.src = asset.deliveryUrl;
-      if (asset.kind === "video") { media.controls = true; media.preload = "metadata"; media.playsInline = true; }
+      if (asset.kind === "video") {
+        media.controls = true; media.preload = "metadata"; media.playsInline = true;
+        media.addEventListener("play", function () {
+          mediaRegion.querySelectorAll("video").forEach(function (other) { if (other !== media) other.pause(); });
+        });
+      }
       else { media.alt = `Approved media from ${work.businessName}`; media.loading = anchorJourney && mediaIndex === 0 ? "eager" : "lazy"; media.decoding = "async"; if (anchorJourney && mediaIndex === 0) media.fetchPriority = "high"; }
       const relatedProduct = asset.purpose === "product" && asset.relatedEntityId && Array.isArray(work.products)
         ? work.products.find(function (product) { return product.productId === asset.relatedEntityId; }) : null;
