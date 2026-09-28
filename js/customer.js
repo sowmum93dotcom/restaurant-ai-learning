@@ -1236,11 +1236,18 @@ if (typeof module !== "undefined" && module.exports) {
     saveCustomerPossibility, selectCustomerIntention, toCustomerPossibility, toCustomerWorkItem };
 }
 
+function pauseDiscoverVideos(document) {
+  const discover = document.getElementById("discover");
+  if (!discover) return;
+  discover.querySelectorAll("video").forEach(function (video) { video.pause(); });
+}
+
 function applyCustomerSurfaceRoute(document, hash) {
   const discover = document.getElementById("discover");
   const intention = document.getElementById("intention");
   if (!discover || !intention) return;
   const showIntention = hash === "#intention" || hash === "#customer-intention-form";
+  if (showIntention) pauseDiscoverVideos(document);
   discover.hidden = showIntention;
   intention.hidden = !showIntention;
   document.querySelectorAll(".customer-journey-nav a[href^='#']").forEach(function (link) {
@@ -1256,4 +1263,6 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   loadCustomerWork(document, fetch, window.location);
   applyCustomerSurfaceRoute(document, window.location.hash);
   window.addEventListener("hashchange", function () { applyCustomerSurfaceRoute(document, window.location.hash); });
+  document.addEventListener("visibilitychange", function () { if (document.hidden) pauseDiscoverVideos(document); });
+  window.addEventListener("pagehide", function () { pauseDiscoverVideos(document); });
 });
