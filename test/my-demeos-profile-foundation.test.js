@@ -286,3 +286,10 @@ test("normal Discover returns only published work and an honest empty state", fu
   const customer = read("js/customer.js");
   assert.match(customer, /Nothing to discover just yet/);
 });
+
+test("My DEMEOS preference input uses iPhone-safe text size without disabling zoom", function () {
+  const css = read("css/demeos-customer-space.css");
+  assert.match(css, /\.my-preferences-form input\{[^}]*font-size:16px\}/);
+  const html = read("my-demeos.html");
+  assert.match(html, /name="viewport" content="width=device-width, initial-scale=1\.0"/);
+});
