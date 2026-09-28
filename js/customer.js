@@ -967,7 +967,10 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
       if (asset.kind === "video") {
         media.controls = true; media.preload = "metadata"; media.playsInline = true;
         media.addEventListener("play", function () {
-          mediaRegion.querySelectorAll("video").forEach(function (other) { if (other !== media) other.pause(); });
+          const discover = document.getElementById("discover");
+          const videos = discover && typeof discover.querySelectorAll === "function"
+            ? discover.querySelectorAll("video") : mediaRegion.querySelectorAll("video");
+          videos.forEach(function (other) { if (other !== media) other.pause(); });
         });
       }
       else { media.alt = `Approved media from ${work.businessName}`; media.loading = anchorJourney && mediaIndex === 0 ? "eager" : "lazy"; media.decoding = "async"; if (anchorJourney && mediaIndex === 0) media.fetchPriority = "high"; }

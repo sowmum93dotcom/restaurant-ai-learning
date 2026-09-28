@@ -635,6 +635,22 @@ test("Playing one Discover video pauses the other video in its business gallery"
   assert.equal(secondPauses, 1);
 });
 
+test("Playing a Discover video pauses a video in another business card", function () {
+  const document = fakeDocument();
+  let otherPauses = 0;
+  const otherVideo = { pause() { otherPauses += 1; } };
+  const discover = document.elements.discover = new Element("section");
+  const card = createCustomerWorkCard(document, {
+    workItemId: "video-a", businessName: "North Star", content: "Approved media", participationAction: "Interested",
+    media: [{ assetId: "a", kind: "video", role: "primary", deliveryUrl: "https://cdn.example.com/a.mp4" }]
+  }, [], async function () {});
+  const region = card.children[1].children.find((child) => child.className === "customer-work-media");
+  const active = region.children[0];
+  discover.querySelectorAll = function (selector) { assert.equal(selector, "video"); return [active, otherVideo]; };
+  active.listeners.play();
+  assert.equal(otherPauses, 1);
+});
+
 test("a late possibilities response cannot replace the latest customer request", async function () {
   const document = fakeDocument();
   const ids = ["customer-possibilities", "customer-possibilities-heading", "customer-possibilities-list",
