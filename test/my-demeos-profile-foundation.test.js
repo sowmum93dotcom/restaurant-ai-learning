@@ -382,6 +382,6 @@ test("Discover refresh disconnects old media observer and pauses replaced videos
 
 test("Discover arrow and keyboard navigation pause videos before scrolling", function () {
   const script = read("js/customer.js");
-  assert.match(script, /if \(target && target !== items\[closest\]\) \{\s*pauseMediaVideos\(\);\s*mediaRegion\.scrollBy/);
+  assert.match(script, /if \(target\) \{\s*if \(target !== items\[closest\]\) pauseMediaVideos\(\);\s*mediaRegion\.scrollBy/);
   assert.match(script, /mediaRegion\.querySelectorAll\("video"\)\.forEach\(function \(video\) \{ video\.pause\(\); \}\);\s*mediaRegion\.scrollBy/);
 });
