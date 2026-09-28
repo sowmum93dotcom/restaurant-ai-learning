@@ -983,6 +983,12 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
       } else mediaRegion.appendChild(media);
     });
     message.appendChild(mediaRegion);
+    function pauseMediaVideos() {
+      Array.from(mediaRegion.children).forEach(function (item) {
+        const video = item.tagName === "VIDEO" || item.tag === "video" ? item : item.querySelector && item.querySelector("video");
+        if (video) video.pause();
+      });
+    }
     // A video must not keep playing after its media frame is no longer active.
     mediaRegion.addEventListener("scroll", function () {
       const regionStart = mediaRegion.getBoundingClientRect().left;
@@ -1025,7 +1031,10 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
             if (difference < distance) { distance = difference; closest = index; }
           });
           const target = items[Math.max(0, Math.min(items.length - 1, closest + control[1]))];
-          if (target) mediaRegion.scrollBy({ left: target.getBoundingClientRect().left - regionStart, behavior: "smooth" });
+          if (target) {
+            if (target !== items[closest]) pauseMediaVideos();
+            mediaRegion.scrollBy({ left: target.getBoundingClientRect().left - regionStart, behavior: "smooth" });
+          }
         });
         controls.appendChild(button);
       });
@@ -1163,6 +1172,7 @@ function renderCustomerWork(document, work, customerPackages, participationRecor
       if (!mediaRegion || mediaRegion.children.length < 2) return;
       event.preventDefault();
       const direction = event.key === "ArrowRight" ? 1 : -1;
+      if (typeof mediaRegion.querySelectorAll === "function") mediaRegion.querySelectorAll("video").forEach(function (video) { video.pause(); });
       mediaRegion.scrollBy({ left: direction * mediaRegion.clientWidth, behavior: "smooth" });
     });
     card.setAttribute("aria-label", `${item.businessName} — Discover item ${index + 1} of ${validWork.length}`);
