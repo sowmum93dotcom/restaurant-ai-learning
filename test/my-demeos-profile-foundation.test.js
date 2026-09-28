@@ -298,3 +298,12 @@ test("no-match guidance has readable text on its pale panel", function () {
   const css = read("css/customer-mobile-refinement.css");
   assert.match(css, /\.customer-body \.customer-no-possibilities > p\.customer-no-match-guidance \{[^}]*background:#f4f7fb;color:#26384e/);
 });
+
+
+test("confirmed intention keeps explicit save available when identity check is unavailable", function () {
+  const script = read("js/customer.js");
+  assert.match(script, /saveArea\.hidden = false;/);
+  assert.doesNotMatch(script, /saveArea\.hidden = identity\.authenticated !== true/);
+  assert.match(script, /Please sign in to My DEMEOS before saving this intention/);
+  assert.match(script, /Your intention could not be saved\. Please try again/);
+});
