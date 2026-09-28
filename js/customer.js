@@ -827,9 +827,13 @@ function initializeCustomerIntention(document, navigatorValue, now) {
     const saveArea = document.getElementById("customer-intention-save");
     const signInNote = document.getElementById("customer-intention-sign-in-note");
     const saveButton = document.getElementById("customer-intention-save-button");
+    // Keep the explicit save action available even when identity status cannot be read.
+    // The server remains responsible for authorizing the actual save request.
+    saveArea.hidden = false;
+    signInNote.hidden = true;
     fetch("/api/customer/identity", { credentials: "same-origin", headers: { Accept: "application/json" } })
       .then(function (response) { return response.ok ? response.json() : { authenticated: false }; })
-      .then(function (identity) { saveArea.hidden = identity.authenticated !== true; signInNote.hidden = identity.authenticated === true; })
+      .then(function (identity) { signInNote.hidden = identity.authenticated === true; })
       .catch(function () { signInNote.hidden = false; });
     saveButton.onclick = async function () {
       if (saveButton.disabled || !currentUnderstanding || currentUnderstanding.confidenceState !== "confirmed") return;
@@ -839,8 +843,16 @@ function initializeCustomerIntention(document, navigatorValue, now) {
           headers: { "Content-Type": "application/json" }, body: JSON.stringify({ intention: currentUnderstanding.intention,
             customerText: currentUnderstanding.customerText, understanding: currentUnderstanding.understanding }) });
         if (response.ok) document.getElementById("customer-intention-save-status").textContent = CUSTOMER_STAGE_TWO_COPY.saved;
-        else saveButton.disabled = false;
-      } catch (_error) { saveButton.disabled = false; }
+        else {
+          saveButton.disabled = false;
+          document.getElementById("customer-intention-save-status").textContent = response.status === 401 || response.status === 403
+            ? "Please sign in to My DEMEOS before saving this intention."
+            : "Your intention could not be saved. Please try again.";
+        }
+      } catch (_error) {
+        saveButton.disabled = false;
+        document.getElementById("customer-intention-save-status").textContent = "Your intention could not be saved. Please try again.";
+      }
     };
     understandingPanel.hidden = true;
     requestCustomerPossibilities(document, currentUnderstanding, globalThis.fetch, {
