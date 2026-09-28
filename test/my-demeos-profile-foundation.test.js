@@ -293,3 +293,8 @@ test("My DEMEOS preference input uses iPhone-safe text size without disabling zo
   const html = read("my-demeos.html");
   assert.match(html, /name="viewport" content="width=device-width, initial-scale=1\.0"/);
 });
+
+test("no-match guidance has readable text on its pale panel", function () {
+  const css = read("css/customer-mobile-refinement.css");
+  assert.match(css, /\.customer-body \.customer-no-possibilities > p\.customer-no-match-guidance \{[^}]*background:#f4f7fb;color:#26384e/);
+});
