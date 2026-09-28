@@ -369,3 +369,12 @@ test("Discover videos pause when customer leaves Discover or browser page", func
   assert.match(script, /document\.addEventListener\("visibilitychange", function \(\) \{ if \(document\.hidden\) pauseDiscoverVideos\(document\); \}\)/);
   assert.match(script, /window\.addEventListener\("pagehide", function \(\) \{ pauseDiscoverVideos\(document\); \}\)/);
 });
+
+
+test("Discover refresh disconnects old media observer and pauses replaced videos", function () {
+  const script = read("js/customer.js");
+  assert.match(script, /const discoverMediaObservers = new WeakMap\(\)/);
+  assert.match(script, /if \(previousObserver\) \{ previousObserver\.disconnect\(\); discoverMediaObservers\.delete\(list\); \}/);
+  assert.match(script, /list\.querySelectorAll\("video"\)\.forEach\(function \(video\) \{ video\.pause\(\); \}\)/);
+  assert.match(script, /discoverMediaObservers\.set\(list, observer\)/);
+});

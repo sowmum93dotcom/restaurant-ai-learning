@@ -1125,10 +1125,15 @@ async function recordParticipation(work) {
   if (!response.ok) throw new Error("DEMEOS could not share your interest. Please try again.");
 }
 
+const discoverMediaObservers = new WeakMap();
+
 function renderCustomerWork(document, work, customerPackages, participationRecorder) {
   const status = document.getElementById("customer-work-status");
   const list = document.getElementById("customer-work-list");
   const navigationHint = typeof document.querySelector === "function" ? document.querySelector(".customer-discover-navigation-hint") : null;
+  const previousObserver = discoverMediaObservers.get(list);
+  if (previousObserver) { previousObserver.disconnect(); discoverMediaObservers.delete(list); }
+  if (typeof list.querySelectorAll === "function") list.querySelectorAll("video").forEach(function (video) { video.pause(); });
   list.textContent = "";
   const validWork = getValidCustomerWork(work);
   if (navigationHint) navigationHint.hidden = !validWork.length;
@@ -1174,6 +1179,7 @@ function renderCustomerWork(document, work, customerPackages, participationRecor
       });
     }, { threshold: 0.1 });
     Array.from(list.children).forEach(function (card) { observer.observe(card); });
+    discoverMediaObservers.set(list, observer);
   }
 }
 
