@@ -984,7 +984,10 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
     });
     message.appendChild(mediaRegion);
     function pauseMediaVideos() {
-      Array.from(mediaRegion.querySelectorAll("video")).forEach(function (video) { video.pause(); });
+      Array.from(mediaRegion.children).forEach(function (item) {
+        const video = item.tagName === "VIDEO" || item.tag === "video" ? item : item.querySelector && item.querySelector("video");
+        if (video) video.pause();
+      });
     }
     // A video must not keep playing after its media frame is no longer active.
     mediaRegion.addEventListener("scroll", function () {
@@ -1169,7 +1172,7 @@ function renderCustomerWork(document, work, customerPackages, participationRecor
       if (!mediaRegion || mediaRegion.children.length < 2) return;
       event.preventDefault();
       const direction = event.key === "ArrowRight" ? 1 : -1;
-      mediaRegion.querySelectorAll("video").forEach(function (video) { video.pause(); });
+      if (typeof mediaRegion.querySelectorAll === "function") mediaRegion.querySelectorAll("video").forEach(function (video) { video.pause(); });
       mediaRegion.scrollBy({ left: direction * mediaRegion.clientWidth, behavior: "smooth" });
     });
     card.setAttribute("aria-label", `${item.businessName} — Discover item ${index + 1} of ${validWork.length}`);
