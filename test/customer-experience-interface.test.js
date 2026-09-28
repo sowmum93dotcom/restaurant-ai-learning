@@ -868,6 +868,10 @@ test("confirmed customer intention renders only validated business possibilities
   assert.match(focus.textContent, /Approved business offering/);
   assert.match(focus.textContent, /Matching evidence from published business information: cake. This is a possible connection, not confirmation that all your requirements are met/);
   assert.equal(focus.children.some((child) => child.className === "customer-business-continuation"), false);
+  const save = focus.children.find((child) => child.className === "customer-possibility-save");
+  const signInLink = save.children.find((child) => child.className === "customer-possibility-sign-in");
+  assert.equal(signInLink.href, "my-demeos.html");
+  assert.equal(save.children.some((child) => child.className === "customer-possibility-save-button"), false);
 });
 
 

@@ -445,6 +445,8 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
       });
     } else {
       addText(document, save, "p", "customer-possibility-save-note", CUSTOMER_STAGE_THREE_COPY.saveSignInNote);
+      const signInLink = addText(document, save, "a", "customer-possibility-sign-in", "Go to My DEMEOS to sign in");
+      signInLink.href = "my-demeos.html";
     }
     focusRegion.appendChild(save);
     const participation = document.createElement("section");
