@@ -1031,8 +1031,8 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
             if (difference < distance) { distance = difference; closest = index; }
           });
           const target = items[Math.max(0, Math.min(items.length - 1, closest + control[1]))];
-          if (target && target !== items[closest]) {
-            pauseMediaVideos();
+          if (target) {
+            if (target !== items[closest]) pauseMediaVideos();
             mediaRegion.scrollBy({ left: target.getBoundingClientRect().left - regionStart, behavior: "smooth" });
           }
         });
