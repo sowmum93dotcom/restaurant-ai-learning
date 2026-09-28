@@ -681,6 +681,37 @@ test("Discover media position follows horizontal scroll on narrow screens", func
   assert.equal(position.textContent, "Media 1 of 3");
 });
 
+test("Discover media counter updates when gallery resizes", function () {
+  const original = global.ResizeObserver;
+  const observers = [];
+  global.ResizeObserver = class {
+    constructor(callback) { this.callback = callback; observers.push(this); }
+    observe(region) { this.region = region; }
+    disconnect() { this.disconnected = true; }
+  };
+  try {
+    const document = fakeDocument();
+    const card = createCustomerWorkCard(document, {
+      workItemId: "resize-gallery", businessName: "North Star", content: "Approved media", participationAction: "Interested",
+      media: [
+        { assetId: "a", kind: "image", role: "primary", deliveryUrl: "https://cdn.example.com/a.webp" },
+        { assetId: "b", kind: "image", role: "supporting", deliveryUrl: "https://cdn.example.com/b.webp" }
+      ]
+    }, [], async function () {});
+    const message = card.children[1];
+    const region = message.children.find((child) => child.className === "customer-work-media");
+    const position = message.children.find((child) => child.className === "customer-media-position");
+    assert.equal(observers.length, 1);
+    let left = 0;
+    region.getBoundingClientRect = () => ({ left: 0 });
+    region.children.forEach((item, index) => { item.getBoundingClientRect = () => ({ left: index * 200 - left }); });
+    left = 200;
+    observers[0].callback();
+    assert.equal(position.textContent, "Media 2 of 2");
+    assert.equal(position.attributes["aria-label"], "Media 2 of 2");
+  } finally { global.ResizeObserver = original; }
+});
+
 test("a late possibilities response cannot replace the latest customer request", async function () {
   const document = fakeDocument();
   const ids = ["customer-possibilities", "customer-possibilities-heading", "customer-possibilities-list",
