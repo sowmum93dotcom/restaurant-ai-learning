@@ -10,6 +10,7 @@ test("multi-media gallery is keyboard focusable and uses existing validated arro
  assert.match(source, /mediaRegion\.setAttribute\("aria-keyshortcuts", "ArrowLeft ArrowRight Home End"\)/);
  assert.match(source, /mediaRegion\.addEventListener\("keydown", function \(event\) \{/);
  assert.match(source, /event\.target !== mediaRegion/);
+ assert.match(source, /event\.altKey \|\| event\.ctrlKey \|\| event\.metaKey \|\| event\.shiftKey/);
  assert.match(source, /\["ArrowLeft", "ArrowRight", "Home", "End"\]\.includes\(event\.key\)/);
  assert.match(source, /event\.key === "Home" \|\| event\.key === "End"/);
  assert.match(source, /event\.key === "Home" \? items\[0\] : items\[items\.length - 1\]/);
