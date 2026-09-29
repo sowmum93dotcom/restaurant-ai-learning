@@ -26,6 +26,12 @@ test("Discover business card keeps identity, media, options and action in one or
   assert.match(unified, /@media\(max-width:680px\)/);
 });
 
+test("Discover shows an honest visible empty state when business options are absent", function () {
+  const customer = fs.readFileSync(path.join(__dirname, "../js/customer.js"), "utf8");
+  assert.match(customer, /"customer-package-empty", "This business has no product or service options to show yet/);
+  assert.doesNotMatch(customer, /"customer-package-empty customer-visually-hidden"/);
+});
+
 test("Discover has a visible three-part customer journey on the actual customer page", function () {
   const html = fs.readFileSync(path.join(__dirname, "../customer.html"), "utf8");
   const css = fs.readFileSync(path.join(__dirname, "../css/customer-mobile-refinement.css"), "utf8");
