@@ -11,7 +11,7 @@ test("optional location is explicit, bounded, session-only and clearable", () =>
   assert.match(source, /let sessionLocation = null/);
   assert.match(source, /version !== locationRequestVersion/);
   assert.match(source, /\+\+locationRequestVersion;\s*sessionLocation = null/);
-  assert.match(source, /Location-based recommendations are not enabled yet/);
+  assert.match(source, /GPS-based matching is not enabled/);
   assert.match(html, /id="customer-location-clear"[^>]*hidden/);
   assert.doesNotMatch(source.slice(source.indexOf("async function requestCustomerPossibilities"), source.indexOf("function getLocalGreeting")), /sessionLocation/);
 });
