@@ -23,6 +23,16 @@
     fr: { stageLabel: "Étape 2 · DEMEOS comprend", heading: "Voici ce que DEMEOS a compris.", clarificationLabel: "Que souhaitez-vous accomplir ?", clarificationAction: "Mettre à jour", confirmAction: "Oui, continuer", changeAction: "Modifier" },
     ar: { stageLabel: "المرحلة 2 · يفهم DEMEOS", heading: "هذا ما فهمه DEMEOS.", clarificationLabel: "ما الذي تريد المساعدة في إنجازه؟", clarificationAction: "تحديث الفهم", confirmAction: "نعم، متابعة", changeAction: "تعديل" }
   };
+  var resultCopy = {
+    en: { none: "DEMEOS doesn’t have a sufficiently supported possibility yet.", found: "Your possibilities", preparing: "Preparing possibilities connected to what you asked for…", error: "DEMEOS could not prepare possibilities. Please try again." },
+    fr: { none: "DEMEOS ne dispose pas encore d’une possibilité suffisamment étayée.", found: "Vos possibilités", preparing: "Préparation des possibilités liées à votre demande…", error: "DEMEOS n’a pas pu préparer les possibilités. Veuillez réessayer." },
+    ar: { none: "لا تتوفر لدى DEMEOS بعد إمكانية مدعومة بمعلومات كافية.", found: "إمكانياتك", preparing: "جارٍ إعداد الإمكانيات المرتبطة بطلبك…", error: "تعذّر على DEMEOS إعداد الإمكانيات. يرجى المحاولة مجددًا." }
+  };
+  function localizeResult(value, language) {
+    var code = normalize(language);
+    var key = Object.keys(resultCopy.en).find(function (item) { return supported.some(function (source) { return resultCopy[source][item] === value; }); });
+    return key ? resultCopy[code][key] : value;
+  }
   function normalize(value) { var code = String(value || "").toLowerCase().split("-")[0]; return supported.indexOf(code) >= 0 ? code : "en"; }
   function getSaved() { try { return root.localStorage.getItem("demeos-customer-language"); } catch (_) { return null; } }
   function setSaved(value) { try { root.localStorage.setItem("demeos-customer-language", value); } catch (_) {} }
@@ -51,6 +61,10 @@
       var key = element.getAttribute("data-understanding-copy");
       if (Object.prototype.hasOwnProperty.call(confirmationCopy[code], key)) element.textContent = confirmationCopy[code][key];
     });
+    var heading = root.document.getElementById("customer-possibilities-heading");
+    if (heading) heading.textContent = localizeResult(heading.textContent, code);
+    var emptyHeading = root.document.getElementById("customer-no-possibilities-heading");
+    if (emptyHeading) emptyHeading.textContent = resultCopy[code].none;
     var control = root.document.getElementById("customer-language");
     if (control) control.value = code;
     return code;
@@ -75,7 +89,7 @@
     apply(preferred);
     select.addEventListener("change", function () { var code = apply(select.value); setSaved(code); });
   }
-  if (typeof module !== "undefined" && module.exports) module.exports = { normalize: normalize, copy: copy, intentionLabels: intentionLabels, journeyCopy: journeyCopy, confirmationCopy: confirmationCopy };
+  if (typeof module !== "undefined" && module.exports) module.exports = { normalize: normalize, copy: copy, intentionLabels: intentionLabels, journeyCopy: journeyCopy, confirmationCopy: confirmationCopy, resultCopy: resultCopy, localizeResult: localizeResult };
   if (root && root.document) {
     if (root.document.readyState === "loading") root.document.addEventListener("DOMContentLoaded", start);
     else start();
