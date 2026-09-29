@@ -1,0 +1,87 @@
+/* Approved Discover UI copy for the six additional languages. Not a complete journey catalogue. */
+(function(root){"use strict";var copy=Object.freeze({
+  "es": [
+    "Descubrir",
+    "Explora imágenes, productos y servicios de empresas.",
+    "Cuéntaselo a DEMEOS",
+    "Describe lo que buscas para encontrar posibilidades relevantes.",
+    "Mi DEMEOS",
+    "Guarda tus intereses confirmados en tu espacio privado.",
+    "¿Buscas algo específico?",
+    "Dile a DEMEOS qué necesitas y explora posibilidades respaldadas por empresas.",
+    "Sé lo que quiero",
+    "Todavía no hay nada que descubrir",
+    "No hay novedades que explorar en este momento. Vuelve pronto.",
+    "Cargando contenido aprobado…"
+  ],
+  "pt": [
+    "Descobrir",
+    "Explore imagens, produtos e serviços de empresas.",
+    "Conte ao DEMEOS",
+    "Descreva o que procura para encontrar possibilidades relevantes.",
+    "Meu DEMEOS",
+    "Guarde os seus interesses confirmados no seu espaço privado.",
+    "Procura algo específico?",
+    "Diga ao DEMEOS do que precisa e explore possibilidades apoiadas por empresas.",
+    "Sei o que quero",
+    "Ainda não há nada para descobrir",
+    "Não há novidades para explorar neste momento. Volte em breve.",
+    "A carregar conteúdo aprovado…"
+  ],
+  "zh": [
+    "发现",
+    "探索商家图片、产品和服务。",
+    "告诉 DEMEOS",
+    "描述您的需求，探索相关的可能选择。",
+    "我的 DEMEOS",
+    "在私人空间中保存已确认的兴趣。",
+    "正在寻找特定的内容？",
+    "告诉 DEMEOS 您需要什么，探索有商家信息支持的选择。",
+    "我知道自己想要什么",
+    "暂时没有可发现的内容",
+    "目前没有新内容可供探索，请稍后再来。",
+    "正在加载已批准的内容…"
+  ],
+  "hi": [
+    "खोजें",
+    "व्यवसायों की तस्वीरें, उत्पाद और सेवाएँ देखें।",
+    "DEMEOS को बताएँ",
+    "अपनी ज़रूरत बताएँ ताकि संबंधित विकल्प मिल सकें।",
+    "मेरा DEMEOS",
+    "अपनी पुष्टि की गई रुचियाँ निजी स्थान में रखें।",
+    "कुछ खास खोज रहे हैं?",
+    "DEMEOS को अपनी ज़रूरत बताएँ और व्यवसायों द्वारा समर्थित विकल्प देखें।",
+    "मुझे पता है कि मुझे क्या चाहिए",
+    "अभी खोजने के लिए कुछ नहीं है",
+    "इस समय देखने के लिए कुछ नया नहीं है। कृपया बाद में फिर आएँ।",
+    "स्वीकृत सामग्री लोड हो रही है…"
+  ],
+  "de": [
+    "Entdecken",
+    "Entdecken Sie Bilder, Produkte und Dienstleistungen von Unternehmen.",
+    "DEMEOS informieren",
+    "Beschreiben Sie Ihren Wunsch, um passende Möglichkeiten zu finden.",
+    "Mein DEMEOS",
+    "Bewahren Sie bestätigte Interessen in Ihrem privaten Bereich auf.",
+    "Suchen Sie etwas Bestimmtes?",
+    "Teilen Sie DEMEOS mit, was Sie benötigen, und entdecken Sie durch Unternehmensangaben gestützte Möglichkeiten.",
+    "Ich weiß, was ich möchte",
+    "Noch nichts zu entdecken",
+    "Derzeit gibt es nichts Neues zu entdecken. Schauen Sie bald wieder vorbei.",
+    "Freigegebene Inhalte werden geladen…"
+  ],
+  "ja": [
+    "見つける",
+    "事業者の画像、商品、サービスを探す。",
+    "DEMEOS に伝える",
+    "希望を伝えて、関連する選択肢を探しましょう。",
+    "マイ DEMEOS",
+    "確認した関心事項を自分専用のスペースに保存します。",
+    "お探しのものはありますか？",
+    "必要なことを DEMEOS に伝え、事業者の情報に基づく選択肢を探しましょう。",
+    "欲しいものが決まっている",
+    "現在、表示できるものはありません",
+    "現在、新しくご案内できるものはありません。しばらくしてから再度ご確認ください。",
+    "承認済みコンテンツを読み込み中…"
+  ]
+});if(typeof module!=="undefined"&&module.exports)module.exports=copy;root.DEMEOSDiscoverAdditionalCopy=copy;}(typeof window!=="undefined"?window:{}));
