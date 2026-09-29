@@ -26,7 +26,7 @@ Repository: sowmum93dotcom/restaurant-ai-learning.
 | Order | ID | Gate | State |
 |---|---|---|---|
 | 1 | A1-13 | Record real mobile/tablet location permission, denial and clearing acceptance | Awaiting acceptance; do not misstate completion |
-| 2 | A1-14 | Validated privacy-first location-aware recommendations, no invented distance | Next new feature; issue #561 |
+| 2 | A1-14 | Verify optional exact business-listed place matching; GPS proximity remains separate | Merged PR #564; awaiting production/device acceptance |
 | 3 | A1-22 | Full cross-destination production journey | Pending A1-14 |
 | 4 | A1-20 | Define and implement genuine multilingual customer UI | Later; not started |
 
@@ -36,3 +36,9 @@ Repository: sowmum93dotcom/restaurant-ai-learning.
 - Do not call a merged PR or green preview production-complete.
 - Do not start a new feature while the previous feature has an unrecorded result. An explicit hold with reason is allowed.
 - User can request a different priority; record the change here before switching.
+
+## 2026-09-29 — A1-14 implementation checkpoint
+- PR #564: optional customer-provided town/city matches only the exact declared business location. Blank input retains existing recommendations. No GPS coordinates or inferred distance.
+- First GitHub test run failed (place regex escaping and default response regression). Both corrected in the same PR; subsequent V1 Baseline Tests run #578 passed, Vercel preview succeeded.
+- Merge SHA: `5df50ed19ac8562dceb08f202e30228d55a4c7b8`. Production deployment `dpl_9ahqCN4afvt62yP9wcAMR6ArjUnS` was BUILDING at first check; verify READY before marking production complete. Real mobile/tablet acceptance remains unverified.
+- A1-14 remains Implemented / awaiting acceptance. Issue #561 automatic geolocation-based relevance is not complete; do not imply that it is.
