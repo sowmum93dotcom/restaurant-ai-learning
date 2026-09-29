@@ -57,6 +57,12 @@
   scroll-snap-align:start;
   scroll-snap-stop:always;
 }
+/* Make the newly keyboard-focusable gallery itself visibly identifiable. */
+.customer-body #discover .customer-work-media:focus-visible {
+  outline:3px solid #d4aa61;
+  outline-offset:-3px;
+  border-radius:14px;
+}
 .customer-body .customer-work-media-link:focus-visible {
   outline:3px solid #d4aa61;
   outline-offset:-3px;
