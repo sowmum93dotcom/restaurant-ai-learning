@@ -32,7 +32,7 @@ function discoverTestContent() {
       media: [
         { assetId: "test-bistro-image", kind: "image", role: "primary", deliveryUrl: "https://www.demeos.io/images/discover-test-bistro-gallery.svg",
           purpose: "business" },
-        { assetId: "test-bistro-view-only", kind: "image", role: "supporting", deliveryUrl: "https://www.demeos.io/images/discover-test-bistro-gallery.svg" }
+        { assetId: "test-bistro-view-only", kind: "image", role: "supporting", deliveryUrl: "https://www.demeos.io/images/discover-test-bistro-view-only.svg" }
       ]
     },
     {
