@@ -85,6 +85,16 @@
     });
     wrapper.appendChild(label); wrapper.appendChild(select);
     nav.parentNode.insertBefore(wrapper, nav.nextSibling);
+    var resultHeading = root.document.getElementById("customer-possibilities-heading");
+    if (resultHeading && typeof root.MutationObserver === "function") {
+      var resultObserver = new root.MutationObserver(function () {
+        var current = resultHeading.textContent;
+        var selected = root.document.getElementById("customer-language");
+        var localized = localizeResult(current, selected ? selected.value : "en");
+        if (localized !== current) resultHeading.textContent = localized;
+      });
+      resultObserver.observe(resultHeading, { childList: true, characterData: true, subtree: true });
+    }
     var preferred = getSaved() || (root.navigator && root.navigator.language) || "en";
     apply(preferred);
     select.addEventListener("change", function () { var code = apply(select.value); setSaved(code); });
