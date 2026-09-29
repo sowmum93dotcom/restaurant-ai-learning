@@ -516,3 +516,11 @@
 @media(max-width:680px){
  .customer-body #discover .customer-work-card .customer-participation{padding:10px 12px 12px;gap:8px}
 }
+
+/* A1-22: usable exact-place input on phone and tablet. */
+.customer-body #intention .customer-context-field{display:flex;flex-direction:column;align-items:stretch;gap:8px;width:100%;min-width:0}
+.customer-body #intention .customer-context-field label{display:block;max-width:100%;line-height:1.4;text-align:left}
+.customer-body #intention #customer-place{display:block;box-sizing:border-box;width:100%;max-width:100%;min-width:0;min-height:48px;margin:0;padding:12px 14px;border:1px solid rgba(223,188,112,.55);border-radius:12px;background:#0d223b;color:#f3f6fb;font:inherit;font-size:16px;line-height:1.4;text-align:left}
+.customer-body #intention #customer-place::placeholder{color:#aebdd0;opacity:1}
+.customer-body #intention #customer-place:focus-visible{outline:2px solid #e4bf6a;outline-offset:3px}
+.customer-body #intention .customer-context-status{max-width:100%;margin:0;line-height:1.45;text-align:left}
