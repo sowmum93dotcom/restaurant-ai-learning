@@ -54,7 +54,7 @@ function discoverTestContent() {
           purpose: "business" },
         { assetId: "test-studio-video", kind: "video", role: "supporting", deliveryUrl: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
           purpose: "business" },
-        { assetId: "test-studio-missing-match", kind: "image", role: "supporting", deliveryUrl: "https://www.demeos.io/images/discover-test-studio-gallery.svg",
+        { assetId: "test-studio-missing-match", kind: "image", role: "supporting", deliveryUrl: "https://www.demeos.io/images/discover-test-studio-view-only.svg",
           purpose: "product", relatedEntityId: "missing-test-product" }
       ]
     },
