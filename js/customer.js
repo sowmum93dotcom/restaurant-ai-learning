@@ -953,6 +953,7 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
   boundaryMeaning.className = "customer-visually-hidden";
   boundaryMeaning.textContent = "Personal interest is recorded only after DEMEOS has matched an approved possibility.";
   message.appendChild(boundaryMeaning);
+  if (Array.isArray(work.media) && work.media.length) addText(document, message, "p", "customer-media-section-label", "Business gallery");
   const businessContent = addText(document, message, "p", "customer-work-content", work.content);
   businessContent.setAttribute("dir", "auto");
 
@@ -1061,8 +1062,8 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
   const choice = document.createElement("section");
   choice.className = "customer-choice";
   if (anchorJourney) choice.id = "choose";
-  addText(document, choice, "p", "customer-step", "Options");
-  addText(document, choice, "h4", "customer-choice-title", "Customer options");
+  addText(document, choice, "p", "customer-step", "Explore");
+  addText(document, choice, "h4", "customer-choice-title", "Products and services");
   const packageRegion = document.createElement("div");
   packageRegion.className = "customer-package-region";
   packageRegion.setAttribute("role", "list");
