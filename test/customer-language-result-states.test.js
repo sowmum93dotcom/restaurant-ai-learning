@@ -1,0 +1,2 @@
+const test=require("node:test");const assert=require("node:assert/strict");const {resultCopy,localizeResult}=require("../js/customer-interface-language.js");
+test("result states translate only known interface messages",()=>{for(const lang of ["fr","ar"]){assert.deepEqual(Object.keys(resultCopy[lang]).sort(),Object.keys(resultCopy.en).sort());for(const key of Object.keys(resultCopy.en))assert.equal(localizeResult(resultCopy.en[key],lang),resultCopy[lang][key]);}assert.equal(localizeResult("Business provided product", "fr"),"Business provided product");});
