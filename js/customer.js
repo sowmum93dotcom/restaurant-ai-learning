@@ -1212,6 +1212,27 @@ function renderCustomerWork(document, work, customerPackages, participationRecor
     const position = context && Array.from(context.children || []).find(function (child) { return child.className === "customer-discover-position"; });
     if (position) position.textContent = `${index + 1} / ${validWork.length}`;
     list.appendChild(card);
+    if (validWork.length > 1 && context) {
+      const controls = document.createElement("nav");
+      controls.className = "customer-business-controls";
+      controls.setAttribute("aria-label", "Browse businesses");
+      [["Previous business", index - 1, "↑"], ["Next business", index + 1, "↓"]].forEach(function (control) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "customer-business-control";
+        button.setAttribute("aria-label", control[0]);
+        button.textContent = control[2];
+        button.disabled = control[1] < 0 || control[1] >= validWork.length;
+        button.addEventListener("click", function () {
+          const target = list.children[control[1]];
+          if (!target) return;
+          target.focus();
+          target.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        });
+        controls.appendChild(button);
+      });
+      context.appendChild(controls);
+    }
   });
   // Stop playback when a business leaves the customer viewport.
   if (typeof IntersectionObserver !== "undefined") {
