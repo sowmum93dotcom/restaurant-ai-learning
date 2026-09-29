@@ -1022,8 +1022,11 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
           const difference = Math.abs(item.getBoundingClientRect().left - regionStart);
           if (difference < distance) { distance = difference; closest = index; }
         });
-        mediaPosition.textContent = "Media " + (closest + 1) + " of " + items.length;
-        mediaPosition.setAttribute("aria-label", "Media " + (closest + 1) + " of " + items.length);
+        const positionLabel = "Media " + (closest + 1) + " of " + items.length;
+        if (mediaPosition.textContent !== positionLabel) {
+          mediaPosition.textContent = positionLabel;
+          mediaPosition.setAttribute("aria-label", positionLabel);
+        }
         const buttons = controls ? Array.from(controls.children) : [];
         if (buttons.length === 2) {
           buttons[0].disabled = closest === 0;
