@@ -26,6 +26,16 @@ test("Discover business card keeps identity, media, options and action in one or
   assert.match(unified, /@media\(max-width:680px\)/);
 });
 
+test("Discover gallery counter and arrows share one row before the business description", function () {
+  const css = fs.readFileSync(path.join(__dirname, "../css/customer-mobile-refinement.css"), "utf8");
+  const gallery = css.slice(css.lastIndexOf("/* Gallery position and arrows share one compact row"));
+  assert.match(gallery, /customer-message\{display:grid;grid-template-columns:minmax\(0,1fr\) auto/);
+  assert.match(gallery, /customer-work-media\{grid-column:1 \/ -1/);
+  assert.match(gallery, /customer-media-position\{grid-column:1/);
+  assert.match(gallery, /customer-media-controls\{grid-column:2/);
+  assert.match(gallery, /customer-work-content\{grid-column:1 \/ -1/);
+});
+
 test("Discover has a visible three-part customer journey on the actual customer page", function () {
   const html = fs.readFileSync(path.join(__dirname, "../customer.html"), "utf8");
   const css = fs.readFileSync(path.join(__dirname, "../css/customer-mobile-refinement.css"), "utf8");
