@@ -181,6 +181,22 @@ test("public Discover serialization excludes payment authority and private check
   assert.doesNotMatch(serialized, /commercialArrangement|paymentReady|providerAccountId|checkoutUrl|unverified\\.example|private-account/);
 });
 
+test("Discover uses contact wording when availability is limited or unconfirmed", function () {
+  for (const availability of ["limited", "contact"]) {
+    const document = fakeDocument();
+    const card = createCustomerWorkCard(document, {
+      workItemId: "availability-" + availability, businessName: "Example Business", content: "Approved content",
+      participationAction: "Interested",
+      customerContinuation: { routes: ["website"], website: "https://business.example/approved" },
+      products: [{ productId: "p1", name: "Product", description: "Details",
+        continuationRoute: "website", availability }]
+    }, [], async function () {});
+    const choice = card.children.find(function (child) { return child.className === "customer-choice"; });
+    assert.match(choice.textContent, /Contact Example Business/);
+    assert.doesNotMatch(choice.textContent, /Continue with Example Business/);
+  }
+});
+
 test("Discover clearly marks unavailable products without continuation", function () {
   const document = fakeDocument();
   const card = createCustomerWorkCard(document, {
