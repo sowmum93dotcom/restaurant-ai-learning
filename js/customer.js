@@ -1091,7 +1091,11 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
           option.appendChild(imageLink);
           imageContainer = imageLink;
         } else option.appendChild(image);
-        image.addEventListener("error", function () { imageContainer.remove(); }, { once: true });
+        image.addEventListener("error", function () {
+          if (imageContainer !== option) imageContainer.textContent = "";
+          else image.hidden = true;
+          addText(document, imageContainer, "span", "customer-discover-option-image-fallback", "Image unavailable. Product details remain below.");
+        }, { once: true });
       }
       const productName = addText(document, option, "h5", "customer-discover-option-name", product.name);
       productName.setAttribute("dir", "auto");
