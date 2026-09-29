@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" role="img" aria-labelledby="title description">
+  <title id="title">Controlled test service illustration</title>
+  <desc id="description">A stylised appointment calendar on a navy background, labelled test service.</desc>
+  <rect width="600" height="600" fill="#081a30"/>
+  <rect x="117" y="103" width="366" height="354" rx="30" fill="#e8edf3" stroke="#d4aa61" stroke-width="8"/>
+  <path d="M120 197h360" stroke="#143a5d" stroke-width="18"/>
+  <path d="M211 73v83M389 73v83" stroke="#d4aa61" stroke-width="24" stroke-linecap="round"/>
+  <circle cx="226" cy="272" r="22" fill="#143a5d"/><circle cx="300" cy="272" r="22" fill="#143a5d"/><circle cx="374" cy="272" r="22" fill="#143a5d"/>
+  <circle cx="226" cy="351" r="22" fill="#143a5d"/><path d="m278 350 20 20 40-49" fill="none" stroke="#37684f" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="90" y="514" width="420" height="54" rx="12" fill="#d4aa61"/>
+  <text x="300" y="550" fill="#081a30" font-family="Arial,sans-serif" font-size="25" font-weight="700" text-anchor="middle">CONTROLLED TEST SERVICE</text>
+</svg>
