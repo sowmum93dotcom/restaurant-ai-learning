@@ -159,6 +159,28 @@ test("Discover ignores unverified commission and checkout claims from public wor
   assert.ok(!links.includes("https://unverified.example/checkout"));
 });
 
+test("public Discover serialization excludes payment authority and private checkout data", function () {
+  const { getValidPublicCustomerWork } = require("../api/_lib/customer-public-work-contract.js");
+  const [publicItem] = getValidPublicCustomerWork([{
+    workItemId: "a", businessId: "vendor-a", businessName: "Example Vendor",
+    content: "Approved message", participationAction: "Interested",
+    commercialArrangement: "commission", paymentReady: true,
+    providerAccountId: "private-account", checkoutUrl: "https://unverified.example/pay",
+    customerContinuation: { routes: ["website"], website: "https://business.example/approved" },
+    products: [{
+      businessId: "vendor-a", productId: "p1", name: "Product", description: "Approved description",
+      continuationRoute: "website", availability: "available", price: "£100",
+      commercialArrangement: "commission", paymentReady: true,
+      providerAccountId: "private-account", checkoutUrl: "https://unverified.example/pay"
+    }]
+  }]);
+  assert.ok(publicItem);
+  assert.equal(publicItem.customerContinuation.website, "https://business.example/approved");
+  assert.equal(publicItem.products[0].name, "Product");
+  const serialized = JSON.stringify(publicItem);
+  assert.doesNotMatch(serialized, /commercialArrangement|paymentReady|providerAccountId|checkoutUrl|unverified\\.example|private-account/);
+});
+
 test("Discover public contract gives different businesses a first distribution pass", function () {
   const { getValidPublicCustomerWork } = require("../api/_lib/customer-public-work-contract.js");
   const work = [
