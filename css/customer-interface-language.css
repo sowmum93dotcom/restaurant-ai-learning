@@ -1,0 +1,8 @@
+/* A1-20: compact language control, with layout direction separate from customer-entered text. */
+.customer-language-control{display:flex;align-items:center;gap:8px;min-width:0;color:#e9d09a;font-size:14px}
+.customer-language-control select{max-width:130px;min-height:40px;padding:6px 10px;border:1px solid #a58b56;border-radius:10px;background:#172b46;color:#fff;font:inherit}
+.customer-language-control select:focus-visible{outline:2px solid #e4bf6a;outline-offset:2px}
+.customer-header-inner{flex-wrap:wrap}
+[dir=rtl] .customer-language-control select{direction:rtl}
+#customer-intention-text,#customer-place{direction:auto}
+@media(max-width:640px){.customer-language-control{width:100%;justify-content:flex-end;padding:0 8px 8px}.customer-language-control select{min-height:44px}}
