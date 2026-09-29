@@ -1,3 +1,12 @@
+const assert = require("node:assert/strict");
+const test = require("node:test");
+const fs = require("node:fs");
+const path = require("node:path");
+const { createCustomerWorkCard, getServerCustomerPackages, getValidCustomerWork,
+  getLocalGreeting, getPreferredLanguage, normalizedCustomerIntention, recordParticipation,
+  renderCustomerWork, requestCustomerPossibilities, requestCustomerLocation, selectCustomerIntention, applyCustomerSurfaceRoute, getDiscoverRequest, loadCustomerWork, toCustomerWorkItem } = require("../js/customer.js");
+const { confirmTrustedCustomer } = require("../js/my-demeos.js");
+
 test("Discover has a visible three-part customer journey on the actual customer page", function () {
   const html = fs.readFileSync(path.join(__dirname, "../customer.html"), "utf8");
   const css = fs.readFileSync(path.join(__dirname, "../css/customer-mobile-refinement.css"), "utf8");
@@ -8,15 +17,6 @@ test("Discover has a visible three-part customer journey on the actual customer 
   assert.match(css, /customer-discover-entry-guide/);
   assert.match(css, /@media\(max-width:680px\)/);
 });
-
-const assert = require("node:assert/strict");
-const test = require("node:test");
-const fs = require("node:fs");
-const path = require("node:path");
-const { createCustomerWorkCard, getServerCustomerPackages, getValidCustomerWork,
-  getLocalGreeting, getPreferredLanguage, normalizedCustomerIntention, recordParticipation,
-  renderCustomerWork, requestCustomerPossibilities, requestCustomerLocation, selectCustomerIntention, applyCustomerSurfaceRoute, getDiscoverRequest, loadCustomerWork, toCustomerWorkItem } = require("../js/customer.js");
-const { confirmTrustedCustomer } = require("../js/my-demeos.js");
 
 class Element {
   constructor(tag = "div") { this.tag = tag; this.children = []; this.listeners = {}; this.attributes = {}; this._text = ""; this.innerHTML = ""; }
