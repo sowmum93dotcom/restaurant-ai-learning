@@ -1114,7 +1114,7 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
         const continueAction = document.createElement("a");
         continueAction.className = "customer-product-continue-action";
         continueAction.href = href;
-        continueAction.textContent = "Continue with " + work.businessName;
+        continueAction.textContent = product.availability === "limited" || product.availability === "contact" ? "Contact " + work.businessName : "Continue with " + work.businessName;
         if (/^https?:\/\//i.test(href)) { continueAction.target = "_blank"; continueAction.rel = "noopener noreferrer"; }
         option.appendChild(continueAction);
       }
