@@ -30,9 +30,9 @@ function discoverTestContent() {
           continuationRoute: "website", availability: "unavailable" }
       ],
       media: [
-        { assetId: "test-bistro-image", kind: "image", role: "primary", deliveryUrl: "https://picsum.photos/seed/demeos-bistro/1200/900",
+        { assetId: "test-bistro-image", kind: "image", role: "primary", deliveryUrl: "https://www.demeos.io/images/discover-test-bistro-gallery.svg",
           purpose: "business" },
-        { assetId: "test-bistro-view-only", kind: "image", role: "supporting", deliveryUrl: "https://picsum.photos/seed/demeos-bistro-view/1200/900" }
+        { assetId: "test-bistro-view-only", kind: "image", role: "supporting", deliveryUrl: "https://www.demeos.io/images/discover-test-bistro-gallery.svg" }
       ]
     },
     {
@@ -50,11 +50,11 @@ function discoverTestContent() {
           continuationRoute: "booking", availability: "limited" }
       ],
       media: [
-        { assetId: "test-studio-image", kind: "image", role: "primary", deliveryUrl: "https://picsum.photos/seed/demeos-studio/1200/900",
+        { assetId: "test-studio-image", kind: "image", role: "primary", deliveryUrl: "https://www.demeos.io/images/discover-test-studio-gallery.svg",
           purpose: "business" },
         { assetId: "test-studio-video", kind: "video", role: "supporting", deliveryUrl: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
           purpose: "business" },
-        { assetId: "test-studio-missing-match", kind: "image", role: "supporting", deliveryUrl: "https://picsum.photos/seed/demeos-unmatched/1200/900",
+        { assetId: "test-studio-missing-match", kind: "image", role: "supporting", deliveryUrl: "https://www.demeos.io/images/discover-test-studio-gallery.svg",
           purpose: "product", relatedEntityId: "missing-test-product" }
       ]
     },
@@ -66,7 +66,7 @@ function discoverTestContent() {
       content: "Controlled content for testing a business with view-only media and no customer continuation.",
       participationAction: "Interested",
       media: [
-        { assetId: "test-market-image", kind: "image", role: "primary", deliveryUrl: "https://picsum.photos/seed/demeos-market/1200/900" }
+        { assetId: "test-market-image", kind: "image", role: "primary", deliveryUrl: "https://www.demeos.io/images/discover-test-market-gallery.svg" }
       ]
     }
   ];
