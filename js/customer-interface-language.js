@@ -50,6 +50,17 @@
     ar: { place: "لا توجد نتيجة تطابق طلبك والمدينة المحددة التي أدخلتها معًا. هذا ليس بحثًا عن الأماكن القريبة. غيّر المدينة أو امسحها للبحث دون هذا القيد.", guidance: "يمكنك إضافة تفاصيل عن الموقع أو التاريخ المفضل أو متطلبات المنتج أو الخدمة، أو تغيير طلبك. سيتحقق DEMEOS مجددًا دون اختلاق تطابق.", detail: "إضافة تفاصيل", change: "تغيير نيتي", label: "أضف تفاصيل عن طلبك", continue: "متابعة", cancel: "إلغاء" }
   };
   var noMatchSelectors = { place: "#customer-no-place-match-note", guidance: ".customer-no-match-guidance", detail: "#customer-add-detail", change: "#customer-empty-change-intention", label: "label[for=customer-add-detail-text]", continue: "#customer-add-detail-form button[type=submit]", cancel: "#customer-add-detail-cancel" };
+  var statusCopy = {
+    en: ["DEMEOS understands your intention.", "Saved to My Intentions.", "Add a little more detail so DEMEOS can understand your intention.", "Add some detail before continuing.", "Keep your combined detail within 500 characters.", "Your intention could not be saved. Please try again."],
+    fr: ["DEMEOS comprend votre intention.", "Enregistré dans Mes intentions.", "Ajoutez quelques précisions pour que DEMEOS comprenne votre intention.", "Ajoutez des précisions avant de continuer.", "Limitez l’ensemble de vos précisions à 500 caractères.", "Votre intention n’a pas pu être enregistrée. Veuillez réessayer."],
+    ar: ["يفهم DEMEOS نيتك.", "تم الحفظ في نياتي.", "أضف مزيدًا من التفاصيل حتى يفهم DEMEOS نيتك.", "أضف تفاصيل قبل المتابعة.", "اجعل مجموع التفاصيل في حدود 500 حرف.", "تعذّر حفظ نيتك. يرجى المحاولة مجددًا."]
+  };
+  function localizeStatus(value, language) {
+    var code = normalize(language);
+    var index = -1;
+    supported.some(function (source) { index = statusCopy[source].indexOf(value); return index >= 0; });
+    return index >= 0 ? statusCopy[code][index] : value;
+  }
   function normalize(value) { var code = String(value || "").toLowerCase().split("-")[0]; return supported.indexOf(code) >= 0 ? code : "en"; }
   function getSaved() { try { return root.localStorage.getItem("demeos-customer-language"); } catch (_) { return null; } }
   function setSaved(value) { try { root.localStorage.setItem("demeos-customer-language", value); } catch (_) {} }
@@ -94,6 +105,10 @@
     if (heading) heading.textContent = localizeResult(heading.textContent, code);
     var emptyHeading = root.document.getElementById("customer-no-possibilities-heading");
     if (emptyHeading) emptyHeading.textContent = resultCopy[code].none;
+    ["customer-understanding-status", "customer-intention-save-status", "customer-add-detail-status"].forEach(function (id) {
+      var element = root.document.getElementById(id);
+      if (element) element.textContent = localizeStatus(element.textContent, code);
+    });
     var control = root.document.getElementById("customer-language");
     if (control) control.value = code;
     return code;
@@ -124,11 +139,23 @@
       });
       resultObserver.observe(resultHeading, { childList: true, characterData: true, subtree: true });
     }
+    if (typeof root.MutationObserver === "function") {
+      ["customer-understanding-status", "customer-intention-save-status", "customer-add-detail-status"].forEach(function (id) {
+        var element = root.document.getElementById(id);
+        if (!element) return;
+        var observer = new root.MutationObserver(function () {
+          var selected = root.document.getElementById("customer-language");
+          var localized = localizeStatus(element.textContent, selected ? selected.value : "en");
+          if (localized !== element.textContent) element.textContent = localized;
+        });
+        observer.observe(element, { childList: true, characterData: true, subtree: true });
+      });
+    }
     var preferred = getSaved() || (root.navigator && root.navigator.language) || "en";
     apply(preferred);
     select.addEventListener("change", function () { var code = apply(select.value); setSaved(code); });
   }
-  if (typeof module !== "undefined" && module.exports) module.exports = { normalize: normalize, copy: copy, intentionLabels: intentionLabels, journeyCopy: journeyCopy, confirmationCopy: confirmationCopy, resultCopy: resultCopy, localizeResult: localizeResult, staticCopy: staticCopy, possibilityCopy: possibilityCopy, noMatchCopy: noMatchCopy };
+  if (typeof module !== "undefined" && module.exports) module.exports = { normalize: normalize, copy: copy, intentionLabels: intentionLabels, journeyCopy: journeyCopy, confirmationCopy: confirmationCopy, resultCopy: resultCopy, localizeResult: localizeResult, staticCopy: staticCopy, possibilityCopy: possibilityCopy, noMatchCopy: noMatchCopy, statusCopy: statusCopy, localizeStatus: localizeStatus };
   if (root && root.document) {
     if (root.document.readyState === "loading") root.document.addEventListener("DOMContentLoaded", start);
     else start();
