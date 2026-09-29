@@ -1082,9 +1082,12 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
           const items = Array.from(mediaRegion.children);
           const target = event.key === "Home" ? items[0] : items[items.length - 1];
           if (target) {
-            pauseMediaVideos();
-            const reducedMotion = typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-            mediaRegion.scrollBy({ left: target.getBoundingClientRect().left - mediaRegion.getBoundingClientRect().left, behavior: reducedMotion ? "auto" : "smooth" });
+            const offset = target.getBoundingClientRect().left - mediaRegion.getBoundingClientRect().left;
+            if (Math.abs(offset) > 1) {
+              pauseMediaVideos();
+              const reducedMotion = typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+              mediaRegion.scrollBy({ left: offset, behavior: reducedMotion ? "auto" : "smooth" });
+            }
           }
           return;
         }
