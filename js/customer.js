@@ -34,7 +34,9 @@ const CUSTOMER_STAGE_ONE_COPY = Object.freeze({
   textLabel: "Describe what you need in your own words (optional)",
   textPlaceholder: "For example, I would like a relaxed place to spend time together.",
   locationAction: "Use my location",
-  locationAvailable: "Location available for this session.",
+  locationAvailable: "Location permission granted. Location-based recommendations are not enabled yet.",
+  locationClear: "Clear location",
+  locationCleared: "Location cleared for this session.",
   locationOptional: "Location is optional. You can continue without it.",
   continueAction: "Continue",
   continueReady: "Your intention is ready. No information has been sent.",
@@ -680,7 +682,15 @@ function requestCustomerLocation(geolocation, onState) {
     onState("optional");
     return;
   }
-  geolocation.getCurrentPosition(function () { onState("available"); }, function () { onState("optional"); });
+  geolocation.getCurrentPosition(function (position) {
+    const coords = position && position.coords;
+    if (!coords || !Number.isFinite(coords.latitude) || !Number.isFinite(coords.longitude) ||
+        Math.abs(coords.latitude) > 90 || Math.abs(coords.longitude) > 180) {
+      onState("optional");
+      return;
+    }
+    onState("available", { latitude: coords.latitude, longitude: coords.longitude });
+  }, function () { onState("optional"); }, { enableHighAccuracy: false, maximumAge: 0, timeout: 10000 });
 }
 
 function initializeCustomerIntention(document, navigatorValue, now) {
@@ -771,10 +781,24 @@ function initializeCustomerIntention(document, navigatorValue, now) {
   });
 
   const locationStatus = document.getElementById("customer-location-status");
-  document.getElementById("customer-location-button").addEventListener("click", function () {
-    requestCustomerLocation(navigatorValue && navigatorValue.geolocation, function (state) {
-      locationStatus.textContent = state === "available" ? CUSTOMER_STAGE_ONE_COPY.locationAvailable : CUSTOMER_STAGE_ONE_COPY.locationOptional;
+  const locationButton = document.getElementById("customer-location-button");
+  const clearLocationButton = document.getElementById("customer-location-clear");
+  let sessionLocation = null;
+  let locationRequestVersion = 0;
+  locationButton.addEventListener("click", function () {
+    const version = ++locationRequestVersion;
+    requestCustomerLocation(navigatorValue && navigatorValue.geolocation, function (state, coordinates) {
+      if (version !== locationRequestVersion) return;
+      sessionLocation = state === "available" ? coordinates : null;
+      clearLocationButton.hidden = !sessionLocation;
+      locationStatus.textContent = sessionLocation ? CUSTOMER_STAGE_ONE_COPY.locationAvailable : CUSTOMER_STAGE_ONE_COPY.locationOptional;
     });
+  });
+  clearLocationButton.addEventListener("click", function () {
+    ++locationRequestVersion;
+    sessionLocation = null;
+    clearLocationButton.hidden = true;
+    locationStatus.textContent = CUSTOMER_STAGE_ONE_COPY.locationCleared;
   });
   intentionForm.addEventListener("submit", function (event) {
     event.preventDefault();
