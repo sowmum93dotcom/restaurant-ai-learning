@@ -1125,7 +1125,7 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
       packageRegion.appendChild(option);
     });
   } else if (!customerPackages.length) {
-    addText(document, packageRegion, "p", "customer-package-empty customer-visually-hidden", "Customer options will appear here when available.");
+    addText(document, packageRegion, "p", "customer-package-empty", "This business has no product or service options to show yet. Explore its approved media or tell DEMEOS what you want.");
   }
   choice.appendChild(packageRegion);
 
