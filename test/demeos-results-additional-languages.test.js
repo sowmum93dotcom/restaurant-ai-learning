@@ -1,0 +1,2 @@
+const test=require("node:test");const assert=require("node:assert/strict");const catalog=require("../js/demeos-results-additional-languages.js");
+test("six additional languages cover all four known result states",()=>{assert.deepEqual(Object.keys(catalog).sort(),["es","pt","zh","hi","de","ja"].sort());for(const item of Object.values(catalog)){assert.deepEqual(Object.keys(item),["none","found","preparing","error"]);assert.ok(Object.values(item).every(x=>typeof x==="string"&&x.trim()));}});
