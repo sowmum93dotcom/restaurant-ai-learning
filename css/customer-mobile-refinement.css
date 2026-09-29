@@ -463,3 +463,14 @@
  .customer-body #discover .customer-work-card .customer-discover-option.has-image .customer-discover-option-image{width:80px;height:80px;aspect-ratio:1 / 1;object-fit:cover}
  .customer-body #discover .customer-work-card .customer-discover-option.has-image .customer-product-continue-action{grid-column:1 / -1;grid-row:auto;width:100%;min-height:44px;margin-top:8px}
 }
+
+
+/* Keep the three-step orientation readable without three tall panels above Discover on phones. */
+@media(max-width:680px){
+ .customer-body #discover .customer-discover-entry-guide{grid-template-columns:minmax(0,1fr);gap:0;margin:0 0 10px;padding:6px 10px;border:1px solid rgba(223,188,112,.24);border-radius:11px;background:#0d223b}
+ .customer-body #discover .customer-discover-entry-guide>div{display:grid;grid-template-columns:22px minmax(0,1fr);align-items:center;gap:2px 8px;padding:6px 0;border:0;border-radius:0;background:transparent}
+ .customer-body #discover .customer-discover-entry-guide>div+div{border-top:1px solid rgba(223,188,112,.13)}
+ .customer-body #discover .customer-discover-guide-number{grid-column:1;grid-row:1 / 3;align-self:center}
+ .customer-body #discover .customer-discover-entry-guide strong{grid-column:2;font-size:.75rem}
+ .customer-body #discover .customer-discover-entry-guide>div>span:last-child{grid-column:2;font-size:.68rem;line-height:1.3}
+}
