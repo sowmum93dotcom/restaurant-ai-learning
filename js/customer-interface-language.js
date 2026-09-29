@@ -39,6 +39,17 @@
     ar: { saveButton: "حفظ في حسابي في DEMEOS", saveHelp: "احفظ هذه النية المؤكدة في حسابك في DEMEOS.", signIn: "سجّل الدخول إلى حسابك في DEMEOS للاحتفاظ بهذه النية بين الزيارات.", gallery: "عندما تتوفر صورة مقدمة من النشاط التجاري لمنتج أو خدمة ذات صلة، ستظهر مع الإمكانية. لا ينشئ DEMEOS صورًا للمنتجات من عنده." }
   };
   var staticSelectors = { saveButton: "#customer-intention-save-button", saveHelp: "#customer-intention-save > p:not([id])", signIn: "#customer-intention-sign-in-note", gallery: ".customer-product-gallery-guide" };
+  var possibilityCopy = {
+    en: { stageLabel: "Stage 3 · Your possibilities", introduction: "DEMEOS has brought forward a small set of possibilities around your intention.", changeAction: "Change what I’m looking for" },
+    fr: { stageLabel: "Étape 3 · Vos possibilités", introduction: "DEMEOS présente un petit ensemble de possibilités liées à votre intention.", changeAction: "Modifier ma recherche" },
+    ar: { stageLabel: "المرحلة 3 · إمكانياتك", introduction: "يعرض DEMEOS مجموعة محدودة من الإمكانيات المرتبطة بنيتك.", changeAction: "تغيير ما أبحث عنه" }
+  };
+  var noMatchCopy = {
+    en: { place: "No result matches both your request and the exact town or city you entered. This is not a nearby search. Change or clear the town or city in I know what I want to search without that restriction.", guidance: "You can add useful details such as your location, preferred date, product or service requirements, or change your request. DEMEOS will check again without inventing a match.", detail: "Add more detail", change: "Change my intention", label: "Add customer-provided context about what you want", continue: "Continue", cancel: "Cancel" },
+    fr: { place: "Aucun résultat ne correspond à la fois à votre demande et à la ville exacte saisie. Il ne s’agit pas d’une recherche à proximité. Modifiez ou effacez la ville pour supprimer cette restriction.", guidance: "Vous pouvez préciser le lieu, la date souhaitée, le produit ou le service, ou modifier votre demande. DEMEOS vérifiera à nouveau sans inventer de correspondance.", detail: "Ajouter des précisions", change: "Modifier mon intention", label: "Ajoutez des précisions sur votre besoin", continue: "Continuer", cancel: "Annuler" },
+    ar: { place: "لا توجد نتيجة تطابق طلبك والمدينة المحددة التي أدخلتها معًا. هذا ليس بحثًا عن الأماكن القريبة. غيّر المدينة أو امسحها للبحث دون هذا القيد.", guidance: "يمكنك إضافة تفاصيل عن الموقع أو التاريخ المفضل أو متطلبات المنتج أو الخدمة، أو تغيير طلبك. سيتحقق DEMEOS مجددًا دون اختلاق تطابق.", detail: "إضافة تفاصيل", change: "تغيير نيتي", label: "أضف تفاصيل عن طلبك", continue: "متابعة", cancel: "إلغاء" }
+  };
+  var noMatchSelectors = { place: "#customer-no-place-match-note", guidance: ".customer-no-match-guidance", detail: "#customer-add-detail", change: "#customer-empty-change-intention", label: "label[for=customer-add-detail-text]", continue: "#customer-add-detail-form button[type=submit]", cancel: "#customer-add-detail-cancel" };
   function normalize(value) { var code = String(value || "").toLowerCase().split("-")[0]; return supported.indexOf(code) >= 0 ? code : "en"; }
   function getSaved() { try { return root.localStorage.getItem("demeos-customer-language"); } catch (_) { return null; } }
   function setSaved(value) { try { root.localStorage.setItem("demeos-customer-language", value); } catch (_) {} }
@@ -70,6 +81,14 @@
     Object.keys(staticSelectors).forEach(function (key) {
       var element = root.document.querySelector(staticSelectors[key]);
       if (element) element.textContent = staticCopy[code][key];
+    });
+    root.document.querySelectorAll("[data-possibilities-copy]").forEach(function (element) {
+      var key = element.getAttribute("data-possibilities-copy");
+      if (Object.prototype.hasOwnProperty.call(possibilityCopy[code], key)) element.textContent = possibilityCopy[code][key];
+    });
+    Object.keys(noMatchSelectors).forEach(function (key) {
+      var element = root.document.querySelector(noMatchSelectors[key]);
+      if (element) element.textContent = noMatchCopy[code][key];
     });
     var heading = root.document.getElementById("customer-possibilities-heading");
     if (heading) heading.textContent = localizeResult(heading.textContent, code);
@@ -109,7 +128,7 @@
     apply(preferred);
     select.addEventListener("change", function () { var code = apply(select.value); setSaved(code); });
   }
-  if (typeof module !== "undefined" && module.exports) module.exports = { normalize: normalize, copy: copy, intentionLabels: intentionLabels, journeyCopy: journeyCopy, confirmationCopy: confirmationCopy, resultCopy: resultCopy, localizeResult: localizeResult, staticCopy: staticCopy };
+  if (typeof module !== "undefined" && module.exports) module.exports = { normalize: normalize, copy: copy, intentionLabels: intentionLabels, journeyCopy: journeyCopy, confirmationCopy: confirmationCopy, resultCopy: resultCopy, localizeResult: localizeResult, staticCopy: staticCopy, possibilityCopy: possibilityCopy, noMatchCopy: noMatchCopy };
   if (root && root.document) {
     if (root.document.readyState === "loading") root.document.addEventListener("DOMContentLoaded", start);
     else start();
