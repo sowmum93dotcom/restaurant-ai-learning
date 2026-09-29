@@ -1,0 +1,2 @@
+const test=require("node:test");const assert=require("node:assert/strict");const {confirmationCopy,staticCopy}=require("../js/customer-interface-language.js");
+test("confirmation trust and save guidance translated for each supported language",()=>{for(const lang of ["en","fr","ar"]){assert.ok(confirmationCopy[lang].foundationTrust);assert.deepEqual(Object.keys(staticCopy[lang]).sort(),Object.keys(staticCopy.en).sort());assert.ok(Object.values(staticCopy[lang]).every(Boolean));}});

@@ -19,9 +19,9 @@
     ar: { stageLabel: "المرحلة 1 · نيتك", question: "ماذا تود أن تفعل اليوم؟", trust: "أخبر DEMEOS بما تحتاج إليه. أنت المتحكم.", intentionLegend: "اختر نيتك", textLabel: "صف ما تحتاج إليه بكلماتك (اختياري)", textPlaceholder: "على سبيل المثال، أريد مكانًا هادئًا لقضاء الوقت معًا.", locationAction: "استخدم موقعي", continueAction: "متابعة" }
   };
   var confirmationCopy = {
-    en: { stageLabel: "Stage 2 · DEMEOS understands", heading: "Here’s what DEMEOS understands.", clarificationLabel: "What would you like help getting done?", clarificationAction: "Update understanding", confirmAction: "Yes, continue", changeAction: "Change this" },
-    fr: { stageLabel: "Étape 2 · DEMEOS comprend", heading: "Voici ce que DEMEOS a compris.", clarificationLabel: "Que souhaitez-vous accomplir ?", clarificationAction: "Mettre à jour", confirmAction: "Oui, continuer", changeAction: "Modifier" },
-    ar: { stageLabel: "المرحلة 2 · يفهم DEMEOS", heading: "هذا ما فهمه DEMEOS.", clarificationLabel: "ما الذي تريد المساعدة في إنجازه؟", clarificationAction: "تحديث الفهم", confirmAction: "نعم، متابعة", changeAction: "تعديل" }
+    en: { stageLabel: "Stage 2 · DEMEOS understands", heading: "Here’s what DEMEOS understands.", clarificationLabel: "What would you like help getting done?", clarificationAction: "Update understanding", confirmAction: "Yes, continue", changeAction: "Change this", foundationTrust: "DEMEOS will use your intention to look for relevant Solution, Participation, Convenience and Experience." },
+    fr: { stageLabel: "Étape 2 · DEMEOS comprend", heading: "Voici ce que DEMEOS a compris.", clarificationLabel: "Que souhaitez-vous accomplir ?", clarificationAction: "Mettre à jour", confirmAction: "Oui, continuer", changeAction: "Modifier", foundationTrust: "DEMEOS utilisera votre intention pour rechercher des solutions, des possibilités de participation, de la commodité et des expériences pertinentes." },
+    ar: { stageLabel: "المرحلة 2 · يفهم DEMEOS", heading: "هذا ما فهمه DEMEOS.", clarificationLabel: "ما الذي تريد المساعدة في إنجازه؟", clarificationAction: "تحديث الفهم", confirmAction: "نعم، متابعة", changeAction: "تعديل", foundationTrust: "سيستخدم DEMEOS نيتك للبحث عن الحلول والمشاركة والراحة والتجارب ذات الصلة." }
   };
   var resultCopy = {
     en: { none: "DEMEOS doesn’t have a sufficiently supported possibility yet.", found: "Your possibilities", preparing: "Preparing possibilities connected to what you asked for…", error: "DEMEOS could not prepare possibilities. Please try again." },
@@ -33,6 +33,12 @@
     var key = Object.keys(resultCopy.en).find(function (item) { return supported.some(function (source) { return resultCopy[source][item] === value; }); });
     return key ? resultCopy[code][key] : value;
   }
+  var staticCopy = {
+    en: { saveButton: "Save to My DEMEOS", saveHelp: "Save this confirmed intention to your DEMEOS relationship.", signIn: "Sign in to My DEMEOS if you want to keep this intention across visits.", gallery: "When a relevant business product or service has a business-provided image, you will see that image with the possibility. DEMEOS does not invent product images." },
+    fr: { saveButton: "Enregistrer dans Mon DEMEOS", saveHelp: "Enregistrez cette intention confirmée dans votre espace DEMEOS.", signIn: "Connectez-vous à Mon DEMEOS pour conserver cette intention entre vos visites.", gallery: "Lorsqu’un produit ou service pertinent possède une image fournie par l’entreprise, elle apparaît avec la possibilité. DEMEOS n’invente pas d’images de produits." },
+    ar: { saveButton: "حفظ في حسابي في DEMEOS", saveHelp: "احفظ هذه النية المؤكدة في حسابك في DEMEOS.", signIn: "سجّل الدخول إلى حسابك في DEMEOS للاحتفاظ بهذه النية بين الزيارات.", gallery: "عندما تتوفر صورة مقدمة من النشاط التجاري لمنتج أو خدمة ذات صلة، ستظهر مع الإمكانية. لا ينشئ DEMEOS صورًا للمنتجات من عنده." }
+  };
+  var staticSelectors = { saveButton: "#customer-intention-save-button", saveHelp: "#customer-intention-save > p:not([id])", signIn: "#customer-intention-sign-in-note", gallery: ".customer-product-gallery-guide" };
   function normalize(value) { var code = String(value || "").toLowerCase().split("-")[0]; return supported.indexOf(code) >= 0 ? code : "en"; }
   function getSaved() { try { return root.localStorage.getItem("demeos-customer-language"); } catch (_) { return null; } }
   function setSaved(value) { try { root.localStorage.setItem("demeos-customer-language", value); } catch (_) {} }
@@ -60,6 +66,10 @@
     root.document.querySelectorAll("[data-understanding-copy]").forEach(function (element) {
       var key = element.getAttribute("data-understanding-copy");
       if (Object.prototype.hasOwnProperty.call(confirmationCopy[code], key)) element.textContent = confirmationCopy[code][key];
+    });
+    Object.keys(staticSelectors).forEach(function (key) {
+      var element = root.document.querySelector(staticSelectors[key]);
+      if (element) element.textContent = staticCopy[code][key];
     });
     var heading = root.document.getElementById("customer-possibilities-heading");
     if (heading) heading.textContent = localizeResult(heading.textContent, code);
@@ -99,7 +109,7 @@
     apply(preferred);
     select.addEventListener("change", function () { var code = apply(select.value); setSaved(code); });
   }
-  if (typeof module !== "undefined" && module.exports) module.exports = { normalize: normalize, copy: copy, intentionLabels: intentionLabels, journeyCopy: journeyCopy, confirmationCopy: confirmationCopy, resultCopy: resultCopy, localizeResult: localizeResult };
+  if (typeof module !== "undefined" && module.exports) module.exports = { normalize: normalize, copy: copy, intentionLabels: intentionLabels, journeyCopy: journeyCopy, confirmationCopy: confirmationCopy, resultCopy: resultCopy, localizeResult: localizeResult, staticCopy: staticCopy };
   if (root && root.document) {
     if (root.document.readyState === "loading") root.document.addEventListener("DOMContentLoaded", start);
     else start();
