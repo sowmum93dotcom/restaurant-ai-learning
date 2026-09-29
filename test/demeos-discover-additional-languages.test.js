@@ -1,0 +1,3 @@
+const test=require("node:test");const assert=require("node:assert/strict");const catalog=require("../js/demeos-discover-additional-languages.js");const registry=require("../js/demeos-language-registry.js");
+test("all six additional approved languages have complete Discover copy",()=>{assert.deepEqual(Object.keys(catalog).sort(),["es","pt","zh","hi","de","ja"].sort());for(const code of Object.keys(catalog)){assert.equal(catalog[code].length,12);assert.ok(catalog[code].every(x=>typeof x==="string"&&x.trim()));assert.equal(registry.resolve(code).code,code);}});
+test("catalog does not include customer or business content",()=>{for(const values of Object.values(catalog))assert.ok(values.every(x=>!x.includes("businessId")&&!x.includes("customerId")));});
