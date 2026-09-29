@@ -36,6 +36,16 @@ test("Discover gallery counter and arrows share one row before the business desc
   assert.match(gallery, /customer-work-content\{grid-column:1 \/ -1/);
 });
 
+test("phone Discover options keep square photography beside details and fit no-image products", function () {
+  const css = fs.readFileSync(path.join(__dirname, "../css/customer-mobile-refinement.css"), "utf8");
+  const options = css.slice(css.lastIndexOf("/* Phone product options keep a square image"));
+  assert.match(options, /@media\(max-width:680px\)/);
+  assert.match(options, /customer-package-region\{display:grid;grid-template-columns:minmax\(0,1fr\)/);
+  assert.match(options, /customer-discover-option\{display:grid;grid-template-columns:104px minmax\(0,1fr\)/);
+  assert.match(options, /customer-discover-option-image\{display:block;width:104px;height:104px;aspect-ratio:1 \/ 1;object-fit:cover/);
+  assert.match(options, /customer-discover-option:not\(\.has-image\)\{grid-template-columns:minmax\(0,1fr\)/);
+});
+
 test("Discover has a visible three-part customer journey on the actual customer page", function () {
   const html = fs.readFileSync(path.join(__dirname, "../customer.html"), "utf8");
   const css = fs.readFileSync(path.join(__dirname, "../css/customer-mobile-refinement.css"), "utf8");
