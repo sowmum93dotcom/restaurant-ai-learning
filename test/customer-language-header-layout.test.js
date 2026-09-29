@@ -1,0 +1,2 @@
+const test=require("node:test");const assert=require("node:assert/strict");const fs=require("node:fs");
+test("mobile language selector occupies contained second grid row in LTR and RTL",()=>{const css=fs.readFileSync(require.resolve("../css/customer-interface-language.css"),"utf8");assert.match(css,/grid-column:1 \/ -1;grid-row:2/);assert.match(css,/\[dir=rtl\] \.customer-body \.customer-language-control\{justify-content:flex-start\}/);assert.match(css,/width:min\(100%,180px\);max-width:100%/);});
