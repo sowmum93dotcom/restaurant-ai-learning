@@ -224,13 +224,13 @@ test("anonymous Customer Experience stays functional and is not retroactively is
 });
 
 test("optional place request preserves the default response and filters only declared locations", async function () {
-  const { intention, customerText, understanding: summary, source, confidenceState } = confirmed("Eat & enjoy", "quiet dinner");
+  const { intention, customerText, understanding: summary, source, confidenceState } = confirmed("Spend time together", "relaxed family dinner");
   const understanding = { intention, customerText, understanding: summary, source, confidenceState };
   const repository = { async getCustomerWork() {
     return [
-      work("london", "Quiet dinner and restaurant meal", { location: "London" }),
-      work("paris", "Quiet dinner and restaurant meal", { location: "Paris" }),
-      work("unknown", "Quiet dinner and restaurant meal")
+      work("london", "A relaxed family dinner", { location: "London" }),
+      work("paris", "A relaxed family dinner", { location: "Paris" }),
+      work("unknown", "A relaxed family dinner")
     ];
   } };
   const defaultResult = await post({ understanding }, repository);
@@ -247,10 +247,10 @@ test("optional place request preserves the default response and filters only dec
   assert.deepEqual(unmatched.body, { possibilities: [], placeApplied: true });
 });
 test("malformed place is rejected before repository access and does not disclose business data", async function () {
-  const { intention, customerText, understanding: summary, source, confidenceState } = confirmed("Eat & enjoy", "quiet dinner");
+  const { intention, customerText, understanding: summary, source, confidenceState } = confirmed("Spend time together", "relaxed family dinner");
   const understanding = { intention, customerText, understanding: summary, source, confidenceState };
   let calls = 0;
-  const repository = { async getCustomerWork() { calls++; return [work("one", "Quiet dinner")]; } };
+  const repository = { async getCustomerWork() { calls++; return [work("one", "A relaxed family dinner")]; } };
   for (const place of ["", "x".repeat(81), "London;drop", 42]) {
     const result = await post({ understanding, place }, repository);
     assert.equal(result.statusCode, 400);
