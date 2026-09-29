@@ -68,6 +68,16 @@
     supported.some(function (source) { index = additionalStatuses[source].indexOf(value); return index >= 0; });
     return index >= 0 ? additionalStatuses[code][index] : value;
   }
+  var feedbackCopy = {
+    en: ["Stage 6 · Continue with DEMEOS", "Help DEMEOS understand better", "Did this possibility fit what you were looking for?", "Yes, this was relevant", "Not quite", "I need something different", "Tell DEMEOS a little more (optional)", "Share feedback", "Choose one response before sharing feedback.", "DEMEOS could not share your feedback. Please try again.", "Thank you. Your feedback will help DEMEOS understand better.", "Explore my possibilities", "Start with a new intention"],
+    fr: ["Étape 6 · Continuer avec DEMEOS", "Aidez DEMEOS à mieux comprendre", "Cette possibilité correspondait-elle à votre recherche ?", "Oui, c’était pertinent", "Pas tout à fait", "J’ai besoin d’autre chose", "Donnez quelques précisions à DEMEOS (facultatif)", "Envoyer mon avis", "Choisissez une réponse avant d’envoyer votre avis.", "DEMEOS n’a pas pu envoyer votre avis. Veuillez réessayer.", "Merci. Votre avis aidera DEMEOS à mieux comprendre.", "Explorer mes possibilités", "Commencer avec une nouvelle intention"],
+    ar: ["المرحلة 6 · المتابعة مع DEMEOS", "ساعد DEMEOS على فهمك بشكل أفضل", "هل كانت هذه الإمكانية مناسبة لما تبحث عنه؟", "نعم، كانت ذات صلة", "ليس تمامًا", "أحتاج إلى شيء مختلف", "أخبر DEMEOS بالمزيد (اختياري)", "إرسال الملاحظات", "اختر إجابة قبل إرسال الملاحظات.", "تعذّر إرسال ملاحظاتك إلى DEMEOS. يرجى المحاولة مجددًا.", "شكرًا لك. ستساعد ملاحظاتك DEMEOS على فهمك بشكل أفضل.", "استكشاف إمكانياتي", "البدء بنية جديدة"]
+  };
+  function localizeFeedback(value, language) {
+    var code = normalize(language), index = -1;
+    supported.some(function (source) { index = feedbackCopy[source].indexOf(value); return index >= 0; });
+    return index >= 0 ? feedbackCopy[code][index] : value;
+  }
   function normalize(value) { var code = String(value || "").toLowerCase().split("-")[0]; return supported.indexOf(code) >= 0 ? code : "en"; }
   function getSaved() { try { return root.localStorage.getItem("demeos-customer-language"); } catch (_) { return null; } }
   function setSaved(value) { try { root.localStorage.setItem("demeos-customer-language", value); } catch (_) {} }
@@ -107,6 +117,11 @@
     Object.keys(noMatchSelectors).forEach(function (key) {
       var element = root.document.querySelector(noMatchSelectors[key]);
       if (element) element.textContent = noMatchCopy[code][key];
+    });
+    root.document.querySelectorAll(".customer-feedback").forEach(function (panel) {
+      panel.querySelectorAll(".customer-stage-label, .customer-feedback-heading, .customer-feedback-question, .customer-feedback-choice span, .customer-feedback-comment-label, .customer-feedback-submit, .customer-feedback-result, .customer-feedback-explore, .customer-feedback-restart").forEach(function (element) {
+        element.textContent = localizeFeedback(element.textContent, code);
+      });
     });
     var heading = root.document.getElementById("customer-possibilities-heading");
     if (heading) heading.textContent = localizeResult(heading.textContent, code);
@@ -158,11 +173,23 @@
         observer.observe(element, { childList: true, characterData: true, subtree: true });
       });
     }
+    var focused = root.document.getElementById("customer-focused-possibility");
+    if (focused && typeof root.MutationObserver === "function") {
+      var feedbackObserver = new root.MutationObserver(function () {
+        var selected = root.document.getElementById("customer-language");
+        var code = selected ? selected.value : "en";
+        focused.querySelectorAll(".customer-feedback .customer-stage-label, .customer-feedback .customer-feedback-heading, .customer-feedback .customer-feedback-question, .customer-feedback .customer-feedback-choice span, .customer-feedback .customer-feedback-comment-label, .customer-feedback .customer-feedback-submit, .customer-feedback .customer-feedback-result, .customer-feedback .customer-feedback-explore, .customer-feedback .customer-feedback-restart").forEach(function (element) {
+          var localized = localizeFeedback(element.textContent, code);
+          if (localized !== element.textContent) element.textContent = localized;
+        });
+      });
+      feedbackObserver.observe(focused, { childList: true, characterData: true, subtree: true });
+    }
     var preferred = getSaved() || (root.navigator && root.navigator.language) || "en";
     apply(preferred);
     select.addEventListener("change", function () { var code = apply(select.value); setSaved(code); });
   }
-  if (typeof module !== "undefined" && module.exports) module.exports = { normalize: normalize, copy: copy, intentionLabels: intentionLabels, journeyCopy: journeyCopy, confirmationCopy: confirmationCopy, resultCopy: resultCopy, localizeResult: localizeResult, staticCopy: staticCopy, possibilityCopy: possibilityCopy, noMatchCopy: noMatchCopy, statusCopy: statusCopy, localizeStatus: localizeStatus, additionalStatuses: additionalStatuses };
+  if (typeof module !== "undefined" && module.exports) module.exports = { normalize: normalize, copy: copy, intentionLabels: intentionLabels, journeyCopy: journeyCopy, confirmationCopy: confirmationCopy, resultCopy: resultCopy, localizeResult: localizeResult, staticCopy: staticCopy, possibilityCopy: possibilityCopy, noMatchCopy: noMatchCopy, statusCopy: statusCopy, localizeStatus: localizeStatus, additionalStatuses: additionalStatuses, feedbackCopy: feedbackCopy, localizeFeedback: localizeFeedback };
   if (root && root.document) {
     if (root.document.readyState === "loading") root.document.addEventListener("DOMContentLoaded", start);
     else start();
