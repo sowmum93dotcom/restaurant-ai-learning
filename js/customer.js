@@ -1060,7 +1060,9 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
         controls.appendChild(button);
       });
       message.appendChild(controls);
-      updateMediaPosition();
+      // Layout measurements are unavailable in server-side test DOMs; the scroll and resize
+      // handlers update both arrow states once the browser can measure the gallery.
+      if (typeof mediaRegion.getBoundingClientRect === "function") updateMediaPosition();
     }
   }
 
