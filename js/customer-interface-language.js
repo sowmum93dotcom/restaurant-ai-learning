@@ -55,11 +55,18 @@
     fr: ["DEMEOS comprend votre intention.", "Enregistré dans Mes intentions.", "Ajoutez quelques précisions pour que DEMEOS comprenne votre intention.", "Ajoutez des précisions avant de continuer.", "Limitez l’ensemble de vos précisions à 500 caractères.", "Votre intention n’a pas pu être enregistrée. Veuillez réessayer."],
     ar: ["يفهم DEMEOS نيتك.", "تم الحفظ في نياتي.", "أضف مزيدًا من التفاصيل حتى يفهم DEMEOS نيتك.", "أضف تفاصيل قبل المتابعة.", "اجعل مجموع التفاصيل في حدود 500 حرف.", "تعذّر حفظ نيتك. يرجى المحاولة مجددًا."]
   };
+  var additionalStatuses = {
+    en: ["Your intention is ready. No information has been sent.", "Tell DEMEOS what you need before continuing.", "Location cleared for this session.", "Location is optional. You can continue without it.", "Location permission granted. GPS-based matching is not enabled. You can enter a town or city above to filter by an exact business-listed place."],
+    fr: ["Votre intention est prête. Aucune information n’a été envoyée.", "Indiquez à DEMEOS ce dont vous avez besoin avant de continuer.", "La position a été effacée pour cette session.", "La position est facultative. Vous pouvez continuer sans elle.", "Autorisation de localisation accordée. La recherche par GPS n’est pas activée. Saisissez une ville ci-dessus pour filtrer selon le lieu exact indiqué par l’entreprise."],
+    ar: ["نيتك جاهزة. لم تُرسل أي معلومات.", "أخبر DEMEOS بما تحتاج إليه قبل المتابعة.", "تم مسح الموقع لهذه الجلسة.", "الموقع اختياري. يمكنك المتابعة دونه.", "تم منح إذن الموقع. المطابقة باستخدام GPS غير مفعلة. يمكنك إدخال مدينة أعلاه للتصفية حسب الموقع المحدد من النشاط التجاري."]
+  };
   function localizeStatus(value, language) {
     var code = normalize(language);
     var index = -1;
     supported.some(function (source) { index = statusCopy[source].indexOf(value); return index >= 0; });
-    return index >= 0 ? statusCopy[code][index] : value;
+    if (index >= 0) return statusCopy[code][index];
+    supported.some(function (source) { index = additionalStatuses[source].indexOf(value); return index >= 0; });
+    return index >= 0 ? additionalStatuses[code][index] : value;
   }
   function normalize(value) { var code = String(value || "").toLowerCase().split("-")[0]; return supported.indexOf(code) >= 0 ? code : "en"; }
   function getSaved() { try { return root.localStorage.getItem("demeos-customer-language"); } catch (_) { return null; } }
@@ -105,7 +112,7 @@
     if (heading) heading.textContent = localizeResult(heading.textContent, code);
     var emptyHeading = root.document.getElementById("customer-no-possibilities-heading");
     if (emptyHeading) emptyHeading.textContent = resultCopy[code].none;
-    ["customer-understanding-status", "customer-intention-save-status", "customer-add-detail-status"].forEach(function (id) {
+    ["customer-understanding-status", "customer-intention-save-status", "customer-add-detail-status", "customer-intention-status", "customer-location-status"].forEach(function (id) {
       var element = root.document.getElementById(id);
       if (element) element.textContent = localizeStatus(element.textContent, code);
     });
@@ -155,7 +162,7 @@
     apply(preferred);
     select.addEventListener("change", function () { var code = apply(select.value); setSaved(code); });
   }
-  if (typeof module !== "undefined" && module.exports) module.exports = { normalize: normalize, copy: copy, intentionLabels: intentionLabels, journeyCopy: journeyCopy, confirmationCopy: confirmationCopy, resultCopy: resultCopy, localizeResult: localizeResult, staticCopy: staticCopy, possibilityCopy: possibilityCopy, noMatchCopy: noMatchCopy, statusCopy: statusCopy, localizeStatus: localizeStatus };
+  if (typeof module !== "undefined" && module.exports) module.exports = { normalize: normalize, copy: copy, intentionLabels: intentionLabels, journeyCopy: journeyCopy, confirmationCopy: confirmationCopy, resultCopy: resultCopy, localizeResult: localizeResult, staticCopy: staticCopy, possibilityCopy: possibilityCopy, noMatchCopy: noMatchCopy, statusCopy: statusCopy, localizeStatus: localizeStatus, additionalStatuses: additionalStatuses };
   if (root && root.document) {
     if (root.document.readyState === "loading") root.document.addEventListener("DOMContentLoaded", start);
     else start();
