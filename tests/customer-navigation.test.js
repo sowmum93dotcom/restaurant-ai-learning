@@ -8,7 +8,7 @@ const script = fs.readFileSync(path.join(__dirname, '..', 'js', 'customer-naviga
 const customerPage = fs.readFileSync(path.join(__dirname, '..', 'customer.html'), 'utf8');
 
 test('actual customer page loads its active section navigation', () => {
-  assert.match(customerPage, /<script src="js\\/customer-navigation\\.js"><\\/script>/);
+  assert.equal(customerPage.includes('<script src="js/customer-navigation.js"></script>'), true);
 });
 
 function navigation(hash) {
