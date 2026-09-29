@@ -89,6 +89,27 @@
     supported.some(function (source) { index = discoverCopy[source].indexOf(value); return index >= 0; });
     return index >= 0 ? discoverCopy[code][index] : value;
   }
+  /* Register additional approved UI catalogues without enabling incomplete journeys. */
+  function registerAdditional(target, source, field) {
+    if (!source) return;
+    ["es", "pt", "zh", "hi", "de", "ja"].forEach(function (code) {
+      if (source[code] && (!field || source[code][field])) target[code] = field ? source[code][field] : source[code];
+    });
+  }
+  registerAdditional(discoverCopy, root.DEMEOSDiscoverAdditionalCopy);
+  registerAdditional(intentionLabels, root.DEMEOSIntentionAdditionalCopy, "intentionLabels");
+  registerAdditional(confirmationCopy, root.DEMEOSConfirmationAdditionalCopy);
+  registerAdditional(resultCopy, root.DEMEOSResultsAdditionalCopy);
+  var additionalJourneyKeys = Object.keys(journeyCopy.en);
+  if (root.DEMEOSIntentionAdditionalCopy) {
+    ["es", "pt", "zh", "hi", "de", "ja"].forEach(function (code) {
+      var entry = root.DEMEOSIntentionAdditionalCopy[code];
+      if (entry && entry.journeyCopy && entry.journeyCopy.length === additionalJourneyKeys.length) {
+        journeyCopy[code] = {};
+        additionalJourneyKeys.forEach(function (key, index) { journeyCopy[code][key] = entry.journeyCopy[index]; });
+      }
+    });
+  }
   function normalize(value) { var code = String(value || "").toLowerCase().split("-")[0]; return supported.indexOf(code) >= 0 ? code : "en"; }
   function getSaved() { try { return root.localStorage.getItem("demeos-customer-language"); } catch (_) { return null; } }
   function setSaved(value) { try { root.localStorage.setItem("demeos-customer-language", value); } catch (_) {} }
