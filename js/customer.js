@@ -967,6 +967,7 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
       media.setAttribute("role", "listitem");
       media.src = asset.deliveryUrl;
       if (asset.kind === "video") {
+        media.setAttribute("aria-label", "Video " + (mediaIndex + 1) + " of " + work.media.length + " from " + work.businessName);
         media.controls = true; media.preload = "metadata"; media.playsInline = true;
         media.addEventListener("play", function () {
           const discover = document.getElementById("discover");
