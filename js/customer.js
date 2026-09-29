@@ -963,8 +963,8 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
     mediaRegion.setAttribute("aria-label", `Media from ${work.businessName}`);
     if (work.media.length > 1) {
       mediaRegion.tabIndex = 0;
-      mediaRegion.setAttribute("aria-label", "Media from " + work.businessName + ". Use Left and Right arrow keys to browse.");
-      mediaRegion.setAttribute("aria-keyshortcuts", "ArrowLeft ArrowRight");
+      mediaRegion.setAttribute("aria-label", "Media from " + work.businessName + ". Use Left and Right arrow keys to browse; Home and End jump to the first and last media.");
+      mediaRegion.setAttribute("aria-keyshortcuts", "ArrowLeft ArrowRight Home End");
     }
     work.media.forEach(function (asset, mediaIndex) {
       const media = asset.kind === "video" ? document.createElement("video") : document.createElement("img");
@@ -1076,8 +1076,18 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
       });
       mediaRegion.addEventListener("keydown", function (event) {
         // Leave keys within video controls and full-image links to their native behavior.
-        if (event.target !== mediaRegion || (event.key !== "ArrowLeft" && event.key !== "ArrowRight")) return;
+        if (event.target !== mediaRegion || !["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
         event.preventDefault();
+        if (event.key === "Home" || event.key === "End") {
+          const items = Array.from(mediaRegion.children);
+          const target = event.key === "Home" ? items[0] : items[items.length - 1];
+          if (target) {
+            pauseMediaVideos();
+            const reducedMotion = typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+            mediaRegion.scrollBy({ left: target.getBoundingClientRect().left - mediaRegion.getBoundingClientRect().left, behavior: reducedMotion ? "auto" : "smooth" });
+          }
+          return;
+        }
         const direction = event.key === "ArrowLeft" ? -1 : 1;
         const button = controls.children[direction === -1 ? 0 : 1];
         if (button && !button.disabled) button.click();
