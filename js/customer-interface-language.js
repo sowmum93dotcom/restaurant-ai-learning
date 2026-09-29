@@ -13,6 +13,16 @@
     fr: ["Manger et profiter", "Prendre soin de moi", "Passer du temps ensemble", "Accomplir quelque chose", "Aller quelque part", "Découvrir quelque chose de nouveau"],
     ar: ["الطعام والاستمتاع", "العناية بنفسي", "قضاء الوقت معًا", "إنجاز شيء", "الذهاب إلى مكان ما", "اكتشاف شيء جديد"]
   };
+  var journeyCopy = {
+    en: { stageLabel: "Stage 1 · Your intention", question: "What would you like to do today?", trust: "Tell DEMEOS what you need. You stay in control.", intentionLegend: "Choose an intention", textLabel: "Describe what you need in your own words (optional)", textPlaceholder: "For example, I would like a relaxed place to spend time together.", locationAction: "Use my location", continueAction: "Continue" },
+    fr: { stageLabel: "Étape 1 · Votre intention", question: "Que souhaitez-vous faire aujourd’hui ?", trust: "Dites à DEMEOS ce dont vous avez besoin. Vous gardez le contrôle.", intentionLegend: "Choisissez une intention", textLabel: "Décrivez votre besoin avec vos propres mots (facultatif)", textPlaceholder: "Par exemple, je souhaite trouver un endroit calme pour passer du temps ensemble.", locationAction: "Utiliser ma position", continueAction: "Continuer" },
+    ar: { stageLabel: "المرحلة 1 · نيتك", question: "ماذا تود أن تفعل اليوم؟", trust: "أخبر DEMEOS بما تحتاج إليه. أنت المتحكم.", intentionLegend: "اختر نيتك", textLabel: "صف ما تحتاج إليه بكلماتك (اختياري)", textPlaceholder: "على سبيل المثال، أريد مكانًا هادئًا لقضاء الوقت معًا.", locationAction: "استخدم موقعي", continueAction: "متابعة" }
+  };
+  var confirmationCopy = {
+    en: { stageLabel: "Stage 2 · DEMEOS understands", heading: "Here’s what DEMEOS understands.", clarificationLabel: "What would you like help getting done?", clarificationAction: "Update understanding", confirmAction: "Yes, continue", changeAction: "Change this" },
+    fr: { stageLabel: "Étape 2 · DEMEOS comprend", heading: "Voici ce que DEMEOS a compris.", clarificationLabel: "Que souhaitez-vous accomplir ?", clarificationAction: "Mettre à jour", confirmAction: "Oui, continuer", changeAction: "Modifier" },
+    ar: { stageLabel: "المرحلة 2 · يفهم DEMEOS", heading: "هذا ما فهمه DEMEOS.", clarificationLabel: "ما الذي تريد المساعدة في إنجازه؟", clarificationAction: "تحديث الفهم", confirmAction: "نعم، متابعة", changeAction: "تعديل" }
+  };
   function normalize(value) { var code = String(value || "").toLowerCase().split("-")[0]; return supported.indexOf(code) >= 0 ? code : "en"; }
   function getSaved() { try { return root.localStorage.getItem("demeos-customer-language"); } catch (_) { return null; } }
   function setSaved(value) { try { root.localStorage.setItem("demeos-customer-language", value); } catch (_) {} }
@@ -28,6 +38,18 @@
       var canonical = button.getAttribute("data-canonical-intention") || button.textContent;
       var index = intentionLabels.en.indexOf(canonical);
       if (index >= 0) { button.setAttribute("data-canonical-intention", canonical); button.textContent = intentionLabels[code][index]; }
+    });
+    root.document.querySelectorAll("[data-stage-copy]").forEach(function (element) {
+      var key = element.getAttribute("data-stage-copy");
+      if (Object.prototype.hasOwnProperty.call(journeyCopy[code], key)) element.textContent = journeyCopy[code][key];
+    });
+    root.document.querySelectorAll("[data-stage-placeholder]").forEach(function (element) {
+      var key = element.getAttribute("data-stage-placeholder");
+      if (Object.prototype.hasOwnProperty.call(journeyCopy[code], key)) element.setAttribute("placeholder", journeyCopy[code][key]);
+    });
+    root.document.querySelectorAll("[data-understanding-copy]").forEach(function (element) {
+      var key = element.getAttribute("data-understanding-copy");
+      if (Object.prototype.hasOwnProperty.call(confirmationCopy[code], key)) element.textContent = confirmationCopy[code][key];
     });
     var control = root.document.getElementById("customer-language");
     if (control) control.value = code;
@@ -53,7 +75,7 @@
     apply(preferred);
     select.addEventListener("change", function () { var code = apply(select.value); setSaved(code); });
   }
-  if (typeof module !== "undefined" && module.exports) module.exports = { normalize: normalize, copy: copy, intentionLabels: intentionLabels };
+  if (typeof module !== "undefined" && module.exports) module.exports = { normalize: normalize, copy: copy, intentionLabels: intentionLabels, journeyCopy: journeyCopy, confirmationCopy: confirmationCopy };
   if (root && root.document) {
     if (root.document.readyState === "loading") root.document.addEventListener("DOMContentLoaded", start);
     else start();

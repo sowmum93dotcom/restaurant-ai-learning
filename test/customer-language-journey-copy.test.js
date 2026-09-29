@@ -1,0 +1,2 @@
+const test=require("node:test");const assert=require("node:assert/strict");const {journeyCopy,confirmationCopy}=require("../js/customer-interface-language.js");
+test("intention and confirmation keys have complete translations",()=>{for(const language of ["fr","ar"]){for(const [source,group] of [[journeyCopy, "intention"],[confirmationCopy,"confirmation"]]){assert.deepEqual(Object.keys(source[language]).sort(),Object.keys(source.en).sort(),group);assert.ok(Object.values(source[language]).every(Boolean));}}});
