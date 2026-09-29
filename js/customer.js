@@ -1085,7 +1085,7 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
         if (href) {
           const imageLink = document.createElement("a");
           imageLink.href = href;
-          imageLink.setAttribute("aria-label", product.name + " — continue with " + work.businessName);
+          imageLink.setAttribute("aria-label", product.name + " — " + (product.availability === "limited" || product.availability === "contact" ? "contact " : "continue with ") + work.businessName);
           if (/^https?:\/\//i.test(href)) { imageLink.target = "_blank"; imageLink.rel = "noopener noreferrer"; }
           imageLink.appendChild(image);
           option.appendChild(imageLink);

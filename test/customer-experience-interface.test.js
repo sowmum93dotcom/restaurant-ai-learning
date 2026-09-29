@@ -189,9 +189,11 @@ test("Discover uses contact wording when availability is limited or unconfirmed"
       participationAction: "Interested",
       customerContinuation: { routes: ["website"], website: "https://business.example/approved" },
       products: [{ productId: "p1", name: "Product", description: "Details",
-        continuationRoute: "website", availability }]
+        continuationRoute: "website", availability, imageUrl: "https://business.example/product.webp" }]
     }, [], async function () {});
     const choice = card.children.find(function (child) { return child.className === "customer-choice"; });
+    const imageLink = choice.children[2].children[0].children[0];
+    assert.equal(imageLink.attributes["aria-label"], "Product — contact Example Business");
     assert.match(choice.textContent, /Contact Example Business/);
     assert.doesNotMatch(choice.textContent, /Continue with Example Business/);
   }
