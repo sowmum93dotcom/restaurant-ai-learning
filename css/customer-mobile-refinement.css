@@ -400,3 +400,15 @@
 .customer-body #discover .customer-work-card .customer-business-control{display:grid;place-items:center;width:44px;height:44px;padding:0;border:1px solid rgba(229,189,89,.55);border-radius:10px;background:#102c4b;color:#fff;font:inherit;font-size:1.25rem;font-weight:700;cursor:pointer}
 .customer-body #discover .customer-work-card .customer-business-control:disabled{opacity:.35;cursor:default}
 .customer-body #discover .customer-work-card .customer-business-control:focus-visible{outline:3px solid #f0cd7a;outline-offset:2px}
+
+/* Gallery position and arrows share one compact row beneath the approved media. */
+.customer-body #discover .customer-work-card .customer-message{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:10px}
+.customer-body #discover .customer-work-card .customer-work-media{grid-column:1 / -1;min-width:0}
+.customer-body #discover .customer-work-card .customer-media-position{grid-column:1;align-self:center;margin:8px 0;color:#dce5f2;font-size:.85rem}
+.customer-body #discover .customer-work-card .customer-media-position::after{content:none}
+.customer-body #discover .customer-work-card .customer-media-controls{grid-column:2;align-self:center;margin:6px 0 0}
+.customer-body #discover .customer-work-card .customer-work-content{grid-column:1 / -1;margin:10px 0 0}
+@media(max-width:680px){
+ .customer-body #discover .customer-work-card .customer-media-controls{gap:7px}
+ .customer-body #discover .customer-work-card .customer-media-control{width:44px;height:44px}
+}
