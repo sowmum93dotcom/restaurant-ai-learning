@@ -32,6 +32,7 @@ test("purchase summary fails closed on absent disclosures, inconsistent totals a
     c => { c.transaction.totalMinor = 10499; },
     c => { c.transaction.deliveryMinor = -1; },
     c => { c.transaction.taxMinor = 1.5; },
+    c => { c.product.priceMinor = Number.MAX_SAFE_INTEGER; c.transaction.priceMinor = Number.MAX_SAFE_INTEGER; c.transaction.totalMinor = Number.MAX_SAFE_INTEGER + 500; },
     c => { c.vendor.commercialArrangement = "marketing"; }
   ]) { const c = approved(); change(c); assert.equal(preparePurchaseSummary(c).ready, false); }
 });
