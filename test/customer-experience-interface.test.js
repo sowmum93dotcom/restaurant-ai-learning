@@ -1,3 +1,14 @@
+test("Discover has a visible three-part customer journey on the actual customer page", function () {
+  const html = fs.readFileSync(path.join(__dirname, "../customer.html"), "utf8");
+  const css = fs.readFileSync(path.join(__dirname, "../css/customer-mobile-refinement.css"), "utf8");
+  assert.match(html, /customer-discover-entry-guide/);
+  assert.match(html, /Explore business images, products and services/);
+  assert.match(html, /Describe what you want for relevant possibilities/);
+  assert.match(html, /Keep your confirmed interests in your private space/);
+  assert.match(css, /customer-discover-entry-guide/);
+  assert.match(css, /@media\(max-width:680px\)/);
+});
+
 const assert = require("node:assert/strict");
 const test = require("node:test");
 const fs = require("node:fs");
