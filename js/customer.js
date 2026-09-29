@@ -961,7 +961,11 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
     mediaRegion.className = "customer-work-media";
     mediaRegion.setAttribute("role", "list");
     mediaRegion.setAttribute("aria-label", `Media from ${work.businessName}`);
-    if (work.media.length > 1) mediaRegion.tabIndex = 0;
+    if (work.media.length > 1) {
+      mediaRegion.tabIndex = 0;
+      mediaRegion.setAttribute("aria-label", "Media from " + work.businessName + ". Use Left and Right arrow keys to browse.");
+      mediaRegion.setAttribute("aria-keyshortcuts", "ArrowLeft ArrowRight");
+    }
     work.media.forEach(function (asset, mediaIndex) {
       const media = asset.kind === "video" ? document.createElement("video") : document.createElement("img");
       media.className = "customer-work-media-item " + (asset.role === "primary" ? "is-primary" : "is-supporting");
