@@ -34,7 +34,7 @@ const CUSTOMER_STAGE_ONE_COPY = Object.freeze({
   textLabel: "Describe what you need in your own words (optional)",
   textPlaceholder: "For example, I would like a relaxed place to spend time together.",
   locationAction: "Use my location",
-  locationAvailable: "Location permission granted. Location-based recommendations are not enabled yet.",
+  locationAvailable: "Location permission granted. GPS-based matching is not enabled. You can enter a town or city above to filter by an exact business-listed place.",
   locationClear: "Clear location",
   locationCleared: "Location cleared for this session.",
   locationOptional: "Location is optional. You can continue without it.",
@@ -240,7 +240,7 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
   if (possibilitySpace) possibilitySpace.hidden = !valid.length;
   if (changeAction) changeAction.hidden = !valid.length;
   if (emptyState) emptyState.hidden = Boolean(valid.length);
-  heading.textContent = valid.length ? CUSTOMER_STAGE_THREE_COPY.found : CUSTOMER_STAGE_THREE_COPY.none;
+  heading.textContent = valid.length ? (saveOptions && saveOptions.placeApplied ? "Possibilities for your selected place" : CUSTOMER_STAGE_THREE_COPY.found) : CUSTOMER_STAGE_THREE_COPY.none;
   if (!valid.length) {
     region.hidden = false;
     const detailForm = document.getElementById("customer-add-detail-form");
@@ -607,7 +607,7 @@ async function requestCustomerPossibilities(document, understanding, fetcher, co
     });
     const data = await response.json();
     if (!response.ok || !data || !Array.isArray(data.possibilities)) throw new Error();
-    if (data.placeApplied) heading.textContent = "Possibilities matching your request and exact listed place";
+
     if (requestSequence !== customerPossibilitiesRequestSequence) return;
     let authenticated = false;
     try {
@@ -617,7 +617,7 @@ async function requestCustomerPossibilities(document, understanding, fetcher, co
     } catch (_error) { authenticated = false; }
     if (requestSequence !== customerPossibilitiesRequestSequence) return;
     renderCustomerPossibilities(document, data.possibilities, understanding, recordParticipation,
-      recordCustomerFeedback, continuationActions, { authenticated, record: saveCustomerPossibility });
+      recordCustomerFeedback, continuationActions, { authenticated, record: saveCustomerPossibility, placeApplied: data.placeApplied === true });
   } catch (error) {
     if (requestSequence !== customerPossibilitiesRequestSequence) return;
     heading.textContent = CUSTOMER_STAGE_THREE_COPY.error;
