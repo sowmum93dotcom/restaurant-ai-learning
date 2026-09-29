@@ -1076,7 +1076,7 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
       });
       mediaRegion.addEventListener("keydown", function (event) {
         // Leave keys within video controls and full-image links to their native behavior.
-        if (event.target !== mediaRegion || !["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+        if (event.target !== mediaRegion || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || !["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
         event.preventDefault();
         if (event.key === "Home" || event.key === "End") {
           const items = Array.from(mediaRegion.children);
