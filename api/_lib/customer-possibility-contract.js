@@ -35,7 +35,7 @@ function ownKeysAre(value, keys) {
 }
 
 function validateConfirmedUnderstanding(body) {
-  if (!ownKeysAre(body, ["understanding"]) && !ownKeysAre(body, ["understanding", "place"])) return null;
+  if (!ownKeysAre(body, ["understanding"]) && !ownKeysAre(body, ["place", "understanding"])) return null;
   const value = body.understanding;
   const keys = ["confidenceState", "customerText", "intention", "source", "understanding"].sort();
   if (!ownKeysAre(value, keys)) return null;
