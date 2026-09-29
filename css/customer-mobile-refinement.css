@@ -394,3 +394,9 @@
  .customer-body #discover .customer-work-card .customer-choice{padding:10px 12px 12px}
  .customer-body #discover .customer-work-card .customer-participation{padding:10px 12px 12px}
 }
+
+/* Visible business navigation stays with the business identity and position. */
+.customer-body #discover .customer-work-card .customer-business-controls{grid-column:2;grid-row:2;display:flex;justify-self:end;gap:8px;margin:0}
+.customer-body #discover .customer-work-card .customer-business-control{display:grid;place-items:center;width:44px;height:44px;padding:0;border:1px solid rgba(229,189,89,.55);border-radius:10px;background:#102c4b;color:#fff;font:inherit;font-size:1.25rem;font-weight:700;cursor:pointer}
+.customer-body #discover .customer-work-card .customer-business-control:disabled{opacity:.35;cursor:default}
+.customer-body #discover .customer-work-card .customer-business-control:focus-visible{outline:3px solid #f0cd7a;outline-offset:2px}
