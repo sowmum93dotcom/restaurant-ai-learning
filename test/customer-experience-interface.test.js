@@ -16,6 +16,14 @@ test("Tablet Discover presents business media before description without reserve
   assert.match(tablet, /height:auto;min-height:0/);
 });
 
+test("Discover separates approved gallery from product options without extra panels", function () {
+  const source = fs.readFileSync(path.join(__dirname, "../js/customer.js"), "utf8");
+  const css = fs.readFileSync(path.join(__dirname, "../css/customer-mobile-refinement.css"), "utf8");
+  assert.match(source, /"customer-media-section-label", "Business gallery"/);
+  assert.match(source, /"customer-choice-title", "Products and services"/);
+  assert.match(css, /customer-media-section-label/);
+});
+
 test("Discover business card keeps identity, media, options and action in one ordered surface", function () {
   const css = fs.readFileSync(path.join(__dirname, "../css/customer-mobile-refinement.css"), "utf8");
   const unified = css.slice(css.lastIndexOf("/* One cohesive Discover business experience"));
