@@ -25,3 +25,15 @@ test("bistro view-only media is visually distinct and has no product match", () 
  assert.notEqual(primary.deliveryUrl, viewOnly.deliveryUrl);
  assert.equal(viewOnly.productId, undefined);
 });
+
+test("studio unmatched media is visually distinct and stays view-only", () => {
+ const studio = discoverTestContent().find(item => item.businessName && /studio/i.test(item.businessName));
+ assert.ok(studio);
+ const primary = studio.media.find(asset => asset.assetId === "test-studio-image");
+ const unmatched = studio.media.find(asset => asset.assetId === "test-studio-missing-match");
+ assert.ok(primary && unmatched);
+ assert.notEqual(primary.deliveryUrl, unmatched.deliveryUrl);
+ assert.match(unmatched.deliveryUrl, /studio-view-only\.svg$/);
+ const svg = fs.readFileSync(path.join(__dirname, "..", "images", "discover-test-studio-view-only.svg"), "utf8");
+ assert.match(svg, /CONTROLLED TEST · VIEW ONLY/);
+});
