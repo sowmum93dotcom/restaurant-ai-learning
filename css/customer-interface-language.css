@@ -6,3 +6,13 @@
 [dir=rtl] .customer-language-control select{direction:rtl}
 #customer-intention-text,#customer-place{direction:auto}
 @media(max-width:640px){.customer-language-control{width:100%;justify-content:flex-end;padding:0 8px 8px}.customer-language-control select{min-height:44px}}
+
+/* Mobile header: selector is a full-width second row, never an overflowing grid item. */
+@media(max-width:680px){
+ .customer-body .customer-header-inner{box-sizing:border-box;grid-template-columns:64px minmax(0,1fr);width:100%;max-width:100%;min-width:0;gap:10px}
+ .customer-body .customer-brand{grid-column:1;grid-row:1;min-width:0}
+ .customer-body .customer-journey-nav{grid-column:2;grid-row:1;min-width:0;max-width:100%}
+ .customer-body .customer-language-control{box-sizing:border-box;grid-column:1 / -1;grid-row:2;width:100%;max-width:100%;min-width:0;margin:0;padding:0;justify-content:flex-end}
+ .customer-body .customer-language-control select{box-sizing:border-box;display:block;width:min(100%,180px);max-width:100%;min-width:0;min-height:44px}
+ [dir=rtl] .customer-body .customer-language-control{justify-content:flex-start}
+}
