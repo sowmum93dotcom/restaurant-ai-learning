@@ -222,3 +222,37 @@ test("anonymous Customer Experience stays functional and is not retroactively is
   assert.equal(res.body.possibilities.length, 1);
   assert.equal(issuanceCalls, 0);
 });
+
+test("optional place request preserves the default response and filters only declared locations", async function () {
+  const understanding = confirmed("Eat & enjoy", "quiet dinner");
+  const repository = { async getCustomerWork() {
+    return [
+      work("london", "Quiet dinner and restaurant meal", { location: "London" }),
+      work("paris", "Quiet dinner and restaurant meal", { location: "Paris" }),
+      work("unknown", "Quiet dinner and restaurant meal")
+    ];
+  } };
+  const defaultResult = await post({ understanding }, repository);
+  assert.equal(defaultResult.statusCode, 200);
+  assert.deepEqual(Object.keys(defaultResult.body), ["possibilities"]);
+  assert.equal(defaultResult.body.possibilities.length, 3);
+  const london = await post({ understanding, place: " london " }, repository);
+  assert.equal(london.statusCode, 200);
+  assert.equal(london.body.placeApplied, true);
+  assert.equal(london.body.possibilities.length, 1);
+  assert.equal(london.body.possibilities[0].location, "London");
+  const unmatched = await post({ understanding, place: "Manchester" }, repository);
+  assert.equal(unmatched.statusCode, 200);
+  assert.deepEqual(unmatched.body, { possibilities: [], placeApplied: true });
+});
+test("malformed place is rejected before repository access and does not disclose business data", async function () {
+  const understanding = confirmed("Eat & enjoy", "quiet dinner");
+  let calls = 0;
+  const repository = { async getCustomerWork() { calls++; return [work("one", "Quiet dinner")]; } };
+  for (const place of ["", "x".repeat(81), "London;drop", 42]) {
+    const result = await post({ understanding, place }, repository);
+    assert.equal(result.statusCode, 400);
+    assert.equal(result.body.error, "A valid optional place is required.");
+  }
+  assert.equal(calls, 0);
+});
