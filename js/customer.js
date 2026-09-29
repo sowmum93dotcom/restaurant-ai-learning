@@ -1041,6 +1041,7 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
       }
       controls = document.createElement("div");
       controls.className = "customer-media-controls";
+      controls.setAttribute("role", "group");
       controls.setAttribute("aria-label", "Browse business media");
       [["Previous image or video", -1, "←"], ["Next image or video", 1, "→"]].forEach(function (control) {
         const button = document.createElement("button");
