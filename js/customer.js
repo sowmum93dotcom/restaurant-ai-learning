@@ -1010,6 +1010,7 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
     if (work.media.length > 1) {
       const mediaPosition = addText(document, message, "p", "customer-media-position", "Media 1 of " + work.media.length);
       mediaPosition.setAttribute("aria-label", "Media 1 of " + work.media.length);
+      let controls;
       function updateMediaPosition() {
         const items = Array.from(mediaRegion.children);
         let closest = 0;
@@ -1021,7 +1022,7 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
         });
         mediaPosition.textContent = "Media " + (closest + 1) + " of " + items.length;
         mediaPosition.setAttribute("aria-label", "Media " + (closest + 1) + " of " + items.length);
-        const buttons = message.querySelectorAll(".customer-media-controls .customer-media-control");
+        const buttons = controls ? Array.from(controls.children) : [];
         if (buttons.length === 2) {
           buttons[0].disabled = closest === 0;
           buttons[1].disabled = closest === items.length - 1;
@@ -1033,7 +1034,7 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
         resizeObserver.observe(mediaRegion);
         mediaRegion.discoverResizeObserver = resizeObserver;
       }
-      const controls = document.createElement("div");
+      controls = document.createElement("div");
       controls.className = "customer-media-controls";
       controls.setAttribute("aria-label", "Browse business media");
       [["Previous image or video", -1, "←"], ["Next image or video", 1, "→"]].forEach(function (control) {
