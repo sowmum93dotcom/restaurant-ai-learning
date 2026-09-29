@@ -1,0 +1,2 @@
+const test=require("node:test");const assert=require("node:assert/strict");const {statusCopy,localizeStatus}=require("../js/customer-interface-language.js");
+test("known status messages translate across all supported languages",()=>{for(const lang of ["en","fr","ar"]){assert.equal(statusCopy[lang].length,statusCopy.en.length);for(let i=0;i<statusCopy.en.length;i++)assert.equal(localizeStatus(statusCopy.fr[i],lang),statusCopy[lang][i]);}assert.equal(localizeStatus("Business-provided message","ar"),"Business-provided message");});
