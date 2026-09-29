@@ -777,6 +777,7 @@ function initializeCustomerIntention(document, navigatorValue, now) {
     button.type = "button";
     button.className = "customer-intention-option";
     button.textContent = label;
+    button.setAttribute("data-canonical-intention", label);
     button.setAttribute("aria-pressed", "false");
     button.addEventListener("click", function () {
       selectedIntention = selectCustomerIntention(label);
