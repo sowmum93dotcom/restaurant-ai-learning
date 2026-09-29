@@ -394,3 +394,9 @@
  .customer-body #discover .customer-work-card .customer-choice{padding:10px 12px 12px}
  .customer-body #discover .customer-work-card .customer-participation{padding:10px 12px 12px}
 }
+
+/* Distinct content headings within the same business card, without extra panels. */
+.customer-body #discover .customer-work-card .customer-media-section-label{order:0;margin:0 0 8px;color:#e4bd71;font-size:.69rem;font-weight:750;letter-spacing:.09em;text-transform:uppercase}
+.customer-body #discover .customer-work-card .customer-choice-title{margin:3px 0 10px;font-size:clamp(1rem,1.7vw,1.22rem);line-height:1.25}
+.customer-body #discover .customer-work-card .customer-package-region{gap:10px}
+@media(max-width:680px){.customer-body #discover .customer-work-card .customer-media-section-label{margin-bottom:7px;font-size:.64rem}.customer-body #discover .customer-work-card .customer-choice-title{margin-bottom:8px}}
