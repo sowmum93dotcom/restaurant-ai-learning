@@ -240,8 +240,12 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
   if (possibilitySpace) possibilitySpace.hidden = !valid.length;
   if (changeAction) changeAction.hidden = !valid.length;
   if (emptyState) emptyState.hidden = Boolean(valid.length);
+  const placeNote = document.getElementById("customer-no-place-match-note");
+  if (placeNote) placeNote.hidden = !(saveOptions && saveOptions.placeApplied && !valid.length);
   heading.textContent = valid.length ? (saveOptions && saveOptions.placeApplied ? "Possibilities for your selected place" : CUSTOMER_STAGE_THREE_COPY.found) : CUSTOMER_STAGE_THREE_COPY.none;
   if (!valid.length) {
+    const placeNote = document.getElementById("customer-no-place-match-note");
+    if (placeNote) placeNote.hidden = !(saveOptions && saveOptions.placeApplied);
     region.hidden = false;
     const detailForm = document.getElementById("customer-add-detail-form");
     const emptyActions = document.getElementById("customer-no-possibilities-actions");
