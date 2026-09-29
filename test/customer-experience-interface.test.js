@@ -311,6 +311,32 @@ test("Discover distributed work is vertically navigable in customer order", func
   assert.match(css, /\.customer-work-card\{scroll-snap-align:start;scroll-margin-top:110px\}/);
 });
 
+test("Discover business controls move to adjacent approved businesses and stop at the ends", function () {
+  const document = fakeDocument();
+  const work = ["a", "b", "c"].map(function (id) {
+    return { workItemId: id, businessName: "Business " + id.toUpperCase(), content: "Approved " + id, participationAction: "Interested" };
+  });
+  renderCustomerWork(document, work, [], async function () {});
+  const cards = document.elements["customer-work-list"].children;
+  const controls = cards.map(function (card) {
+    return card.children[0].children.find(function (child) { return child.className === "customer-business-controls"; });
+  });
+  assert.equal(controls[0].children[0].disabled, true);
+  assert.equal(controls[2].children[1].disabled, true);
+  assert.equal(controls[1].children[0].attributes["aria-label"], "Previous business");
+  let focused = false;
+  let scrolled = false;
+  cards[1].focus = function () { focused = true; };
+  cards[1].scrollIntoView = function (options) { scrolled = options.block === "nearest"; };
+  controls[0].children[1].listeners.click();
+  assert.equal(focused && scrolled, true);
+  const single = fakeDocument();
+  renderCustomerWork(single, work.slice(0, 1), [], async function () {});
+  assert.equal(single.elements["customer-work-list"].children[0].children[0].children.some(function (child) {
+    return child.className === "customer-business-controls";
+  }), false);
+});
+
 test("Discover keeps business media and options in horizontal navigation lanes", function () {
   const document = fakeDocument();
   const card = createCustomerWorkCard(document, {
