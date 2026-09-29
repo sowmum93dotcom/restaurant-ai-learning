@@ -600,7 +600,7 @@ async function requestCustomerPossibilities(document, understanding, fetcher, co
       understanding: understanding.understanding, source: understanding.source,
       confidenceState: understanding.confidenceState };
     const placeInput = document.getElementById("customer-place");
-    const place = placeInput ? placeInput.value.trim().replace(/\\s+/g, " ") : "";
+    const place = placeInput ? placeInput.value.trim().replace(/\s+/g, " ") : "";
     const response = await fetcher("/api/customer/possibilities", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify(place ? { understanding: currentIntention, place } : { understanding: currentIntention })
