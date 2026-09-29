@@ -46,6 +46,16 @@ test("phone Discover options keep square photography beside details and fit no-i
   assert.match(options, /customer-discover-option:not\(\.has-image\)\{grid-template-columns:minmax\(0,1fr\)/);
 });
 
+test("tablet Discover options form columns only when cards can keep square images beside readable details", function () {
+  const css = fs.readFileSync(path.join(__dirname, "../css/customer-mobile-refinement.css"), "utf8");
+  const options = css.slice(css.lastIndexOf("/* Tablet options use square images"));
+  assert.match(options, /@media\(min-width:681px\) and \(max-width:1180px\)/);
+  assert.match(options, /grid-template-columns:repeat\(auto-fit,minmax\(min\(100%,390px\),1fr\)\)/);
+  assert.match(options, /customer-discover-option\{display:grid;grid-template-columns:144px minmax\(0,1fr\)/);
+  assert.match(options, /customer-discover-option-image\{display:block;width:144px;height:144px;aspect-ratio:1 \/ 1;object-fit:cover/);
+  assert.match(options, /customer-discover-option:not\(\.has-image\)\{grid-template-columns:minmax\(0,1fr\)/);
+});
+
 test("Discover has a visible three-part customer journey on the actual customer page", function () {
   const html = fs.readFileSync(path.join(__dirname, "../customer.html"), "utf8");
   const css = fs.readFileSync(path.join(__dirname, "../css/customer-mobile-refinement.css"), "utf8");

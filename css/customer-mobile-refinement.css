@@ -429,3 +429,20 @@
  .customer-body #discover .customer-work-card .customer-discover-option:not(.has-image)>*{grid-column:1}
  .customer-body #discover .customer-work-card .customer-product-continue-action{margin-top:6px;padding:9px;overflow-wrap:anywhere}
 }
+
+/* Tablet options use square images beside the details; columns form only when there is room. */
+@media(min-width:681px) and (max-width:1180px){
+ .customer-body #discover .customer-work-card .customer-package-region{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,390px),1fr));gap:12px;overflow:visible}
+ .customer-body #discover .customer-work-card .customer-discover-option{display:grid;grid-template-columns:144px minmax(0,1fr);grid-template-rows:repeat(5,auto);align-content:start;column-gap:14px;row-gap:5px;width:100%;max-width:100%;min-width:0;padding:12px}
+ .customer-body #discover .customer-work-card .customer-discover-option>a:has(> .customer-discover-option-image),
+ .customer-body #discover .customer-work-card .customer-discover-option>.customer-discover-option-image{grid-column:1;grid-row:1 / span 5;align-self:start;width:144px;height:144px;aspect-ratio:1 / 1}
+ .customer-body #discover .customer-work-card .customer-discover-option-image{display:block;width:144px;height:144px;aspect-ratio:1 / 1;object-fit:cover;border-radius:10px}
+ .customer-body #discover .customer-work-card .customer-discover-option-name,
+ .customer-body #discover .customer-work-card .customer-discover-option-description,
+ .customer-body #discover .customer-work-card .customer-discover-option-price,
+ .customer-body #discover .customer-work-card .customer-discover-option-availability,
+ .customer-body #discover .customer-work-card .customer-product-continue-action{grid-column:2;min-width:0;margin:0}
+ .customer-body #discover .customer-work-card .customer-discover-option:not(.has-image){grid-template-columns:minmax(0,1fr)}
+ .customer-body #discover .customer-work-card .customer-discover-option:not(.has-image)>*{grid-column:1}
+ .customer-body #discover .customer-work-card .customer-product-continue-action{margin-top:8px;overflow-wrap:anywhere}
+}
