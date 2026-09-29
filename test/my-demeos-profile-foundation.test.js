@@ -321,7 +321,7 @@ test("Discover images open for viewing without inventing product continuation", 
   const script = read("js/customer.js");
   const css = read("css/customer-mobile-refinement.css");
   assert.match(script, /if \(asset\.kind === "image"\) \{[\s\S]*?mediaLink\.href = asset\.deliveryUrl;[\s\S]*?mediaLink\.target = "_blank";/);
-  assert.match(script, /mediaLink\.setAttribute\("aria-label", "Open full image " \+ \(mediaIndex \+ 1\) \+ " of " \+ work\.media\.length \+ " from " \+ work\.businessName\)/);
+  assert.match(script, /mediaLink\.setAttribute\("aria-label", "Open full image " \+ \(mediaIndex \+ 1\) \+ " of " \+ work\.media\.length \+ " from " \+ work\.businessName \+ " \(opens in a new tab\)"\)/);
   assert.doesNotMatch(script, /mediaLink\.href = mediaHref;/);
   assert.match(css, /customer-work-media-link > img\.customer-work-media-item\{[^}]*object-fit:contain/);
 });
