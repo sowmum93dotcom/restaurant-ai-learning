@@ -433,3 +433,44 @@ test("Discover controlled test content exercises validated unavailable unmatched
   assert.equal(market.customerContinuation, undefined);
   assert.equal(market.products, undefined);
 });
+
+
+test("approved real business and controlled preview share the Discover public contract without feed mixing", async function () {
+  const approved = {
+    workItemId: "approved-campaign", businessId: "real-business", businessName: "Approved Business",
+    location: "Test location", content: "Approved customer-facing campaign",
+    participationAction: "Interested",
+    customerContinuation: { routes: ["website"], website: "https://business.example" },
+    products: [{ productId: "real-product", businessId: "real-business", name: "Approved Product",
+      description: "Business-provided product", continuationRoute: "website", availability: "available",
+      imageUrl: "https://business.example/product.webp" }],
+    media: [{ assetId: "real-media", kind: "image", role: "primary",
+      deliveryUrl: "https://business.example/media.webp", purpose: "business" }]
+  };
+  let repositoryCalls = 0;
+  const repository = { async getCustomerWork() { repositoryCalls++; return [approved]; } };
+  const normal = await runHandler("../api/customer/work.js", repository,
+    { method: "GET", query: {}, headers: {} });
+  assert.equal(normal.statusCode, 200);
+  assert.equal(normal.body.testMode, false);
+  assert.equal(normal.body.work.length, 1);
+  assert.equal(normal.body.work[0].businessName, "Approved Business");
+  assert.equal(normal.body.work[0].products[0].name, "Approved Product");
+  assert.equal(normal.body.work[0].media[0].assetId, "real-media");
+  assert.equal(normal.body.work.some(item => item.businessName.startsWith("DEMEOS Test")), false);
+
+  const preview = await runHandler("../api/customer/work.js", repository,
+    { method: "GET", query: { "demeos-test": "1" },
+      headers: { "x-demeos-discover-test": "controlled-preview" } });
+  assert.equal(preview.statusCode, 200);
+  assert.equal(preview.body.testMode, true);
+  assert.equal(preview.body.work.length, 3);
+  assert.equal(preview.body.work.some(item => item.businessName === "Approved Business"), false);
+  assert.equal(repositoryCalls, 1);
+  for (const item of [...normal.body.work, ...preview.body.work]) {
+    assert.equal(typeof item.workItemId, "string");
+    assert.equal(typeof item.businessName, "string");
+    assert.equal(typeof item.content, "string");
+    assert.equal(item.participationAction, "Interested");
+  }
+});
