@@ -1,5 +1,7 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
+const fs = require("node:fs");
+const path = require("node:path");
 
 const persistencePath = require.resolve("../api/_lib/persistence.js");
 const rulesPath = require.resolve("../api/_lib/demeos-rules.js");
@@ -413,6 +415,14 @@ test("Discover controlled test content exercises validated unavailable unmatched
   const [bistro, studio, market] = res.body.work;
   assert.equal(bistro.products[0].availability, "available");
   assert.equal(bistro.products[1].availability, "unavailable");
+  assert.equal(bistro.products[0].imageUrl, "https://www.demeos.io/images/discover-test-meal.svg");
+  assert.equal(bistro.products[1].imageUrl, bistro.products[0].imageUrl);
+  assert.equal(studio.products[0].imageUrl, "https://www.demeos.io/images/discover-test-session.svg");
+  for (const file of ["discover-test-meal.svg", "discover-test-session.svg"]) {
+    const svg = fs.readFileSync(path.join(__dirname, "..", "images", file), "utf8");
+    assert.match(svg, /viewBox="0 0 600 600"/);
+    assert.match(svg, /CONTROLLED TEST (PRODUCT|SERVICE)/);
+  }
   assert.equal(bistro.media[0].relatedEntityId, undefined);
   assert.equal(bistro.media[0].purpose, "business");
   assert.equal(bistro.media[1].relatedEntityId, undefined);
