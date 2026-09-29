@@ -1322,7 +1322,15 @@ async function loadCustomerWork(document, fetcher, location) {
   } catch (error) {
     if (discoverRequestVersions.get(document) !== version) return;
     // A failed refresh must not leave previously rendered business content visible.
-    document.getElementById("customer-work-list").textContent = "";
+    const list = document.getElementById("customer-work-list");
+    Array.from(list.children || []).forEach(function (card) {
+      const region = typeof card.querySelector === "function" ? card.querySelector(".customer-work-media") : null;
+      if (region && region.discoverResizeObserver) region.discoverResizeObserver.disconnect();
+    });
+    const previousObserver = discoverMediaObservers.get(list);
+    if (previousObserver) { previousObserver.disconnect(); discoverMediaObservers.delete(list); }
+    if (typeof list.querySelectorAll === "function") list.querySelectorAll("video").forEach(function (video) { video.pause(); });
+    list.textContent = "";
     const navigationHint = typeof document.querySelector === "function" ? document.querySelector(".customer-discover-navigation-hint") : null;
     if (navigationHint) navigationHint.hidden = true;
     status.className = "customer-empty-state customer-load-error";
