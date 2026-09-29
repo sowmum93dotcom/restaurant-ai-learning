@@ -181,6 +181,24 @@ test("public Discover serialization excludes payment authority and private check
   assert.doesNotMatch(serialized, /commercialArrangement|paymentReady|providerAccountId|checkoutUrl|unverified\\.example|private-account/);
 });
 
+test("Discover retains product information and approved route when its image fails", function () {
+  const document = fakeDocument();
+  const card = createCustomerWorkCard(document, {
+    workItemId: "image-failure", businessName: "Example Business", content: "Approved content",
+    participationAction: "Interested",
+    customerContinuation: { routes: ["website"], website: "https://business.example/approved" },
+    products: [{ productId: "p1", name: "Product", description: "Approved details",
+      continuationRoute: "website", availability: "available", imageUrl: "https://business.example/broken.webp" }]
+  }, [], async function () {});
+  const choice = card.children.find(function (child) { return child.className === "customer-choice"; });
+  const option = choice.children[2].children[0];
+  const imageLink = option.children[0];
+  imageLink.children[0].listeners.error();
+  assert.match(option.textContent, /Image unavailable/);
+  assert.match(option.textContent, /Product|Approved details/);
+  assert.equal(imageLink.href, "https://business.example/approved");
+});
+
 test("Discover uses contact wording when availability is limited or unconfirmed", function () {
   for (const availability of ["limited", "contact"]) {
     const document = fakeDocument();
