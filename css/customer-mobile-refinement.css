@@ -357,3 +357,11 @@
  .customer-body #discover .customer-work-card .customer-discover-position{grid-column:2;grid-row:1;align-self:start;margin:0}
  .customer-body #discover .customer-work-card .customer-approved-mark{grid-column:1 / -1;grid-row:2;justify-self:start;margin:0}
 }
+
+/* A compact, visible orientation to the three customer destinations. */
+.customer-body #discover .customer-discover-entry-guide{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:0 0 12px}
+.customer-body #discover .customer-discover-entry-guide>div{display:grid;grid-template-columns:auto minmax(0,1fr);align-content:start;column-gap:9px;row-gap:3px;min-width:0;padding:12px;border:1px solid rgba(223,188,112,.24);border-radius:12px;background:#0d223b;color:#f3f6fb}
+.customer-body #discover .customer-discover-guide-number{grid-row:1 / 3;align-self:start;color:#e4bd71;font-size:.72rem;font-weight:700;letter-spacing:.08em}
+.customer-body #discover .customer-discover-entry-guide strong{font-size:.86rem;line-height:1.25}
+.customer-body #discover .customer-discover-entry-guide>div>span:last-child{grid-column:2;color:#c9d5e4;font-size:.74rem;line-height:1.4}
+@media(max-width:680px){.customer-body #discover .customer-discover-entry-guide{gap:6px;margin-bottom:9px}.customer-body #discover .customer-discover-entry-guide>div{display:flex;flex-direction:column;gap:4px;padding:9px 8px;border-radius:9px}.customer-body #discover .customer-discover-entry-guide strong{font-size:.72rem}.customer-body #discover .customer-discover-entry-guide>div>span:last-child{font-size:.65rem;line-height:1.3}}
