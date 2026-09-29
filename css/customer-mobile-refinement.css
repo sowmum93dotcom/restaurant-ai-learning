@@ -453,3 +453,13 @@
 
 /* Clip the rounded card without turning it into the sticky identity's scroll container. */
 .customer-body #discover .customer-work-card{overflow:clip}
+
+
+/* Narrow phones: retain square product photography without squeezing details or actions. */
+@media(max-width:380px){
+ .customer-body #discover .customer-work-card .customer-discover-option.has-image{grid-template-columns:80px minmax(0,1fr);column-gap:9px}
+ .customer-body #discover .customer-work-card .customer-discover-option.has-image>a:has(> .customer-discover-option-image),
+ .customer-body #discover .customer-work-card .customer-discover-option.has-image>.customer-discover-option-image{width:80px;height:80px;aspect-ratio:1 / 1}
+ .customer-body #discover .customer-work-card .customer-discover-option.has-image .customer-discover-option-image{width:80px;height:80px;aspect-ratio:1 / 1;object-fit:cover}
+ .customer-body #discover .customer-work-card .customer-discover-option.has-image .customer-product-continue-action{grid-column:1 / -1;grid-row:auto;width:100%;min-height:44px;margin-top:8px}
+}
