@@ -376,3 +376,21 @@
  .customer-body #discover .customer-work-card .customer-choice{padding:12px 16px 16px}
  .customer-body #discover .customer-work-card .customer-work-media-link>img.customer-work-media-item{max-height:420px;object-fit:contain}
 }
+
+/* One cohesive Discover business experience: identity, media, options, next action. */
+.customer-body #discover .customer-work-card{display:flex;flex-direction:column;overflow:hidden;border-radius:16px}
+.customer-body #discover .customer-work-card .customer-work-context{order:1;margin:0;padding:12px 16px;border-bottom:1px solid rgba(223,188,112,.18)}
+.customer-body #discover .customer-work-card .customer-message{order:2;margin:0}
+.customer-body #discover .customer-work-card .customer-choice{order:3;margin:0;border-top:1px solid rgba(223,188,112,.18)}
+.customer-body #discover .customer-work-card .customer-participation{order:4;margin:0;border-top:1px solid rgba(223,188,112,.18)}
+.customer-body #discover .customer-work-card .customer-business-name{line-height:1.2;overflow-wrap:anywhere}
+.customer-body #discover .customer-work-card .customer-discover-position{font-variant-numeric:tabular-nums;white-space:nowrap}
+.customer-body #discover .customer-work-card .customer-product-continue-action:focus-visible,
+.customer-body #discover .customer-work-card .customer-participation-button:focus-visible{outline:3px solid #f0cd7a;outline-offset:3px}
+@media(max-width:680px){
+ .customer-body #discover .customer-work-card{border-radius:13px}
+ .customer-body #discover .customer-work-card .customer-work-context{margin:0;padding:10px 12px}
+ .customer-body #discover .customer-work-card .customer-message{padding-top:10px}
+ .customer-body #discover .customer-work-card .customer-choice{padding:10px 12px 12px}
+ .customer-body #discover .customer-work-card .customer-participation{padding:10px 12px 12px}
+}
