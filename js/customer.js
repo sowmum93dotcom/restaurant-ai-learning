@@ -1102,6 +1102,14 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
         productPrice.setAttribute("dir", "auto");
       }
 
+      if (product.availability === "unavailable") {
+        addText(document, option, "p", "customer-discover-option-availability", "Currently unavailable");
+      } else if (product.availability === "limited") {
+        addText(document, option, "p", "customer-discover-option-availability", "Limited availability");
+      } else if (product.availability === "contact") {
+        addText(document, option, "p", "customer-discover-option-availability", "Contact business for availability");
+      }
+
       if (product.availability !== "unavailable" && href) {
         const continueAction = document.createElement("a");
         continueAction.className = "customer-product-continue-action";
