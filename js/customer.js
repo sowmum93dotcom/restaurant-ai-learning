@@ -1021,6 +1021,11 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
         });
         mediaPosition.textContent = "Media " + (closest + 1) + " of " + items.length;
         mediaPosition.setAttribute("aria-label", "Media " + (closest + 1) + " of " + items.length);
+        const buttons = message.querySelectorAll(".customer-media-controls .customer-media-control");
+        if (buttons.length === 2) {
+          buttons[0].disabled = closest === 0;
+          buttons[1].disabled = closest === items.length - 1;
+        }
       }
       mediaRegion.addEventListener("scroll", updateMediaPosition, { passive: true });
       if (typeof ResizeObserver !== "undefined") {
@@ -1055,6 +1060,7 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
         controls.appendChild(button);
       });
       message.appendChild(controls);
+      updateMediaPosition();
     }
   }
 
