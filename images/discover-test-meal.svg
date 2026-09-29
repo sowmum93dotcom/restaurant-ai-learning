@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" role="img" aria-labelledby="title description">
+  <title id="title">Controlled test meal illustration</title>
+  <desc id="description">A stylised plate on a navy background, labelled test product.</desc>
+  <rect width="600" height="600" fill="#081a30"/>
+  <circle cx="300" cy="278" r="190" fill="#143a5d" stroke="#d4aa61" stroke-width="8"/>
+  <circle cx="300" cy="278" r="145" fill="#e8edf3"/>
+  <circle cx="300" cy="278" r="112" fill="#e6b66f"/>
+  <path d="M218 292c42-68 121-91 179-37M221 340c59-28 112-17 154 13" fill="none" stroke="#37684f" stroke-width="19" stroke-linecap="round"/>
+  <circle cx="259" cy="244" r="14" fill="#b95943"/><circle cx="350" cy="302" r="18" fill="#b95943"/>
+  <rect x="88" y="514" width="424" height="54" rx="12" fill="#d4aa61"/>
+  <text x="300" y="550" fill="#081a30" font-family="Arial,sans-serif" font-size="25" font-weight="700" text-anchor="middle">CONTROLLED TEST PRODUCT</text>
+</svg>
