@@ -181,6 +181,23 @@ test("public Discover serialization excludes payment authority and private check
   assert.doesNotMatch(serialized, /commercialArrangement|paymentReady|providerAccountId|checkoutUrl|unverified\\.example|private-account/);
 });
 
+test("Discover clearly marks unavailable products without continuation", function () {
+  const document = fakeDocument();
+  const card = createCustomerWorkCard(document, {
+    workItemId: "availability-test", businessName: "Example Business", content: "Approved content",
+    participationAction: "Interested",
+    customerContinuation: { website: "https://business.example/approved" },
+    products: [{ productId: "p1", name: "Unavailable item", description: "Details",
+      continuationRoute: "website", availability: "unavailable", price: "£22" }]
+  }, [], async function () {});
+  const choice = card.children.find(function (child) { return child.className === "customer-choice"; });
+  assert.match(choice.textContent, /Currently unavailable/);
+  const links = [];
+  function collect(node) { if (node.tag === "a") links.push(node.href); (node.children || []).forEach(collect); }
+  collect(choice);
+  assert.ok(!links.includes("https://business.example/approved"));
+});
+
 test("Discover public contract gives different businesses a first distribution pass", function () {
   const { getValidPublicCustomerWork } = require("../api/_lib/customer-public-work-contract.js");
   const work = [
