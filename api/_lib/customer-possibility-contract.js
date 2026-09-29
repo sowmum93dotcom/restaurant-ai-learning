@@ -63,13 +63,13 @@ function validateConfirmedUnderstanding(body) {
 function validateCustomerPlace(body) {
   if (!Object.prototype.hasOwnProperty.call(body, "place")) return "";
   if (typeof body.place !== "string" || body.place.length > 80) return null;
-  const place = body.place.trim().replace(/\\s+/g, " ");
-  if (!place || !/^[\\p{L}\\p{M}\\p{N} .,'-]+$/u.test(place)) return null;
+  const place = body.place.trim().replace(/\s+/g, " ");
+  if (!place || !/^[\p{L}\p{M}\p{N} .,'-]+$/u.test(place)) return null;
   return place;
 }
 function sameDeclaredPlace(place, businessPlace) {
   if (!place || typeof businessPlace !== "string") return false;
-  const normalize = value => value.normalize("NFKC").toLocaleLowerCase("en").replace(/\\s+/g, " ").trim();
+  const normalize = value => value.normalize("NFKC").toLocaleLowerCase("en").replace(/\s+/g, " ").trim();
   return normalize(place) === normalize(businessPlace);
 }
 
