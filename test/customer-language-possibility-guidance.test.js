@@ -1,0 +1,2 @@
+const test=require("node:test");const assert=require("node:assert/strict");const {possibilityCopy,noMatchCopy}=require("../js/customer-interface-language.js");
+test("possibility and no-match interface labels have matching language keys",()=>{for(const group of [possibilityCopy,noMatchCopy])for(const language of ["fr","ar"]){assert.deepEqual(Object.keys(group[language]).sort(),Object.keys(group.en).sort());assert.ok(Object.values(group[language]).every(Boolean));}});
