@@ -1,0 +1,3 @@
+const test=require("node:test");const assert=require("node:assert/strict");const registry=require("../js/demeos-language-registry.js");
+test("approved Marketing Agent registry contains nine distinct languages and Japanese",()=>{assert.deepEqual(registry.languages.map(x=>x.code),["en","es","fr","ar","pt","zh","hi","de","ja"]);assert.equal(new Set(registry.languages.map(x=>x.code)).size,9);assert.equal(registry.resolve("ja-JP").name,"日本語");});
+test("Arabic alone is RTL and unknown languages fall back to English",()=>{assert.deepEqual(registry.languages.filter(x=>x.direction==="rtl").map(x=>x.code),["ar"]);assert.equal(registry.resolve("xx").code,"en");});
