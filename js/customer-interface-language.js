@@ -78,6 +78,17 @@
     supported.some(function (source) { index = feedbackCopy[source].indexOf(value); return index >= 0; });
     return index >= 0 ? feedbackCopy[code][index] : value;
   }
+  var discoverCopy = {
+    en: ["Discover", "Explore business images, products and services.", "Tell DEMEOS", "Describe what you want for relevant possibilities.", "My DEMEOS", "Keep your confirmed interests in your private space.", "Looking for something specific?", "Tell DEMEOS what you need and explore supported business possibilities.", "I know what I want", "Nothing to discover just yet", "There is nothing new to explore right now. Please check back soon.", "Loading approved work…"],
+    fr: ["Découvrir", "Explorez les images, produits et services des entreprises.", "Parlez à DEMEOS", "Décrivez votre besoin pour découvrir des possibilités pertinentes.", "Mon DEMEOS", "Conservez vos intérêts confirmés dans votre espace privé.", "Vous cherchez quelque chose de précis ?", "Indiquez votre besoin à DEMEOS et explorez les possibilités proposées par les entreprises.", "Je sais ce que je veux", "Rien à découvrir pour le moment", "Il n’y a rien de nouveau à explorer actuellement. Revenez bientôt.", "Chargement des contenus approuvés…"],
+    ar: ["استكشف", "استكشف صور الأنشطة التجارية ومنتجاتها وخدماتها.", "أخبر DEMEOS", "صف ما تريده للاطلاع على الإمكانيات ذات الصلة.", "حسابي في DEMEOS", "احتفظ باهتماماتك المؤكدة في مساحتك الخاصة.", "هل تبحث عن شيء محدد؟", "أخبر DEMEOS بما تحتاج إليه واستكشف الإمكانيات المدعومة من الأنشطة التجارية.", "أعرف ما أريد", "لا يوجد ما يمكن استكشافه بعد", "لا يوجد محتوى جديد لاستكشافه الآن. يرجى العودة لاحقًا.", "جارٍ تحميل المحتوى المعتمد…"]
+  };
+  var discoverSelectors = [".customer-section-heading .customer-step", ".customer-discover-entry-guide > div:nth-child(1) > span:last-child", ".customer-discover-entry-guide > div:nth-child(2) > strong", ".customer-discover-entry-guide > div:nth-child(2) > span:last-child", ".customer-discover-entry-guide > div:nth-child(3) > strong", ".customer-discover-entry-guide > div:nth-child(3) > span:last-child", ".customer-connection-entry > div > strong", ".customer-connection-entry > div > span", ".customer-connection-action"];
+  function localizeDiscoverStatus(value, language) {
+    var code = normalize(language), index = -1;
+    supported.some(function (source) { index = discoverCopy[source].indexOf(value); return index >= 0; });
+    return index >= 0 ? discoverCopy[code][index] : value;
+  }
   function normalize(value) { var code = String(value || "").toLowerCase().split("-")[0]; return supported.indexOf(code) >= 0 ? code : "en"; }
   function getSaved() { try { return root.localStorage.getItem("demeos-customer-language"); } catch (_) { return null; } }
   function setSaved(value) { try { root.localStorage.setItem("demeos-customer-language", value); } catch (_) {} }
@@ -123,6 +134,24 @@
         element.textContent = localizeFeedback(element.textContent, code);
       });
     });
+    discoverSelectors.forEach(function (selector, index) {
+      var element = root.document.querySelector(selector);
+      if (!element) return;
+      if (index === 8) {
+        var label = element.firstChild;
+        if (label && label.nodeType === 3) label.textContent = discoverCopy[code][index] + " ";
+      } else element.textContent = discoverCopy[code][index];
+    });
+    var firstGuide = root.document.querySelector(".customer-discover-entry-guide > div:nth-child(1) > strong");
+    if (firstGuide) firstGuide.textContent = discoverCopy[code][0];
+    var status = root.document.getElementById("customer-work-status");
+    if (status) {
+      if (status.classList.contains("customer-empty-state")) {
+        var emptyTitle = status.querySelector("strong"), emptyBody = status.querySelector("span");
+        if (emptyTitle) emptyTitle.textContent = discoverCopy[code][9];
+        if (emptyBody) emptyBody.textContent = discoverCopy[code][10];
+      } else status.textContent = localizeDiscoverStatus(status.textContent, code);
+    }
     var heading = root.document.getElementById("customer-possibilities-heading");
     if (heading) heading.textContent = localizeResult(heading.textContent, code);
     var emptyHeading = root.document.getElementById("customer-no-possibilities-heading");
@@ -185,11 +214,27 @@
       });
       feedbackObserver.observe(focused, { childList: true, characterData: true, subtree: true });
     }
+    var discoverStatus = root.document.getElementById("customer-work-status");
+    if (discoverStatus && typeof root.MutationObserver === "function") {
+      var discoverObserver = new root.MutationObserver(function () {
+        var selected = root.document.getElementById("customer-language");
+        var code = selected ? selected.value : "en";
+        if (discoverStatus.classList.contains("customer-empty-state")) {
+          var title = discoverStatus.querySelector("strong"), body = discoverStatus.querySelector("span");
+          if (title && title.textContent !== discoverCopy[code][9]) title.textContent = discoverCopy[code][9];
+          if (body && body.textContent !== discoverCopy[code][10]) body.textContent = discoverCopy[code][10];
+        } else {
+          var translated = localizeDiscoverStatus(discoverStatus.textContent, code);
+          if (translated !== discoverStatus.textContent) discoverStatus.textContent = translated;
+        }
+      });
+      discoverObserver.observe(discoverStatus, { childList: true, characterData: true, subtree: true });
+    }
     var preferred = getSaved() || (root.navigator && root.navigator.language) || "en";
     apply(preferred);
     select.addEventListener("change", function () { var code = apply(select.value); setSaved(code); });
   }
-  if (typeof module !== "undefined" && module.exports) module.exports = { normalize: normalize, copy: copy, intentionLabels: intentionLabels, journeyCopy: journeyCopy, confirmationCopy: confirmationCopy, resultCopy: resultCopy, localizeResult: localizeResult, staticCopy: staticCopy, possibilityCopy: possibilityCopy, noMatchCopy: noMatchCopy, statusCopy: statusCopy, localizeStatus: localizeStatus, additionalStatuses: additionalStatuses, feedbackCopy: feedbackCopy, localizeFeedback: localizeFeedback };
+  if (typeof module !== "undefined" && module.exports) module.exports = { normalize: normalize, copy: copy, intentionLabels: intentionLabels, journeyCopy: journeyCopy, confirmationCopy: confirmationCopy, resultCopy: resultCopy, localizeResult: localizeResult, staticCopy: staticCopy, possibilityCopy: possibilityCopy, noMatchCopy: noMatchCopy, statusCopy: statusCopy, localizeStatus: localizeStatus, additionalStatuses: additionalStatuses, feedbackCopy: feedbackCopy, localizeFeedback: localizeFeedback, discoverCopy: discoverCopy, localizeDiscoverStatus: localizeDiscoverStatus };
   if (root && root.document) {
     if (root.document.readyState === "loading") root.document.addEventListener("DOMContentLoaded", start);
     else start();
