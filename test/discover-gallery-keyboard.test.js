@@ -13,7 +13,9 @@ test("multi-media gallery is keyboard focusable and uses existing validated arro
  assert.match(source, /\["ArrowLeft", "ArrowRight", "Home", "End"\]\.includes\(event\.key\)/);
  assert.match(source, /event\.key === "Home" \|\| event\.key === "End"/);
  assert.match(source, /event\.key === "Home" \? items\[0\] : items\[items\.length - 1\]/);
- assert.match(source, /pauseMediaVideos\(\)/);
+ assert.match(source, /const offset = target\\.getBoundingClientRect\\(\\)\\.left - mediaRegion\\.getBoundingClientRect\\(\\)\\.left/);
+ assert.match(source, /if \\(Math\\.abs\\(offset\\) > 1\\) \\{\\s*pauseMediaVideos\\(\\)/);
+ assert.match(source, /mediaRegion\\.scrollBy\\(\\{ left: offset, behavior: reducedMotion \\? "auto" : "smooth" \\}\\)/);
  assert.match(source, /event\.preventDefault\(\)/);
  assert.match(source, /if \(button && !button\.disabled\) button\.click\(\)/);
 });
