@@ -30,7 +30,7 @@
   };
   function localizeResult(value, language) {
     var code = normalize(language);
-    var key = Object.keys(resultCopy.en).find(function (item) { return resultCopy.en[item] === value; });
+    var key = Object.keys(resultCopy.en).find(function (item) { return supported.some(function (source) { return resultCopy[source][item] === value; }); });
     return key ? resultCopy[code][key] : value;
   }
   function normalize(value) { var code = String(value || "").toLowerCase().split("-")[0]; return supported.indexOf(code) >= 0 ? code : "en"; }
