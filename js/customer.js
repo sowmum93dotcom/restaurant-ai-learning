@@ -1011,6 +1011,7 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
     if (work.media.length > 1) {
       const mediaPosition = addText(document, message, "p", "customer-media-position", "Media 1 of " + work.media.length);
       mediaPosition.setAttribute("aria-label", "Media 1 of " + work.media.length);
+      mediaPosition.setAttribute("role", "status");
       mediaPosition.setAttribute("aria-live", "polite");
       mediaPosition.setAttribute("aria-atomic", "true");
       let controls;
