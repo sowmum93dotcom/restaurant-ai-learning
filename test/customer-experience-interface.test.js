@@ -7,6 +7,15 @@ const { createCustomerWorkCard, getServerCustomerPackages, getValidCustomerWork,
   renderCustomerWork, requestCustomerPossibilities, requestCustomerLocation, selectCustomerIntention, applyCustomerSurfaceRoute, getDiscoverRequest, loadCustomerWork, toCustomerWorkItem } = require("../js/customer.js");
 const { confirmTrustedCustomer } = require("../js/my-demeos.js");
 
+test("Tablet Discover presents business media before description without reserved height", function () {
+  const css = fs.readFileSync(path.join(__dirname, "../css/customer-mobile-refinement.css"), "utf8");
+  const tablet = css.slice(css.lastIndexOf("/* The actual Discover business card keeps one media-first reading order"));
+  assert.match(tablet, /@media\(min-width:681px\) and \(max-width:1180px\)/);
+  assert.match(tablet, /customer-work-media\{order:1/);
+  assert.match(tablet, /customer-work-content\{order:4/);
+  assert.match(tablet, /height:auto;min-height:0/);
+});
+
 test("Discover has a visible three-part customer journey on the actual customer page", function () {
   const html = fs.readFileSync(path.join(__dirname, "../customer.html"), "utf8");
   const css = fs.readFileSync(path.join(__dirname, "../css/customer-mobile-refinement.css"), "utf8");
