@@ -35,7 +35,7 @@ function ownKeysAre(value, keys) {
 }
 
 function validateConfirmedUnderstanding(body) {
-  if (!ownKeysAre(body, ["understanding"])) return null;
+  if (!ownKeysAre(body, ["understanding"]) && !ownKeysAre(body, ["understanding", "place"])) return null;
   const value = body.understanding;
   const keys = ["confidenceState", "customerText", "intention", "source", "understanding"].sort();
   if (!ownKeysAre(value, keys)) return null;
@@ -55,6 +55,22 @@ function validateConfirmedUnderstanding(body) {
   const expected = buildCustomerUnderstanding(intention, customerText);
   if (!expected || expected.confidenceState !== "ready-for-confirmation" || expected.understanding !== understanding) return null;
   return Object.freeze({ intention, customerText, understanding, source: value.source, confidenceState: value.confidenceState });
+}
+
+
+// Place is customer-provided, optional and scoped to this one request. Match only
+// an explicit business-provided place; no geocoding, distance or inferred proximity.
+function validateCustomerPlace(body) {
+  if (!Object.prototype.hasOwnProperty.call(body, "place")) return "";
+  if (typeof body.place !== "string" || body.place.length > 80) return null;
+  const place = body.place.trim().replace(/\s+/g, " ");
+  if (!place || !/^[\p{L}\p{M}\p{N} .,'-]+$/u.test(place)) return null;
+  return place;
+}
+function sameDeclaredPlace(place, businessPlace) {
+  if (!place || typeof businessPlace !== "string") return false;
+  const normalize = value => value.normalize("NFKC").toLocaleLowerCase("en").replace(/\s+/g, " ").trim();
+  return normalize(place) === normalize(businessPlace);
 }
 
 function meaningfulTerms(value) {
@@ -185,7 +201,7 @@ function stablePossibilityId(workItemId) {
     .digest("base64url").slice(0, 20);
 }
 
-function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_POSSIBILITIES, storedPreferences = [], storedFeedback = []) {
+function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_POSSIBILITIES, storedPreferences = [], storedFeedback = [], place = "") {
   const excludedTerms = excludedCustomerTerms(understanding.customerText);
   const additionalRequirements = explicitAdditionalRequirements(understanding.customerText);
   const requestWords = understanding.customerText.toLocaleLowerCase("en").match(/[\p{L}\p{N}]+/gu) || [];
@@ -204,6 +220,7 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
     // An explicitly unavailable business cannot be presented as a current possibility.
     // Unknown/contact status is not treated as confirmed availability.
     if (work.operationalAvailability && work.operationalAvailability.status === "unavailable") return;
+    if (place && !sameDeclaredPlace(place, work.location)) return;
     const contentTerms = meaningfulTerms(work.content);
     const productTerms = meaningfulTerms((Array.isArray(work.products) ? work.products : []).map(function (product) {
       return product && product.availability !== "unavailable" && [product.name, product.description].join(" ");
@@ -270,6 +287,6 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
 }
 
 module.exports = {
-  FIELD_LIMITS, MAX_POSSIBILITIES, SUPPORTED_INTENTIONS, findCustomerPossibilities,
+  validateCustomerPlace, sameDeclaredPlace, FIELD_LIMITS, MAX_POSSIBILITIES, SUPPORTED_INTENTIONS, findCustomerPossibilities,
   evidencedConcepts, explicitAdditionalRequirements, excludedCustomerTerms, feedbackGuidance, meaningfulTerms, preferenceTerms, productRelevance, relevantProductsForCustomer, stablePossibilityId, validateConfirmedUnderstanding
 };

@@ -3,7 +3,7 @@ const { DEMEOS_ACTOR_SCOPES, DEMEOS_ACTIONS, canPerformDemeosAction } = require(
 const { createAuthenticatedCustomerContext } = require("../_lib/demeos-actor-context.js");
 const { authorizeDemeosAction } = require("../_lib/demeos-authorization.js");
 const { resolveTrustedCustomerIdentityFromRequest } = require("../_lib/demeos-customer-authentication.js");
-const { findCustomerPossibilities, validateConfirmedUnderstanding } = require("../_lib/customer-possibility-contract.js");
+const { findCustomerPossibilities, validateConfirmedUnderstanding, validateCustomerPlace } = require("../_lib/customer-possibility-contract.js");
 const {
   prepareCustomerPossibilityIssuanceTrust,
   confirmCustomerPossibilityIssuanceDelivery
@@ -21,6 +21,8 @@ module.exports = async function handler(req, res) {
 
   const understanding = validateConfirmedUnderstanding(req.body);
   if (!understanding) return res.status(400).json({ error: "A valid confirmed customer understanding is required." });
+  const place = validateCustomerPlace(req.body);
+  if (place === null) return res.status(400).json({ error: "A valid optional place is required." });
   try {
     const repository = getRepository();
     const work = await repository.getCustomerWork();
@@ -54,7 +56,7 @@ module.exports = async function handler(req, res) {
         feedback = await repository.getCustomerFeedback(customerIdentity.trustedCustomerIdentityId, 50);
       }
     }
-    let possibilities = findCustomerPossibilities(understanding, work, undefined, preferences, feedback);
+    let possibilities = findCustomerPossibilities(understanding, work, undefined, preferences, feedback, place);
     if (customerIdentity) {
       await prepareCustomerPossibilityIssuanceTrust();
       const issuedWorkItemIds = await repository.recordCustomerPossibilityIssuance(
@@ -64,7 +66,7 @@ module.exports = async function handler(req, res) {
       const issued = new Set(confirmedWorkItemIds);
       possibilities = possibilities.filter(function (possibility) { return issued.has(possibility.workItemId); });
     }
-    return res.status(200).json({ possibilities });
+    return res.status(200).json(place ? { possibilities, placeApplied: true } : { possibilities });
   } catch (error) {
     console.error("Could not prepare customer possibilities:", error);
     return res.status(500).json({ error: "DEMEOS could not prepare possibilities." });

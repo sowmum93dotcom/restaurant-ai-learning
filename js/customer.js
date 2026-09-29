@@ -599,12 +599,15 @@ async function requestCustomerPossibilities(document, understanding, fetcher, co
     const currentIntention = { intention: understanding.intention, customerText: understanding.customerText,
       understanding: understanding.understanding, source: understanding.source,
       confidenceState: understanding.confidenceState };
+    const placeInput = document.getElementById("customer-place");
+    const place = placeInput ? placeInput.value.trim().replace(/\s+/g, " ") : "";
     const response = await fetcher("/api/customer/possibilities", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ understanding: currentIntention })
+      body: JSON.stringify(place ? { understanding: currentIntention, place } : { understanding: currentIntention })
     });
     const data = await response.json();
     if (!response.ok || !data || !Array.isArray(data.possibilities)) throw new Error();
+    if (data.placeApplied) heading.textContent = "Possibilities matching your request and exact listed place";
     if (requestSequence !== customerPossibilitiesRequestSequence) return;
     let authenticated = false;
     try {
