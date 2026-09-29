@@ -9,6 +9,6 @@ test("Discover gallery arrows indicate first and last media boundaries", () => {
  assert.match(section, /buttons\[0\]\.disabled = closest === 0/);
  assert.match(section, /buttons\[1\]\.disabled = closest === items\.length - 1/);
  assert.match(section, /mediaRegion\.addEventListener\("scroll", updateMediaPosition/);
- assert.match(section, /message\.appendChild\(controls\);\s*updateMediaPosition\(\)/);
+ assert.match(section, /typeof mediaRegion\.getBoundingClientRect === "function"\) updateMediaPosition\(\)/);
  assert.match(section, /Math\.max\(0, Math\.min\(items\.length - 1, closest \+ control\[1\]\)\)/);
 });
