@@ -63,6 +63,14 @@ test("Discover hides the redundant native gallery bar while retaining horizontal
   assert.match(gallery, /customer-work-media::-webkit-scrollbar\{display:none\}/);
 });
 
+test("Discover card clipping leaves its business identity sticky without a reserved top band", function () {
+  const css = fs.readFileSync(path.join(__dirname, "../css/customer-mobile-refinement.css"), "utf8");
+  const card = css.slice(css.lastIndexOf("/* Clip the rounded card"));
+  assert.match(card, /customer-work-card\{overflow:clip\}/);
+  const identity = fs.readFileSync(path.join(__dirname, "../css/demeos-customer-space.css"), "utf8");
+  assert.match(identity, /\.customer-work-context\{position:sticky;top:0/);
+});
+
 test("Discover has a visible three-part customer journey on the actual customer page", function () {
   const html = fs.readFileSync(path.join(__dirname, "../customer.html"), "utf8");
   const css = fs.readFileSync(path.join(__dirname, "../css/customer-mobile-refinement.css"), "utf8");
