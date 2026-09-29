@@ -988,7 +988,7 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
         mediaLink.href = asset.deliveryUrl;
         mediaLink.target = "_blank";
         mediaLink.rel = "noopener noreferrer";
-        mediaLink.setAttribute("aria-label", "Open full image from " + work.businessName);
+        mediaLink.setAttribute("aria-label", "Open full image " + (mediaIndex + 1) + " of " + work.media.length + " from " + work.businessName);
         mediaLink.appendChild(media);
         mediaRegion.appendChild(mediaLink);
       } else mediaRegion.appendChild(media);
