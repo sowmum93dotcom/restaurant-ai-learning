@@ -25,7 +25,7 @@ No item may be marked Verified from a merged PR alone. Existing implementation d
 | A1-11 | Intention | Explore possibility, relevant products and validated actions | js/customer.js, possibility/continuation tests | Implemented | Verify complete real customer journey |
 | A1-12 | Intention | Save intention and possibility to private account | js/customer.js, js/my-demeos.js, saved-intention/possibility tests | Implemented | Verify signed-in/out behavior and persistence |
 | A1-13 | Intention | Optional location permission, clear session state, denial fallback | PR #562; js/customer.js, customer.html, test/customer-location-session-control.test.js | Partial | Production controls deployed; location not used in recommendations |
-| A1-14 | Intention | Validated opt-in location-aware possibilities, no invented proximity | Issue #561; no location input in current possibilities request | Planned | Design and implement one complete privacy-preserving feature |
+| A1-14 | Intention | Optional customer-provided town/city filters relevant possibilities against exact declared business location; GPS proximity is separate | PR #564; api/customer/possibilities.js, customer-possibility-contract.js, customer.html, js/customer.js | Implemented; awaiting production/device acceptance | Verify production exact SHA, entered place, blank fallback and no-match. Automatic GPS matching remains unimplemented under #561 |
 | A1-15 | My DEMEOS | Single customer authentication, sign in/out and protected private data | my-demeos.html, js/my-demeos.js, authentication tests | Implemented | Verify real production sign-in/out on phone/tablet |
 | A1-16 | My DEMEOS | View/remove saved intentions | js/my-demeos.js, customer intentions tests | Implemented | Test actual account persistence |
 | A1-17 | My DEMEOS | View/remove saved possibilities and product details | js/my-demeos.js, saved possibilities tests | Implemented | Test actual account persistence |
@@ -38,7 +38,7 @@ No item may be marked Verified from a merged PR alone. Existing implementation d
 
 ## Priority
 1. Close and verify A1-13 as the already merged feature. The controls are deployed, but the location-based recommendation feature is not.
-2. Develop A1-14 as the next **new feature** only after a bounded privacy/data contract is approved. Do not represent coordinates as verified business proximity.
+2. A1-14 manual place filter is merged; complete production/device acceptance before closing. Automatic GPS matching remains separately gated under #561.
 3. Run A1-22 end-to-end acceptance; then address only evidenced defects.
 4. Review A1-20 global language capability as a separate new feature after A1-14 is complete.
 No gallery polish, Business Owner Workspace, Admin Panel or economic architecture changes under this register.
