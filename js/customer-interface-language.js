@@ -7,7 +7,7 @@
     fr: ["Découvrir", "Je sais ce que je veux", "Mon DEMEOS", "Langue", "Explorer les entreprises", "Que souhaitez-vous faire aujourd’hui ?", "Dites à DEMEOS ce dont vous avez besoin. Vous gardez le contrôle.", "Ville (facultatif, lieu exact indiqué par l’entreprise)", "Continuer", "Utiliser ma position", "Effacer la position"],
     ar: ["استكشف", "أعرف ما أريد", "حسابي في DEMEOS", "اللغة", "استكشف الأنشطة التجارية", "ماذا تود أن تفعل اليوم؟", "أخبر DEMEOS بما تحتاج إليه. أنت المتحكم.", "المدينة (اختياري، الموقع المحدد من النشاط التجاري)", "متابعة", "استخدم موقعي", "مسح الموقع"]
   };
-  var selectors = [".customer-journey-nav a:nth-child(1)", ".customer-journey-nav a:nth-child(2)", ".customer-journey-nav a:nth-child(3)", "#customer-language-label", "#customer-work-heading", "#customer-intention-heading", "#customer-intention-lead", "label[for=customer-place]", "#customer-intention-continue", "#customer-use-location", "#customer-clear-location"];
+  var selectors = [".customer-journey-nav a:nth-child(1)", ".customer-journey-nav a:nth-child(2)", ".customer-journey-nav a:nth-child(3)", "#customer-language-label", "#customer-work-heading", "label[for=customer-place]", "#customer-location-clear"];
   function normalize(value) { var code = String(value || "").toLowerCase().split("-")[0]; return supported.indexOf(code) >= 0 ? code : "en"; }
   function getSaved() { try { return root.localStorage.getItem("demeos-customer-language"); } catch (_) { return null; } }
   function setSaved(value) { try { root.localStorage.setItem("demeos-customer-language", value); } catch (_) {} }
@@ -17,7 +17,7 @@
     root.document.documentElement.dir = code === "ar" ? "rtl" : "ltr";
     selectors.forEach(function (selector, index) {
       var element = root.document.querySelector(selector);
-      if (element) element.textContent = copy[code][index];
+      if (element) element.textContent = copy[code][index < 5 ? index : (index === 5 ? 7 : 10)];
     });
     var control = root.document.getElementById("customer-language");
     if (control) control.value = code;
