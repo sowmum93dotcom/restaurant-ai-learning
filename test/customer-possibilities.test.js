@@ -224,7 +224,8 @@ test("anonymous Customer Experience stays functional and is not retroactively is
 });
 
 test("optional place request preserves the default response and filters only declared locations", async function () {
-  const understanding = confirmed("Eat & enjoy", "quiet dinner");
+  const { intention, customerText, understanding: summary, source, confidenceState } = confirmed("Eat & enjoy", "quiet dinner");
+  const understanding = { intention, customerText, understanding: summary, source, confidenceState };
   const repository = { async getCustomerWork() {
     return [
       work("london", "Quiet dinner and restaurant meal", { location: "London" }),
@@ -246,7 +247,8 @@ test("optional place request preserves the default response and filters only dec
   assert.deepEqual(unmatched.body, { possibilities: [], placeApplied: true });
 });
 test("malformed place is rejected before repository access and does not disclose business data", async function () {
-  const understanding = confirmed("Eat & enjoy", "quiet dinner");
+  const { intention, customerText, understanding: summary, source, confidenceState } = confirmed("Eat & enjoy", "quiet dinner");
+  const understanding = { intention, customerText, understanding: summary, source, confidenceState };
   let calls = 0;
   const repository = { async getCustomerWork() { calls++; return [work("one", "Quiet dinner")]; } };
   for (const place of ["", "x".repeat(81), "London;drop", 42]) {
