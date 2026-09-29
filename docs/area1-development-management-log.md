@@ -42,3 +42,9 @@ Repository: sowmum93dotcom/restaurant-ai-learning.
 - First GitHub test run failed (place regex escaping and default response regression). Both corrected in the same PR; subsequent V1 Baseline Tests run #578 passed, Vercel preview succeeded.
 - Merge SHA: `5df50ed19ac8562dceb08f202e30228d55a4c7b8`. Production deployment `dpl_9ahqCN4afvt62yP9wcAMR6ArjUnS` was BUILDING at first check; verify READY before marking production complete. Real mobile/tablet acceptance remains unverified.
 - A1-14 remains Implemented / awaiting acceptance. Issue #561 automatic geolocation-based relevance is not complete; do not imply that it is.
+
+## 2026-09-29 — A1-14 production checkpoint
+- PR #565 documentation merged as `749cad7abfe62975967a8bf808e886aca853011e`; production READY.
+- PR #566 corrected the exact-place result heading and distinguished manual place filtering from GPS permission. Its initial test failed because the previous copy assertion was stale; corrected on the same PR. GitHub V1 Baseline Tests run #581 and Vercel preview passed.
+- PR #566 merge SHA `c4ebbdb9de4373e082ec5e9dfd9a27f4375d8965`; production deployment `dpl_AXzCdU8sSAXD183MbgbeipMRCiWr` READY, aliases www.demeos.io and demeos.io verified.
+- Screenshot from iPhone showed Discover empty, not the I Know What I Want place flow. No customer device acceptance of place matching was established. Do not mark A1-14 Verified until actual place, blank fallback, no-match and tablet/mobile behavior are checked. Do not treat empty Discover as a location regression or add unapproved content.
