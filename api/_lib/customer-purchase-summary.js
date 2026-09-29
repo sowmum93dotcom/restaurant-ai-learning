@@ -13,10 +13,12 @@ function preparePurchaseSummary(context) {
   if (!sellerName || !productName || !fulfilment || !refundTerms || !sellerContact) {
     return { ready: false, reason: "missing-purchase-information" };
   }
+  const calculatedTotal = product.priceMinor + transaction.deliveryMinor + transaction.taxMinor;
   if (!Number.isSafeInteger(transaction.deliveryMinor) || transaction.deliveryMinor < 0 ||
       !Number.isSafeInteger(transaction.taxMinor) || transaction.taxMinor < 0 ||
+      !Number.isSafeInteger(calculatedTotal) ||
       !Number.isSafeInteger(transaction.totalMinor) ||
-      transaction.totalMinor !== product.priceMinor + transaction.deliveryMinor + transaction.taxMinor) {
+      transaction.totalMinor !== calculatedTotal) {
     return { ready: false, reason: "invalid-order-total" };
   }
   return {
