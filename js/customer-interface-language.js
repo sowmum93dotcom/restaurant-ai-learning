@@ -8,6 +8,11 @@
     ar: ["استكشف", "أعرف ما أريد", "حسابي في DEMEOS", "اللغة", "استكشف الأنشطة التجارية", "ماذا تود أن تفعل اليوم؟", "أخبر DEMEOS بما تحتاج إليه. أنت المتحكم.", "المدينة (اختياري، الموقع المحدد من النشاط التجاري)", "متابعة", "استخدم موقعي", "مسح الموقع"]
   };
   var selectors = [".customer-journey-nav a:nth-child(1)", ".customer-journey-nav a:nth-child(2)", ".customer-journey-nav a:nth-child(3)", "#customer-language-label", "#customer-work-heading", "label[for=customer-place]", "#customer-location-clear"];
+  var intentionLabels = {
+    en: ["Eat & enjoy", "Take care of myself", "Spend time together", "Get something done", "Go somewhere", "Discover something new"],
+    fr: ["Manger et profiter", "Prendre soin de moi", "Passer du temps ensemble", "Accomplir quelque chose", "Aller quelque part", "Découvrir quelque chose de nouveau"],
+    ar: ["الطعام والاستمتاع", "العناية بنفسي", "قضاء الوقت معًا", "إنجاز شيء", "الذهاب إلى مكان ما", "اكتشاف شيء جديد"]
+  };
   function normalize(value) { var code = String(value || "").toLowerCase().split("-")[0]; return supported.indexOf(code) >= 0 ? code : "en"; }
   function getSaved() { try { return root.localStorage.getItem("demeos-customer-language"); } catch (_) { return null; } }
   function setSaved(value) { try { root.localStorage.setItem("demeos-customer-language", value); } catch (_) {} }
@@ -18,6 +23,11 @@
     selectors.forEach(function (selector, index) {
       var element = root.document.querySelector(selector);
       if (element) element.textContent = copy[code][index < 5 ? index : (index === 5 ? 7 : 10)];
+    });
+    root.document.querySelectorAll("#customer-intention-options .customer-intention-option").forEach(function (button) {
+      var canonical = button.getAttribute("data-canonical-intention") || button.textContent;
+      var index = intentionLabels.en.indexOf(canonical);
+      if (index >= 0) { button.setAttribute("data-canonical-intention", canonical); button.textContent = intentionLabels[code][index]; }
     });
     var control = root.document.getElementById("customer-language");
     if (control) control.value = code;
@@ -43,7 +53,7 @@
     apply(preferred);
     select.addEventListener("change", function () { var code = apply(select.value); setSaved(code); });
   }
-  if (typeof module !== "undefined" && module.exports) module.exports = { normalize: normalize, copy: copy };
+  if (typeof module !== "undefined" && module.exports) module.exports = { normalize: normalize, copy: copy, intentionLabels: intentionLabels };
   if (root && root.document) {
     if (root.document.readyState === "loading") root.document.addEventListener("DOMContentLoaded", start);
     else start();
