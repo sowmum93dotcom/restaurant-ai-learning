@@ -66,7 +66,7 @@ module.exports = async function handler(req, res) {
       const issued = new Set(confirmedWorkItemIds);
       possibilities = possibilities.filter(function (possibility) { return issued.has(possibility.workItemId); });
     }
-    return res.status(200).json({ possibilities, placeApplied: Boolean(place) });
+    return res.status(200).json(place ? { possibilities, placeApplied: true } : { possibilities });
   } catch (error) {
     console.error("Could not prepare customer possibilities:", error);
     return res.status(500).json({ error: "DEMEOS could not prepare possibilities." });
