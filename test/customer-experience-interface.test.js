@@ -56,6 +56,13 @@ test("tablet Discover options form columns only when cards can keep square image
   assert.match(options, /customer-discover-option:not\(\.has-image\)\{grid-template-columns:minmax\(0,1fr\)/);
 });
 
+test("Discover hides the redundant native gallery bar while retaining horizontal scroll and snap", function () {
+  const css = fs.readFileSync(path.join(__dirname, "../css/customer-mobile-refinement.css"), "utf8");
+  const gallery = css.slice(css.lastIndexOf("/* The live media counter and arrows"));
+  assert.match(gallery, /customer-work-media\{overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none\}/);
+  assert.match(gallery, /customer-work-media::-webkit-scrollbar\{display:none\}/);
+});
+
 test("Discover has a visible three-part customer journey on the actual customer page", function () {
   const html = fs.readFileSync(path.join(__dirname, "../customer.html"), "utf8");
   const css = fs.readFileSync(path.join(__dirname, "../css/customer-mobile-refinement.css"), "utf8");
