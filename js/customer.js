@@ -961,6 +961,7 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
     mediaRegion.className = "customer-work-media";
     mediaRegion.setAttribute("role", "list");
     mediaRegion.setAttribute("aria-label", `Media from ${work.businessName}`);
+    if (work.media.length > 1) mediaRegion.tabIndex = 0;
     work.media.forEach(function (asset, mediaIndex) {
       const media = asset.kind === "video" ? document.createElement("video") : document.createElement("img");
       media.className = "customer-work-media-item " + (asset.role === "primary" ? "is-primary" : "is-supporting");
@@ -1068,6 +1069,14 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
           }
         });
         controls.appendChild(button);
+      });
+      mediaRegion.addEventListener("keydown", function (event) {
+        // Leave keys within video controls and full-image links to their native behavior.
+        if (event.target !== mediaRegion || (event.key !== "ArrowLeft" && event.key !== "ArrowRight")) return;
+        event.preventDefault();
+        const direction = event.key === "ArrowLeft" ? -1 : 1;
+        const button = controls.children[direction === -1 ? 0 : 1];
+        if (button && !button.disabled) button.click();
       });
       message.appendChild(controls);
       // Layout measurements are unavailable in server-side test DOMs; the scroll and resize
