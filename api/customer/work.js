@@ -22,9 +22,11 @@ function discoverTestContent() {
       products: [
         { productId: "test-bistro-meal", businessId: "test-business-bistro", name: "Test Bistro Meal",
           description: "Available controlled test product with validated continuation.", price: "£18", priceMode: "fixed",
+          imageUrl: "https://www.demeos.io/images/discover-test-meal.svg",
           continuationRoute: "website", availability: "available" },
         { productId: "test-bistro-unavailable", businessId: "test-business-bistro", name: "Unavailable Test Meal",
           description: "Controlled unavailable product used to verify safe non-continuation.", price: "£22", priceMode: "fixed",
+          imageUrl: "https://www.demeos.io/images/discover-test-meal.svg",
           continuationRoute: "website", availability: "unavailable" }
       ],
       media: [
@@ -44,6 +46,7 @@ function discoverTestContent() {
       products: [
         { productId: "test-studio-service", businessId: "test-business-studio", name: "Test Studio Session",
           description: "Controlled service used to validate service presentation and booking continuation.",
+          imageUrl: "https://www.demeos.io/images/discover-test-session.svg",
           continuationRoute: "booking", availability: "limited" }
       ],
       media: [
