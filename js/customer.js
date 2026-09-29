@@ -976,7 +976,7 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
           videos.forEach(function (other) { if (other !== media) other.pause(); });
         });
       }
-      else { media.alt = `Approved media from ${work.businessName}`; media.loading = anchorJourney && mediaIndex === 0 ? "eager" : "lazy"; media.decoding = "async"; if (anchorJourney && mediaIndex === 0) media.fetchPriority = "high"; }
+      else { media.alt = `Approved image ${mediaIndex + 1} of ${work.media.length} from ${work.businessName}`; media.loading = anchorJourney && mediaIndex === 0 ? "eager" : "lazy"; media.decoding = "async"; if (anchorJourney && mediaIndex === 0) media.fetchPriority = "high"; }
       const relatedProduct = asset.purpose === "product" && asset.relatedEntityId && Array.isArray(work.products)
         ? work.products.find(function (product) { return product.productId === asset.relatedEntityId; }) : null;
       if (relatedProduct) media.setAttribute("data-related-product-id", relatedProduct.productId);
