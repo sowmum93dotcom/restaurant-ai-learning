@@ -446,3 +446,7 @@
  .customer-body #discover .customer-work-card .customer-discover-option:not(.has-image)>*{grid-column:1}
  .customer-body #discover .customer-work-card .customer-product-continue-action{margin-top:8px;overflow-wrap:anywhere}
 }
+
+/* The live media counter and arrows provide the gallery cue without a second native scrollbar. */
+.customer-body #discover .customer-work-card .customer-work-media{overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none}
+.customer-body #discover .customer-work-card .customer-work-media::-webkit-scrollbar{display:none}
