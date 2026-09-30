@@ -1,0 +1,3 @@
+const test=require("node:test");const assert=require("node:assert/strict");const gate=require("../js/demeos-language-coverage.js");const registry=require("../js/demeos-language-registry.js");
+test("approved languages have explicit coverage and incomplete languages remain gated",()=>{assert.deepEqual(Object.keys(gate.complete).sort(),registry.languages.map(x=>x.code).sort());for(const code of ["en","fr","ar"])assert.equal(gate.selectable(code),true);for(const code of ["es","pt","zh","hi","de","ja"]){assert.equal(gate.selectable(code),false);assert.ok(gate.missing(code).includes("myDemeos"));assert.ok(gate.missing(code).includes("feedback"));}});
+test("unknown language cannot be enabled",()=>{assert.equal(gate.selectable("xx"),false);});
