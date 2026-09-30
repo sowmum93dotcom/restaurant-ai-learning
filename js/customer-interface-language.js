@@ -31,7 +31,7 @@
   };
   function localizeResult(value, language) {
     var code = normalize(language);
-    var key = Object.keys(resultCopy.en).find(function (item) { return supported.some(function (source) { return resultCopy[source][item] === value; }); });
+    var key = Object.keys(resultCopy.en).find(function (item) { return supported.some(function (source) { return resultCopy[source] && resultCopy[source][item] === value; }); });
     return key ? resultCopy[code][key] : value;
   }
   var staticCopy = {
@@ -64,9 +64,9 @@
   function localizeStatus(value, language) {
     var code = normalize(language);
     var index = -1;
-    supported.some(function (source) { index = statusCopy[source].indexOf(value); return index >= 0; });
+    supported.some(function (source) { index = statusCopy[source] ? statusCopy[source].indexOf(value) : -1; return index >= 0; });
     if (index >= 0) return statusCopy[code][index];
-    supported.some(function (source) { index = additionalStatuses[source].indexOf(value); return index >= 0; });
+    supported.some(function (source) { index = additionalStatuses[source] ? additionalStatuses[source].indexOf(value) : -1; return index >= 0; });
     return index >= 0 ? additionalStatuses[code][index] : value;
   }
   var feedbackCopy = {
@@ -76,7 +76,7 @@
   };
   function localizeFeedback(value, language) {
     var code = normalize(language), index = -1;
-    supported.some(function (source) { index = feedbackCopy[source].indexOf(value); return index >= 0; });
+    supported.some(function (source) { index = feedbackCopy[source] ? feedbackCopy[source].indexOf(value) : -1; return index >= 0; });
     return index >= 0 ? feedbackCopy[code][index] : value;
   }
   var discoverCopy = {
@@ -87,7 +87,7 @@
   var discoverSelectors = [".customer-section-heading .customer-step", ".customer-discover-entry-guide > div:nth-child(1) > span:last-child", ".customer-discover-entry-guide > div:nth-child(2) > strong", ".customer-discover-entry-guide > div:nth-child(2) > span:last-child", ".customer-discover-entry-guide > div:nth-child(3) > strong", ".customer-discover-entry-guide > div:nth-child(3) > span:last-child", ".customer-connection-entry > div > strong", ".customer-connection-entry > div > span", ".customer-connection-action"];
   function localizeDiscoverStatus(value, language) {
     var code = normalize(language), index = -1;
-    supported.some(function (source) { index = discoverCopy[source].indexOf(value); return index >= 0; });
+    supported.some(function (source) { index = discoverCopy[source] ? discoverCopy[source].indexOf(value) : -1; return index >= 0; });
     return index >= 0 ? discoverCopy[code][index] : value;
   }
   /* Register additional approved UI catalogues without enabling incomplete journeys. */
