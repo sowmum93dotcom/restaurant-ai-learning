@@ -1,0 +1,2 @@
+const test=require("node:test");const assert=require("node:assert/strict");const copy=require("../js/demeos-status-additional-languages.js");
+test("six languages cover status and location messages without missing strings",()=>{assert.deepEqual(Object.keys(copy).sort(),["es","pt","zh","hi","de","ja"].sort());for(const item of Object.values(copy)){assert.equal(item.status.length,6);assert.equal(item.additional.length,5);assert.ok([...item.status,...item.additional].every(x=>typeof x==="string"&&x.trim()));}});
