@@ -340,9 +340,6 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
         if (productPriceText) addText(document, card, "p", "customer-product-price", productPriceText);
         const productAvailabilityLabels = { available: "Available", limited: "Limited availability — contact the business first", unavailable: "Not currently available", contact: "Contact the business to confirm availability" };
         addText(document, card, "p", "customer-product-availability", productAvailabilityLabels[product.availability]);
-        if (product.relevance && Array.isArray(product.relevance.evidence) && product.relevance.evidence.length) {
-          addText(document, card, "p", "customer-product-relevance", "Relevant to your request: " + product.relevance.evidence.join(", ") + ".");
-        }
         if (product.fulfilment && product.fulfilment.methods.length) {
           const productFulfilmentLabels = { collection: "Collection", delivery: "Delivery", shipping: "Shipping", premises: "At the business", "customer-location": "At your location", appointment: "Appointment", digital: "Digital" };
           addText(document, card, "p", "customer-product-fulfilment", "How you receive it: " + product.fulfilment.methods.map(function (method) { return productFulfilmentLabels[method]; }).join(" · "));
