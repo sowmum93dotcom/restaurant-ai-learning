@@ -11,7 +11,7 @@ const assert = require("node:assert/strict");
       await page.goto("http://127.0.0.1:4173/customer.html#discover", { waitUntil: "networkidle" });
       assert.ok((await page.locator("body").innerText()).trim().length > 100, "Customer Experience must render meaningful content");
       assert.equal(await page.locator("#customer-language").count(), 1, "Language selector must render");
-      assert.deepEqual(await page.locator("#customer-language option").evaluateAll(options => options.map(o => o.value)), ["en","fr","ar"], "Public selector remains gated before final release");
+      assert.deepEqual(await page.locator("#customer-language option").evaluateAll(options => options.map(o => o.value)), ["en","es","fr","ar","pt","zh","hi","de","ja"], "All verified languages must be publicly selectable");
       assert.ok(await page.locator(".customer-journey-nav").isVisible(), "Customer journey navigation must be visible");
       assert.equal(errors.length, 0, "Customer Experience must not raise page errors");
       await page.close();
