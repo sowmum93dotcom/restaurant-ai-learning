@@ -24,7 +24,7 @@
  .customer-body .customer-intention-option:nth-child(6) {grid-column:auto}
  .customer-body .customer-intention-option:before {content:none;display:none}
  .customer-body .customer-intention-option[aria-pressed="true"] {background:#173e69;border:2px solid #e4b963;box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
- .customer-body .customer-intention-detail {width:100%;margin:16px 0 0;padding:0;text-align:left}
+ .customer-body .customer-intention-detail {width:100%;margin:16px 0 0;padding:0;text-align:start}
  .customer-body .customer-intention-detail label {margin-bottom:8px;font-size:14px;line-height:1.4}
  .customer-body .customer-intention-detail textarea {display:block;width:100%;min-height:96px;padding:13px 14px;border-radius:12px;font-size:16px;line-height:1.45;resize:vertical}
  .customer-body .customer-context-actions {width:100%;margin:14px 0 0;gap:10px}
@@ -144,7 +144,7 @@
 /* Make the existing validated relevance explanation visible before opening a possibility. */
 .customer-body .customer-possibility-relevance-preview {display:block;margin-top:8px;padding-top:9px;border-top:1px solid rgba(183,141,56,.4);font-size:.85rem;line-height:1.5;overflow-wrap:anywhere}
 
-.customer-body .customer-no-possibilities > p.customer-no-match-guidance {margin:12px 0 16px;padding:13px 15px;border-left:3px solid #b78d38;border-radius:8px;background:#f4f7fb;color:#26384e;line-height:1.55}
+.customer-body .customer-no-possibilities > p.customer-no-match-guidance {margin:12px 0 16px;padding:13px 15px;border-inline-start:3px solid #b78d38;border-radius:8px;background:#f4f7fb;color:#26384e;line-height:1.55}
 
 .customer-body .customer-possibilities-error-note {margin:12px 0;color:#26384e;line-height:1.55}
 .customer-body .customer-possibilities-retry {min-height:44px;padding:10px 18px;border:1px solid #b78d38;border-radius:10px;background:#102c4b;color:#fff;font:inherit;font-weight:700;cursor:pointer}
@@ -271,14 +271,14 @@
 @media(max-width:680px){
  .customer-body #discover .customer-section-heading {display:block;margin-bottom:8px;padding-bottom:8px}
  .customer-body #discover .customer-section-heading h2 {font-size:1.55rem}
- .customer-body #discover .customer-section-heading>p {max-width:none;text-align:left;margin-top:4px;font-size:.8rem}
+ .customer-body #discover .customer-section-heading>p {max-width:none;text-align:start;margin-top:4px;font-size:.8rem}
  .customer-body #discover .customer-test-content-status {font-size:.6rem}
 }
 
 /* Discover is one compact toolbar followed immediately by business content. */
 .customer-body #discover {padding-top:12px}
 .customer-body #discover .customer-discover-toolbar {display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 12px;padding:10px 16px;border:1px solid rgba(211,170,91,.28);border-radius:14px;background:#0c1b2f;color:#f7f5ef;box-shadow:none}
-.customer-body #discover .customer-discover-toolbar .customer-section-heading {display:block;flex:0 1 auto;margin:0;padding:0;border:0;text-align:left;background:none;box-shadow:none}
+.customer-body #discover .customer-discover-toolbar .customer-section-heading {display:block;flex:0 1 auto;margin:0;padding:0;border:0;text-align:start;background:none;box-shadow:none}
 .customer-body #discover .customer-discover-toolbar .customer-step {color:#dfbc70;font-size:.6rem;line-height:1.2;margin:0 0 3px}
 .customer-body #discover .customer-discover-toolbar h2 {color:#fff;font-family:inherit;font-size:clamp(1.1rem,2vw,1.45rem);font-weight:700;line-height:1.15;letter-spacing:-.015em;margin:0}
 .customer-body #discover .customer-discover-meta {display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap;min-width:0}
@@ -488,7 +488,7 @@
  display:flex;flex-direction:column;align-items:flex-start;justify-content:center;
  min-height:0;width:100%;max-width:100%;margin:0;padding:14px 16px;
  border:1px solid rgba(223,188,112,.3);border-radius:10px;
- background:#132b46;color:#dce5f2;text-align:left;box-shadow:none
+ background:#132b46;color:#dce5f2;text-align:start;box-shadow:none
 }
 .customer-body #discover .customer-discover-meta .customer-empty-state strong{
  color:#f3f6fb;font-family:inherit;font-size:1rem;font-weight:700;line-height:1.35
@@ -519,8 +519,8 @@
 
 /* A1-22: usable exact-place input on phone and tablet. */
 .customer-body #intention .customer-context-field{display:flex;flex-direction:column;align-items:stretch;gap:8px;width:100%;min-width:0}
-.customer-body #intention .customer-context-field label{display:block;max-width:100%;line-height:1.4;text-align:left}
-.customer-body #intention #customer-place{display:block;box-sizing:border-box;width:100%;max-width:100%;min-width:0;min-height:48px;margin:0;padding:12px 14px;border:1px solid rgba(223,188,112,.55);border-radius:12px;background:#0d223b;color:#f3f6fb;font:inherit;font-size:16px;line-height:1.4;text-align:left}
+.customer-body #intention .customer-context-field label{display:block;max-width:100%;line-height:1.4;text-align:start}
+.customer-body #intention #customer-place{display:block;box-sizing:border-box;width:100%;max-width:100%;min-width:0;min-height:48px;margin:0;padding:12px 14px;border:1px solid rgba(223,188,112,.55);border-radius:12px;background:#0d223b;color:#f3f6fb;font:inherit;font-size:16px;line-height:1.4;text-align:start}
 .customer-body #intention #customer-place::placeholder{color:#aebdd0;opacity:1}
 .customer-body #intention #customer-place:focus-visible{outline:2px solid #e4bf6a;outline-offset:3px}
-.customer-body #intention .customer-context-status{max-width:100%;margin:0;line-height:1.45;text-align:left}
+.customer-body #intention .customer-context-status{max-width:100%;margin:0;line-height:1.45;text-align:start}

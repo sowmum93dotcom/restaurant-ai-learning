@@ -25,3 +25,17 @@ test("Discover, I know what I want and My DEMEOS share one persisted language st
  assert.match(myDemeos,/href="customer\.html#intention"/);
  for(const page of [customer,myDemeos]) assert.match(page,/js\/customer-interface-language\.js/);
 });
+
+
+test("Arabic uses RTL-safe logical alignment while customer-entered fields keep automatic direction",()=>{
+ const languageCss=fs.readFileSync(require.resolve("../css/customer-interface-language.css"),"utf8");
+ const mobileCss=fs.readFileSync(require.resolve("../css/customer-mobile-refinement.css"),"utf8");
+ const spaceCss=fs.readFileSync(require.resolve("../css/demeos-customer-space.css"),"utf8");
+ const controller=fs.readFileSync(require.resolve("../js/customer-interface-language.js"),"utf8");
+ assert.match(controller,/documentElement\.dir\s*=\s*code\s*===\s*"ar"\s*\?\s*"rtl"\s*:\s*"ltr"/);
+ assert.match(languageCss,/\[dir=rtl\]/);
+ assert.match(languageCss,/#customer-intention-text,#customer-place\{direction:auto\}/);
+ assert.doesNotMatch(mobileCss,/text-align:left/);
+ assert.doesNotMatch(spaceCss,/text-align:left/);
+ assert.match(mobileCss,/border-inline-start:3px solid #b78d38/);
+});
