@@ -1,7 +1,8 @@
 /* A1-20: explicit customer interface language, separate from business-provided content. */
 (function (root) {
   "use strict";
-  var supported = ["en", "fr", "ar"];
+  var supported = ["en", "fr", "ar", "es", "pt", "zh", "hi", "de", "ja"];
+  var selectable = ["en", "fr", "ar"];
   var copy = {
     en: ["Discover", "I know what I want", "My DEMEOS", "Language", "Explore businesses", "What would you like to do today?", "Tell DEMEOS what you need. You stay in control.", "Town or city (optional, exact business-listed location)", "Continue", "Use my location", "Clear location"],
     fr: ["Découvrir", "Je sais ce que je veux", "Mon DEMEOS", "Langue", "Explorer les entreprises", "Que souhaitez-vous faire aujourd’hui ?", "Dites à DEMEOS ce dont vous avez besoin. Vous gardez le contrôle.", "Ville (facultatif, lieu exact indiqué par l’entreprise)", "Continuer", "Utiliser ma position", "Effacer la position"],
