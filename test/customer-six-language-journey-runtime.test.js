@@ -50,7 +50,7 @@ test("known generated states localize in all six languages while unknown provide
 });
 
 test("canonical intention values remain English while presentation labels localize",()=>{
- const canonical=["Explore","Eat","Shop","Book","Learn","Other"];
+ const canonical=["Eat & enjoy","Take care of myself","Spend time together","Get something done","Go somewhere","Discover something new"];
  assert.deepEqual(c.intentionLabels.en,canonical);
  for(const code of languages){
   assert.equal(c.intentionLabels[code].length,canonical.length);
