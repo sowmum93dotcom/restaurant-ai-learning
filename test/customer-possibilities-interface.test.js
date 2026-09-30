@@ -71,22 +71,24 @@ async function openProduct(overrides = {}) {
   return { card, participation };
 }
 
-test("failed product images retain details and the same business continuation without creating interest", async function () {
+test("failed product images preserve the validated Buy action without creating interest", async function () {
   const { card, participation } = await openProduct();
   const image = descendants(card).find((element) => element.tag === "img");
-  const link = descendants(card).find((element) => element.tag === "a");
   assert.equal(image.src, "https://business.example/dinner.jpg");
+  assert.equal(descendants(card).filter((element) => element.tag === "a").length, 1);
   assert.doesNotMatch(card.textContent, /Image unavailable/);
   image.listeners.error();
   assert.equal(descendants(card).filter((element) => element.tag === "img").length, 0);
-  assert.match(link.textContent, /Image unavailable/);
-  assert.equal(link.href, "https://business.example/menu");
-  assert.equal(link.attributes["aria-label"], "Family dinner — continue with Bella Vista Bistro");
+  assert.match(card.textContent, /Image unavailable/);
   const fallback = descendants(card).find((element) => element.className === "customer-product-no-image");
   assert.match(fallback.attributes["aria-label"], /Family dinner could not be loaded/);
   const details = descendants(card).find((element) => element.className === "customer-product-details");
+  const buy = descendants(details).find((element) => element.tag === "a");
   assert.equal(details.hidden, false);
-  assert.equal(descendants(details).find((element) => element.tag === "a").href, link.href);
+  assert.equal(buy.textContent, "Buy");
+  assert.equal(buy.href, "https://business.example/menu");
+  assert.equal(buy.attributes["aria-label"], "Buy Family dinner from Bella Vista Bistro");
+  assert.equal(descendants(card).filter((element) => element.tag === "a").length, 1);
   assert.equal(participation.length, 0);
 });
 
