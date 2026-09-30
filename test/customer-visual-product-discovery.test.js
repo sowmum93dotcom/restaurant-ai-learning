@@ -12,8 +12,8 @@ test("customer product discovery has explicit details without manufacturing enga
 });
 
 test("customer product continuation uses one simple Buy action while retaining exact product and business identity", function () {
-  assert.match(customer, /continueAction\\.textContent = "Buy"/);
-  assert.match(customer, /"Buy " \\+ product\\.name \\+ " from " \\+ possibility\\.businessName/);
+  assert.match(customer, /continueAction\.textContent = "Buy"/);
+  assert.match(customer, /"Buy " \+ product\.name \+ " from " \+ possibility\.businessName/);
 });
 
 test("unavailable products do not receive a detail continuation action", function () {
