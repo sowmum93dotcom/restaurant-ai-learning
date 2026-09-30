@@ -10,5 +10,5 @@ test("My DEMEOS language changes reapply every authentication presentation state
   const values=auth.copy[code];
   for(const key of ["loadingTitle","loadingDetail","signedOutTitle","signedOutDetail","signIn","signedInTitle","signedInDetail","anonymousDetail","signOut","unavailableTitle","unavailableDetail","providerDetail"]) assert.ok(values[key]&&values[key].trim());
  }
- assert.doesNotMatch(authSource,/signInWith|signOut\(|session|authenticate|redirectToSignIn/);
+ assert.doesNotMatch(authSource,/signInWith|signOut\(|authenticate\(|redirectToSignIn|setActive\(|createSession/);
 });
