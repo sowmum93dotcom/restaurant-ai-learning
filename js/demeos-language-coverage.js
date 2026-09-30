@@ -8,9 +8,9 @@
     es: Object.freeze(required.slice()), pt: Object.freeze(required.slice()), zh: Object.freeze(required.slice()),
     hi: Object.freeze(required.slice()), de: Object.freeze(required.slice()), ja: Object.freeze(required.slice())
   });
-  // Preserve existing availability. No complete nine-language journey has been certified by this audit.
-  var enabled = Object.freeze(["en", "fr", "ar"]);
-  var verifiedJourneys = Object.freeze([]);
+  // All nine Customer Experience languages were verified and publicly released in PR #633.
+  var enabled = Object.freeze(["en", "es", "fr", "ar", "pt", "zh", "hi", "de", "ja"]);
+  var verifiedJourneys = Object.freeze(["en", "es", "fr", "ar", "pt", "zh", "hi", "de", "ja"]);
   function missing(code) {
     return required.filter(function (item) { return (complete[code] || []).indexOf(item) < 0; });
   }
