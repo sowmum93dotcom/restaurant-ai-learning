@@ -32,7 +32,7 @@ test("Arabic uses RTL-safe logical alignment while customer-entered fields keep 
  const mobileCss=fs.readFileSync(require.resolve("../css/customer-mobile-refinement.css"),"utf8");
  const spaceCss=fs.readFileSync(require.resolve("../css/demeos-customer-space.css"),"utf8");
  const controller=fs.readFileSync(require.resolve("../js/customer-interface-language.js"),"utf8");
- assert.match(controller,/documentElement\.dir=code==="ar"\?"rtl":"ltr"/);
+ assert.match(controller,/documentElement\.dir\s*=\s*code\s*===\s*"ar"\s*\?\s*"rtl"\s*:\s*"ltr"/);
  assert.match(languageCss,/\[dir=rtl\]/);
  assert.match(languageCss,/#customer-intention-text,#customer-place\{direction:auto\}/);
  assert.doesNotMatch(mobileCss,/text-align:left/);
