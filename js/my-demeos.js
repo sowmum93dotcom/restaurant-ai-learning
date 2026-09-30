@@ -208,19 +208,19 @@
     empty.hidden = participations.length !== 0;
     participations.forEach(function (participation) {
       const article = documentObject.createElement("article");
-      const action = documentObject.createElement("h4"); action.textContent = "Interested"; article.appendChild(action);
+      const action = documentObject.createElement("h4"); action.textContent = root.DEMEOSMyParticipationLanguage ? root.DEMEOSMyParticipationLanguage.text(0) : "Interested"; article.appendChild(action);
       if (participation.content) { const content = documentObject.createElement("p"); content.textContent = participation.content; article.appendChild(content); }
-      if (participation.businessName) { const provider = documentObject.createElement("p"); provider.textContent = "Provided by " + participation.businessName; article.appendChild(provider); }
+      if (participation.businessName) { const provider = documentObject.createElement("p"); provider.textContent = (root.DEMEOSMyParticipationLanguage ? root.DEMEOSMyParticipationLanguage.text(1) : "Provided by ") + participation.businessName; article.appendChild(provider); }
       if (participation.location) { const location = documentObject.createElement("p"); location.textContent = participation.location; article.appendChild(location); }
       const date = documentObject.createElement("time"); date.dateTime = participation.participatedAt;
-      date.textContent = new Date(participation.participatedAt).toLocaleDateString(); article.appendChild(date);
+      date.textContent = root.DEMEOSMyParticipationLanguage ? root.DEMEOSMyParticipationLanguage.date(participation.participatedAt) : new Date(participation.participatedAt).toLocaleDateString(); article.appendChild(date);
       list.appendChild(article);
     });
   }
 
   async function loadParticipations(documentObject, fetchFunction) {
     const loading = documentObject.getElementById("my-participation-loading");
-    loading.textContent = "Loading your participation…";
+    loading.textContent = root.DEMEOSMyParticipationLanguage ? root.DEMEOSMyParticipationLanguage.text(2) : "Loading your participation…";
     loading.hidden = false;
     let result;
     try {
@@ -228,11 +228,11 @@
       if (!response.ok) throw new Error("Could not load participation");
       result = await response.json();
     } catch (_error) {
-      loading.textContent = "Your participation could not be loaded. Please refresh to try again.";
+      loading.textContent = root.DEMEOSMyParticipationLanguage ? root.DEMEOSMyParticipationLanguage.text(3) : "Your participation could not be loaded. Please refresh to try again.";
       return;
     }
     if (!result || !Array.isArray(result.participations)) {
-      loading.textContent = "Your participation could not be verified. Please refresh the page.";
+      loading.textContent = root.DEMEOSMyParticipationLanguage ? root.DEMEOSMyParticipationLanguage.text(4) : "Your participation could not be verified. Please refresh the page.";
       return;
     }
     renderParticipations(documentObject, result.participations);
