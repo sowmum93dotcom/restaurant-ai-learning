@@ -2,7 +2,7 @@
 (function (root) {
   "use strict";
   var supported = ["en", "fr", "ar", "es", "pt", "zh", "hi", "de", "ja"];
-  var selectable = ["en", "fr", "ar"];
+  var selectable = ["en", "es", "fr", "ar", "pt", "zh", "hi", "de", "ja"];
   var copy = {
     en: ["Discover", "I know what I want", "My DEMEOS", "Language", "Explore businesses", "What would you like to do today?", "Tell DEMEOS what you need. You stay in control.", "Town or city (optional, exact business-listed location)", "Continue", "Use my location", "Clear location"],
     fr: ["Découvrir", "Je sais ce que je veux", "Mon DEMEOS", "Langue", "Explorer les entreprises", "Que souhaitez-vous faire aujourd’hui ?", "Dites à DEMEOS ce dont vous avez besoin. Vous gardez le contrôle.", "Ville (facultatif, lieu exact indiqué par l’entreprise)", "Continuer", "Utiliser ma position", "Effacer la position"],
@@ -224,7 +224,7 @@
     var select = root.document.createElement("select");
     select.id = "customer-language";
     select.setAttribute("aria-label", "Customer interface language");
-    [["en","English"],["fr","Français"],["ar","العربية"]].forEach(function (pair) {
+    [["en","English"],["es","Español"],["fr","Français"],["ar","العربية"],["pt","Português"],["zh","简体中文"],["hi","हिन्दी"],["de","Deutsch"],["ja","日本語"]].forEach(function (pair) {
       var option = root.document.createElement("option"); option.value = pair[0]; option.textContent = pair[1]; select.appendChild(option);
     });
     wrapper.appendChild(label); wrapper.appendChild(select);
