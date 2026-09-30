@@ -347,6 +347,8 @@
     }
     documentObject.getElementById("use-preferences-as-guidance").checked = controls.usePreferencesAsGuidance === true;
     documentObject.getElementById("use-feedback-as-guidance").checked = controls.useFeedbackAsGuidance === true;
+    form.dataset.loadedPreferencesGuidance = String(controls.usePreferencesAsGuidance === true);
+    form.dataset.loadedFeedbackGuidance = String(controls.useFeedbackAsGuidance === true);
     status.textContent = successMessage || "";
     if (submit) submit.disabled = false;
   }
@@ -453,13 +455,23 @@
       if (!event.target || event.target.id !== "customer-language") return;
       const signedIn = documentObject.getElementById("customer-auth-signed-in");
       if (!signedIn || signedIn.hidden) return;
-      return Promise.allSettled([
+      const preferenceInput = documentObject.getElementById("customer-preference");
+      const preferenceDirty = Boolean(preferenceInput && preferenceInput.value && preferenceInput.value.trim());
+      const privacyForm = documentObject.getElementById("privacy-controls-form");
+      const preferencesGuidance = documentObject.getElementById("use-preferences-as-guidance");
+      const feedbackGuidance = documentObject.getElementById("use-feedback-as-guidance");
+      const privacyDirty = Boolean(privacyForm && preferencesGuidance && feedbackGuidance &&
+        privacyForm.dataset && privacyForm.dataset.loadedPreferencesGuidance !== undefined &&
+        (String(preferencesGuidance.checked) !== privacyForm.dataset.loadedPreferencesGuidance ||
+         String(feedbackGuidance.checked) !== privacyForm.dataset.loadedFeedbackGuidance));
+      const refreshes = [
         loadIntentions(documentObject, fetchFunction),
         loadPossibilities(documentObject, fetchFunction),
-        loadParticipations(documentObject, fetchFunction),
-        loadPreferences(documentObject, fetchFunction),
-        loadPrivacyControls(documentObject, fetchFunction)
-      ]);
+        loadParticipations(documentObject, fetchFunction)
+      ];
+      if (!preferenceDirty) refreshes.push(loadPreferences(documentObject, fetchFunction));
+      if (!privacyDirty) refreshes.push(loadPrivacyControls(documentObject, fetchFunction));
+      return Promise.allSettled(refreshes);
     });
   }
 
