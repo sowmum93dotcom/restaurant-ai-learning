@@ -1,0 +1,2 @@
+const test=require("node:test");const assert=require("node:assert/strict");const copy=require("../js/demeos-no-match-additional-languages.js");const keys=["place","guidance","detail","change","label","continue","cancel"];
+test("six languages cover all seven no-match guidance fields",()=>{assert.deepEqual(Object.keys(copy).sort(),["es","pt","zh","hi","de","ja"].sort());for(const item of Object.values(copy)){assert.deepEqual(Object.keys(item),keys);assert.ok(Object.values(item).every(x=>typeof x==="string"&&x.trim()));}});
