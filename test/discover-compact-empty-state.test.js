@@ -13,5 +13,5 @@ test("Discover empty approved feed is compact and remains clearly distinct from 
  assert.match(rule, /\.customer-discover-meta \.customer-empty-state/);
  assert.match(rule, /min-height:0;width:100%/);
  assert.match(rule, /background:#132b46/);
- assert.match(rule, /text-align:left/);
+ assert.match(rule, /text-align:start/);
 });
