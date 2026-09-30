@@ -103,7 +103,18 @@
     };
   }
 
+  function recoverDiscoverIfNeeded(document) {
+    const status = document.getElementById("customer-work-status");
+    const list = document.getElementById("customer-work-list");
+    if (!status || !list || list.children.length) return false;
+    if (!/loading approved work/i.test(status.textContent || "")) return false;
+    if (typeof loadCustomerWork !== "function" || typeof globalThis.fetch !== "function") return false;
+    loadCustomerWork(document, globalThis.fetch, globalThis.location);
+    return true;
+  }
+
   function initialize(document) {
+    recoverDiscoverIfNeeded(document);
     const list = document.getElementById("customer-work-list");
     const back = document.getElementById("product-experience-back");
     if (!list || !back) return;
@@ -124,6 +135,6 @@
     });
   }
 
-  if (typeof module !== "undefined" && module.exports) module.exports = { availabilityCopy, openProductExperience, priceCopy, safeHttps };
+  if (typeof module !== "undefined" && module.exports) module.exports = { availabilityCopy, openProductExperience, priceCopy, recoverDiscoverIfNeeded, safeHttps };
   if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", function () { initialize(document); });
 })();
