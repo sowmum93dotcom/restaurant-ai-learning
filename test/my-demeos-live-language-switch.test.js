@@ -132,3 +132,22 @@ test("language change preserves unsaved privacy toggles", async () => {
   assert.equal(requests.some(r => r.url === "/api/customer/privacy-controls"), false);
   assert.equal(requests.some(r => r.url === "/api/customer/preferences"), true);
 });
+
+
+test("failed language refresh reads preserve already rendered private data and controls", async () => {
+  const f = fixture();
+  const preserved = {
+    "my-intentions-list": "Saved intention remains visible",
+    "my-possibilities-list": "Saved possibility remains visible",
+    "my-participation-list": "Participation remains visible",
+    "my-preferences-list": "Preference remains visible"
+  };
+  for (const [id, value] of Object.entries(preserved)) f.document.getElementById(id).textContent = value;
+  f.document.getElementById("use-preferences-as-guidance").checked = true;
+  f.document.getElementById("use-feedback-as-guidance").checked = false;
+  setupLiveLanguageRefresh(f.document, async () => ({ ok: false, json: async () => ({}) }));
+  await f.change();
+  for (const [id, value] of Object.entries(preserved)) assert.equal(f.document.getElementById(id).textContent, value);
+  assert.equal(f.document.getElementById("use-preferences-as-guidance").checked, true);
+  assert.equal(f.document.getElementById("use-feedback-as-guidance").checked, false);
+});
