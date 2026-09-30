@@ -1,0 +1,11 @@
+(function(root){"use strict";var copy={
+en:["Interested","Provided by ","Loading your participation…","Your participation could not be loaded. Please refresh to try again.","Your participation could not be verified. Please refresh the page."],
+es:["Interesado","Proporcionado por ","Cargando tu participación…","No se pudo cargar tu participación. Actualiza para volver a intentarlo.","No se pudo verificar tu participación. Actualiza la página."],
+fr:["Intéressé","Fourni par ","Chargement de votre participation…","Impossible de charger votre participation. Actualisez pour réessayer.","Impossible de vérifier votre participation. Actualisez la page."],
+ar:["مهتم","مقدم من ","جارٍ تحميل مشاركتك…","تعذر تحميل مشاركتك. حدّث الصفحة للمحاولة مرة أخرى.","تعذر التحقق من مشاركتك. حدّث الصفحة."],
+pt:["Interessado","Fornecido por ","A carregar a sua participação…","Não foi possível carregar a sua participação. Atualize para tentar novamente.","Não foi possível verificar a sua participação. Atualize a página."],
+zh:["感兴趣","由以下商家提供：","正在加载您的参与记录…","无法加载您的参与记录。请刷新后重试。","无法验证您的参与记录。请刷新页面。"],
+hi:["रुचि है","द्वारा प्रदान किया गया ","आपकी भागीदारी लोड हो रही है…","आपकी भागीदारी लोड नहीं हो सकी। पुनः प्रयास के लिए पृष्ठ रीफ़्रेश करें।","आपकी भागीदारी सत्यापित नहीं हो सकी। पृष्ठ रीफ़्रेश करें।"],
+de:["Interessiert","Bereitgestellt von ","Ihre Teilnahme wird geladen…","Ihre Teilnahme konnte nicht geladen werden. Aktualisieren Sie die Seite und versuchen Sie es erneut.","Ihre Teilnahme konnte nicht überprüft werden. Aktualisieren Sie die Seite."],
+ja:["興味あり","提供元: ","参加履歴を読み込んでいます…","参加履歴を読み込めませんでした。ページを更新して再試行してください。","参加履歴を確認できませんでした。ページを更新してください。"]};
+function code(){var v="en";try{v=root.localStorage.getItem("demeos-customer-language")||"en";}catch(_e){}v=String(v).toLowerCase().split("-")[0];return copy[v]?v:"en";}function text(i){return copy[code()][i];}function date(value){return new Date(value).toLocaleDateString(code()==="zh"?"zh-CN":code());}var api={copy:copy,code:code,text:text,date:date};if(typeof module!=="undefined"&&module.exports)module.exports=api;root.DEMEOSMyParticipationLanguage=api;})(typeof window!=="undefined"?window:{});
