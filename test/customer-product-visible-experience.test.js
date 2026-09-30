@@ -17,7 +17,7 @@ test("mobile Product Experience makes the product and Buy action visually primar
   assert.match(css, /\.customer-product-continue-action\{display:flex;align-items:center;justify-content:center;width:100%;min-height:52px[^}]*font-size:1\.05rem/);
 });
 
-test("desktop Product Experience keeps one focused product column", () => {
-  assert.match(css, /\.customer-product-grid\{display:grid;grid-template-columns:1fr/);
-  assert.match(css, /\.customer-product-card\{display:grid;grid-template-columns:minmax\(0,1\.08fr\) minmax\(260px,\.92fr\)/);
+test("mobile Product Experience removes carousel behaviour from the final presentation", () => {
+  assert.match(css, /\.customer-product-grid\{display:grid;grid-template-columns:1fr;overflow:visible;padding:0\}/);
+  assert.match(css, /\.customer-product-card\{display:flex;flex-direction:column;width:100%;padding:\.7rem;scroll-snap-align:none\}/);
 });
