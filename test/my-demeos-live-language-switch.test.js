@@ -9,7 +9,7 @@ function fixture(hidden = false) {
   const document = {
     addEventListener(name, handler) { if (name === "change") change = handler; },
     getElementById(id) {
-      if (!nodes.has(id)) nodes.set(id, { hidden: false, textContent: "", checked: false,
+      if (!nodes.has(id)) nodes.set(id, { hidden: false, textContent: "", checked: false, value: "", dataset: {},
         querySelector() { return { disabled: false }; },
         addEventListener(name, handler) { if (id === "customer-language" && name === "change") change = handler; }
       });
@@ -98,4 +98,37 @@ test("repeated language changes remain read-only and refresh every private area"
     assert.equal(options.body, undefined);
     assert.equal(options.credentials, "same-origin");
   }
+});
+
+
+test("language change preserves unsaved preference text", async () => {
+  const f = fixture();
+  f.document.getElementById("customer-preference").value = "Keep this unsaved preference";
+  const requests = [];
+  setupLiveLanguageRefresh(f.document, async (url, options) => {
+    requests.push({ url, options });
+    return { ok: true, json: async () => ({ intentions: [], possibilities: [], participations: [], controls: { usePreferencesAsGuidance: true, useFeedbackAsGuidance: false } }) };
+  });
+  await f.change();
+  assert.equal(f.document.getElementById("customer-preference").value, "Keep this unsaved preference");
+  assert.equal(requests.some(r => r.url === "/api/customer/preferences"), false);
+  assert.equal(requests.some(r => r.url === "/api/customer/privacy-controls"), true);
+});
+
+test("language change preserves unsaved privacy toggles", async () => {
+  const f = fixture();
+  const form = f.document.getElementById("privacy-controls-form");
+  form.dataset.loadedPreferencesGuidance = "true";
+  form.dataset.loadedFeedbackGuidance = "false";
+  f.document.getElementById("use-preferences-as-guidance").checked = false;
+  f.document.getElementById("use-feedback-as-guidance").checked = false;
+  const requests = [];
+  setupLiveLanguageRefresh(f.document, async (url, options) => {
+    requests.push({ url, options });
+    return { ok: true, json: async () => ({ intentions: [], possibilities: [], participations: [], preferences: [] }) };
+  });
+  await f.change();
+  assert.equal(f.document.getElementById("use-preferences-as-guidance").checked, false);
+  assert.equal(requests.some(r => r.url === "/api/customer/privacy-controls"), false);
+  assert.equal(requests.some(r => r.url === "/api/customer/preferences"), true);
 });
