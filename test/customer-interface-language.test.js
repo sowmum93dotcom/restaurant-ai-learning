@@ -51,9 +51,9 @@ test("Customer Experience language controls remain responsive for longer transla
 });
 
 
-test("six additional languages execute internally while visible selector remains gated",()=>{
+test("all nine verified languages execute and are available in the visible selector",()=>{
  const controller=fs.readFileSync(require.resolve("../js/customer-interface-language.js"),"utf8");
  for(const code of ["es","pt","zh","hi","de","ja"]) assert.equal(normalize(code),code);
- assert.match(controller,/var selectable = \["en", "fr", "ar"\]/);
- assert.match(controller,/\[\["en","English"\],\["fr","Français"\],\["ar","العربية"\]\]\.forEach/);
+ assert.match(controller,/var selectable = \["en", "es", "fr", "ar", "pt", "zh", "hi", "de", "ja"\]/);
+ assert.match(controller,/\[\["en","English"\],\["es","Español"\],\["fr","Français"\],\["ar","العربية"\],\["pt","Português"\],\["zh","简体中文"\],\["hi","हिन्दी"\],\["de","Deutsch"\],\["ja","日本語"\]\]\.forEach/);
 });
