@@ -115,7 +115,7 @@ test("participation load failure is announced and can be retried", function () {
 test("preferences load failure replaces loading with recoverable message", function () {
   const script = read("js/my-demeos.js");
   assert.match(script, /"Your preferences could not be loaded\. Please refresh to try again\."/);
-  assert.match(script, /loading\.textContent = "Loading your preferences…";\s+loading\.hidden = false;/);
+  assert.match(script, /loading\.textContent = root\.DEMEOSMyPreferencesLanguage[\s\S]*?loading\.hidden = false;/);
 });
 
 test("privacy controls cannot be saved when existing settings fail to load", function () {
@@ -133,33 +133,33 @@ test("privacy controls save recovers from a network failure", function () {
 
 test("preference creation recovers from a network failure without clearing input", function () {
   const script = read("js/my-demeos.js");
-  assert.match(script, /status\.textContent = "Your preference could not be saved\. Please try again\.";\s+if \(submit\) submit\.disabled = false;\s+return;/);
-  assert.match(script, /if \(!response\.ok\) \{ status\.textContent = "Your preference could not be saved\."; if \(submit\) submit\.disabled = false; return; \}/);
+  assert.match(script, /status\.textContent = root\.DEMEOSMyPreferencesLanguage[\s\S]*?if \(submit\) submit\.disabled = false;\s+return;/);
+  assert.match(script, /if \(!response\.ok\) \{ status\.textContent = root\.DEMEOSMyPreferencesLanguage[\s\S]*?submit\.disabled = false; return; \}/);
 });
 
 test("preference removal reports failed requests without removing the displayed item", function () {
   const script = read("js/my-demeos.js");
-  assert.match(script, /if \(!removed\.ok\) throw new Error\("Removal failed"\);\s+await loadPreferences\(documentObject, fetchFunction, "Preference removed\."\);/);
-  assert.match(script, /status\.textContent = "Your preference could not be removed\. Please try again\.";/);
+  assert.match(script, /if \(!removed\.ok\) throw new Error\("Removal failed"\);\s+await loadPreferences\(documentObject, fetchFunction, root\.DEMEOSMyPreferencesLanguage/);
+  assert.match(script, /status\.textContent = root\.DEMEOSMyPreferencesLanguage \? root\.DEMEOSMyPreferencesLanguage\.text\(9\)/);
 });
 
 test("preference removal prevents duplicate requests and permits retry after failure", function () {
   const script = read("js/my-demeos.js");
   assert.match(script, /if \(!remove\.disabled\) removePreference\(preference\.preferenceId, remove\);/);
-  assert.match(script, /async function \(preferenceId, button\) \{\s+button\.disabled = true;\s+status\.textContent = "Removing preference…";/);
-  assert.match(script, /button\.disabled = false;\s+status\.textContent = "Your preference could not be removed\. Please try again\.";/);
+  assert.match(script, /async function \(preferenceId, button\) \{\s+button\.disabled = true;\s+status\.textContent = root\.DEMEOSMyPreferencesLanguage/);
+  assert.match(script, /button\.disabled = false;\s+status\.textContent = root\.DEMEOSMyPreferencesLanguage/);
 });
 
 test("preference save confirmation follows a successful list refresh", function () {
   const script = read("js/my-demeos.js");
   assert.match(script, /async function loadPreferences\(documentObject, fetchFunction, successMessage\)/);
   assert.match(script, /if \(successMessage\) status\.textContent = successMessage;/);
-  assert.match(script, /input\.value = "";\s+await loadPreferences\(documentObject, fetchFunction, "Preference saved\."\);/);
+  assert.match(script, /input\.value = "";\s+await loadPreferences\(documentObject, fetchFunction, root\.DEMEOSMyPreferencesLanguage/);
 });
 
 test("preference removal confirmation follows a successful list refresh", function () {
   const script = read("js/my-demeos.js");
-  assert.match(script, /if \(!removed\.ok\) throw new Error\("Removal failed"\);\s+await loadPreferences\(documentObject, fetchFunction, "Preference removed\."\);/);
+  assert.match(script, /if \(!removed\.ok\) throw new Error\("Removal failed"\);\s+await loadPreferences\(documentObject, fetchFunction, root\.DEMEOSMyPreferencesLanguage/);
   assert.match(script, /if \(successMessage\) status\.textContent = successMessage;/);
 });
 
@@ -200,7 +200,7 @@ test("privacy save confirmation follows successful refresh", function () {
 
 test("preference mutation distinguishes successful write from failed refresh", function () {
   const script = read("js/my-demeos.js");
-  assert.match(script, /successMessage \? "Your change was saved, but your preferences could not be refreshed\. Please refresh the page\." : "Your preferences could not be loaded\. Please refresh to try again\."/);
+  assert.match(script, /successMessage \? \(root\.DEMEOSMyPreferencesLanguage[\s\S]*?text\(3\)[\s\S]*?:[\s\S]*?text\(4\)/);
   assert.match(script, /if \(successMessage\) status\.textContent = successMessage;\s+return true;/);
 });
 
@@ -268,7 +268,7 @@ test("invalid participation payload is not displayed as an empty history", funct
 
 test("invalid preferences refresh preserves confirmation that a change was saved", function () {
   const script = read("js/my-demeos.js");
-  assert.match(script, /successMessage \? "Your change was saved, but your preferences could not be verified\. Please refresh the page\." : "Your preferences could not be verified\. Please refresh the page\."/);
+  assert.match(script, /successMessage \? \(root\.DEMEOSMyPreferencesLanguage[\s\S]*?text\(5\)[\s\S]*?:[\s\S]*?text\(6\)/);
 });
 
 test("normal Discover rejects a controlled test feed response", function () {
