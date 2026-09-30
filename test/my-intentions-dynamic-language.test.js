@@ -1,0 +1,1 @@
+const test=require("node:test");const assert=require("node:assert/strict");const l=require("../js/my-intentions-language.js");test("dynamic My Intentions states cover nine languages",()=>{assert.equal(Object.keys(l.copy).length,9);for(const v of Object.values(l.copy)){assert.equal(v.length,9);assert.ok(v.every(x=>x.trim()));}});

@@ -69,9 +69,9 @@
       const heading = documentObject.createElement("h4"); heading.textContent = intention.intention; article.appendChild(heading);
       if (intention.customerText) { const detail = documentObject.createElement("p"); detail.textContent = intention.customerText; article.appendChild(detail); }
       const understanding = documentObject.createElement("p"); understanding.textContent = intention.understanding; article.appendChild(understanding);
-      const date = documentObject.createElement("time"); date.dateTime = intention.createdAt; date.textContent = "Saved " + new Date(intention.createdAt).toLocaleDateString(); article.appendChild(date);
+      const date = documentObject.createElement("time"); date.dateTime = intention.createdAt; date.textContent = (root.DEMEOSMyIntentionsLanguage ? root.DEMEOSMyIntentionsLanguage.date(intention.createdAt) : "Saved " + new Date(intention.createdAt).toLocaleDateString()); article.appendChild(date);
       if (removeIntention && intention.intentionId) {
-        const remove = documentObject.createElement("button"); remove.type = "button"; remove.className = "demeos-secondary-button"; remove.textContent = "Remove";
+        const remove = documentObject.createElement("button"); remove.type = "button"; remove.className = "demeos-secondary-button"; remove.textContent = root.DEMEOSMyIntentionsLanguage ? root.DEMEOSMyIntentionsLanguage.text(1) : "Remove";
         remove.addEventListener("click", function () { if (!remove.disabled) removeIntention(intention.intentionId, remove); }); article.appendChild(remove);
       }
       list.appendChild(article);
@@ -89,22 +89,22 @@
       result = await response.json();
     } catch (_error) {
       loading.hidden = true;
-      status.textContent = successMessage ? "The saved intention was removed, but your intentions could not be refreshed. Please refresh the page." : "Your intentions could not be loaded. Please refresh to try again.";
+      status.textContent = successMessage ? (root.DEMEOSMyIntentionsLanguage ? root.DEMEOSMyIntentionsLanguage.text(3) : "The saved intention was removed, but your intentions could not be refreshed. Please refresh the page.") : (root.DEMEOSMyIntentionsLanguage ? root.DEMEOSMyIntentionsLanguage.text(2) : "Your intentions could not be loaded. Please refresh to try again.");
       return;
     }
     if (!result || !Array.isArray(result.intentions)) {
       loading.hidden = true;
-      status.textContent = successMessage ? "The saved intention was removed, but your intentions could not be verified. Please refresh the page." : "Your intentions could not be verified. Please refresh the page.";
+      status.textContent = successMessage ? (root.DEMEOSMyIntentionsLanguage ? root.DEMEOSMyIntentionsLanguage.text(5) : "The saved intention was removed, but your intentions could not be verified. Please refresh the page.") : (root.DEMEOSMyIntentionsLanguage ? root.DEMEOSMyIntentionsLanguage.text(4) : "Your intentions could not be verified. Please refresh the page.");
       return;
     }
     renderIntentions(documentObject, result.intentions, async function (intentionId, button) {
-      const status = documentObject.getElementById("my-intentions-status"); button.disabled = true; status.textContent = "Removing saved intention…";
+      const status = documentObject.getElementById("my-intentions-status"); button.disabled = true; status.textContent = root.DEMEOSMyIntentionsLanguage ? root.DEMEOSMyIntentionsLanguage.text(6) : "Removing saved intention…";
       try {
         const removed = await fetchFunction("/api/customer/intentions", { method: "DELETE", credentials: "same-origin",
           headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify({ intentionId }) });
         if (!removed.ok) throw new Error("Removal failed");
-        await loadIntentions(documentObject, fetchFunction, "Saved intention removed.");
-      } catch (_error) { button.disabled = false; status.textContent = "The saved intention could not be removed."; }
+        await loadIntentions(documentObject, fetchFunction, root.DEMEOSMyIntentionsLanguage ? root.DEMEOSMyIntentionsLanguage.text(7) : "Saved intention removed.");
+      } catch (_error) { button.disabled = false; status.textContent = root.DEMEOSMyIntentionsLanguage ? root.DEMEOSMyIntentionsLanguage.text(8) : "The saved intention could not be removed."; }
     });
     if (successMessage) status.textContent = successMessage;
   }
