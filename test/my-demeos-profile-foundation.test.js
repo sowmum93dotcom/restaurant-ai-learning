@@ -107,8 +107,8 @@ test("saved intentions failure replaces loading with recoverable message", funct
 test("participation load failure is announced and can be retried", function () {
   const script = read("js/my-demeos.js");
   const html = read("my-demeos.html");
-  assert.match(script, /loading\.textContent = "Your participation could not be loaded\. Please refresh to try again\."/);
-  assert.match(script, /loading\.textContent = "Loading your participation…";\s+loading\.hidden = false;/);
+  assert.match(script, /loading\.textContent = root\.DEMEOSMyParticipationLanguage/);
+  assert.match(script, /loading\.textContent = root\.DEMEOSMyParticipationLanguage[\s\S]*?loading\.hidden = false;/);
   assert.match(html, /id="my-participation-loading" role="status" aria-live="polite"/);
 });
 
