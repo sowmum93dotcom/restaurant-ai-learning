@@ -319,13 +319,8 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
         if (product.imageUrl) {
           const imageFrame = document.createElement("div"); imageFrame.className = "customer-product-image-frame";
           const image = document.createElement("img"); image.alt = product.name; image.loading = "lazy"; image.decoding = "async";
-          let imageContainer = imageFrame;
-          if (href) {
-            const imageLink = document.createElement("a"); imageLink.href = href; imageLink.setAttribute("aria-label", product.name + " — continue with " + possibility.businessName);
-            if (/^https?:\/\//i.test(href)) { imageLink.target = "_blank"; imageLink.rel = "noopener noreferrer"; }
-            imageLink.appendChild(image); imageFrame.appendChild(imageLink);
-            imageContainer = imageLink;
-          } else imageFrame.appendChild(image);
+          const imageContainer = imageFrame;
+          imageFrame.appendChild(image);
           image.addEventListener("error", function () {
             imageContainer.textContent = "";
             const unavailableImage = addText(document, imageContainer, "div", "customer-product-no-image", "Image unavailable. Product information is shown below.");
