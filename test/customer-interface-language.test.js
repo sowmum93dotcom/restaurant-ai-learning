@@ -39,3 +39,13 @@ test("Arabic uses RTL-safe logical alignment while customer-entered fields keep 
  assert.doesNotMatch(spaceCss,/text-align:left/);
  assert.match(mobileCss,/border-inline-start:3px solid #b78d38/);
 });
+
+
+test("Customer Experience language controls remain responsive for longer translated labels",()=>{
+ const languageCss=fs.readFileSync(require.resolve("../css/customer-interface-language.css"),"utf8");
+ const mobileCss=fs.readFileSync(require.resolve("../css/customer-mobile-refinement.css"),"utf8");
+ assert.match(languageCss,/\.customer-language-control\{[^}]*min-width:0/);
+ assert.match(languageCss,/@media\(max-width:680px\)[\s\S]*?\.customer-language-control select\{[^}]*width:min\(100%,180px\)[^}]*max-width:100%[^}]*min-width:0/);
+ assert.match(mobileCss,/\.customer-journey-nav a,[\s\S]*?white-space:normal/);
+ assert.match(mobileCss,/@media\(max-width:680px\)\{\.customer-body #discover \.customer-connection-entry[^}]*\}[\s\S]*?\.customer-connection-action \{width:100%;white-space:normal\}/);
+});
