@@ -1,0 +1,6 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path");
+const source=fs.readFileSync(path.join(__dirname,"../js/my-demeos.js"),"utf8");
+test("authenticated My DEMEOS refreshes all dynamic relationship areas on language change",()=>{assert.match(source,/function setupLiveLanguageRefresh/);assert.match(source,/selector\.addEventListener\("change"/);for(const name of ["loadIntentions","loadPossibilities","loadParticipations","loadPreferences","loadPrivacyControls"])assert.match(source,new RegExp(name+"\\(documentObject, fetchFunction\\)"));});
+test("language change does not write canonical relationship data",()=>{const start=source.indexOf("function setupLiveLanguageRefresh");const end=source.indexOf("const api =",start);const block=source.slice(start,end);assert.doesNotMatch(block,/POST|DELETE|JSON\.stringify|localStorage\.setItem/);assert.match(block,/if \(!signedIn \|\| signedIn\.hidden\) return/);});
+test("live language refresh is initialized and exported",()=>{assert.match(source,/setupLiveLanguageRefresh, initialiseCustomerAuthentication/);assert.match(source,/setupLiveLanguageRefresh\(root\.document, root\.fetch\.bind\(root\)\)/);});
