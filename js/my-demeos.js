@@ -448,9 +448,9 @@
   }
 
   function setupLiveLanguageRefresh(documentObject, fetchFunction) {
-    const selector = documentObject.getElementById("customer-language");
-    if (!selector || !fetchFunction) return;
-    selector.addEventListener("change", function () {
+    if (!documentObject || !fetchFunction) return;
+    documentObject.addEventListener("change", function (event) {
+      if (!event.target || event.target.id !== "customer-language") return;
       const signedIn = documentObject.getElementById("customer-auth-signed-in");
       if (!signedIn || signedIn.hidden) return;
       return Promise.allSettled([
