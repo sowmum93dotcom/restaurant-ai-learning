@@ -4,7 +4,11 @@ Scope: AREA 1 Customer Experience only. This is a catalogue and implementation a
 
 ## Current release gate
 
-The customer controller exposes English, French and Arabic only. The six additional language catalogues now cover navigation, Discover, intention, confirmation, results, possibilities, no-match, save, status and feedback. The separate My DEMEOS page is not fully localized, so all six remain unavailable. Existing en/fr/ar My DEMEOS completeness also needs a separate audit: the page currently contains English-only text and does not have a complete private-page translation controller. Do not treat the coverage array alone as proof of a translated page.
+The customer controller still exposes English, French and Arabic only. Catalogues now exist for all eleven tracked surfaces in all nine approved languages, including My DEMEOS static, dynamic, authentication and accessibility presentation. Catalogue presence is implementation evidence, not proof of complete translated journeys.
+
+PR 616 completed residual My DEMEOS presentation. PR 617 added dynamic refresh through existing reads and corrected a JavaScript syntax regression. PR 618 attached refresh through document events because the selector is created after the private-page script initializes. GitHub baseline and Vercel checks passed for both refresh changes.
+
+The coverage gate records catalogue presence separately from existing availability and full-journey verification. No language has full-journey verification recorded by this audit. English, French and Arabic retain their existing availability; Spanish, Portuguese, Simplified Chinese, Hindi, German and Japanese remain gated. Do not describe existing availability as nine-language journey certification.
 
 ## Private page inventory
 
@@ -21,6 +25,8 @@ The static HTML contains the customer navigation, authentication loading/signed-
 - Translate all dynamic success, failure and unverified states, including when a save succeeded but a refresh failed.
 - Audit RTL Arabic, mobile navigation and live language switching after wiring.
 
-## Next implementation
 
-Create a keyed static and dynamic My DEMEOS catalogue, connect it to the private page without translating record data, test all state paths and verify the page in all nine languages before expanding the selector. The existing three-language selector does not certify the private page.
+
+Create a keyed static and dynamic My DEMEOS catalogue, connect it to the private page without translating record data, test all state paths and verify the page in all nine languages before expanding the selector. The existing three-language selector does not certify the private page.## Remaining release verification
+
+Verify the actual page script lifecycle, navigation between Discover, I Know What I Want and My DEMEOS, static and generated presentation, authentication and failure states, and canonical record preservation in all nine languages. Check Arabic RTL and responsive presentation through automated device views. Include repeated language changes, signed-out protection, failed reads, and unsaved preference/privacy choices. Record evidence before adding languages to the selector. Full real-business and user device testing remains scheduled after Marketing Agent completion.
