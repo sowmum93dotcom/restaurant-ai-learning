@@ -180,22 +180,22 @@
       result = await response.json();
     } catch (_error) {
       loading.hidden = true;
-      status.textContent = successMessage ? "The saved possibility was removed, but your possibilities could not be refreshed. Please refresh the page." : "Your possibilities could not be loaded. Please refresh to try again.";
+      status.textContent = root.DEMEOSMyPossibilitiesLanguage ? root.DEMEOSMyPossibilitiesLanguage.text(successMessage ? 21 : 20) : (successMessage ? "The saved possibility was removed, but your possibilities could not be refreshed. Please refresh the page." : "Your possibilities could not be loaded. Please refresh to try again.");
       return;
     }
     if (!result || !Array.isArray(result.possibilities)) {
       loading.hidden = true;
-      status.textContent = successMessage ? "The saved possibility was removed, but your possibilities could not be verified. Please refresh the page." : "Your possibilities could not be verified. Please refresh the page.";
+      status.textContent = root.DEMEOSMyPossibilitiesLanguage ? root.DEMEOSMyPossibilitiesLanguage.text(successMessage ? 23 : 22) : (successMessage ? "The saved possibility was removed, but your possibilities could not be verified. Please refresh the page." : "Your possibilities could not be verified. Please refresh the page.");
       return;
     }
     renderPossibilities(documentObject, result.possibilities, async function (savedPossibilityId, button) {
-      const status = documentObject.getElementById("my-possibilities-status"); button.disabled = true; status.textContent = "Removing saved possibility…";
+      const status = documentObject.getElementById("my-possibilities-status"); button.disabled = true; status.textContent = root.DEMEOSMyPossibilitiesLanguage ? root.DEMEOSMyPossibilitiesLanguage.text(24) : "Removing saved possibility…";
       try {
         const removed = await fetchFunction("/api/customer/possibilities/saved", { method: "DELETE", credentials: "same-origin",
           headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify({ savedPossibilityId }) });
         if (!removed.ok) throw new Error("Removal failed");
-        await loadPossibilities(documentObject, fetchFunction, "Saved possibility removed.");
-      } catch (_error) { button.disabled = false; status.textContent = "The saved possibility could not be removed."; }
+        await loadPossibilities(documentObject, fetchFunction, root.DEMEOSMyPossibilitiesLanguage ? root.DEMEOSMyPossibilitiesLanguage.text(25) : "Saved possibility removed.");
+      } catch (_error) { button.disabled = false; status.textContent = root.DEMEOSMyPossibilitiesLanguage ? root.DEMEOSMyPossibilitiesLanguage.text(26) : "The saved possibility could not be removed."; }
     });
     if (successMessage) status.textContent = successMessage;
   }
