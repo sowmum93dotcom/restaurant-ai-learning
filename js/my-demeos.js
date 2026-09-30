@@ -249,10 +249,10 @@
       const text = documentObject.createElement("h4"); text.textContent = preference.preference; article.appendChild(text);
       if (preference.createdAt) {
         const date = documentObject.createElement("time"); date.dateTime = preference.createdAt;
-        date.textContent = "Saved " + new Date(preference.createdAt).toLocaleDateString(); article.appendChild(date);
+        date.textContent = root.DEMEOSMyPreferencesLanguage ? root.DEMEOSMyPreferencesLanguage.date(preference.createdAt) : "Saved " + new Date(preference.createdAt).toLocaleDateString(); article.appendChild(date);
       }
       const remove = documentObject.createElement("button"); remove.type = "button"; remove.className = "demeos-secondary-button";
-      remove.textContent = "Remove";
+      remove.textContent = root.DEMEOSMyPreferencesLanguage ? root.DEMEOSMyPreferencesLanguage.text(1) : "Remove";
       remove.addEventListener("click", function () { if (!remove.disabled) removePreference(preference.preferenceId, remove); });
       article.appendChild(remove); list.appendChild(article);
     });
@@ -262,7 +262,7 @@
     const loading = documentObject.getElementById("my-preferences-loading");
     const status = documentObject.getElementById("my-preferences-status");
     status.textContent = "";
-    loading.textContent = "Loading your preferences…";
+    loading.textContent = root.DEMEOSMyPreferencesLanguage ? root.DEMEOSMyPreferencesLanguage.text(2) : "Loading your preferences…";
     loading.hidden = false;
     let result;
     try {
@@ -271,25 +271,25 @@
       result = await response.json();
     } catch (_error) {
       loading.hidden = true;
-      status.textContent = successMessage ? "Your change was saved, but your preferences could not be refreshed. Please refresh the page." : "Your preferences could not be loaded. Please refresh to try again.";
+      status.textContent = successMessage ? (root.DEMEOSMyPreferencesLanguage ? root.DEMEOSMyPreferencesLanguage.text(3) : "Your change was saved, but your preferences could not be refreshed. Please refresh the page.") : (root.DEMEOSMyPreferencesLanguage ? root.DEMEOSMyPreferencesLanguage.text(4) : "Your preferences could not be loaded. Please refresh to try again.");
       return false;
     }
     if (!result || !Array.isArray(result.preferences)) {
       loading.hidden = true;
-      status.textContent = successMessage ? "Your change was saved, but your preferences could not be verified. Please refresh the page." : "Your preferences could not be verified. Please refresh the page.";
+      status.textContent = successMessage ? (root.DEMEOSMyPreferencesLanguage ? root.DEMEOSMyPreferencesLanguage.text(5) : "Your change was saved, but your preferences could not be verified. Please refresh the page.") : (root.DEMEOSMyPreferencesLanguage ? root.DEMEOSMyPreferencesLanguage.text(6) : "Your preferences could not be verified. Please refresh the page.");
       return false;
     }
     renderPreferences(documentObject, result.preferences, async function (preferenceId, button) {
       button.disabled = true;
-      status.textContent = "Removing preference…";
+      status.textContent = root.DEMEOSMyPreferencesLanguage ? root.DEMEOSMyPreferencesLanguage.text(7) : "Removing preference…";
       try {
         const removed = await fetchFunction("/api/customer/preferences", { method: "DELETE", credentials: "same-origin",
           headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify({ preferenceId }) });
         if (!removed.ok) throw new Error("Removal failed");
-        await loadPreferences(documentObject, fetchFunction, "Preference removed.");
+        await loadPreferences(documentObject, fetchFunction, root.DEMEOSMyPreferencesLanguage ? root.DEMEOSMyPreferencesLanguage.text(8) : "Preference removed.");
       } catch (_error) {
         button.disabled = false;
-        status.textContent = "Your preference could not be removed. Please try again.";
+        status.textContent = root.DEMEOSMyPreferencesLanguage ? root.DEMEOSMyPreferencesLanguage.text(9) : "Your preference could not be removed. Please try again.";
       }
     });
     if (successMessage) status.textContent = successMessage;
@@ -307,20 +307,20 @@
       const status = documentObject.getElementById("my-preferences-status");
       const preference = input.value.trim();
       if (!preference) return;
-      status.textContent = "Saving your preference…";
+      status.textContent = root.DEMEOSMyPreferencesLanguage ? root.DEMEOSMyPreferencesLanguage.text(10) : "Saving your preference…";
       if (submit) submit.disabled = true;
       let response;
       try {
         response = await fetchFunction("/api/customer/preferences", { method: "POST", credentials: "same-origin",
           headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify({ preference }) });
       } catch (_error) {
-        status.textContent = "Your preference could not be saved. Please try again.";
+        status.textContent = root.DEMEOSMyPreferencesLanguage ? root.DEMEOSMyPreferencesLanguage.text(11) : "Your preference could not be saved. Please try again.";
         if (submit) submit.disabled = false;
         return;
       }
-      if (!response.ok) { status.textContent = "Your preference could not be saved."; if (submit) submit.disabled = false; return; }
+      if (!response.ok) { status.textContent = root.DEMEOSMyPreferencesLanguage ? root.DEMEOSMyPreferencesLanguage.text(12) : "Your preference could not be saved."; if (submit) submit.disabled = false; return; }
       input.value = "";
-      await loadPreferences(documentObject, fetchFunction, "Preference saved.");
+      await loadPreferences(documentObject, fetchFunction, root.DEMEOSMyPreferencesLanguage ? root.DEMEOSMyPreferencesLanguage.text(13) : "Preference saved.");
       if (submit) submit.disabled = false;
     });
   }
