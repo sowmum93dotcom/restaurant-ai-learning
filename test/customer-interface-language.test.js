@@ -3,7 +3,7 @@ const assert=require("node:assert/strict");
 const fs=require("node:fs");
 const {normalize,copy}=require("../js/customer-interface-language.js");
 test("explicit language selection supports regional preferences and safe fallback",()=>{
- assert.equal(normalize("fr-CA"),"fr");assert.equal(normalize("ar-SA"),"ar");assert.equal(normalize("zh-Hant"),"en");assert.equal(normalize(null),"en");
+ assert.equal(normalize("fr-CA"),"fr");assert.equal(normalize("ar-SA"),"ar");assert.equal(normalize("zh-Hant"),"zh");assert.equal(normalize("ja-JP"),"ja");assert.equal(normalize(null),"en");
  for(const lang of ["en","fr","ar"]){assert.equal(copy[lang].length,11);assert.ok(copy[lang].every(Boolean));}
 });
 test("both customer destinations load the same language control",()=>{
@@ -48,4 +48,12 @@ test("Customer Experience language controls remain responsive for longer transla
  assert.match(languageCss,/@media\(max-width:680px\)[\s\S]*?\.customer-language-control select\{[^}]*width:min\(100%,180px\)[^}]*max-width:100%[^}]*min-width:0/);
  assert.match(mobileCss,/\.customer-journey-nav a,[\s\S]*?white-space:normal/);
  assert.match(mobileCss,/@media\(max-width:680px\)\{\.customer-body #discover \.customer-connection-entry[^}]*\}[\s\S]*?\.customer-connection-action \{width:100%;white-space:normal\}/);
+});
+
+
+test("six additional languages execute internally while visible selector remains gated",()=>{
+ const controller=fs.readFileSync(require.resolve("../js/customer-interface-language.js"),"utf8");
+ for(const code of ["es","pt","zh","hi","de","ja"]) assert.equal(normalize(code),code);
+ assert.match(controller,/var selectable = \["en", "fr", "ar"\]/);
+ assert.match(controller,/\[\["en","English"\],\["fr","Français"\],\["ar","العربية"\]\]\.forEach/);
 });

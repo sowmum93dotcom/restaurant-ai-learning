@@ -1,7 +1,8 @@
 /* A1-20: explicit customer interface language, separate from business-provided content. */
 (function (root) {
   "use strict";
-  var supported = ["en", "fr", "ar"];
+  var supported = ["en", "fr", "ar", "es", "pt", "zh", "hi", "de", "ja"];
+  var selectable = ["en", "fr", "ar"];
   var copy = {
     en: ["Discover", "I know what I want", "My DEMEOS", "Language", "Explore businesses", "What would you like to do today?", "Tell DEMEOS what you need. You stay in control.", "Town or city (optional, exact business-listed location)", "Continue", "Use my location", "Clear location"],
     fr: ["Découvrir", "Je sais ce que je veux", "Mon DEMEOS", "Langue", "Explorer les entreprises", "Que souhaitez-vous faire aujourd’hui ?", "Dites à DEMEOS ce dont vous avez besoin. Vous gardez le contrôle.", "Ville (facultatif, lieu exact indiqué par l’entreprise)", "Continuer", "Utiliser ma position", "Effacer la position"],
@@ -30,7 +31,7 @@
   };
   function localizeResult(value, language) {
     var code = normalize(language);
-    var key = Object.keys(resultCopy.en).find(function (item) { return supported.some(function (source) { return resultCopy[source][item] === value; }); });
+    var key = Object.keys(resultCopy.en).find(function (item) { return supported.some(function (source) { return resultCopy[source] && resultCopy[source][item] === value; }); });
     return key ? resultCopy[code][key] : value;
   }
   var staticCopy = {
@@ -63,9 +64,9 @@
   function localizeStatus(value, language) {
     var code = normalize(language);
     var index = -1;
-    supported.some(function (source) { index = statusCopy[source].indexOf(value); return index >= 0; });
+    supported.some(function (source) { index = statusCopy[source] ? statusCopy[source].indexOf(value) : -1; return index >= 0; });
     if (index >= 0) return statusCopy[code][index];
-    supported.some(function (source) { index = additionalStatuses[source].indexOf(value); return index >= 0; });
+    supported.some(function (source) { index = additionalStatuses[source] ? additionalStatuses[source].indexOf(value) : -1; return index >= 0; });
     return index >= 0 ? additionalStatuses[code][index] : value;
   }
   var feedbackCopy = {
@@ -75,7 +76,7 @@
   };
   function localizeFeedback(value, language) {
     var code = normalize(language), index = -1;
-    supported.some(function (source) { index = feedbackCopy[source].indexOf(value); return index >= 0; });
+    supported.some(function (source) { index = feedbackCopy[source] ? feedbackCopy[source].indexOf(value) : -1; return index >= 0; });
     return index >= 0 ? feedbackCopy[code][index] : value;
   }
   var discoverCopy = {
@@ -86,7 +87,7 @@
   var discoverSelectors = [".customer-section-heading .customer-step", ".customer-discover-entry-guide > div:nth-child(1) > span:last-child", ".customer-discover-entry-guide > div:nth-child(2) > strong", ".customer-discover-entry-guide > div:nth-child(2) > span:last-child", ".customer-discover-entry-guide > div:nth-child(3) > strong", ".customer-discover-entry-guide > div:nth-child(3) > span:last-child", ".customer-connection-entry > div > strong", ".customer-connection-entry > div > span", ".customer-connection-action"];
   function localizeDiscoverStatus(value, language) {
     var code = normalize(language), index = -1;
-    supported.some(function (source) { index = discoverCopy[source].indexOf(value); return index >= 0; });
+    supported.some(function (source) { index = discoverCopy[source] ? discoverCopy[source].indexOf(value) : -1; return index >= 0; });
     return index >= 0 ? discoverCopy[code][index] : value;
   }
   /* Register additional approved UI catalogues without enabling incomplete journeys. */
