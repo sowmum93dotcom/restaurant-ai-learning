@@ -126,6 +126,7 @@
   registerAdditional(intentionLabels, root.DEMEOSIntentionAdditionalCopy, "intentionLabels");
   registerAdditional(confirmationCopy, root.DEMEOSConfirmationAdditionalCopy);
   registerAdditional(resultCopy, root.DEMEOSResultsAdditionalCopy);
+  registerAdditional(possibilityCopy, root.DEMEOSPossibilitiesAdditionalCopy);
   var additionalJourneyKeys = Object.keys(journeyCopy.en);
   if (root.DEMEOSIntentionAdditionalCopy) {
     ["es", "pt", "zh", "hi", "de", "ja"].forEach(function (code) {
