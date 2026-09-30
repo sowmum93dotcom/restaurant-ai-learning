@@ -354,10 +354,8 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
         }
         addText(document, card, "p", "customer-product-source", "Image and product information provided by " + possibility.businessName + ".");
         const controls = document.createElement("div"); controls.className = "customer-product-controls";
-        const detailButton = document.createElement("button"); detailButton.type = "button"; detailButton.className = "customer-product-detail-button"; detailButton.textContent = "View details";
-        const details = document.createElement("div"); details.className = "customer-product-details"; details.hidden = true;
-        addText(document, details, "p", "customer-product-detail-description", product.description);
-        addText(document, details, "p", "customer-product-detail-trust", "This product is shown because its business-provided information connects to your current request. Viewing it is not recorded as interest or a purchase.");
+        const details = document.createElement("div"); details.className = "customer-product-details";
+        addText(document, details, "p", "customer-product-detail-trust", "Product information provided by " + possibility.businessName + ".");
         if (product.availability !== "unavailable" && href) {
           const continueAction = document.createElement("a"); continueAction.className = "customer-product-continue-action"; continueAction.href = href;
           continueAction.textContent = "Buy";
@@ -367,12 +365,7 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
         } else if (product.availability === "unavailable") {
           addText(document, details, "p", "customer-product-unavailable-note", "This business says this product is not currently available.");
         }
-        detailButton.setAttribute("aria-expanded", "false");
-        detailButton.addEventListener("click", function () {
-          const opening = details.hidden; details.hidden = !opening; detailButton.setAttribute("aria-expanded", opening ? "true" : "false");
-          detailButton.textContent = opening ? "Hide details" : "View details";
-        });
-        controls.appendChild(detailButton); card.appendChild(controls); card.appendChild(details);
+        card.appendChild(details); card.appendChild(controls);
         grid.appendChild(card);
       });
       products.appendChild(grid); focusRegion.appendChild(products);
