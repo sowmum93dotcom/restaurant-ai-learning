@@ -107,6 +107,15 @@
   }
   registerAdditional(noMatchCopy, root.DEMEOSNoMatchAdditionalCopy);
   registerAdditional(staticCopy, root.DEMEOSSaveAdditionalCopy);
+  if (root.DEMEOSStatusAdditionalCopy) {
+    ["es","pt","zh","hi","de","ja"].forEach(function (code) {
+      var entry = root.DEMEOSStatusAdditionalCopy[code];
+      if (entry && entry.status && entry.status.length === statusCopy.en.length && entry.additional && entry.additional.length === additionalStatuses.en.length) {
+        statusCopy[code] = entry.status;
+        additionalStatuses[code] = entry.additional;
+      }
+    });
+  }
   registerAdditional(discoverCopy, root.DEMEOSDiscoverAdditionalCopy);
   registerAdditional(intentionLabels, root.DEMEOSIntentionAdditionalCopy, "intentionLabels");
   registerAdditional(confirmationCopy, root.DEMEOSConfirmationAdditionalCopy);
