@@ -120,15 +120,15 @@ test("preferences load failure replaces loading with recoverable message", funct
 
 test("privacy controls cannot be saved when existing settings fail to load", function () {
   const script = read("js/my-demeos.js");
-  assert.match(script, /status\.textContent = successMessage \? "Your privacy controls were saved, but could not be refreshed\. Please refresh the page before making further changes\." : "Your privacy controls could not be loaded\. Please refresh to try again\.";\s+return;/);
-  assert.match(script, /if \(submit\) submit\.disabled = true;\s+status\.textContent = "Loading your privacy controls…";/);
-  assert.match(script, /if \(response\.ok\) await loadPrivacyControls\(documentObject, fetchFunction, "Privacy controls saved\."\);\s+else status\.textContent = "Your privacy controls could not be saved\.";\s+if \(!response\.ok && submit\) submit\.disabled = false;/);
+  assert.match(script, /status\.textContent = successMessage \? \(root\.DEMEOSPrivacyControlLanguage[\s\S]*?text\(1\)[\s\S]*?: \(root\.DEMEOSPrivacyControlLanguage[\s\S]*?text\(2\)[\s\S]*?return;/);
+  assert.match(script, /if \(submit\) submit\.disabled = true;\s+status\.textContent = root\.DEMEOSPrivacyControlLanguage[\s\S]*?text\(0\)/);
+  assert.match(script, /if \(response\.ok\) await loadPrivacyControls\(documentObject, fetchFunction, root\.DEMEOSPrivacyControlLanguage[\s\S]*?text\(6\)[\s\S]*?else status\.textContent = root\.DEMEOSPrivacyControlLanguage[\s\S]*?text\(7\)[\s\S]*?if \(!response\.ok && submit\) submit\.disabled = false;/);
 });
 
 test("privacy controls save recovers from a network failure", function () {
   const script = read("js/my-demeos.js");
-  assert.match(script, /status\.textContent = "Your privacy controls could not be saved\. Please try again\.";\s+if \(submit\) submit\.disabled = false;\s+return;/);
-  assert.match(script, /if \(response\.ok\) await loadPrivacyControls\(documentObject, fetchFunction, "Privacy controls saved\."\);\s+else status\.textContent = "Your privacy controls could not be saved\.";\s+if \(!response\.ok && submit\) submit\.disabled = false;/);
+  assert.match(script, /status\.textContent = root\.DEMEOSPrivacyControlLanguage[\s\S]*?text\(5\)[\s\S]*?if \(submit\) submit\.disabled = false;\s+return;/);
+  assert.match(script, /if \(response\.ok\) await loadPrivacyControls\(documentObject, fetchFunction, root\.DEMEOSPrivacyControlLanguage[\s\S]*?text\(6\)[\s\S]*?else status\.textContent = root\.DEMEOSPrivacyControlLanguage[\s\S]*?text\(7\)[\s\S]*?if \(!response\.ok && submit\) submit\.disabled = false;/);
 });
 
 test("preference creation recovers from a network failure without clearing input", function () {
@@ -195,7 +195,7 @@ test("privacy save confirmation follows successful refresh", function () {
   const script = read("js/my-demeos.js");
   assert.match(script, /async function loadPrivacyControls\(documentObject, fetchFunction, successMessage\)/);
   assert.match(script, /status\.textContent = successMessage \|\| "";/);
-  assert.match(script, /await loadPrivacyControls\(documentObject, fetchFunction, "Privacy controls saved\."\);/);
+  assert.match(script, /await loadPrivacyControls\(documentObject, fetchFunction, root\.DEMEOSPrivacyControlLanguage[\s\S]*?text\(6\)/);
 });
 
 test("preference mutation distinguishes successful write from failed refresh", function () {
@@ -216,7 +216,7 @@ test("possibility removal distinguishes successful delete from failed refresh", 
 
 test("privacy save distinguishes successful write from failed refresh", function () {
   const script = read("js/my-demeos.js");
-  assert.match(script, /successMessage \? "Your privacy controls were saved, but could not be refreshed\. Please refresh the page before making further changes\." : "Your privacy controls could not be loaded\. Please refresh to try again\."/);
+  assert.match(script, /successMessage \? \(root\.DEMEOSPrivacyControlLanguage[\s\S]*?text\(1\)[\s\S]*?: \(root\.DEMEOSPrivacyControlLanguage[\s\S]*?text\(2\)/);
 });
 
 test("privacy controls reject malformed response before enabling save", function () {
