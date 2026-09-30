@@ -55,5 +55,5 @@ test("six additional languages execute internally while visible selector remains
  const controller=fs.readFileSync(require.resolve("../js/customer-interface-language.js"),"utf8");
  for(const code of ["es","pt","zh","hi","de","ja"]) assert.equal(normalize(code),code);
  assert.match(controller,/var selectable = \["en", "fr", "ar"\]/);
- assert.match(controller,/selectable\.forEach\(function\s*\(code\)\s*\{/);
+ assert.match(controller,/\[\["en","English"\],\["fr","Français"\],\["ar","العربية"\]\]\.forEach/);
 });
