@@ -360,7 +360,8 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
         addText(document, details, "p", "customer-product-detail-trust", "This product is shown because its business-provided information connects to your current request. Viewing it is not recorded as interest or a purchase.");
         if (product.availability !== "unavailable" && href) {
           const continueAction = document.createElement("a"); continueAction.className = "customer-product-continue-action"; continueAction.href = href;
-          continueAction.textContent = product.availability === "limited" || product.availability === "contact" ? "Contact " + possibility.businessName : "Continue with " + possibility.businessName;
+          continueAction.textContent = "Buy";
+          continueAction.setAttribute("aria-label", "Buy " + product.name + " from " + possibility.businessName);
           if (/^https?:\/\//i.test(href)) { continueAction.target = "_blank"; continueAction.rel = "noopener noreferrer"; }
           details.appendChild(continueAction);
         } else if (product.availability === "unavailable") {
