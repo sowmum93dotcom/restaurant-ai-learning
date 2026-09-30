@@ -447,11 +447,27 @@
     }
   }
 
-  const api = { confirmTrustedCustomer, showState, setupRelationshipDashboard, renderIntentions, loadIntentions, renderPossibilities, loadPossibilities, renderParticipations, loadParticipations, renderPreferences, loadPreferences, setupPreferenceCreation, loadPrivacyControls, setupPrivacyControls, initialiseCustomerAuthentication };
+  function setupLiveLanguageRefresh(documentObject, fetchFunction) {
+    const selector = documentObject.getElementById("customer-language");
+    if (!selector || !fetchFunction) return;
+    selector.addEventListener("change", function () {
+      const signedIn = documentObject.getElementById("customer-auth-signed-in");
+      if (!signedIn || signedIn.hidden) return;
+      Promise.allSettled([
+        loadIntentions(documentObject, fetchFunction),
+        loadPossibilities(documentObject, fetchFunction),
+        loadParticipations(documentObject, fetchFunction),
+        loadPreferences(documentObject, fetchFunction),
+        loadPrivacyControls(documentObject, fetchFunction)
+      ]);
+    });
+  }
+
+  const api = { confirmTrustedCustomer, showState, setupRelationshipDashboard, renderIntentions, loadIntentions, renderPossibilities, loadPossibilities, renderParticipations, loadParticipations, renderPreferences, loadPreferences, setupPreferenceCreation, loadPrivacyControls, setupPrivacyControls, setupLiveLanguageRefresh, initialiseCustomerAuthentication };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   if (root && root.document && root.fetch) {
     setupRelationshipDashboard(root.document);
-    setupPreferenceCreation(root.document, root.fetch.bind(root));
+    setupPreferenceCreation(root.document, root.fetch.bind(root));\n    setupLiveLanguageRefresh(root.document, root.fetch.bind(root));
     setupPrivacyControls(root.document, root.fetch.bind(root));
     initialiseCustomerAuthentication(root, root.document, root.fetch.bind(root));
   }
