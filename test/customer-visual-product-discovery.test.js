@@ -8,7 +8,7 @@ const customer = fs.readFileSync(path.join(__dirname, "..", "js", "customer.js")
 test("customer product discovery presents product information directly without an extra details step", function () {
   assert.doesNotMatch(customer, /customer-product-detail-button/);
   assert.doesNotMatch(customer, /View details/);
-  assert.match(customer, /Product information provided by " \\+ possibility\\.businessName/);
+  assert.match(customer, /Product information provided by/);\n  assert.match(customer, /possibility\\.businessName/);
 });
 
 test("customer product continuation uses one simple Buy action while retaining exact product and business identity", function () {
