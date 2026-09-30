@@ -118,10 +118,10 @@
     possibilities.forEach(function (possibility) {
       const article = documentObject.createElement("article");
       const content = documentObject.createElement("h4"); content.textContent = possibility.content; article.appendChild(content);
-      const provider = documentObject.createElement("p"); provider.textContent = "Provided by " + possibility.businessName; article.appendChild(provider);
+      const provider = documentObject.createElement("p"); provider.textContent = (root.DEMEOSMyPossibilitiesLanguage ? root.DEMEOSMyPossibilitiesLanguage.text(0) : "Provided by ") + possibility.businessName; article.appendChild(provider);
       if (possibility.location) { const location = documentObject.createElement("p"); location.textContent = possibility.location; article.appendChild(location); }
       if (Array.isArray(possibility.products) && possibility.products.length) {
-        const productsHeading = documentObject.createElement("h5"); productsHeading.textContent = "Products shown with this possibility"; article.appendChild(productsHeading);
+        const productsHeading = documentObject.createElement("h5"); productsHeading.textContent = root.DEMEOSMyPossibilitiesLanguage ? root.DEMEOSMyPossibilitiesLanguage.text(1) : "Products shown with this possibility"; article.appendChild(productsHeading);
         const products = documentObject.createElement("div"); products.className = "my-demeos-saved-products";
         possibility.products.forEach(function (product) {
           const productCard = documentObject.createElement("div"); productCard.className = "my-demeos-saved-product";
@@ -131,38 +131,38 @@
           }
           const name = documentObject.createElement("strong"); name.textContent = product.name; productCard.appendChild(name);
           if (product.description) { const description = documentObject.createElement("p"); description.textContent = product.description; productCard.appendChild(description); }
-          const historicalPrice = product.priceMode === "contact" ? "Contact for price" :
-            product.priceMode === "from" && product.price ? "From " + product.price :
-            product.priceMode === "range" && product.price ? "Price range: " + product.price : product.price;
+          const historicalPrice = product.priceMode === "contact" ? (root.DEMEOSMyPossibilitiesLanguage ? root.DEMEOSMyPossibilitiesLanguage.text(2) : "Contact for price") :
+            product.priceMode === "from" && product.price ? (root.DEMEOSMyPossibilitiesLanguage ? root.DEMEOSMyPossibilitiesLanguage.text(3) : "From ") + product.price :
+            product.priceMode === "range" && product.price ? (root.DEMEOSMyPossibilitiesLanguage ? root.DEMEOSMyPossibilitiesLanguage.text(4) : "Price range: ") + product.price : product.price;
           if (historicalPrice) { const price = documentObject.createElement("p"); price.textContent = historicalPrice; productCard.appendChild(price); }
           if (product.fulfilment && Array.isArray(product.fulfilment.methods) && product.fulfilment.methods.length) {
-            const labels = { collection: "Collection", delivery: "Delivery", shipping: "Shipping", premises: "At the business", "customer-location": "At your location", appointment: "Appointment", digital: "Digital" };
-            const fulfilment = documentObject.createElement("p"); fulfilment.textContent = "Shown fulfilment: " + product.fulfilment.methods.map(function (method) { return labels[method] || method; }).join(" · ");
+            const v = root.DEMEOSMyPossibilitiesLanguage ? root.DEMEOSMyPossibilitiesLanguage.values() : null; const labels = { collection: v ? v[5] : "Collection", delivery: v ? v[6] : "Delivery", shipping: v ? v[7] : "Shipping", premises: v ? v[8] : "At the business", "customer-location": v ? v[9] : "At your location", appointment: v ? v[10] : "Appointment", digital: v ? v[11] : "Digital" };
+            const fulfilment = documentObject.createElement("p"); fulfilment.textContent = (root.DEMEOSMyPossibilitiesLanguage ? root.DEMEOSMyPossibilitiesLanguage.text(12) : "Shown fulfilment: ") + product.fulfilment.methods.map(function (method) { return labels[method] || method; }).join(" · ");
             productCard.appendChild(fulfilment);
           }
           const availability = documentObject.createElement("p");
-          availability.textContent = product.availability ? "Shown availability: " + product.availability : "Availability was not stated.";
+          availability.textContent = product.availability ? (root.DEMEOSMyPossibilitiesLanguage ? root.DEMEOSMyPossibilitiesLanguage.text(13) : "Shown availability: ") + product.availability : (root.DEMEOSMyPossibilitiesLanguage ? root.DEMEOSMyPossibilitiesLanguage.text(14) : "Availability was not stated.");
           productCard.appendChild(availability); products.appendChild(productCard);
         });
         article.appendChild(products);
         const historical = documentObject.createElement("p"); historical.className = "my-demeos-meaning";
-        historical.textContent = "This is the product information DEMEOS showed at the time. Availability may have changed; check with the business before continuing.";
+        historical.textContent = root.DEMEOSMyPossibilitiesLanguage ? root.DEMEOSMyPossibilitiesLanguage.text(15) : "This is the product information DEMEOS showed at the time. Availability may have changed; check with the business before continuing.";
         article.appendChild(historical);
       }
       if (possibility.relevance && possibility.relevance.basis === "explicit-customer-intent-overlap") {
-        const why = documentObject.createElement("p"); why.textContent = "Why this appeared: explicit customer intent overlap"; article.appendChild(why);
+        const why = documentObject.createElement("p"); why.textContent = root.DEMEOSMyPossibilitiesLanguage ? root.DEMEOSMyPossibilitiesLanguage.text(16) : "Why this appeared: explicit customer intent overlap"; article.appendChild(why);
       }
       const recordedAt = possibility.issuedAt || possibility.createdAt;
       const date = documentObject.createElement("time"); date.dateTime = recordedAt;
-      date.textContent = "Shown " + new Date(recordedAt).toLocaleDateString(); article.appendChild(date);
+      date.textContent = root.DEMEOSMyPossibilitiesLanguage ? root.DEMEOSMyPossibilitiesLanguage.date(recordedAt) : "Shown " + new Date(recordedAt).toLocaleDateString(); article.appendChild(date);
       if (possibility.feedback) {
         const feedback = documentObject.createElement("p");
-        feedback.textContent = "Your feedback: " + possibility.feedback.response;
+        feedback.textContent = (root.DEMEOSMyPossibilitiesLanguage ? root.DEMEOSMyPossibilitiesLanguage.text(18) : "Your feedback: ") + possibility.feedback.response;
         article.appendChild(feedback);
         if (possibility.feedback.comment) { const comment = documentObject.createElement("p"); comment.textContent = possibility.feedback.comment; article.appendChild(comment); }
       }
       if (removePossibility && possibility.savedPossibilityId) {
-        const remove = documentObject.createElement("button"); remove.type = "button"; remove.className = "demeos-secondary-button"; remove.textContent = "Remove";
+        const remove = documentObject.createElement("button"); remove.type = "button"; remove.className = "demeos-secondary-button"; remove.textContent = root.DEMEOSMyPossibilitiesLanguage ? root.DEMEOSMyPossibilitiesLanguage.text(19) : "Remove";
         remove.addEventListener("click", function () { if (!remove.disabled) removePossibility(possibility.savedPossibilityId, remove); }); article.appendChild(remove);
       }
       list.appendChild(article);
@@ -180,22 +180,22 @@
       result = await response.json();
     } catch (_error) {
       loading.hidden = true;
-      status.textContent = successMessage ? "The saved possibility was removed, but your possibilities could not be refreshed. Please refresh the page." : "Your possibilities could not be loaded. Please refresh to try again.";
+      status.textContent = root.DEMEOSMyPossibilitiesLanguage ? root.DEMEOSMyPossibilitiesLanguage.text(successMessage ? 21 : 20) : (successMessage ? "The saved possibility was removed, but your possibilities could not be refreshed. Please refresh the page." : "Your possibilities could not be loaded. Please refresh to try again.");
       return;
     }
     if (!result || !Array.isArray(result.possibilities)) {
       loading.hidden = true;
-      status.textContent = successMessage ? "The saved possibility was removed, but your possibilities could not be verified. Please refresh the page." : "Your possibilities could not be verified. Please refresh the page.";
+      status.textContent = root.DEMEOSMyPossibilitiesLanguage ? root.DEMEOSMyPossibilitiesLanguage.text(successMessage ? 23 : 22) : (successMessage ? "The saved possibility was removed, but your possibilities could not be verified. Please refresh the page." : "Your possibilities could not be verified. Please refresh the page.");
       return;
     }
     renderPossibilities(documentObject, result.possibilities, async function (savedPossibilityId, button) {
-      const status = documentObject.getElementById("my-possibilities-status"); button.disabled = true; status.textContent = "Removing saved possibility…";
+      const status = documentObject.getElementById("my-possibilities-status"); button.disabled = true; status.textContent = root.DEMEOSMyPossibilitiesLanguage ? root.DEMEOSMyPossibilitiesLanguage.text(24) : "Removing saved possibility…";
       try {
         const removed = await fetchFunction("/api/customer/possibilities/saved", { method: "DELETE", credentials: "same-origin",
           headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify({ savedPossibilityId }) });
         if (!removed.ok) throw new Error("Removal failed");
-        await loadPossibilities(documentObject, fetchFunction, "Saved possibility removed.");
-      } catch (_error) { button.disabled = false; status.textContent = "The saved possibility could not be removed."; }
+        await loadPossibilities(documentObject, fetchFunction, root.DEMEOSMyPossibilitiesLanguage ? root.DEMEOSMyPossibilitiesLanguage.text(25) : "Saved possibility removed.");
+      } catch (_error) { button.disabled = false; status.textContent = root.DEMEOSMyPossibilitiesLanguage ? root.DEMEOSMyPossibilitiesLanguage.text(26) : "The saved possibility could not be removed."; }
     });
     if (successMessage) status.textContent = successMessage;
   }

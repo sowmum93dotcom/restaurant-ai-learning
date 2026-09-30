@@ -95,7 +95,7 @@ test("issued customer possibilities query uses the actual issuance schema", func
 
 test("saved possibilities failure replaces loading with recoverable message", function () {
   const script = read("js/my-demeos.js");
-  assert.match(script, /loading\.hidden = true;\s+status\.textContent = successMessage \? "The saved possibility was removed, but your possibilities could not be refreshed\. Please refresh the page\." : "Your possibilities could not be loaded\. Please refresh to try again\."/);
+  assert.match(script, /loading\.hidden = true;\s+status\.textContent = root\.DEMEOSMyPossibilitiesLanguage/);
   assert.match(script, /status\.textContent = "";\s+let result;/);
 });
 
@@ -166,7 +166,7 @@ test("preference removal confirmation follows a successful list refresh", functi
 test("saved possibility removal confirmation follows a successful refresh", function () {
   const script = read("js/my-demeos.js");
   assert.match(script, /async function loadPossibilities\(documentObject, fetchFunction, successMessage\)/);
-  assert.match(script, /await loadPossibilities\(documentObject, fetchFunction, "Saved possibility removed\."\);/);
+  assert.match(script, /await loadPossibilities\(documentObject, fetchFunction, root\.DEMEOSMyPossibilitiesLanguage/);
   assert.match(script, /if \(successMessage\) status\.textContent = successMessage;/);
 });
 
@@ -187,8 +187,8 @@ test("saved intention removal prevents duplicate clicks", function () {
 test("saved possibility removal prevents duplicate clicks", function () {
   const script = read("js/my-demeos.js");
   assert.match(script, /if \(!remove\.disabled\) removePossibility\(possibility\.savedPossibilityId, remove\);/);
-  assert.match(script, /button\.disabled = true; status\.textContent = "Removing saved possibility…";/);
-  assert.match(script, /button\.disabled = false; status\.textContent = "The saved possibility could not be removed\.";/);
+  assert.match(script, /button\.disabled = true; status\.textContent = root\.DEMEOSMyPossibilitiesLanguage/);
+  assert.match(script, /button\.disabled = false; status\.textContent = root\.DEMEOSMyPossibilitiesLanguage/);
 });
 
 test("privacy save confirmation follows successful refresh", function () {
