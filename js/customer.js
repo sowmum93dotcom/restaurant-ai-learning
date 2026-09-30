@@ -344,7 +344,6 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
           const productFulfilmentLabels = { collection: "Collection", delivery: "Delivery", shipping: "Shipping", premises: "At the business", "customer-location": "At your location", appointment: "Appointment", digital: "Digital" };
           addText(document, card, "p", "customer-product-fulfilment", "How you receive it: " + product.fulfilment.methods.map(function (method) { return productFulfilmentLabels[method]; }).join(" · "));
         }
-        addText(document, card, "p", "customer-product-source", "Image and product information provided by " + possibility.businessName + ".");
         const details = document.createElement("div"); details.className = "customer-product-details";
         if (product.availability !== "unavailable" && href) {
           const continueAction = document.createElement("a"); continueAction.className = "customer-product-continue-action"; continueAction.href = href;
