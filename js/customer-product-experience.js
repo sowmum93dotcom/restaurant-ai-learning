@@ -33,6 +33,7 @@
   }
 
   function configureAction(action, product, destination) {
+    if (!action) return false;
     const routeType = continuationType(product);
     const available = product && product.availability !== "unavailable";
     const safeDestination = safeHttps(destination);
@@ -42,6 +43,7 @@
     action.removeAttribute("target");
     action.removeAttribute("rel");
     action.removeAttribute("data-demeos-purchase");
+    action.removeAttribute("aria-disabled");
 
     if (!available) return false;
 
@@ -66,10 +68,16 @@
     const surface = document.getElementById("product-experience");
     const discover = document.getElementById("discover");
     const intention = document.getElementById("intention");
-    if (!surface || !discover || !product) return false;
-
     const image = document.getElementById("product-experience-image");
     const fallback = document.getElementById("product-experience-image-fallback");
+    const business = document.getElementById("product-experience-business");
+    const title = document.getElementById("product-experience-title");
+    const description = document.getElementById("product-experience-description");
+    const price = document.getElementById("product-experience-price");
+    const availability = document.getElementById("product-experience-availability");
+    const action = document.getElementById("product-experience-action");
+    if (!surface || !discover || !product || !image || !fallback || !business || !title || !description || !price || !availability || !action) return false;
+
     const imageUrl = safeHttps(product.imageUrl);
     image.hidden = !imageUrl;
     fallback.hidden = Boolean(imageUrl);
@@ -81,13 +89,11 @@
       image.alt = "";
     }
 
-    document.getElementById("product-experience-business").textContent = text(work && work.businessName);
-    document.getElementById("product-experience-title").textContent = text(product.name) || "Product";
-    document.getElementById("product-experience-description").textContent = text(product.description);
-    document.getElementById("product-experience-price").textContent = priceCopy(product);
-    document.getElementById("product-experience-availability").textContent = availabilityCopy(product.availability);
-
-    const action = document.getElementById("product-experience-action");
+    business.textContent = text(work && work.businessName);
+    title.textContent = text(product.name) || "Product";
+    description.textContent = text(product.description);
+    price.textContent = priceCopy(product);
+    availability.textContent = availabilityCopy(product.availability);
     configureAction(action, product, destination);
 
     discover.hidden = true;
@@ -96,7 +102,7 @@
     surface.setAttribute("data-product-id", text(product.productId));
     surface.setAttribute("data-continuation-type", continuationType(product));
     window.scrollTo({ top: 0, behavior: "auto" });
-    document.getElementById("product-experience-title").focus({ preventScroll: true });
+    title.focus({ preventScroll: true });
     return true;
   }
 
@@ -135,8 +141,8 @@
     const list = document.getElementById("customer-work-list");
     if (!status || !list || list.children.length) return false;
     if (!/loading approved work/i.test(status.textContent || "")) return false;
-    if (typeof loadCustomerWork !== "function" || typeof globalThis.fetch !== "function") return false;
-    loadCustomerWork(document, globalThis.fetch, globalThis.location);
+    if (typeof globalThis.loadCustomerWork !== "function" || typeof globalThis.fetch !== "function") return false;
+    globalThis.loadCustomerWork(document, globalThis.fetch, globalThis.location);
     return true;
   }
 
