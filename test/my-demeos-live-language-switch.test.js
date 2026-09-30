@@ -7,6 +7,7 @@ function fixture(hidden = false) {
   let change;
   const nodes = new Map();
   const document = {
+    addEventListener(name, handler) { if (name === "change") change = handler; },
     getElementById(id) {
       if (!nodes.has(id)) nodes.set(id, { hidden: false, textContent: "", checked: false,
         querySelector() { return { disabled: false }; },
@@ -16,7 +17,7 @@ function fixture(hidden = false) {
     }
   };
   document.getElementById("customer-auth-signed-in").hidden = hidden;
-  return { document, nodes, change: () => change() };
+  return { document, nodes, change: (id = "customer-language") => change({ target: { id } }) };
 }
 
 test("language changes refresh all five areas using reads only", async () => {
@@ -52,6 +53,19 @@ test("signed out language changes do not request private data", async () => {
   assert.equal(calls, 0);
 });
 
-test("missing selector is safe", () => {
-  assert.doesNotThrow(() => setupLiveLanguageRefresh({ getElementById: () => null }, async () => {}));
+test("other controls do not trigger private refreshes", async () => {
+  const f = fixture();
+  let calls = 0;
+  setupLiveLanguageRefresh(f.document, async () => { calls++; });
+  await f.change("customer-preference");
+  assert.equal(calls, 0);
+});
+
+test("listener registers before the selector exists", () => {
+  let listener;
+  setupLiveLanguageRefresh({
+    addEventListener(name, handler) { assert.equal(name, "change"); listener = handler; },
+    getElementById() { throw new Error("Selector is not created yet"); }
+  }, async () => {});
+  assert.equal(typeof listener, "function");
 });
