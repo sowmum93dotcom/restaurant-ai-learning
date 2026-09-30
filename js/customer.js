@@ -354,7 +354,6 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
         }
         addText(document, card, "p", "customer-product-source", "Image and product information provided by " + possibility.businessName + ".");
         const details = document.createElement("div"); details.className = "customer-product-details";
-        addText(document, details, "p", "customer-product-detail-trust", "Product information provided by " + possibility.businessName + ".");
         if (product.availability !== "unavailable" && href) {
           const continueAction = document.createElement("a"); continueAction.className = "customer-product-continue-action"; continueAction.href = href;
           continueAction.textContent = "Buy";
