@@ -353,7 +353,6 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
           addText(document, card, "p", "customer-product-fulfilment", "How you receive it: " + product.fulfilment.methods.map(function (method) { return productFulfilmentLabels[method]; }).join(" · "));
         }
         addText(document, card, "p", "customer-product-source", "Image and product information provided by " + possibility.businessName + ".");
-        const controls = document.createElement("div"); controls.className = "customer-product-controls";
         const details = document.createElement("div"); details.className = "customer-product-details";
         addText(document, details, "p", "customer-product-detail-trust", "Product information provided by " + possibility.businessName + ".");
         if (product.availability !== "unavailable" && href) {
@@ -365,7 +364,7 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
         } else if (product.availability === "unavailable") {
           addText(document, details, "p", "customer-product-unavailable-note", "This business says this product is not currently available.");
         }
-        card.appendChild(details); card.appendChild(controls);
+        card.appendChild(details);
         grid.appendChild(card);
       });
       products.appendChild(grid); focusRegion.appendChild(products);
