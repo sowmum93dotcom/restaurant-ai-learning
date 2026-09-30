@@ -453,7 +453,7 @@
     selector.addEventListener("change", function () {
       const signedIn = documentObject.getElementById("customer-auth-signed-in");
       if (!signedIn || signedIn.hidden) return;
-      Promise.allSettled([
+      return Promise.allSettled([
         loadIntentions(documentObject, fetchFunction),
         loadPossibilities(documentObject, fetchFunction),
         loadParticipations(documentObject, fetchFunction),
@@ -467,7 +467,8 @@
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   if (root && root.document && root.fetch) {
     setupRelationshipDashboard(root.document);
-    setupPreferenceCreation(root.document, root.fetch.bind(root));\n    setupLiveLanguageRefresh(root.document, root.fetch.bind(root));
+    setupPreferenceCreation(root.document, root.fetch.bind(root));
+    setupLiveLanguageRefresh(root.document, root.fetch.bind(root));
     setupPrivacyControls(root.document, root.fetch.bind(root));
     initialiseCustomerAuthentication(root, root.document, root.fetch.bind(root));
   }
