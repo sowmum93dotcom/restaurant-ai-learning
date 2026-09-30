@@ -7,13 +7,13 @@ const assert = require("node:assert/strict");
     for (const viewport of [{ width: 390, height: 844 }, { width: 820, height: 1180 }]) {
       const page = await browser.newPage({ viewport });
       const errors = [];
-      page.on("pageerror", error => errors.push(String(error)));
+      page.on("pageerror", error => errors.push(String(error && error.stack ? error.stack : error)));
       await page.goto("http://127.0.0.1:4173/customer.html#discover", { waitUntil: "networkidle" });
       assert.ok((await page.locator("body").innerText()).trim().length > 100, "Customer Experience must render meaningful content");
       assert.equal(await page.locator("#customer-language").count(), 1, "Language selector must render");
       assert.deepEqual(await page.locator("#customer-language option").evaluateAll(options => options.map(o => o.value)), ["en","es","fr","ar","pt","zh","hi","de","ja"], "All verified languages must be publicly selectable");
       assert.ok(await page.locator(".customer-journey-nav").isVisible(), "Customer journey navigation must be visible");
-      assert.equal(errors.length, 0, "Customer Experience must not raise page errors");
+      assert.equal(errors.length, 0, "Customer Experience must not raise page errors. " + errors.join(" | "));
       await page.close();
     }
 
