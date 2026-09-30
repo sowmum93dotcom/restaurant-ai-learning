@@ -116,7 +116,7 @@ test("My Participation states and rendering are truthful, separate, safe, and co
   assert.match(html, /No participation recorded yet/);
   assert.match(html, /When you choose Interested on a possibility while your DEMEOS relationship is active, it can appear here/);
   assert.match(html, /Interested is an interest signal only\. It is not a purchase, booking or sale/);
-  assert.match(js, /action\.textContent = "Interested"/);
+  assert.match(js, /action\.textContent = root\.DEMEOSMyParticipationLanguage/);
   assert.match(js, /content\.textContent = participation\.content/);
   assert.doesNotMatch(js, /innerHTML|localStorage|sessionStorage/);
   assert.match(vercel, /customer\/participation[^]*public-config\?resource=customer-participation/);
