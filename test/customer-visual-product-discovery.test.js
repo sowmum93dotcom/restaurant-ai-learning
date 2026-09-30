@@ -21,3 +21,9 @@ test("unavailable products do not receive a detail continuation action", functio
   assert.match(customer, /product\.availability !== "unavailable" && href/);
   assert.match(customer, /product is not currently available/);
 });
+
+
+test("product experiences keep Buy primary instead of rendering competing business continuation actions", function () {
+  assert.match(customer, /const hasProductExperience = Array\.isArray\(possibility\.products\) && possibility\.products\.length > 0/);
+  assert.match(customer, /possibility\.customerContinuation && !hasProductExperience/);
+});

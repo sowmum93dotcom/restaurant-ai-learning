@@ -363,7 +363,8 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
       });
       products.appendChild(grid); focusRegion.appendChild(products);
     }
-    if (possibility.customerContinuation) {
+    const hasProductExperience = Array.isArray(possibility.products) && possibility.products.length > 0;
+    if (possibility.customerContinuation && !hasProductExperience) {
       const continuation = document.createElement("section");
       continuation.className = "customer-business-continuation";
       addText(document, continuation, "h4", "customer-continuation-heading", CUSTOMER_STAGE_THREE_COPY.continueHeading);
