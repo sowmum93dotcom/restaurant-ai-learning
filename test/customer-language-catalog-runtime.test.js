@@ -1,6 +1,6 @@
 const test=require("node:test");const assert=require("node:assert/strict");const fs=require("node:fs");const html=fs.readFileSync(require("node:path").join(__dirname,"../customer.html"),"utf8");
 test("customer page loads shared catalogues before interface language controller",()=>{const names=["demeos-language-registry","demeos-discover-additional-languages","demeos-intention-additional-languages","demeos-confirmation-additional-languages","demeos-results-additional-languages","customer-interface-language"];let previous=-1;for(const name of names){const index=html.indexOf('src="js/'+name+'.js"');assert.ok(index>previous,name+" missing or out of order");previous=index;}});
-test("additional languages execute internally but are not exposed in selector",()=>{const controller=fs.readFileSync(require("node:path").join(__dirname,"../js/customer-interface-language.js"),"utf8");assert.match(controller,/var supported = \["en", "fr", "ar", "es", "pt", "zh", "hi", "de", "ja"\]/);assert.match(controller,/var selectable = \["en", "fr", "ar"\]/);});
+test("all verified languages execute and are exposed in selector",()=>{const controller=fs.readFileSync(require("node:path").join(__dirname,"../js/customer-interface-language.js"),"utf8");assert.match(controller,/var supported = \["en", "fr", "ar", "es", "pt", "zh", "hi", "de", "ja"\]/);assert.match(controller,/var selectable = \["en", "es", "fr", "ar", "pt", "zh", "hi", "de", "ja"\]/);});
 
 
 test("additional-language catalogues preserve canonical and provided data boundaries",()=>{
