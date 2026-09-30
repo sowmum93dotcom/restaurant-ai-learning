@@ -26,7 +26,6 @@ The static HTML contains the customer navigation, authentication loading/signed-
 - Audit RTL Arabic, mobile navigation and live language switching after wiring.
 
 
-
-Create a keyed static and dynamic My DEMEOS catalogue, connect it to the private page without translating record data, test all state paths and verify the page in all nine languages before expanding the selector. The existing three-language selector does not certify the private page.## Remaining release verification
+## Remaining release verification
 
 Verify the actual page script lifecycle, navigation between Discover, I Know What I Want and My DEMEOS, static and generated presentation, authentication and failure states, and canonical record preservation in all nine languages. Check Arabic RTL and responsive presentation through automated device views. Include repeated language changes, signed-out protection, failed reads, and unsaved preference/privacy choices. Record evidence before adding languages to the selector. Full real-business and user device testing remains scheduled after Marketing Agent completion.
