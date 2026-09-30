@@ -16,8 +16,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Install browser test dependency
+        run: npm install --no-save playwright@1.55.0
       - name: Install browser
-        run: npx --yes playwright@1.55.0 install --with-deps chromium
+        run: npx playwright install --with-deps chromium
       - name: Start static Customer Experience
         run: |
           npx --yes http-server . -p 4173 -c-1 > /tmp/demeos-http.log 2>&1 &
@@ -25,4 +27,4 @@ jobs:
           cat /tmp/demeos-http.log
           exit 1
       - name: Run browser language gate
-        run: npx --yes -p playwright@1.55.0 node browser-checks/customer-language-gate.js
+        run: node browser-checks/customer-language-gate.js
