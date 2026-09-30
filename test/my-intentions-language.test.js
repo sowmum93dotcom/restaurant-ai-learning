@@ -1,0 +1,1 @@
+const test=require("node:test");const assert=require("node:assert/strict");const l=require("../js/my-demeos-language-foundation.js");test("My Intentions fixed states cover nine languages",()=>{assert.equal(l.intentionsSelectors.length,7);for(const code of Object.keys(l.copy)){assert.equal(l.intentionsCopy[code].length,7);assert.ok(l.intentionsCopy[code].every(v=>v.trim()));}});
