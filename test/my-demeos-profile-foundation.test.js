@@ -173,7 +173,7 @@ test("saved possibility removal confirmation follows a successful refresh", func
 test("saved intention removal confirmation follows a successful refresh", function () {
   const script = read("js/my-demeos.js");
   assert.match(script, /async function loadIntentions\(documentObject, fetchFunction, successMessage\)/);
-  assert.match(script, /await loadIntentions\\(documentObject, fetchFunction,/);
+  assert.match(script, /await loadIntentions\(documentObject, fetchFunction,/);
   assert.match(script, /if \(successMessage\) status\.textContent = successMessage;/);
 });
 
