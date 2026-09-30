@@ -69,3 +69,33 @@ test("listener registers before the selector exists", () => {
   }, async () => {});
   assert.equal(typeof listener, "function");
 });
+
+
+test("repeated language changes remain read-only and refresh every private area", async () => {
+  const f = fixture();
+  const requests = [];
+  const fetch = async (url, options) => {
+    requests.push({ url, options });
+    return { ok: true, json: async () => ({
+      intentions: [], possibilities: [], participations: [], preferences: [],
+      controls: { usePreferencesAsGuidance: true, useFeedbackAsGuidance: false }
+    }) };
+  };
+  setupLiveLanguageRefresh(f.document, fetch);
+  await f.change();
+  await f.change();
+  assert.equal(requests.length, 10);
+  const counts = requests.reduce((result, request) => {
+    result[request.url] = (result[request.url] || 0) + 1;
+    return result;
+  }, {});
+  for (const url of [
+    "/api/customer/intentions", "/api/customer/possibilities/saved",
+    "/api/customer/participation", "/api/customer/preferences", "/api/customer/privacy-controls"
+  ]) assert.equal(counts[url], 2);
+  for (const { options } of requests) {
+    assert.equal(options.method || "GET", "GET");
+    assert.equal(options.body, undefined);
+    assert.equal(options.credentials, "same-origin");
+  }
+});
