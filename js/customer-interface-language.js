@@ -96,6 +96,17 @@
       if (source[code] && (!field || source[code][field])) target[code] = field ? source[code][field] : source[code];
     });
   }
+  var navigationKeys = ["discover","know","my","language","explore","question","trust","place","continue","useLocation","clearLocation"];
+  if (root.DEMEOSNavigationAdditionalCopy) {
+    ["es","pt","zh","hi","de","ja"].forEach(function (code) {
+      var entry = root.DEMEOSNavigationAdditionalCopy[code];
+      if (entry && navigationKeys.every(function (key) { return typeof entry[key] === "string"; })) {
+        copy[code] = navigationKeys.map(function (key) { return entry[key]; });
+      }
+    });
+  }
+  registerAdditional(noMatchCopy, root.DEMEOSNoMatchAdditionalCopy);
+  registerAdditional(staticCopy, root.DEMEOSSaveAdditionalCopy);
   registerAdditional(discoverCopy, root.DEMEOSDiscoverAdditionalCopy);
   registerAdditional(intentionLabels, root.DEMEOSIntentionAdditionalCopy, "intentionLabels");
   registerAdditional(confirmationCopy, root.DEMEOSConfirmationAdditionalCopy);
