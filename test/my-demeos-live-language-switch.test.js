@@ -1,0 +1,57 @@
+"use strict";
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const { setupLiveLanguageRefresh } = require("../js/my-demeos.js");
+
+function fixture(hidden = false) {
+  let change;
+  const nodes = new Map();
+  const document = {
+    getElementById(id) {
+      if (!nodes.has(id)) nodes.set(id, { hidden: false, textContent: "", checked: false,
+        querySelector() { return { disabled: false }; },
+        addEventListener(name, handler) { if (id === "customer-language" && name === "change") change = handler; }
+      });
+      return nodes.get(id);
+    }
+  };
+  document.getElementById("customer-auth-signed-in").hidden = hidden;
+  return { document, nodes, change: () => change() };
+}
+
+test("language changes refresh all five areas using reads only", async () => {
+  const f = fixture();
+  const requests = [];
+  const fetch = async (url, options) => {
+    requests.push({ url, options });
+    return { ok: true, json: async () => ({
+      intentions: [], possibilities: [], participations: [], preferences: [],
+      controls: { usePreferencesAsGuidance: true, useFeedbackAsGuidance: false }
+    }) };
+  };
+  setupLiveLanguageRefresh(f.document, fetch);
+  await f.change();
+  assert.deepEqual(requests.map(r => r.url).sort(), [
+    "/api/customer/intentions", "/api/customer/possibilities/saved",
+    "/api/customer/participation", "/api/customer/preferences", "/api/customer/privacy-controls"
+  ].sort());
+  for (const { options } of requests) {
+    assert.equal(options.method || "GET", "GET");
+    assert.equal(options.body, undefined);
+    assert.equal(options.credentials, "same-origin");
+  }
+  assert.equal(f.nodes.get("use-preferences-as-guidance").checked, true);
+  assert.equal(f.nodes.get("use-feedback-as-guidance").checked, false);
+});
+
+test("signed out language changes do not request private data", async () => {
+  const f = fixture(true);
+  let calls = 0;
+  setupLiveLanguageRefresh(f.document, async () => { calls++; });
+  await f.change();
+  assert.equal(calls, 0);
+});
+
+test("missing selector is safe", () => {
+  assert.doesNotThrow(() => setupLiveLanguageRefresh({ getElementById: () => null }, async () => {}));
+});
