@@ -330,19 +330,19 @@
     const submit = form.querySelector('button[type="submit"]');
     const status = documentObject.getElementById("privacy-controls-status");
     if (submit) submit.disabled = true;
-    status.textContent = "Loading your privacy controls…";
+    status.textContent = root.DEMEOSPrivacyControlLanguage ? root.DEMEOSPrivacyControlLanguage.text(0) : "Loading your privacy controls…";
     let result;
     try {
       const response = await fetchFunction("/api/customer/privacy-controls", { credentials: "same-origin", headers: { Accept: "application/json" } });
       if (!response.ok) throw new Error("Could not load privacy controls");
       result = await response.json();
     } catch (_error) {
-      status.textContent = successMessage ? "Your privacy controls were saved, but could not be refreshed. Please refresh the page before making further changes." : "Your privacy controls could not be loaded. Please refresh to try again.";
+      status.textContent = successMessage ? (root.DEMEOSPrivacyControlLanguage ? root.DEMEOSPrivacyControlLanguage.text(1) : "Your privacy controls were saved, but could not be refreshed. Please refresh the page before making further changes.") : (root.DEMEOSPrivacyControlLanguage ? root.DEMEOSPrivacyControlLanguage.text(2) : "Your privacy controls could not be loaded. Please refresh to try again.");
       return;
     }
     const controls = result && result.controls;
     if (!controls || typeof controls.usePreferencesAsGuidance !== "boolean" || typeof controls.useFeedbackAsGuidance !== "boolean") {
-      status.textContent = "Your privacy controls could not be verified. Please refresh before making changes.";
+      status.textContent = root.DEMEOSPrivacyControlLanguage ? root.DEMEOSPrivacyControlLanguage.text(3) : "Your privacy controls could not be verified. Please refresh before making changes.";
       return;
     }
     documentObject.getElementById("use-preferences-as-guidance").checked = controls.usePreferencesAsGuidance === true;
@@ -361,19 +361,19 @@
       const status = documentObject.getElementById("privacy-controls-status");
       const controls = { usePreferencesAsGuidance: documentObject.getElementById("use-preferences-as-guidance").checked,
         useFeedbackAsGuidance: documentObject.getElementById("use-feedback-as-guidance").checked };
-      status.textContent = "Saving your privacy controls…";
+      status.textContent = root.DEMEOSPrivacyControlLanguage ? root.DEMEOSPrivacyControlLanguage.text(4) : "Saving your privacy controls…";
       if (submit) submit.disabled = true;
       let response;
       try {
         response = await fetchFunction("/api/customer/privacy-controls", { method: "POST", credentials: "same-origin",
           headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify(controls) });
       } catch (_error) {
-        status.textContent = "Your privacy controls could not be saved. Please try again.";
+        status.textContent = root.DEMEOSPrivacyControlLanguage ? root.DEMEOSPrivacyControlLanguage.text(5) : "Your privacy controls could not be saved. Please try again.";
         if (submit) submit.disabled = false;
         return;
       }
-      if (response.ok) await loadPrivacyControls(documentObject, fetchFunction, "Privacy controls saved.");
-      else status.textContent = "Your privacy controls could not be saved.";
+      if (response.ok) await loadPrivacyControls(documentObject, fetchFunction, root.DEMEOSPrivacyControlLanguage ? root.DEMEOSPrivacyControlLanguage.text(6) : "Privacy controls saved.");
+      else status.textContent = root.DEMEOSPrivacyControlLanguage ? root.DEMEOSPrivacyControlLanguage.text(7) : "Your privacy controls could not be saved.";
       if (!response.ok && submit) submit.disabled = false;
     });
   }
