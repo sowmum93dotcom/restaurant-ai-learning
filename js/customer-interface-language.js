@@ -224,7 +224,7 @@
     var select = root.document.createElement("select");
     select.id = "customer-language";
     select.setAttribute("aria-label", "Customer interface language");
-    [["en","English"],["fr","Français"],["ar","العربية"]].forEach(function (pair) {
+    [["en","English"],["es","Español"],["fr","Français"],["ar","العربية"],["pt","Português"],["zh","简体中文"],["hi","हिन्दी"],["de","Deutsch"],["ja","日本語"]].forEach(function (pair) {
       var option = root.document.createElement("option"); option.value = pair[0]; option.textContent = pair[1]; select.appendChild(option);
     });
     wrapper.appendChild(label); wrapper.appendChild(select);
