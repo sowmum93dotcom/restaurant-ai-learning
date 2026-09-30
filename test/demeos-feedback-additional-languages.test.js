@@ -1,0 +1,2 @@
+const test=require("node:test");const assert=require("node:assert/strict");const copy=require("../js/demeos-feedback-additional-languages.js");
+test("six languages cover all thirteen feedback strings",()=>{assert.deepEqual(Object.keys(copy).sort(),["es","pt","zh","hi","de","ja"].sort());for(const item of Object.values(copy)){assert.equal(item.length,13);assert.ok(item.every(x=>typeof x==="string"&&x.trim()));}});
