@@ -25,4 +25,4 @@ jobs:
           cat /tmp/demeos-http.log
           exit 1
       - name: Run browser language gate
-        run: npx --yes -p playwright@1.55.0 node test/browser/customer-language-gate.js
+        run: npx --yes -p playwright@1.55.0 node browser-checks/customer-language-gate.js
