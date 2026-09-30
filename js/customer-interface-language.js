@@ -107,6 +107,12 @@
   }
   registerAdditional(noMatchCopy, root.DEMEOSNoMatchAdditionalCopy);
   registerAdditional(staticCopy, root.DEMEOSSaveAdditionalCopy);
+  if (root.DEMEOSFeedbackAdditionalCopy) {
+    ["es","pt","zh","hi","de","ja"].forEach(function (code) {
+      var entry = root.DEMEOSFeedbackAdditionalCopy[code];
+      if (entry && entry.length === feedbackCopy.en.length) feedbackCopy[code] = entry;
+    });
+  }
   if (root.DEMEOSStatusAdditionalCopy) {
     ["es","pt","zh","hi","de","ja"].forEach(function (code) {
       var entry = root.DEMEOSStatusAdditionalCopy[code];
