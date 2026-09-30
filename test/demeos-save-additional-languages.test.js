@@ -1,0 +1,2 @@
+const test=require("node:test");const assert=require("node:assert/strict");const copy=require("../js/demeos-save-additional-languages.js");
+test("six additional languages cover save, sign-in and gallery guidance",()=>{assert.deepEqual(Object.keys(copy).sort(),["es","pt","zh","hi","de","ja"].sort());for(const item of Object.values(copy)){assert.deepEqual(Object.keys(item),["saveButton","saveHelp","signIn","gallery"]);assert.ok(Object.values(item).every(x=>typeof x==="string"&&x.trim()));}});
