@@ -1,6 +1,6 @@
 // Supplied media fixtures only. Never persisted as business or vendor records.
 function productExperienceTestContent() {
-  return [
+  const work = [
   {
     "workItemId": "test-discover-fashion",
     "businessId": "test-business-fashion",
@@ -305,5 +305,64 @@ function productExperienceTestContent() {
     ]
   }
 ];
+  return addStructuredTestItems(work);
 }
 module.exports = { productExperienceTestContent };
+
+// Prices and selectable examples below are fictional controlled fixtures only.
+function addStructuredTestItems(work) {
+  const copy = require('../../js/demeos-item-presentation-copy.js').en;
+  const fixed = amount => ({mode:'fixed',currency:'GBP',amount});
+  const from = amount => ({mode:'from',currency:'GBP',amount});
+  const range = (min,max) => ({mode:'range',currency:'GBP',min,max});
+  const option = (key,values) => ({key,values:values.map(value=>({value,label:copy.values[value],copyKey:value}))});
+  const p = (categoryId,pricing,options=[],variants=[]) => ({categoryId,pricing,options,variants});
+  const variant = (variantId,selection,availability,pricing) => ({variantId,selection,availability,...(pricing?{pricing}:{})});
+  const clothingOptions = [option('size',['small','medium']),option('colour',['black','blue'])];
+  const presentation = {
+    'test-product-activewear':p('fashion.apparel',from(45),clothingOptions,[
+      variant('active-small-black',{size:'small',colour:'black'},'available',fixed(45)),
+      variant('active-medium-black',{size:'medium',colour:'black'},'unavailable',fixed(45)),
+      variant('active-small-blue',{size:'small',colour:'blue'},'limited',fixed(47)),
+      variant('active-medium-blue',{size:'medium',colour:'blue'},'available',fixed(47))
+    ]),
+    'test-product-summer-fashion':p('fashion.apparel',fixed(32)),
+    'test-product-mens-fashion':p('fashion.apparel',range(60,80),[option('colour',['black','pink'])],[
+      variant('jacket-black',{colour:'black'},'limited',fixed(60)),variant('jacket-pink',{colour:'pink'},'available',fixed(80))
+    ]),
+    'test-product-running':p('sports.sessions',from(20),[option('duration',['minutes30','minutes60']),option('people',['onePerson','twoPeople'])],[
+      variant('run-30-one',{duration:'minutes30',people:'onePerson'},'available',fixed(20)),
+      variant('run-30-two',{duration:'minutes30',people:'twoPeople'},'limited',fixed(30)),
+      variant('run-60-one',{duration:'minutes60',people:'onePerson'},'unavailable',fixed(35))
+    ]),
+    'test-product-football':p('sports.sessions',fixed(18)),
+    'test-product-fishing':p('outdoors.experiences',{mode:'none'}),
+    'test-product-camping':p('outdoors.experiences',{mode:'quote'},[
+      option('location',['testVenue']),{key:'date',values:[{value:'2026-10-08',label:'2026-10-08'},{value:'2026-10-09',label:'2026-10-09'}]}
+    ],[variant('camp-first',{location:'testVenue',date:'2026-10-08'},'available'),variant('camp-second',{location:'testVenue',date:'2026-10-09'},'contact')]),
+    'test-product-hiking':p('outdoors.experiences',range(15,25)),
+    'test-product-childrens-fashion':p('fashion.apparel',fixed(18)),
+    'test-product-toys':p('family.toys',fixed(12)),
+    'test-product-childrens-collection':p('fashion.apparel',fixed(25))
+  };
+  const groceries = work.find(w=>w.workItemId==='test-discover-groceries');
+  groceries.customerContinuation={routes:['website'],website:'https://www.demeos.io/customer.html?demeos-test=1#discover'};
+  const groceryOptions=[option('weight',['weight500','weight1000']),option('quantity',['quantity1','quantity2']),option('packSize',['pack1','pack2'])];
+  const groceryVariants=[];
+  for(const weight of groceryOptions[0].values)for(const quantity of groceryOptions[1].values)for(const pack of groceryOptions[2].values){
+    const selection={weight:weight.value,quantity:quantity.value,packSize:pack.value};
+    const amount=7.5*(weight.value==='weight1000'?2:1)*(quantity.value==='quantity2'?2:1)*(pack.value==='pack2'?2:1);
+    groceryVariants.push(variant('grocery-'+groceryVariants.length,selection,'available',fixed(amount)));
+  }
+  groceries.products=[{productId:'test-product-grocery-pack',businessId:groceries.businessId,name:'Test Grocery pack',description:'Controlled grocery pack presentation. No real sale or booking.',continuationRoute:'website',availability:'available',presentation:p('groceries.packs',from(7.5),groceryOptions,groceryVariants)}];
+  // The grocery artwork remains business marketing; it is not a product photograph.
+  for(const business of work)for(const product of business.products||[]){
+    if(presentation[product.productId])product.presentation=presentation[product.productId];
+    if(product.productId==='test-product-toys')product.availability='unavailable';
+    if(product.productId==='test-product-fishing')product.availability='limited';
+    if(product.productId==='test-product-childrens-collection'){
+      product.continuationRoute='demeos';business.customerContinuation.routes.push('demeos');
+    }
+  }
+  return work;
+}

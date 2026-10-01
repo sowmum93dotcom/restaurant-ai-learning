@@ -1,3 +1,4 @@
+const customerItemContract = typeof module !== "undefined" && module.exports ? require("./customer-item-contract.js") : window.DEMEOSCustomerItemContract;
 function addText(document, parent, tag, className, text) {
   const element = document.createElement(tag);
   element.className = className;
@@ -128,7 +129,7 @@ function toCustomerPossibility(value) {
   const possibility = { possibilityId, workItemId, businessName, content, participationAction: "Interested",
     relevance: { basis: relevance.basis, evidence: evidence.slice(0, 5), explanation: relevance.explanation } };
   if (typeof value.location === "string" && value.location.trim()) possibility.location = value.location.trim();
-  const allowedRoutes = ["website", "phone", "whatsapp", "email", "visit", "booking", "quote"];
+  const allowedRoutes = ["website", "phone", "whatsapp", "email", "visit", "booking", "quote", "demeos"];
   const routeDetails = { website: "website", phone: "phone", whatsapp: "whatsapp", email: "email", visit: "visitAddress", booking: "bookingLink" };
   if (value.customerContinuation && typeof value.customerContinuation === "object" && Array.isArray(value.customerContinuation.routes)) {
     const safe = { routes: [] };
@@ -172,7 +173,9 @@ function toCustomerPossibility(value) {
         (!product.imageUrl || /^https?:\/\//i.test(product.imageUrl)) &&
         (!product.continuationRoute || (possibility.customerContinuation && possibility.customerContinuation.routes.includes(product.continuationRoute)));
     }).slice(0, 100).map(function (product) {
-      const normalized = { productId: product.productId.trim(), name: product.name.trim(), description: product.description.trim(),
+      const presentation = product.presentation === undefined ? undefined : customerItemContract.normalize(product.presentation);
+      if (product.presentation !== undefined && !presentation) return null;
+      const normalized = { ...(presentation ? {presentation} : {}), productId: product.productId.trim(), name: product.name.trim(), description: product.description.trim(),
         price: normalizedRequiredString(product.price) || "", priceMode: ["fixed", "from", "range"].includes(product.priceMode) ? product.priceMode : "contact",
         imageUrl: normalizedRequiredString(product.imageUrl) || "",
         continuationRoute: normalizedRequiredString(product.continuationRoute) || "",
@@ -191,7 +194,7 @@ function toCustomerPossibility(value) {
         }
       }
       return normalized;
-    });
+    }).filter(Boolean);
   }
   if (value.informationSource === "business-provided") possibility.informationSource = "business-provided";
   return possibility;
@@ -296,6 +299,9 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
       const grid = document.createElement("div"); grid.className = "customer-product-grid"; grid.setAttribute("role", "list"); grid.setAttribute("aria-labelledby", "customer-products-heading");
       possibility.products.forEach(function (product) {
         const card = document.createElement("article"); card.className = "customer-product-card";
+        card.demeosProduct = product;
+        card.setAttribute("data-continuation-route", product.continuationRoute);
+        card.setAttribute("data-availability", product.availability);
         card.setAttribute("role", "listitem"); card.setAttribute("data-product-id", product.productId);
         const route = product.continuationRoute;
         const field = { website: "website", phone: "phone", whatsapp: "whatsapp", email: "email", booking: "bookingLink", visit: "visitAddress" }[route];
@@ -355,6 +361,7 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
           addText(document, details, "p", "customer-product-unavailable-note", "This business says this product is not currently available.");
         }
         card.appendChild(details);
+        if (document.defaultView && document.defaultView.DEMEOSCustomerItemPresentation) document.defaultView.DEMEOSCustomerItemPresentation.mountCard(document, card, product);
         grid.appendChild(card);
       });
       products.appendChild(grid); focusRegion.appendChild(products);
@@ -902,7 +909,11 @@ function toCustomerWorkItem(item) {
       return product && typeof product === "object" && !Array.isArray(product) &&
         normalizedRequiredString(product.productId) && normalizedRequiredString(product.name) &&
         normalizedRequiredString(product.description) && normalizedRequiredString(product.continuationRoute);
-    }).slice(0, 100);
+    }).slice(0, 100).map(function (product) {
+      if (product.presentation === undefined) return product;
+      const presentation = customerItemContract.normalize(product.presentation);
+      return presentation ? Object.assign({}, product, {presentation}) : null;
+    }).filter(Boolean);
   }
   if (Array.isArray(item.media)) {
     publicItem.media = item.media.filter(function (asset) {
@@ -926,6 +937,7 @@ function getValidCustomerWork(work) {
 function getCustomerProductContinuationHref(work, product) {
   if (!product || product.availability === "unavailable") return null;
   const route = product.continuationRoute;
+  if (route === "demeos" && work.customerContinuation && work.customerContinuation.routes.includes("demeos")) return "#product-experience";
   const field = { website: "website", phone: "phone", whatsapp: "whatsapp", email: "email", booking: "bookingLink", visit: "visitAddress" }[route];
   const detail = work.customerContinuation && field ? work.customerContinuation[field] : null;
   if ((route === "website" || route === "booking") && /^https?:\/\//i.test(detail)) return detail;
@@ -1155,6 +1167,7 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
       const option = document.createElement("article");
       option.className = "customer-discover-option" + (/^https:\/\//i.test(product.imageUrl || "") ? " has-image" : "");
       option.setAttribute("role", "listitem");
+      option.demeosProduct = product;
       option.setAttribute("data-product-id", product.productId);
       option.setAttribute("data-continuation-route", product.continuationRoute);
       option.setAttribute("data-availability", product.availability);
@@ -1207,6 +1220,7 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
         if (/^https?:\/\//i.test(href)) { continueAction.target = "_blank"; continueAction.rel = "noopener noreferrer"; }
         option.appendChild(continueAction);
       }
+      if (document.defaultView && document.defaultView.DEMEOSCustomerItemPresentation) document.defaultView.DEMEOSCustomerItemPresentation.mountCard(document, option, product);
       packageRegion.appendChild(option);
     });
   } else if (!customerPackages.length) {

@@ -49,7 +49,8 @@
       "Hiking experience",
       "Children’s outfit",
       "Learning toys",
-      "Children’s clothing collection"
+      "Children’s clothing collection",
+      "Grocery pack"
     ],
     "mediaFrom": "Media from {business}",
     "productsFrom": "Products and services from {business}",
@@ -103,7 +104,8 @@
       "Experiencia de senderismo",
       "Conjunto infantil",
       "Juguetes educativos",
-      "Colección de ropa infantil"
+      "Colección de ropa infantil",
+      "Paquete de alimentación"
     ],
     "mediaFrom": "Contenido de {business}",
     "productsFrom": "Productos y servicios de {business}",
@@ -157,7 +159,8 @@
       "Expérience de randonnée",
       "Tenue pour enfant",
       "Jouets éducatifs",
-      "Collection de vêtements pour enfants"
+      "Collection de vêtements pour enfants",
+      "Lot alimentaire"
     ],
     "mediaFrom": "Médias de {business}",
     "productsFrom": "Produits et services de {business}",
@@ -211,7 +214,8 @@
       "تجربة مشي",
       "ملابس أطفال",
       "ألعاب تعليمية",
-      "مجموعة ملابس أطفال"
+      "مجموعة ملابس أطفال",
+      "عبوة بقالة"
     ],
     "mediaFrom": "وسائط من {business}",
     "productsFrom": "منتجات وخدمات من {business}",
@@ -265,7 +269,8 @@
       "Experiência de caminhada",
       "Conjunto infantil",
       "Brinquedos educativos",
-      "Coleção de roupa infantil"
+      "Coleção de roupa infantil",
+      "Embalagem de mercearia"
     ],
     "mediaFrom": "Conteúdo de {business}",
     "productsFrom": "Produtos e serviços de {business}",
@@ -319,7 +324,8 @@
       "徒步体验",
       "儿童套装",
       "益智玩具",
-      "儿童服装系列"
+      "儿童服装系列",
+      "食品组合包"
     ],
     "mediaFrom": "{business}的媒体",
     "productsFrom": "{business}的产品和服务",
@@ -373,7 +379,8 @@
       "पैदल यात्रा अनुभव",
       "बच्चों की पोशाक",
       "शैक्षिक खिलौने",
-      "बच्चों के कपड़ों का संग्रह"
+      "बच्चों के कपड़ों का संग्रह",
+      "किराना पैक"
     ],
     "mediaFrom": "{business} का मीडिया",
     "productsFrom": "{business} के उत्पाद और सेवाएँ",
@@ -427,7 +434,8 @@
       "Wandererlebnis",
       "Kinderoutfit",
       "Lernspielzeug",
-      "Kinderbekleidungskollektion"
+      "Kinderbekleidungskollektion",
+      "Lebensmittelpaket"
     ],
     "mediaFrom": "Medien von {business}",
     "productsFrom": "Produkte und Dienstleistungen von {business}",
@@ -481,7 +489,8 @@
       "ハイキング体験",
       "子ども用の服",
       "知育玩具",
-      "子ども服コレクション"
+      "子ども服コレクション",
+      "食料品セット"
     ],
     "mediaFrom": "{business}のメディア",
     "productsFrom": "{business}の商品とサービス",

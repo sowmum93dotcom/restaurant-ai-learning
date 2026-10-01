@@ -82,6 +82,8 @@
     const action = document.getElementById("product-experience-action");
     if (!surface || !discover || !product || !image || !fallback || !business || !title || !description || !price || !availability || !action) return false;
 
+    if (window.DEMEOSCustomerItemPresentation) window.DEMEOSCustomerItemPresentation.reset(document);
+    price.hidden = false;
     pauseExperienceVideos(document);
     const imageUrl = safeHttps(product.imageUrl);
     image.hidden = !imageUrl;
@@ -106,6 +108,7 @@
     surface.hidden = false;
     surface.setAttribute("data-product-id", text(product.productId));
     surface.setAttribute("data-continuation-type", continuationType(product));
+    if (window.DEMEOSCustomerItemPresentation) window.DEMEOSCustomerItemPresentation.open(document, surface, product, destination);
     window.scrollTo({ top: 0, behavior: "auto" });
     title.focus({ preventScroll: true });
     return true;
@@ -117,6 +120,7 @@
     if (!surface || !discover) return;
     pauseExperienceVideos(document);
     surface.hidden = true;
+    if (window.DEMEOSCustomerItemPresentation) window.DEMEOSCustomerItemPresentation.reset(document);
     discover.hidden = false;
     surface.removeAttribute("data-product-id");
     surface.removeAttribute("data-continuation-type");
@@ -141,10 +145,11 @@
     const image = firstNode(card, [".customer-product-image-frame img", ".customer-discover-option-image"]);
     const route = card.getAttribute("data-continuation-route") || "website";
     return {
+      ...(card.demeosProduct || {}),
       productId: card.getAttribute("data-product-id") || "",
       name: name ? name.textContent : "",
       description: description ? description.textContent : "",
-      price: price ? price.textContent : "",
+      price: card.demeosProduct ? card.demeosProduct.price || "" : price ? price.textContent : "",
       imageUrl: image ? image.src : "",
       availability: card.getAttribute("data-availability") || (availability && /not currently available|unavailable/i.test(availability.textContent) ? "unavailable" : availability && /limited/i.test(availability.textContent) ? "limited" : availability && /contact/i.test(availability.textContent) ? "contact" : "available"),
       continuationRoute: route
@@ -169,6 +174,7 @@
 
     back.addEventListener("click", function () { closeProductExperience(document); });
     action.addEventListener("click", function (event) {
+      if (action.getAttribute("aria-disabled") === "true") { event.preventDefault(); return; }
       if (action.getAttribute("data-demeos-purchase") !== "pending") return;
       event.preventDefault();
       action.textContent = "DEMEOS buying is not active yet";
@@ -176,11 +182,11 @@
     });
 
     document.addEventListener("click", function (event) {
-      const target = event.target && event.target.closest ? event.target.closest(".customer-product-continue-action, .customer-discover-option a") : null;
+      const target = event.target && event.target.closest ? event.target.closest(".customer-product-continue-action, .customer-discover-option a, .customer-item-details") : null;
       if (!target) return;
       const card = target.closest(".customer-product-card, .customer-discover-option");
       if (!card) return;
-      const destination = safeHttps(target.href);
+      const destination = safeHttps(target.getAttribute("data-customer-destination") || target.href);
       const product = productFromCard(card);
       if (!product) return;
       event.preventDefault();

@@ -209,3 +209,17 @@ test("authorized GET preserves the existing not-found response", async function 
   assert.equal(result.response.statusCode, 404);
   assert.deepEqual(result.response.body, { error: "Business not found." });
 });
+
+test('Customer Experience structured presentation survives validated profile persistence', async () => {
+  const product=require('../api/_lib/controlled-customer-test-content').productExperienceTestContent()[0].products[0];
+  const profile=completeProfile({profileVersion:2,productsServices:'Clothing',customerContinuation:{routes:['website'],website:'https://example.com'},fulfilment:{methods:['shipping']},products:[{...product,businessId:'business-a'}]});
+  const result=await invoke({method:'PUT',body:{businessProfile:profile}});
+  assert.equal(result.response.statusCode,204);
+  const saved=result.savedProfiles[0];
+  assert.deepEqual(saved.products[0].presentation,require('../js/customer-item-contract').normalize(product.presentation));
+  const work=require('../api/_lib/customer-public-work-contract').toPublicCustomerWorkItem({workItemId:'work-a',businessId:'business-a',businessName:saved.name,content:'Clothing',participationAction:'Interested',customerContinuation:saved.customerContinuation,products:saved.products});
+  assert.deepEqual(work.products[0].presentation,saved.products[0].presentation);
+  profile.products[0].presentation.categoryId='arbitrary';
+  const invalid=await invoke({method:'PUT',body:{businessProfile:profile}});
+  assert.equal(invalid.response.statusCode,400);assert.equal(invalid.savedProfiles.length,0);
+});

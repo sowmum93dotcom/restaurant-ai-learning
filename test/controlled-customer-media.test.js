@@ -20,7 +20,7 @@ test("supplied test media keeps exact product relationships and nature marketing
         assert.equal(product.imageUrl, asset.deliveryUrl);
       } else {
         assert.equal(asset.relatedEntityId, undefined);
-        assert.equal(item.products, undefined);
+        assert.ok((item.products || []).every(product => !product.imageUrl), "Business marketing must not become a product photograph");
       }
     }
   }
