@@ -24,7 +24,7 @@ test('external marketing cannot enter preparation, even with a valid selected it
 test('transaction detail fields are declared per item, with global delivery and no redundant service questions',()=>{
  const delivery=contract.resolve(publicWork(fixtures()),draft());assert.deepEqual(contract.fields(delivery),['address','city','country']);assert.equal(contract.validDetails(delivery,{address:'12 Test Road',city:'Conakry',country:'Guinea'}),true);assert.equal(contract.validDetails(delivery,{address:'12',city:'Conakry',country:'Guinea',card:'secret'}),false);
  const collection=contract.resolve(publicWork(fixtures()),{...draft(),productId:'test-product-childrens-fashion',selection:{},quantity:1});assert.deepEqual(contract.fields(collection),[]);
- const service=contract.resolve(publicWork(fixtures()),{...draft(),workItemId:'test-discover-sports',productId:'test-product-football',selection:{},quantity:1});assert.deepEqual(contract.fields(service),['date']);assert.equal(contract.validDetails(service,{date:'2026-02-30'}),false);assert.equal(contract.validDetails(service,{date:'2026-10-08'}),true);
+ const service=contract.resolve(publicWork(fixtures()),{...draft(),workItemId:'test-discover-sports',productId:'test-product-football',selection:{},quantity:1});assert.deepEqual(contract.fields(service),['date']);assert.equal(contract.validDetails(service,{date:'2026-02-30'}),false);assert.equal(contract.validDetails(service,{date:'2026-10-08'},Date.UTC(2026,9,1)),true);
  const digital={...collection,method:'digital',product:{...collection.product,fulfilment:{methods:['digital'],requiredDetails:[]}}};assert.deepEqual(contract.fields(digital),[]);
 });
 test('preparation endpoint independently enforces exact test gate, authenticated customer scope, and strict request',async()=>{
@@ -47,3 +47,5 @@ test('disabled controlled content blocks preparation and service quantities cann
  assert.equal(contract.resolve(publicWork(fixtures()),{...draft(),workItemId:'test-discover-sports',productId:'test-product-football',selection:{},quantity:2}).ready,false);
  assert.equal(contract.draft({...draft(),quantity:21}),null);
 });
+
+test('appointments reject past dates and permit same-day dates using UTC calendar policy',()=>{const service=contract.resolve(publicWork(fixtures()),{...draft(),workItemId:'test-discover-sports',productId:'test-product-football',selection:{},quantity:1});const now=Date.UTC(2026,9,1,23,59);assert.equal(contract.validDetails(service,{date:'2026-09-30'},now),false);assert.equal(contract.validDetails(service,{date:'2026-10-01'},now),true);assert.equal(contract.validDetails(service,{date:'2026-10-02'},now),true);});

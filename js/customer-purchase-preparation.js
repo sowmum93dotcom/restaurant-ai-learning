@@ -27,8 +27,8 @@
   const quantity=a.product.presentation.kind==='product'&&a.product.fulfilment?.quantityEnabled===true&&!a.product.presentation.options.some(o=>o.key==='quantity')?Number(get('purchase-preparation-quantity').querySelector('input').value):1;
   return contract.draft({version:1,workItemId:a.work.workItemId,productId:a.product.productId,selection:{...a.selection},quantity,expires:Date.now()+1800000});
  }
- async function request(draft,review=false){
-  const response=await root.fetch('/api/customer/preparation?demeos-test=1',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json','x-demeos-test-mode':'controlled-preview'},body:JSON.stringify({draft,review,...(review?{details}:{})})});
+ async function request(draft,review=false,submittedDetails=details){
+  const response=await root.fetch('/api/customer/preparation?demeos-test=1',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json','x-demeos-test-mode':'controlled-preview'},body:JSON.stringify({draft,review,...(review?{details:submittedDetails}:{})})});
   if(response.status===401)return {auth:true};
   const data=await response.json();return response.ok&&data.ready&&data.paymentActive===false&&data.orderCreated===false?data:{error:data.reason||'failed'};
  }
@@ -61,7 +61,7 @@
    const legend=doc.createElement('legend');fields.appendChild(legend);
    for(const field of fieldKeys){const label=doc.createElement('label');label.className='customer-item-option';label.setAttribute('data-detail-field',field);const span=doc.createElement('span'),input=doc.createElement('input');input.name=field;input.required=true;input.maxLength=200;input.type=field==='date'?'date':field==='people'?'number':'text';if(field==='people'){input.min='1';input.max='99';input.step='1';}input.autocomplete=({recipient:'name',address:'street-address',city:'address-level2',postalCode:'postal-code',country:'country-name'})[field]||'off';input.value=details[field]||'';input.addEventListener('input',()=>{details[field]=input.value;});label.append(span,input);fields.appendChild(label);}
   }
-  fields.hidden=!fieldKeys.length;set(fields.querySelector('legend'),c.details);fields.querySelectorAll('label').forEach(l=>set(l.querySelector('span'),c[l.getAttribute('data-detail-field')]));
+  fields.disabled=busy;fields.hidden=!fieldKeys.length;set(fields.querySelector('legend'),c.details);fields.querySelectorAll('label').forEach(l=>set(l.querySelector('span'),c[l.getAttribute('data-detail-field')]));
  }
  async function start(){
   if(busy)return;const draft=currentDraft();if(!draft){const input=get('purchase-preparation-quantity')?.querySelector('input');if(input&&!input.checkValidity())input.reportValidity();return;}if(!write(draft)){show();render();status('failed');return;}
@@ -78,13 +78,13 @@
  async function review(event){
   event.preventDefault();if(busy||!preparation)return;
   if(!contract.validDetails(preparation,details)){status('required');return;}
-  busy=true;get('purchase-preparation-review').disabled=true;const revision=++generation;status('checking');
+  const submittedDetails={...details};busy=true;get('purchase-preparation-details').disabled=true;get('purchase-preparation-review').disabled=true;const revision=++generation;status('checking');
   try{
-   const result=await request(preparation.draft,true);if(revision!==generation)return;
+   const result=await request(preparation.draft,true,submittedDetails);if(revision!==generation)return;
    if(result.auth){root.location.assign('/my-demeos.html?prepare=1');return;}
    if(result.error){boundary=false;status(result.error==='unavailable'?'unavailable':'failed');return;}
-   preparation=result.preparation;boundary=true;set(get('purchase-preparation-status'),'');render();
-  }catch(_){if(revision===generation)status('failed');}finally{busy=false;get('purchase-preparation-review').disabled=false;}
+   preparation=result.preparation;details=submittedDetails;boundary=true;set(get('purchase-preparation-status'),'');render();
+  }catch(_){if(revision===generation)status('failed');}finally{busy=false;get('purchase-preparation-details').disabled=false;get('purchase-preparation-review').disabled=false;}
  }
  function back(){generation++;busy=false;get('purchase-preparation').hidden=true;get('product-experience').hidden=false;boundary=false;root.DEMEOSCustomerItemPresentation.localize();}
  async function resume(){

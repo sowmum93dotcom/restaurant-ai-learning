@@ -27,12 +27,12 @@
   const allowed=preparation.method==='delivery'?['recipient','address','city','postalCode','country']:preparation.method==='appointment'?['date','location','people']:[];
   return (preparation.product.fulfilment.requiredDetails||[]).filter(k=>allowed.includes(k)&&!preparation.product.presentation.options.some(o=>o.key===k));
  }
- function validDetails(preparation,details){
+ function validDetails(preparation,details,now=Date.now()){
   if(!object(details)||Object.keys(details).some(k=>!fields(preparation).includes(k)))return false;
   return fields(preparation).every(k=>{
    const v=details[k];if(typeof v!=='string'||!v.trim()||v.length>200)return false;
    if(k==='people')return /^[1-9]\d?$/.test(v);
-   if(k==='date'){const date=new Date(v+'T12:00:00Z');return /^\d{4}-\d{2}-\d{2}$/.test(v)&&Number.isFinite(date.getTime())&&date.toISOString().slice(0,10)===v;}
+   if(k==='date'){const date=new Date(v+'T12:00:00Z');return /^\d{4}-\d{2}-\d{2}$/.test(v)&&Number.isFinite(date.getTime())&&date.toISOString().slice(0,10)===v&&v>=new Date(now).toISOString().slice(0,10);}
    return true;
   });
  }
