@@ -22,8 +22,9 @@ async function openProduct(page,option,product,work,language='en') {
   for(const choice of field.values.filter(v=>v.copyKey))assert.equal(await page.locator('#product-experience-options select[data-option-key="'+field.key+'"] option[value="'+choice.value+'"]').textContent(),ownedCopy.values[choice.copyKey]);
  }
  const action=page.locator('#product-experience-action');
- const blocked=product.availability==='unavailable'||product.continuationRoute==='demeos';
+ const blocked=product.availability==='unavailable';
  if(blocked){assert.equal(await action.getAttribute('href'),null);assert.equal(await action.getAttribute('aria-disabled'),'true');}
+ else if(product.continuationRoute==='demeos'){assert.equal(await action.getAttribute('href'),'#purchase-preparation');assert.equal(await action.getAttribute('aria-disabled'),null);assert.equal(await action.textContent(),require('../js/demeos-purchase-preparation-copy')[language].continue);}
  else {
   assert.equal(await action.getAttribute('href'),work.customerContinuation[product.continuationRoute==='booking'?'bookingLink':'website']);
   const c=require('../js/demeos-controlled-customer-copy')[language];

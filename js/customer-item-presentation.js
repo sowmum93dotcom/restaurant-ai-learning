@@ -65,14 +65,14 @@
   set(card.querySelector('.customer-item-details'),copy().viewDetails);
   set(card.querySelector('.customer-product-continue-action'),product.continuationRoute==='demeos'?copy().buyDemeos:product.continuationRoute==='booking'?root.DEMEOSControlledCustomerCopy[locale()].book:root.DEMEOSControlledCustomerCopy[locale()].buy);
  }
- function open(doc,surface,product,destination){
+ function open(doc,surface,product,destination,work){
   const container=doc.getElementById('product-experience-options');
   if(!container)return;
   container.replaceChildren();container.hidden=true;
   const presentation=product.presentation;
   active=null;
   if(!presentation)return;
-  active={doc,surface,product,destination,selection:{}};
+  active={doc,surface,product,destination,work,selection:{}};
   container.hidden=!presentation.options.length;
   const legend=node(doc,container,'legend','customer-item-options-title');
   legend.id='product-experience-options-title';
@@ -112,7 +112,9 @@
   const action=doc.getElementById('product-experience-action');
   action.hidden=false;action.removeAttribute('href');action.setAttribute('aria-disabled','true');
   if(product.continuationRoute==='demeos'){
-   set(action,state.canContinue?c.demeosInactive:availability(state.availability,p.kind));
+   const preparable=state.canContinue&&['available','limited'].includes(state.availability)&&surface.getAttribute('data-controlled-test')==='true'&&root.DEMEOSCustomerPurchasePreparation;
+   set(action,preparable?root.DEMEOSPurchasePreparationCopy[locale()].continue:state.canContinue?c.demeosInactive:availability(state.availability,p.kind));
+   if(preparable){action.href='#purchase-preparation';action.removeAttribute('aria-disabled');}
   }else if(!state.canContinue){
    set(action,state.availability==='selection-required'?c.selectionRequired:p.variants.length&&state.variantId===null?c.missingCombination:availability(state.availability,p.kind));
   }else{
@@ -120,11 +122,14 @@
    if(/^https:\/\//i.test(destination)){action.href=destination;action.removeAttribute('aria-disabled');}
   }
   const guidance=doc.getElementById('product-experience-selection-guidance');
-  set(guidance,p.options.length?c.confirmBusiness:'');guidance.hidden=!p.options.length;
+  set(guidance,p.options.length&&product.continuationRoute!=='demeos'?c.confirmBusiness:'');guidance.hidden=!p.options.length||product.continuationRoute==='demeos';
+  if(root.DEMEOSCustomerPurchasePreparation)root.DEMEOSCustomerPurchasePreparation.product(active);
   surface.setAttribute('data-selected-availability',state.availability);
   surface.setAttribute('data-selected-variant',state.variantId||'');
  }
+ function selection(values){if(!active)return;active.selection={...values};for(const select of active.doc.querySelectorAll('#product-experience-options select'))select.value=values[select.getAttribute('data-option-key')]||'';renderSurface();}
+ function snapshot(){return active;}
  function localize(){root.document.querySelectorAll('[data-structured-item]').forEach(renderCard);renderSurface();}
  function reset(doc){active=null;['product-experience-category','product-experience-options','product-experience-selection','product-experience-selection-guidance'].forEach(id=>{const n=doc.getElementById(id);if(n)n.hidden=true;});}
- root.DEMEOSCustomerItemPresentation=Object.freeze({mountCard,open,localize,reset,price,choiceLabel});
+ root.DEMEOSCustomerItemPresentation=Object.freeze({mountCard,open,localize,reset,price,choiceLabel,selection,snapshot});
 }(typeof window!=='undefined'?window:{}));

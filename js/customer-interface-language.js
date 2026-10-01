@@ -231,6 +231,7 @@
     set(doc.getElementById("product-experience-safety"),c.safety);
     set(doc.getElementById("product-experience-image-fallback"),root.DEMEOSProductExperienceCopy[code].imageUnavailable);
     if (root.DEMEOSCustomerItemPresentation) root.DEMEOSCustomerItemPresentation.localize();
+    if (root.DEMEOSCustomerPurchasePreparation) root.DEMEOSCustomerPurchasePreparation.localize();
   }
 
   function apply(language) {
@@ -305,6 +306,7 @@
     if (control) control.value = code;
     applyControlled(code);
     if (root.DEMEOSCustomerItemPresentation) root.DEMEOSCustomerItemPresentation.localize();
+    if (root.DEMEOSCustomerPurchasePreparation) root.DEMEOSCustomerPurchasePreparation.localize();
     return code;
   }
   function start() {

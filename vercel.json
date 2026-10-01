@@ -31,6 +31,10 @@
     {
       "source": "/api/customer/work/:campaignId/feedback",
       "destination": "/api/customer/work/:campaignId/participation?interaction=feedback"
+    },
+    {
+      "source": "/api/customer/preparation",
+      "destination": "/api/public-config?resource=customer-preparation"
     }
   ]
 }

@@ -182,7 +182,7 @@ function toCustomerPossibility(value) {
         availability: ["available", "limited", "unavailable", "contact"].includes(product.availability) ? product.availability : "contact" };
       if (product.fulfilment && Array.isArray(product.fulfilment.methods)) {
         const productMethods = product.fulfilment.methods.filter(function (method) { return allowedFulfilment.includes(method); });
-        if (productMethods.length) normalized.fulfilment = { methods: productMethods };
+        if (productMethods.length) normalized.fulfilment = { methods: productMethods, ...(Array.isArray(product.fulfilment.requiredDetails)?{requiredDetails:product.fulfilment.requiredDetails.filter(k=>['recipient','address','city','postalCode','country','date','location','people'].includes(k))}:{}), ...(typeof product.fulfilment.quantityEnabled==='boolean'?{quantityEnabled:product.fulfilment.quantityEnabled}:{}) };
       }
       const productRelevance = product.relevance;
       if (productRelevance && typeof productRelevance === "object" && !Array.isArray(productRelevance) &&
@@ -273,6 +273,7 @@ function renderCustomerPossibilities(document, possibilities, understanding, par
     list.className = "customer-possibilities-list is-deemphasized";
     focusRegion.textContent = "";
     focusRegion.hidden = false;
+    focusRegion.setAttribute("data-work-item-id", possibility.workItemId);
     const back = addText(document, focusRegion, "button", "customer-possibility-back", CUSTOMER_STAGE_THREE_COPY.backAction);
     back.type = "button";
     back.addEventListener("click", function () {
@@ -1428,6 +1429,10 @@ function applyCustomerSurfaceRoute(document, hash) {
   const discover = document.getElementById("discover");
   const intention = document.getElementById("intention");
   if (!discover || !intention) return;
+  const itemSurface = document.getElementById("product-experience");
+  const preparationSurface = document.getElementById("purchase-preparation");
+  if (itemSurface) itemSurface.hidden = true;
+  if (preparationSurface) preparationSurface.hidden = true;
   const showIntention = hash === "#intention" || hash === "#customer-intention-form";
   if (showIntention) pauseDiscoverVideos(document);
   discover.hidden = showIntention;
@@ -1445,6 +1450,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   loadCustomerWork(document, fetch, window.location);
   applyCustomerSurfaceRoute(document, window.location.hash);
   window.addEventListener("hashchange", function () { applyCustomerSurfaceRoute(document, window.location.hash); });
+  document.querySelectorAll(".customer-journey-nav a[href^='#']").forEach(function (link) { link.addEventListener("click", function () { applyCustomerSurfaceRoute(document, link.getAttribute("href")); }); });
   document.addEventListener("visibilitychange", function () { if (document.hidden) pauseDiscoverVideos(document); });
   window.addEventListener("pagehide", function () { pauseDiscoverVideos(document); });
 });

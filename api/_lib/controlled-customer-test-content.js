@@ -362,6 +362,15 @@ function addStructuredTestItems(work) {
     if(product.productId==='test-product-fishing')product.availability='limited';
     if(product.productId==='test-product-childrens-collection'){
       product.continuationRoute='demeos';business.customerContinuation.routes.push('demeos');
+      product.presentation=p('fashion.apparel',from(25),clothingOptions,[variant('collection-small-black',{size:'small',colour:'black'},'available',fixed(25)),variant('collection-medium-blue',{size:'medium',colour:'blue'},'limited',fixed(27)),variant('collection-medium-black',{size:'medium',colour:'black'},'unavailable',fixed(25))]);
+      product.fulfilment={methods:['delivery'],requiredDetails:['address','city','country'],quantityEnabled:true};
+    }
+  }
+  for(const business of work)for(const product of business.products||[]){
+    if(['test-product-childrens-fashion','test-product-football'].includes(product.productId)){
+      product.continuationRoute='demeos';
+      if(!business.customerContinuation.routes.includes('demeos'))business.customerContinuation.routes.push('demeos');
+      product.fulfilment={methods:[product.productId==='test-product-football'?'appointment':'collection'],requiredDetails:product.productId==='test-product-football'?['date']:[],quantityEnabled:product.productId!=='test-product-football'};
     }
   }
   return work;

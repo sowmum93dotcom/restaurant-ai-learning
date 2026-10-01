@@ -21,6 +21,8 @@ function isCustomerIdentityRequest(req) {
 
 async function publicConfig(req, res) {
   res.setHeader("Cache-Control", "no-store");
+  const preparationRequest = req?.query?.resource === 'customer-preparation' || (typeof req?.url === 'string' && req.url.startsWith('/api/customer/preparation'));
+  if (preparationRequest) return require('./_lib/customer-controlled-preparation')(req, res);
   const understandingRequest = req?.query?.resource === "customer-understanding" ||
     (typeof req?.url === "string" && req.url.startsWith("/api/customer/understanding"));
   if (understandingRequest) {

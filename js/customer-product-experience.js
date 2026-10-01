@@ -108,7 +108,7 @@
     surface.hidden = false;
     surface.setAttribute("data-product-id", text(product.productId));
     surface.setAttribute("data-continuation-type", continuationType(product));
-    if (window.DEMEOSCustomerItemPresentation) window.DEMEOSCustomerItemPresentation.open(document, surface, product, destination);
+    if (window.DEMEOSCustomerItemPresentation) window.DEMEOSCustomerItemPresentation.open(document, surface, product, destination, work);
     window.scrollTo({ top: 0, behavior: "auto" });
     title.focus({ preventScroll: true });
     return true;
@@ -177,6 +177,7 @@
       if (action.getAttribute("aria-disabled") === "true") { event.preventDefault(); return; }
       if (action.getAttribute("data-demeos-purchase") !== "pending") return;
       event.preventDefault();
+      if (window.DEMEOSCustomerPurchasePreparation) { window.DEMEOSCustomerPurchasePreparation.start(); return; }
       action.textContent = "DEMEOS buying is not active yet";
       action.setAttribute("aria-disabled", "true");
     });
@@ -192,10 +193,11 @@
       event.preventDefault();
       const workCard = card.closest(".customer-focused-possibility, .customer-work-card, article[data-discover-position]");
       const businessNameNode = workCard && workCard.querySelector ? workCard.querySelector(".customer-possibility-provider, .customer-business-name, .customer-work-business-name, h3") : null;
-      openProductExperience(document, { businessName: businessNameNode ? businessNameNode.textContent : "" }, product, destination);
+      openProductExperience(document, { businessName: businessNameNode ? businessNameNode.textContent : "", workItemId: workCard ? workCard.getAttribute("data-work-item-id") : "" }, product, destination);
     });
   }
 
   if (typeof module !== "undefined" && module.exports) module.exports = { pauseExperienceVideos, closeProductExperience, availabilityCopy, configureAction, continuationType, openProductExperience, priceCopy, recoverDiscoverIfNeeded, safeHttps };
+  if (typeof window !== "undefined") window.DEMEOSCustomerProductExperience = Object.freeze({open: openProductExperience});
   if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", function () { initialize(document); });
 })();
