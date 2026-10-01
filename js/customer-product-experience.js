@@ -176,7 +176,18 @@
     back.addEventListener("click", function () { closeProductExperience(document); });
     action.addEventListener("click", function (event) {
       if (action.getAttribute("aria-disabled") === "true") { event.preventDefault(); return; }
-      if (action.getAttribute("data-demeos-purchase") !== "pending") return;
+      if(action.getAttribute("data-demeos-purchase")!=="pending"){
+        const selected=window.DEMEOSCustomerItemPresentation&&window.DEMEOSCustomerItemPresentation.snapshot();
+        if(selected&&selected.surface.getAttribute("data-controlled-test")==="true"&&new URL(window.location.href).searchParams.get("demeos-test")==="1"){
+          const target=new URL(action.href,window.location.href);
+          if(["www.demeos.io","demeos.io"].includes(target.hostname)&&target.pathname==="/customer.html"&&target.searchParams.get("demeos-test")==="1"){
+            event.preventDefault();const safety=document.getElementById("product-experience-safety");
+            if(safety){safety.setAttribute("role","status");safety.setAttribute("tabindex","-1");safety.focus({preventScroll:true});}
+            action.hidden=true;
+          }
+        }
+        return;
+      }
       event.preventDefault();
       if (window.DEMEOSCustomerPurchasePreparation) { window.DEMEOSCustomerPurchasePreparation.start(); return; }
       action.textContent = "DEMEOS buying is not active yet";

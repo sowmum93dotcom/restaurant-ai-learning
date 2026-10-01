@@ -15,3 +15,5 @@ The final boundary is explicitly inactive. No order, booking, payment session, c
 The browser preparation gate uses a deterministic provider adapter, not a real OAuth account or live signup. It exercises the actual preparation handler and fixtures through registration return, all nine languages and phone/tablet/desktop review, conditional fulfilment, unavailable re-check and external isolation. The existing language and supplied media/browser gates continue separately. Live provider signup remains configured by the existing Clerk integration; no provider account is created by these checks.
 
 Appointment dates use the current UTC calendar date. Same-day dates are allowed; past dates are rejected by the shared client/server contract. Final validation freezes fulfilment fields and retains the submitted snapshot, including through language changes.
+
+Fictional external destinations pointing to controlled Discover stay at the selected product with the existing test-destination notice. They never open unrelated top-of-feed content. Real external destinations retain their existing validated continuation.
