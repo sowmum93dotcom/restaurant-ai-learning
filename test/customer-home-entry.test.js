@@ -8,7 +8,9 @@ test("homepage separates public Customer Experience from private sign-in", funct
   const customer = fs.readFileSync(path.join(__dirname, "..", "customer.html"), "utf8");
   const account = fs.readFileSync(path.join(__dirname, "..", "my-demeos.html"), "utf8");
   assert.match(home, /class="demeos-entry-signin" href="my-demeos\.html">Sign in<\/a>/);
-  assert.match(home, /<h2>Customer Experience<\/h2>[\s\S]*?<a href="customer\.html">Enter/);
+  assert.match(home, /<h2>Customer Experience<\/h2>[\s\S]*?<a id="customer-entry-link" href="customer\.html">Enter/);
+  assert.match(home, /params\.get\('demeos-test'\) !== '1'/);
+  assert.match(home, /customerEntry\.href = 'customer\.html\?demeos-test=1'/);
   assert.match(customer, /id="discover"/);
   assert.match(account, /id="customer-auth-signed-out"/);
   assert.match(account, /id="customer-sign-in"/);
