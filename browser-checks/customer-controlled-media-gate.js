@@ -72,11 +72,16 @@ const local = base.includes('127.0.0.1');
     const c=copy[code];await page.selectOption('#customer-language',code);
     await page.waitForFunction(b=>document.querySelector('#customer-work-status').textContent===b,c.banner);
     assert.equal(await page.locator('html').getAttribute('dir'),code==='ar'?'rtl':'ltr');
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'no page overflow in '+code);
     await media.focus();await page.keyboard.press('Home');
     await page.waitForFunction(()=>document.querySelector('.customer-media-position').getAttribute('data-media-index')==='1');
     await page.keyboard.press('ArrowRight');
     await page.waitForFunction(()=>document.querySelector('.customer-media-position').getAttribute('data-media-index')==='2');
     assert.equal(await cards.first().locator('.customer-media-position').textContent(),c.media.replace('{index}','2').replace('{count}','3'));
+    await page.keyboard.press('ArrowLeft');
+    await page.waitForFunction(()=>document.querySelector('.customer-media-position').getAttribute('data-media-index')==='1');
+    await cards.first().focus();await page.keyboard.press('ArrowRight');
+    await page.waitForFunction(()=>document.querySelector('.customer-media-position').getAttribute('data-media-index')==='2');
     await page.keyboard.press('ArrowLeft');
     await page.waitForFunction(()=>document.querySelector('.customer-media-position').getAttribute('data-media-index')==='1');
     for (const [i,work] of fixtures().entries()) {

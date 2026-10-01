@@ -1028,6 +1028,14 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
       } else mediaRegion.appendChild(media);
     });
     message.appendChild(mediaRegion);
+    // Measure from the reading-direction edge so the same ordered controls work in RTL.
+    function mediaOffset(item) {
+      const region = mediaRegion.getBoundingClientRect();
+      const bounds = item.getBoundingClientRect();
+      const view = document.defaultView;
+      const rtl = view && typeof view.getComputedStyle === "function" && view.getComputedStyle(mediaRegion).direction === "rtl";
+      return rtl ? bounds.right - region.right : bounds.left - region.left;
+    }
     function pauseMediaVideos() {
       Array.from(mediaRegion.children).forEach(function (item) {
         const video = item.tagName === "VIDEO" || item.tag === "video" ? item : item.querySelector && item.querySelector("video");
@@ -1036,10 +1044,9 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
     }
     // A video must not keep playing after its media frame is no longer active.
     mediaRegion.addEventListener("scroll", function () {
-      const regionStart = mediaRegion.getBoundingClientRect().left;
       Array.from(mediaRegion.children).forEach(function (item) {
         const video = item.tagName === "VIDEO" ? item : item.querySelector && item.querySelector("video");
-        if (video && Math.abs(item.getBoundingClientRect().left - regionStart) > item.getBoundingClientRect().width / 2) video.pause();
+        if (video && Math.abs(mediaOffset(item)) > item.getBoundingClientRect().width / 2) video.pause();
       });
     }, { passive: true });
     if (work.media.length > 1) {
@@ -1053,9 +1060,8 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
         const items = Array.from(mediaRegion.children);
         let closest = 0;
         let distance = Infinity;
-        const regionStart = mediaRegion.getBoundingClientRect().left;
         items.forEach(function (item, index) {
-          const difference = Math.abs(item.getBoundingClientRect().left - regionStart);
+          const difference = Math.abs(mediaOffset(item));
           if (difference < distance) { distance = difference; closest = index; }
         });
         mediaPosition.setAttribute("data-media-index", String(closest + 1));
@@ -1088,18 +1094,17 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
         button.textContent = control[2];
         button.addEventListener("click", function () {
           const items = Array.from(mediaRegion.children);
-          const regionStart = mediaRegion.getBoundingClientRect().left;
           let closest = 0;
           let distance = Infinity;
           items.forEach(function (item, index) {
-            const difference = Math.abs(item.getBoundingClientRect().left - regionStart);
+            const difference = Math.abs(mediaOffset(item));
             if (difference < distance) { distance = difference; closest = index; }
           });
           const target = items[Math.max(0, Math.min(items.length - 1, closest + control[1]))];
           if (target) {
             if (target !== items[closest]) pauseMediaVideos();
             const reducedMotion = typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-            mediaRegion.scrollBy({ left: target.getBoundingClientRect().left - regionStart, behavior: reducedMotion ? "auto" : "smooth" });
+            mediaRegion.scrollBy({ left: mediaOffset(target), behavior: reducedMotion ? "auto" : "smooth" });
           }
         });
         controls.appendChild(button);
@@ -1112,7 +1117,7 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
           const items = Array.from(mediaRegion.children);
           const target = event.key === "Home" ? items[0] : items[items.length - 1];
           if (target) {
-            const offset = target.getBoundingClientRect().left - mediaRegion.getBoundingClientRect().left;
+            const offset = mediaOffset(target);
             if (Math.abs(offset) > 1) {
               pauseMediaVideos();
               const reducedMotion = typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -1280,6 +1285,9 @@ function renderCustomerWork(document, work, customerPackages, participationRecor
       const mediaRegion = card.querySelector(".customer-work-media");
       if (!mediaRegion || mediaRegion.children.length < 2) return;
       event.preventDefault();
+      const mediaControls = card.querySelector(".customer-media-controls");
+      const mediaButton = mediaControls && mediaControls.children[event.key === "ArrowLeft" ? 0 : 1];
+      if (mediaButton) { if (!mediaButton.disabled) mediaButton.click(); return; }
       const direction = event.key === "ArrowRight" ? 1 : -1;
       if (typeof mediaRegion.querySelectorAll === "function") mediaRegion.querySelectorAll("video").forEach(function (video) { video.pause(); });
       mediaRegion.scrollBy({ left: direction * mediaRegion.clientWidth, behavior: "smooth" });
