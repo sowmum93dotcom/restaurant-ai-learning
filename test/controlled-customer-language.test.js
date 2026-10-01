@@ -7,7 +7,7 @@ test('controlled copy covers the same nine customer languages, every fixture and
  for(const [language,table] of Object.entries(copy)) {
   assert.deepEqual(Object.keys(table).sort(),keys,language);
   assert.equal(table.categories.length,6,language);
-  assert.equal(table.products.length,11,language);
+  assert.equal(table.products.length,12,language);
   for(const value of Object.values(table).flat()) assert.ok(typeof value==='string'&&value.trim(),language);
   for(const key of ['content','description','media']) {
    assert.deepEqual(table[key].match(/\{\w+\}/g).sort(),copy.en[key].match(/\{\w+\}/g).sort(),language+' placeholders');

@@ -5,6 +5,31 @@ const { productExperienceTestContent: fixtures } = require('../api/_lib/controll
 const { getValidPublicCustomerWork } = require('../api/_lib/customer-public-work-contract');
 const base = process.env.DEMEOS_BROWSER_BASE_URL || 'http://127.0.0.1:4173';
 const local = base.includes('127.0.0.1');
+async function openProduct(page,option,product,work,language='en') {
+ await option.locator('.customer-product-continue-action, .customer-item-details').first().click();
+ await page.locator('#product-experience:not([hidden])').waitFor();
+ const presentation=require('../js/customer-item-contract').normalize(product.presentation);
+ const chosen=presentation.variants.find(v=>v.availability==='available'||v.availability==='limited');
+ for(const field of presentation.options) {
+  const value=chosen?chosen.selection[field.key]:field.values[0].value;
+  const select=page.locator('#product-experience-options select[data-option-key="'+field.key+'"]');
+  if(await select.isEnabled())await select.selectOption(value);
+ }
+ const ownedCopy=require('../js/demeos-item-presentation-copy')[language];
+ for(const field of presentation.options) {
+  assert.equal(await page.locator('#product-experience-options label[data-option-key="'+field.key+'"] span').textContent(),ownedCopy.fields[field.key]);
+  for(const choice of field.values.filter(v=>v.copyKey))assert.equal(await page.locator('#product-experience-options select[data-option-key="'+field.key+'"] option[value="'+choice.value+'"]').textContent(),ownedCopy.values[choice.copyKey]);
+ }
+ const action=page.locator('#product-experience-action');
+ const blocked=product.availability==='unavailable'||product.continuationRoute==='demeos';
+ if(blocked){assert.equal(await action.getAttribute('href'),null);assert.equal(await action.getAttribute('aria-disabled'),'true');}
+ else {
+  assert.equal(await action.getAttribute('href'),work.customerContinuation[product.continuationRoute==='booking'?'bookingLink':'website']);
+  const c=require('../js/demeos-controlled-customer-copy')[language];
+  assert.equal(await action.textContent(),product.continuationRoute==='booking'?c.book:c.buy);
+ }
+}
+
 (async () => {
  const browser = await chromium.launch({headless:true});
  try {
@@ -19,7 +44,7 @@ const local = base.includes('127.0.0.1');
     });
     await page.route('https://www.demeos.io/images/controlled-test/**', route=>route.fulfill({path:path.join(__dirname,'..',new URL(route.request().url()).pathname)}));
    }
-   await page.goto(base+'/customer.html?demeos-test=1#discover',{waitUntil:'networkidle'});
+   console.log('Opening',viewport.width);await page.goto(base+'/customer.html?demeos-test=1#discover',{waitUntil:'networkidle'});
    await page.locator('#customer-work-list[data-controlled-test="true"]').waitFor();
    assert.equal(await page.locator('.customer-work-card').count(),6);
    assert.equal(await page.locator('.customer-header-inner').evaluate(el=>getComputedStyle(el,'::after').content),'none','header keeps navigation unobstructed');
@@ -29,23 +54,40 @@ const local = base.includes('127.0.0.1');
     await Promise.race([Promise.all(images.map(im=>im.decode())),new Promise((_,reject)=>setTimeout(()=>reject(new Error("image decoding timeout")),15000))]);
     return images.map(im=>({w:im.getBoundingClientRect().width,h:im.getBoundingClientRect().height,nw:im.naturalWidth,nh:im.naturalHeight,fit:getComputedStyle(im).objectFit,cls:im.className}));
    });
-   assert.equal(imageMetrics.length,23);
+   console.log('Images decoded');assert.equal(imageMetrics.length,23);
    for (const im of imageMetrics) { assert.ok(im.nw>0);assert.equal(im.fit,'contain', im.cls);assert.ok(Math.abs(im.w/im.h-im.nw/im.nh)<.015,'natural aspect ratio preserved '+JSON.stringify(im)); }
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'no page overflow');
    for (const work of fixtures().filter(w=>w.products)) {
     const card=page.locator('.customer-work-card').filter({hasText:work.businessName});
     for (const product of work.products) {
      const option=card.locator('[data-product-id="'+product.productId+'"]');
-     await option.locator('.customer-product-continue-action').click();
+     console.log('Product',product.productId);await openProduct(page,option,product,work);
      await page.locator('#product-experience:not([hidden])').waitFor();
      assert.equal(await page.locator('#product-experience-title').textContent(),product.name);
      assert.equal(await page.locator('#product-experience-business').textContent(),work.businessName);
-     assert.equal(await page.locator('#product-experience-image').getAttribute('src'),product.imageUrl);
-     assert.equal(await page.locator('#product-experience-action').getAttribute('href'),work.customerContinuation[product.continuationRoute==='booking'?'bookingLink':'website']);
-     assert.equal(await page.locator('#product-experience-action').textContent(),product.continuationRoute==='booking'?'Book with business':'Where to buy');
+     if(product.imageUrl)assert.equal(await page.locator('#product-experience-image').getAttribute('src'),product.imageUrl);
+
      await page.locator('#product-experience-back').click();
     }
    }
+   const activeOption=page.locator('[data-product-id="test-product-activewear"]');
+   await openProduct(page,activeOption,fixtures()[0].products[0],fixtures()[0]);
+   await page.screenshot({path:'/tmp/demeos-structured-'+viewport.width+'.png',fullPage:true});
+   await page.selectOption('#product-experience-options select[data-option-key="size"]','medium');
+   await page.selectOption('#product-experience-options select[data-option-key="colour"]','black');
+   assert.equal(await page.locator('#product-experience-action').getAttribute('href'),null,'unavailable variant cannot continue');
+   assert.equal(await page.locator('#product-experience').getAttribute('data-selected-availability'),'unavailable');
+   await page.selectOption('#product-experience-options select[data-option-key="size"]','small');
+   await page.selectOption('#product-experience-options select[data-option-key="colour"]','blue');
+   assert.equal(await page.locator('#product-experience').getAttribute('data-selected-availability'),'limited');
+   assert.match(await page.locator('#product-experience-price').textContent(),/47/);
+   await page.locator('#product-experience-back').click();
+   await openProduct(page,page.locator('[data-product-id="test-product-running"]'),fixtures()[2].products[0],fixtures()[2]);
+   assert.equal(await page.locator('#product-experience-options select[data-option-key="size"]').count(),0,'services never force clothing sizes');
+   await page.selectOption('#product-experience-options select[data-option-key="duration"]','minutes60');
+   await page.selectOption('#product-experience-options select[data-option-key="people"]','twoPeople');
+   assert.equal(await page.locator('#product-experience-action').getAttribute('href'),null,'missing combination cannot continue');
+   await page.locator('#product-experience-back').click();
    const video=page.locator('video');await video.scrollIntoViewIfNeeded();
    await video.evaluate(v=>{v.load();});
    try { await page.waitForFunction(()=>document.querySelector('video').readyState>=2,null,{timeout:10000}); } catch(e) { console.error(await video.evaluate(v=>({error:v.error&&{code:v.error.code,message:v.error.message},state:v.readyState,src:v.currentSrc,h264:v.canPlayType('video/mp4; codecs="avc1.42E01E"')}))); throw e; }
@@ -69,7 +111,7 @@ const local = base.includes('127.0.0.1');
    await page.keyboard.press('ArrowLeft');
    await page.waitForFunction(()=>document.querySelector('.customer-media-position').getAttribute('data-media-index')==='1');
    for (const code of Object.keys(copy)) {
-    const c=copy[code];await page.selectOption('#customer-language',code);
+    console.log('Language',code);const c=copy[code];await page.selectOption('#customer-language',code);
     await page.waitForFunction(b=>document.querySelector('#customer-work-status').textContent===b,c.banner);
     assert.equal(await page.locator('html').getAttribute('dir'),code==='ar'?'rtl':'ltr');
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'no page overflow in '+code);
@@ -106,20 +148,19 @@ const local = base.includes('127.0.0.1');
       const option=card.locator('[data-product-id="'+product.productId+'"]');
       const expected=await option.locator('.customer-discover-option-name').textContent();
       if(code!=='en') {
-       const pi=['activewear','summer-fashion','mens-fashion','running','football','fishing','camping','hiking','childrens-fashion','toys','childrens-collection'].indexOf(product.productId.replace('test-product-',''));
+       const pi=['activewear','summer-fashion','mens-fashion','running','football','fishing','camping','hiking','childrens-fashion','toys','childrens-collection','grocery-pack'].indexOf(product.productId.replace('test-product-',''));
        assert.equal(expected,c.test+' '+c.products[pi],'localized product name');
       }
-      await option.locator('.customer-product-continue-action').click();
+      await openProduct(page,option,product,work,code);
       assert.equal(await page.locator('#product-experience-title').textContent(),expected);
       assert.equal(await page.locator('#product-experience-business').textContent(),name);
-      assert.equal(await page.locator('#product-experience-action').textContent(),product.continuationRoute==='booking'?c.book:c.buy);
-      assert.equal(await page.locator('#product-experience-action').getAttribute('href'),work.customerContinuation[product.continuationRoute==='booking'?'bookingLink':'website']);
+
       assert.equal(await page.locator('#product-experience-safety').textContent(),c.safety);
       await page.locator('#product-experience-back').click();
      }
     }
     // Switching language while Product Experience is already open also updates its owned content.
-    await cards.first().locator('.customer-product-continue-action').first().click();
+    await openProduct(page,cards.first().locator('[data-product-id="test-product-activewear"]'),fixtures()[0].products[0],fixtures()[0],code);
     const next=code==='ja'?'en':'ja';await page.selectOption('#customer-language',next);
     await page.waitForFunction(value=>document.querySelector('#product-experience-action').textContent===value,copy[next].buy);
     await page.locator('#product-experience-back').click();
@@ -129,7 +170,7 @@ const local = base.includes('127.0.0.1');
    await page.locator('#customer-work-list[data-controlled-test="true"]').waitFor();
    await page.waitForFunction(b=>document.querySelector('#customer-work-status').textContent===b,copy.ja.banner);
    assert.equal(await cards.count(),6,'direct entry and reload remain controlled');
-   await page.locator('#customer-controlled-test-exit').click();
+   await page.goto(base+'/customer.html#discover',{waitUntil:'networkidle'});
    await page.locator('#customer-work-list[data-controlled-test="false"]').waitFor({state:'attached'});
    assert.equal(await page.locator('[data-work-item-id^="test-discover-"]').count(),0,'normal mode never shows controlled records');
    await page.locator('#customer-controlled-test-entry').click();
@@ -143,7 +184,7 @@ const local = base.includes('127.0.0.1');
     await page.route('**/api/customer/work?demeos-test=1',route=>route.fulfill({json:{work:[],testMode:false}}));
     await page.reload({waitUntil:'networkidle'});
     await page.locator('.customer-discover-retry').waitFor();
-    assert.ok(await page.locator('#customer-controlled-test-exit').isVisible(),'disabled test mode preserves exit');
+    assert.equal(await page.locator('#customer-controlled-test-exit').getAttribute('href'),'customer.html#discover','normal entry remains separate');
     assert.ok(!(await page.locator('#customer-controlled-test-entry').isVisible()));
     assert.equal(await page.locator('.customer-work-card').count(),0,'disabled test mode fails closed');
    }

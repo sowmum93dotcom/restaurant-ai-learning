@@ -1,7 +1,8 @@
+const customerItemContract = require("../../js/customer-item-contract.js");
 const MAX_PUBLIC_CUSTOMER_MEDIA = 10;
 const DEFAULT_PUBLIC_CUSTOMER_WORK_LIMIT = 20;
 const CUSTOMER_PARTICIPATION_ACTION = "Interested";
-const ALLOWED_CONTINUATION_ROUTES = new Set(["website", "phone", "whatsapp", "email", "visit", "booking", "quote"]);
+const ALLOWED_CONTINUATION_ROUTES = new Set(["website", "phone", "whatsapp", "email", "visit", "booking", "quote", "demeos"]);
 const ALLOWED_FULFILMENT_METHODS = new Set(["collection", "delivery", "shipping", "premises", "customer-location", "appointment", "digital"]);
 const ROUTE_DETAIL_FIELDS = Object.freeze({ website: "website", phone: "phone", whatsapp: "whatsapp", email: "email", booking: "bookingLink", visit: "visitAddress" });
 
@@ -71,7 +72,10 @@ function toPublicCustomerWorkItem(item) {
       const safeRoute = route && publicItem.customerContinuation &&
         publicItem.customerContinuation.routes.includes(route) ? route : null;
       if (!safeRoute) return null;
+      const presentation = product.presentation === undefined ? undefined : customerItemContract.normalize(product.presentation);
+      if (product.presentation !== undefined && !presentation) return null;
       return {
+        ...(presentation ? { presentation } : {}),
         productId: product.productId.trim(),
         name: product.name.trim(),
         description: product.description.trim(),

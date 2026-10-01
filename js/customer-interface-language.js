@@ -169,7 +169,7 @@
     var list = doc.getElementById("customer-work-list");
     if (!list || list.getAttribute("data-controlled-test") !== "true") return;
     var ids = ["fashion", "groceries", "sports", "outdoors", "family", "garden"];
-    var productIds = ["activewear", "summer-fashion", "mens-fashion", "running", "football", "fishing", "camping", "hiking", "childrens-fashion", "toys", "childrens-collection"];
+    var productIds = ["activewear", "summer-fashion", "mens-fashion", "running", "football", "fishing", "camping", "hiking", "childrens-fashion", "toys", "childrens-collection", "grocery-pack"];
     set(doc.getElementById("customer-work-status"), c.banner);
     list.querySelectorAll(".customer-work-card").forEach(function (card) {
       var index = ids.indexOf((card.getAttribute("data-work-item-id") || "").replace("test-discover-", ""));
@@ -208,7 +208,7 @@
         var productName = option.querySelector(".customer-discover-option-name").textContent;
         set(option.querySelector("img"),productName,"alt");
         option.querySelectorAll("a").forEach(function (n) {set(n,productName+" — "+name,"aria-label");});
-        set(option.querySelector(".customer-product-continue-action"),option.getAttribute("data-continuation-route")==="booking"?c.book:c.buy);
+        if (!option.hasAttribute("data-structured-item")) set(option.querySelector(".customer-product-continue-action"),option.getAttribute("data-continuation-route")==="booking"?c.book:c.buy);
         set(option.querySelector(".customer-discover-option-image-fallback"),root.DEMEOSProductExperienceCopy[code].imageUnavailable);
       });
     });
@@ -221,13 +221,16 @@
       set(doc.getElementById("product-experience-description"),option.querySelector(".customer-discover-option-description").textContent);
       set(doc.getElementById("product-experience-business"),card.querySelector(".customer-business-name").textContent);
       set(doc.getElementById("product-experience-image"),option.querySelector(".customer-discover-option-name").textContent,"alt");
-      set(doc.getElementById("product-experience-availability"),root.DEMEOSProductExperienceCopy[code].available);
-      set(doc.getElementById("product-experience-action"),surface.getAttribute("data-continuation-type")==="booking"?c.book:c.buy);
+      if (!option.hasAttribute("data-structured-item")) {
+        set(doc.getElementById("product-experience-availability"),root.DEMEOSProductExperienceCopy[code].available);
+        set(doc.getElementById("product-experience-action"),surface.getAttribute("data-continuation-type")==="booking"?c.book:c.buy);
+      }
     }
     set(doc.querySelector("#product-experience-back span"),c.back);
     set(doc.getElementById("product-experience-back"),c.back,"aria-label");
     set(doc.getElementById("product-experience-safety"),c.safety);
     set(doc.getElementById("product-experience-image-fallback"),root.DEMEOSProductExperienceCopy[code].imageUnavailable);
+    if (root.DEMEOSCustomerItemPresentation) root.DEMEOSCustomerItemPresentation.localize();
   }
 
   function apply(language) {
@@ -301,6 +304,7 @@
     var control = root.document.getElementById("customer-language");
     if (control) control.value = code;
     applyControlled(code);
+    if (root.DEMEOSCustomerItemPresentation) root.DEMEOSCustomerItemPresentation.localize();
     return code;
   }
   function start() {
