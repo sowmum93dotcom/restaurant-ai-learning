@@ -93,6 +93,7 @@ function toPublicCustomerWorkItem(item) {
     }).slice(0, MAX_PUBLIC_CUSTOMER_MEDIA).map(function (asset) {
       return { assetId: asset.assetId, kind: asset.kind, role: asset.role, deliveryUrl: asset.deliveryUrl,
         ...(asset.contentType ? { contentType: asset.contentType } : {}),
+        ...(asset.kind === "video" && asset.fallbackSource && asset.fallbackSource.contentType === "video/webm" && /^https:\/\//i.test(asset.fallbackSource.deliveryUrl || "") ? { fallbackSource: { deliveryUrl: asset.fallbackSource.deliveryUrl, contentType: "video/webm" } } : {}),
         ...(normalizedRequiredString(asset.purpose) ? { purpose: asset.purpose.trim() } : {}),
         ...(normalizedRequiredString(asset.relatedEntityId) ? { relatedEntityId: asset.relatedEntityId.trim() } : {}) };
     });

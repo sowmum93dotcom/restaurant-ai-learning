@@ -55,6 +55,7 @@ function discoverTestContent(req) {
 }
 
 function isDiscoverTestMode(req) {
+  if (process.env.DEMEOS_CONTROLLED_TEST_CONTENT === "disabled") return false;
   const headers = req && req.headers || {};
   const header = headers[DISCOVER_TEST_MODE_HEADER];
   const legacyHeader = headers[DISCOVER_TEST_MODE_LEGACY_HEADER];

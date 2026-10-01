@@ -6,7 +6,7 @@ const { getValidPublicCustomerWork } = require("../api/_lib/customer-public-work
 const { pauseExperienceVideos } = require("../js/customer-product-experience.js");
 test("supplied test media keeps exact product relationships and nature marketing stays view-only", () => {
   const work = getValidPublicCustomerWork(productExperienceTestContent());
-  assert.equal(work.length, 5);
+  assert.equal(work.length, 6);
   let images = 0, videos = 0;
   for (const item of work) {
     assert.match(item.businessName, /^DEMEOS Test /);
@@ -24,10 +24,10 @@ test("supplied test media keeps exact product relationships and nature marketing
       }
     }
   }
-  assert.equal(images, 9);
+  assert.equal(images, 12);
   assert.equal(videos, 1);
-  assert.match(work[4].media[0].deliveryUrl, /media\/controlled\/customer-outdoor-video\.mp4$/);
-  assert.equal(work[4].customerContinuation, undefined);
+  assert.match(work[5].media[0].deliveryUrl, /images\/controlled-test\/garden-wildlife\.mp4$/);
+  assert.equal(work[5].customerContinuation, undefined);
 });
 test("leaving Product Experience pauses mounted videos", () => {
   let paused = 0;
