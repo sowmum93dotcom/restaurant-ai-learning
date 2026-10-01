@@ -10,6 +10,8 @@
     return /^https:\/\//i.test(candidate) ? candidate : "";
   }
 
+  function isFictionalDiscoverDestination(value) { return ["https://www.demeos.io/customer.html?demeos-test=1#discover","https://demeos.io/customer.html?demeos-test=1#discover"].includes(value); }
+
   function availabilityCopy(value) {
     if (value === "unavailable") return "Currently unavailable";
     if (value === "limited") return "Limited availability";
@@ -176,7 +178,17 @@
     back.addEventListener("click", function () { closeProductExperience(document); });
     action.addEventListener("click", function (event) {
       if (action.getAttribute("aria-disabled") === "true") { event.preventDefault(); return; }
-      if (action.getAttribute("data-demeos-purchase") !== "pending") return;
+      if(action.getAttribute("data-demeos-purchase")!=="pending"){
+        const selected=window.DEMEOSCustomerItemPresentation&&window.DEMEOSCustomerItemPresentation.snapshot();
+        if(selected&&selected.surface.getAttribute("data-controlled-test")==="true"&&new URL(window.location.href).searchParams.get("demeos-test")==="1"){
+          if(isFictionalDiscoverDestination(action.getAttribute("href"))){
+            event.preventDefault();const safety=document.getElementById("product-experience-safety");
+            if(safety){safety.setAttribute("role","status");safety.setAttribute("tabindex","-1");safety.focus({preventScroll:true});}
+            action.hidden=true;
+          }
+        }
+        return;
+      }
       event.preventDefault();
       if (window.DEMEOSCustomerPurchasePreparation) { window.DEMEOSCustomerPurchasePreparation.start(); return; }
       action.textContent = "DEMEOS buying is not active yet";
@@ -199,7 +211,7 @@
     });
   }
 
-  if (typeof module !== "undefined" && module.exports) module.exports = { pauseExperienceVideos, closeProductExperience, availabilityCopy, configureAction, continuationType, openProductExperience, priceCopy, recoverDiscoverIfNeeded, safeHttps };
+  if (typeof module !== "undefined" && module.exports) module.exports = { isFictionalDiscoverDestination, pauseExperienceVideos, closeProductExperience, availabilityCopy, configureAction, continuationType, openProductExperience, priceCopy, recoverDiscoverIfNeeded, safeHttps };
   if (typeof window !== "undefined") window.DEMEOSCustomerProductExperience = Object.freeze({open: openProductExperience});
   if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", function () { initialize(document); });
 })();
