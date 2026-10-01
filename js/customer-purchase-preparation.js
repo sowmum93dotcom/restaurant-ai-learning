@@ -11,6 +11,7 @@
  function read(){try{const value=contract.draft(JSON.parse(root.sessionStorage.getItem(key)));if(!value)root.sessionStorage.removeItem(key);return value;}catch(_){return null;}}
  function write(value){try{root.sessionStorage.setItem(key,JSON.stringify(value));return true;}catch(_){return false;}}
  function clear(){try{root.sessionStorage.removeItem(key);}catch(_){}details={};preparation=null;boundary=false;generation++;}
+ function consumeResume(){const url=new URL(root.location.href);url.searchParams.delete("resume");root.history.replaceState(null,"",url.pathname+url.search+url.hash);}
  function controlled(){return new URL(root.location.href).searchParams.get('demeos-test')==='1';}
  function authenticationPath(){return new URL(root.location.href).searchParams.get('prepare')==='1'&&read()?root.location.origin+'/my-demeos.html?prepare=1':null;}
  function authenticationReturn(){if(!authenticationPath())return false;root.location.replace('/customer.html?demeos-test=1&resume=1#product-experience');return true;}
@@ -45,7 +46,7 @@
   const c=copy();set(get('purchase-preparation-title'),boundary?c.ready:c.title);set(get('purchase-preparation-test'),c.test);
   set(get('purchase-preparation-review'),c.review);set(get('purchase-preparation-back'),c.back);set(get('purchase-preparation-discard'),c.discard);set(get('purchase-preparation-edit'),c.edit);set(get('purchase-preparation-privacy'),c.privacy);set(get('purchase-preparation-boundary'),c.inactive);
   get('purchase-preparation-boundary').hidden=!boundary;get('purchase-preparation-form').hidden=boundary||!preparation;get('purchase-preparation-edit').hidden=!boundary;
-  if(!preparation)return;
+  if(!preparation){const image=get("purchase-preparation-image");if(image){image.hidden=true;image.removeAttribute("src");}get("purchase-preparation-summary").replaceChildren();return;}
   const p=preparation,n=names(p),item=root.DEMEOSItemPresentationCopy[code()],productCopy=root.DEMEOSProductExperienceCopy[code()];
   const selected=p.product.presentation.options.map(field=>item.fields[field.key]+': '+root.DEMEOSCustomerItemPresentation.choiceLabel(field,field.values.find(v=>v.value===p.draft.selection[field.key]))).join(' · ');
   const rows=[[root.DEMEOSControlledCustomerCopy[code()].business,n.business],[item[p.product.presentation.kind],n.product],[c.selected,selected],[c.price,root.DEMEOSCustomerItemPresentation.price(p.state.pricing)],[c.availability,p.product.presentation.kind==='service'?item[p.state.availability==='limited'?'serviceLimited':'serviceAvailable']:productCopy[p.state.availability]]];
@@ -92,7 +93,7 @@
  async function resume(){
   if(!controlled()||new URL(root.location.href).searchParams.get('resume')!=='1')return;
   const draft=read();if(!draft)return;
-  const revision=++generation;const url=new URL(root.location.href);url.searchParams.delete("resume");root.history.replaceState(null,"",url.pathname+url.search+url.hash);
+  const revision=++generation;
   try{
    const response=await root.fetch('/api/customer/work?demeos-test=1',{credentials:'same-origin',cache:'no-store',headers:{'x-demeos-test-mode':'controlled-preview'}});const data=await response.json();if(revision!==generation)return;
    if(!response.ok||data.testMode!==true){return;}
@@ -100,7 +101,7 @@
    const p=result.product;get('product-experience').setAttribute('data-controlled-test','true');root.DEMEOSCustomerProductExperience.open(doc,result.business,p,'');root.DEMEOSCustomerItemPresentation.selection(draft.selection);
    const input=get('purchase-preparation-quantity').querySelector('input');input.value=String(draft.quantity);
    const prepared=await request(draft);if(revision!==generation)return;if(prepared.auth)return;if(prepared.error){show();status(prepared.error==='unavailable'?'unavailable':'failed');return;}
-   preparation=prepared.preparation;show();set(get('purchase-preparation-status'),'');render();
+   consumeResume();preparation=prepared.preparation;show();set(get('purchase-preparation-status'),'');render();
   }catch(_){show();render();status('failed');}
  }
  function authBanner(){
@@ -110,6 +111,6 @@
   localize();doc.addEventListener('change',()=>root.setTimeout(localize,0));new root.MutationObserver(localize).observe(doc.documentElement,{attributes:true,attributeFilter:['lang']});
  }
  function localize(){render();const a=root.DEMEOSCustomerItemPresentation?.snapshot();if(a)product(a);}
- root.DEMEOSCustomerPurchasePreparation=Object.freeze({start,product,localize,authenticationReturn,authenticationPath,read,cancelPending:()=>{generation++;busy=false;}});
+ root.DEMEOSCustomerPurchasePreparation=Object.freeze({start,product,localize,authenticationReturn,authenticationPath,read,cancelPending:()=>{generation++;busy=false;consumeResume();}});
  doc.addEventListener('DOMContentLoaded',()=>{doc.querySelectorAll('.customer-journey-nav a[href^="#"]').forEach(link=>link.addEventListener('click',()=>{generation++;busy=false;}));authBanner();if(!get('purchase-preparation'))return;get('purchase-preparation-form').addEventListener('submit',review);get('purchase-preparation-back').addEventListener('click',back);get('purchase-preparation-edit').addEventListener('click',()=>{boundary=false;render();});get('purchase-preparation-discard').addEventListener('click',()=>{clear();back();});resume();});
 }(typeof window!=='undefined'?window:{}));
