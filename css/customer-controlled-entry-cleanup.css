@@ -1,0 +1,2 @@
+/* Presentation-only cleanup: keep controlled test routing/security intact while hiding temporary test entry/exit links from the customer UI. */
+#customer-controlled-test-exit{display:none!important}
