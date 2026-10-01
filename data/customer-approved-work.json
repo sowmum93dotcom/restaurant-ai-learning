@@ -1,0 +1,35 @@
+{
+  "mode": "controlled-test",
+  "label": "DEMEOS TEST BUSINESS",
+  "items": [
+    {
+      "id": "demeos-test-activewear",
+      "businessName": "DEMEOS Test Activewear",
+      "businessIdentity": "Controlled test business",
+      "discoverPosition": 1,
+      "media": [],
+      "products": [
+        {
+          "productId": "test-performance-bag",
+          "name": "Performance Training Bag",
+          "description": "Controlled test product for validating the real DEMEOS Customer Experience product journey.",
+          "price": "£45.00",
+          "priceMode": "fixed",
+          "availability": "available",
+          "continuationRoute": "demeos",
+          "imageUrl": ""
+        },
+        {
+          "productId": "test-sports-accessories",
+          "name": "Sports Accessories",
+          "description": "Controlled marketing product used to validate external buying navigation.",
+          "price": "From £18.00",
+          "priceMode": "from",
+          "availability": "available",
+          "continuationRoute": "website",
+          "destinationUrl": "https://www.demeos.io/"
+        }
+      ]
+    }
+  ]
+}
