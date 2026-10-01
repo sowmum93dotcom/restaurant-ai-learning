@@ -1,0 +1,10 @@
+/* Supplied test media keeps its natural proportions on the actual customer page. */
+.customer-body.demeos-controlled-test .customer-header-inner::after{content:none}
+.customer-body.demeos-controlled-test #discover .customer-work-card .customer-work-media-link>img.customer-work-media-item,
+.customer-body.demeos-controlled-test #discover .customer-work-card video.customer-work-media-item{width:100%;height:auto;aspect-ratio:auto;max-height:min(55vh,440px);object-fit:contain;background:#061326}
+.customer-body.demeos-controlled-test #discover .customer-work-card .customer-discover-option.has-image .customer-discover-option-image{width:110px;height:auto;aspect-ratio:auto;max-height:145px;object-fit:contain}
+@media(max-width:680px){
+.customer-body.demeos-controlled-test #discover .customer-work-card .customer-work-media-link>img.customer-work-media-item,
+.customer-body.demeos-controlled-test #discover .customer-work-card video.customer-work-media-item{max-height:340px}
+.customer-body.demeos-controlled-test #discover .customer-work-card .customer-discover-option.has-image .customer-discover-option-image{width:88px;max-height:116px}
+}

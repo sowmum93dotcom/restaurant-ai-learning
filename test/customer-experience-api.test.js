@@ -500,9 +500,9 @@ test("Product Experience test feed requires both exact query and controlled head
   assert.equal(controlled.statusCode, 200);
   assert.equal(controlled.body.testMode, true);
   assert.equal(repositoryCalls, rejected.length);
-  assert.equal(controlled.body.work.length, 1);
+  assert.equal(controlled.body.work.length, 5);
   const item = controlled.body.work[0];
-  assert.equal(item.businessName, "DEMEOS Product Experience Test");
+  assert.equal(item.businessName, "DEMEOS Test Fashion");
   assert.equal(item.media[0].relatedEntityId, item.products[0].productId);
   assert.match(item.products[0].imageUrl, /^https:\/\/www\.demeos\.io\/images\/discover-test-/);
   assert.equal(item.products[0].continuationRoute, "website");

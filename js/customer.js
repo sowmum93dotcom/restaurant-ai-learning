@@ -1133,6 +1133,8 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
       const option = document.createElement("article");
       option.className = "customer-discover-option" + (/^https:\/\//i.test(product.imageUrl || "") ? " has-image" : "");
       option.setAttribute("role", "listitem");
+      option.setAttribute("data-product-id", product.productId);
+      option.setAttribute("data-continuation-route", product.continuationRoute || "");
       const href = getCustomerProductContinuationHref(work, product);
       if (/^https:\/\//i.test(product.imageUrl || "")) {
         const image = document.createElement("img");
@@ -1330,6 +1332,7 @@ async function loadCustomerWork(document, fetcher, location) {
     const data = await response.json();
     if (discoverRequestVersions.get(document) !== version) return;
     if (!response.ok || !data || !Array.isArray(data.work) || (request.testMode && data.testMode !== true) || (!request.testMode && data.testMode === true) || (data.testMode === true && data.work.length === 0)) throw new Error();
+    if (document.body && document.body.classList) document.body.classList.toggle("demeos-controlled-test", data.testMode === true);
     renderCustomerWork(document, data.work, getServerCustomerPackages(data), recordParticipation);
     if (data.testMode === true) {
       status.className = "customer-work-status customer-test-content-status";
