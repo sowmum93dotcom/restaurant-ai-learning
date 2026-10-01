@@ -143,6 +143,12 @@
   function setSaved(value) { try { root.localStorage.setItem("demeos-customer-language", value); } catch (_) {} }
   // Only the explicitly activated, server-confirmed controlled feed owns these strings.
   // Real business content never passes through this catalogue.
+  function controlledMediaPosition(index, count) {
+    var code = normalize(root.document && root.document.documentElement.lang);
+    var copy = root.DEMEOSControlledCustomerCopy;
+    var template = copy && copy[code] ? copy[code].media : "Media {index} of {count}";
+    return template.replace("{index}", String(index)).replace("{count}", String(count));
+  }
   function applyControlled(language) {
     var doc = root.document, catalog = root.DEMEOSControlledCustomerCopy;
     if (!doc || !catalog) return;
@@ -177,7 +183,11 @@
       card.querySelectorAll(".customer-choice .customer-step").forEach(function (n) {set(n,c.options);});
       var fields = {".customer-approved-mark":"approved", ".customer-choice-title":"choice", ".customer-participation-title":"interested", ".customer-participation-button":"tell", ".customer-package-empty":"empty", ".customer-message > .customer-visually-hidden":"boundary"};
       Object.keys(fields).forEach(function (selector) {set(card.querySelector(selector),c[fields[selector]]);});
-      card.querySelectorAll(".customer-message, .customer-work-media, .customer-media-controls, .customer-package-region").forEach(function (n) {set(n,name,"aria-label");});
+      set(card.querySelector(".customer-message"),format(c.mediaFrom,{business:name}),"aria-label");
+      var gallery = card.querySelector(".customer-work-media");
+      set(gallery,format(gallery && gallery.children.length > 1 ? c.galleryGuidance : c.mediaFrom,{business:name}),"aria-label");
+      set(card.querySelector(".customer-media-controls"),format(c.browseMedia,{business:name}),"aria-label");
+      set(card.querySelector(".customer-package-region"),format(c.productsFrom,{business:name}),"aria-label");
       card.querySelectorAll(".customer-business-controls").forEach(function (n) {set(n,c.browse,"aria-label");});
       card.querySelectorAll(".customer-business-controls button").forEach(function (n,i) {set(n,i===0?c.previousBusiness:c.nextBusiness,"aria-label");});
       card.querySelectorAll(".customer-media-control").forEach(function (n,i) {set(n,i===0?c.previousMedia:c.nextMedia,"aria-label");});
@@ -365,7 +375,7 @@
       });
       ["customer-work-list", "product-experience"].forEach(function (id) {
         var node = root.document.getElementById(id);
-        if (node) controlledObserver.observe(node, { childList:true, characterData:true, subtree:true, attributes:true, attributeFilter:["data-controlled-test", "data-product-id", "data-continuation-type"] });
+        if (node) controlledObserver.observe(node, { childList:true, characterData:true, subtree:true, attributes:true, attributeFilter:["data-controlled-test", "data-product-id", "data-continuation-type", "data-media-index"] });
       });
     }
     var preferred = getSaved() || (root.navigator && root.navigator.language) || "en";
@@ -373,7 +383,7 @@
     select.addEventListener("change", function () { var code = apply(select.value); setSaved(code); });
   }
   if (typeof module !== "undefined" && module.exports) module.exports = { normalize: normalize, copy: copy, intentionLabels: intentionLabels, journeyCopy: journeyCopy, confirmationCopy: confirmationCopy, resultCopy: resultCopy, localizeResult: localizeResult, staticCopy: staticCopy, possibilityCopy: possibilityCopy, noMatchCopy: noMatchCopy, statusCopy: statusCopy, localizeStatus: localizeStatus, additionalStatuses: additionalStatuses, feedbackCopy: feedbackCopy, localizeFeedback: localizeFeedback, discoverCopy: discoverCopy, localizeDiscoverStatus: localizeDiscoverStatus };
-  if (root) root.DEMEOSCustomerInterfaceLanguage = Object.freeze({ apply: apply, normalize: normalize });
+  if (root) root.DEMEOSCustomerInterfaceLanguage = Object.freeze({ apply: apply, normalize: normalize, mediaPosition: controlledMediaPosition });
   if (root && root.document) {
     if (root.document.readyState === "loading") root.document.addEventListener("DOMContentLoaded", start);
     else start();

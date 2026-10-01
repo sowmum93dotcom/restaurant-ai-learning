@@ -89,6 +89,7 @@ class Element {
   insertBefore(child, before) { this.children.splice(this.children.indexOf(before), 0, child); }
   addEventListener(name, listener) { this.listeners[name] = listener; }
   setAttribute(name, value) { this.attributes[name] = value; }
+  getAttribute(name) { return this.attributes[name] ?? null; }
   set textContent(value) { this._text = value; if (!value) this.children = []; }
   get textContent() { return this._text + this.children.map((child) => child.textContent).join(""); }
 }
@@ -1136,4 +1137,18 @@ test("Discover tablet presentation keeps business and media lanes contained", fu
   assert.match(tablet, /#discover \.customer-work-card\s*\{[^}]*min-height:0/);
   assert.match(tablet, /#discover \.customer-work-media\s*\{[^}]*overflow-x:auto/);
   assert.match(tablet, /#discover \.customer-discover-option-image\s*\{[^}]*aspect-ratio:1 \/ 1/);
+});
+
+
+test("controlled testing always offers normal-mode exit even on disabled or failed requests", async function () {
+  for (const response of [{ok:true,json:async()=>({work:[],testMode:false})},{ok:false,json:async()=>({error:"unavailable"})}]) {
+    const document = fakeDocument();
+    document.elements["customer-controlled-test-entry"] = new Element("a");
+    document.elements["customer-controlled-test-exit"] = new Element("a");
+    await loadCustomerWork(document,async()=>response,{search:"?demeos-test=1"});
+    assert.equal(document.elements["customer-controlled-test-entry"].hidden,true);
+    assert.equal(document.elements["customer-controlled-test-exit"].hidden,false);
+    assert.equal(document.elements["customer-work-list"].children.length,0);
+    assert.match(document.elements["customer-work-status"].className,/customer-load-error/);
+  }
 });

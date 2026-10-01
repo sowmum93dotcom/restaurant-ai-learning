@@ -1064,8 +1064,11 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
           const difference = Math.abs(mediaOffset(item));
           if (difference < distance) { distance = difference; closest = index; }
         });
-        mediaPosition.setAttribute("data-media-index", String(closest + 1));
-        const positionLabel = "Media " + (closest + 1) + " of " + items.length;
+        if (mediaPosition.getAttribute("data-media-index") !== String(closest + 1)) mediaPosition.setAttribute("data-media-index", String(closest + 1));
+        const language = document.defaultView && document.defaultView.DEMEOSCustomerInterfaceLanguage;
+        const controlled = document.body && document.body.classList && document.body.classList.contains("demeos-controlled-test");
+        const positionLabel = controlled && language && typeof language.mediaPosition === "function"
+          ? language.mediaPosition(closest + 1, items.length) : "Media " + (closest + 1) + " of " + items.length;
         if (mediaPosition.textContent !== positionLabel) {
           mediaPosition.textContent = positionLabel;
           mediaPosition.setAttribute("aria-label", positionLabel);
@@ -1350,6 +1353,10 @@ async function loadCustomerWork(document, fetcher, location) {
   discoverRequestVersions.set(document, version);
   const status = document.getElementById("customer-work-status");
   const request = getDiscoverRequest(location);
+  const testEntry = document.getElementById("customer-controlled-test-entry");
+  const testExit = document.getElementById("customer-controlled-test-exit");
+  if (testEntry) testEntry.hidden = request.testMode;
+  if (testExit) testExit.hidden = !request.testMode;
   try {
     const response = await fetcher(request.url, request.options);
     const data = await response.json();
@@ -1361,10 +1368,6 @@ async function loadCustomerWork(document, fetcher, location) {
     if (workList && typeof workList.setAttribute === "function") workList.setAttribute("data-controlled-test", String(data.testMode === true));
     const productSurface = document.getElementById("product-experience");
     if (productSurface) productSurface.setAttribute("data-controlled-test", String(data.testMode === true));
-    const testEntry = document.getElementById("customer-controlled-test-entry");
-    const testExit = document.getElementById("customer-controlled-test-exit");
-    if (testEntry) testEntry.hidden = data.testMode === true;
-    if (testExit) testExit.hidden = data.testMode !== true;
     if (data.testMode === true) {
       status.className = "customer-work-status customer-test-content-status";
       status.textContent = "CONTROLLED TEST CONTENT — not live business content";
@@ -1372,7 +1375,9 @@ async function loadCustomerWork(document, fetcher, location) {
   } catch (error) {
     if (discoverRequestVersions.get(document) !== version) return;
     // A failed refresh must not leave previously rendered business content visible.
-    document.getElementById("customer-work-list").textContent = "";
+    const failedList = document.getElementById("customer-work-list");
+    failedList.textContent = "";
+    if (typeof failedList.setAttribute === "function") failedList.setAttribute("data-controlled-test", "false");
     const navigationHint = typeof document.querySelector === "function" ? document.querySelector(".customer-discover-navigation-hint") : null;
     if (navigationHint) navigationHint.hidden = true;
     status.className = "customer-empty-state customer-load-error";

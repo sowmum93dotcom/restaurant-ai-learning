@@ -73,6 +73,11 @@ const local = base.includes('127.0.0.1');
     await page.waitForFunction(b=>document.querySelector('#customer-work-status').textContent===b,c.banner);
     assert.equal(await page.locator('html').getAttribute('dir'),code==='ar'?'rtl':'ltr');
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'no page overflow in '+code);
+    await page.evaluate(()=>{
+     window.__counterChanges=[];
+     window.__counterObserver=new MutationObserver(records=>records.forEach(r=>r.addedNodes.forEach(n=>window.__counterChanges.push(n.textContent))));
+     window.__counterObserver.observe(document.querySelector('.customer-media-position'),{childList:true});
+    });
     await media.focus();await page.keyboard.press('Home');
     await page.waitForFunction(()=>document.querySelector('.customer-media-position').getAttribute('data-media-index')==='1');
     await page.keyboard.press('ArrowRight');
@@ -84,6 +89,11 @@ const local = base.includes('127.0.0.1');
     await page.waitForFunction(()=>document.querySelector('.customer-media-position').getAttribute('data-media-index')==='2');
     await page.keyboard.press('ArrowLeft');
     await page.waitForFunction(()=>document.querySelector('.customer-media-position').getAttribute('data-media-index')==='1');
+    const announcements=await page.evaluate(()=>{window.__counterObserver.disconnect();return window.__counterChanges;});
+    if(code!=="en") assert.ok(announcements.every(text=>!/^Media \d+ of \d+$/.test(text)),"counter never announces English while scrolling in "+code);
+    const firstName=await cards.first().locator('.customer-business-name').textContent();
+    assert.equal(await media.getAttribute('aria-label'),c.galleryGuidance.replace('{business}',firstName));
+    assert.equal(await cards.first().locator('.customer-package-region').getAttribute('aria-label'),c.productsFrom.replace('{business}',firstName));
     for (const [i,work] of fixtures().entries()) {
      const card=cards.nth(i);
      const name=code==='en'?work.businessName:'DEMEOS '+c.test+' '+c.categories[i];
@@ -129,6 +139,14 @@ const local = base.includes('127.0.0.1');
    await page.selectOption('#customer-language','en');
    await page.locator('#customer-work-list img').evaluateAll(async images=>{images.forEach(im=>{im.loading='eager';});await Promise.all(images.map(im=>im.decode()));});
    await page.screenshot({path:'/tmp/demeos-controlled-'+viewport.width+'.png',fullPage:true});
+   if(local) {
+    await page.route('**/api/customer/work?demeos-test=1',route=>route.fulfill({json:{work:[],testMode:false}}));
+    await page.reload({waitUntil:'networkidle'});
+    await page.locator('.customer-discover-retry').waitFor();
+    assert.ok(await page.locator('#customer-controlled-test-exit').isVisible(),'disabled test mode preserves exit');
+    assert.ok(!(await page.locator('#customer-controlled-test-entry').isVisible()));
+    assert.equal(await page.locator('.customer-work-card').count(),0,'disabled test mode fails closed');
+   }
    assert.deepEqual(errors,[]);
    console.log('Controlled media and continuation verified at '+viewport.width+'px');
    await page.close();

@@ -50,7 +50,11 @@
       "Children’s outfit",
       "Learning toys",
       "Children’s clothing collection"
-    ]
+    ],
+    "mediaFrom": "Media from {business}",
+    "productsFrom": "Products and services from {business}",
+    "browseMedia": "Browse media from {business}",
+    "galleryGuidance": "Media from {business}. Use Left and Right arrow keys to browse; Home and End jump to the first and last media."
   },
   "es": {
     "entry": "Abrir prueba controlada de la experiencia del cliente",
@@ -100,7 +104,11 @@
       "Conjunto infantil",
       "Juguetes educativos",
       "Colección de ropa infantil"
-    ]
+    ],
+    "mediaFrom": "Contenido de {business}",
+    "productsFrom": "Productos y servicios de {business}",
+    "browseMedia": "Explorar contenido de {business}",
+    "galleryGuidance": "Contenido de {business}. Usa las flechas izquierda y derecha; Inicio y Fin llevan al primer y último contenido."
   },
   "fr": {
     "entry": "Ouvrir le test contrôlé de l’expérience client",
@@ -150,7 +158,11 @@
       "Tenue pour enfant",
       "Jouets éducatifs",
       "Collection de vêtements pour enfants"
-    ]
+    ],
+    "mediaFrom": "Médias de {business}",
+    "productsFrom": "Produits et services de {business}",
+    "browseMedia": "Parcourir les médias de {business}",
+    "galleryGuidance": "Médias de {business}. Utilisez les flèches gauche et droite ; Début et Fin accèdent au premier et au dernier média."
   },
   "ar": {
     "entry": "فتح اختبار تجربة العميل الخاضع للتحكم",
@@ -200,7 +212,11 @@
       "ملابس أطفال",
       "ألعاب تعليمية",
       "مجموعة ملابس أطفال"
-    ]
+    ],
+    "mediaFrom": "وسائط من {business}",
+    "productsFrom": "منتجات وخدمات من {business}",
+    "browseMedia": "تصفح وسائط {business}",
+    "galleryGuidance": "وسائط من {business}. استخدم مفتاحي السهم الأيسر والأيمن للتصفح؛ ومفتاحي البداية والنهاية للوصول إلى أول وآخر وسيط."
   },
   "pt": {
     "entry": "Abrir teste controlado da experiência do cliente",
@@ -250,7 +266,11 @@
       "Conjunto infantil",
       "Brinquedos educativos",
       "Coleção de roupa infantil"
-    ]
+    ],
+    "mediaFrom": "Conteúdo de {business}",
+    "productsFrom": "Produtos e serviços de {business}",
+    "browseMedia": "Explorar conteúdo de {business}",
+    "galleryGuidance": "Conteúdo de {business}. Use as setas esquerda e direita; Início e Fim levam ao primeiro e último conteúdo."
   },
   "zh": {
     "entry": "打开受控客户体验测试",
@@ -300,7 +320,11 @@
       "儿童套装",
       "益智玩具",
       "儿童服装系列"
-    ]
+    ],
+    "mediaFrom": "{business}的媒体",
+    "productsFrom": "{business}的产品和服务",
+    "browseMedia": "浏览{business}的媒体",
+    "galleryGuidance": "{business}的媒体。使用左右方向键浏览；起始键和结束键跳到第一个和最后一个媒体。"
   },
   "hi": {
     "entry": "नियंत्रित ग्राहक अनुभव परीक्षण खोलें",
@@ -350,7 +374,11 @@
       "बच्चों की पोशाक",
       "शैक्षिक खिलौने",
       "बच्चों के कपड़ों का संग्रह"
-    ]
+    ],
+    "mediaFrom": "{business} का मीडिया",
+    "productsFrom": "{business} के उत्पाद और सेवाएँ",
+    "browseMedia": "{business} का मीडिया देखें",
+    "galleryGuidance": "{business} का मीडिया। बाएँ और दाएँ तीर कुंजियों से देखें; होम और एंड कुंजियों से पहले और आखिरी मीडिया पर जाएँ।"
   },
   "de": {
     "entry": "Kontrollierten Kundenerlebnis-Test öffnen",
@@ -400,7 +428,11 @@
       "Kinderoutfit",
       "Lernspielzeug",
       "Kinderbekleidungskollektion"
-    ]
+    ],
+    "mediaFrom": "Medien von {business}",
+    "productsFrom": "Produkte und Dienstleistungen von {business}",
+    "browseMedia": "Medien von {business} durchsuchen",
+    "galleryGuidance": "Medien von {business}. Mit den Pfeiltasten links und rechts navigieren; Pos1 und Ende springen zum ersten und letzten Medium."
   },
   "ja": {
     "entry": "管理された顧客体験テストを開く",
@@ -450,7 +482,11 @@
       "子ども用の服",
       "知育玩具",
       "子ども服コレクション"
-    ]
+    ],
+    "mediaFrom": "{business}のメディア",
+    "productsFrom": "{business}の商品とサービス",
+    "browseMedia": "{business}のメディアを見る",
+    "galleryGuidance": "{business}のメディア。左右の矢印キーで切り替え、ホーム・エンドキーで最初と最後に移動できます。"
   }
 };
   if (typeof module !== "undefined" && module.exports) module.exports = copy;
