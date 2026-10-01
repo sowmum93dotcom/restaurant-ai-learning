@@ -28,7 +28,7 @@
         <div class="demeos-entry-icon" aria-hidden="true">○</div>
         <h2>Customer Experience</h2>
         <p>Explore businesses, products and services without signing in.</p>
-        <a href="customer.html">Enter Discover <span aria-hidden="true">→</span></a>
+        <a id="customer-entry-link" href="customer.html">Enter Discover <span aria-hidden="true">→</span></a>
       </article>
 
       <article class="demeos-entry-path">
@@ -50,5 +50,13 @@
       <small>© 2026 DEMEOS. All rights reserved.</small>
     </div>
   </footer>
+  <script>
+    (() => {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('demeos-test') !== '1') return;
+      const customerEntry = document.getElementById('customer-entry-link');
+      if (customerEntry) customerEntry.href = 'customer.html?demeos-test=1';
+    })();
+  </script>
 </body>
 </html>
