@@ -30,7 +30,7 @@ function createPaymentService({provider=null,store,loadQuote,now=Date.now,newId=
   // No browser success parameter, parsed JSON or boolean can replace gateway signature verification.
   if(!Buffer.isBuffer(rawBody))return failure('invalid-notification');
   let event;try{event=await provider.verifyNotification(rawBody,headers);}catch(_){return failure('invalid-notification');}
-  if(!event||event.mode!=='test'||typeof event.id!=='string'||!event.id||typeof event.orderId!=='string'||typeof event.paymentId!=='string')return failure('invalid-notification');
+  if(!event||event.mode!=='test'||['id','orderId','paymentId'].some(k=>typeof event[k]!=='string'||!event[k].trim()||event[k].length>200))return failure('invalid-notification');
   // Reconcile with the provider's current payment record, not an out-of-order event's claimed status.
   let evidence;try{evidence=await provider.retrievePayment(event.paymentId);}catch(_){return failure('gateway-unavailable');}
   if(evidence?.paymentId!==event.paymentId||evidence?.orderId!==event.orderId)return failure('payment-mismatch');
@@ -46,7 +46,7 @@ function createPaymentService({provider=null,store,loadQuote,now=Date.now,newId=
     if(!record)continue;
    }
    const next=transition(record,evidence);if(!next)return failure('payment-mismatch');
-   const saved=await store.apply(record,next,event.id);
+   const saved=await store.apply(record,next,'notification:'+event.id);
    if(saved)return {ready:true};
   }
   return failure('retry');

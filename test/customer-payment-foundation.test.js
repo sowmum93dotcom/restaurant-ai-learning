@@ -15,6 +15,7 @@ test('payment quote is exact, server-derived, direct to the business and strictl
 test('verified payment evidence must match the payment, seller, exact total and currency',()=>{
  const record={id:'order-a',paymentId:'payment-a',state:'pending',quote:prepareQuote(quote(),now()),refundedMinor:0};
  assert.equal(transition(record,evidence(record)).state,'paid');
+ assert.equal(transition({...record,paymentId:undefined},evidence(record,{paymentId:undefined})),null,'missing IDs cannot stand in for gateway payment evidence');
  for(const overrides of [{mode:'live'},{orderId:'other-order'},{paymentId:'other-payment'},{merchantAccountId:'other-business'},{currency:'USD'},{amountMinor:9800},{status:'browser-success'},{refundedMinor:-1},{refundedMinor:10000}])assert.equal(transition(record,evidence(record,overrides)),null);
  const partial=transition(record,evidence(record,{refundedMinor:3000}));assert.equal(partial.state,'partially-refunded');
  const full=transition(partial,evidence(record,{refundedMinor:9900}));assert.equal(full.state,'refunded');assert.equal(transition(full,evidence(record,{refundedMinor:1000})).refundedMinor,9900);
@@ -48,6 +49,9 @@ test('real PostgreSQL storage and gateway-independent payment flow',async t=>{
   });
   await t.test('forged notifications, browser claims and provider failures do not mark paid',async()=>{
    assert.equal((await service.notification({paid:true},{})).reason,'invalid-notification');signatureValid=false;assert.equal((await service.notification(Buffer.from('{}'),{})).reason,'invalid-notification');signatureValid=true;const record=await store.get('order-a');currentEvidence=evidence(record,{amountMinor:9800});assert.equal((await service.notification(Buffer.from('{}'),{})).reason,'payment-mismatch');throwRetrieve=true;assert.equal((await service.notification(Buffer.from('{}'),{})).reason,'gateway-unavailable');throwRetrieve=false;assert.equal((await store.get('order-a')).state,'pending');
+  });
+  await t.test('empty gateway identities cannot bind a payment to a creating attempt',async()=>{
+   const previous=eventPayment;eventPayment='';assert.equal((await service.notification(Buffer.from('{}'),{})).reason,'invalid-notification');eventPayment=previous;
   });
   await t.test('verified payment, duplicate events, refunds and late failures remain consistent',async()=>{
    let record=await store.get('order-a');currentEvidence=evidence(record);const both=await Promise.all([service.notification(Buffer.from('{}'),{}),service.notification(Buffer.from('{}'),{})]);assert.ok(both.every(r=>r.ready));record=await store.get('order-a');assert.equal(record.state,'paid');const version=record.version;await service.notification(Buffer.from('{}'),{});assert.equal((await store.get('order-a')).version,version);

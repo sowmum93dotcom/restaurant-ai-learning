@@ -23,7 +23,7 @@ function prepareQuote(value,now=Date.now()){
  return {...quote,fingerprint:createHash('sha256').update(JSON.stringify(canonical(stable))).digest('hex')};
 }
 function matches(record,evidence){
- return object(record)&&object(evidence)&&evidence.mode==='test'&&evidence.orderId===record.id&&evidence.paymentId===record.paymentId&&evidence.merchantAccountId===record.quote.merchantAccountId&&evidence.currency===record.quote.currency&&evidence.amountMinor===record.quote.totalMinor;
+ return object(record)&&object(record.quote)&&object(evidence)&&text(record.id)&&text(record.paymentId)&&text(evidence.orderId)&&text(evidence.paymentId)&&evidence.mode==='test'&&evidence.orderId===record.id&&evidence.paymentId===record.paymentId&&evidence.merchantAccountId===record.quote.merchantAccountId&&evidence.currency===record.quote.currency&&evidence.amountMinor===record.quote.totalMinor;
 }
 function transition(record,evidence){
  if(!STATES.has(record?.state)||!matches(record,evidence)||!money(evidence.refundedMinor)||evidence.refundedMinor>record.quote.totalMinor)return null;
@@ -38,7 +38,7 @@ function transition(record,evidence){
  return {...record,state:evidence.refundedMinor===record.quote.totalMinor?'refunded':evidence.refundedMinor>0?'partially-refunded':'paid',refundedMinor:evidence.refundedMinor};
 }
 function customerReceipt(record,customerId){
- if(!record||record.quote.customerId!==customerId||!STATES.has(record.state))return null;
+ if(!object(record)||!object(record.quote)||record.quote.customerId!==customerId||!STATES.has(record.state))return null;
  const q=record.quote;
  return {reference:record.id,testMode:true,recipient:'business',state:record.state,businessId:q.businessId,productId:q.productId,sellerName:q.sellerName,productName:q.productName,selection:{...q.selection},quantity:q.quantity,currency:q.currency,unitMinor:q.unitMinor,deliveryMinor:q.deliveryMinor,taxMinor:q.taxMinor,totalMinor:q.totalMinor,refundedMinor:record.refundedMinor||0,sellerContact:q.sellerContact,refundTerms:q.refundTerms,fulfilmentMethod:q.fulfilmentMethod,paid:['paid','partially-refunded','refunded'].includes(record.state)};
 }
