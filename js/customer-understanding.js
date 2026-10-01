@@ -57,3 +57,55 @@
 
   return { buildCustomerUnderstanding, confirmCustomerUnderstanding, normalizeCustomerText };
 }));
+
+if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", function () {
+  const emptyState = document.getElementById("customer-no-possibilities");
+  if (!emptyState || document.getElementById("customer-no-possibilities-actions")) return;
+
+  const actions = document.createElement("div");
+  actions.id = "customer-no-possibilities-actions";
+  actions.className = "customer-no-possibilities-actions";
+
+  const addDetail = document.createElement("button");
+  addDetail.id = "customer-add-detail";
+  addDetail.type = "button";
+  addDetail.textContent = "Add more detail";
+
+  const change = document.createElement("button");
+  change.id = "customer-empty-change-intention";
+  change.type = "button";
+  change.textContent = "Change what I’m looking for";
+
+  actions.append(addDetail, change);
+
+  const form = document.createElement("form");
+  form.id = "customer-add-detail-form";
+  form.className = "customer-add-detail-form";
+  form.hidden = true;
+
+  const label = document.createElement("label");
+  label.htmlFor = "customer-add-detail-text";
+  label.textContent = "Add a little more detail";
+
+  const input = document.createElement("textarea");
+  input.id = "customer-add-detail-text";
+  input.rows = 3;
+  input.maxLength = 500;
+  input.setAttribute("dir", "auto");
+
+  const submit = document.createElement("button");
+  submit.type = "submit";
+  submit.textContent = "Continue";
+
+  const cancel = document.createElement("button");
+  cancel.id = "customer-add-detail-cancel";
+  cancel.type = "button";
+  cancel.textContent = "Cancel";
+
+  const status = document.createElement("p");
+  status.id = "customer-add-detail-status";
+  status.setAttribute("aria-live", "polite");
+
+  form.append(label, input, submit, cancel, status);
+  emptyState.append(actions, form);
+});

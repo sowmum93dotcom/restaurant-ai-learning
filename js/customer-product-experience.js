@@ -25,14 +25,59 @@
     return price;
   }
 
+  function continuationType(product) {
+    const route = text(product && product.continuationRoute).toLowerCase();
+    if (route === "demeos" || route === "demeos-purchase" || route === "purchase") return "demeos";
+    if (route === "booking") return "booking";
+    return "external";
+  }
+
+  function configureAction(action, product, destination) {
+    if (!action) return false;
+    const routeType = continuationType(product);
+    const available = product && product.availability !== "unavailable";
+    const safeDestination = safeHttps(destination);
+
+    action.hidden = true;
+    action.removeAttribute("href");
+    action.removeAttribute("target");
+    action.removeAttribute("rel");
+    action.removeAttribute("data-demeos-purchase");
+    action.removeAttribute("aria-disabled");
+
+    if (!available) return false;
+
+    if (routeType === "demeos") {
+      action.hidden = false;
+      action.href = "#";
+      action.textContent = "Buy in DEMEOS";
+      action.setAttribute("data-demeos-purchase", "pending");
+      return true;
+    }
+
+    if (!safeDestination) return false;
+    action.hidden = false;
+    action.href = safeDestination;
+    action.target = "_blank";
+    action.rel = "noopener noreferrer";
+    action.textContent = routeType === "booking" ? "Book with business" : "Where to buy";
+    return true;
+  }
+
   function openProductExperience(document, work, product, destination) {
     const surface = document.getElementById("product-experience");
     const discover = document.getElementById("discover");
     const intention = document.getElementById("intention");
-    if (!surface || !discover || !product) return false;
-
     const image = document.getElementById("product-experience-image");
     const fallback = document.getElementById("product-experience-image-fallback");
+    const business = document.getElementById("product-experience-business");
+    const title = document.getElementById("product-experience-title");
+    const description = document.getElementById("product-experience-description");
+    const price = document.getElementById("product-experience-price");
+    const availability = document.getElementById("product-experience-availability");
+    const action = document.getElementById("product-experience-action");
+    if (!surface || !discover || !product || !image || !fallback || !business || !title || !description || !price || !availability || !action) return false;
+
     const imageUrl = safeHttps(product.imageUrl);
     image.hidden = !imageUrl;
     fallback.hidden = Boolean(imageUrl);
@@ -44,33 +89,20 @@
       image.alt = "";
     }
 
-    document.getElementById("product-experience-business").textContent = text(work && work.businessName);
-    document.getElementById("product-experience-title").textContent = text(product.name) || "Product";
-    document.getElementById("product-experience-description").textContent = text(product.description);
-    document.getElementById("product-experience-price").textContent = priceCopy(product);
-    document.getElementById("product-experience-availability").textContent = availabilityCopy(product.availability);
-
-    const action = document.getElementById("product-experience-action");
-    const safeDestination = safeHttps(destination);
-    const canContinue = product.availability !== "unavailable" && Boolean(safeDestination);
-    action.hidden = !canContinue;
-    if (canContinue) {
-      action.href = safeDestination;
-      action.target = "_blank";
-      action.rel = "noopener noreferrer";
-      action.textContent = product.continuationRoute === "booking" ? "Book with business" : "Where to buy";
-    } else {
-      action.removeAttribute("href");
-      action.removeAttribute("target");
-      action.removeAttribute("rel");
-    }
+    business.textContent = text(work && work.businessName);
+    title.textContent = text(product.name) || "Product";
+    description.textContent = text(product.description);
+    price.textContent = priceCopy(product);
+    availability.textContent = availabilityCopy(product.availability);
+    configureAction(action, product, destination);
 
     discover.hidden = true;
     if (intention) intention.hidden = true;
     surface.hidden = false;
     surface.setAttribute("data-product-id", text(product.productId));
+    surface.setAttribute("data-continuation-type", continuationType(product));
     window.scrollTo({ top: 0, behavior: "auto" });
-    document.getElementById("product-experience-title").focus({ preventScroll: true });
+    title.focus({ preventScroll: true });
     return true;
   }
 
@@ -81,6 +113,7 @@
     surface.hidden = true;
     discover.hidden = false;
     surface.removeAttribute("data-product-id");
+    surface.removeAttribute("data-continuation-type");
     if (window.location.hash !== "#discover") history.replaceState(null, "", "#discover");
     window.scrollTo({ top: 0, behavior: "auto" });
   }
@@ -108,8 +141,8 @@
     const list = document.getElementById("customer-work-list");
     if (!status || !list || list.children.length) return false;
     if (!/loading approved work/i.test(status.textContent || "")) return false;
-    if (typeof loadCustomerWork !== "function" || typeof globalThis.fetch !== "function") return false;
-    loadCustomerWork(document, globalThis.fetch, globalThis.location);
+    if (typeof globalThis.loadCustomerWork !== "function" || typeof globalThis.fetch !== "function") return false;
+    globalThis.loadCustomerWork(document, globalThis.fetch, globalThis.location);
     return true;
   }
 
@@ -117,9 +150,16 @@
     recoverDiscoverIfNeeded(document);
     const list = document.getElementById("customer-work-list");
     const back = document.getElementById("product-experience-back");
-    if (!list || !back) return;
+    const action = document.getElementById("product-experience-action");
+    if (!list || !back || !action) return;
 
     back.addEventListener("click", function () { closeProductExperience(document); });
+    action.addEventListener("click", function (event) {
+      if (action.getAttribute("data-demeos-purchase") !== "pending") return;
+      event.preventDefault();
+      action.textContent = "DEMEOS buying is not active yet";
+      action.setAttribute("aria-disabled", "true");
+    });
 
     list.addEventListener("click", function (event) {
       const target = event.target && event.target.closest ? event.target.closest(".customer-discover-option a") : null;
@@ -135,6 +175,6 @@
     });
   }
 
-  if (typeof module !== "undefined" && module.exports) module.exports = { availabilityCopy, openProductExperience, priceCopy, recoverDiscoverIfNeeded, safeHttps };
+  if (typeof module !== "undefined" && module.exports) module.exports = { availabilityCopy, configureAction, continuationType, openProductExperience, priceCopy, recoverDiscoverIfNeeded, safeHttps };
   if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", function () { initialize(document); });
 })();
