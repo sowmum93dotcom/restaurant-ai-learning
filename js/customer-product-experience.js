@@ -146,7 +146,7 @@
       description: description ? description.textContent : "",
       price: price ? price.textContent : "",
       imageUrl: image ? image.src : "",
-      availability: availability && /not currently available|unavailable/i.test(availability.textContent) ? "unavailable" : availability && /limited/i.test(availability.textContent) ? "limited" : availability && /contact/i.test(availability.textContent) ? "contact" : "available",
+      availability: card.getAttribute("data-availability") || (availability && /not currently available|unavailable/i.test(availability.textContent) ? "unavailable" : availability && /limited/i.test(availability.textContent) ? "limited" : availability && /contact/i.test(availability.textContent) ? "contact" : "available"),
       continuationRoute: route
     };
   }

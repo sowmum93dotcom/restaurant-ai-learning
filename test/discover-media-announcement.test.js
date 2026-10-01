@@ -8,6 +8,7 @@ test("Discover gallery position politely announces media changes", () => {
  const section = source.slice(source.indexOf('const mediaPosition = addText('), source.indexOf('const mediaPosition = addText(') + 1800);
  assert.match(section, /mediaPosition\.setAttribute\("aria-live", "polite"\)/);
  assert.match(section, /mediaPosition\.setAttribute\("aria-atomic", "true"\)/);
- assert.match(section, /const positionLabel = "Media " \+ \(closest \+ 1\)/);
+ assert.match(section, /const positionLabel = controlled && language && typeof language\.mediaPosition === "function"/);
+ assert.match(section, /language\.mediaPosition\(closest \+ 1, items\.length\) : "Media " \+ \(closest \+ 1\)/);
  assert.match(section, /mediaPosition\.textContent = positionLabel/);
 });

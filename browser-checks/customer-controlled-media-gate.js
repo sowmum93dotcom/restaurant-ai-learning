@@ -12,6 +12,7 @@ const local = base.includes('127.0.0.1');
    const page = await browser.newPage({viewport});
    const errors=[];page.on('pageerror', e=>errors.push(String(e)));
    if(local) {
+    await page.route('**/api/customer/work', route=>route.fulfill({json:{work:[],customerPackages:[],testMode:false}}));
     await page.route('**/api/customer/work?demeos-test=1', route=>{
      const request=route.request();assert.equal(request.headers()['x-demeos-test-mode'],'controlled-preview');
      return route.fulfill({json:{work:getValidPublicCustomerWork(fixtures()),customerPackages:[],testMode:true}});
@@ -22,7 +23,7 @@ const local = base.includes('127.0.0.1');
    await page.locator('#customer-work-list[data-controlled-test="true"]').waitFor();
    assert.equal(await page.locator('.customer-work-card').count(),6);
    assert.equal(await page.locator('.customer-header-inner').evaluate(el=>getComputedStyle(el,'::after').content),'none','header keeps navigation unobstructed');
-   assert.match(await page.locator('#customer-work-status').innerText(),/CONTROLLED TEST CONTENT/);
+   assert.match(await page.locator('#customer-work-status').textContent(),/CONTROLLED TEST CONTENT/);
    const imageMetrics=await page.locator('#customer-work-list img').evaluateAll(async images=>{
     images.forEach(im=>{im.loading="eager";});
     await Promise.race([Promise.all(images.map(im=>im.decode())),new Promise((_,reject)=>setTimeout(()=>reject(new Error("image decoding timeout")),15000))]);
@@ -37,11 +38,11 @@ const local = base.includes('127.0.0.1');
      const option=card.locator('[data-product-id="'+product.productId+'"]');
      await option.locator('.customer-product-continue-action').click();
      await page.locator('#product-experience:not([hidden])').waitFor();
-     assert.equal(await page.locator('#product-experience-title').innerText(),product.name);
+     assert.equal(await page.locator('#product-experience-title').textContent(),product.name);
      assert.equal(await page.locator('#product-experience-business').textContent(),work.businessName);
      assert.equal(await page.locator('#product-experience-image').getAttribute('src'),product.imageUrl);
      assert.equal(await page.locator('#product-experience-action').getAttribute('href'),work.customerContinuation[product.continuationRoute==='booking'?'bookingLink':'website']);
-     assert.equal(await page.locator('#product-experience-action').innerText(),product.continuationRoute==='booking'?'Book with business':'Where to buy');
+     assert.equal(await page.locator('#product-experience-action').textContent(),product.continuationRoute==='booking'?'Book with business':'Where to buy');
      await page.locator('#product-experience-back').click();
     }
    }
@@ -56,7 +57,96 @@ const local = base.includes('127.0.0.1');
    await page.locator('#product-experience-back').click();
    const garden=page.locator('.customer-work-card').filter({hasText:'DEMEOS Test Garden and Wildlife'});
    assert.equal(await garden.locator('.customer-product-continue-action').count(),0);
+   const copy=require('../js/demeos-controlled-customer-copy');
+   const cards=page.locator('.customer-work-card');
+   await cards.first().focus();await page.keyboard.press('ArrowDown');
+   assert.ok(await cards.nth(1).evaluate(n=>n===document.activeElement),'Down advances business');
+   await page.keyboard.press('ArrowUp');
+   assert.ok(await cards.first().evaluate(n=>n===document.activeElement),'Up returns business');
+   const media=cards.first().locator('.customer-work-media');
+   await media.focus();await page.keyboard.press('ArrowRight');
+   await page.waitForFunction(()=>document.querySelector('.customer-media-position').getAttribute('data-media-index')==='2');
+   await page.keyboard.press('ArrowLeft');
+   await page.waitForFunction(()=>document.querySelector('.customer-media-position').getAttribute('data-media-index')==='1');
+   for (const code of Object.keys(copy)) {
+    const c=copy[code];await page.selectOption('#customer-language',code);
+    await page.waitForFunction(b=>document.querySelector('#customer-work-status').textContent===b,c.banner);
+    assert.equal(await page.locator('html').getAttribute('dir'),code==='ar'?'rtl':'ltr');
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'no page overflow in '+code);
+    await page.evaluate(()=>{
+     window.__counterChanges=[];
+     window.__counterObserver=new MutationObserver(records=>records.forEach(r=>r.addedNodes.forEach(n=>window.__counterChanges.push(n.textContent))));
+     window.__counterObserver.observe(document.querySelector('.customer-media-position'),{childList:true});
+    });
+    await media.focus();await page.keyboard.press('Home');
+    await page.waitForFunction(()=>document.querySelector('.customer-media-position').getAttribute('data-media-index')==='1');
+    await page.keyboard.press('ArrowRight');
+    await page.waitForFunction(()=>document.querySelector('.customer-media-position').getAttribute('data-media-index')==='2');
+    assert.equal(await cards.first().locator('.customer-media-position').textContent(),c.media.replace('{index}','2').replace('{count}','3'));
+    await page.keyboard.press('ArrowLeft');
+    await page.waitForFunction(()=>document.querySelector('.customer-media-position').getAttribute('data-media-index')==='1');
+    await cards.first().focus();await page.keyboard.press('ArrowRight');
+    await page.waitForFunction(()=>document.querySelector('.customer-media-position').getAttribute('data-media-index')==='2');
+    await page.keyboard.press('ArrowLeft');
+    await page.waitForFunction(()=>document.querySelector('.customer-media-position').getAttribute('data-media-index')==='1');
+    const announcements=await page.evaluate(()=>{window.__counterObserver.disconnect();return window.__counterChanges;});
+    if(code!=="en") assert.ok(announcements.every(text=>!/^Media \d+ of \d+$/.test(text)),"counter never announces English while scrolling in "+code);
+    const firstName=await cards.first().locator('.customer-business-name').textContent();
+    assert.equal(await media.getAttribute('aria-label'),c.galleryGuidance.replace('{business}',firstName));
+    assert.equal(await cards.first().locator('.customer-package-region').getAttribute('aria-label'),c.productsFrom.replace('{business}',firstName));
+    for (const [i,work] of fixtures().entries()) {
+     const card=cards.nth(i);
+     const name=code==='en'?work.businessName:'DEMEOS '+c.test+' '+c.categories[i];
+     assert.equal(await card.locator('.customer-business-name').textContent(),name);
+     assert.equal(await card.locator('.customer-approved-mark').textContent(),c.approved);
+     assert.equal(await card.locator('.customer-choice-title').textContent(),c.choice);
+     assert.equal(await card.locator('.customer-participation-button').textContent(),c.tell);
+     if(code!=='en') assert.ok(!(await card.locator('.customer-work-content').textContent()).includes('Supplied test media'));
+     for(const product of work.products||[]) {
+      const option=card.locator('[data-product-id="'+product.productId+'"]');
+      const expected=await option.locator('.customer-discover-option-name').textContent();
+      if(code!=='en') {
+       const pi=['activewear','summer-fashion','mens-fashion','running','football','fishing','camping','hiking','childrens-fashion','toys','childrens-collection'].indexOf(product.productId.replace('test-product-',''));
+       assert.equal(expected,c.test+' '+c.products[pi],'localized product name');
+      }
+      await option.locator('.customer-product-continue-action').click();
+      assert.equal(await page.locator('#product-experience-title').textContent(),expected);
+      assert.equal(await page.locator('#product-experience-business').textContent(),name);
+      assert.equal(await page.locator('#product-experience-action').textContent(),product.continuationRoute==='booking'?c.book:c.buy);
+      assert.equal(await page.locator('#product-experience-action').getAttribute('href'),work.customerContinuation[product.continuationRoute==='booking'?'bookingLink':'website']);
+      assert.equal(await page.locator('#product-experience-safety').textContent(),c.safety);
+      await page.locator('#product-experience-back').click();
+     }
+    }
+    // Switching language while Product Experience is already open also updates its owned content.
+    await cards.first().locator('.customer-product-continue-action').first().click();
+    const next=code==='ja'?'en':'ja';await page.selectOption('#customer-language',next);
+    await page.waitForFunction(value=>document.querySelector('#product-experience-action').textContent===value,copy[next].buy);
+    await page.locator('#product-experience-back').click();
+   }
+   await page.selectOption('#customer-language','ja');
+   await page.reload({waitUntil:'networkidle'});
+   await page.locator('#customer-work-list[data-controlled-test="true"]').waitFor();
+   await page.waitForFunction(b=>document.querySelector('#customer-work-status').textContent===b,copy.ja.banner);
+   assert.equal(await cards.count(),6,'direct entry and reload remain controlled');
+   await page.locator('#customer-controlled-test-exit').click();
+   await page.locator('#customer-work-list[data-controlled-test="false"]').waitFor({state:'attached'});
+   assert.equal(await page.locator('[data-work-item-id^="test-discover-"]').count(),0,'normal mode never shows controlled records');
+   await page.locator('#customer-controlled-test-entry').click();
+   await page.locator('#customer-work-list[data-controlled-test="true"]').waitFor();
+   assert.equal(await cards.count(),6,'labelled testing entry consistently activates feed');
+
+   await page.selectOption('#customer-language','en');
+   await page.locator('#customer-work-list img').evaluateAll(async images=>{images.forEach(im=>{im.loading='eager';});await Promise.all(images.map(im=>im.decode()));});
    await page.screenshot({path:'/tmp/demeos-controlled-'+viewport.width+'.png',fullPage:true});
+   if(local) {
+    await page.route('**/api/customer/work?demeos-test=1',route=>route.fulfill({json:{work:[],testMode:false}}));
+    await page.reload({waitUntil:'networkidle'});
+    await page.locator('.customer-discover-retry').waitFor();
+    assert.ok(await page.locator('#customer-controlled-test-exit').isVisible(),'disabled test mode preserves exit');
+    assert.ok(!(await page.locator('#customer-controlled-test-entry').isVisible()));
+    assert.equal(await page.locator('.customer-work-card').count(),0,'disabled test mode fails closed');
+   }
    assert.deepEqual(errors,[]);
    console.log('Controlled media and continuation verified at '+viewport.width+'px');
    await page.close();

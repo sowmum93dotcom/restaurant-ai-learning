@@ -948,6 +948,7 @@ function getCustomerProductContinuationHref(work, product) {
 function createCustomerWorkCard(document, work, customerPackages, recordParticipation, anchorJourney) {
   const card = document.createElement("article");
   card.className = "customer-work-card";
+  card.setAttribute("data-work-item-id", work.workItemId);
 
   const context = document.createElement("header");
   context.className = "customer-work-context";
@@ -1027,6 +1028,14 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
       } else mediaRegion.appendChild(media);
     });
     message.appendChild(mediaRegion);
+    // Measure from the reading-direction edge so the same ordered controls work in RTL.
+    function mediaOffset(item) {
+      const region = mediaRegion.getBoundingClientRect();
+      const bounds = item.getBoundingClientRect();
+      const view = document.defaultView;
+      const rtl = view && typeof view.getComputedStyle === "function" && view.getComputedStyle(mediaRegion).direction === "rtl";
+      return rtl ? bounds.right - region.right : bounds.left - region.left;
+    }
     function pauseMediaVideos() {
       Array.from(mediaRegion.children).forEach(function (item) {
         const video = item.tagName === "VIDEO" || item.tag === "video" ? item : item.querySelector && item.querySelector("video");
@@ -1035,10 +1044,9 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
     }
     // A video must not keep playing after its media frame is no longer active.
     mediaRegion.addEventListener("scroll", function () {
-      const regionStart = mediaRegion.getBoundingClientRect().left;
       Array.from(mediaRegion.children).forEach(function (item) {
         const video = item.tagName === "VIDEO" ? item : item.querySelector && item.querySelector("video");
-        if (video && Math.abs(item.getBoundingClientRect().left - regionStart) > item.getBoundingClientRect().width / 2) video.pause();
+        if (video && Math.abs(mediaOffset(item)) > item.getBoundingClientRect().width / 2) video.pause();
       });
     }, { passive: true });
     if (work.media.length > 1) {
@@ -1052,12 +1060,15 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
         const items = Array.from(mediaRegion.children);
         let closest = 0;
         let distance = Infinity;
-        const regionStart = mediaRegion.getBoundingClientRect().left;
         items.forEach(function (item, index) {
-          const difference = Math.abs(item.getBoundingClientRect().left - regionStart);
+          const difference = Math.abs(mediaOffset(item));
           if (difference < distance) { distance = difference; closest = index; }
         });
-        const positionLabel = "Media " + (closest + 1) + " of " + items.length;
+        if (mediaPosition.getAttribute("data-media-index") !== String(closest + 1)) mediaPosition.setAttribute("data-media-index", String(closest + 1));
+        const language = document.defaultView && document.defaultView.DEMEOSCustomerInterfaceLanguage;
+        const controlled = document.body && document.body.classList && document.body.classList.contains("demeos-controlled-test");
+        const positionLabel = controlled && language && typeof language.mediaPosition === "function"
+          ? language.mediaPosition(closest + 1, items.length) : "Media " + (closest + 1) + " of " + items.length;
         if (mediaPosition.textContent !== positionLabel) {
           mediaPosition.textContent = positionLabel;
           mediaPosition.setAttribute("aria-label", positionLabel);
@@ -1086,18 +1097,17 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
         button.textContent = control[2];
         button.addEventListener("click", function () {
           const items = Array.from(mediaRegion.children);
-          const regionStart = mediaRegion.getBoundingClientRect().left;
           let closest = 0;
           let distance = Infinity;
           items.forEach(function (item, index) {
-            const difference = Math.abs(item.getBoundingClientRect().left - regionStart);
+            const difference = Math.abs(mediaOffset(item));
             if (difference < distance) { distance = difference; closest = index; }
           });
           const target = items[Math.max(0, Math.min(items.length - 1, closest + control[1]))];
           if (target) {
             if (target !== items[closest]) pauseMediaVideos();
             const reducedMotion = typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-            mediaRegion.scrollBy({ left: target.getBoundingClientRect().left - regionStart, behavior: reducedMotion ? "auto" : "smooth" });
+            mediaRegion.scrollBy({ left: mediaOffset(target), behavior: reducedMotion ? "auto" : "smooth" });
           }
         });
         controls.appendChild(button);
@@ -1110,7 +1120,7 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
           const items = Array.from(mediaRegion.children);
           const target = event.key === "Home" ? items[0] : items[items.length - 1];
           if (target) {
-            const offset = target.getBoundingClientRect().left - mediaRegion.getBoundingClientRect().left;
+            const offset = mediaOffset(target);
             if (Math.abs(offset) > 1) {
               pauseMediaVideos();
               const reducedMotion = typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -1147,6 +1157,7 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
       option.setAttribute("role", "listitem");
       option.setAttribute("data-product-id", product.productId);
       option.setAttribute("data-continuation-route", product.continuationRoute);
+      option.setAttribute("data-availability", product.availability);
       const href = getCustomerProductContinuationHref(work, product);
       if (/^https:\/\//i.test(product.imageUrl || "")) {
         const image = document.createElement("img");
@@ -1277,6 +1288,9 @@ function renderCustomerWork(document, work, customerPackages, participationRecor
       const mediaRegion = card.querySelector(".customer-work-media");
       if (!mediaRegion || mediaRegion.children.length < 2) return;
       event.preventDefault();
+      const mediaControls = card.querySelector(".customer-media-controls");
+      const mediaButton = mediaControls && mediaControls.children[event.key === "ArrowLeft" ? 0 : 1];
+      if (mediaButton) { if (!mediaButton.disabled) mediaButton.click(); return; }
       const direction = event.key === "ArrowRight" ? 1 : -1;
       if (typeof mediaRegion.querySelectorAll === "function") mediaRegion.querySelectorAll("video").forEach(function (video) { video.pause(); });
       mediaRegion.scrollBy({ left: direction * mediaRegion.clientWidth, behavior: "smooth" });
@@ -1328,7 +1342,7 @@ function getDiscoverRequest(location) {
   const search = location && typeof location.search === "string" ? location.search : "";
   const testMode = new URLSearchParams(search).get("demeos-test") === "1";
   return testMode
-    ? { url: "/api/customer/work?demeos-test=1", options: { headers: { "x-demeos-test-mode": "controlled-preview" } }, testMode: true }
+    ? { url: "/api/customer/work?demeos-test=1", options: { cache: "no-store", headers: { "x-demeos-test-mode": "controlled-preview" } }, testMode: true }
     : { url: "/api/customer/work", options: undefined, testMode: false };
 }
 
@@ -1339,6 +1353,10 @@ async function loadCustomerWork(document, fetcher, location) {
   discoverRequestVersions.set(document, version);
   const status = document.getElementById("customer-work-status");
   const request = getDiscoverRequest(location);
+  const testEntry = document.getElementById("customer-controlled-test-entry");
+  const testExit = document.getElementById("customer-controlled-test-exit");
+  if (testEntry) testEntry.hidden = request.testMode;
+  if (testExit) testExit.hidden = !request.testMode;
   try {
     const response = await fetcher(request.url, request.options);
     const data = await response.json();
@@ -1357,7 +1375,9 @@ async function loadCustomerWork(document, fetcher, location) {
   } catch (error) {
     if (discoverRequestVersions.get(document) !== version) return;
     // A failed refresh must not leave previously rendered business content visible.
-    document.getElementById("customer-work-list").textContent = "";
+    const failedList = document.getElementById("customer-work-list");
+    failedList.textContent = "";
+    if (typeof failedList.setAttribute === "function") failedList.setAttribute("data-controlled-test", "false");
     const navigationHint = typeof document.querySelector === "function" ? document.querySelector(".customer-discover-navigation-hint") : null;
     if (navigationHint) navigationHint.hidden = true;
     status.className = "customer-empty-state customer-load-error";
