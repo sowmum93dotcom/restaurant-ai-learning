@@ -118,21 +118,30 @@
     window.scrollTo({ top: 0, behavior: "auto" });
   }
 
+  function firstNode(card, selectors) {
+    for (let i = 0; i < selectors.length; i += 1) {
+      const node = card.querySelector(selectors[i]);
+      if (node) return node;
+    }
+    return null;
+  }
+
   function productFromCard(card) {
     if (!card) return null;
-    const name = card.querySelector(".customer-discover-option-name");
-    const description = card.querySelector(".customer-discover-option-description");
-    const price = card.querySelector(".customer-discover-option-price");
-    const availability = card.querySelector(".customer-discover-option-availability");
-    const image = card.querySelector(".customer-discover-option-image");
+    const name = firstNode(card, [".customer-product-name", ".customer-discover-option-name"]);
+    const description = firstNode(card, [".customer-product-description", ".customer-discover-option-description"]);
+    const price = firstNode(card, [".customer-product-price", ".customer-discover-option-price"]);
+    const availability = firstNode(card, [".customer-product-availability", ".customer-discover-option-availability"]);
+    const image = firstNode(card, [".customer-product-image-frame img", ".customer-discover-option-image"]);
+    const route = card.getAttribute("data-continuation-route") || "website";
     return {
       productId: card.getAttribute("data-product-id") || "",
       name: name ? name.textContent : "",
       description: description ? description.textContent : "",
       price: price ? price.textContent : "",
       imageUrl: image ? image.src : "",
-      availability: availability && /unavailable/i.test(availability.textContent) ? "unavailable" : availability && /limited/i.test(availability.textContent) ? "limited" : availability && /contact/i.test(availability.textContent) ? "contact" : "available",
-      continuationRoute: card.getAttribute("data-continuation-route") || "website"
+      availability: availability && /not currently available|unavailable/i.test(availability.textContent) ? "unavailable" : availability && /limited/i.test(availability.textContent) ? "limited" : availability && /contact/i.test(availability.textContent) ? "contact" : "available",
+      continuationRoute: route
     };
   }
 
@@ -148,10 +157,9 @@
 
   function initialize(document) {
     recoverDiscoverIfNeeded(document);
-    const list = document.getElementById("customer-work-list");
     const back = document.getElementById("product-experience-back");
     const action = document.getElementById("product-experience-action");
-    if (!list || !back || !action) return;
+    if (!back || !action) return;
 
     back.addEventListener("click", function () { closeProductExperience(document); });
     action.addEventListener("click", function (event) {
@@ -161,16 +169,17 @@
       action.setAttribute("aria-disabled", "true");
     });
 
-    list.addEventListener("click", function (event) {
-      const target = event.target && event.target.closest ? event.target.closest(".customer-discover-option a") : null;
+    document.addEventListener("click", function (event) {
+      const target = event.target && event.target.closest ? event.target.closest(".customer-product-continue-action, .customer-discover-option a") : null;
       if (!target) return;
-      const card = target.closest(".customer-discover-option");
+      const card = target.closest(".customer-product-card, .customer-discover-option");
+      if (!card) return;
       const destination = safeHttps(target.href);
       const product = productFromCard(card);
       if (!product) return;
       event.preventDefault();
-      const workCard = card.closest(".customer-work-card, article[data-discover-position]");
-      const businessNameNode = workCard && workCard.querySelector ? workCard.querySelector(".customer-business-name, .customer-work-business-name, h3") : null;
+      const workCard = card.closest(".customer-focused-possibility, .customer-work-card, article[data-discover-position]");
+      const businessNameNode = workCard && workCard.querySelector ? workCard.querySelector(".customer-possibility-provider, .customer-business-name, .customer-work-business-name, h3") : null;
       openProductExperience(document, { businessName: businessNameNode ? businessNameNode.textContent : "" }, product, destination);
     });
   }
