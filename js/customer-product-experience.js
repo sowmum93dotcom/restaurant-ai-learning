@@ -105,11 +105,12 @@
 
     discover.hidden = true;
     if (intention) intention.hidden = true;
+    const preparation=document.getElementById("purchase-preparation");if(preparation)preparation.hidden=true;
     surface.hidden = false;
     surface.setAttribute("data-product-id", text(product.productId));
     surface.setAttribute("data-continuation-type", continuationType(product));
     if (window.DEMEOSCustomerItemPresentation) window.DEMEOSCustomerItemPresentation.open(document, surface, product, destination, work);
-    window.scrollTo({ top: 0, behavior: "auto" });
+    window.scrollTo({ top: 0, behavior: "instant" });
     title.focus({ preventScroll: true });
     return true;
   }
@@ -125,7 +126,7 @@
     surface.removeAttribute("data-product-id");
     surface.removeAttribute("data-continuation-type");
     if (window.location.hash !== "#discover") history.replaceState(null, "", "#discover");
-    window.scrollTo({ top: 0, behavior: "auto" });
+    window.scrollTo({ top: 0, behavior: "instant" });
   }
 
   function firstNode(card, selectors) {
@@ -191,6 +192,7 @@
       const product = productFromCard(card);
       if (!product) return;
       event.preventDefault();
+      if(window.DEMEOSCustomerPurchasePreparation)window.DEMEOSCustomerPurchasePreparation.cancelPending();
       const workCard = card.closest(".customer-focused-possibility, .customer-work-card, article[data-discover-position]");
       const businessNameNode = workCard && workCard.querySelector ? workCard.querySelector(".customer-possibility-provider, .customer-business-name, .customer-work-business-name, h3") : null;
       openProductExperience(document, { businessName: businessNameNode ? businessNameNode.textContent : "", workItemId: workCard ? workCard.getAttribute("data-work-item-id") : "" }, product, destination);

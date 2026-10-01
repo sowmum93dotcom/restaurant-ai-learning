@@ -17,6 +17,7 @@
   return baseCopy().range.replace('{price}',currency(value.min,value.currency)+' – '+currency(value.max,value.currency));
  }
  function choiceLabel(field,value){
+  if(field.key==='size'&&({extraSmall:'XS',small:'S',medium:'M',large:'L',extraLarge:'XL',extraExtraLarge:'XXL'})[value.value])return ({extraSmall:'XS',small:'S',medium:'M',large:'L',extraLarge:'XL',extraExtraLarge:'XXL'})[value.value];
   if(value.copyKey)return copy().values[value.copyKey];
   if(field.key==='date'&&/^\d{4}-\d{2}-\d{2}$/.test(value.value)){
    const date=new Date(value.value+'T12:00:00Z');

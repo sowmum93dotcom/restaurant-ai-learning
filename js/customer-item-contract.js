@@ -9,7 +9,7 @@
     'family.toys': {parent:'family',kind:'product',fields:[]},
     'services.appointments': {parent:'services',kind:'service',fields:['duration','location','people','date']}
   });
-  const valueCopy = Object.freeze({size:['small','medium','large'],colour:['black','blue','pink'],weight:['weight500','weight1000'],quantity:['quantity1','quantity2'],packSize:['pack1','pack2'],duration:['minutes30','minutes60'],location:['testVenue','customerLocation'],people:['onePerson','twoPeople'],date:[]});
+  const valueCopy = Object.freeze({size:['extraSmall','small','medium','large','extraLarge','extraExtraLarge'],colour:['black','blue','pink'],weight:['weight500','weight1000'],quantity:['quantity1','quantity2'],packSize:['pack1','pack2'],duration:['minutes30','minutes60'],location:['testVenue','customerLocation'],people:['onePerson','twoPeople'],date:[]});
   const states = ['available','limited','unavailable','contact'];
   const currencies = new Set(['GBP','EUR','USD','JPY','CNY','INR','BRL','CAD','AUD','CHF','NZD','ZAR','NGN','GHS','GNF','XOF','XAF','AED','SAR','TRY','KRW','SGD','HKD','MXN','SEK','NOK','DKK','PLN']);
   const object = x => x && typeof x==='object' && !Array.isArray(x);

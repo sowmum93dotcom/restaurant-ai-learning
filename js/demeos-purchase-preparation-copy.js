@@ -27,7 +27,7 @@
     "review": "Review",
     "back": "Back to selection",
     "edit": "Change details",
-    "ready": "Ready for payment setup",
+    "ready": "Selection reviewed",
     "inactive": "Payment is inactive. No order or payment has been created.",
     "unavailable": "This selection is no longer available. Please choose again.",
     "failed": "We could not check this selection. Please try again.",
@@ -40,7 +40,8 @@
     "customer": "Customer",
     "selected": "Selected options",
     "price": "Current price",
-    "availability": "Availability"
+    "availability": "Availability",
+    "total": "Items total"
   },
   "es": {
     "title": "Revisa tu selección",
@@ -67,7 +68,7 @@
     "review": "Revisar",
     "back": "Volver a la selección",
     "edit": "Cambiar datos",
-    "ready": "Preparado para configurar el pago",
+    "ready": "Selección revisada",
     "inactive": "El pago está desactivado. No se ha creado ningún pedido ni pago.",
     "unavailable": "Esta selección ya no está disponible. Elige de nuevo.",
     "failed": "No pudimos comprobar esta selección. Vuelve a intentarlo.",
@@ -80,7 +81,8 @@
     "customer": "Cliente",
     "selected": "Opciones seleccionadas",
     "price": "Precio actual",
-    "availability": "Disponibilidad"
+    "availability": "Disponibilidad",
+    "total": "Total de artículos"
   },
   "fr": {
     "title": "Vérifiez votre sélection",
@@ -107,7 +109,7 @@
     "review": "Vérifier",
     "back": "Retour à la sélection",
     "edit": "Modifier les détails",
-    "ready": "Prêt pour la configuration du paiement",
+    "ready": "Sélection vérifiée",
     "inactive": "Le paiement est désactivé. Aucune commande ni aucun paiement n’a été créé.",
     "unavailable": "Cette sélection n’est plus disponible. Veuillez choisir à nouveau.",
     "failed": "Nous n’avons pas pu vérifier cette sélection. Veuillez réessayer.",
@@ -120,7 +122,8 @@
     "customer": "Client",
     "selected": "Options sélectionnées",
     "price": "Prix actuel",
-    "availability": "Disponibilité"
+    "availability": "Disponibilité",
+    "total": "Total des articles"
   },
   "ar": {
     "title": "راجع اختيارك",
@@ -147,7 +150,7 @@
     "review": "مراجعة",
     "back": "العودة إلى الاختيار",
     "edit": "تغيير التفاصيل",
-    "ready": "جاهز لإعداد الدفع",
+    "ready": "تمت مراجعة الاختيار",
     "inactive": "الدفع غير مفعّل. لم يتم إنشاء أي طلب أو عملية دفع.",
     "unavailable": "هذا الاختيار لم يعد متاحًا. يرجى الاختيار مجددًا.",
     "failed": "لم نتمكن من التحقق من هذا الاختيار. يرجى المحاولة مجددًا.",
@@ -160,7 +163,8 @@
     "customer": "العميل",
     "selected": "الخيارات المحددة",
     "price": "السعر الحالي",
-    "availability": "التوفر"
+    "availability": "التوفر",
+    "total": "إجمالي المنتجات"
   },
   "pt": {
     "title": "Reveja a sua seleção",
@@ -187,7 +191,7 @@
     "review": "Rever",
     "back": "Voltar à seleção",
     "edit": "Alterar dados",
-    "ready": "Pronto para configurar o pagamento",
+    "ready": "Seleção revista",
     "inactive": "O pagamento está desativado. Não foi criada nenhuma encomenda nem pagamento.",
     "unavailable": "Esta seleção já não está disponível. Escolha novamente.",
     "failed": "Não foi possível verificar esta seleção. Tente novamente.",
@@ -200,7 +204,8 @@
     "customer": "Cliente",
     "selected": "Opções selecionadas",
     "price": "Preço atual",
-    "availability": "Disponibilidade"
+    "availability": "Disponibilidade",
+    "total": "Total dos artigos"
   },
   "zh": {
     "title": "查看您的选择",
@@ -227,7 +232,7 @@
     "review": "查看",
     "back": "返回选择",
     "edit": "修改详情",
-    "ready": "可进行付款设置",
+    "ready": "选择已核对",
     "inactive": "付款尚未启用。未创建任何订单或付款。",
     "unavailable": "此选择已不可用。请重新选择。",
     "failed": "无法核实此选择。请重试。",
@@ -240,7 +245,8 @@
     "customer": "客户",
     "selected": "所选选项",
     "price": "当前价格",
-    "availability": "可用状态"
+    "availability": "可用状态",
+    "total": "商品总计"
   },
   "hi": {
     "title": "अपने चयन की समीक्षा करें",
@@ -267,7 +273,7 @@
     "review": "समीक्षा करें",
     "back": "चयन पर वापस जाएँ",
     "edit": "जानकारी बदलें",
-    "ready": "भुगतान की व्यवस्था के लिए तैयार",
+    "ready": "चयन की समीक्षा हो गई",
     "inactive": "भुगतान सक्रिय नहीं है। कोई ऑर्डर या भुगतान नहीं बनाया गया है।",
     "unavailable": "यह चयन अब उपलब्ध नहीं है। कृपया फिर से चुनें।",
     "failed": "हम इस चयन की जाँच नहीं कर सके। कृपया फिर से कोशिश करें।",
@@ -280,7 +286,8 @@
     "customer": "ग्राहक",
     "selected": "चुने गए विकल्प",
     "price": "वर्तमान मूल्य",
-    "availability": "उपलब्धता"
+    "availability": "उपलब्धता",
+    "total": "वस्तुओं का कुल"
   },
   "de": {
     "title": "Auswahl prüfen",
@@ -307,7 +314,7 @@
     "review": "Prüfen",
     "back": "Zurück zur Auswahl",
     "edit": "Angaben ändern",
-    "ready": "Bereit für die Zahlungseinrichtung",
+    "ready": "Auswahl geprüft",
     "inactive": "Zahlungen sind nicht aktiviert. Es wurde keine Bestellung oder Zahlung erstellt.",
     "unavailable": "Diese Auswahl ist nicht mehr verfügbar. Bitte wählen Sie erneut.",
     "failed": "Diese Auswahl konnte nicht geprüft werden. Bitte versuchen Sie es erneut.",
@@ -320,7 +327,8 @@
     "customer": "Kunde",
     "selected": "Gewählte Optionen",
     "price": "Aktueller Preis",
-    "availability": "Verfügbarkeit"
+    "availability": "Verfügbarkeit",
+    "total": "Artikelsumme"
   },
   "ja": {
     "title": "選択内容を確認",
@@ -347,7 +355,7 @@
     "review": "確認",
     "back": "選択に戻る",
     "edit": "情報を変更",
-    "ready": "支払い設定の準備完了",
+    "ready": "選択内容を確認しました",
     "inactive": "支払いは無効です。注文や支払いは作成されていません。",
     "unavailable": "この選択は現在利用できません。もう一度お選びください。",
     "failed": "この選択を確認できませんでした。もう一度お試しください。",
@@ -360,7 +368,8 @@
     "customer": "お客様",
     "selected": "選択したオプション",
     "price": "現在の価格",
-    "availability": "利用可能状況"
+    "availability": "利用可能状況",
+    "total": "商品合計"
   }
 };
  if(typeof module!=="undefined"&&module.exports)module.exports=copy;

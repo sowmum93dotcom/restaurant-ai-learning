@@ -318,7 +318,7 @@ function addStructuredTestItems(work) {
   const option = (key,values) => ({key,values:values.map(value=>({value,label:copy.values[value],copyKey:value}))});
   const p = (categoryId,pricing,options=[],variants=[]) => ({categoryId,pricing,options,variants});
   const variant = (variantId,selection,availability,pricing) => ({variantId,selection,availability,...(pricing?{pricing}:{})});
-  const clothingOptions = [option('size',['small','medium']),option('colour',['black','blue'])];
+  const clothingOptions = [option('size',['extraSmall','small','medium','large','extraLarge','extraExtraLarge']),option('colour',['black','blue'])];
   const presentation = {
     'test-product-activewear':p('fashion.apparel',from(45),clothingOptions,[
       variant('active-small-black',{size:'small',colour:'black'},'available',fixed(45)),
@@ -371,6 +371,13 @@ function addStructuredTestItems(work) {
       product.continuationRoute='demeos';
       if(!business.customerContinuation.routes.includes('demeos'))business.customerContinuation.routes.push('demeos');
       product.fulfilment={methods:[product.productId==='test-product-football'?'appointment':'collection'],requiredDetails:product.productId==='test-product-football'?['date']:[],quantityEnabled:product.productId!=='test-product-football'};
+    }
+  }
+  for(const business of work)for(const product of business.products||[]){
+    if(!['test-product-activewear','test-product-childrens-collection'].includes(product.productId))continue;
+    for(const size of ['extraSmall','large','extraLarge','extraExtraLarge'])for(const colour of ['black','blue']){
+      const amount=product.productId==='test-product-activewear'?(colour==='blue'?47:45):(colour==='blue'?27:25);
+      product.presentation.variants.push(variant(product.productId+'-'+size+'-'+colour,{size,colour},'available',fixed(amount)));
     }
   }
   return work;
