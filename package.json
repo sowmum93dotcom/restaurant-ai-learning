@@ -4,6 +4,9 @@
   "scripts": {
     "test": "node --test"
   },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.8"
+  },
   "dependencies": {
     "@clerk/backend": "^2.14.0",
     "@vercel/postgres": "^0.10.0",
