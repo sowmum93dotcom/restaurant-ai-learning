@@ -186,7 +186,7 @@
       if (!target) return;
       const card = target.closest(".customer-product-card, .customer-discover-option");
       if (!card) return;
-      const destination = safeHttps(target.href);
+      const destination = safeHttps(target.getAttribute("data-customer-destination") || target.href);
       const product = productFromCard(card);
       if (!product) return;
       event.preventDefault();

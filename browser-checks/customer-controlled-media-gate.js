@@ -6,6 +6,7 @@ const { getValidPublicCustomerWork } = require('../api/_lib/customer-public-work
 const base = process.env.DEMEOS_BROWSER_BASE_URL || 'http://127.0.0.1:4173';
 const local = base.includes('127.0.0.1');
 async function openProduct(page,option,product,work,language='en') {
+ assert.equal(await option.locator('a[href^="http"]').count(),0,'structured card cannot bypass selection with an external link');
  await option.locator('.customer-product-continue-action, .customer-item-details').first().click();
  await page.locator('#product-experience:not([hidden])').waitFor();
  const presentation=require('../js/customer-item-contract').normalize(product.presentation);

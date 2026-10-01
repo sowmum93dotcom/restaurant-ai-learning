@@ -33,6 +33,20 @@
   if(!product.presentation)return;
   card.setAttribute('data-structured-item','true');
   card.demeosProduct=product;
+  // External continuation belongs only to the resolved selection surface.
+  card.querySelectorAll('a').forEach(link=>{
+   const destination=link.getAttribute('href')||'';
+   if(/^https:\/\//i.test(destination))link.setAttribute('data-customer-destination',destination);
+   link.setAttribute('href','#product-experience');
+   link.removeAttribute('target');link.removeAttribute('rel');
+   if(link.classList.contains('customer-product-continue-action')){
+    const button=doc.createElement('button');button.type='button';button.className=link.className;
+    button.textContent=link.textContent;
+    if(link.hasAttribute('data-customer-destination'))button.setAttribute('data-customer-destination',destination);
+    link.replaceWith(button);
+   }
+  });
+
   if(!card.querySelector('.customer-item-category'))node(doc,card,'p','customer-item-category');
   if(!card.querySelector('.customer-discover-option-price, .customer-product-price'))node(doc,card,'p','customer-discover-option-price');
   if(!card.querySelector('.customer-discover-option-availability, .customer-product-availability'))node(doc,card,'p','customer-discover-option-availability');

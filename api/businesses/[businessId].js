@@ -1,3 +1,4 @@
+const customerItemContract = require("../../js/customer-item-contract.js");
 const { getRepository } = require("../_lib/persistence.js");
 const {
   authorizeBusinessOwnerRequest
@@ -92,8 +93,10 @@ function getValidatedProfile(req) {
         (imageUrl && !isSafeHttpUrl(imageUrl)) ||
         (!continuationRoute || !ALLOWED_CONTINUATION_ROUTES.has(continuationRoute) || !continuation.routes.includes(continuationRoute)) ||
         !ALLOWED_AVAILABILITY_STATES.has(availability)) return null;
+    const presentation = item.presentation === undefined ? undefined : customerItemContract.normalize(item.presentation);
+    if (item.presentation !== undefined && !presentation) return null;
     productIds.add(productId);
-    products.push({ productId, businessId: cleanString(profile.businessId, 120), name, description, price, imageUrl,
+    products.push({ ...(presentation ? { presentation } : {}), productId, businessId: cleanString(profile.businessId, 120), name, description, price, imageUrl,
       continuationRoute, availability, priceMode, customerVisible: item.customerVisible !== false, imageSource: imageUrl ? "business-provided" : "",
       ...(productFulfilment ? { fulfilment: { methods: Array.from(new Set(productFulfilment.methods)) } } : {}) });
   }

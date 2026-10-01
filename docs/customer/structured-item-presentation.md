@@ -1,6 +1,6 @@
 # AREA 1 structured product and service presentation
 
-Issue #656 adds an optional `presentation` to the existing customer-visible product contract. Existing legacy products remain supported. Public API validation and browser validation use `js/customer-item-contract.js`; malformed structured items are omitted rather than rendered with invented values.
+Issue #656 adds an optional `presentation` to the existing customer-visible product contract. Existing legacy products remain supported. The existing profile API retains this optional validated field so saved structured data reaches Customer Experience; no owner forms are added. Public API validation and browser validation use `js/customer-item-contract.js`; malformed structured items are omitted rather than rendered with invented values.
 
 Controlled fixtures remain behind the existing exact query/header activation. They are never persisted as business records. Normal production requests do not receive them. Supplied media associations remain unchanged; the grocery pack intentionally has no product image because its supplied artwork belongs to business marketing.
 
@@ -13,7 +13,7 @@ Controlled fixtures remain behind the existing exact query/header activation. Th
 
 The category contract distinguishes products and services. Fashion supports size/colour; groceries support weight/quantity/pack size; services support duration/location/people/date. Fields are optional. Products without options do not receive irrelevant controls.
 
-Base unavailability always blocks continuation. Available/limited/contact selections retain the original business-approved external destination. Selected options are displayed for confirmation with the business; no undocumented third-party URL parameters are added. The explicitly granted DEMEOS continuation remains inactive, with no payment request or economic mechanism.
+Base unavailability always blocks continuation. Available/limited/contact selections retain the original business-approved external destination. Structured cards expose only local experience navigation; their external destination is held for the resolved selection surface, preventing middle-click or context-menu bypass. Selected options are displayed for confirmation with the business; no undocumented third-party URL parameters are added. The explicitly granted DEMEOS continuation remains inactive, with no payment request or economic mechanism.
 
 Language selection and persistence remain in the existing Customer Interface language controller. The added catalogue supplies content to that controller, including prices, categories, selection labels, values, availability and guidance. Real business-provided names and custom option labels remain business content.
 
