@@ -11,3 +11,6 @@
 .customer-product-experience[data-controlled-test="true"] .customer-product-experience-media{aspect-ratio:auto;background:#041226;box-shadow:none;max-width:100%}
 .customer-product-experience[data-controlled-test="true"] .customer-product-experience-media img{width:auto;height:auto;max-width:100%;max-height:440px;object-fit:contain}
 @media(max-width:760px){.customer-product-experience[data-controlled-test="true"] .customer-product-experience-media img{max-height:340px}}
+
+/* Hide the temporary escape link without changing controlled-test routing or security. */
+#customer-controlled-test-exit{display:none!important}
