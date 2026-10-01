@@ -118,5 +118,5 @@ module.exports = async function handler(req, res) {
   }
 };
 
-module.exports.discoverTestContent = productExperienceTestContent;
+module.exports.discoverTestContent = legacyDiscoverTestContent;
 module.exports.isDiscoverTestMode = isDiscoverTestMode;

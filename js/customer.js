@@ -1314,7 +1314,7 @@ function getDiscoverRequest(location) {
   const search = location && typeof location.search === "string" ? location.search : "";
   const testMode = new URLSearchParams(search).get("demeos-test") === "1";
   return testMode
-    ? { url: "/api/customer/work?demeos-test=1", options: { headers: { "x-demeos-discover-test": "controlled-preview" } }, testMode: true }
+    ? { url: "/api/customer/work?demeos-test=1", options: { headers: { "x-demeos-test-mode": "controlled-preview" } }, testMode: true }
     : { url: "/api/customer/work", options: undefined, testMode: false };
 }
 

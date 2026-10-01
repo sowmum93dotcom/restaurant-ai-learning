@@ -474,3 +474,37 @@ test("approved real business and controlled preview share the Discover public co
     assert.equal(item.participationAction, "Interested");
   }
 });
+
+
+test("Product Experience test feed requires both exact query and controlled header", async function () {
+  let repositoryCalls = 0;
+  const repository = { async getCustomerWork() { repositoryCalls++; return []; } };
+  const rejected = [
+    { query: {}, headers: {} },
+    { query: { "demeos-test": "1" }, headers: {} },
+    { query: {}, headers: { "x-demeos-test-mode": "controlled-preview" } },
+    { query: { "demeos-test": "0" }, headers: { "x-demeos-test-mode": "controlled-preview" } },
+    { query: { "demeos-test": "1" }, headers: { "x-demeos-test-mode": "true" } },
+    { query: { "demeos-test": ["1"] }, headers: { "x-demeos-test-mode": "controlled-preview" } }
+  ];
+  for (const request of rejected) {
+    const res = await runHandler("../api/customer/work.js", repository, { method: "GET", ...request });
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.testMode, false);
+    assert.deepEqual(res.body.work, []);
+  }
+  assert.equal(repositoryCalls, rejected.length);
+  const controlled = await runHandler("../api/customer/work.js", repository, {
+    method: "GET", query: { "demeos-test": "1" }, headers: { "x-demeos-test-mode": "controlled-preview" }
+  });
+  assert.equal(controlled.statusCode, 200);
+  assert.equal(controlled.body.testMode, true);
+  assert.equal(repositoryCalls, rejected.length);
+  assert.equal(controlled.body.work.length, 1);
+  const item = controlled.body.work[0];
+  assert.equal(item.businessName, "DEMEOS Product Experience Test");
+  assert.equal(item.media[0].relatedEntityId, item.products[0].productId);
+  assert.match(item.products[0].imageUrl, /^https:\/\/www\.demeos\.io\/images\/discover-test-/);
+  assert.equal(item.products[0].continuationRoute, "website");
+  assert.deepEqual(controlled.body.customerPackages, []);
+});
