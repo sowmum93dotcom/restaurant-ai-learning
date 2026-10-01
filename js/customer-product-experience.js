@@ -126,7 +126,7 @@
     surface.removeAttribute("data-product-id");
     surface.removeAttribute("data-continuation-type");
     if (window.location.hash !== "#discover") history.replaceState(null, "", "#discover");
-    window.scrollTo({ top: 0, behavior: "auto" });
+    window.scrollTo({ top: 0, behavior: "instant" });
   }
 
   function firstNode(card, selectors) {
