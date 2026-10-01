@@ -84,7 +84,7 @@ function toPublicCustomerWorkItem(item) {
         ...(normalizedRequiredString(product.imageUrl) ? { imageUrl: product.imageUrl.trim(), imageSource: "business-provided" } : {}),
         ...(safeRoute ? { continuationRoute: safeRoute } : {}),
         availability: ["available", "limited", "unavailable", "contact"].includes(product.availability) ? product.availability : "contact",
-        ...(product.fulfilment && Array.isArray(product.fulfilment.methods) ? { fulfilment: { methods: product.fulfilment.methods.filter(function (method) { return ALLOWED_FULFILMENT_METHODS.has(method); }) } } : {})
+        ...(product.fulfilment && Array.isArray(product.fulfilment.methods) ? { fulfilment: { methods: product.fulfilment.methods.filter(function (method) { return ALLOWED_FULFILMENT_METHODS.has(method); }), ...(Array.isArray(product.fulfilment.requiredDetails)?{requiredDetails:product.fulfilment.requiredDetails.filter(k=>['recipient','address','city','postalCode','country','date','location','people'].includes(k))}:{}), ...(typeof product.fulfilment.quantityEnabled==='boolean'?{quantityEnabled:product.fulfilment.quantityEnabled}:{}) } } : {})
       };
     }).filter(Boolean);
     if (products.length) publicItem.products = products;

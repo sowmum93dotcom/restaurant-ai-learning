@@ -55,6 +55,7 @@
       });
     });
 
+    if (root.location && root.location.hash === "#privacy-control") { const privacy = triggers.find(trigger => trigger.getAttribute("data-relationship-area") === "privacy-control"); if (privacy) openView(privacy); }
     return { openView, closeView };
   }
 
@@ -422,7 +423,9 @@
       if (!clerk || typeof clerk.load !== "function" || !windowObject.__internal_ClerkUICtor) {
         throw new Error("Provider unavailable");
       }
-      await clerk.load({ ui: { ClerkUI: windowObject.__internal_ClerkUICtor } });
+      const localization = windowObject.DEMEOSCustomerAuthLanguage ? await windowObject.DEMEOSCustomerAuthLanguage.localization() : undefined;
+      await clerk.load({ ui: { ClerkUI: windowObject.__internal_ClerkUICtor }, ...(localization ? { localization } : {}) });
+      if (windowObject.DEMEOSCustomerAuthLanguage) windowObject.DEMEOSCustomerAuthLanguage.bind(clerk);
 
       async function update() {
         const hasProviderSession = Boolean(clerk.user);
@@ -438,9 +441,10 @@
         documentObject.getElementById("my-preferences-signed-in").hidden = !authenticated;
         documentObject.getElementById("privacy-control-signed-out").hidden = authenticated;
         documentObject.getElementById("privacy-controls-form").hidden = !authenticated;
+        if (authenticated && windowObject.DEMEOSCustomerPurchasePreparation && windowObject.DEMEOSCustomerPurchasePreparation.authenticationReturn()) return;
         if (authenticated) await Promise.allSettled([loadIntentions(documentObject, fetchFunction), loadPossibilities(documentObject, fetchFunction), loadParticipations(documentObject, fetchFunction), loadPreferences(documentObject, fetchFunction), loadPrivacyControls(documentObject, fetchFunction)]);
       }
-      authElements.signIn.addEventListener("click", function () { clerk.openSignIn(); });
+      authElements.signIn.addEventListener("click", function () { const preparation = windowObject.DEMEOSCustomerPurchasePreparation; const returnPath = preparation && preparation.authenticationPath(); clerk.openSignIn(returnPath ? { forceRedirectUrl: returnPath, signUpForceRedirectUrl: returnPath, withSignUp: true } : undefined); });
       authElements.signOut.addEventListener("click", function () { clerk.signOut(); });
       clerk.addListener(update);
       await update();

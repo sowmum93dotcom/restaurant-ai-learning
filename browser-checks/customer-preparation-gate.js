@@ -1,0 +1,52 @@
+/* Deterministic OAuth adapter only. Real preparation handler and fixture contracts are exercised. */
+const {chromium}=require('playwright'),assert=require('node:assert/strict'),path=require('node:path');
+const {productExperienceTestContent:fixtures}=require('../api/_lib/controlled-customer-test-content');
+const {getValidPublicCustomerWork}=require('../api/_lib/customer-public-work-contract');
+const {createHandler}=require('../api/_lib/customer-controlled-preparation');
+const copy=require('../js/demeos-purchase-preparation-copy');
+const base=process.env.DEMEOS_BROWSER_BASE_URL||'http://127.0.0.1:4173';
+(async()=>{const browser=await chromium.launch({headless:true});try{
+ for(const viewport of [{width:390,height:844},{width:820,height:1180},{width:1440,height:1000}]){
+  const context=await browser.newContext({viewport});const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.stack||String(e)));
+  let authenticated=false,available=true,preparationCalls=0;
+  await context.route('**/api/customer/work*',route=>{const controlled=new URL(route.request().url()).searchParams.get('demeos-test')==='1'&&route.request().headers()['x-demeos-test-mode']==='controlled-preview';return route.fulfill({json:{work:controlled?getValidPublicCustomerWork(fixtures()):[],testMode:controlled,customerPackages:[]}});});
+  await context.route('https://www.demeos.io/images/controlled-test/**',route=>route.fulfill({path:path.join(__dirname,'..',new URL(route.request().url()).pathname)}));
+  await context.route('**/api/public-config',route=>route.fulfill({json:{clerkPublishableKey:'pk_test_'+Buffer.from('clerk.test$').toString('base64')}}));
+  await context.route('https://clerk.test/npm/@clerk/ui@1/dist/ui.browser.js',route=>route.fulfill({contentType:'text/javascript',body:'window.__internal_ClerkUICtor={};'}));
+  await context.route('https://clerk.test/npm/@clerk/clerk-js@6/dist/clerk.browser.js',route=>route.fulfill({contentType:'text/javascript',body:`window.Clerk={user:sessionStorage.getItem('browser-test-auth')?{}:null,async load(options){this.testLocalization=options.localization&&options.localization.locale;},addListener(fn){this.listener=fn;},async openSignIn(options){if(!options.withSignUp||!options.forceRedirectUrl.endsWith('/my-demeos.html?prepare=1')||options.signUpForceRedirectUrl!==options.forceRedirectUrl)throw Error('Wrong registration return');await fetch('/browser-test-auth');sessionStorage.setItem('browser-test-auth','yes');this.user={};this.listener();},signOut(){this.user=null;}};` }));
+  await context.route('**/browser-test-auth',route=>{authenticated=true;return route.fulfill({json:{ok:true}});});
+  await context.route('**/api/customer/identity',route=>route.fulfill({json:{authenticated}}));
+  await context.route('**/api/customer/preparation*',async route=>{
+   preparationCalls++;const request=route.request(),url=new URL(request.url());const headers=request.headers();headers.host=url.host;const req={method:request.method(),headers,query:Object.fromEntries(url.searchParams),body:request.postDataJSON()};
+   const res={headers:{},statusCode:200,setHeader(k,v){this.headers[k]=v;},status(v){this.statusCode=v;return this;},json(v){this.body=v;return this;}};
+   const handler=createHandler({authenticate:async()=>authenticated?{trustedCustomerIdentityId:'browser-only-customer'}:null,repository:()=>({getOwnedBusinessIds:async()=>[]}),fixtures:()=>{const w=fixtures();if(!available)w.find(x=>x.workItemId==='test-discover-family').products.find(x=>x.productId==='test-product-childrens-collection').availability='unavailable';return w;}});
+   await handler(req,res);await route.fulfill({status:res.statusCode,json:res.body,headers:res.headers});
+  });
+  await context.route('**/api/customer/intentions',r=>r.fulfill({json:{intentions:[]}}));await context.route('**/api/customer/possibilities/saved',r=>r.fulfill({json:{possibilities:[]}}));await context.route('**/api/customer/participation',r=>r.fulfill({json:{participations:[]}}));await context.route('**/api/customer/preferences',r=>r.fulfill({json:{preferences:[]}}));await context.route('**/api/customer/privacy-controls',r=>r.fulfill({json:{controls:{usePreferencesAsGuidance:false,useFeedbackAsGuidance:false}}}));
+  async function open(product){await page.goto(base+'/customer.html?demeos-test=1&browser-check='+encodeURIComponent(product)+'#discover');await page.locator('#customer-work-list[data-controlled-test="true"]').waitFor();await page.locator('[data-product-id="'+product+'"] .customer-product-continue-action, [data-product-id="'+product+'"] .customer-item-details').first().click();await page.locator('#product-experience:not([hidden])').waitFor();}
+  await open('test-product-childrens-collection');await page.locator('#customer-language').selectOption('ja');
+  await page.locator('select[data-option-key="size"]').selectOption('medium');await page.locator('select[data-option-key="colour"]').selectOption('blue');await page.locator('#purchase-preparation-quantity input').fill('3');await page.locator('#product-experience-action').click();
+  await page.waitForURL('**/my-demeos.html?prepare=1');await page.locator('#customer-sign-in').waitFor({state:'visible'});
+  assert.equal(await page.evaluate(()=>window.Clerk.testLocalization),'ja-JP','existing provider receives the selected Customer Experience language');
+  assert.equal(await page.locator('input[name="address"], input[name="date"], input[name="country"]').count(),0,'registration requires no transaction details');
+  const draft=await page.evaluate(()=>JSON.parse(sessionStorage.getItem('demeos-controlled-preparation-v1')));assert.deepEqual(draft.selection,{size:'medium',colour:'blue'});assert.equal(draft.quantity,3);assert.deepEqual(Object.keys(draft).sort(),['expires','productId','quantity','selection','version','workItemId']);
+  await page.locator('#customer-sign-in').click();await page.waitForURL('**/customer.html?demeos-test=1&resume=1#product-experience');await page.locator('#purchase-preparation:not([hidden])').waitFor();await page.locator('#purchase-preparation-details input[name="address"]').waitFor();
+  assert.equal(await page.locator('select[data-option-key="size"]').inputValue(),'medium');assert.equal(await page.locator('select[data-option-key="colour"]').inputValue(),'blue');assert.equal(await page.locator('#purchase-preparation-quantity input').inputValue(),'3');
+  assert.deepEqual(await page.locator('#purchase-preparation-details input').evaluateAll(ns=>ns.map(n=>n.name)),['address','city','country']);
+  await page.locator('input[name="address"]').fill('12 Controlled Test Street');await page.locator('input[name="city"]').fill('Conakry');await page.locator('input[name="country"]').fill('Guinea');
+  for(const language of Object.keys(copy)){
+   await page.locator('#customer-language').selectOption(language);await page.waitForTimeout(80);
+   assert.equal(await page.locator('#purchase-preparation-title').textContent(),copy[language].title);assert.equal(await page.locator('#purchase-preparation-details label[data-detail-field="address"] span').textContent(),copy[language].address);assert.equal(await page.locator('input[name="address"]').inputValue(),'12 Controlled Test Street');assert.ok((await page.locator('#purchase-preparation-summary').textContent()).includes('3'));
+   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'responsive review has no horizontal overflow');if(language==='en')await page.screenshot({path:'/tmp/issue658-preparation-'+viewport.width+'-en.png',fullPage:true});
+  }
+  await page.screenshot({path:'/tmp/issue658-preparation-'+viewport.width+'.png',fullPage:true});
+  await page.locator('#purchase-preparation-review').click();await page.locator('#purchase-preparation-boundary').waitFor({state:'visible'});assert.equal(await page.locator('#purchase-preparation-boundary').textContent(),copy.ja.inactive);assert.equal(await page.locator('input[type="password"], input[name*="card"], iframe').count(),0);
+  await page.locator('#purchase-preparation-back').click();assert.equal(await page.locator('select[data-option-key="colour"]').inputValue(),'blue');await page.locator('select[data-option-key="colour"]').selectOption('black');assert.equal(await page.locator('#product-experience-action').getAttribute('aria-disabled'),'true');
+  await page.locator('select[data-option-key="size"]').selectOption('small');await page.locator('#product-experience-action').click();await page.locator('#purchase-preparation-review').waitFor({state:'visible'});await page.waitForTimeout(100);assert.equal(await page.locator('input[name="address"]').inputValue(),'12 Controlled Test Street','back/change preserves applicable transaction details');
+  available=false;await page.locator('#purchase-preparation-review').click();await page.waitForTimeout(150);assert.equal(await page.locator('#purchase-preparation-status').textContent(),copy.ja.unavailable);assert.ok(!(await page.locator('#purchase-preparation-boundary').isVisible()));available=true;
+  await open('test-product-childrens-fashion');await page.locator('#product-experience-action').click();await page.locator('#purchase-preparation-review').waitFor({state:'visible'});assert.equal(await page.locator('#purchase-preparation-details input').count(),0,'collection asks no address');
+  await open('test-product-football');assert.ok(!(await page.locator('#purchase-preparation-quantity').isVisible()));await page.locator('#product-experience-action').click();await page.locator('#purchase-preparation-details input').waitFor();assert.deepEqual(await page.locator('#purchase-preparation-details input').evaluateAll(ns=>ns.map(n=>n.name)),['date']);
+  const before=preparationCalls;await open('test-product-summer-fashion');assert.match(await page.locator('#product-experience-action').getAttribute('href'),/^https:\/\//);assert.equal(preparationCalls,before,'external marketing never calls DEMEOS preparation');
+  assert.deepEqual(errors,[]);console.log('Preparation gate passed',viewport.width,'all nine languages, exact authentication return, fulfilment, unavailable re-check, no payment');await context.close();
+ }
+}finally{await browser.close();}})().catch(error=>{console.error(error);process.exit(1);});

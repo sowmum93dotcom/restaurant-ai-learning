@@ -1,0 +1,540 @@
+{
+  "locale": "ja-JP",
+  "backButton": "戻る",
+  "dividerText": "または",
+  "footerActionLink__alternativePhoneCodeProvider": "代わりにSMSでコードを送信",
+  "footerActionLink__useAnotherMethod": "別の方法を使用する",
+  "footerPageLink__help": "ヘルプ",
+  "footerPageLink__privacy": "プライバシー",
+  "footerPageLink__terms": "利用規約",
+  "formButtonPrimary": "続ける",
+  "formButtonPrimary__verify": "確認する",
+  "formFieldAction__forgotPassword": "パスワードをお忘れですか？",
+  "formFieldAction__hidePassword": "パスワードを非表示にする",
+  "formFieldAction__showPassword": "パスワードを表示する",
+  "formFieldError__matchingPasswords": "パスワードが一致します。",
+  "formFieldError__notMatchingPasswords": "パスワードが一致しません。",
+  "formFieldError__verificationLinkExpired": "検証リンクの有効期限が切れています。新しいリンクをリクエストしてください。",
+  "formFieldHintText__optional": "任意",
+  "formFieldHintText__slug": "Slugは人間が読める一意なIDで、URLでよく使われます。",
+  "formFieldInputPlaceholder__apiKeyDescription": "このキーを生成する理由を記入してください",
+  "formFieldInputPlaceholder__apiKeyExpirationDate": "日付を選択",
+  "formFieldInputPlaceholder__apiKeyName": "シークレットキー名を入力",
+  "formFieldInputPlaceholder__backupCode": "バックアップコードを入力",
+  "formFieldInputPlaceholder__confirmDeletionUserAccount": "アカウント削除",
+  "formFieldInputPlaceholder__emailAddress": "メールアドレスを入力",
+  "formFieldInputPlaceholder__emailAddress_username": "メールアドレスまたはユーザー名",
+  "formFieldInputPlaceholder__emailAddresses": "example@email.com, example2@email.com",
+  "formFieldInputPlaceholder__firstName": "名",
+  "formFieldInputPlaceholder__lastName": "姓",
+  "formFieldInputPlaceholder__organizationDomain": "example.com",
+  "formFieldInputPlaceholder__organizationDomainEmailAddress": "you@example.com",
+  "formFieldInputPlaceholder__organizationName": "組織名",
+  "formFieldInputPlaceholder__organizationSlug": "my-org",
+  "formFieldInputPlaceholder__password": "パスワードを入力",
+  "formFieldInputPlaceholder__phoneNumber": "電話番号を入力",
+  "formFieldInputPlaceholder__username": "ユーザー名を入力",
+  "formFieldInput__emailAddress_format": "例: name@example.com",
+  "formFieldLabel__apiKey": "APIキー",
+  "formFieldLabel__apiKeyDescription": "説明",
+  "formFieldLabel__apiKeyExpiration": "有効期限",
+  "formFieldLabel__apiKeyName": "シークレットキー名",
+  "formFieldLabel__automaticInvitations": "このドメインの自動招待を有効にする",
+  "formFieldLabel__backupCode": "バックアップコード",
+  "formFieldLabel__confirmDeletion": "削除の確認",
+  "formFieldLabel__confirmPassword": "パスワードの確認",
+  "formFieldLabel__currentPassword": "現在のパスワード",
+  "formFieldLabel__emailAddress": "メールアドレス",
+  "formFieldLabel__emailAddress_username": "メールアドレスまたはユーザー名",
+  "formFieldLabel__emailAddresses": "メールアドレス",
+  "formFieldLabel__firstName": "名",
+  "formFieldLabel__lastName": "姓",
+  "formFieldLabel__newPassword": "新しいパスワード",
+  "formFieldLabel__organizationDomain": "ドメイン",
+  "formFieldLabel__organizationDomainDeletePending": "保留中の招待と提案を削除",
+  "formFieldLabel__organizationDomainEmailAddress": "確認用のメールアドレス",
+  "formFieldLabel__organizationDomainEmailAddressDescription": "このドメインを確認するためのコードを受け取るメールアドレスを入力してください。",
+  "formFieldLabel__organizationName": "組織名",
+  "formFieldLabel__organizationSlug": "Slug",
+  "formFieldLabel__passkeyName": "パスキー名",
+  "formFieldLabel__password": "パスワード",
+  "formFieldLabel__phoneNumber": "電話番号",
+  "formFieldLabel__role": "役割",
+  "formFieldLabel__signOutOfOtherSessions": "他の全てのデバイスからサインアウト",
+  "formFieldLabel__username": "ユーザー名",
+  "maintenanceMode": "現在メンテナンス中です。数分程度で完了する予定ですので、そのままお待ちください。",
+  "oauthConsent": {
+    "redirectUriModal": {},
+    "scopeList": {}
+  },
+  "reverification": {
+    "alternativeMethods": {
+      "actionLink": "ヘルプを取得",
+      "actionText": "これらのいずれもお持ちでないですか？",
+      "blockButton__backupCode": "バックアップコードを使用する",
+      "blockButton__emailCode": "{{identifier}} にメールコードを送信",
+      "blockButton__passkey": "パスキーを使用する",
+      "blockButton__password": "パスワードで続行",
+      "blockButton__phoneCode": "{{identifier}} にSMSコードを送信",
+      "blockButton__totp": "認証アプリを使用する",
+      "getHelp": {
+        "blockButton__emailSupport": "メールサポート",
+        "content": "アカウントの確認に問題がある場合は、メールでお問い合わせいただければ、できるだけ早くアクセスを回復できるよう対応いたします。",
+        "title": "ヘルプを取得"
+      },
+      "subtitle": "問題が発生していますか？これらの方法のいずれかを使用して本人確認を行うことができます。",
+      "title": "別の方法を使用"
+    },
+    "backupCodeMfa": {
+      "subtitle": "二段階認証の設定時に受け取ったバックアップコードを入力してください",
+      "title": "バックアップコードを入力"
+    },
+    "emailCode": {
+      "formTitle": "検証コード",
+      "resendButton": "コードが届いていませんか？再送信",
+      "subtitle": "続行するには、メールに送信されたコードを入力してください",
+      "title": "確認が必要です"
+    },
+    "noAvailableMethods": {
+      "message": "確認を続行できません。利用可能な認証要素が設定されていません。",
+      "subtitle": "エラーが発生しました",
+      "title": "アカウントを確認できません"
+    },
+    "passkey": {
+      "blockButton__passkey": "パスキーを使用する",
+      "subtitle": "パスキーを使用すると、ご本人であることを確認できます。デバイスから指紋認証、顔認証、または画面ロックの解除を求められる場合があります。",
+      "title": "パスキーを使用する"
+    },
+    "password": {
+      "actionLink": "別の方法を使用",
+      "subtitle": "続行するには現在のパスワードを入力してください",
+      "title": "確認が必要です"
+    },
+    "phoneCode": {
+      "formTitle": "検証コード",
+      "resendButton": "コードが届いていませんか？再送信",
+      "subtitle": "続行するには、電話に送信されたコードを入力してください",
+      "title": "確認が必要です"
+    },
+    "phoneCodeMfa": {
+      "formTitle": "検証コード",
+      "resendButton": "コードが届いていませんか？再送信",
+      "subtitle": "続行するには、電話に送信されたコードを入力してください",
+      "title": "確認が必要です"
+    },
+    "totpMfa": {
+      "formTitle": "検証コード",
+      "subtitle": "続行するには、認証アプリで生成されたコードを入力してください",
+      "title": "確認が必要です"
+    }
+  },
+  "signIn": {
+    "accountSwitcher": {
+      "action__addAccount": "アカウントを追加",
+      "action__signOutAll": "全てのアカウントからサインアウト",
+      "subtitle": "続行するアカウントを選択してください。",
+      "title": "アカウントを選択"
+    },
+    "alternativeMethods": {
+      "actionLink": "ヘルプを取得",
+      "actionText": "これらのいずれも持っていませんか？",
+      "blockButton__backupCode": "バックアップコードを使用する",
+      "blockButton__emailCode": "{{identifier}}にメールコードを送信",
+      "blockButton__emailLink": "{{identifier}}にメールリンクを送信",
+      "blockButton__passkey": "パスキーでサインインする",
+      "blockButton__password": "パスワードでサインインする",
+      "blockButton__phoneCode": "{{identifier}}にSMSコードを送信",
+      "blockButton__totp": "認証アプリを使用する",
+      "getHelp": {
+        "blockButton__emailSupport": "メールサポート",
+        "content": "アカウントにサインインできない場合は、メールでお問い合わせいただければ、できるだけ早くアクセスを回復するためにお手伝いいたします。",
+        "title": "ヘルプを取得"
+      },
+      "subtitle": "問題が発生していますか？これらの方法を使用してサインインすることができます。",
+      "title": "別の方法を使用"
+    },
+    "alternativePhoneCodeProvider": {
+      "formTitle": "検証コード",
+      "resendButton": "コードが届いていませんか？再送信",
+      "subtitle": "{{applicationName}} へ進む",
+      "title": "{{provider}} を確認してください"
+    },
+    "backupCodeMfa": {
+      "subtitle": "バックアップコードは、二段階認証の設定時に受け取ったものです",
+      "title": "バックアップコードを入力"
+    },
+    "emailCode": {
+      "formTitle": "検証コード",
+      "resendButton": "コードを再送信",
+      "subtitle": "{{applicationName}} へ進む",
+      "title": "メールを確認"
+    },
+    "emailCodeMfa": {
+      "formTitle": "メールを確認",
+      "resendButton": "コードが届いていませんか？再送信",
+      "subtitle": "{{applicationName}} へ進む",
+      "title": "メールを確認"
+    },
+    "emailLink": {
+      "clientMismatch": {
+        "subtitle": "続行するには、サインインを開始したデバイスとブラウザで検証リンクを開いてください",
+        "title": "このデバイスでは検証リンクが無効です"
+      },
+      "expired": {
+        "subtitle": "元のタブに戻って続行してください。",
+        "title": "この検証リンクは期限切れです"
+      },
+      "failed": {
+        "subtitle": "元のタブに戻って続行してください。",
+        "title": "この検証リンクは無効です"
+      },
+      "formSubtitle": "メールに送信された検証リンクを使用してください",
+      "formTitle": "検証リンク",
+      "loading": {
+        "subtitle": "まもなくリダイレクトされます",
+        "title": "サインイン中..."
+      },
+      "resendButton": "リンクを再送信",
+      "subtitle": "{{applicationName}} へ進む",
+      "title": "メールを確認",
+      "unusedTab": {
+        "title": "このタブを閉じてもかまいません"
+      },
+      "verified": {
+        "subtitle": "まもなくリダイレクトされます",
+        "title": "サインインが完了しました"
+      },
+      "verifiedSwitchTab": {
+        "subtitle": "続行するには元のタブに戻ってください",
+        "subtitleNewTab": "新しく開いたタブに戻って続行してください",
+        "titleNewTab": "他のタブでサインイン済み"
+      },
+      "verifiedTransferable": {}
+    },
+    "emailLinkMfa": {
+      "formSubtitle": "メールに送信された確認リンクを使用してください",
+      "resendButton": "リンクが届いていませんか？再送信",
+      "subtitle": "{{applicationName}} へ進む",
+      "title": "メールを確認してください"
+    },
+    "enterpriseConnections": {
+      "subtitle": "続行するエンタープライズアカウントを選択してください。",
+      "title": "エンタープライズアカウントを選択"
+    },
+    "enterpriseSSO": {},
+    "forgotPassword": {
+      "formTitle": "パスワードリセットコード",
+      "resendButton": "コードを再送信",
+      "subtitle": "パスワードをリセットするために",
+      "subtitle_email": "まず、メールアドレスに送信されたコードを入力してください",
+      "subtitle_phone": "まず、電話に送信されたコードを入力してください",
+      "title": "パスワードをリセット"
+    },
+    "forgotPasswordAlternativeMethods": {
+      "blockButton__resetPassword": "パスワードをリセット",
+      "label__alternativeMethods": "または、別の方法でサインインしてください。",
+      "title": "パスワードをお忘れですか？"
+    },
+    "newDeviceVerificationNotice": "新しいデバイスからサインインしています。アカウントのセキュリティを保つため、確認をお願いしています。",
+    "noAvailableMethods": {
+      "message": "サインインできません。利用可能な認証方法がありません。",
+      "subtitle": "エラーが発生しました",
+      "title": "サインインできません"
+    },
+    "passkey": {
+      "subtitle": "パスキーを使用すると、ご本人であることを確認できます。デバイスから指紋認証、顔認証、または画面ロックの解除を求められる場合があります。",
+      "title": "パスキーを使用する"
+    },
+    "password": {
+      "actionLink": "別の方法を使用",
+      "subtitle": "アカウントに関連付けられたパスワードを入力してください",
+      "title": "パスワードを入力"
+    },
+    "passwordCompromised": {
+      "title": "漏洩したパスワード"
+    },
+    "passwordPwned": {
+      "title": "漏洩したパスワード"
+    },
+    "passwordUntrusted": {
+      "title": "信頼できないパスワード"
+    },
+    "phoneCode": {
+      "formTitle": "検証コード",
+      "resendButton": "コードを再送信",
+      "subtitle": "{{applicationName}} へ進む",
+      "title": "電話を確認してください"
+    },
+    "phoneCodeMfa": {
+      "formTitle": "検証コード",
+      "resendButton": "コードを再送信",
+      "subtitle": "続行するには、電話に送信された検証コードを入力してください",
+      "title": "電話を確認してください"
+    },
+    "protectCheck": {},
+    "resetPassword": {
+      "formButtonPrimary": "パスワードをリセット",
+      "requiredMessage": "セキュリティ上の理由から、パスワードのリセットが必要です。",
+      "successMessage": "パスワードが正常に変更されました。お待ちください、サインインしています。",
+      "title": "パスワードをリセット"
+    },
+    "resetPasswordMfa": {
+      "detailsLabel": "パスワードをリセットする前に、身元を確認する必要があります。"
+    },
+    "ssoBypass": {
+      "code": {}
+    },
+    "start": {
+      "actionLink": "サインアップ",
+      "actionLink__join_waitlist": "ウェイトリストに登録",
+      "actionLink__use_email": "メールアドレスを使用",
+      "actionLink__use_email_username": "メールアドレスまたはユーザー名を使用",
+      "actionLink__use_passkey": "代わりにパスキーを使用",
+      "actionLink__use_phone": "電話番号を使用",
+      "actionLink__use_username": "ユーザー名を使用",
+      "actionText": "アカウントをお持ちでないですか？",
+      "actionText__join_waitlist": "先行体験にご興味ありますか？",
+      "alternativePhoneCodeProvider": {
+        "actionLink": "別の方法を使用",
+        "label": "{{provider}} の電話番号",
+        "subtitle": "{{provider}} で検証コードを受け取るための電話番号を入力してください。",
+        "title": "{{provider}} を使って {{applicationName}} にサインイン"
+      },
+      "subtitle": "お帰りなさい！続行するにはサインインしてください",
+      "subtitleCombined": "お帰りなさい！続行するにはサインインしてください",
+      "title": "{{applicationName}} にサインイン",
+      "titleCombined": "{{applicationName}} へ進む"
+    },
+    "totpMfa": {
+      "formTitle": "検証コード",
+      "subtitle": "続行するには、認証アプリで生成された検証コードを入力してください",
+      "title": "二段階認証"
+    },
+    "web3Solana": {
+      "subtitle": "サインインするには下のウォレットを選択してください",
+      "title": "Solana でサインイン"
+    }
+  },
+  "signInEnterPasswordTitle": "パスワードを入力してください",
+  "signUp": {
+    "alternativePhoneCodeProvider": {
+      "resendButton": "コードが届いていませんか？再送信",
+      "subtitle": "{{provider}} に送信された確認コードを入力してください",
+      "title": "{{provider}} を確認してください"
+    },
+    "continue": {
+      "actionLink": "サインイン",
+      "actionText": "アカウントをお持ちですか？",
+      "subtitle": "続行するには残りの詳細を入力してください",
+      "title": "未入力のフィールドを入力"
+    },
+    "emailCode": {
+      "formSubtitle": "メールアドレスに送信された確認コードを入力してください",
+      "formTitle": "確認コード",
+      "resendButton": "コードを再送信",
+      "subtitle": "メールに送信された確認コードを入力してください",
+      "title": "メールアドレスを確認"
+    },
+    "emailLink": {
+      "clientMismatch": {
+        "subtitle": "続行するには、サインアップを開始したデバイスとブラウザで検証リンクを開いてください",
+        "title": "このデバイスでは検証リンクが無効です"
+      },
+      "formSubtitle": "メールアドレスに送信された確認リンクを使用してください",
+      "formTitle": "確認リンク",
+      "loading": {
+        "title": "登録中..."
+      },
+      "resendButton": "リンクを再送信",
+      "subtitle": "{{applicationName}} へ進む",
+      "title": "メールアドレスを確認",
+      "verified": {
+        "title": "登録が完了しました"
+      },
+      "verifiedSwitchTab": {
+        "subtitle": "続行するために新しく開いたタブに戻ってください",
+        "subtitleNewTab": "続行するために前のタブに戻ってください",
+        "title": "メールアドレスが正常に確認されました"
+      }
+    },
+    "enterpriseConnections": {
+      "subtitle": "続行するエンタープライズアカウントを選択してください。",
+      "title": "エンタープライズアカウントを選択"
+    },
+    "legalConsent": {
+      "checkbox": {
+        "label__onlyPrivacyPolicy": "{{privacyPolicyLink || link(\"個人情報保護方針\")}}に同意します",
+        "label__onlyTermsOfService": "{{termsOfServiceLink || link(\"利用規約\")}}に同意します",
+        "label__termsOfServiceAndPrivacyPolicy": "{{termsOfServiceLink || link(\"利用規約\")}}と{{privacyPolicyLink || link(\"個人情報保護方針\")}}に同意します"
+      },
+      "continue": {
+        "subtitle": "続行する前に、利用条件を読み同意してください",
+        "title": "法的同意"
+      }
+    },
+    "phoneCode": {
+      "formSubtitle": "電話番号に送信された確認コードを入力してください",
+      "formTitle": "確認コード",
+      "resendButton": "コードを再送信",
+      "subtitle": "電話に送信された確認コードを入力してください",
+      "title": "電話番号を確認"
+    },
+    "protectCheck": {},
+    "restrictedAccess": {
+      "actionLink": "サインイン",
+      "actionText": "既にアカウントをお持ちですか？",
+      "blockButton__emailSupport": "サポートに連絡",
+      "blockButton__joinWaitlist": "待機リストに参加",
+      "subtitle": "現在サインアップは無効になっています。アクセス権限があると思われる場合は、サポートまでご連絡ください。",
+      "subtitleWaitlist": "現在サインアップは無効になっています。リリース時に最初に通知を受け取るには、待機リストにご参加ください。",
+      "title": "アクセス制限"
+    },
+    "start": {
+      "actionLink": "サインイン",
+      "actionLink__use_email": "代わりにメールアドレスを使用",
+      "actionLink__use_phone": "代わりに電話番号を使用",
+      "actionText": "アカウントをお持ちですか？",
+      "alternativePhoneCodeProvider": {
+        "actionLink": "別の方法を使用",
+        "label": "{{provider}} の電話番号",
+        "subtitle": "{{provider}} で検証コードを受け取るための電話番号を入力してください。",
+        "title": "{{provider}} を使って {{applicationName}} にサインアップ"
+      },
+      "subtitle": "ようこそ！始めるには詳細を入力してください",
+      "subtitleCombined": "ようこそ！始めるには詳細を入力してください",
+      "title": "アカウントを作成",
+      "titleCombined": "アカウントを作成"
+    },
+    "web3Solana": {
+      "subtitle": "サインアップするには下のウォレットを選択してください",
+      "title": "Solana でサインアップ"
+    }
+  },
+  "socialButtonsBlockButton": "{{provider|titleize}}で続ける",
+  "socialButtonsBlockButtonManyInView": "{{provider|titleize}}",
+  "unstable__errors": {
+    "action_blocked": "ログインを完了できませんでした。もう一度お試しください。",
+    "already_a_member_in_organization": "{{email}} は既にこの組織のメンバーです。",
+    "api_key_name_already_exists": "ログインを完了できませんでした。もう一度お試しください。",
+    "api_key_usage_exceeded": "ログインを完了できませんでした。もう一度お試しください。",
+    "avatar_file_size_exceeded": "ファイルサイズが10MBの上限を超えています。より小さいファイルを選択してください。",
+    "avatar_file_type_invalid": "サポートされていないファイル形式です。JPG、PNG、GIF、またはWEBP画像をアップロードしてください。",
+    "captcha_invalid": "セキュリティ検証に失敗しました。もう一度お試しください。",
+    "captcha_unavailable": "ボット検証に失敗したため、サインアップに失敗しました。ページを更新して再試行するか、サポートに連絡してさらに支援を受けてください。",
+    "form_code_incorrect": "入力されたコードが正しくありません。",
+    "form_email_address_blocked": "一時的なメールサービスはサポートされていません。アカウントを作成するには、通常のメールアドレスを使用してください。",
+    "form_identifier_exists__email_address": "このメールアドレスは既に使用されています。別のものをお試しください。",
+    "form_identifier_exists__phone_number": "この電話番号は既に使用されています。別のものをお試しください。",
+    "form_identifier_exists__username": "このユーザー名は既に使用されています。別のものをお試しください。",
+    "form_identifier_not_found": "その情報に一致するアカウントが見つかりませんでした。",
+    "form_new_password_matches_current": "新しいパスワードを現在のパスワードと同じにすることはできません。",
+    "form_param_format_invalid": "入力された値の形式が正しくありません。確認して修正してください。",
+    "form_param_format_invalid__email_address": "メールアドレスの形式が正しくありません。",
+    "form_param_format_invalid__phone_number": "電話番号は有効な国際形式で入力してください。",
+    "form_param_max_length_exceeded__first_name": "名は256文字以内で入力してください。",
+    "form_param_max_length_exceeded__last_name": "姓は256文字以内で入力してください。",
+    "form_param_max_length_exceeded__name": "名前は256文字以内で入力してください。",
+    "form_param_nil": "この項目は必須です。空欄にはできません。",
+    "form_param_type_invalid": "入力された値の型が正しくありません。",
+    "form_param_type_invalid__email_address": "メールアドレスは有効な文字列である必要があります。",
+    "form_param_type_invalid__phone_number": "電話番号は有効な文字列である必要があります。",
+    "form_param_value_invalid": "入力された値が無効です。修正してください。",
+    "form_password_compromised__sign_in": "このパスワードは侵害された可能性があります。アカウントを保護するため、別のサインイン方法を使用してください。サインイン後にパスワードのリセットが必要になります。",
+    "form_password_incorrect": "入力されたパスワードが正しくありません。もう一度お試しください。",
+    "form_password_length_too_short": "パスワードが短すぎます。8文字以上である必要があります。",
+    "form_password_matches_identifier": "ログインを完了できませんでした。もう一度お試しください。",
+    "form_password_not_strong_enough": "パスワードの強度が不十分です。",
+    "form_password_or_identifier_incorrect": "パスワードまたはメールアドレスが正しくありません。もう一度お試しいただくか、別の方法をご利用ください。",
+    "form_password_pwned": "このパスワードは侵害の一部として見つかったため使用できません。別のパスワードを試してください。",
+    "form_password_pwned__sign_in": "このパスワードは侵害の一部として見つかったため使用できません。パスワードをリセットしてください。",
+    "form_password_size_in_bytes_exceeded": "パスワードのバイト数が上限を超えています。短くするか、一部の特殊文字を削除してください。",
+    "form_password_untrusted__sign_in": "このパスワードは安全でない可能性があります。アカウントを保護するため、別のサインイン方法を使用してください。サインイン後にパスワードのリセットが必要になります。",
+    "form_password_validation_failed": "パスワードが間違っています",
+    "form_username_invalid_character": "ユーザー名に無効な文字が含まれています。",
+    "form_username_invalid_length": "ユーザー名は{{min_length}}文字以上{{max_length}}文字以下である必要があります。",
+    "form_username_needs_non_number_char": "ユーザー名には少なくとも1つの数字以外の文字が含まれている必要があります。",
+    "identification_deletion_failed": "最後の識別情報は削除できません。",
+    "insufficient_seats_change_plan": "ログインを完了できませんでした。もう一度お試しください。",
+    "insufficient_seats_contact_support": "ログインを完了できませんでした。もう一度お試しください。",
+    "not_allowed_access": "メールアドレスまたは電話番号は登録に使用できません。これは、'+', '=', '#' または '.' がメールアドレスに使用されているか、一時的な電子メールサービスに接続されたドメインが使用されているか、明示的な除外が行われているためです。エラーが発生した場合は、サポートに連絡してください。",
+    "oauth_access_denied": "ログインを完了できませんでした。もう一度お試しください。",
+    "organization_domain_blocked": "このメールプロバイダーのドメインはブロックされています。別のものを使用してください。",
+    "organization_domain_common": "これは一般的なメールプロバイダーのドメインです。別のものを使用してください。",
+    "organization_domain_exists_for_enterprise_connection": "このドメインは組織の SSO で既に使用されています。",
+    "organization_membership_quota_exceeded": "保留中の招待を含め、組織のメンバー数の上限に達しました。",
+    "organization_minimum_permissions_needed": "必要な最小権限を持つ組織メンバーが少なくとも1人必要です。",
+    "organization_not_found_or_unauthorized": "この組織のメンバーではなくなりました。別の組織を選択するか、新しく作成してください。",
+    "organization_not_found_or_unauthorized_with_create_organization_disabled": "この組織のメンバーではなくなりました。別の組織を選択してください。",
+    "passkey_already_exists": "このデバイスには既にパスキーが登録されています。",
+    "passkey_not_supported": "このデバイスではパスキーはサポートされていません。",
+    "passkey_pa_not_supported": "登録にはプラットフォーム認証器が必要ですが、このデバイスは対応していません。",
+    "passkey_registration_cancelled": "パスキーの登録はキャンセルされたか、タイムアウトしました。",
+    "passkey_retrieval_cancelled": "パスキーの確認はキャンセルされたか、タイムアウトしました。",
+    "passwordComplexity": {
+      "maximumLength": "{{length}}文字未満",
+      "minimumLength": "{{length}}文字以上",
+      "requireLowercase": "小文字を含む",
+      "requireNumbers": "数字を含む",
+      "requireSpecialCharacter": "特殊文字を含む",
+      "requireUppercase": "大文字を含む",
+      "sentencePrefix": "パスワードは次の条件を満たす必要があります："
+    },
+    "phone_number_exists": "この電話番号は既に使用されています。別のものをお試しください。",
+    "protect_check_aborted": "ログインを完了できませんでした。もう一度お試しください。",
+    "protect_check_already_resolved": "ログインを完了できませんでした。もう一度お試しください。",
+    "protect_check_execution_failed": "ログインを完了できませんでした。もう一度お試しください。",
+    "protect_check_invalid_script": "ログインを完了できませんでした。もう一度お試しください。",
+    "protect_check_invalid_sdk_url": "ログインを完了できませんでした。もう一度お試しください。",
+    "protect_check_required": "ログインを完了できませんでした。もう一度お試しください。",
+    "protect_check_script_load_failed": "ログインを完了できませんでした。もう一度お試しください。",
+    "protect_check_timed_out": "ログインを完了できませんでした。もう一度お試しください。",
+    "protect_check_unsupported_environment": "ログインを完了できませんでした。もう一度お試しください。",
+    "session_exists": "既にサインインしています。",
+    "sso_bypass_domain_not_served": "ログインを完了できませんでした。もう一度お試しください。",
+    "ticket_expired_code": "ログインを完了できませんでした。もう一度お試しください。",
+    "ticket_invalid_code": "ログインを完了できませんでした。もう一度お試しください。",
+    "too_many_unverified_identifications": "ログインを完了できませんでした。もう一度お試しください。",
+    "web3_missing_identifier": "Web3ウォレット拡張機能が見つかりません。続行するにはインストールしてください。",
+    "web3_signature_request_rejected": "署名リクエストを拒否しました。続行するにはもう一度お試しください。",
+    "web3_solana_signature_generation_failed": "署名の生成中にエラーが発生しました。続行するにはもう一度お試しください。",
+    "zxcvbn": {
+      "couldBeStronger": "パスワードは有効ですが、もう少し強化できます。文字を追加してみてください。",
+      "goodPassword": "パスワードは全ての要件を満たしています。",
+      "notEnough": "パスワードの強度が十分ではありません。",
+      "suggestions": {
+        "allUppercase": "全ての文字を大文字にするのではなく、一部の文字を大文字にしてください。",
+        "anotherWord": "より一般的でない単語を追加してください。",
+        "associatedYears": "自分に関連する年号は避けてください。",
+        "capitalization": "最初の文字以外も大文字にしてください。",
+        "dates": "自分に関連する日付や年号は避けてください。",
+        "l33t": "予測可能な文字の代替（例：'@' で 'a' を置き換える）を避けてください。",
+        "longerKeyboardPattern": "長いキーボードパターンを使用し、タイピングの方向を複数回変えてください。",
+        "noNeed": "シンボル、数字、大文字の使用なしでも強力なパスワードを作成できます。",
+        "pwned": "他の場所でこのパスワードを使用している場合は、変更する必要があります。",
+        "recentYears": "最近の年号は避けてください。",
+        "repeated": "繰り返される単語や文字を避けてください。",
+        "reverseWords": "一般的な単語の逆さ読みは避けてください。",
+        "sequences": "一般的な文字の並びを避けてください。",
+        "useWords": "複数の単語を使用してくださいが、一般的なフレーズは避けてください。"
+      },
+      "warnings": {
+        "common": "これは一般的に使われるパスワードです。",
+        "commonNames": "一般的な名前や姓は推測しやすいです。",
+        "dates": "日付は推測しやすいです。",
+        "extendedRepeat": "\"abcabcabc\" といった繰り返しパターンは推測しやすいです。",
+        "keyPattern": "短いキーボードパターンは推測しやすいです。",
+        "namesByThemselves": "単体の名前や姓は推測しやすいです。",
+        "pwned": "このパスワードはインターネット上のデータ侵害によって公開されています。",
+        "recentYears": "最近の年号は推測しやすいです。",
+        "sequences": "\"abc\" といった一般的な文字の並びは推測しやすいです。",
+        "similarToCommon": "これは一般的に使われるパスワードに類似しています。",
+        "simpleRepeat": "\"aaa\" といった繰り返し文字は推測しやすいです。",
+        "straightRow": "キーボード上の連続した行は推測しやすいです。",
+        "topHundred": "これは頻繁に使われるパスワードです。",
+        "topTen": "これはよく使われるパスワードです。",
+        "userInputs": "個人情報やページに関連するデータは含まれていないはずです。",
+        "wordByItself": "単語単体では推測しやすいです。"
+      }
+    }
+  }
+}
