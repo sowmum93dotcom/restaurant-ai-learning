@@ -6,6 +6,8 @@ const {
 } = require("../_lib/demeos-rules.js");
 const { getValidPublicCustomerWork } = require("../_lib/customer-public-work-contract.js");
 
+const DISCOVER_TEST_MODE_HEADER = "x-demeos-test-mode";
+const DISCOVER_TEST_MODE_VALUE = "controlled-preview";
 const DISCOVER_TEST_MODE_QUERY = "demeos-test";
 
 function discoverTestContent() {
@@ -33,8 +35,9 @@ function discoverTestContent() {
 }
 
 function isDiscoverTestMode(req) {
+  const header = req && req.headers && req.headers[DISCOVER_TEST_MODE_HEADER];
   const query = req && req.query && req.query[DISCOVER_TEST_MODE_QUERY];
-  return query === "1";
+  return header === DISCOVER_TEST_MODE_VALUE || query === "1";
 }
 
 module.exports = async function handler(req, res) {
