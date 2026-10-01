@@ -141,6 +141,85 @@
   function normalize(value) { var code = String(value || "").toLowerCase().split("-")[0]; return supported.indexOf(code) >= 0 ? code : "en"; }
   function getSaved() { try { return root.localStorage.getItem("demeos-customer-language"); } catch (_) { return null; } }
   function setSaved(value) { try { root.localStorage.setItem("demeos-customer-language", value); } catch (_) {} }
+  // Only the explicitly activated, server-confirmed controlled feed owns these strings.
+  // Real business content never passes through this catalogue.
+  function applyControlled(language) {
+    var doc = root.document, catalog = root.DEMEOSControlledCustomerCopy;
+    if (!doc || !catalog) return;
+    var code = normalize(language), c = catalog[code];
+    function format(value, params) { return value.replace(/\{(\w+)\}/g, function (_, key) { return params[key]; }); }
+    function set(node, value, attr) {
+      if (!node) return;
+      if (attr) { if (node.getAttribute(attr) !== value) node.setAttribute(attr, value); }
+      else if (node.textContent !== value) node.textContent = value;
+    }
+    function owned(node, value) {
+      if (!node) return;
+      if (!node.hasAttribute("data-controlled-source")) node.setAttribute("data-controlled-source", node.textContent);
+      set(node, code === "en" ? node.getAttribute("data-controlled-source") : value);
+    }
+    set(doc.getElementById("customer-controlled-test-entry"), c.entry);
+    set(doc.getElementById("customer-controlled-test-exit"), c.exit);
+    var list = doc.getElementById("customer-work-list");
+    if (!list || list.getAttribute("data-controlled-test") !== "true") return;
+    var ids = ["fashion", "groceries", "sports", "outdoors", "family", "garden"];
+    var productIds = ["activewear", "summer-fashion", "mens-fashion", "running", "football", "fishing", "camping", "hiking", "childrens-fashion", "toys", "childrens-collection"];
+    set(doc.getElementById("customer-work-status"), c.banner);
+    list.querySelectorAll(".customer-work-card").forEach(function (card) {
+      var index = ids.indexOf((card.getAttribute("data-work-item-id") || "").replace("test-discover-", ""));
+      if (index < 0) return;
+      var category = c.categories[index], name = "DEMEOS " + c.test + " " + category;
+      owned(card.querySelector(".customer-business-name"), name);
+      name = card.querySelector(".customer-business-name").textContent;
+      owned(card.querySelector(".customer-work-content"), format(c.content, {category:category}));
+      set(card, name, "aria-label");
+      card.querySelectorAll(".customer-work-context .customer-step").forEach(function (n) {set(n,c.business);});
+      card.querySelectorAll(".customer-choice .customer-step").forEach(function (n) {set(n,c.options);});
+      var fields = {".customer-approved-mark":"approved", ".customer-choice-title":"choice", ".customer-participation-title":"interested", ".customer-participation-button":"tell", ".customer-package-empty":"empty", ".customer-message > .customer-visually-hidden":"boundary"};
+      Object.keys(fields).forEach(function (selector) {set(card.querySelector(selector),c[fields[selector]]);});
+      card.querySelectorAll(".customer-message, .customer-work-media, .customer-media-controls, .customer-package-region").forEach(function (n) {set(n,name,"aria-label");});
+      card.querySelectorAll(".customer-business-controls").forEach(function (n) {set(n,c.browse,"aria-label");});
+      card.querySelectorAll(".customer-business-controls button").forEach(function (n,i) {set(n,i===0?c.previousBusiness:c.nextBusiness,"aria-label");});
+      card.querySelectorAll(".customer-media-control").forEach(function (n,i) {set(n,i===0?c.previousMedia:c.nextMedia,"aria-label");});
+      card.querySelectorAll(".customer-work-media img").forEach(function (n,i) {set(n,c.image+" "+(i+1)+" — "+name,"alt");});
+      card.querySelectorAll(".customer-work-media video").forEach(function (n) {set(n,c.video+" — "+name,"aria-label");});
+      card.querySelectorAll(".customer-work-media-link").forEach(function (n) {set(n,c.openImage+" — "+name,"aria-label");});
+      var position = card.querySelector(".customer-media-position");
+      if (position) {
+        var value = format(c.media,{index:position.getAttribute("data-media-index")||"1",count:card.querySelector(".customer-work-media").children.length});
+        set(position,value);set(position,value,"aria-label");
+      }
+      card.querySelectorAll(".customer-discover-option").forEach(function (option) {
+        var pi = productIds.indexOf((option.getAttribute("data-product-id")||"").replace("test-product-", ""));
+        if (pi < 0) return;
+        var product = c.products[pi];
+        owned(option.querySelector(".customer-discover-option-name"),c.test+" "+product);
+        owned(option.querySelector(".customer-discover-option-description"),format(c.description,{product:product}));
+        var productName = option.querySelector(".customer-discover-option-name").textContent;
+        set(option.querySelector("img"),productName,"alt");
+        option.querySelectorAll("a").forEach(function (n) {set(n,productName+" — "+name,"aria-label");});
+        set(option.querySelector(".customer-product-continue-action"),option.getAttribute("data-continuation-route")==="booking"?c.book:c.buy);
+        set(option.querySelector(".customer-discover-option-image-fallback"),root.DEMEOSProductExperienceCopy[code].imageUnavailable);
+      });
+    });
+    var surface = doc.getElementById("product-experience");
+    if (!surface || surface.getAttribute("data-controlled-test") !== "true") return;
+    var option = Array.from(list.querySelectorAll(".customer-discover-option")).find(function (n) {return n.getAttribute("data-product-id")===surface.getAttribute("data-product-id");});
+    if (option) {
+      var card = option.closest(".customer-work-card");
+      set(doc.getElementById("product-experience-title"),option.querySelector(".customer-discover-option-name").textContent);
+      set(doc.getElementById("product-experience-description"),option.querySelector(".customer-discover-option-description").textContent);
+      set(doc.getElementById("product-experience-business"),card.querySelector(".customer-business-name").textContent);
+      set(doc.getElementById("product-experience-image"),option.querySelector(".customer-discover-option-name").textContent,"alt");
+      set(doc.getElementById("product-experience-availability"),root.DEMEOSProductExperienceCopy[code].available);
+      set(doc.getElementById("product-experience-action"),surface.getAttribute("data-continuation-type")==="booking"?c.book:c.buy);
+    }
+    set(doc.querySelector("#product-experience-back span"),c.back);
+    set(doc.getElementById("product-experience-back"),c.back,"aria-label");
+    set(doc.getElementById("product-experience-safety"),c.safety);
+    set(doc.getElementById("product-experience-image-fallback"),root.DEMEOSProductExperienceCopy[code].imageUnavailable);
+  }
+
   function apply(language) {
     var code = normalize(language);
     root.document.documentElement.lang = code;
@@ -211,6 +290,7 @@
     });
     var control = root.document.getElementById("customer-language");
     if (control) control.value = code;
+    applyControlled(code);
     return code;
   }
   function start() {
@@ -278,6 +358,15 @@
         }
       });
       discoverObserver.observe(discoverStatus, { childList: true, characterData: true, subtree: true });
+    }
+    if (typeof root.MutationObserver === "function") {
+      var controlledObserver = new root.MutationObserver(function () {
+        applyControlled(root.document.documentElement.lang);
+      });
+      ["customer-work-list", "product-experience"].forEach(function (id) {
+        var node = root.document.getElementById(id);
+        if (node) controlledObserver.observe(node, { childList:true, characterData:true, subtree:true, attributes:true, attributeFilter:["data-controlled-test", "data-product-id", "data-continuation-type"] });
+      });
     }
     var preferred = getSaved() || (root.navigator && root.navigator.language) || "en";
     apply(preferred);

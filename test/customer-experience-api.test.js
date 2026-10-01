@@ -402,6 +402,8 @@ test("Discover controlled test content requires the exact private preview signal
   });
   assert.equal(controlled.statusCode, 200);
   assert.equal(controlled.body.testMode, true);
+  assert.equal(controlled.headers["Cache-Control"], "private, no-store");
+  assert.equal(controlled.headers["Vercel-CDN-Cache-Control"], "no-store");
   assert.equal(controlled.body.work.length, 3);
   assert.deepEqual(controlled.body.work.map(item => item.businessName),
     ["DEMEOS Test Bistro", "DEMEOS Test Studio", "DEMEOS Test Market"]);
@@ -491,6 +493,9 @@ test("Product Experience test feed requires both exact query and controlled head
     const res = await runHandler("../api/customer/work.js", repository, { method: "GET", ...request });
     assert.equal(res.statusCode, 200);
     assert.equal(res.body.testMode, false);
+    assert.equal(res.headers["Cache-Control"], "private, no-store");
+    assert.equal(res.headers["Vercel-CDN-Cache-Control"], "no-store");
+    assert.equal(res.headers.Vary, "x-demeos-test-mode, x-demeos-discover-test");
     assert.deepEqual(res.body.work, []);
   }
   assert.equal(repositoryCalls, rejected.length);
@@ -499,6 +504,8 @@ test("Product Experience test feed requires both exact query and controlled head
   });
   assert.equal(controlled.statusCode, 200);
   assert.equal(controlled.body.testMode, true);
+  assert.equal(controlled.headers["Cache-Control"], "private, no-store");
+  assert.equal(controlled.headers["Vercel-CDN-Cache-Control"], "no-store");
   assert.equal(repositoryCalls, rejected.length);
   assert.equal(controlled.body.work.length, 6);
   const item = controlled.body.work[0];

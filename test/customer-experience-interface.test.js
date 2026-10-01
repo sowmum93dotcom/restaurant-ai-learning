@@ -739,7 +739,7 @@ test("Discover controlled preview is explicit and normal requests stay unchanged
   assert.deepEqual(getDiscoverRequest({ search: "" }), { url: "/api/customer/work", options: undefined, testMode: false });
   assert.deepEqual(getDiscoverRequest({ search: "?demeos-test=1" }), {
     url: "/api/customer/work?demeos-test=1",
-    options: { headers: { "x-demeos-test-mode": "controlled-preview" } },
+    options: { cache: "no-store", headers: { "x-demeos-test-mode": "controlled-preview" } },
     testMode: true
   });
   assert.equal(getDiscoverRequest({ search: "?demeos-test=0" }).testMode, false);

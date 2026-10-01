@@ -948,6 +948,7 @@ function getCustomerProductContinuationHref(work, product) {
 function createCustomerWorkCard(document, work, customerPackages, recordParticipation, anchorJourney) {
   const card = document.createElement("article");
   card.className = "customer-work-card";
+  card.setAttribute("data-work-item-id", work.workItemId);
 
   const context = document.createElement("header");
   context.className = "customer-work-context";
@@ -1057,6 +1058,7 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
           const difference = Math.abs(item.getBoundingClientRect().left - regionStart);
           if (difference < distance) { distance = difference; closest = index; }
         });
+        mediaPosition.setAttribute("data-media-index", String(closest + 1));
         const positionLabel = "Media " + (closest + 1) + " of " + items.length;
         if (mediaPosition.textContent !== positionLabel) {
           mediaPosition.textContent = positionLabel;
@@ -1147,6 +1149,7 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
       option.setAttribute("role", "listitem");
       option.setAttribute("data-product-id", product.productId);
       option.setAttribute("data-continuation-route", product.continuationRoute);
+      option.setAttribute("data-availability", product.availability);
       const href = getCustomerProductContinuationHref(work, product);
       if (/^https:\/\//i.test(product.imageUrl || "")) {
         const image = document.createElement("img");
@@ -1328,7 +1331,7 @@ function getDiscoverRequest(location) {
   const search = location && typeof location.search === "string" ? location.search : "";
   const testMode = new URLSearchParams(search).get("demeos-test") === "1";
   return testMode
-    ? { url: "/api/customer/work?demeos-test=1", options: { headers: { "x-demeos-test-mode": "controlled-preview" } }, testMode: true }
+    ? { url: "/api/customer/work?demeos-test=1", options: { cache: "no-store", headers: { "x-demeos-test-mode": "controlled-preview" } }, testMode: true }
     : { url: "/api/customer/work", options: undefined, testMode: false };
 }
 
@@ -1350,6 +1353,10 @@ async function loadCustomerWork(document, fetcher, location) {
     if (workList && typeof workList.setAttribute === "function") workList.setAttribute("data-controlled-test", String(data.testMode === true));
     const productSurface = document.getElementById("product-experience");
     if (productSurface) productSurface.setAttribute("data-controlled-test", String(data.testMode === true));
+    const testEntry = document.getElementById("customer-controlled-test-entry");
+    const testExit = document.getElementById("customer-controlled-test-exit");
+    if (testEntry) testEntry.hidden = data.testMode === true;
+    if (testExit) testExit.hidden = data.testMode !== true;
     if (data.testMode === true) {
       status.className = "customer-work-status customer-test-content-status";
       status.textContent = "CONTROLLED TEST CONTENT — not live business content";

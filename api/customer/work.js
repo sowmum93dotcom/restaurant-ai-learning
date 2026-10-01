@@ -66,6 +66,10 @@ function isDiscoverTestMode(req) {
 }
 
 module.exports = async function handler(req, res) {
+  // Responses depend on the explicit activation header; never share them across modes.
+  res.setHeader("Cache-Control", "private, no-store");
+  res.setHeader("Vercel-CDN-Cache-Control", "no-store");
+  res.setHeader("Vary", "x-demeos-test-mode, x-demeos-discover-test");
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
     return res.status(405).json({ error: "Method not allowed" });

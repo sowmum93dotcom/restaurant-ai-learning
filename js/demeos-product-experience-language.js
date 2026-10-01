@@ -45,7 +45,7 @@
       var translated = source.split(" · ").map(function (method) { return methods[method] ? copy[methods[method]] : method; }).join(" · ");
       element.textContent = format(copy.receive, { methods: translated });
     });
-    root.document.querySelectorAll(".customer-product-continue-action").forEach(function (element) { canonical(element); element.textContent = copy.buy; });
+    root.document.querySelectorAll(".customer-product-continue-action").forEach(function (element) { if (element.closest("#customer-work-list[data-controlled-test=\"true\"]")) return; canonical(element); element.textContent = copy.buy; });
     setText(".customer-product-unavailable-note", "unavailableNote");
   }
   function start() {
