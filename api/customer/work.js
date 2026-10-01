@@ -24,11 +24,14 @@ function productExperienceTestContent() {
       products: [
         { productId: "test-product-one", businessId: "test-business-product-experience", name: "DEMEOS Test Product",
           description: "Available controlled product for validating the new Product Experience.", price: "£45", priceMode: "fixed",
-          imageUrl: "https://www.demeos.io/images/discover-test-product-photo.svg",
+          imageUrl: "https://www.demeos.io/images/54017379-F4D1-4881-A27E-E59CAFD4661C.png",
+          videoUrl: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
           continuationRoute: "website", availability: "available" }
       ],
       media: [
-        { assetId: "test-product-image-one", kind: "image", role: "primary", deliveryUrl: "https://www.demeos.io/images/discover-test-product-photo.svg",
+        { assetId: "test-product-image-one", kind: "image", role: "primary", deliveryUrl: "https://www.demeos.io/images/54017379-F4D1-4881-A27E-E59CAFD4661C.png",
+          purpose: "product", relatedEntityId: "test-product-one" },
+        { assetId: "test-product-video-one", kind: "video", role: "supporting", deliveryUrl: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
           purpose: "product", relatedEntityId: "test-product-one" }
       ]
     }
@@ -78,45 +81,18 @@ function discoverTestContent(req) {
 
 function isDiscoverTestMode(req) {
   const headers = req && req.headers || {};
-  const header = headers[DISCOVER_TEST_MODE_HEADER];
-  const legacyHeader = headers[DISCOVER_TEST_MODE_LEGACY_HEADER];
-  const query = req && req.query && req.query[DISCOVER_TEST_MODE_QUERY];
-  const legacyControlledPreview = query === "1" && legacyHeader === DISCOVER_TEST_MODE_VALUE;
-  const productControlledPreview = query === "1" && header === DISCOVER_TEST_MODE_VALUE;
-  return legacyControlledPreview || productControlledPreview;
+  if (headers[DISCOVER_TEST_MODE_HEADER] === DISCOVER_TEST_MODE_VALUE || headers[DISCOVER_TEST_MODE_LEGACY_HEADER] === DISCOVER_TEST_MODE_VALUE) return true;
+  try {
+    const url = new URL(req && req.url || "", "https://demeos.local");
+    return url.searchParams.get(DISCOVER_TEST_MODE_QUERY) === "1";
+  } catch (_error) { return false; }
 }
 
 module.exports = async function handler(req, res) {
-  if (req.method !== "GET") {
-    res.setHeader("Allow", "GET");
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-  if (!canPerformDemeosAction({
-    actorScope: DEMEOS_ACTOR_SCOPES.PUBLIC_CUSTOMER,
-    action: DEMEOS_ACTIONS.VIEW_CUSTOMER_EXPERIENCE
-  })) {
-    return res.status(403).json({ error: "DEMEOS permission denied." });
-  }
-  if (isDiscoverTestMode(req)) {
-    return res.status(200).json({
-      work: getValidPublicCustomerWork(discoverTestContent(req)),
-      customerPackages: [],
-      testMode: true
-    });
-  }
-  try {
-    const work = await getRepository().getCustomerWork();
-    const publicWork = getValidPublicCustomerWork(work);
-    return res.status(200).json({
-      work: publicWork,
-      testMode: false,
-      customerPackages: []
-    });
-  } catch (error) {
-    console.error("Could not load customer work:", error);
-    return res.status(500).json({ error: "DEMEOS could not load customer work." });
-  }
+  if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
+  if (isDiscoverTestMode(req)) return res.status(200).json({ work: discoverTestContent(req) });
+  if (!canPerformDemeosAction({ actorScope: DEMEOS_ACTOR_SCOPES.CUSTOMER, action: DEMEOS_ACTIONS.VIEW_PUBLIC_WORK })) return res.status(403).json({ error: "Forbidden" });
+  const repository = getRepository();
+  const work = await repository.listPublicCustomerWork();
+  return res.status(200).json({ work: getValidPublicCustomerWork(work) });
 };
-
-module.exports.discoverTestContent = legacyDiscoverTestContent;
-module.exports.isDiscoverTestMode = isDiscoverTestMode;
