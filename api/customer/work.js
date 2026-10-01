@@ -24,11 +24,11 @@ function productExperienceTestContent() {
       products: [
         { productId: "test-product-one", businessId: "test-business-product-experience", name: "DEMEOS Test Product",
           description: "Available controlled product for validating the new Product Experience.", price: "£45", priceMode: "fixed",
-          imageUrl: "https://www.demeos.io/images/discover-test-meal.svg",
+          imageUrl: "https://www.demeos.io/images/54017379-F4D1-4881-A27E-E59CAFD4661C.png",
           continuationRoute: "website", availability: "available" }
       ],
       media: [
-        { assetId: "test-product-image-one", kind: "image", role: "primary", deliveryUrl: "https://www.demeos.io/images/discover-test-bistro-gallery.svg",
+        { assetId: "test-product-image-one", kind: "image", role: "primary", deliveryUrl: "https://www.demeos.io/images/54017379-F4D1-4881-A27E-E59CAFD4661C.png",
           purpose: "product", relatedEntityId: "test-product-one" }
       ]
     }
