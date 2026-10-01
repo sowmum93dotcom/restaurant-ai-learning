@@ -739,7 +739,7 @@ test("Discover controlled preview is explicit and normal requests stay unchanged
   assert.deepEqual(getDiscoverRequest({ search: "" }), { url: "/api/customer/work", options: undefined, testMode: false });
   assert.deepEqual(getDiscoverRequest({ search: "?demeos-test=1" }), {
     url: "/api/customer/work?demeos-test=1",
-    options: { headers: { "x-demeos-discover-test": "controlled-preview" } },
+    options: { headers: { "x-demeos-test-mode": "controlled-preview" } },
     testMode: true
   });
   assert.equal(getDiscoverRequest({ search: "?demeos-test=0" }).testMode, false);
@@ -749,7 +749,7 @@ test("Discover controlled preview visibly identifies populated test content", as
   const document = fakeDocument();
   await loadCustomerWork(document, async function (url, options) {
     assert.equal(url, "/api/customer/work?demeos-test=1");
-    assert.equal(options.headers["x-demeos-discover-test"], "controlled-preview");
+    assert.equal(options.headers["x-demeos-test-mode"], "controlled-preview");
     return { ok: true, async json() { return { testMode: true, work: [
       { workItemId: "test-a", businessName: "DEMEOS Test Bistro", content: "Controlled preview content", participationAction: "Interested" }
     ] }; } };

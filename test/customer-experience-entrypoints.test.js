@@ -59,7 +59,7 @@ test("public customer requests retain the minimized server-authoritative contrac
   const source = read("js/customer.js");
   assert.match(source, /url: "\/api\/customer\/work", options: undefined, testMode: false/);
   assert.match(source, /new URLSearchParams\(search\)\.get\("demeos-test"\) === "1"/);
-  assert.match(source, /"x-demeos-discover-test": "controlled-preview"/);
+  assert.match(source, /"x-demeos-test-mode": "controlled-preview"/);
   assert.match(source, /Array\.isArray\(data\.customerPackages\)/);
   assert.match(source, /`\/api\/customer\/work\/\$\{encodeURIComponent\(workItemId\)\}\/participation`/);
   assert.match(source, /body: JSON\.stringify\(\{ action: "Interested" \}\)/);

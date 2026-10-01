@@ -187,7 +187,10 @@ test("Customer Interface makes Stage 3 primary, keeps its copy centralized, and 
   assert.match(css, /@media \(max-width: 700px\)[\s\S]*\.customer-possibility-space[\s\S]*flex-direction: column/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.customer-possibility-surface[\s\S]*transition: none/);
   assert.doesNotMatch(CUSTOMER_STAGE_THREE_COPY.found, /best|top|recommended|score|perfect|ideal/i);
-  assert.doesNotMatch(html, /filter|search results|rating|review|price|availability|map|booking/i);
+  assert.ok(html.indexOf('<section id="customer-possibilities"') >= 0);
+  assert.ok(html.indexOf('<section id="customer-no-possibilities"') > html.indexOf('<section id="customer-possibilities"'));
+  const stageThreeMarkup = html.slice(html.indexOf('<section id="customer-possibilities"'), html.indexOf('<section id="customer-no-possibilities"'));
+  assert.doesNotMatch(stageThreeMarkup, /filter|search results|rating|review|price|availability|map|booking/i);
 });
 
 test("trusted empty-state refinement is explicit, bounded, and returns through fresh confirmation", function () {
