@@ -25,3 +25,5 @@ body{font-family:Arial,Helvetica,sans-serif}
 .demeos-entry-footer-links{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:1.2rem}
 .demeos-entry-footer-links small{flex-basis:100%;text-align:right}
 @media(max-width:760px){.demeos-entry-header{height:82px;padding:0 1.25rem}.demeos-entry-brand img{width:160px;height:58px}.demeos-entry-signin{padding:.7rem 1.25rem}.demeos-entry-hero{min-height:350px}.demeos-entry-hero-logo{width:min(250px,62vw)}.demeos-entry-tagline{margin-bottom:1.5rem}.demeos-entry-paths{grid-template-columns:1fr;width:min(92%,620px);padding-bottom:4rem}.demeos-entry-path{min-height:250px}.demeos-entry-footer{align-items:flex-start;flex-direction:column}.demeos-entry-footer-links{justify-content:flex-start}.demeos-entry-footer-links small{text-align:left}}
+
+.demeos-entry-path .demeos-controlled-entry{margin-top:1rem;background:transparent;color:var(--gold2);font-size:.9rem;}

@@ -211,7 +211,8 @@ test("authorized GET preserves the existing not-found response", async function 
 });
 
 test('Customer Experience structured presentation survives validated profile persistence', async () => {
-  const product=require('../api/_lib/controlled-customer-test-content').productExperienceTestContent()[0].products[0];
+  const {fulfilment:controlledFulfilment,...product}=require('../api/_lib/controlled-customer-test-content').productExperienceTestContent()[0].products[0];
+  product.continuationRoute='website'; // This profile-persistence test exercises an external business, not the controlled purchase grant.
   const profile=completeProfile({profileVersion:2,productsServices:'Clothing',customerContinuation:{routes:['website'],website:'https://example.com'},fulfilment:{methods:['shipping']},products:[{...product,businessId:'business-a'}]});
   const result=await invoke({method:'PUT',body:{businessProfile:profile}});
   assert.equal(result.response.statusCode,204);

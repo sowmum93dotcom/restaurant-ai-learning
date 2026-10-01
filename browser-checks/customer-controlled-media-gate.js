@@ -164,7 +164,7 @@ async function openProduct(page,option,product,work,language='en') {
     // Switching language while Product Experience is already open also updates its owned content.
     await openProduct(page,cards.first().locator('[data-product-id="test-product-activewear"]'),fixtures()[0].products[0],fixtures()[0],code);
     const next=code==='ja'?'en':'ja';await page.selectOption('#customer-language',next);
-    await page.waitForFunction(value=>document.querySelector('#product-experience-action').textContent===value,copy[next].buy);
+    await page.waitForFunction(value=>document.querySelector('#product-experience-action').textContent===value,require('../js/demeos-purchase-preparation-copy')[next].continue);
     await page.locator('#product-experience-back').click();
    }
    await page.selectOption('#customer-language','ja');
