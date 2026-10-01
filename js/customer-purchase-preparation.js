@@ -50,6 +50,8 @@
   const selected=p.product.presentation.options.map(field=>item.fields[field.key]+': '+root.DEMEOSCustomerItemPresentation.choiceLabel(field,field.values.find(v=>v.value===p.draft.selection[field.key]))).join(' · ');
   const rows=[[root.DEMEOSControlledCustomerCopy[code()].business,n.business],[item[p.product.presentation.kind],n.product],[c.selected,selected],[c.price,root.DEMEOSCustomerItemPresentation.price(p.state.pricing)],[c.availability,p.product.presentation.kind==='service'?item[p.state.availability==='limited'?'serviceLimited':'serviceAvailable']:productCopy[p.state.availability]]];
   if(p.product.presentation.kind==='product'&&p.product.fulfilment?.quantityEnabled===true&&!p.product.presentation.options.some(o=>o.key==='quantity'))rows.push([c.quantity,String(p.draft.quantity)]);
+  if(p.state.pricing.mode==='fixed'&&Number.isFinite(p.state.pricing.amount))rows.push([c.total,root.DEMEOSCustomerItemPresentation.price({...p.state.pricing,amount:Math.round(p.state.pricing.amount*p.draft.quantity*100)/100})]);
+  const image=get('purchase-preparation-image');if(image){image.src=p.product.imageUrl||'';image.alt=n.product;image.hidden=!p.product.imageUrl;}
   rows.push([c.account,c.identity]);
   rows.push([p.method==='appointment'?c.service:c[p.method],p.method==='collection'?c.collectionNote:p.method==='digital'?c.digital:c.details]);
   if(boundary)for(const field of contract.fields(p))rows.push([c[field],details[field]]);
@@ -90,13 +92,14 @@
  async function resume(){
   if(!controlled()||new URL(root.location.href).searchParams.get('resume')!=='1')return;
   const draft=read();if(!draft)return;
+  const revision=++generation;const url=new URL(root.location.href);url.searchParams.delete("resume");root.history.replaceState(null,"",url.pathname+url.search+url.hash);
   try{
-   const response=await root.fetch('/api/customer/work?demeos-test=1',{credentials:'same-origin',cache:'no-store',headers:{'x-demeos-test-mode':'controlled-preview'}});const data=await response.json();
+   const response=await root.fetch('/api/customer/work?demeos-test=1',{credentials:'same-origin',cache:'no-store',headers:{'x-demeos-test-mode':'controlled-preview'}});const data=await response.json();if(revision!==generation)return;
    if(!response.ok||data.testMode!==true){return;}
    const result=contract.resolve(data.work,draft);if(!result.ready){show();render();status(result.reason==='unavailable'?'unavailable':'failed');return;}
    const p=result.product;get('product-experience').setAttribute('data-controlled-test','true');root.DEMEOSCustomerProductExperience.open(doc,result.business,p,'');root.DEMEOSCustomerItemPresentation.selection(draft.selection);
    const input=get('purchase-preparation-quantity').querySelector('input');input.value=String(draft.quantity);
-   const prepared=await request(draft);if(prepared.auth)return;if(prepared.error){show();status(prepared.error==='unavailable'?'unavailable':'failed');return;}
+   const prepared=await request(draft);if(revision!==generation)return;if(prepared.auth)return;if(prepared.error){show();status(prepared.error==='unavailable'?'unavailable':'failed');return;}
    preparation=prepared.preparation;show();set(get('purchase-preparation-status'),'');render();
   }catch(_){show();render();status('failed');}
  }
@@ -107,6 +110,6 @@
   localize();doc.addEventListener('change',()=>root.setTimeout(localize,0));new root.MutationObserver(localize).observe(doc.documentElement,{attributes:true,attributeFilter:['lang']});
  }
  function localize(){render();const a=root.DEMEOSCustomerItemPresentation?.snapshot();if(a)product(a);}
- root.DEMEOSCustomerPurchasePreparation=Object.freeze({start,product,localize,authenticationReturn,authenticationPath,read});
+ root.DEMEOSCustomerPurchasePreparation=Object.freeze({start,product,localize,authenticationReturn,authenticationPath,read,cancelPending:()=>{generation++;busy=false;}});
  doc.addEventListener('DOMContentLoaded',()=>{doc.querySelectorAll('.customer-journey-nav a[href^="#"]').forEach(link=>link.addEventListener('click',()=>{generation++;busy=false;}));authBanner();if(!get('purchase-preparation'))return;get('purchase-preparation-form').addEventListener('submit',review);get('purchase-preparation-back').addEventListener('click',back);get('purchase-preparation-edit').addEventListener('click',()=>{boundary=false;render();});get('purchase-preparation-discard').addEventListener('click',()=>{clear();back();});resume();});
 }(typeof window!=='undefined'?window:{}));
