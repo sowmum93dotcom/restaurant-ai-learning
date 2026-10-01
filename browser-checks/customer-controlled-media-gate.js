@@ -21,6 +21,7 @@ const local = base.includes('127.0.0.1');
    await page.goto(base+'/customer.html?demeos-test=1#discover',{waitUntil:'networkidle'});
    await page.locator('#customer-work-list[data-controlled-test="true"]').waitFor();
    assert.equal(await page.locator('.customer-work-card').count(),6);
+   assert.equal(await page.locator('.customer-header-inner').evaluate(el=>getComputedStyle(el,'::after').content),'none','header keeps navigation unobstructed');
    assert.match(await page.locator('#customer-work-status').innerText(),/CONTROLLED TEST CONTENT/);
    const imageMetrics=await page.locator('#customer-work-list img').evaluateAll(async images=>{
     images.forEach(im=>{im.loading="eager";});
