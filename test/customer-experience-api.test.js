@@ -512,6 +512,7 @@ test("Product Experience test feed requires both exact query and controlled head
   assert.equal(item.businessName, "DEMEOS Test Fashion");
   assert.equal(item.media[0].relatedEntityId, item.products[0].productId);
   assert.match(item.products[0].imageUrl, /^https:\/\/www\.demeos\.io\/images\/controlled-test\//);
-  assert.equal(item.products[0].continuationRoute, "website");
+  assert.equal(item.products[0].continuationRoute, "demeos");
+  assert.ok(item.customerContinuation.routes.includes("demeos"));
   assert.deepEqual(controlled.body.customerPackages, []);
 });

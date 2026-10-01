@@ -24,7 +24,8 @@ test('supplied controlled media has exact business/product ownership and all 13 
         assert.equal(product.businessId, work.businessId);
         assert.equal(product.imageUrl, media.deliveryUrl);
         assert.ok(work.customerContinuation.routes.includes(product.continuationRoute));
-        assert.equal(new URL(work.customerContinuation[product.continuationRoute === 'booking' ? 'bookingLink' : 'website']).hostname, 'www.demeos.io');
+        assert.equal(product.continuationRoute, 'demeos', 'controlled products use customer review instead of a fictional external shop');
+        assert.ok(product.fulfilment, 'every controlled continuation declares relevant fulfilment');
       }
     }
   }

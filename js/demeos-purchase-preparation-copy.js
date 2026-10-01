@@ -3,6 +3,7 @@
  "use strict";
  const copy={
   "en": {
+    "createAccount": "Create your account",
     "title": "Review your selection",
     "continue": "Continue",
     "signIn": "Sign in or create your account",
@@ -44,6 +45,7 @@
     "total": "Items total"
   },
   "es": {
+    "createAccount": "Crea tu cuenta",
     "title": "Revisa tu selección",
     "continue": "Continuar",
     "signIn": "Inicia sesión o crea tu cuenta",
@@ -85,6 +87,7 @@
     "total": "Total de artículos"
   },
   "fr": {
+    "createAccount": "Créer votre compte",
     "title": "Vérifiez votre sélection",
     "continue": "Continuer",
     "signIn": "Connectez-vous ou créez votre compte",
@@ -126,6 +129,7 @@
     "total": "Total des articles"
   },
   "ar": {
+    "createAccount": "أنشئ حسابك",
     "title": "راجع اختيارك",
     "continue": "متابعة",
     "signIn": "سجّل الدخول أو أنشئ حسابك",
@@ -167,6 +171,7 @@
     "total": "إجمالي المنتجات"
   },
   "pt": {
+    "createAccount": "Criar a sua conta",
     "title": "Reveja a sua seleção",
     "continue": "Continuar",
     "signIn": "Inicie sessão ou crie a sua conta",
@@ -208,6 +213,7 @@
     "total": "Total dos artigos"
   },
   "zh": {
+    "createAccount": "创建账户",
     "title": "查看您的选择",
     "continue": "继续",
     "signIn": "登录或创建账户",
@@ -249,6 +255,7 @@
     "total": "商品总计"
   },
   "hi": {
+    "createAccount": "अपना खाता बनाएँ",
     "title": "अपने चयन की समीक्षा करें",
     "continue": "जारी रखें",
     "signIn": "साइन इन करें या अपना खाता बनाएँ",
@@ -290,6 +297,7 @@
     "total": "वस्तुओं का कुल"
   },
   "de": {
+    "createAccount": "Konto erstellen",
     "title": "Auswahl prüfen",
     "continue": "Weiter",
     "signIn": "Anmelden oder Konto erstellen",
@@ -331,6 +339,7 @@
     "total": "Artikelsumme"
   },
   "ja": {
+    "createAccount": "アカウントを作成",
     "title": "選択内容を確認",
     "continue": "続ける",
     "signIn": "ログインまたはアカウントを作成",

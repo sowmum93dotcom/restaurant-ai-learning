@@ -19,7 +19,8 @@ test('authoritative variant price and availability override browser claims',()=>
  assert.equal(contract.resolve(publicWork(fixtures()),draft({})).ready,false);
 });
 test('external marketing cannot enter preparation, even with a valid selected item',()=>{
- assert.equal(contract.resolve(publicWork(fixtures()),{...draft(),workItemId:'test-discover-fashion',productId:'test-product-activewear',quantity:1}).ready,false);
+ const work=publicWork(fixtures());work.find(w=>w.workItemId==='test-discover-fashion').products.find(p=>p.productId==='test-product-activewear').continuationRoute='website';
+ assert.equal(contract.resolve(work,{...draft(),workItemId:'test-discover-fashion',productId:'test-product-activewear',quantity:1}).ready,false);
 });
 test('transaction detail fields are declared per item, with global delivery and no redundant service questions',()=>{
  const delivery=contract.resolve(publicWork(fixtures()),draft());assert.deepEqual(contract.fields(delivery),['address','city','country']);assert.equal(contract.validDetails(delivery,{address:'12 Test Road',city:'Conakry',country:'Guinea'}),true);assert.equal(contract.validDetails(delivery,{address:'12',city:'Conakry',country:'Guinea',card:'secret'}),false);
@@ -49,3 +50,16 @@ test('disabled controlled content blocks preparation and service quantities cann
 });
 
 test('appointments reject past dates and permit same-day dates using UTC calendar policy',()=>{const service=contract.resolve(publicWork(fixtures()),{...draft(),workItemId:'test-discover-sports',productId:'test-product-football',selection:{},quantity:1});const now=Date.UTC(2026,9,1,23,59);assert.equal(contract.validDetails(service,{date:'2026-09-30'},now),false);assert.equal(contract.validDetails(service,{date:'2026-10-01'},now),true);assert.equal(contract.validDetails(service,{date:'2026-10-02'},now),true);});
+
+test('every available controlled product grants an exact review, with no fictional shop redirect',()=>{
+ const work=publicWork(fixtures());
+ for(const business of work)for(const product of business.products||[]){
+  assert.equal(product.continuationRoute,'demeos');
+  const presentation=require('../js/customer-item-contract').normalize(product.presentation);
+  const variant=presentation.variants.find(v=>['available','limited'].includes(v.availability));
+  const selection=variant?variant.selection:Object.fromEntries(presentation.options.map(o=>[o.key,o.values[0].value]));
+  const result=contract.resolve(work,{...draft(selection),workItemId:business.workItemId,productId:product.productId,quantity:1});
+  assert.equal(result.ready,product.availability!=='unavailable',product.productId);
+  if(result.ready){assert.equal(result.product.productId,product.productId);assert.equal(result.business.businessId,business.businessId);if(presentation.kind==='service')assert.equal(result.method,'appointment');}
+ }
+});

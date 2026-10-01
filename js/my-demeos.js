@@ -444,7 +444,13 @@
         if (authenticated && windowObject.DEMEOSCustomerPurchasePreparation && windowObject.DEMEOSCustomerPurchasePreparation.authenticationReturn()) return;
         if (authenticated) await Promise.allSettled([loadIntentions(documentObject, fetchFunction), loadPossibilities(documentObject, fetchFunction), loadParticipations(documentObject, fetchFunction), loadPreferences(documentObject, fetchFunction), loadPrivacyControls(documentObject, fetchFunction)]);
       }
-      authElements.signIn.addEventListener("click", function () { const preparation = windowObject.DEMEOSCustomerPurchasePreparation; const returnPath = preparation && preparation.authenticationPath(); clerk.openSignIn(returnPath ? { forceRedirectUrl: returnPath, signUpForceRedirectUrl: returnPath, withSignUp: true } : undefined); });
+      authElements.signIn.addEventListener("click", function () { const preparation = windowObject.DEMEOSCustomerPurchasePreparation; const returnPath = preparation && preparation.authenticationPath(); clerk.openSignIn({ withSignUp: true, ...(returnPath ? { forceRedirectUrl: returnPath, signUpForceRedirectUrl: returnPath } : {}) }); });
+      const createAccount = documentObject.getElementById('customer-create-account');
+      if (createAccount) createAccount.addEventListener('click', function () {
+        const preparation = windowObject.DEMEOSCustomerPurchasePreparation;
+        const returnPath = preparation && preparation.authenticationPath() || windowObject.location.href;
+        clerk.openSignUp({ forceRedirectUrl: returnPath, signInForceRedirectUrl: returnPath });
+      });
       authElements.signOut.addEventListener("click", function () { clerk.signOut(); });
       clerk.addListener(update);
       await update();

@@ -380,5 +380,16 @@ function addStructuredTestItems(work) {
       product.presentation.variants.push(variant(product.productId+'-'+size+'-'+colour,{size,colour},'available',fixed(amount)));
     }
   }
+  // Explicitly grant the controlled customer continuation. These fictional
+  // businesses have no external shop: returning to Discover was a dead end.
+  // This changes only opt-in fixtures; it never grants a real business a route.
+  for(const business of work)for(const product of business.products||[]){
+    product.continuationRoute='demeos';
+    if(!business.customerContinuation.routes.includes('demeos'))business.customerContinuation.routes.push('demeos');
+    if(!product.fulfilment){
+      const service=require('../../js/customer-item-contract').normalize(product.presentation).kind==='service';
+      product.fulfilment={methods:[service?'appointment':'collection'],requiredDetails:service?['date']:[],quantityEnabled:!service&&!product.presentation.options.some(o=>o.key==='quantity')};
+    }
+  }
   return work;
 }
