@@ -911,6 +911,7 @@ function toCustomerWorkItem(item) {
     }).slice(0, 10).map(function (asset) {
       return { assetId: normalizedRequiredString(asset.assetId) || "", kind: asset.kind, role: asset.role,
         deliveryUrl: asset.deliveryUrl, contentType: normalizedRequiredString(asset.contentType) || "",
+        ...(asset.kind === "video" && asset.fallbackSource && asset.fallbackSource.contentType === "video/webm" && /^https:\/\//i.test(asset.fallbackSource.deliveryUrl || "") ? { fallbackSource: { deliveryUrl: asset.fallbackSource.deliveryUrl, contentType: "video/webm" } } : {}),
         purpose: normalizedRequiredString(asset.purpose) || "", relatedEntityId: normalizedRequiredString(asset.relatedEntityId) || "" };
     });
   }
@@ -989,6 +990,17 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
       media.src = asset.deliveryUrl;
       if (asset.kind === "video") {
         media.setAttribute("aria-label", "Video " + (mediaIndex + 1) + " of " + work.media.length + " from " + work.businessName);
+        if (asset.fallbackSource) {
+          media.removeAttribute("src");
+          const primarySource = document.createElement("source");
+          primarySource.src = asset.deliveryUrl;
+          primarySource.type = asset.contentType;
+          media.appendChild(primarySource);
+          const fallbackSource = document.createElement("source");
+          fallbackSource.src = asset.fallbackSource.deliveryUrl;
+          fallbackSource.type = asset.fallbackSource.contentType;
+          media.appendChild(fallbackSource);
+        }
         media.controls = true; media.preload = "metadata"; media.playsInline = true;
         media.addEventListener("play", function () {
           const discover = document.getElementById("discover");
@@ -1133,6 +1145,8 @@ function createCustomerWorkCard(document, work, customerPackages, recordParticip
       const option = document.createElement("article");
       option.className = "customer-discover-option" + (/^https:\/\//i.test(product.imageUrl || "") ? " has-image" : "");
       option.setAttribute("role", "listitem");
+      option.setAttribute("data-product-id", product.productId);
+      option.setAttribute("data-continuation-route", product.continuationRoute);
       const href = getCustomerProductContinuationHref(work, product);
       if (/^https:\/\//i.test(product.imageUrl || "")) {
         const image = document.createElement("img");
@@ -1330,7 +1344,12 @@ async function loadCustomerWork(document, fetcher, location) {
     const data = await response.json();
     if (discoverRequestVersions.get(document) !== version) return;
     if (!response.ok || !data || !Array.isArray(data.work) || (request.testMode && data.testMode !== true) || (!request.testMode && data.testMode === true) || (data.testMode === true && data.work.length === 0)) throw new Error();
+    if (document.body && document.body.classList) document.body.classList.toggle("demeos-controlled-test", data.testMode === true);
     renderCustomerWork(document, data.work, getServerCustomerPackages(data), recordParticipation);
+    const workList = document.getElementById("customer-work-list");
+    if (workList && typeof workList.setAttribute === "function") workList.setAttribute("data-controlled-test", String(data.testMode === true));
+    const productSurface = document.getElementById("product-experience");
+    if (productSurface) productSurface.setAttribute("data-controlled-test", String(data.testMode === true));
     if (data.testMode === true) {
       status.className = "customer-work-status customer-test-content-status";
       status.textContent = "CONTROLLED TEST CONTENT — not live business content";

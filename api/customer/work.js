@@ -11,29 +11,7 @@ const DISCOVER_TEST_MODE_LEGACY_HEADER = "x-demeos-discover-test";
 const DISCOVER_TEST_MODE_VALUE = "controlled-preview";
 const DISCOVER_TEST_MODE_QUERY = "demeos-test";
 
-function productExperienceTestContent() {
-  return [
-    {
-      workItemId: "test-product-experience",
-      businessId: "test-business-product-experience",
-      businessName: "DEMEOS Product Experience Test",
-      location: "Controlled test environment",
-      content: "Controlled product content for validating the real DEMEOS Customer Experience before payment development.",
-      participationAction: "Interested",
-      customerContinuation: { routes: ["website"], website: "https://www.demeos.io/" },
-      products: [
-        { productId: "test-product-one", businessId: "test-business-product-experience", name: "DEMEOS Test Product",
-          description: "Available controlled product for validating the new Product Experience.", price: "£45", priceMode: "fixed",
-          imageUrl: "https://www.demeos.io/images/discover-test-product-photo.svg",
-          continuationRoute: "website", availability: "available" }
-      ],
-      media: [
-        { assetId: "test-product-image-one", kind: "image", role: "primary", deliveryUrl: "https://www.demeos.io/images/discover-test-product-photo.svg",
-          purpose: "product", relatedEntityId: "test-product-one" }
-      ]
-    }
-  ];
-}
+const { productExperienceTestContent } = require("../_lib/controlled-customer-test-content.js");
 
 function legacyDiscoverTestContent() {
   return [
@@ -77,6 +55,7 @@ function discoverTestContent(req) {
 }
 
 function isDiscoverTestMode(req) {
+  if (process.env.DEMEOS_CONTROLLED_TEST_CONTENT === "disabled") return false;
   const headers = req && req.headers || {};
   const header = headers[DISCOVER_TEST_MODE_HEADER];
   const legacyHeader = headers[DISCOVER_TEST_MODE_LEGACY_HEADER];

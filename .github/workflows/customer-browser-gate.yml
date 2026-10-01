@@ -28,3 +28,5 @@ jobs:
           exit 1
       - name: Run browser language gate
         run: node browser-checks/customer-language-gate.js
+      - name: Run controlled supplied media and continuation gate
+        run: node browser-checks/customer-controlled-media-gate.js

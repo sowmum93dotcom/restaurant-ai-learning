@@ -1,0 +1,178 @@
+[
+  {
+    "source": "1EB63F3F-24C6-48B8-A4A4-9C9A493706E9.png",
+    "asset": "images/controlled-test/groceries.webp",
+    "sourceSha256": "29b53ce1c7a26c86464bbedfdc3254caa5deaba03bdda31cf3fb02f9334e27ca",
+    "assetSha256": "274010507bf48b88cefe1aa166ee5412581fe98a133a3b8ad7957b7a14236038",
+    "sourceSize": [
+      1536,
+      1024
+    ],
+    "assetSize": [
+      1440,
+      960
+    ]
+  },
+  {
+    "source": "63D83F3D-5D92-4964-8033-9A8CA15F0DC4.png",
+    "asset": "images/controlled-test/activewear.webp",
+    "sourceSha256": "67f6bd79503630f45a20b246a20df1e0b57b3d994d88e5e68d35e05efd111021",
+    "assetSha256": "87cd6d5b5dae291930c6437cd1ede21c32f632fec62d83929756388712c28be8",
+    "sourceSize": [
+      1122,
+      1402
+    ],
+    "assetSize": [
+      1122,
+      1402
+    ]
+  },
+  {
+    "source": "C6E25FD4-B1B9-4C21-B269-CC1A3A61A91E.png",
+    "asset": "images/controlled-test/summer-fashion.webp",
+    "sourceSha256": "fe797d847e2374fb6501fdbc39a877080ab4852235e31f18ad7491cafb474f0d",
+    "assetSha256": "d07c098c6e8d4d9fc89e4ee00d1a9515cd5494de4bd3603c045bf5ac97da3a2f",
+    "sourceSize": [
+      1536,
+      1024
+    ],
+    "assetSize": [
+      1440,
+      960
+    ]
+  },
+  {
+    "source": "5B47111B-333D-4E3B-A1FA-AFAAC202515A.png",
+    "asset": "images/controlled-test/running.webp",
+    "sourceSha256": "771bff1b9269fa5cc243921b0755e55eff175449d69622dfff125f4019260175",
+    "assetSha256": "e51fc111e844fe96dcbce1d36266dab5cf4f6c9761fc22a321f07a8521b13819",
+    "sourceSize": [
+      1536,
+      1024
+    ],
+    "assetSize": [
+      1440,
+      960
+    ]
+  },
+  {
+    "source": "82B61A15-4352-41D3-BCA0-F97723463FA2.png",
+    "asset": "images/controlled-test/football.webp",
+    "sourceSha256": "ba362b45bb192d9a931deca0ce6981892761713970e100b9dd1b4cfd1fb81016",
+    "assetSha256": "c5056b08db0e6edb884535b0d32b920be440f4c5916fbf061cb6931d6d8e2066",
+    "sourceSize": [
+      1536,
+      1024
+    ],
+    "assetSize": [
+      1440,
+      960
+    ]
+  },
+  {
+    "source": "4014744D-B1BE-4345-837E-DBCAE0CE8756.png",
+    "asset": "images/controlled-test/fishing.webp",
+    "sourceSha256": "2385d8b48871b2a374aecff4ea074d7734d404c7d363b64ff26463fa55bef1c7",
+    "assetSha256": "860ff74acc70ea9d4488aa1032d6d35ee60d700849f7a0821ca1d4d731f2045c",
+    "sourceSize": [
+      1536,
+      1024
+    ],
+    "assetSize": [
+      1440,
+      960
+    ]
+  },
+  {
+    "source": "0C863AC6-2FFC-44EC-A298-301C6BAA46EF.png",
+    "asset": "images/controlled-test/childrens-fashion.webp",
+    "sourceSha256": "67146d12368009771d2b97a60c6b6f2d195126a716c1eca61625adc29a7738cc",
+    "assetSha256": "5407f11a23f51f6b6b539472a913cde06524f1633071e2e9a9b53af12d9ca1d2",
+    "sourceSize": [
+      1402,
+      1122
+    ],
+    "assetSize": [
+      1402,
+      1122
+    ]
+  },
+  {
+    "source": "DFD49D50-85AB-4837-8A55-8FC6F5A687DB.png",
+    "asset": "images/controlled-test/toys.webp",
+    "sourceSha256": "a5a3f63c14735d9d79b8067cf0bf70e1ce13c003ea668b050e345038466033e5",
+    "assetSha256": "f332c9547ef63b1edf3236880473706c296bef1fe63e41b4a1e8772e5533c226",
+    "sourceSize": [
+      1536,
+      1024
+    ],
+    "assetSize": [
+      1440,
+      960
+    ]
+  },
+  {
+    "source": "E0510941-5DE3-4D62-B932-06B7331780C5.png",
+    "asset": "images/controlled-test/childrens-collection.webp",
+    "sourceSha256": "c7c9f0d788eeaaa3d7ad9775a517391d4cd622aba9794c4732fd1bd02043608a",
+    "assetSha256": "5510c9cdcad16363d92e255db40628e73764e52d074f3677609016e058d74667",
+    "sourceSize": [
+      1508,
+      1043
+    ],
+    "assetSize": [
+      1440,
+      996
+    ]
+  },
+  {
+    "source": "2E416B6C-2843-4027-9712-1385A9DBA0D9.png",
+    "asset": "images/controlled-test/mens-fashion.webp",
+    "sourceSha256": "80cbac382b2b9b04ac2410e8d121eae52435682dec00437ea72de883e024f337",
+    "assetSha256": "215ddab54c99d4be33a2787eabf7f2ec5a5bffd476c6767621b2bc1d0a4ecce7",
+    "sourceSize": [
+      1402,
+      1122
+    ],
+    "assetSize": [
+      1402,
+      1122
+    ]
+  },
+  {
+    "source": "IMG_2735.mov",
+    "asset": "images/controlled-test/garden-wildlife.mp4",
+    "sourceSha256": "8287ce0b4a50c0f4251081760308a49b2751bbbfae4698ca12e7f39ebba7caba",
+    "assetSha256": "ba321893752d6d4c58fab3254525b07efc85da15a3a78a1f978f73d69172ef6e",
+    "fallbackAsset": "images/controlled-test/garden-wildlife.webm",
+    "fallbackSha256": "e3b02b57110a47bfb397170fb292b64a933e37dca4bbe55b5079984b971b4156"
+  },
+  {
+    "source": "5772875E-B274-4DFF-B75D-98DCBF5CA11A.png",
+    "asset": "images/controlled-test/camping.webp",
+    "sourceSha256": "d845c0fd2731183b08e9c360545215805b514350411479bb28a62b220a9a726d",
+    "assetSha256": "f5ae495f5e6f279a60d68685f800ac9ec13fad7161f4fa3eade658cf588cbe47",
+    "sourceSize": [
+      1536,
+      1024
+    ],
+    "assetSize": [
+      1440,
+      960
+    ]
+  },
+  {
+    "source": "CE7C9568-1BDE-435A-BE92-ACFB51FCA82D.png",
+    "asset": "images/controlled-test/hiking.webp",
+    "sourceSha256": "b8ac2dbbaffd497d84ad27f885f40ad703b36fc0b8593415e515d20efe71c50b",
+    "assetSha256": "5dd9b72d0b622eccb9476155c899a0cb6fb8409219fc9d514eda5581704b4216",
+    "sourceSize": [
+      1536,
+      1024
+    ],
+    "assetSize": [
+      1440,
+      960
+    ]
+  }
+]

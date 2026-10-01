@@ -64,6 +64,10 @@
     return true;
   }
 
+  function pauseExperienceVideos(document) {
+    if (typeof document.querySelectorAll === "function") document.querySelectorAll("#discover video, #product-experience video").forEach(function (video) { video.pause(); });
+  }
+
   function openProductExperience(document, work, product, destination) {
     const surface = document.getElementById("product-experience");
     const discover = document.getElementById("discover");
@@ -78,6 +82,7 @@
     const action = document.getElementById("product-experience-action");
     if (!surface || !discover || !product || !image || !fallback || !business || !title || !description || !price || !availability || !action) return false;
 
+    pauseExperienceVideos(document);
     const imageUrl = safeHttps(product.imageUrl);
     image.hidden = !imageUrl;
     fallback.hidden = Boolean(imageUrl);
@@ -110,6 +115,7 @@
     const surface = document.getElementById("product-experience");
     const discover = document.getElementById("discover");
     if (!surface || !discover) return;
+    pauseExperienceVideos(document);
     surface.hidden = true;
     discover.hidden = false;
     surface.removeAttribute("data-product-id");
@@ -184,6 +190,6 @@
     });
   }
 
-  if (typeof module !== "undefined" && module.exports) module.exports = { availabilityCopy, configureAction, continuationType, openProductExperience, priceCopy, recoverDiscoverIfNeeded, safeHttps };
+  if (typeof module !== "undefined" && module.exports) module.exports = { pauseExperienceVideos, closeProductExperience, availabilityCopy, configureAction, continuationType, openProductExperience, priceCopy, recoverDiscoverIfNeeded, safeHttps };
   if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", function () { initialize(document); });
 })();
