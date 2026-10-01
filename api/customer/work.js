@@ -82,7 +82,10 @@ function isDiscoverTestMode(req) {
   const legacyHeader = headers[DISCOVER_TEST_MODE_LEGACY_HEADER];
   const query = req && req.query && req.query[DISCOVER_TEST_MODE_QUERY];
   const browserRequest = typeof headers["user-agent"] === "string" && headers["user-agent"].trim().length > 0;
-  return header === DISCOVER_TEST_MODE_VALUE || legacyHeader === DISCOVER_TEST_MODE_VALUE || (query === "1" && browserRequest);
+  const legacyControlledPreview = query === "1" && legacyHeader === DISCOVER_TEST_MODE_VALUE;
+  const productControlledPreview = header === DISCOVER_TEST_MODE_VALUE;
+  const browserControlledPreview = query === "1" && browserRequest;
+  return legacyControlledPreview || productControlledPreview || browserControlledPreview;
 }
 
 module.exports = async function handler(req, res) {
