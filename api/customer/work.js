@@ -7,66 +7,26 @@ const {
 const { getValidPublicCustomerWork } = require("../_lib/customer-public-work-contract.js");
 
 const DISCOVER_TEST_MODE_QUERY = "demeos-test";
-const DISCOVER_TEST_MODE_HEADER = "x-demeos-discover-test";
 
 function discoverTestContent() {
   return [
     {
-      workItemId: "test-discover-bistro",
-      businessId: "test-business-bistro",
-      businessName: "DEMEOS Test Bistro",
-      location: "Test environment",
-      content: "Controlled test content for validating the populated DEMEOS Discover experience.",
+      workItemId: "test-product-experience",
+      businessId: "test-business-product-experience",
+      businessName: "DEMEOS Product Experience Test",
+      location: "Controlled test environment",
+      content: "Controlled product content for validating the real DEMEOS Customer Experience before payment development.",
       participationAction: "Interested",
-      customerContinuation: { routes: ["website"], website: "https://example.com/demeos-test-bistro" },
+      customerContinuation: { routes: ["website"], website: "https://www.demeos.io/" },
       products: [
-        { productId: "test-bistro-meal", businessId: "test-business-bistro", name: "Test Bistro Meal",
-          description: "Available controlled test product with validated continuation.", price: "£18", priceMode: "fixed",
+        { productId: "test-product-one", businessId: "test-business-product-experience", name: "DEMEOS Test Product",
+          description: "Available controlled product for validating the new Product Experience.", price: "£45", priceMode: "fixed",
           imageUrl: "https://www.demeos.io/images/discover-test-meal.svg",
-          continuationRoute: "website", availability: "available" },
-        { productId: "test-bistro-unavailable", businessId: "test-business-bistro", name: "Unavailable Test Meal",
-          description: "Controlled unavailable product used to verify safe non-continuation.", price: "£22", priceMode: "fixed",
-          imageUrl: "https://www.demeos.io/images/discover-test-meal.svg",
-          continuationRoute: "website", availability: "unavailable" }
+          continuationRoute: "website", availability: "available" }
       ],
       media: [
-        { assetId: "test-bistro-image", kind: "image", role: "primary", deliveryUrl: "https://www.demeos.io/images/discover-test-bistro-gallery.svg",
-          purpose: "business" },
-        { assetId: "test-bistro-view-only", kind: "image", role: "supporting", deliveryUrl: "https://www.demeos.io/images/discover-test-bistro-view-only.svg" }
-      ]
-    },
-    {
-      workItemId: "test-discover-studio",
-      businessId: "test-business-studio",
-      businessName: "DEMEOS Test Studio",
-      location: "Test environment",
-      content: "A second controlled business for testing vertical distribution and horizontal discovery.",
-      participationAction: "Interested",
-      customerContinuation: { routes: ["booking"], bookingLink: "https://example.com/demeos-test-studio" },
-      products: [
-        { productId: "test-studio-service", businessId: "test-business-studio", name: "Test Studio Session",
-          description: "Controlled service used to validate service presentation and booking continuation.",
-          imageUrl: "https://www.demeos.io/images/discover-test-session.svg",
-          continuationRoute: "booking", availability: "limited" }
-      ],
-      media: [
-        { assetId: "test-studio-image", kind: "image", role: "primary", deliveryUrl: "https://www.demeos.io/images/discover-test-studio-gallery.svg",
-          purpose: "business" },
-        { assetId: "test-studio-video", kind: "video", role: "supporting", deliveryUrl: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
-          purpose: "business" },
-        { assetId: "test-studio-missing-match", kind: "image", role: "supporting", deliveryUrl: "https://www.demeos.io/images/discover-test-studio-view-only.svg",
-          purpose: "product", relatedEntityId: "missing-test-product" }
-      ]
-    },
-    {
-      workItemId: "test-discover-market",
-      businessId: "test-business-market",
-      businessName: "DEMEOS Test Market",
-      location: "Test environment",
-      content: "Controlled content for testing a business with view-only media and no customer continuation.",
-      participationAction: "Interested",
-      media: [
-        { assetId: "test-market-image", kind: "image", role: "primary", deliveryUrl: "https://www.demeos.io/images/discover-test-market-gallery.svg" }
+        { assetId: "test-product-image-one", kind: "image", role: "primary", deliveryUrl: "https://www.demeos.io/images/discover-test-bistro-gallery.svg",
+          purpose: "product", relatedEntityId: "test-product-one" }
       ]
     }
   ];
@@ -74,8 +34,7 @@ function discoverTestContent() {
 
 function isDiscoverTestMode(req) {
   const query = req && req.query && req.query[DISCOVER_TEST_MODE_QUERY];
-  const header = req && req.headers && req.headers[DISCOVER_TEST_MODE_HEADER];
-  return query === "1" && header === "controlled-preview";
+  return query === "1";
 }
 
 module.exports = async function handler(req, res) {
@@ -102,7 +61,6 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({
       work: publicWork,
       testMode: false,
-      // Customer package availability is server-owned. No package definitions exist yet.
       customerPackages: []
     });
   } catch (error) {
