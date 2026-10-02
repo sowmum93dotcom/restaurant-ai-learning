@@ -75,12 +75,13 @@ const base=process.env.DEMEOS_BROWSER_BASE_URL||'http://127.0.0.1:4173';
   assert.equal(await page.evaluate(()=>window.Clerk.testLocalization),'ja-JP','existing provider receives the selected Customer Experience language');
   assert.equal(await page.locator('input[name="address"], input[name="date"], input[name="country"]').count(),0,'registration requires no transaction details');
   const draft=await page.evaluate(()=>JSON.parse(sessionStorage.getItem('demeos-controlled-preparation-v1')));assert.deepEqual(draft.selection,{size:'medium',colour:'blue'});assert.equal(draft.quantity,3);assert.deepEqual(Object.keys(draft).sort(),['expires','productId','quantity','selection','version','workItemId']);
+  await page.locator('#purchase-auth-selection:not([hidden])').waitFor();
   // Purchase sign-in has a short heading, one primary action and separated return/privacy controls.
   for(const language of Object.keys(copy)){
    await page.locator('#customer-language').selectOption(language);await page.waitForTimeout(60);
    assert.equal(await page.locator('#customer-auth-signed-out h2').textContent(),copy[language].authTitle);
    assert.equal(await page.locator('#customer-auth-signed-out p').textContent(),copy[language].purchaseSignInNote);
-   assert.equal(await page.locator('#purchase-auth-discard').textContent(),copy[language].discard);
+   assert.equal(await page.locator('#purchase-auth-discard').textContent(),copy[language].discard);const selected=await page.locator('#purchase-auth-selection').textContent();assert.ok(selected.includes('M')&&selected.includes('3'),'sign-in shows exact size and quantity');assert.ok(selected.includes(require('../js/demeos-item-presentation-copy')[language].values.blue),'sign-in colour follows the selected language');
    const back=await page.locator('#purchase-auth-return').boundingBox(),privacy=await page.locator('#purchase-auth-privacy').boundingBox();
    assert.ok(privacy.y>=back.y+back.height,'return and privacy links have distinct touch rows');
    for(const selector of ['#customer-sign-in','#customer-create-account','#purchase-auth-return','#purchase-auth-privacy','#purchase-auth-discard']){
