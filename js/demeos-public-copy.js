@@ -38,7 +38,11 @@
     "contactIntro": "For a product or service, use the contact or buying destination provided by its business in Discover.",
     "contactAccount": "For saved information and privacy preferences, open Privacy & Control in My DEMEOS.",
     "controls": "Privacy & Control",
-    "tagline": "One System. Real Value."
+    "tagline": "One System. Real Value.",
+    "home": "DEMEOS home",
+    "entryPaths": "Enter DEMEOS",
+    "guide": "How DEMEOS works",
+    "information": "Information"
   },
   "es": {
     "language": "Idioma",
@@ -78,7 +82,11 @@
     "contactIntro": "Para un producto o servicio, usa el contacto o destino de compra del negocio en Descubrir.",
     "contactAccount": "Para información guardada y preferencias de privacidad, abre Privacidad y control en Mi DEMEOS.",
     "controls": "Privacidad y control",
-    "tagline": "Un sistema. Valor real."
+    "tagline": "Un sistema. Valor real.",
+    "home": "Inicio de DEMEOS",
+    "entryPaths": "Entrar en DEMEOS",
+    "guide": "Cómo funciona DEMEOS",
+    "information": "Información"
   },
   "fr": {
     "language": "Langue",
@@ -118,7 +126,11 @@
     "contactIntro": "Pour un produit ou service, utilisez le contact ou la destination d’achat de l’entreprise dans Découvrir.",
     "contactAccount": "Pour vos informations enregistrées et préférences de confidentialité, ouvrez Confidentialité et contrôle dans Mon DEMEOS.",
     "controls": "Confidentialité et contrôle",
-    "tagline": "Un système. Une valeur réelle."
+    "tagline": "Un système. Une valeur réelle.",
+    "home": "Accueil DEMEOS",
+    "entryPaths": "Entrer dans DEMEOS",
+    "guide": "Comment fonctionne DEMEOS",
+    "information": "Informations"
   },
   "ar": {
     "language": "اللغة",
@@ -158,7 +170,11 @@
     "contactIntro": "للمنتج أو الخدمة، استخدم وسيلة الاتصال أو وجهة الشراء التي يقدمها النشاط التجاري في استكشف.",
     "contactAccount": "للمعلومات المحفوظة وتفضيلات الخصوصية، افتح الخصوصية والتحكم في حسابي في DEMEOS.",
     "controls": "الخصوصية والتحكم",
-    "tagline": "نظام واحد. قيمة حقيقية."
+    "tagline": "نظام واحد. قيمة حقيقية.",
+    "home": "الرئيسية في DEMEOS",
+    "entryPaths": "الدخول إلى DEMEOS",
+    "guide": "كيف يعمل DEMEOS",
+    "information": "معلومات"
   },
   "pt": {
     "language": "Idioma",
@@ -198,7 +214,11 @@
     "contactIntro": "Para um produto ou serviço, use o contacto ou destino de compra da empresa em Descobrir.",
     "contactAccount": "Para informações guardadas e preferências de privacidade, abra Privacidade e controlo no Meu DEMEOS.",
     "controls": "Privacidade e controlo",
-    "tagline": "Um sistema. Valor real."
+    "tagline": "Um sistema. Valor real.",
+    "home": "Início DEMEOS",
+    "entryPaths": "Entrar no DEMEOS",
+    "guide": "Como funciona o DEMEOS",
+    "information": "Informações"
   },
   "zh": {
     "language": "语言",
@@ -238,7 +258,11 @@
     "contactIntro": "对于产品或服务，请使用发现中商家提供的联系方式或购买目的地。",
     "contactAccount": "对于已保存的信息和隐私偏好，请打开我的 DEMEOS 中的隐私与控制。",
     "controls": "隐私与控制",
-    "tagline": "一个系统。真实价值。"
+    "tagline": "一个系统。真实价值。",
+    "home": "DEMEOS 首页",
+    "entryPaths": "进入 DEMEOS",
+    "guide": "DEMEOS 如何运作",
+    "information": "信息"
   },
   "hi": {
     "language": "भाषा",
@@ -278,7 +302,11 @@
     "contactIntro": "उत्पाद या सेवा के लिए खोजें में व्यवसाय द्वारा दिए गए संपर्क या खरीद गंतव्य का उपयोग करें।",
     "contactAccount": "सहेजी जानकारी और गोपनीयता पसंद के लिए मेरे DEMEOS में गोपनीयता और नियंत्रण खोलें।",
     "controls": "गोपनीयता और नियंत्रण",
-    "tagline": "एक प्रणाली। वास्तविक मूल्य।"
+    "tagline": "एक प्रणाली। वास्तविक मूल्य।",
+    "home": "DEMEOS होम",
+    "entryPaths": "DEMEOS में प्रवेश करें",
+    "guide": "DEMEOS कैसे काम करता है",
+    "information": "जानकारी"
   },
   "de": {
     "language": "Sprache",
@@ -318,7 +346,11 @@
     "contactIntro": "Nutzen Sie für ein Produkt oder eine Dienstleistung den Kontakt oder das Kaufziel des Unternehmens in Entdecken.",
     "contactAccount": "Öffnen Sie für gespeicherte Informationen und Datenschutzeinstellungen Datenschutz und Kontrolle in Mein DEMEOS.",
     "controls": "Datenschutz und Kontrolle",
-    "tagline": "Ein System. Echter Wert."
+    "tagline": "Ein System. Echter Wert.",
+    "home": "DEMEOS Startseite",
+    "entryPaths": "DEMEOS öffnen",
+    "guide": "So funktioniert DEMEOS",
+    "information": "Informationen"
   },
   "ja": {
     "language": "言語",
@@ -358,6 +390,10 @@
     "contactIntro": "商品やサービスについては、ディスカバーで事業者が提供する連絡先や購入先をご利用ください。",
     "contactAccount": "保存した情報やプライバシー設定は、マイ DEMEOS のプライバシーと管理を開いてください。",
     "controls": "プライバシーと管理",
-    "tagline": "一つのシステム。確かな価値。"
+    "tagline": "一つのシステム。確かな価値。",
+    "home": "DEMEOS ホーム",
+    "entryPaths": "DEMEOS に入る",
+    "guide": "DEMEOS の使い方",
+    "information": "情報"
   }
 };if(typeof module!=="undefined"&&module.exports)module.exports=copy;root.DEMEOSPublicCopy=copy;}(typeof window!=="undefined"?window:{}));

@@ -6,6 +6,7 @@
  function set(node,value){if(node&&node.textContent!==value)node.textContent=value;}
  function apply(){
   const code=registry.resolve(doc.documentElement.lang).code,c=catalog[code];
+  doc.querySelectorAll('[data-public-aria]').forEach(node=>node.setAttribute('aria-label',c[node.getAttribute('data-public-aria')]));
   doc.querySelectorAll('[data-public-copy]').forEach(node=>{
    if(node.id==='product-experience-safety'&&doc.getElementById('product-experience')?.getAttribute('data-controlled-test')==='true')return;
    set(node,c[node.getAttribute('data-public-copy')]);
