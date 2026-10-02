@@ -1,63 +1,16 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="DEMEOS — One System. Real Value." />
-  <title>DEMEOS — One System. Real Value.</title>
-  <link rel="stylesheet" href="css/demeos-entry.css" />
-</head>
+<html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="description" content="DEMEOS — One System. Real Value." /><title>DEMEOS — One System. Real Value.</title><link rel="stylesheet" href="css/demeos-entry.css" /></head>
 <body class="demeos-entry">
-  <header class="demeos-entry-header">
-    <a class="demeos-entry-brand" href="index.html" aria-label="DEMEOS home">
-      <img src="images/demeos-logo.png" alt="DEMEOS" />
-    </a>
-    <a class="demeos-entry-signin" href="my-demeos.html">Sign in</a>
-  </header>
-
-  <main>
-    <section class="demeos-entry-hero" aria-labelledby="welcome-title">
-      <img class="demeos-entry-hero-logo" src="images/demeos-logo.png" alt="DEMEOS" />
-      <p class="demeos-entry-tagline">One System. Real Value.</p>
-      <h1 id="welcome-title">Welcome to <span>DEMEOS</span></h1>
-      <p class="demeos-entry-lead">People. Business. A Stronger Future.</p>
-    </section>
-
-    <section id="entry-paths" class="demeos-entry-paths" aria-label="Enter DEMEOS">
-      <article class="demeos-entry-path">
-        <div class="demeos-entry-icon" aria-hidden="true">○</div>
-        <h2>Customer Experience</h2>
-        <p>Explore businesses, products and services without signing in.</p>
-        <a id="customer-entry-link" href="customer.html">Enter Discover <span aria-hidden="true">→</span></a>
-        <a id="controlled-customer-entry-link" class="demeos-controlled-entry" href="customer.html?demeos-test=1#discover">Open controlled Customer Experience test</a>
-      </article>
-
-      <article class="demeos-entry-path">
-        <div class="demeos-entry-icon" aria-hidden="true">▢</div>
-        <h2>Business Owner</h2>
-        <p>Access your business workspace.</p>
-        <a href="business-workspace.html">Business access <span aria-hidden="true">→</span></a>
-      </article>
-    </section>
-  </main>
-
-  <footer class="demeos-entry-footer">
-    <div>
-      <strong>DEMEOS</strong>
-      <p>One System. Real Value. Shared Future.</p>
-    </div>
-    <div class="demeos-entry-footer-links">
-      <span>Privacy</span><span>Terms</span><span>Contact</span>
-      <small>© 2026 DEMEOS. All rights reserved.</small>
-    </div>
-  </footer>
-  <script>
-    (() => {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('demeos-test') !== '1') return;
-      const customerEntry = document.getElementById('customer-entry-link');
-      if (customerEntry) customerEntry.href = 'customer.html?demeos-test=1';
-    })();
-  </script>
-</body>
-</html>
+<header class="demeos-entry-header"><a class="demeos-entry-brand" href="index.html" aria-label="DEMEOS home"><img src="images/demeos-logo.png" alt="DEMEOS" /></a><div class="demeos-entry-tools"><div class="customer-language-control"><label id="customer-language-label" for="customer-language" data-public-copy="language">Language</label><select id="customer-language"></select></div><a class="demeos-entry-signin" href="my-demeos.html" data-public-copy="signIn">Sign in</a></div></header>
+<main>
+<section class="demeos-entry-hero" aria-labelledby="welcome-title"><h1 id="welcome-title" data-public-copy="headline">Find what you need.</h1><p class="demeos-entry-lead" data-public-copy="lead">Explore businesses, products and services. Keep what matters in My DEMEOS.</p></section>
+<section id="entry-paths" class="demeos-entry-paths" aria-label="Enter DEMEOS">
+<article class="demeos-entry-path"><h2 data-public-copy="customer">Customer Experience</h2><p data-public-copy="browse">Browse businesses, products and services. No account needed.</p><a id="customer-entry-link" href="customer.html" data-public-copy="enter">Enter Discover</a></article>
+<article class="demeos-entry-path demeos-entry-business"><h2 data-public-copy="business">Business Owner</h2><p data-public-copy="businessNote">Sign in to manage your business or get started.</p><a id="business-entry-link" href="business-workspace.html" data-public-copy="businessSignIn">Business sign in</a></article>
+</section>
+<section class="demeos-entry-guide" aria-label="How DEMEOS works"><ol><li><span aria-hidden="true">1</span><div><h2 data-public-copy="step1">Tell us what you need</h2><p data-public-copy="step1Note">Describe what you are looking for or browse.</p></div></li><li><span aria-hidden="true">2</span><div><h2 data-public-copy="step2">See real options</h2><p data-public-copy="step2Note">Discover relevant businesses, products and services.</p></div></li><li><span aria-hidden="true">3</span><div><h2 data-public-copy="step3">Save what matters to you</h2><p data-public-copy="step3Note">Keep your saved experiences in My DEMEOS.</p></div></li></ol></section>
+</main>
+<footer class="demeos-entry-footer"><p data-public-copy="tagline">One System. Real Value.</p><nav class="demeos-entry-footer-links" aria-label="Information"><a href="privacy.html" data-public-copy="privacy">Privacy</a><a href="terms.html" data-public-copy="terms">Terms</a><a href="contact.html" data-public-copy="contact">Contact</a><small>© 2026 DEMEOS</small></nav></footer>
+<script src="js/demeos-language-registry.js"></script><script src="js/demeos-public-copy.js"></script><script src="js/demeos-public-interface.js"></script>
+<script>(() => { const params = new URLSearchParams(window.location.search); if (params.get('demeos-test') !== '1') return; const customerEntry = document.getElementById('customer-entry-link'); if (customerEntry) customerEntry.href = 'customer.html?demeos-test=1'; })();</script>
+</body></html>

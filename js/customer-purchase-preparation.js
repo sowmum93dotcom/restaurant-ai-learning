@@ -48,9 +48,9 @@
   get('purchase-preparation-boundary').hidden=!boundary;get('purchase-preparation-form').hidden=boundary||!preparation;get('purchase-preparation-edit').hidden=!boundary;
   if(get('customer-payment-action')){get('customer-payment-action').hidden=!boundary;get('customer-payment-action').disabled=busy;set(get('customer-payment-action'),c.pay);set(get('customer-payment-message'),checkoutMessage?c[checkoutMessage]:'');}
   if(!preparation){const image=get("purchase-preparation-image");if(image){image.hidden=true;image.removeAttribute("src");}get("purchase-preparation-summary").replaceChildren();return;}
-  const p=preparation,n=names(p),item=root.DEMEOSItemPresentationCopy[code()];
+  const p=preparation,n=names(p),item=root.DEMEOSItemPresentationCopy[code()],productCopy=root.DEMEOSProductExperienceCopy[code()];
   const selected=p.product.presentation.options.map(field=>item.fields[field.key]+': '+root.DEMEOSCustomerItemPresentation.choiceLabel(field,field.values.find(v=>v.value===p.draft.selection[field.key]))).join(' · ');
-  const rows=[[root.DEMEOSControlledCustomerCopy[code()].business,n.business],[item[p.product.presentation.kind],n.product],[c.selected,selected],[c.price,root.DEMEOSCustomerItemPresentation.price(p.state.pricing)]];
+  const rows=[[root.DEMEOSControlledCustomerCopy[code()].business,n.business],[item[p.product.presentation.kind],n.product],[c.selected,selected],[c.price,root.DEMEOSCustomerItemPresentation.price(p.state.pricing)],[c.availability,p.product.presentation.kind==='service'?item[p.state.availability==='limited'?'serviceLimited':'serviceAvailable']:productCopy[p.state.availability]]];
   if(p.product.presentation.kind==='product'&&p.product.fulfilment?.quantityEnabled===true&&!p.product.presentation.options.some(o=>o.key==='quantity'))rows.push([c.quantity,String(p.draft.quantity)]);
   if(p.state.pricing.mode==='fixed'&&Number.isFinite(p.state.pricing.amount))rows.push([c.total,root.DEMEOSCustomerItemPresentation.price({...p.state.pricing,amount:Math.round(p.state.pricing.amount*p.draft.quantity*100)/100})]);
   const image=get('purchase-preparation-image');if(image){image.src=p.product.imageUrl||'';image.alt=n.product;image.hidden=!p.product.imageUrl;}
@@ -154,3 +154,4 @@
  root.DEMEOSCustomerPurchasePreparation=Object.freeze({start,product,localize,authenticationReturn,authenticationPath,read,cancelPending:()=>{generation++;busy=false;consumeResume();}});
  doc.addEventListener('DOMContentLoaded',()=>{doc.querySelectorAll('.customer-journey-nav a[href^="#"]').forEach(link=>link.addEventListener('click',()=>{generation++;busy=false;}));authBanner();localize();new root.MutationObserver(localize).observe(doc.documentElement,{attributes:true,attributeFilter:['lang']});if(!get('purchase-preparation'))return;get('purchase-preparation-form').addEventListener('submit',review);get('customer-payment-action').addEventListener('click',checkout);get('purchase-preparation-back').addEventListener('click',back);get('purchase-preparation-edit').addEventListener('click',()=>{boundary=false;checkoutKey=null;root.DEMEOSCheckoutRecovery.clear(root.sessionStorage);checkoutMessage='';render();});get('purchase-preparation-discard').addEventListener('click',()=>{clear();back();});resume();});
 }(typeof window!=='undefined'?window:{}));
+
