@@ -524,3 +524,22 @@
 .customer-body #intention #customer-place::placeholder{color:#aebdd0;opacity:1}
 .customer-body #intention #customer-place:focus-visible{outline:2px solid #e4bf6a;outline-offset:3px}
 .customer-body #intention .customer-context-status{max-width:100%;margin:0;line-height:1.45;text-align:start}
+
+/* Customer journey quality: readable headings, choices and anchored section entry. */
+.customer-body #discover,.customer-body #intention{scroll-margin-top:var(--customer-purchase-header-height,12rem)}
+.customer-body #intention #customer-title{font-size:clamp(1.8rem,3.6vw,2.6rem);line-height:1.2;max-width:28ch}
+.customer-body #intention .customer-connection-steps{gap:.6rem;margin:1.25rem auto}
+.customer-body #intention .customer-connection-steps>span{border:1px solid #354760;background:#102039;color:#d9e2ec;border-radius:10px;padding:.7rem .85rem;font-size:.9rem;line-height:1.5}
+.customer-body #intention .customer-connection-steps strong{color:#f7f9fc}
+.customer-body #intention .customer-context-field{margin-top:1rem}
+.customer-body #intention .customer-context-status{font-size:.85rem;line-height:1.5;color:#b9c7d8}
+.customer-body #discover .customer-business-name{font-family:inherit;font-size:clamp(1.2rem,2.4vw,1.6rem);line-height:1.3}
+.customer-body #discover .customer-controlled-entry a{display:inline-flex;align-items:center;min-height:44px;color:#b9c7d8;font-size:.85rem;line-height:1.4;padding-block:.5rem}
+@media(max-width:680px){
+ .customer-body #intention .customer-intention-option:nth-child(n){flex-direction:column;gap:.4rem;padding:.8rem;min-height:88px}
+ .customer-body #intention .customer-intention-option .customer-intention-option-title{font-size:.95rem}
+ .customer-body #intention .customer-intention-option span{line-height:1.4}
+ .customer-body #intention .customer-intention-option small{font-size:.75rem;line-height:1.4}
+ .customer-body #intention .customer-connection-steps{margin-block:1rem}
+}
+.customer-body #discover .customer-controlled-entry a[hidden]{display:none!important}

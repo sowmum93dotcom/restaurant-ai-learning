@@ -70,3 +70,43 @@
 .customer-payment-history-link span{color:#dcc17c;font-size:.9rem}
 @media(max-width:480px){#customer-payment-summary{grid-template-columns:minmax(0,1fr)}#customer-payment-summary dd{margin-bottom:10px}}
 .my-demeos-body #relationship-areas-heading{color:#fff;font-family:inherit;font-weight:700;line-height:1.2;text-align:center}
+
+/* Purchase sign-in is one small step; profile areas keep their ordinary place. */
+.customer-purchase-sign-in .my-demeos-main{max-width:560px;padding-block:1.5rem 2rem}
+.customer-purchase-sign-in .my-demeos-introduction{text-align:start}
+.customer-purchase-sign-in .my-demeos-introduction>.customer-eyebrow,
+.customer-purchase-sign-in .my-demeos-introduction>h1,
+.customer-purchase-sign-in .my-demeos-introduction>.my-demeos-lead{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip-path:inset(50%)}
+.customer-purchase-sign-in #customer-auth-status{margin:0;padding:1.25rem;background:#0b1d34;border:1px solid #354760}
+.customer-purchase-sign-in #customer-auth-status h2{font-family:inherit;font-weight:700;font-size:1.5rem;line-height:1.25;letter-spacing:-.02em}
+.customer-purchase-sign-in #customer-auth-status p{font-size:.95rem;line-height:1.5;margin:.65rem 0 1.25rem}
+.customer-purchase-sign-in #customer-sign-in,.customer-purchase-sign-in #customer-create-account{display:flex;align-items:center;justify-content:center;width:100%;min-width:0;min-height:48px;border-radius:10px;padding:.75rem 1rem;font-family:inherit;font-weight:700;font-size:1rem;line-height:1.4;margin:.65rem 0 0;white-space:normal}
+.customer-purchase-sign-in #customer-create-account{background:transparent;color:#edf2f8;border:1px solid #526784}
+#purchase-preparation-auth{display:grid;gap:.6rem;padding:1rem 0;border:0;background:transparent;text-align:start}
+#purchase-preparation-auth a{display:flex;align-items:center;min-height:44px;width:fit-content;max-width:100%;margin:0;padding:.5rem .25rem;color:#d8e3f0;line-height:1.5;overflow-wrap:anywhere}
+#purchase-preparation-auth #purchase-auth-privacy{font-size:.9rem;color:#b9c7d8}
+#purchase-preparation-auth #purchase-auth-discard{justify-self:start;min-height:44px;background:transparent;color:#b9c7d8;border:0;padding:.5rem .25rem;line-height:1.5;text-decoration:underline;text-underline-offset:.2em}
+.customer-purchase-sign-in .my-demeos-future:not(:has(.my-demeos-relationship-view:not([hidden]))){display:none}
+.customer-purchase-sign-in .my-demeos-future{margin-top:1rem}
+.customer-purchase-sign-in .my-demeos-future:has(.my-demeos-relationship-view:not([hidden])) .my-demeos-section-heading{display:none}
+.my-demeos-main .my-demeos-introduction h1{font-size:clamp(2rem,5vw,3rem)}
+.my-demeos-sign-in-status h2{font-size:1.4rem;line-height:1.3}
+.customer-purchase-sign-in .my-demeos-main{min-height:0}
+.customer-purchase-sign-in .my-demeos-introduction{display:block}
+.customer-purchase-sign-in #purchase-preparation-auth{width:100%;justify-items:start}
+.customer-purchase-sign-in #purchase-preparation-auth a{margin-inline:0;justify-content:start}
+.my-demeos-body #relationship-areas-heading{font-size:clamp(1.5rem,3vw,2rem)}
+.my-demeos-section-heading>.customer-eyebrow{font-size:.75rem;letter-spacing:.1em}
+.customer-purchase-sign-in .my-demeos-introduction{padding-top:0}
+.customer-purchase-sign-in #customer-sign-in{background:#dfbd67;box-shadow:none;border-color:#e8cc83;color:#08172a}
+.my-demeos-sign-in-status{margin-top:1.5rem;padding:1.5rem;text-align:start;border-color:#354760}
+.my-demeos-sign-in-status #customer-auth-signed-in p{font-size:.95rem;line-height:1.5}
+.my-demeos-sign-in-status #customer-auth-signed-in strong{font-weight:500}
+.my-demeos-sign-in-status h2{font-family:inherit}
+.my-demeos-main .sr-only,.my-demeos-introduction #customer-auth-signed-in h2{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%)}
+#purchase-auth-selection{display:flex;align-items:center;gap:.85rem;margin:0 0 1rem;min-width:0}
+#purchase-auth-selection[hidden],#purchase-auth-selection img[hidden]{display:none!important}
+#purchase-auth-selection img{width:56px;height:72px;object-fit:contain;flex:none;border-radius:8px}
+#purchase-auth-selection>div{min-width:0;overflow-wrap:anywhere}
+#purchase-auth-selection strong{display:block;font-size:1rem;line-height:1.4;color:#f7f9fc}
+#purchase-auth-selection p{margin:.25rem 0;font-size:.85rem;line-height:1.5;color:#b9c7d8}
