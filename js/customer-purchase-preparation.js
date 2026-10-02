@@ -125,6 +125,10 @@
  function authBanner(){
   if(!authenticationPath())return;const parent=doc.querySelector('.my-demeos-introduction');if(!parent)return;
   doc.body.classList.add('customer-purchase-sign-in');
+  let selected=null;
+  const context=doc.createElement('div');context.id='purchase-auth-selection';context.hidden=true;
+  const image=doc.createElement('img'),identity=doc.createElement('div'),business=doc.createElement('p'),name=doc.createElement('strong'),options=doc.createElement('p');image.alt='';
+  identity.append(business,name,options);context.append(image,identity);get('customer-auth-status').before(context);
   const banner=doc.createElement('aside');banner.id='purchase-preparation-auth';
   const link=doc.createElement('a'),privacy=doc.createElement('a'),discard=doc.createElement('button');
   link.id='purchase-auth-return';privacy.id='purchase-auth-privacy';discard.id='purchase-auth-discard';
@@ -133,8 +137,17 @@
   link.href='/customer.html?demeos-test=1&resume=1#product-experience';privacy.href='#privacy-control';
   privacy.addEventListener('click',()=>doc.querySelector('[data-relationship-area="privacy-control"]')?.click());
   banner.append(link,privacy,discard);get('customer-auth-status').after(banner);
-  function localize(){set(link,copy().resume);set(privacy,copy().privacy);set(discard,copy().discard);const button=get('customer-sign-in');if(button)set(button,copy().signIn);}
+  function localize(){
+   if(selected){const n=names(selected),item=root.DEMEOSItemPresentationCopy[code()];set(name,n.product);set(business,n.business);image.src=selected.product.imageUrl||'';image.hidden=!selected.product.imageUrl;
+    const choices=selected.product.presentation.options.map(field=>item.fields[field.key]+': '+root.DEMEOSCustomerItemPresentation.choiceLabel(field,field.values.find(v=>v.value===selected.draft.selection[field.key])));
+    if(selected.product.fulfilment?.quantityEnabled===true&&!selected.product.presentation.options.some(field=>field.key==='quantity'))choices.push(copy().quantity+': '+selected.draft.quantity);
+    set(options,choices.join(' · '));context.hidden=false;
+   }
+   set(link,copy().resume);set(privacy,copy().privacy);set(discard,copy().discard);const button=get('customer-sign-in');if(button)set(button,copy().signIn);}
 
+  // Show selection context only after the same controlled feed/contract validates its association.
+  const draft=read();root.fetch('/api/customer/work?demeos-test=1',{credentials:'same-origin',cache:'no-store',headers:{'x-demeos-test-mode':'controlled-preview'}})
+   .then(async response=>{if(!response.ok)return;const data=await response.json();if(data.testMode!==true)return;const result=contract.resolve(data.work,draft);if(result.ready){selected=result;localize();}}).catch(()=>{});
   localize();doc.addEventListener('change',()=>root.setTimeout(localize,0));new root.MutationObserver(localize).observe(doc.documentElement,{attributes:true,attributeFilter:['lang']});
  }
  function localize(){set(get('customer-sign-in'),copy().signIn);set(get('customer-create-account'),copy().createAccount);const signedOut=get('customer-auth-signed-out');if(signedOut){set(signedOut.querySelector('h2'),authenticationPath()?copy().authTitle:copy().signIn);set(signedOut.querySelector('p'),authenticationPath()?copy().purchaseSignInNote:copy().minimal);}render();const a=root.DEMEOSCustomerItemPresentation?.snapshot();if(a)product(a);}
