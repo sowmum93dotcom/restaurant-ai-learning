@@ -21,7 +21,7 @@ const base=process.env.DEMEOS_BROWSER_BASE_URL||'http://127.0.0.1:4173';
    assert.ok(!/controlled|development|test/i.test(await page.locator('body').innerText()),'ordinary homepage has no development controls');
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'homepage translation has no horizontal overflow');
    if(['en','ar','de'].includes(language.code))await page.screenshot({path:'/tmp/demeos-home-'+viewport.width+'-'+language.code+'.png',fullPage:true});
-   await page.locator('#customer-entry-link').click();await page.locator('#customer-work-list').waitFor();
+   await page.locator('#customer-entry-link').click();await page.locator('#customer-work-list[data-controlled-test="false"]').waitFor({state:'attached'});
    assert.equal(new URL(page.url()).searchParams.has('demeos-test'),false);
    assert.equal(await page.locator('#customer-language').inputValue(),language.code,'Discover preserves language');
    assert.equal(await page.locator('#customer-controlled-test-entry').isVisible(),false);
