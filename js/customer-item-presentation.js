@@ -111,10 +111,13 @@
   const selected=p.options.filter(o=>selection[o.key]).map(o=>c.fields[o.key]+': '+choiceLabel(o,o.values.find(v=>v.value===selection[o.key])));
   set(summary,selected.length?c.selectionSummary+': '+selected.join(' · '):'');summary.hidden=!selected.length;
   const action=doc.getElementById('product-experience-action');
-  action.hidden=false;action.removeAttribute('href');action.setAttribute('aria-disabled','true');
-  if(product.continuationRoute==='demeos'){
+  action.hidden=false;action.removeAttribute('href');action.removeAttribute('data-selection-required');action.setAttribute('aria-disabled','true');
+  if(state.availability==='selection-required'){
+   // The one primary action leads to the missing choices, never to a purchase.
+   set(action,c.choose);action.href='#product-experience-options';action.setAttribute('data-selection-required','true');action.removeAttribute('aria-disabled');
+  }else if(product.continuationRoute==='demeos'){
    const preparable=state.canContinue&&['available','limited'].includes(state.availability)&&surface.getAttribute('data-controlled-test')==='true'&&root.DEMEOSCustomerPurchasePreparation;
-   set(action,preparable?root.DEMEOSPurchasePreparationCopy[locale()].continue:state.canContinue?c.demeosInactive:availability(state.availability,p.kind));
+   set(action,preparable?c.buyDemeos:state.canContinue?c.demeosInactive:availability(state.availability,p.kind));
    if(preparable){action.href='#purchase-preparation';action.removeAttribute('aria-disabled');}
   }else if(!state.canContinue){
    set(action,state.availability==='selection-required'?c.selectionRequired:p.variants.length&&state.variantId===null?c.missingCombination:availability(state.availability,p.kind));

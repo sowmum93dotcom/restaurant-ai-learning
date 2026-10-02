@@ -45,6 +45,7 @@
     action.removeAttribute("target");
     action.removeAttribute("rel");
     action.removeAttribute("data-demeos-purchase");
+    action.removeAttribute("data-selection-required");
     action.removeAttribute("aria-disabled");
 
     if (!available) return false;
@@ -112,6 +113,7 @@
     surface.setAttribute("data-product-id", text(product.productId));
     surface.setAttribute("data-continuation-type", continuationType(product));
     if (window.DEMEOSCustomerItemPresentation) window.DEMEOSCustomerItemPresentation.open(document, surface, product, destination, work);
+    surface.querySelector(".customer-product-experience-shell").scrollTop = 0;
     window.scrollTo({ top: 0, behavior: "instant" });
     title.focus({ preventScroll: true });
     return true;
@@ -171,12 +173,35 @@
 
   function initialize(document) {
     recoverDiscoverIfNeeded(document);
+    const header = document.querySelector(".customer-header");
+    if (header) {
+      const sizePurchaseSurface = () => document.documentElement.style.setProperty("--customer-purchase-header-height", header.getBoundingClientRect().height + "px");
+      sizePurchaseSurface();
+      if (typeof window.ResizeObserver === "function") new window.ResizeObserver(sizePurchaseSurface).observe(header);
+      window.addEventListener("resize", sizePurchaseSurface);
+    }
     const back = document.getElementById("product-experience-back");
     const action = document.getElementById("product-experience-action");
     if (!back || !action) return;
 
     back.addEventListener("click", function () { closeProductExperience(document); });
     action.addEventListener("click", function (event) {
+      if (action.getAttribute("data-selection-required") === "true") {
+        event.preventDefault();
+        const missing = Array.from(document.querySelectorAll("#product-experience-options select")).find(select => !select.disabled && !select.value);
+        if (missing) {
+          missing.scrollIntoView({ block: "center", behavior: "instant" });
+          missing.focus({ preventScroll: true });
+          const header = document.querySelector(".customer-header");
+          const top = (header ? header.getBoundingClientRect().bottom : 0) + 16;
+          const bottom = action.getBoundingClientRect().top - 16;
+          const rect = missing.getBoundingClientRect();
+          const content = document.querySelector("#product-experience .customer-product-experience-shell");
+          if (rect.top < top) content.scrollBy({ top: rect.top - top, behavior: "instant" });
+          else if (rect.bottom > bottom) content.scrollBy({ top: rect.bottom - bottom, behavior: "instant" });
+        }
+        return;
+      }
       if (action.getAttribute("aria-disabled") === "true") { event.preventDefault(); return; }
       if(action.getAttribute("data-demeos-purchase")!=="pending"){
         const selected=window.DEMEOSCustomerItemPresentation&&window.DEMEOSCustomerItemPresentation.snapshot();
