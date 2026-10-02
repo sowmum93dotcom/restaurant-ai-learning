@@ -36,6 +36,7 @@ const base=process.env.DEMEOS_BROWSER_BASE_URL||'http://127.0.0.1:4173';
   // Reproduce the reported visible-but-inert action: incomplete choices must lead to their fields.
   const itemCopy=require('../js/demeos-item-presentation-copy');
   async function dockDoesNotCoverContent(surface){
+   assert.equal(await page.locator('.customer-footer').isVisible(),false,'footer controls cannot receive focus behind the full-screen purchase view');
    const content=page.locator(surface+' .customer-product-experience-shell'),rect=await content.boundingBox();
    const selector=surface==='#product-experience'?'#product-experience-action':'#purchase-preparation-review';const action=await page.locator(selector).boundingBox();
    const header=await page.locator('.customer-header').boundingBox();assert.ok(rect.y>=header.y+header.height,'content stays below the approved header');assert.ok(rect.y+rect.height<action.y,'scrollable content ends before the action dock');
@@ -134,4 +135,3 @@ const base=process.env.DEMEOS_BROWSER_BASE_URL||'http://127.0.0.1:4173';
   marketingOnly=true;await context.route('https://business.example/**',route=>route.fulfill({contentType:'text/html',body:'<h1>Validated test business destination</h1>'}));await open('test-product-summer-fashion');await page.locator('#customer-language').selectOption('en');assert.equal(await page.locator('#product-experience-action').textContent(),require('../js/demeos-controlled-customer-copy').en.buy);assert.equal(await page.locator('#product-experience-action').getAttribute('href'),'https://business.example/summer-fashion');const beforeExternal=preparationCalls;const popupPromise=page.waitForEvent('popup');await page.locator('#product-experience-action').click();const popup=await popupPromise;await popup.waitForLoadState();assert.equal(popup.url(),'https://business.example/summer-fashion');assert.equal(preparationCalls,beforeExternal,'marketing route never calls DEMEOS preparation');assert.equal(await page.locator('#product-experience').getAttribute('data-product-id'),'test-product-summer-fashion');await popup.close();assert.deepEqual(errors,[]);console.log('Preparation gate passed',viewport.width,'all nine languages, exact authentication return, fulfilment, unavailable re-check, no payment');await context.close();
  }
 }finally{await browser.close();}})().catch(error=>{console.error(error);process.exit(1);});
-
