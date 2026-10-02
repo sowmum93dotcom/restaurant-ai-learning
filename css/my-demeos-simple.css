@@ -110,3 +110,34 @@
 #purchase-auth-selection>div{min-width:0;overflow-wrap:anywhere}
 #purchase-auth-selection strong{display:block;font-size:1rem;line-height:1.4;color:#f7f9fc}
 #purchase-auth-selection p{margin:.25rem 0;font-size:.85rem;line-height:1.5;color:#b9c7d8}
+
+/* Compact account overview: one heading, one account action, five clear destinations. */
+.my-demeos-body:not(.customer-purchase-sign-in) .my-demeos-main{max-width:720px;padding-block:1.25rem 2rem}
+.my-demeos-body:not(.customer-purchase-sign-in) .my-demeos-introduction{text-align:start}
+.my-demeos-body:not(.customer-purchase-sign-in) .my-demeos-introduction>.customer-eyebrow,
+.my-demeos-body:not(.customer-purchase-sign-in) .my-demeos-lead,
+.my-demeos-body .my-demeos-section-heading{display:none}
+.my-demeos-body:not(.customer-purchase-sign-in) .my-demeos-introduction h1{font-size:1.75rem;line-height:1.2;margin:0 0 1rem}
+.my-demeos-body:not(.customer-purchase-sign-in) #customer-auth-status{margin:0;padding:1rem;border-radius:12px}
+.my-demeos-body:not(.customer-purchase-sign-in) #customer-auth-status h2{font-size:1.1rem;line-height:1.3}
+.my-demeos-body:not(.customer-purchase-sign-in) #customer-auth-status p{font-size:.9rem;line-height:1.5;margin:.5rem 0}
+.my-demeos-body:not(.customer-purchase-sign-in) #customer-sign-in,
+.my-demeos-body:not(.customer-purchase-sign-in) #customer-create-account{min-width:0;width:100%;min-height:44px;border-radius:9px;margin-top:.65rem;white-space:normal;font-size:.95rem}
+.my-demeos-body:not(.customer-purchase-sign-in) #customer-create-account{background:transparent;border:1px solid #526784;color:#edf2f8}
+.my-demeos-body .my-demeos-future{margin-top:1rem}
+.my-demeos-body #my-demeos-overview{grid-template-columns:minmax(0,1fr);gap:0;margin:0;border:1px solid #354760;border-radius:12px;overflow:hidden}
+.my-demeos-body .my-demeos-area:nth-child(n){grid-column:1;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto;align-items:center;gap:.75rem;padding:1rem;min-height:56px;border:0;border-bottom:1px solid #354760;border-radius:0;text-align:start}
+.my-demeos-body .my-demeos-area:last-child{border-bottom:0}
+.my-demeos-body .my-demeos-area-title{grid-column:1;grid-row:1;font-size:1rem;line-height:1.4;margin:0;overflow-wrap:anywhere}
+.my-demeos-body .my-demeos-area-icon,.my-demeos-body .my-demeos-area-copy{display:none}
+.my-demeos-body .my-demeos-area-enter{grid-column:2;grid-row:1;margin:0;padding:0;border:0;font-size:0;line-height:1}
+.my-demeos-body .my-demeos-area-enter span{font-size:1.25rem}
+.my-demeos-body .my-demeos-area:focus-visible{outline:2px solid #e5bd59;outline-offset:-3px}
+.my-demeos-body #customer-payment-panel[hidden]{display:none!important}
+@media(max-width:760px){
+ .my-demeos-body .customer-header-inner{grid-template-columns:44px minmax(0,1fr);min-height:62px;padding:8px 14px;gap:8px}
+ .my-demeos-body .customer-brand .demeos-logo{width:44px;height:44px}
+ .my-demeos-body .customer-journey-nav a{font-size:11px}
+ .my-demeos-body #customer-language{min-height:36px;max-width:60vw}
+ .my-demeos-body .my-demeos-main{width:calc(100% - 28px)}
+}
