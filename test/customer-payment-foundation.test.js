@@ -63,6 +63,11 @@ test('real PostgreSQL storage and gateway-independent payment flow',async t=>{
   await t.test('own-customer reconciliation recovers missed gateway events without trusting the browser',async()=>{
    const record=await store.get('order-a');currentEvidence=evidence(record,{refundedMinor:9900});assert.equal((await service.reconcile('other-customer','order-a')).reason,'not-found');assert.equal((await service.reconcile('customer-a','order-a')).receipt.state,'refunded');currentEvidence=evidence(record,{paymentId:'other-payment'});assert.equal((await service.reconcile('customer-a','order-a')).reason,'payment-mismatch');
   });
+  await t.test('malformed early evidence never changes the creating attempt',async()=>{
+   const record={id:'malformed-early-order',provider:provider.name,state:'creating',quote:prepareQuote(quote(),now()),version:0,refundedMinor:0};await store.reserve(record,'malformed-early-key');eventOrder=record.id;eventPayment='early-invalid-payment';eventId='malformed-early-event';
+   for(const override of [{status:'unsupported'},{refundedMinor:undefined}]){currentEvidence=evidence({...record,paymentId:eventPayment},override);assert.equal((await service.notification(Buffer.from('{}'),{})).reason,'payment-mismatch');const saved=await store.get(record.id);assert.equal(saved.state,'creating');assert.equal(saved.paymentId,undefined);assert.equal(saved.version,0);}
+   eventOrder='order-a';eventPayment='payment-a';
+  });
   await t.test('terminal notification before creation response recovers the payment without another session',async()=>{
    const record={id:'early-order',provider:provider.name,state:'creating',quote:prepareQuote(quote(),now()),version:0,refundedMinor:0};await store.reserve(record,'early-notification-key');eventOrder='early-order';eventPayment='early-payment';eventId='early-terminal-event';currentEvidence=evidence({...record,paymentId:eventPayment});assert.equal((await service.notification(Buffer.from('{}'),{})).ready,true);assert.equal((await service.receipt('customer-a','early-order')).state,'paid');assert.equal((await store.get('early-order')).paymentId,'early-payment');eventOrder='order-a';eventPayment='payment-a';
   });

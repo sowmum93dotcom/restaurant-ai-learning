@@ -1,7 +1,7 @@
 // Gateway-independent orchestration. An unconfigured provider cannot create a payment.
 'use strict';
 const {randomUUID}=require('node:crypto');
-const {prepareQuote,transition,customerReceipt,matches}=require('./customer-payment-contract');
+const {prepareQuote,transition,customerReceipt}=require('./customer-payment-contract');
 const failure=reason=>({ready:false,reason});
 function createPaymentService({provider=null,store,loadQuote,now=Date.now,newId=randomUUID}={}){
  function configured(){return provider?.mode==='test'&&typeof provider.name==='string'&&provider.name.length>0&&Array.isArray(provider.checkoutOrigins)&&provider.checkoutOrigins.length>0&&['createCheckout','verifyNotification','retrievePayment'].every(k=>typeof provider[k]==='function')&&store&&['reserve','attach','get','apply','getOwn'].every(k=>typeof store[k]==='function')&&typeof loadQuote==='function';}
@@ -41,7 +41,7 @@ function createPaymentService({provider=null,store,loadQuote,now=Date.now,newId=
    // Bind its payment ID only after checking every frozen quote/account field.
    if(record.state==='creating'&&!record.paymentId){
     if(evidence.status==='pending')return failure('retry');
-    if(!matches({...record,paymentId:event.paymentId},evidence))return failure('payment-mismatch');
+    if(!transition({...record,paymentId:event.paymentId,state:'pending'},evidence))return failure('payment-mismatch');
     record=await store.attach(record,{paymentId:event.paymentId,checkoutUrl:null,checkoutExpiresAt:0,state:'pending'});
     if(!record)continue;
    }
