@@ -77,7 +77,7 @@
    if(result.auth){root.location.assign('/my-demeos.html?prepare=1');return;}
    if(result.error){status(result.error==='unavailable'?'unavailable':'failed');return;}
    preparation=result.preparation;set(get('purchase-preparation-status'),'');render();
-  }catch(_){if(revision===generation)status('failed');}finally{busy=false;}
+  }catch(_){if(revision===generation)status('failed');}finally{if(revision===generation){busy=false;render();}}
  }
  async function review(event){
   event.preventDefault();if(busy||!preparation)return;
@@ -88,7 +88,7 @@
    if(result.auth){root.location.assign('/my-demeos.html?prepare=1');return;}
    if(result.error){boundary=false;status(result.error==='unavailable'?'unavailable':'failed');return;}
    preparation=result.preparation;details=submittedDetails;boundary=true;set(get('purchase-preparation-status'),'');render();
-  }catch(_){if(revision===generation)status('failed');}finally{busy=false;get('purchase-preparation-details').disabled=false;get('purchase-preparation-review').disabled=false;}
+  }catch(_){if(revision===generation)status('failed');}finally{if(revision===generation){busy=false;get('purchase-preparation-details').disabled=false;get('purchase-preparation-review').disabled=false;render();}}
  }
  async function checkout(){
   if(busy||!boundary||!preparation)return;
