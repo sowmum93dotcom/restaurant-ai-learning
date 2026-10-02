@@ -44,7 +44,7 @@
  function render(){
   if(!get('purchase-preparation'))return;
   const c=copy();set(get('purchase-preparation-title'),boundary?c.ready:c.title);set(get('purchase-preparation-test'),c.test);
-  set(get('purchase-preparation-review'),c.review);set(get('purchase-preparation-back'),c.back);set(get('purchase-preparation-discard'),c.discard);set(get('purchase-preparation-edit'),c.edit);set(get('purchase-preparation-privacy'),c.privacy);set(get('purchase-preparation-boundary'),c.inactive);
+  get('purchase-preparation-review').disabled=busy||!preparation;set(get('purchase-preparation-review'),c.review);set(get('purchase-preparation-back'),c.back);set(get('purchase-preparation-discard'),c.discard);set(get('purchase-preparation-edit'),c.edit);set(get('purchase-preparation-privacy'),c.privacy);set(get('purchase-preparation-boundary'),c.inactive);
   get('purchase-preparation-boundary').hidden=!boundary;get('purchase-preparation-form').hidden=boundary||!preparation;get('purchase-preparation-edit').hidden=!boundary;
   if(get('customer-payment-action')){get('customer-payment-action').hidden=!boundary;get('customer-payment-action').disabled=busy;set(get('customer-payment-action'),c.pay);set(get('customer-payment-message'),checkoutMessage?c[checkoutMessage]:'');}
   if(!preparation){const image=get("purchase-preparation-image");if(image){image.hidden=true;image.removeAttribute("src");}get("purchase-preparation-summary").replaceChildren();return;}
