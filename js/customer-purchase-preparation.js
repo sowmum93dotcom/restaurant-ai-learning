@@ -10,7 +10,7 @@
  const set=(n,v)=>{if(n&&n.textContent!==v)n.textContent=v;};
  function read(){try{const value=contract.draft(JSON.parse(root.sessionStorage.getItem(key)));if(!value)root.sessionStorage.removeItem(key);return value;}catch(_){return null;}}
  function write(value){try{root.sessionStorage.setItem(key,JSON.stringify(value));return true;}catch(_){return false;}}
- function clear(){try{root.sessionStorage.removeItem(key);}catch(_){}details={};preparation=null;boundary=false;checkoutKey=null;checkoutMessage='';generation++;}
+ function clear(){root.DEMEOSCheckoutRecovery?.clear(root.sessionStorage);try{root.sessionStorage.removeItem(key);}catch(_){}details={};preparation=null;boundary=false;checkoutKey=null;checkoutMessage='';generation++;}
  function consumeResume(){const url=new URL(root.location.href);url.searchParams.delete("resume");root.history.replaceState(null,"",url.pathname+url.search+url.hash);}
  function controlled(){return new URL(root.location.href).searchParams.get('demeos-test')==='1';}
  function authenticationPath(){return new URL(root.location.href).searchParams.get('prepare')==='1'&&read()?root.location.origin+'/my-demeos.html?prepare=1':null;}
@@ -34,7 +34,7 @@
   const data=await response.json();return response.ok&&data.ready&&data.paymentActive===false&&data.orderCreated===false?data:{error:data.reason||'failed'};
  }
  function status(reason){set(get('purchase-preparation-status'),copy()[reason]||copy().failed);}
- function show(){get('discover').hidden=true;get('intention').hidden=true;get('product-experience').hidden=true;get('purchase-preparation').hidden=false;root.scrollTo({top:0,behavior:'instant'});get('purchase-preparation-title').focus({preventScroll:true});}
+ function show(){const url=new URL(root.location.href);url.hash='purchase-preparation';root.history.replaceState(null,'',url.pathname+url.search+url.hash);get('discover').hidden=true;get('intention').hidden=true;get('product-experience').hidden=true;get('purchase-preparation').hidden=false;root.scrollTo({top:0,behavior:'instant'});get('purchase-preparation-title').focus({preventScroll:true});}
  function names(p){
   const c=root.DEMEOSControlledCustomerCopy[code()];
   const pi=['activewear','summer-fashion','mens-fashion','running','football','fishing','camping','hiking','childrens-fashion','toys','childrens-collection','grocery-pack'].indexOf(p.product.productId.replace('test-product-',''));
@@ -92,7 +92,7 @@
  }
  async function checkout(){
   if(busy||!boundary||!preparation)return;
-  if(!checkoutKey){if(typeof root.crypto?.randomUUID!=='function'){checkoutMessage='failed';render();return;}checkoutKey=root.crypto.randomUUID();}
+  if(!checkoutKey){if(typeof root.crypto?.randomUUID!=='function'){checkoutMessage='failed';render();return;}checkoutKey=root.DEMEOSCheckoutRecovery.nonce(root.sessionStorage,preparation.draft,()=>root.crypto.randomUUID());if(!checkoutKey){checkoutMessage='failed';render();return;}}
   const revision=++generation;busy=true;checkoutMessage='paymentChecking';render();
   try{
    const response=await root.fetch('/api/customer/checkout?demeos-test=1',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json','x-demeos-test-mode':'controlled-preview','Idempotency-Key':checkoutKey},body:JSON.stringify({draft:preparation.draft,details:{...details}})});
@@ -107,19 +107,19 @@
    checkoutMessage=data.reason==='gateway-not-configured'?'gatewayUnavailable':data.reason==='unavailable'?'unavailable':'failed';
   }catch(_){if(revision===generation)checkoutMessage='failed';}finally{if(revision===generation){busy=false;render();}}
  }
- function back(){generation++;busy=false;checkoutMessage='';get('purchase-preparation').hidden=true;get('product-experience').hidden=false;boundary=false;root.DEMEOSCustomerItemPresentation.localize();}
+ function back(){const url=new URL(root.location.href);url.hash='product-experience';root.history.replaceState(null,'',url.pathname+url.search+url.hash);generation++;busy=false;checkoutMessage='';get('purchase-preparation').hidden=true;get('product-experience').hidden=false;boundary=false;root.DEMEOSCustomerItemPresentation.localize();}
  async function resume(){
-  if(!controlled()||new URL(root.location.href).searchParams.get('resume')!=='1')return;
-  const draft=read();if(!draft)return;
+  const resumeUrl=new URL(root.location.href);if(!controlled()||(resumeUrl.searchParams.get('resume')!=='1'&&resumeUrl.hash!=='#purchase-preparation'&&resumeUrl.hash!=='#product-experience'))return;
+  const draft=read();if(!draft)return;const productOnly=resumeUrl.searchParams.get('resume')!=='1'&&resumeUrl.hash==='#product-experience';
   const revision=++generation;
   try{
    const response=await root.fetch('/api/customer/work?demeos-test=1',{credentials:'same-origin',cache:'no-store',headers:{'x-demeos-test-mode':'controlled-preview'}});const data=await response.json();if(revision!==generation)return;
    if(!response.ok||data.testMode!==true){return;}
    const result=contract.resolve(data.work,draft);if(!result.ready){show();render();status(result.reason==='unavailable'?'unavailable':'failed');return;}
    const p=result.product;get('product-experience').setAttribute('data-controlled-test','true');root.DEMEOSCustomerProductExperience.open(doc,result.business,p,'');root.DEMEOSCustomerItemPresentation.selection(draft.selection);
-   const input=get('purchase-preparation-quantity').querySelector('input');input.value=String(draft.quantity);
+   const input=get('purchase-preparation-quantity').querySelector('input');input.value=String(draft.quantity);if(productOnly){consumeResume();return;}
    const prepared=await request(draft);if(revision!==generation)return;if(prepared.auth)return;if(prepared.error){show();status(prepared.error==='unavailable'?'unavailable':'failed');return;}
-   consumeResume();preparation=prepared.preparation;show();set(get('purchase-preparation-status'),'');render();
+   consumeResume();preparation=prepared.preparation;show();set(get('purchase-preparation-status'),'');render();if(contract.fields(preparation).length)status('restoreDetails');
   }catch(_){show();render();status('failed');}
  }
  function authBanner(){
@@ -130,5 +130,5 @@
  }
  function localize(){set(get('customer-sign-in'),copy().signIn);set(get('customer-create-account'),copy().createAccount);const signedOut=get('customer-auth-signed-out');if(signedOut){set(signedOut.querySelector('h2'),copy().signIn);set(signedOut.querySelector('p'),copy().minimal);}render();const a=root.DEMEOSCustomerItemPresentation?.snapshot();if(a)product(a);}
  root.DEMEOSCustomerPurchasePreparation=Object.freeze({start,product,localize,authenticationReturn,authenticationPath,read,cancelPending:()=>{generation++;busy=false;consumeResume();}});
- doc.addEventListener('DOMContentLoaded',()=>{doc.querySelectorAll('.customer-journey-nav a[href^="#"]').forEach(link=>link.addEventListener('click',()=>{generation++;busy=false;}));authBanner();localize();new root.MutationObserver(localize).observe(doc.documentElement,{attributes:true,attributeFilter:['lang']});if(!get('purchase-preparation'))return;get('purchase-preparation-form').addEventListener('submit',review);get('customer-payment-action').addEventListener('click',checkout);get('purchase-preparation-back').addEventListener('click',back);get('purchase-preparation-edit').addEventListener('click',()=>{boundary=false;checkoutKey=null;checkoutMessage='';render();});get('purchase-preparation-discard').addEventListener('click',()=>{clear();back();});resume();});
+ doc.addEventListener('DOMContentLoaded',()=>{doc.querySelectorAll('.customer-journey-nav a[href^="#"]').forEach(link=>link.addEventListener('click',()=>{generation++;busy=false;}));authBanner();localize();new root.MutationObserver(localize).observe(doc.documentElement,{attributes:true,attributeFilter:['lang']});if(!get('purchase-preparation'))return;get('purchase-preparation-form').addEventListener('submit',review);get('customer-payment-action').addEventListener('click',checkout);get('purchase-preparation-back').addEventListener('click',back);get('purchase-preparation-edit').addEventListener('click',()=>{boundary=false;checkoutKey=null;root.DEMEOSCheckoutRecovery.clear(root.sessionStorage);checkoutMessage='';render();});get('purchase-preparation-discard').addEventListener('click',()=>{clear();back();});resume();});
 }(typeof window!=='undefined'?window:{}));

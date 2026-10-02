@@ -1,13 +1,21 @@
 /* Own-customer status only. A redirect or browser flag never proves payment. */
 (function(root){
  'use strict';const doc=root.document;
- let receipt=null,message='paymentSignIn',busy=false,generation=0;
+ let receipt=null,receipts=[],message='paymentSignIn',busy=false,generation=0;
  const get=id=>doc.getElementById(id),code=()=>doc.documentElement.lang||'en';
  const copy=()=>root.DEMEOSPurchasePreparationCopy[code()]||root.DEMEOSPurchasePreparationCopy.en;
  const set=(node,text)=>{if(node&&node.textContent!==text)node.textContent=text;};
  function render(){
-  const c=copy();set(get('customer-payment-title'),c.paymentTitle);set(get('customer-payment-refresh'),c.paymentRefresh);
+  const c=copy();set(get('customer-payment-title'),new URL(root.location.href).searchParams.has('payment')?c.paymentTitle:c.paymentHistory);set(get('customer-payment-refresh'),c.paymentRefresh);
   get('customer-payment-refresh').disabled=busy;set(get('customer-payment-message'),c[message]||c.failed);
+  const history=get('customer-payment-history');history.replaceChildren();
+  for(const entry of receipts){
+   const cstate={creating:'paymentPending',pending:'paymentPending',paid:'paymentPaid',failed:'paymentFailed',cancelled:'paymentCancelled','partially-refunded':'paymentPartialRefund',refunded:'paymentRefunded'}[entry.state];
+   if(entry.testMode!==true||entry.recipient!=='business'||!cstate||typeof entry.productId!=='string'||typeof entry.reference!=='string'||!/^[a-zA-Z0-9-]{1,200}$/.test(entry.reference))continue;
+   const p=['activewear','summer-fashion','mens-fashion','running','football','fishing','camping','hiking','childrens-fashion','toys','childrens-collection','grocery-pack'].indexOf(entry.productId.replace('test-product-',''));
+   const link=doc.createElement('a');link.className='customer-payment-history-link';link.href='/my-demeos.html?demeos-test=1&payment='+encodeURIComponent(entry.reference);
+   const name=doc.createElement('strong'),state=doc.createElement('span');const owned=root.DEMEOSControlledCustomerCopy[code()];name.textContent=p<0?entry.productName:owned.test+' '+owned.products[p];state.textContent=c[cstate];link.append(name,state);history.append(link);
+  }
   const summary=get('customer-payment-summary');summary.replaceChildren();if(!receipt)return;
   const owned=root.DEMEOSControlledCustomerCopy[code()],item=root.DEMEOSItemPresentationCopy[code()];
   const products=['activewear','summer-fashion','mens-fashion','running','football','fishing','camping','hiking','childrens-fashion','toys','childrens-collection','grocery-pack'];
@@ -22,7 +30,7 @@
   for(const [label,value] of rows){const dt=doc.createElement('dt'),dd=doc.createElement('dd');dt.textContent=label;dd.textContent=value;summary.append(dt,dd);}
  }
  async function refresh(){
-  const revision=++generation;receipt=null;busy=true;message='paymentChecking';render();
+  const revision=++generation;receipt=null;receipts=[];busy=true;message='paymentChecking';render();
   const reference=new URL(root.location.href).searchParams.get('payment');
   try{
    if(reference!==null&&!/^[a-zA-Z0-9-]{1,200}$/.test(reference)){message='paymentMissing';return;}
@@ -30,11 +38,12 @@
    const data=await response.json();if(revision!==generation)return;
    if(response.status===401){message='paymentSignIn';return;}
    if(response.status===404){message='paymentMissing';return;}
+   if(reference===null&&response.ok&&data.ready&&Array.isArray(data.receipts)){receipts=data.receipts.slice(0,50);message=receipts.length?'test':data.reason==='gateway-not-configured'?'gatewayUnavailable':'paymentEmpty';return;}
    if(response.ok&&data.ready&&data.receipt?.testMode===true&&data.receipt.recipient==='business'&&data.receipt.reference===reference){receipt=data.receipt;message='test';return;}
    message=data.reason==='gateway-not-configured'?'gatewayUnavailable':'failed';
   }catch(_){if(revision===generation)message='failed';}finally{if(revision===generation){busy=false;render();}}
  }
- function clear(){generation++;receipt=null;busy=false;message='paymentSignIn';render();}
+ function clear(){generation++;receipt=null;receipts=[];busy=false;message='paymentSignIn';render();}
  doc.addEventListener('DOMContentLoaded',()=>{
   const panel=get('customer-payment-panel');if(!panel||new URL(root.location.href).searchParams.get('demeos-test')!=='1')return;
   panel.hidden=false;render();get('customer-payment-refresh').addEventListener('click',refresh);

@@ -71,6 +71,12 @@ test('real PostgreSQL storage and gateway-independent payment flow',async t=>{
   await t.test('terminal notification before creation response recovers the payment without another session',async()=>{
    const record={id:'early-order',provider:provider.name,state:'creating',quote:prepareQuote(quote(),now()),version:0,refundedMinor:0};await store.reserve(record,'early-notification-key');eventOrder='early-order';eventPayment='early-payment';eventId='early-terminal-event';currentEvidence=evidence({...record,paymentId:eventPayment});assert.equal((await service.notification(Buffer.from('{}'),{})).ready,true);assert.equal((await service.receipt('customer-a','early-order')).state,'paid');assert.equal((await store.get('early-order')).paymentId,'early-payment');eventOrder='order-a';eventPayment='payment-a';
   });
+  await t.test('payment history is bounded, customer-owned and strips private provider fields',async()=>{
+   for(let n=0;n<55;n++)await store.reserve({id:'history-'+String(n).padStart(3,'0'),provider:provider.name,state:'pending',quote:prepareQuote(quote(),now()),version:0,refundedMinor:0},'history-key-'+n);
+   await store.reserve({id:'other-customer-history',provider:provider.name,state:'paid',quote:prepareQuote(quote({customerId:'customer-b'}),now()),version:0,refundedMinor:0},'other-customer-key');
+   const history=await service.receipts('customer-a');assert.equal(history.length,50);assert.ok(history.every(r=>r.reference!=='other-customer-history'));assert.equal((await service.receipts('customer-b')).length,1);assert.deepEqual(await store.listOwn("customer-a' OR TRUE --"),[]);
+   for(const r of history){assert.equal('merchantAccountId'in r,false);assert.equal('paymentId'in r,false);assert.equal('customerId'in r,false);assert.equal('fulfilmentReference'in r,false);}
+  });
   await t.test('unsafe gateway URL or live adapter cannot produce an actionable checkout',async()=>{
    const fakeStore={...store,reserve:async()=>({id:'order-a',provider:provider.name,quote:prepareQuote(quote(),now()),state:'creating',version:0})};invalidSession=true;const isolated=createPaymentService({provider,store:fakeStore,loadQuote:async()=>quote(),now});assert.equal((await isolated.begin('customer-a',{},'customer-click-key')).reason,'invalid-gateway-session');const live=createPaymentService({provider:{...provider,mode:'live'},store,loadQuote:async()=>quote(),now});assert.equal(live.capabilities().configured,false);
   });

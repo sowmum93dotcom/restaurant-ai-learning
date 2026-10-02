@@ -25,7 +25,10 @@ function createHandler(dependencies={}){
   // This entry can never activate a live-mode payment service.
   if(capabilities.mode!=='test'||capabilities.livePayments!==false||capabilities.recipient!=='business')return res.status(503).json({reason:'gateway-not-configured',paymentActive:false});
   if(req.method==='GET'){
-   if(req.query?.reference===undefined)return res.status(200).json({ready:capabilities.configured,paymentActive:false,reason:capabilities.configured?null:'gateway-not-configured'});
+   if(req.query?.reference===undefined){
+    const receipts=typeof service.receipts==='function'?await service.receipts(customerId):[];
+    return res.status(200).json({ready:true,paymentActive:false,receipts,reason:capabilities.configured?null:'gateway-not-configured'});
+   }
    const reference=req.query.reference;
    if(typeof reference!=='string'||!/^[a-zA-Z0-9-]{1,200}$/.test(reference))return res.status(400).json({reason:'invalid'});
    const receipt=await service.receipt(customerId,reference);
