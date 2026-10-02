@@ -6,8 +6,13 @@
 .customer-body #intention .customer-understanding-trust{font-size:.85rem;color:#b9c7d8}
 .customer-body #intention #customer-title{font-size:clamp(1.65rem,3.5vw,2.4rem);margin-block:.5rem .75rem}
 .customer-body #intention .customer-intention-detail{border:0;background:none;box-shadow:none}
+.customer-body #intention:after{display:none}
+.customer-body #intention .customer-intention-option:nth-child(n){display:flex;flex-direction:column;justify-content:center;gap:.35rem}
+.customer-body #intention .customer-context-actions>div{display:flex;flex-wrap:wrap;gap:.5rem}
+.customer-body #intention .customer-context-actions>div>p{flex-basis:100%}
 .customer-body #intention .customer-context-status{font-size:.85rem;line-height:1.5}
 .my-demeos-body .my-demeos-area-enter{display:none}
+.my-demeos-body #my-demeos-overview{padding:0;min-height:0;grid-template-rows:auto}
 .my-demeos-body .my-demeos-area:after{content:"\203a";display:block!important;position:static!important;grid-column:2;grid-row:1;color:#e5bd59;font-size:1.5rem;line-height:1;transform:none!important;background:none!important;border:0;border-radius:0;box-shadow:none;padding:0;width:auto;height:auto}
 .my-demeos-body .my-demeos-relationship-view>.customer-eyebrow{display:none}
 [dir="rtl"] .my-demeos-body .my-demeos-area:after{content:"\2039"}
