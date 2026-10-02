@@ -63,4 +63,8 @@
 }
 
 /* Visible relationship heading on the dark My DEMEOS surface. */
+#customer-payment-summary{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:10px 16px;text-align:start;font-size:1rem;line-height:1.5}
+#customer-payment-summary dt{color:#dcc17c}
+#customer-payment-summary dd{margin:0;min-width:0;overflow-wrap:anywhere;color:#fff}
+@media(max-width:480px){#customer-payment-summary{grid-template-columns:minmax(0,1fr)}#customer-payment-summary dd{margin-bottom:10px}}
 .my-demeos-body #relationship-areas-heading{color:#fff;font-family:inherit;font-weight:700;line-height:1.2;text-align:center}

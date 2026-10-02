@@ -32,3 +32,5 @@ jobs:
         run: node browser-checks/customer-controlled-media-gate.js
       - name: Run customer registration and preparation gate
         run: node browser-checks/customer-preparation-gate.js
+      - name: Run private customer payment status gate
+        run: node browser-checks/customer-payment-gate.js

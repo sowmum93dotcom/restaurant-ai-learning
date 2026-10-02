@@ -3,14 +3,14 @@
  'use strict';
  const contract=root.DEMEOSPurchasePreparationContract,key='demeos-controlled-preparation-v1';
  const doc=root.document;
- let preparation=null,details={},boundary=false,busy=false,generation=0;
+ let preparation=null,details={},boundary=false,busy=false,generation=0,checkoutKey=null,checkoutMessage='';
  const code=()=>doc.documentElement.lang||'en';
  const copy=()=>root.DEMEOSPurchasePreparationCopy[code()]||root.DEMEOSPurchasePreparationCopy.en;
  const get=id=>doc.getElementById(id);
  const set=(n,v)=>{if(n&&n.textContent!==v)n.textContent=v;};
  function read(){try{const value=contract.draft(JSON.parse(root.sessionStorage.getItem(key)));if(!value)root.sessionStorage.removeItem(key);return value;}catch(_){return null;}}
  function write(value){try{root.sessionStorage.setItem(key,JSON.stringify(value));return true;}catch(_){return false;}}
- function clear(){try{root.sessionStorage.removeItem(key);}catch(_){}details={};preparation=null;boundary=false;generation++;}
+ function clear(){try{root.sessionStorage.removeItem(key);}catch(_){}details={};preparation=null;boundary=false;checkoutKey=null;checkoutMessage='';generation++;}
  function consumeResume(){const url=new URL(root.location.href);url.searchParams.delete("resume");root.history.replaceState(null,"",url.pathname+url.search+url.hash);}
  function controlled(){return new URL(root.location.href).searchParams.get('demeos-test')==='1';}
  function authenticationPath(){return new URL(root.location.href).searchParams.get('prepare')==='1'&&read()?root.location.origin+'/my-demeos.html?prepare=1':null;}
@@ -46,6 +46,7 @@
   const c=copy();set(get('purchase-preparation-title'),boundary?c.ready:c.title);set(get('purchase-preparation-test'),c.test);
   set(get('purchase-preparation-review'),c.review);set(get('purchase-preparation-back'),c.back);set(get('purchase-preparation-discard'),c.discard);set(get('purchase-preparation-edit'),c.edit);set(get('purchase-preparation-privacy'),c.privacy);set(get('purchase-preparation-boundary'),c.inactive);
   get('purchase-preparation-boundary').hidden=!boundary;get('purchase-preparation-form').hidden=boundary||!preparation;get('purchase-preparation-edit').hidden=!boundary;
+  if(get('customer-payment-action')){get('customer-payment-action').hidden=!boundary;get('customer-payment-action').disabled=busy;set(get('customer-payment-action'),c.pay);set(get('customer-payment-message'),checkoutMessage?c[checkoutMessage]:'');}
   if(!preparation){const image=get("purchase-preparation-image");if(image){image.hidden=true;image.removeAttribute("src");}get("purchase-preparation-summary").replaceChildren();return;}
   const p=preparation,n=names(p),item=root.DEMEOSItemPresentationCopy[code()],productCopy=root.DEMEOSProductExperienceCopy[code()];
   const selected=p.product.presentation.options.map(field=>item.fields[field.key]+': '+root.DEMEOSCustomerItemPresentation.choiceLabel(field,field.values.find(v=>v.value===p.draft.selection[field.key]))).join(' · ');
@@ -68,7 +69,7 @@
  }
  async function start(){
   if(busy)return;const draft=currentDraft();if(!draft){const input=get('purchase-preparation-quantity')?.querySelector('input');if(input&&!input.checkValidity())input.reportValidity();return;}if(!write(draft)){show();render();status('failed');return;}
-  busy=true;const revision=++generation;boundary=false;
+  busy=true;const revision=++generation;boundary=false;checkoutKey=null;checkoutMessage='';
   if(!preparation||preparation.draft.workItemId!==draft.workItemId||preparation.draft.productId!==draft.productId)details={};
   preparation=null;show();render();status('checking');
   try{
@@ -89,7 +90,24 @@
    preparation=result.preparation;details=submittedDetails;boundary=true;set(get('purchase-preparation-status'),'');render();
   }catch(_){if(revision===generation)status('failed');}finally{busy=false;get('purchase-preparation-details').disabled=false;get('purchase-preparation-review').disabled=false;}
  }
- function back(){generation++;busy=false;get('purchase-preparation').hidden=true;get('product-experience').hidden=false;boundary=false;root.DEMEOSCustomerItemPresentation.localize();}
+ async function checkout(){
+  if(busy||!boundary||!preparation)return;
+  if(!checkoutKey){if(typeof root.crypto?.randomUUID!=='function'){checkoutMessage='failed';render();return;}checkoutKey=root.crypto.randomUUID();}
+  const revision=++generation;busy=true;checkoutMessage='paymentChecking';render();
+  try{
+   const response=await root.fetch('/api/customer/checkout?demeos-test=1',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json','x-demeos-test-mode':'controlled-preview','Idempotency-Key':checkoutKey},body:JSON.stringify({draft:preparation.draft,details:{...details}})});
+   if(revision!==generation)return;
+   if(response.status===401){root.location.assign('/my-demeos.html?prepare=1');return;}
+   const data=await response.json();if(revision!==generation)return;
+   if(response.ok&&data.ready&&data.receipt?.testMode===true&&data.receipt.recipient==='business'){
+    if(!/^[a-zA-Z0-9-]{1,200}$/.test(data.receipt.reference))throw Error('Invalid reference');
+    if(data.checkoutUrl){const url=new URL(data.checkoutUrl);if(url.protocol!=='https:'||url.username||url.password)throw Error('Invalid checkout');root.location.assign(url.href);return;}
+    root.location.assign('/my-demeos.html?demeos-test=1&payment='+encodeURIComponent(data.receipt.reference));return;
+   }
+   checkoutMessage=data.reason==='gateway-not-configured'?'gatewayUnavailable':data.reason==='unavailable'?'unavailable':'failed';
+  }catch(_){if(revision===generation)checkoutMessage='failed';}finally{if(revision===generation){busy=false;render();}}
+ }
+ function back(){generation++;busy=false;checkoutMessage='';get('purchase-preparation').hidden=true;get('product-experience').hidden=false;boundary=false;root.DEMEOSCustomerItemPresentation.localize();}
  async function resume(){
   if(!controlled()||new URL(root.location.href).searchParams.get('resume')!=='1')return;
   const draft=read();if(!draft)return;
@@ -112,5 +130,5 @@
  }
  function localize(){set(get('customer-sign-in'),copy().signIn);set(get('customer-create-account'),copy().createAccount);const signedOut=get('customer-auth-signed-out');if(signedOut){set(signedOut.querySelector('h2'),copy().signIn);set(signedOut.querySelector('p'),copy().minimal);}render();const a=root.DEMEOSCustomerItemPresentation?.snapshot();if(a)product(a);}
  root.DEMEOSCustomerPurchasePreparation=Object.freeze({start,product,localize,authenticationReturn,authenticationPath,read,cancelPending:()=>{generation++;busy=false;consumeResume();}});
- doc.addEventListener('DOMContentLoaded',()=>{doc.querySelectorAll('.customer-journey-nav a[href^="#"]').forEach(link=>link.addEventListener('click',()=>{generation++;busy=false;}));authBanner();localize();new root.MutationObserver(localize).observe(doc.documentElement,{attributes:true,attributeFilter:['lang']});if(!get('purchase-preparation'))return;get('purchase-preparation-form').addEventListener('submit',review);get('purchase-preparation-back').addEventListener('click',back);get('purchase-preparation-edit').addEventListener('click',()=>{boundary=false;render();});get('purchase-preparation-discard').addEventListener('click',()=>{clear();back();});resume();});
+ doc.addEventListener('DOMContentLoaded',()=>{doc.querySelectorAll('.customer-journey-nav a[href^="#"]').forEach(link=>link.addEventListener('click',()=>{generation++;busy=false;}));authBanner();localize();new root.MutationObserver(localize).observe(doc.documentElement,{attributes:true,attributeFilter:['lang']});if(!get('purchase-preparation'))return;get('purchase-preparation-form').addEventListener('submit',review);get('customer-payment-action').addEventListener('click',checkout);get('purchase-preparation-back').addEventListener('click',back);get('purchase-preparation-edit').addEventListener('click',()=>{boundary=false;checkoutKey=null;checkoutMessage='';render();});get('purchase-preparation-discard').addEventListener('click',()=>{clear();back();});resume();});
 }(typeof window!=='undefined'?window:{}));

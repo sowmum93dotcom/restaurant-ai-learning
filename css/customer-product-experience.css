@@ -16,3 +16,6 @@
 @media(max-width:600px){#purchase-preparation-summary{grid-template-columns:1fr;gap:.25rem}#purchase-preparation-summary dt{font-size:.8rem}#purchase-preparation-summary dd{margin-bottom:.65rem}#purchase-preparation .customer-item-details{width:100%;margin:.35rem 0}}
 
 #purchase-preparation-image{display:block;max-width:160px;max-height:180px;width:auto;height:auto;object-fit:contain;border-radius:12px;margin-block:1rem}#purchase-preparation-image[hidden]{display:none}
+#purchase-preparation #customer-payment-action{display:block;width:100%;min-height:48px;margin-block:1rem;background:#dfbd67;color:#08172a;border-color:#dfbd67;font-weight:700}
+#purchase-preparation #customer-payment-action[hidden]{display:none}
+#purchase-preparation #customer-payment-action:disabled{opacity:.65;cursor:wait}

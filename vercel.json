@@ -35,6 +35,10 @@
     {
       "source": "/api/customer/preparation",
       "destination": "/api/public-config?resource=customer-preparation"
+    },
+    {
+      "source": "/api/customer/checkout",
+      "destination": "/api/public-config?resource=customer-checkout"
     }
   ]
 }
