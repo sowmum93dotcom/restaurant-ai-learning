@@ -11,6 +11,7 @@
       if (active) link.setAttribute('aria-current', 'location');
       else link.removeAttribute('aria-current');
     });
+    if (window.location.hash !== '#discover' && window.location.hash !== '#intention') return;
     // Anchor routes must enter below the measured sticky header, including after a surface is revealed.
     window.requestAnimationFrame(function () {
       var section = document.querySelector(current);
