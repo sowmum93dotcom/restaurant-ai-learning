@@ -84,3 +84,11 @@ test('section positioning never scrolls a hidden surface or beyond the top of th
   const top = navigation('#discover', { top: 0, scrollY: 0, headerHeight: 134 });top.frames.shift()();
   assert.deepEqual(top.scrolls, [{ top: 0, behavior: 'instant' }]);
 });
+
+
+test('default Discover entry preserves browser-restored scrolling', () => {
+  const state = navigation('', { top: -300, scrollY: 419 });
+  assert.equal(state.frames.length, 0);
+  assert.equal(state.scrolls.length, 0);
+  assert.equal(state.links[0].attrs['aria-current'], 'location');
+});
