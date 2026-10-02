@@ -43,6 +43,7 @@ jobs:
           name: customer-experience-review
           path: |
             /tmp/demeos-home-*.png
+            /tmp/demeos-public-*.png
             /tmp/customer-quality-*.png
             /tmp/issue669-*.png
             /tmp/demeos-controlled-*.png

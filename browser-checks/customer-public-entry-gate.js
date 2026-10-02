@@ -26,6 +26,13 @@ const base=process.env.DEMEOS_BROWSER_BASE_URL||'http://127.0.0.1:4173';
    assert.equal(await page.locator('#customer-language').inputValue(),language.code,'Discover preserves language');
    assert.equal(await page.locator('#customer-controlled-test-entry').isVisible(),false);
    assert.equal(authenticatedRequests,0,'browsing requires no account API');
+   if(['en','ar','de'].includes(language.code))await page.screenshot({path:'/tmp/demeos-public-discover-'+viewport.width+'-'+language.code+'.png',fullPage:true});
+   await page.locator('.customer-journey-nav a[href="#intention"]').click();await page.locator('#intention:not([hidden])').waitFor();
+   assert.equal(new URL(page.url()).hash,'#intention','ordinary navigation reaches the intention screen');
+   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'public intention has no language overflow');
+   if(['en','ar','de'].includes(language.code))await page.screenshot({path:'/tmp/demeos-public-intention-'+viewport.width+'-'+language.code+'.png',fullPage:true});
+   await page.locator('.customer-journey-nav a[href="#discover"]').click();await page.locator('#discover:not([hidden])').waitFor();
+   assert.equal(authenticatedRequests,0,'public intention and navigation require no account API');
    for(const destination of ['privacy','terms','contact']){
     await page.goto(base+'/'+destination+'.html');assert.equal(await page.locator('h1').textContent(),copy[language.code][destination]);
     assert.equal(await page.locator('#customer-language').inputValue(),language.code);

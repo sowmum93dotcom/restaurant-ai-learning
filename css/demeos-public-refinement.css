@@ -1,4 +1,6 @@
 /* Secondary guidance is quiet; verified media and purchase docks remain unchanged. */
+.customer-body .customer-header-inner:after,.customer-body .customer-main:after{display:none}
+.customer-body #discover{background:transparent;box-shadow:none;padding-bottom:1rem}
 .demeos-public-footer-links{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:1rem;margin-top:.5rem}.demeos-public-footer-links a{display:flex;align-items:center;min-height:44px;color:#c0cbd9;font-size:.85rem;text-underline-offset:.2em}.demeos-public-footer-links a:focus-visible{outline:2px solid #e5bd59;outline-offset:3px}
 .customer-body #discover .customer-discover-entry-guide{display:none}
 .customer-body:has(#product-experience:not([hidden])) .customer-footer,.customer-body:has(#purchase-preparation:not([hidden])) .customer-footer{display:none}
