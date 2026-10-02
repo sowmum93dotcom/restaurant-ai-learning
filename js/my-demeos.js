@@ -396,6 +396,15 @@
     try { return root.atob(encoded).replace(/\$$/, ""); } catch (_error) { return null; }
   }
 
+  async function boundedAuthentication(promise) {
+    let timer;
+    try {
+      return await Promise.race([promise, new Promise(function (_resolve, reject) {
+        timer = root.setTimeout(function () { reject(new Error("Sign-in loading timed out")); }, 12000);
+      })]);
+    } finally { root.clearTimeout(timer); }
+  }
+
   function appendScript(documentObject, source, publishableKey) {
     return new Promise(function (resolve, reject) {
       const script = documentObject.createElement("script");
@@ -411,20 +420,20 @@
   async function initialiseCustomerAuthentication(windowObject, documentObject, fetchFunction) {
     const authElements = elements(documentObject);
     try {
-      const configResponse = await fetchFunction("/api/public-config", { credentials: "same-origin" });
+      const configResponse = await boundedAuthentication(fetchFunction("/api/public-config", { credentials: "same-origin" }));
       if (!configResponse.ok) throw new Error("Provider configuration unavailable");
       const config = await configResponse.json();
       const domain = frontendApiDomain(config.clerkPublishableKey);
       if (!domain) throw new Error("Invalid provider configuration");
 
-      await appendScript(documentObject, `https://${domain}/npm/@clerk/ui@1/dist/ui.browser.js`);
-      await appendScript(documentObject, `https://${domain}/npm/@clerk/clerk-js@6/dist/clerk.browser.js`, config.clerkPublishableKey);
+      await boundedAuthentication(appendScript(documentObject, `https://${domain}/npm/@clerk/ui@1/dist/ui.browser.js`));
+      await boundedAuthentication(appendScript(documentObject, `https://${domain}/npm/@clerk/clerk-js@6/dist/clerk.browser.js`, config.clerkPublishableKey));
       const clerk = windowObject.Clerk;
       if (!clerk || typeof clerk.load !== "function" || !windowObject.__internal_ClerkUICtor) {
         throw new Error("Provider unavailable");
       }
       const localization = windowObject.DEMEOSCustomerAuthLanguage ? await windowObject.DEMEOSCustomerAuthLanguage.localization() : undefined;
-      await clerk.load({ ui: { ClerkUI: windowObject.__internal_ClerkUICtor }, ...(localization ? { localization } : {}) });
+      await boundedAuthentication(clerk.load({ ui: { ClerkUI: windowObject.__internal_ClerkUICtor }, ...(localization ? { localization } : {}) }));
       if (windowObject.DEMEOSCustomerAuthLanguage) windowObject.DEMEOSCustomerAuthLanguage.bind(clerk);
 
       async function update() {
