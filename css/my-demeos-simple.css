@@ -104,3 +104,9 @@
 .my-demeos-sign-in-status #customer-auth-signed-in strong{font-weight:500}
 .my-demeos-sign-in-status h2{font-family:inherit}
 .my-demeos-main .sr-only,.my-demeos-introduction #customer-auth-signed-in h2{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%)}
+#purchase-auth-selection{display:flex;align-items:center;gap:.85rem;margin:0 0 1rem;min-width:0}
+#purchase-auth-selection[hidden],#purchase-auth-selection img[hidden]{display:none!important}
+#purchase-auth-selection img{width:56px;height:72px;object-fit:contain;flex:none;border-radius:8px}
+#purchase-auth-selection>div{min-width:0;overflow-wrap:anywhere}
+#purchase-auth-selection strong{display:block;font-size:1rem;line-height:1.4;color:#f7f9fc}
+#purchase-auth-selection p{margin:.25rem 0;font-size:.85rem;line-height:1.5;color:#b9c7d8}
