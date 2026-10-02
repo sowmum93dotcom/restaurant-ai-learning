@@ -107,7 +107,7 @@
    checkoutMessage=data.reason==='gateway-not-configured'?'gatewayUnavailable':data.reason==='unavailable'?'unavailable':'failed';
   }catch(_){if(revision===generation)checkoutMessage='failed';}finally{if(revision===generation){busy=false;render();}}
  }
- function back(){const url=new URL(root.location.href);url.hash='product-experience';root.history.replaceState(null,'',url.pathname+url.search+url.hash);generation++;busy=false;checkoutMessage='';get('purchase-preparation').hidden=true;get('product-experience').hidden=false;boundary=false;root.DEMEOSCustomerItemPresentation.localize();}
+ function back(){checkoutKey=null;root.DEMEOSCheckoutRecovery.clear(root.sessionStorage);const url=new URL(root.location.href);url.hash='product-experience';root.history.replaceState(null,'',url.pathname+url.search+url.hash);generation++;busy=false;checkoutMessage='';get('purchase-preparation').hidden=true;get('product-experience').hidden=false;boundary=false;root.DEMEOSCustomerItemPresentation.localize();}
  async function resume(){
   const resumeUrl=new URL(root.location.href);if(!controlled()||(resumeUrl.searchParams.get('resume')!=='1'&&resumeUrl.hash!=='#purchase-preparation'&&resumeUrl.hash!=='#product-experience'))return;
   const draft=read();if(!draft)return;const productOnly=resumeUrl.searchParams.get('resume')!=='1'&&resumeUrl.hash==='#product-experience';
