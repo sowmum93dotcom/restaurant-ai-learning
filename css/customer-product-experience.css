@@ -67,3 +67,27 @@
  box-sizing:border-box;
 }
 #product-experience .customer-item-option-select{scroll-margin-block:1rem}
+
+/* Quiet secondary information and a compact, readable purchase summary. */
+#product-experience .customer-item-category{color:#b9c7d8;font-size:.8rem}
+#product-experience .customer-item-options{border-color:#354760;padding:.85rem;gap:.85rem}
+#product-experience .customer-item-option{line-height:1.4}
+#product-experience .customer-item-option-select{min-height:48px;padding:.65rem}
+#product-experience .customer-product-experience-availability{font-size:.9rem;font-weight:600;margin:.65rem 0;color:#d3deea}
+#product-experience .customer-product-experience-safety{font-size:.8rem;line-height:1.5}
+#purchase-preparation .customer-review-heading{display:flex;align-items:center;gap:1rem;margin-bottom:1rem}
+#purchase-preparation .customer-review-heading>div{min-width:0}
+#purchase-preparation #purchase-preparation-image{flex:none;width:64px;height:80px;object-fit:contain;margin:0;border-radius:8px}
+#purchase-preparation #purchase-preparation-title{font-size:clamp(1.4rem,3vw,1.8rem);line-height:1.25;margin:0 0 .4rem;overflow-wrap:anywhere}
+#purchase-preparation #purchase-preparation-test{font-size:.8rem;line-height:1.5;color:#bac8d9;margin:0}
+#purchase-preparation #purchase-preparation-summary{grid-template-columns:minmax(5.5rem,1fr) minmax(0,2fr);gap:.7rem 1rem;padding:1rem;margin:1rem 0;border:0;background:#102039;border-radius:12px;font-size:.9rem;line-height:1.5}
+#purchase-preparation-summary dt{color:#b9c7d8;font-weight:400;overflow-wrap:anywhere}
+#purchase-preparation-summary dd{margin:0;color:#f7f9fc}
+#purchase-preparation #purchase-preparation-boundary{font-size:.85rem;color:#b9c7d8;border:0;background:transparent;padding:0;margin:.75rem 0}
+#purchase-preparation #purchase-preparation-back,#purchase-preparation #purchase-preparation-edit{background:transparent;border:1px solid #354760;font-size:.9rem;min-height:44px;padding:.65rem .85rem;border-radius:9px}
+#purchase-preparation #purchase-preparation-discard{border:0;font-size:.9rem;padding:.65rem .25rem;text-decoration:underline;text-underline-offset:.2em}
+#purchase-preparation #purchase-preparation-privacy{width:fit-content;max-width:100%;display:flex;align-items:center;min-height:44px;color:#bac8d9;font-size:.85rem;line-height:1.5;margin:.8rem 0}
+#purchase-preparation-status:empty,#customer-payment-message:empty{display:none}
+#purchase-preparation #customer-payment-message{font-size:.9rem;line-height:1.5;padding:.85rem;background:#102039;border-radius:10px}
+#purchase-preparation .customer-product-experience-shell{padding-top:1.25rem}
+@media(max-width:380px){#purchase-preparation #purchase-preparation-summary{grid-template-columns:1fr;gap:.2rem}#purchase-preparation #purchase-preparation-summary dd{margin-bottom:.6rem}}
