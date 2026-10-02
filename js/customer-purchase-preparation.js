@@ -34,7 +34,7 @@
   const data=await response.json();return response.ok&&data.ready&&data.paymentActive===false&&data.orderCreated===false?data:{error:data.reason||'failed'};
  }
  function status(reason){set(get('purchase-preparation-status'),copy()[reason]||copy().failed);}
- function show(){const url=new URL(root.location.href);url.hash='purchase-preparation';root.history.replaceState(null,'',url.pathname+url.search+url.hash);get('discover').hidden=true;get('intention').hidden=true;get('product-experience').hidden=true;get('purchase-preparation').hidden=false;root.scrollTo({top:0,behavior:'instant'});get('purchase-preparation-title').focus({preventScroll:true});}
+ function show(){const url=new URL(root.location.href);url.hash='purchase-preparation';root.history.replaceState(null,'',url.pathname+url.search+url.hash);get('discover').hidden=true;get('intention').hidden=true;get('product-experience').hidden=true;get('purchase-preparation').hidden=false;get('purchase-preparation').querySelector('.customer-product-experience-shell').scrollTop=0;root.scrollTo({top:0,behavior:'instant'});get('purchase-preparation-title').focus({preventScroll:true});}
  function names(p){
   const c=root.DEMEOSControlledCustomerCopy[code()];
   const pi=['activewear','summer-fashion','mens-fashion','running','football','fishing','camping','hiking','childrens-fashion','toys','childrens-collection','grocery-pack'].indexOf(p.product.productId.replace('test-product-',''));

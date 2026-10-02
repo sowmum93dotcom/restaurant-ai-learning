@@ -33,3 +33,37 @@
 }
 #product-experience #product-experience-action[hidden],#purchase-preparation-form[hidden]{display:none!important}
 #product-experience:not([hidden]) #product-experience-action[aria-disabled="true"]{background:#223b55;color:#d9e2ec;border-color:#50647f}
+
+/* Product identity precedes compact media and choices; preserve the single action. */
+#product-experience .customer-product-experience-layout{align-items:start;gap:1.5rem;padding-top:.4rem}
+#product-experience .customer-product-experience-details{padding:0;min-width:0}
+#product-experience .customer-product-experience-details h1{font-size:clamp(1.65rem,3.2vw,2.5rem);line-height:1.15;overflow-wrap:anywhere}
+#product-experience .customer-product-experience-description{margin:.65rem 0;font-size:1rem;line-height:1.5}
+#product-experience .customer-product-experience-price{margin:.8rem 0 .3rem;font-size:1.8rem}
+#product-experience .customer-product-experience-availability{margin:.25rem 0 .8rem}
+#product-experience .customer-product-experience-business{margin:.3rem 0 .75rem;overflow-wrap:anywhere}
+#product-experience .customer-item-options{margin:.8rem 0}
+#product-experience .customer-item-selection{padding:.65rem .8rem;border-radius:10px;background:#102039}
+.customer-body #product-experience .customer-product-experience-media{aspect-ratio:auto;background:transparent;box-shadow:none}
+.customer-body #product-experience .customer-product-experience-media img{width:auto;height:auto;max-width:100%;max-height:360px;object-fit:contain}
+@media(max-width:760px){
+ #product-experience .customer-product-experience-layout{gap:.85rem}
+ .customer-body #product-experience .customer-product-experience-media img{max-height:240px;border-radius:14px}
+ #product-experience .customer-product-experience-details h1{font-size:1.8rem}
+ #product-experience .customer-product-experience-description{font-size:.94rem}
+}
+
+/* Reserve the action dock outside the scrollable content so it cannot cover choices. */
+.customer-body:has(#product-experience:not([hidden])),.customer-body:has(#purchase-preparation:not([hidden])){overflow:hidden}
+#product-experience:not([hidden]),#purchase-preparation:not([hidden]){
+ position:fixed;z-index:50;inset-inline:0;top:var(--customer-purchase-header-height,12rem);bottom:0;
+ height:calc(100dvh - var(--customer-purchase-header-height,12rem));min-height:0;
+ padding:0;overflow:hidden;box-sizing:border-box;
+}
+#product-experience:not([hidden])>.customer-product-experience-shell,
+#purchase-preparation:not([hidden])>.customer-product-experience-shell{
+ height:calc(100% - 6rem - env(safe-area-inset-bottom,0px));overflow-y:auto;
+ overscroll-behavior-y:contain;scroll-padding-block:1rem;padding:1rem;
+ box-sizing:border-box;
+}
+#product-experience .customer-item-option-select{scroll-margin-block:1rem}
