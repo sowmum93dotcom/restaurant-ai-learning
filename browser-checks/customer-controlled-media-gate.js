@@ -175,9 +175,10 @@ async function openProduct(page,option,product,work,language='en') {
    await page.goto(base+'/customer.html#discover',{waitUntil:'networkidle'});
    await page.locator('#customer-work-list[data-controlled-test="false"]').waitFor({state:'attached'});
    assert.equal(await page.locator('[data-work-item-id^="test-discover-"]').count(),0,'normal mode never shows controlled records');
-   await page.locator('#customer-controlled-test-entry').click();
+   assert.equal(await page.locator('#customer-controlled-test-entry').isVisible(),false,'ordinary public browsing never exposes a testing control');
+   await page.goto(base+'/customer.html?demeos-test=1#discover',{waitUntil:'networkidle'});
    await page.locator('#customer-work-list[data-controlled-test="true"]').waitFor();
-   assert.equal(await cards.count(),6,'labelled testing entry consistently activates feed');
+   assert.equal(await cards.count(),6,'explicit controlled route consistently activates feed');
 
    await page.selectOption('#customer-language','en');
    await page.locator('#customer-work-list img').evaluateAll(async images=>{images.forEach(im=>{im.loading='eager';});await Promise.all(images.map(im=>im.decode()));});

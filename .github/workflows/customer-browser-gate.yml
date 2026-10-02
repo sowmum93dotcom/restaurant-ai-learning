@@ -44,3 +44,5 @@ jobs:
           path: |
             /tmp/demeos-home-*.png
             /tmp/customer-quality-*.png
+            /tmp/issue669-*.png
+            /tmp/demeos-controlled-*.png
