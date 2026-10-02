@@ -1,0 +1,27 @@
+# AREA 1 direct-business payment foundation
+
+The customer pays and the selling business receives the payment directly through its gateway account. The customer needs a private receipt, payment status and full/partial refund status in My DEMEOS. No gateway has been chosen. This foundation does not activate payment, create a fake gateway, allocate platform fees or introduce economic-system mechanisms.
+
+## Implemented foundation
+
+`customer-payment-contract.js` validates a private, server-derived quote with exact business/product references, selected options, quantity, currency and integer minor-unit totals. A verified seller account, seller disclosures, refund terms and a verified fulfilment reference are required. Personal fulfilment information stays outside gateway metadata and receipts.
+
+`customer-payment-service.js` reserves the attempt before asking the gateway for a session. A customer-scoped idempotency key cannot be reused for another selection, price or fulfilment record. The gateway receives the business account and exact amount, with the durable attempt reference as its own idempotency key. Only an HTTPS session on the configured gateway origins is accepted. Missing configuration or live-mode adapters fail closed.
+
+Payment notifications require the chosen adapter to verify the raw signed notification. The service retrieves the provider's current payment record independently and matches its mode, attempt reference, payment ID, seller account, amount and currency. Browser redirects and browser payment claims cannot change status. Duplicate events do not write twice. Verified refunds cannot exceed the total or regress; late failures cannot erase a paid/refunded state. A verified terminal notification can recover a payment before its checkout-creation response arrives. Customer-scoped reconciliation recovers missed notifications from the provider's current record. Checkout expiry cannot exceed quote expiry, and expired sessions cannot silently create another payment. Notifications that cannot be processed must receive a retryable HTTP response from the future adapter endpoint.
+
+`customer-payment-store.js` uses an isolated, test-only PostgreSQL table, lazy schema creation, customer-scoped idempotency and atomic version checks. Customer reads require the customer ID as well as the attempt ID. The service strips provider-account IDs, provider payment IDs, fulfilment references, checkout URLs and identity IDs from customer receipts. The table has no foreign key to real businesses and does not create business/vendor records. It is not currently instantiated by the production page or API, so this release performs no database migration or writes.
+
+## Gateway connection still required
+
+Before adding a callable checkout or My DEMEOS receipt screen, choose a gateway and verify its direct-business merchant arrangement, supported countries/currencies, sandbox seller account, signature verification, refunds, disputes and reconciliation. Implement the adapter and load quotes exclusively from verified private records. Fulfilment snapshots, seller disclosures, supported currencies/minor-unit rules, delivery and tax calculations, inventory reservations and compatible gateway expiry must be authoritative. The foundation deliberately refuses arbitrary prices and live mode; it does not supply those missing business facts.
+
+The gateway adapter must provide `mode: test`, a server-controlled name and HTTPS checkout origins, plus `createCheckout`, `verifyNotification` and `retrievePayment`. A real adapter must never treat a browser-supplied flag or event JSON as verification. Map genuine gateway identities and statuses to the contract. Retry creation using the same durable reference after failures; never substitute a newly generated payment when the gateway response is uncertain. Resolve attempts stuck in creation through provider reconciliation before exposing them as paid or failed.
+
+Future HTTP routes must authenticate the existing customer identity, reject Business Owner access, preserve the strict controlled test-mode query/header rule and disable switch, validate request schemas and same-origin requests, and provide only own-customer receipts. Do not mount a notification handler behind JSON body parsing. Do not create real business payment records from controlled fixtures. Keep the ordinary production feed separate.
+
+The existing Customer Experience registration/review remains operational and non-charging until the chosen gateway's end-to-end sandbox tests pass. Receipt/payment/refund screens must use the existing nine-language Customer Experience architecture. Production charge activation is a separate reviewed step after provider setup and customer/business payment flows are verified.
+
+## Validation
+
+Contract and orchestration tests cover direct business routing, exact selections/totals, forged notifications, wrong seller/payment/currency/amount, duplicate clicks and notifications, provider timeouts, cross-customer reads, partial/full refunds and late events. Real PostgreSQL-compatible SQL is exercised in an isolated PGlite test database, including storage constraints, idempotency, atomic state updates and parameterized ownership queries. No live provider or production database is contacted by these tests.
