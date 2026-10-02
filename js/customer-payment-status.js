@@ -43,12 +43,12 @@
    message=data.reason==='gateway-not-configured'?'gatewayUnavailable':'failed';
   }catch(_){if(revision===generation)message='failed';}finally{if(revision===generation){busy=false;render();}}
  }
- function clear(){generation++;receipt=null;receipts=[];busy=false;message='paymentSignIn';render();}
+ function clear(){get('customer-payment-panel').hidden=true;generation++;receipt=null;receipts=[];busy=false;message='paymentSignIn';render();}
  doc.addEventListener('DOMContentLoaded',()=>{
   const panel=get('customer-payment-panel');if(!panel||new URL(root.location.href).searchParams.get('demeos-test')!=='1')return;
-  panel.hidden=false;render();get('customer-payment-refresh').addEventListener('click',refresh);
+  panel.hidden=get('customer-auth-signed-in').hidden;render();get('customer-payment-refresh').addEventListener('click',refresh);
   get('customer-sign-out')?.addEventListener('click',clear);
-  const auth=get('customer-auth-signed-in');new root.MutationObserver(()=>{if(auth.hidden)clear();else refresh();}).observe(auth,{attributes:true,attributeFilter:['hidden']});
+  const auth=get('customer-auth-signed-in');new root.MutationObserver(()=>{if(auth.hidden)clear();else {panel.hidden=false;refresh();}}).observe(auth,{attributes:true,attributeFilter:['hidden']});
   new root.MutationObserver(render).observe(doc.documentElement,{attributes:true,attributeFilter:['lang']});
   if(!auth.hidden)refresh();
  });
