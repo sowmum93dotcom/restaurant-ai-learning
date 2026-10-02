@@ -28,3 +28,8 @@ test('payment status always reads the authenticated customer and cannot accept b
  for(const [reference,status] of [['own-reference',200],['other-reference',404],['../private',400]]){const r=res();await handler({service})({...req(),method:'GET',query:{'demeos-test':'1',reference},body:{paid:true}},r);assert.equal(r.statusCode,status);if(status===200)assert.equal(r.body.receipt.paid,false);}
  const r=res();await handler({service:{capabilities:()=>({configured:true,mode:'live',recipient:'business',livePayments:true})}})(req(),r);assert.equal(r.statusCode,503);
 });
+test('receipt history is authenticated and remains available when a configured provider is unavailable',async()=>{
+ let requested;const service={capabilities:()=>({configured:false,mode:'test',recipient:'business',livePayments:false}),async receipts(id){requested=id;return [{reference:'own-reference',testMode:true,recipient:'business',state:'pending'}];}};
+ const r=res();await handler({service})({...req(),method:'GET'},r);assert.equal(requested,'trusted');assert.equal(r.statusCode,200);assert.equal(r.body.receipts.length,1);assert.equal(r.body.reason,'gateway-not-configured');assert.equal(r.body.paymentActive,false);
+ const empty=res();await handler()({...req(),method:'GET'},empty);assert.deepEqual(empty.body.receipts,[]);
+});

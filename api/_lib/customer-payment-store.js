@@ -25,6 +25,7 @@ function createPaymentStore(database){
    WHERE order_id=$1 AND record->>'paymentId'=$4 AND NOT EXISTS (SELECT 1 FROM changed) LIMIT 1`,[record.id,record.version,JSON.stringify(next),session.paymentId]));},
   async get(id){await ready();return row(await database.query(`SELECT record FROM ${TABLE} WHERE order_id=$1`,[id]));},
   async getOwn(customerId,id){await ready();return row(await database.query(`SELECT record FROM ${TABLE} WHERE order_id=$1 AND customer_id=$2`,[id,customerId]));},
+  async listOwn(customerId){await ready();return (await database.query(`SELECT record FROM ${TABLE} WHERE customer_id=$1 ORDER BY created_at DESC, order_id DESC LIMIT 50`,[customerId])).rows.map(row=>row.record);},
   async apply(record,next,eventId){await ready();return row(await database.query(`WITH changed AS (
    UPDATE ${TABLE} SET record=$3::jsonb, version=version+1, processed_events=processed_events||$4::jsonb, updated_at=NOW()
    WHERE order_id=$1 AND version=$2 AND NOT processed_events @> $4::jsonb RETURNING record

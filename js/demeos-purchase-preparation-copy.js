@@ -59,7 +59,10 @@
     "refundTotal": "Amount refunded",
     "paymentSignIn": "Sign in to view your payment.",
     "paymentChecking": "Checking payment status",
-    "paymentTotal": "Payment total"
+    "paymentTotal": "Payment total",
+    "paymentHistory": "Payment history",
+    "paymentEmpty": "No payment records yet.",
+    "restoreDetails": "After refreshing, enter the required delivery or service details again. Your product and options are preserved."
   },
   "es": {
     "createAccount": "Crea tu cuenta",
@@ -118,7 +121,10 @@
     "refundTotal": "Importe reembolsado",
     "paymentSignIn": "Inicia sesión para ver tu pago.",
     "paymentChecking": "Comprobando el estado del pago",
-    "paymentTotal": "Total del pago"
+    "paymentTotal": "Total del pago",
+    "paymentHistory": "Historial de pagos",
+    "paymentEmpty": "Todavía no hay registros de pagos.",
+    "restoreDetails": "Después de actualizar, vuelve a introducir los datos de entrega o servicio necesarios. Tu producto y opciones se conservan."
   },
   "fr": {
     "createAccount": "Créer votre compte",
@@ -177,7 +183,10 @@
     "refundTotal": "Montant remboursé",
     "paymentSignIn": "Connectez-vous pour voir votre paiement.",
     "paymentChecking": "Vérification du paiement",
-    "paymentTotal": "Total du paiement"
+    "paymentTotal": "Total du paiement",
+    "paymentHistory": "Historique des paiements",
+    "paymentEmpty": "Aucun paiement enregistré pour le moment.",
+    "restoreDetails": "Après actualisation, saisissez à nouveau les informations de livraison ou de service requises. Votre produit et vos options sont conservés."
   },
   "ar": {
     "createAccount": "أنشئ حسابك",
@@ -236,7 +245,10 @@
     "refundTotal": "المبلغ المسترد",
     "paymentSignIn": "سجّل الدخول لعرض دفعتك.",
     "paymentChecking": "جارٍ التحقق من حالة الدفع",
-    "paymentTotal": "إجمالي الدفع"
+    "paymentTotal": "إجمالي الدفع",
+    "paymentHistory": "سجل المدفوعات",
+    "paymentEmpty": "لا توجد سجلات دفع بعد.",
+    "restoreDetails": "بعد تحديث الصفحة، أدخل تفاصيل التوصيل أو الخدمة المطلوبة مرة أخرى. تم الاحتفاظ بالمنتج والخيارات."
   },
   "pt": {
     "createAccount": "Criar a sua conta",
@@ -295,7 +307,10 @@
     "refundTotal": "Valor reembolsado",
     "paymentSignIn": "Inicie sessão para ver o seu pagamento.",
     "paymentChecking": "A verificar o estado do pagamento",
-    "paymentTotal": "Total do pagamento"
+    "paymentTotal": "Total do pagamento",
+    "paymentHistory": "Histórico de pagamentos",
+    "paymentEmpty": "Ainda não existem registos de pagamentos.",
+    "restoreDetails": "Após atualizar, introduza novamente os detalhes necessários de entrega ou serviço. O produto e as opções são preservados."
   },
   "zh": {
     "createAccount": "创建账户",
@@ -354,7 +369,10 @@
     "refundTotal": "退款金额",
     "paymentSignIn": "请登录查看您的付款。",
     "paymentChecking": "正在查询付款状态",
-    "paymentTotal": "付款总额"
+    "paymentTotal": "付款总额",
+    "paymentHistory": "付款记录",
+    "paymentEmpty": "暂无付款记录。",
+    "restoreDetails": "刷新后，请重新填写所需的配送或服务信息。您的商品和选项已保留。"
   },
   "hi": {
     "createAccount": "अपना खाता बनाएँ",
@@ -413,7 +431,10 @@
     "refundTotal": "वापस की गई राशि",
     "paymentSignIn": "अपना भुगतान देखने के लिए साइन इन करें।",
     "paymentChecking": "भुगतान की स्थिति जाँची जा रही है",
-    "paymentTotal": "भुगतान का कुल योग"
+    "paymentTotal": "भुगतान का कुल योग",
+    "paymentHistory": "भुगतान इतिहास",
+    "paymentEmpty": "अभी कोई भुगतान रिकॉर्ड नहीं है।",
+    "restoreDetails": "पेज रीफ़्रेश करने के बाद ज़रूरी डिलीवरी या सेवा विवरण फिर से भरें। आपका उत्पाद और विकल्प सुरक्षित हैं।"
   },
   "de": {
     "createAccount": "Konto erstellen",
@@ -472,7 +493,10 @@
     "refundTotal": "Erstatteter Betrag",
     "paymentSignIn": "Melden Sie sich an, um Ihre Zahlung zu sehen.",
     "paymentChecking": "Zahlungsstatus wird geprüft",
-    "paymentTotal": "Zahlungsbetrag"
+    "paymentTotal": "Zahlungsbetrag",
+    "paymentHistory": "Zahlungsverlauf",
+    "paymentEmpty": "Noch keine Zahlungsbelege vorhanden.",
+    "restoreDetails": "Geben Sie nach dem Aktualisieren die erforderlichen Liefer- oder Servicedaten erneut ein. Ihr Produkt und Ihre Optionen bleiben erhalten."
   },
   "ja": {
     "createAccount": "アカウントを作成",
@@ -531,7 +555,10 @@
     "refundTotal": "返金額",
     "paymentSignIn": "お支払いを確認するにはログインしてください。",
     "paymentChecking": "支払い状況を確認中",
-    "paymentTotal": "お支払い合計"
+    "paymentTotal": "お支払い合計",
+    "paymentHistory": "支払い履歴",
+    "paymentEmpty": "支払い記録はまだありません。",
+    "restoreDetails": "ページを更新した場合は、必要な配送またはサービス情報を再入力してください。商品と選択したオプションは保持されています。"
   }
 };
  if(typeof module!=="undefined"&&module.exports)module.exports=copy;

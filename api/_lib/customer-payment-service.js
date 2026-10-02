@@ -55,6 +55,10 @@ function createPaymentService({provider=null,store,loadQuote,now=Date.now,newId=
   if(typeof customerId!=='string'||!customerId||typeof id!=='string'||!id||typeof store?.getOwn!=='function')return null;
   return customerReceipt(await store.getOwn(customerId,id),customerId);
  }
+ async function receipts(customerId){
+  if(typeof customerId!=='string'||!customerId||typeof store?.listOwn!=='function')return [];
+  return (await store.listOwn(customerId)).slice(0,50).map(record=>customerReceipt(record,customerId)).filter(Boolean);
+ }
  async function reconcile(customerId,id){
   if(!configured())return failure('gateway-not-configured');
   const owned=await store.getOwn(customerId,id);
@@ -69,6 +73,6 @@ function createPaymentService({provider=null,store,loadQuote,now=Date.now,newId=
   }
   return failure('retry');
  }
- return Object.freeze({capabilities:()=>({configured:!!configured(),mode:'test',recipient:'business',livePayments:false}),begin,notification,receipt,reconcile});
+ return Object.freeze({capabilities:()=>({configured:!!configured(),mode:'test',recipient:'business',livePayments:false}),begin,notification,receipt,receipts,reconcile});
 }
 module.exports={createPaymentService};
