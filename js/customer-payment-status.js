@@ -16,7 +16,7 @@
   const money=new Intl.NumberFormat(code(),{style:'currency',currency:receipt.currency});const factor=10**money.resolvedOptions().maximumFractionDigits;
   const state={creating:'paymentPending',pending:'paymentPending',paid:'paymentPaid',failed:'paymentFailed',cancelled:'paymentCancelled','partially-refunded':'paymentPartialRefund',refunded:'paymentRefunded'}[receipt.state];
   if(!state){set(get('customer-payment-message'),c.failed);return;}
-  const rows=[[c.paymentReference,receipt.reference],[c.paymentStatus,c[state]],[owned.business,bi<0?receipt.sellerName:'DEMEOS '+owned.test+' '+owned.categories[bi]],[item.product,pi<0?receipt.productName:owned.test+' '+owned.products[pi]],[c.quantity,String(receipt.quantity)],[c.paymentTotal,money.format(receipt.totalMinor/factor)]];
+  const rows=[[c.paymentReference,receipt.reference],[c.paymentStatus,c[state]],[owned.business,bi<0?receipt.sellerName:'DEMEOS '+owned.test+' '+owned.categories[bi]],[item[pi>=3&&pi<=7?'service':'product'],pi<0?receipt.productName:owned.test+' '+owned.products[pi]],[c.quantity,String(receipt.quantity)],[c.paymentTotal,money.format(receipt.totalMinor/factor)]];
   for(const [field,value] of Object.entries(receipt.selection||{}))rows.push([item.fields[field]||field,item.values[value]||value]);
   if(receipt.refundedMinor>0)rows.push([c.refundTotal,money.format(receipt.refundedMinor/factor)]);
   for(const [label,value] of rows){const dt=doc.createElement('dt'),dd=doc.createElement('dd');dt.textContent=label;dd.textContent=value;summary.append(dt,dd);}
