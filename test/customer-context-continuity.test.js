@@ -1,14 +1,21 @@
 const test=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs');
 const source=fs.readFileSync(require.resolve('../js/customer-controlled-navigation'),'utf8');
 const key='demeos-customer-content-context-v1';
-function page(path,storage=new Map(),hrefs=[]){
+function page(path,storage=new Map(),hrefs=[],defaultContent=/^\/(index|customer)\.html/.test(path)?'controlled':null){
  const events={};const links=hrefs.map(href=>({href,getAttribute(){return this.href;},setAttribute(_,value){this.href=value;}}));
  const root={location:{href:'https://www.demeos.io'+path},sessionStorage:{getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},
   history:{state:{preserved:true},replaceState(state,_,url){this.state=state;root.location.href=new URL(url,root.location.href).href;}},
-  document:{addEventListener:(n,fn)=>events[n]=fn,querySelectorAll:()=>links}};
+  document:{currentScript:{getAttribute:()=>defaultContent},addEventListener:(n,fn)=>events[n]=fn,querySelectorAll:()=>links}};
  vm.runInNewContext(source,{window:root,URL});events.DOMContentLoaded();return {root,links,storage,events};
 }
-test('fresh public entry never opts into controlled data',()=>{const p=page('/index.html',undefined,['customer.html','my-demeos.html']);assert.deepEqual(p.links.map(l=>l.href),['customer.html','my-demeos.html']);assert.equal(p.storage.size,0);});
+test('fresh homepage and clean customer entry use the explicit temporary deployment policy',()=>{
+ const p=page('/index.html',undefined,['customer.html','my-demeos.html']);assert.deepEqual(p.links.map(l=>l.href),['/customer.html?demeos-test=1','/my-demeos.html?demeos-test=1']);assert.equal(p.storage.get(key),'controlled');
+ assert.equal(new URL(page('/customer.html#discover').root.location.href).searchParams.get('demeos-test'),'1');
+});
+test('removing the temporary deployment policy gives fresh visits production content',()=>{
+ const p=page('/index.html',undefined,['customer.html'],null);assert.equal(p.links[0].href,'/customer.html?demeos-test=0');assert.equal(p.storage.size,0);
+ const c=page('/customer.html#discover',undefined,[],null);assert.equal(new URL(c.root.location.href).searchParams.get('demeos-test'),'0');
+});
 test('explicit activation survives homepage, account and information returns in one tab',()=>{
  const storage=new Map();page('/customer.html?demeos-test=1#discover',storage);
  for(const path of ['/index.html','/my-demeos.html','/privacy.html','/terms.html','/contact.html']){
@@ -24,15 +31,15 @@ test('purchase authentication URL and selection draft stay intact',()=>{
 });
 test('explicit exit wins over remembered context and remains normal across navigation',()=>{
  const storage=new Map([[key,'controlled']]);const active=page('/customer.html?demeos-test=1',storage,['customer.html?demeos-test=0#discover']);assert.equal(active.links[0].href,'customer.html?demeos-test=0#discover');
- page('/customer.html?demeos-test=0#discover',storage);assert.equal(storage.has(key),false);
- const home=page('/index.html',storage,['customer.html']);assert.equal(home.links[0].href,'customer.html');
+ page('/customer.html?demeos-test=0#discover',storage);assert.equal(storage.get(key),'production');
+ const home=page('/index.html',storage,['customer.html']);assert.equal(home.links[0].href,'/customer.html?demeos-test=0');
 });
 test('external, owner, admin and same-screen links never inherit controlled context',()=>{
  const hrefs=['https://vendor.example/customer.html','business-workspace.html','admin.html','#discover','mailto:support@example.com'];const p=page('/customer.html?demeos-test=1',undefined,hrefs);assert.deepEqual(p.links.map(l=>l.href),hrefs);
 });
-test('unsupported activation is fail closed, and fresh tabs stay public',()=>{
- const storage=new Map([[key,'controlled']]);page('/index.html?demeos-test=true',storage);assert.equal(storage.has(key),false);
- assert.equal(new URL(page('/customer.html#discover').root.location.href).searchParams.has('demeos-test'),false);
+test('unsupported activation selects production and never enables test content',()=>{
+ const storage=new Map([[key,'controlled']]);page('/index.html?demeos-test=true',storage);assert.equal(storage.get(key),'production');
+ assert.equal(new URL(page('/customer.html#discover',storage).root.location.href).searchParams.get('demeos-test'),'0');
 });
 test('dynamically created customer links preserve context on click',()=>{const p=page('/customer.html?demeos-test=1');const link={href:'my-demeos.html#privacy-control',getAttribute(){return this.href;},setAttribute(_,v){this.href=v;}};p.events.click({target:{closest:()=>link}});assert.equal(link.href,'/my-demeos.html?demeos-test=1#privacy-control');});
 test('explicit URL navigation still works when session storage is blocked',()=>{

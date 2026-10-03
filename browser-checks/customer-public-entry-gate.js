@@ -11,7 +11,7 @@ const base=process.env.DEMEOS_BROWSER_BASE_URL||'http://127.0.0.1:4173';
   await context.route('**/api/customer/**',route=>{const request=route.request();if(!request.url().includes('/work'))authenticatedRequests++;assert.equal(request.headers()['x-demeos-test-mode'],undefined);return route.fulfill({json:{work:[],testMode:false,customerPackages:[]}});});
   await context.route('**/api/public-config',route=>route.fulfill({status:503,json:{reason:'unavailable'}}));
   for(const language of registry.languages){
-   await page.goto(base+'/index.html');await page.locator('#customer-language').selectOption(language.code);
+   await page.goto(base+'/index.html?demeos-test=0');await page.locator('#customer-language').selectOption(language.code);
    assert.equal(await page.locator('#welcome-title').textContent(),copy[language.code].headline);
    assert.equal(await page.locator('html').getAttribute('dir'),language.direction);
    for(const selector of ['#customer-entry-link','#business-entry-link']){
@@ -22,7 +22,7 @@ const base=process.env.DEMEOS_BROWSER_BASE_URL||'http://127.0.0.1:4173';
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'homepage translation has no horizontal overflow');
    if(['en','ar','de'].includes(language.code))await page.screenshot({path:'/tmp/demeos-home-'+viewport.width+'-'+language.code+'.png',fullPage:true});
    await page.locator('#customer-entry-link').click();await page.locator('#customer-work-list[data-controlled-test="false"]').waitFor({state:'attached'});
-   assert.equal(new URL(page.url()).searchParams.has('demeos-test'),false);
+   assert.equal(new URL(page.url()).searchParams.get('demeos-test'),'0');
    assert.equal(await page.locator('#customer-language').inputValue(),language.code,'Discover preserves language');
    assert.equal(await page.locator('#customer-controlled-test-entry').isVisible(),false);
    assert.equal(authenticatedRequests,0,'browsing requires no account API');
