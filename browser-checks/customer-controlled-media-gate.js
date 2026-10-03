@@ -188,8 +188,13 @@ async function openProduct(page,option,product,work,language='en') {
     await page.reload({waitUntil:'networkidle'});
     await page.locator('.customer-discover-retry').waitFor();
     assert.equal(await page.locator('#customer-controlled-test-exit').getAttribute('href'),'customer.html?demeos-test=0#discover','explicit exit clears the controlled choice');
+    assert.equal(await page.locator('#customer-controlled-test-exit').isVisible(),true,'explicit exit remains available when the controlled feed fails closed');
     assert.ok(!(await page.locator('#customer-controlled-test-entry').isVisible()));
     assert.equal(await page.locator('.customer-work-card').count(),0,'disabled test mode fails closed');
+    await page.locator('#customer-controlled-test-exit').click();
+    await page.locator('#customer-work-list[data-controlled-test="false"]').waitFor({state:'attached'});
+    assert.equal(await page.evaluate(()=>sessionStorage.getItem('demeos-customer-content-context-v1')),null,'failed controlled load can exit and clear the remembered context');
+    assert.equal(await page.locator('#customer-controlled-test-exit').isVisible(),false,'exit remains hidden on the public data path');
    }
    assert.deepEqual(errors,[]);
    console.log('Controlled media and continuation verified at '+viewport.width+'px');

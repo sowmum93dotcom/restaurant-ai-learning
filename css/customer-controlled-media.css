@@ -12,8 +12,7 @@
 .customer-product-experience[data-controlled-test="true"] .customer-product-experience-media img{width:auto;height:auto;max-width:100%;max-height:440px;object-fit:contain}
 @media(max-width:760px){.customer-product-experience[data-controlled-test="true"] .customer-product-experience-media img{max-height:340px}}
 
-/* Hide the temporary escape link without changing controlled-test routing or security. */
-.customer-body:not(.demeos-controlled-test) #customer-controlled-test-exit{display:none!important}
+/* The existing hidden attribute controls public visibility, including load failures. */
 
 .customer-controlled-entry a{display:inline-flex;align-items:center;min-height:44px;padding:.65rem 1rem;border:1px solid #b99b54;border-radius:10px;color:#e3c46c;text-decoration:none;}
 .customer-controlled-entry a:hover{background:#17283e;}
