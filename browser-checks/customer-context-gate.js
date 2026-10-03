@@ -20,15 +20,14 @@ const publicWork=getValidPublicCustomerWork([{workItemId:'approved-public-work',
   await context.route('**/api/customer/identity',route=>route.fulfill({status:401,json:{reason:'signed-out'}}));
   async function loaded(controlled){await page.locator('#customer-work-list[data-controlled-test="'+controlled+'"]').waitFor({state:'attached'});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no horizontal overflow');}
   // Start with ordinary approved content, on the same permanent pages.
-  await page.goto(base+'/index.html?demeos-test=0');await page.locator('#customer-entry-link').click();await loaded(false);
+  await page.goto(base+'/index.html');await page.locator('#customer-entry-link').click();await loaded(false);
   assert.equal(await page.locator('.customer-work-card').count(),1);assert.equal(controlledRequests,0);
   await page.locator('[data-product-id="public-product"] .customer-product-continue-action').click();await page.locator('#product-experience:not([hidden])').waitFor();
   assert.equal(await page.locator('#product-experience-action').getAttribute('href'),'https://business.example/product');
   await page.locator('#product-experience-back').click();await page.locator('.customer-journey-nav a').last().click();
   await page.locator('.customer-journey-nav a').first().click();await loaded(false);assert.equal(controlledRequests,0,'public account return cannot enable test content');
-  // A fresh homepage chooses the explicit development default, without a special URL.
-  await context.clearCookies();await page.evaluate(()=>sessionStorage.clear());
-  await page.goto(base+'/index.html');await page.locator('#customer-entry-link').click();await loaded(true);
+  // Explicit activation changes data only, with the same homepage/customer/account.
+  await page.goto(base+'/index.html?demeos-test=1');await page.locator('#customer-entry-link').click();await loaded(true);
   assert.equal(await page.locator('.customer-work-card').count(),6);
   await page.locator('[data-product-id="test-product-activewear"] .customer-product-continue-action').click();await page.locator('#product-experience:not([hidden])').waitFor();
   await page.locator('select[data-option-key="size"]').selectOption('large');await page.locator('select[data-option-key="colour"]').selectOption('blue');
@@ -44,13 +43,13 @@ const publicWork=getValidPublicCustomerWork([{workItemId:'approved-public-work',
   // Explicit exit clears the tab choice; a genuinely empty public feed stays empty.
   empty=true;await page.locator('#customer-controlled-test-exit').click();await loaded(false);
   assert.equal(await page.locator('.customer-work-card').count(),0);
-  assert.equal(await page.evaluate(()=>sessionStorage.getItem('demeos-customer-content-context-v1')),'production');
+  assert.equal(await page.evaluate(()=>sessionStorage.getItem('demeos-customer-content-context-v1')),null);
   const afterExit=controlledRequests;
   await page.goto(base+'/index.html');await page.locator('#customer-entry-link').click();await loaded(false);assert.equal(controlledRequests,afterExit,'empty public data never falls back to controlled content');
-  // A fresh explicit production context never receives temporary records.
+  // Fresh independent browser context never inherits this development opt-in.
   const fresh=await browser.newContext({viewport}),freshPage=await fresh.newPage();
   await fresh.route('**/api/customer/work*',route=>{assert.equal(route.request().headers()['x-demeos-test-mode'],undefined);assert.equal(new URL(route.request().url()).searchParams.has('demeos-test'),false);return route.fulfill({json:{work:[],testMode:false,customerPackages:[]}});});
-  await freshPage.goto(base+'/customer.html?demeos-test=0#discover');await freshPage.locator('#customer-work-list[data-controlled-test="false"]').waitFor({state:'attached'});assert.equal(await freshPage.locator('.customer-work-card').count(),0);await fresh.close();
+  await freshPage.goto(base+'/customer.html#discover');await freshPage.locator('#customer-work-list[data-controlled-test="false"]').waitFor({state:'attached'});assert.equal(await freshPage.locator('.customer-work-card').count(),0);await fresh.close();
   assert.deepEqual(errors,[]);console.log('Customer context gate passed',viewport.width,'same pages, homepage/account/refresh continuity, approved public content and explicit exit isolation');await context.close();
  }
 }finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1);});
