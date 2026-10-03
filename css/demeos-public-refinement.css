@@ -1,0 +1,21 @@
+/* Secondary guidance is quiet; verified media and purchase docks remain unchanged. */
+.customer-body .customer-header-inner:after,.customer-body .customer-main:after{display:none}
+.customer-body #discover{background:transparent;box-shadow:none;padding-bottom:1rem}
+.demeos-public-footer-links{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:1rem;margin-top:.5rem}.demeos-public-footer-links a{display:flex;align-items:center;min-height:44px;color:#c0cbd9;font-size:.85rem;text-underline-offset:.2em}.demeos-public-footer-links a:focus-visible{outline:2px solid #e5bd59;outline-offset:3px}
+.customer-body #discover .customer-discover-entry-guide{display:none}
+.customer-body:has(#product-experience:not([hidden])) .customer-footer,.customer-body:has(#purchase-preparation:not([hidden])) .customer-footer{display:none}
+.customer-body #intention .customer-eyebrow,.customer-body #intention .customer-stage-label,.customer-body #intention .customer-greeting,.customer-body #intention .customer-connection-steps,.customer-body #intention .customer-product-gallery-guide{display:none}
+.customer-body #intention .customer-understanding-trust{font-size:.85rem;color:#b9c7d8}
+.customer-body #intention #customer-title{font-size:clamp(1.65rem,3.5vw,2.4rem);margin-block:.5rem .75rem}
+.customer-body #intention .customer-intention-detail{border:0;background:none;box-shadow:none}
+.customer-body #intention:after{display:none}
+.customer-body #intention .customer-intention-option:nth-child(n){display:flex;flex-direction:column;justify-content:center;gap:.35rem}
+.customer-body #intention .customer-context-actions>div{display:flex;flex-wrap:wrap;gap:.5rem}
+.customer-body #intention .customer-context-actions>div>p{flex-basis:100%}
+.customer-body #intention .customer-context-status{font-size:.85rem;line-height:1.5}
+.my-demeos-body .my-demeos-area-enter{display:none}
+.my-demeos-body #my-demeos-overview{padding:0;min-height:0;grid-template-rows:auto}
+.my-demeos-body .my-demeos-area:after{content:"\203a";display:block!important;position:static!important;grid-column:2;grid-row:1;color:#e5bd59;font-size:1.5rem;line-height:1;transform:none!important;background:none!important;border:0;border-radius:0;box-shadow:none;padding:0;width:auto;height:auto}
+.my-demeos-body .my-demeos-relationship-view>.customer-eyebrow{display:none}
+[dir="rtl"] .my-demeos-body .my-demeos-area:after{content:"\2039"}
+@media(max-width:760px){.customer-body:not(.my-demeos-body) .customer-header-inner{grid-template-columns:44px minmax(0,1fr)}.customer-body:not(.my-demeos-body) .customer-brand .demeos-logo{width:44px;height:44px}.customer-body:not(.my-demeos-body) .customer-header-inner{gap:8px;min-height:62px;padding-block:8px}}

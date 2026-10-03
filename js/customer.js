@@ -1370,7 +1370,7 @@ async function loadCustomerWork(document, fetcher, location) {
   const request = getDiscoverRequest(location);
   const testEntry = document.getElementById("customer-controlled-test-entry");
   const testExit = document.getElementById("customer-controlled-test-exit");
-  if (testEntry) testEntry.hidden = request.testMode;
+  if (testEntry) testEntry.hidden = true;
   if (testExit) testExit.hidden = !request.testMode;
   try {
     const response = await fetcher(request.url, request.options);
@@ -1454,3 +1454,4 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   document.addEventListener("visibilitychange", function () { if (document.hidden) pauseDiscoverVideos(document); });
   window.addEventListener("pagehide", function () { pauseDiscoverVideos(document); });
 });
+

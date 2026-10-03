@@ -26,6 +26,8 @@ jobs:
           for i in {1..30}; do curl -fsS http://127.0.0.1:4173/customer.html >/dev/null && exit 0; sleep 1; done
           cat /tmp/demeos-http.log
           exit 1
+      - name: Run public homepage and information gate
+        run: node browser-checks/customer-public-entry-gate.js
       - name: Run browser language gate
         run: node browser-checks/customer-language-gate.js
       - name: Run controlled supplied media and continuation gate
@@ -34,3 +36,14 @@ jobs:
         run: node browser-checks/customer-preparation-gate.js
       - name: Run private customer payment status gate
         run: node browser-checks/customer-payment-gate.js
+      - name: Preserve rendered Customer Experience review images
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: customer-experience-review
+          path: |
+            /tmp/demeos-home-*.png
+            /tmp/demeos-public-*.png
+            /tmp/customer-quality-*.png
+            /tmp/issue669-*.png
+            /tmp/demeos-controlled-*.png

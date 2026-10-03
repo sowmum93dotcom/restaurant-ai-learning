@@ -389,9 +389,10 @@
     select.addEventListener("change", function () { var code = apply(select.value); setSaved(code); });
   }
   if (typeof module !== "undefined" && module.exports) module.exports = { normalize: normalize, copy: copy, intentionLabels: intentionLabels, journeyCopy: journeyCopy, confirmationCopy: confirmationCopy, resultCopy: resultCopy, localizeResult: localizeResult, staticCopy: staticCopy, possibilityCopy: possibilityCopy, noMatchCopy: noMatchCopy, statusCopy: statusCopy, localizeStatus: localizeStatus, additionalStatuses: additionalStatuses, feedbackCopy: feedbackCopy, localizeFeedback: localizeFeedback, discoverCopy: discoverCopy, localizeDiscoverStatus: localizeDiscoverStatus };
-  if (root) root.DEMEOSCustomerInterfaceLanguage = Object.freeze({ apply: apply, normalize: normalize, mediaPosition: controlledMediaPosition });
+  if (root) root.DEMEOSCustomerInterfaceLanguage = Object.freeze({ apply: apply, normalize: normalize, mediaPosition: controlledMediaPosition, loadingCopy: Object.keys(discoverCopy).map(function(code){return discoverCopy[code][11];}) });
   if (root && root.document) {
     if (root.document.readyState === "loading") root.document.addEventListener("DOMContentLoaded", start);
     else start();
   }
 }(typeof window !== "undefined" ? window : {}));
+
