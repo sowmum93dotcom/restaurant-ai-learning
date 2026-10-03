@@ -28,6 +28,8 @@ jobs:
           exit 1
       - name: Run public homepage and information gate
         run: node browser-checks/customer-public-entry-gate.js
+      - name: Run Customer Experience context continuity gate
+        run: node browser-checks/customer-context-gate.js
       - name: Run browser language gate
         run: node browser-checks/customer-language-gate.js
       - name: Run controlled supplied media and continuation gate
@@ -47,3 +49,4 @@ jobs:
             /tmp/customer-quality-*.png
             /tmp/issue669-*.png
             /tmp/demeos-controlled-*.png
+            /tmp/demeos-context-*.png

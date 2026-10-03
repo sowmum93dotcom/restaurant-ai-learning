@@ -172,7 +172,7 @@ async function openProduct(page,option,product,work,language='en') {
    await page.locator('#customer-work-list[data-controlled-test="true"]').waitFor();
    await page.waitForFunction(b=>document.querySelector('#customer-work-status').textContent===b,copy.ja.banner);
    assert.equal(await cards.count(),6,'direct entry and reload remain controlled');
-   await page.goto(base+'/customer.html#discover',{waitUntil:'networkidle'});
+   await page.goto(base+'/customer.html?demeos-test=0#discover',{waitUntil:'networkidle'});
    await page.locator('#customer-work-list[data-controlled-test="false"]').waitFor({state:'attached'});
    assert.equal(await page.locator('[data-work-item-id^="test-discover-"]').count(),0,'normal mode never shows controlled records');
    assert.equal(await page.locator('#customer-controlled-test-entry').isVisible(),false,'ordinary public browsing never exposes a testing control');
@@ -187,7 +187,7 @@ async function openProduct(page,option,product,work,language='en') {
     await page.route('**/api/customer/work?demeos-test=1',route=>route.fulfill({json:{work:[],testMode:false}}));
     await page.reload({waitUntil:'networkidle'});
     await page.locator('.customer-discover-retry').waitFor();
-    assert.equal(await page.locator('#customer-controlled-test-exit').getAttribute('href'),'customer.html#discover','normal entry remains separate');
+    assert.equal(await page.locator('#customer-controlled-test-exit').getAttribute('href'),'customer.html?demeos-test=0#discover','explicit exit clears the controlled choice');
     assert.ok(!(await page.locator('#customer-controlled-test-entry').isVisible()));
     assert.equal(await page.locator('.customer-work-card').count(),0,'disabled test mode fails closed');
    }
