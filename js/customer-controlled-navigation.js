@@ -36,8 +36,8 @@
  const originalHrefs=new WeakMap();
  const customerPages=new Set(['index.html','customer.html','my-demeos.html','privacy.html','terms.html','contact.html']);
  function update(link) {
-  if(!originalHrefs.has(link))originalHrefs.set(link,link.getAttribute('href'));
-  const href=originalHrefs.get(link);
+  const actual=link.getAttribute('href'),saved=originalHrefs.get(link);
+  const href=saved&&actual===saved.decorated?saved.original:actual;
   if(!href||href.startsWith('#'))return;
   const target=new URL(href,current);
   if(target.origin!==current.origin||!customerPages.has(target.pathname.split('/').pop()))return;
@@ -46,15 +46,22 @@
   // public choice (including exit) wins and remains public across homepage returns.
   if(link.getAttribute('data-customer-content-entry')==='controlled'&&target.pathname.endsWith('/customer.html')) {
    target.searchParams.set('demeos-test',publicChoice?'0':'1');
-   link.setAttribute('href',target.pathname+target.search+target.hash);
+   const decorated=target.pathname+target.search+target.hash;
+   originalHrefs.set(link,{original:href,decorated});
+   link.setAttribute('href',decorated);
    return;
   }
   // An explicit exit must never be rewritten back into controlled mode.
   if(target.searchParams.has('demeos-test'))return;
   if(controlled) {
    target.searchParams.set('demeos-test','1');
-   link.setAttribute('href',target.pathname+target.search+target.hash);
-  } else link.setAttribute('href',href);
+   const decorated=target.pathname+target.search+target.hash;
+   originalHrefs.set(link,{original:href,decorated});
+   link.setAttribute('href',decorated);
+  } else {
+   link.setAttribute('href',href);
+   originalHrefs.delete(link);
+  }
  }
  root.addEventListener?.('pageshow',()=>{
   refreshChoice();

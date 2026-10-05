@@ -77,3 +77,11 @@ test('cached homepage and account links honor an exit made after their initial l
  storage.set(key,'production');home.events.click({target:{closest:()=>entry}});
  assert.equal(new URL(entry.href,'https://www.demeos.io').searchParams.get('demeos-test'),'0');
 });
+
+test('navigation decoration keeps later changes made by the purchase flow',()=>{
+ const p=page('/customer.html?demeos-test=1',undefined,['my-demeos.html']);
+ const link=p.links[0];link.href='my-demeos.html?prepare=1';
+ p.events.click({target:{closest:()=>link}});
+ const target=new URL(link.href,'https://www.demeos.io');
+ assert.equal(target.searchParams.get('prepare'),'1');assert.equal(target.searchParams.get('demeos-test'),'1');
+});
