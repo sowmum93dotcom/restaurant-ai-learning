@@ -26,9 +26,18 @@
   root.history.replaceState(root.history.state,'',current.pathname+current.search+current.hash);
  }
 
+ function refreshChoice() {
+  try {
+   const remembered=root.sessionStorage.getItem(key);
+   controlled=remembered==='controlled';
+   publicChoice=remembered==='production';
+  } catch(_) { /* Retain the explicit URL choice when storage is unavailable. */ }
+ }
+ const originalHrefs=new WeakMap();
  const customerPages=new Set(['index.html','customer.html','my-demeos.html','privacy.html','terms.html','contact.html']);
  function update(link) {
-  const href=link.getAttribute('href');
+  if(!originalHrefs.has(link))originalHrefs.set(link,link.getAttribute('href'));
+  const href=originalHrefs.get(link);
   if(!href||href.startsWith('#'))return;
   const target=new URL(href,current);
   if(target.origin!==current.origin||!customerPages.has(target.pathname.split('/').pop()))return;
@@ -45,9 +54,14 @@
   if(controlled) {
    target.searchParams.set('demeos-test','1');
    link.setAttribute('href',target.pathname+target.search+target.hash);
-  }
+  } else link.setAttribute('href',href);
  }
+ root.addEventListener?.('pageshow',()=>{
+  refreshChoice();
+  root.document.querySelectorAll('a[href]').forEach(update);
+ });
  root.document.addEventListener('click',event=>{
+  refreshChoice();
   const link=event.target.closest&&event.target.closest('a[href]');
   if(link)update(link);
  },true);

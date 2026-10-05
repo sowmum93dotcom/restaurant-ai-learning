@@ -3,7 +3,7 @@ const source=fs.readFileSync(require.resolve('../js/customer-controlled-navigati
 const key='demeos-customer-content-context-v1';
 function page(path,storage=new Map(),hrefs=[]){
  const events={};const links=hrefs.map(href=>({href,getAttribute(){return this.href;},setAttribute(_,value){this.href=value;}}));
- const root={location:{href:'https://www.demeos.io'+path},sessionStorage:{getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},
+ const root={addEventListener:(n,fn)=>events[n]=fn,location:{href:'https://www.demeos.io'+path},sessionStorage:{getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},
   history:{state:{preserved:true},replaceState(state,_,url){this.state=state;root.location.href=new URL(url,root.location.href).href;}},
   document:{addEventListener:(n,fn)=>events[n]=fn,querySelectorAll:()=>links}};
  vm.runInNewContext(source,{window:root,URL});events.DOMContentLoaded();return {root,links,storage,events};
@@ -57,4 +57,23 @@ test('explicit public choice overrides the supplied homepage Enter destination',
   p.events.click({target:{closest:()=>entry}});
   assert.equal(new URL(entry.href,'https://www.demeos.io').searchParams.get('demeos-test'),'0');
  }
+});
+
+test('cached homepage and account links honor an exit made after their initial load',()=>{
+ const storage=new Map();const home=page('/index.html',storage,['customer.html?demeos-test=1#discover']);const entry=home.links[0];
+ entry.getAttribute=function(name){return name==='data-customer-content-entry'?'controlled':this.href;};
+ home.events.DOMContentLoaded();
+ page('/customer.html?demeos-test=1',storage);
+ const account=page('/my-demeos.html',storage,['customer.html#discover']);
+ assert.match(account.links[0].href,/demeos-test=1/);
+ page('/customer.html?demeos-test=0',storage);
+ home.events.pageshow();
+ assert.equal(new URL(entry.href,'https://www.demeos.io').searchParams.get('demeos-test'),'0');
+ account.events.pageshow();
+ assert.equal(account.links[0].href,'customer.html#discover');
+ // Click also reads current storage when a restore does not emit pageshow.
+ storage.set(key,'controlled');home.events.click({target:{closest:()=>entry}});
+ assert.equal(new URL(entry.href,'https://www.demeos.io').searchParams.get('demeos-test'),'1');
+ storage.set(key,'production');home.events.click({target:{closest:()=>entry}});
+ assert.equal(new URL(entry.href,'https://www.demeos.io').searchParams.get('demeos-test'),'0');
 });
