@@ -20,14 +20,16 @@ const publicWork=getValidPublicCustomerWork([{workItemId:'approved-public-work',
   await context.route('**/api/customer/identity',route=>route.fulfill({status:401,json:{reason:'signed-out'}}));
   async function loaded(controlled){await page.locator('#customer-work-list[data-controlled-test="'+controlled+'"]').waitFor({state:'attached'});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no horizontal overflow');}
   // Start with ordinary approved content, on the same permanent pages.
-  await page.goto(base+'/index.html');await page.locator('#customer-entry-link').click();await loaded(false);
+  await page.goto(base+'/index.html?demeos-test=0');await page.locator('#customer-entry-link').click();await loaded(false);
   assert.equal(await page.locator('.customer-work-card').count(),1);assert.equal(controlledRequests,0);
   await page.locator('[data-product-id="public-product"] .customer-product-continue-action').click();await page.locator('#product-experience:not([hidden])').waitFor();
   assert.equal(await page.locator('#product-experience-action').getAttribute('href'),'https://business.example/product');
   await page.locator('#product-experience-back').click();await page.locator('.customer-journey-nav a').last().click();
   await page.locator('.customer-journey-nav a').first().click();await loaded(false);assert.equal(controlledRequests,0,'public account return cannot enable test content');
-  // Explicit activation changes data only, with the same homepage/customer/account.
-  await page.goto(base+'/index.html?demeos-test=1');await page.locator('#customer-entry-link').click();await loaded(true);
+  // The actual clean homepage Enter action reaches the supplied products.
+  await page.evaluate(()=>sessionStorage.clear());
+  await page.goto(base+'/index.html');
+  assert.equal(await page.evaluate(()=>sessionStorage.getItem('demeos-customer-content-context-v1')),null,'homepage load does not activate test context');await page.locator('#customer-entry-link').click();await loaded(true);
   assert.equal(await page.locator('.customer-work-card').count(),6);
   await page.locator('[data-product-id="test-product-activewear"] .customer-product-continue-action').click();await page.locator('#product-experience:not([hidden])').waitFor();
   await page.locator('select[data-option-key="size"]').selectOption('large');await page.locator('select[data-option-key="colour"]').selectOption('blue');
@@ -43,7 +45,7 @@ const publicWork=getValidPublicCustomerWork([{workItemId:'approved-public-work',
   // Explicit exit clears the tab choice; a genuinely empty public feed stays empty.
   empty=true;await page.locator('#customer-controlled-test-exit').click();await loaded(false);
   assert.equal(await page.locator('.customer-work-card').count(),0);
-  assert.equal(await page.evaluate(()=>sessionStorage.getItem('demeos-customer-content-context-v1')),null);
+  assert.equal(await page.evaluate(()=>sessionStorage.getItem('demeos-customer-content-context-v1')),'production');
   const afterExit=controlledRequests;
   await page.goto(base+'/index.html');await page.locator('#customer-entry-link').click();await loaded(false);assert.equal(controlledRequests,afterExit,'empty public data never falls back to controlled content');
   // Fresh independent browser context never inherits this development opt-in.

@@ -7,11 +7,16 @@
  const current=new URL(root.location.href);
  const choice=current.searchParams.get('demeos-test');
  let controlled=choice==='1';
+ let publicChoice=current.searchParams.has('demeos-test')&&!controlled;
  try {
   if(current.searchParams.has('demeos-test')) {
    if(controlled)root.sessionStorage.setItem(key,'controlled');
-   else root.sessionStorage.removeItem(key);
-  } else controlled=root.sessionStorage.getItem(key)==='controlled';
+   else root.sessionStorage.setItem(key,'production');
+  } else {
+   const remembered=root.sessionStorage.getItem(key);
+   controlled=remembered==='controlled';
+   publicChoice=remembered==='production';
+  }
  } catch(_) { /* Explicit URLs still work when browser storage is unavailable. */ }
 
  // Resolve the tab's data choice before Discover's existing request code runs.
@@ -27,6 +32,14 @@
   if(!href||href.startsWith('#'))return;
   const target=new URL(href,current);
   if(target.origin!==current.origin||!customerPages.has(target.pathname.split('/').pop()))return;
+  // During development only the homepage Enter action selects the supplied content.
+  // Loading the homepage or a clean Discover URL never activates it. An explicit
+  // public choice (including exit) wins and remains public across homepage returns.
+  if(link.getAttribute('data-customer-content-entry')==='controlled'&&target.pathname.endsWith('/customer.html')) {
+   target.searchParams.set('demeos-test',publicChoice?'0':'1');
+   link.setAttribute('href',target.pathname+target.search+target.hash);
+   return;
+  }
   // An explicit exit must never be rewritten back into controlled mode.
   if(target.searchParams.has('demeos-test'))return;
   if(controlled) {
