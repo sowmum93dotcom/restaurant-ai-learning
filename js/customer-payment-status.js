@@ -13,7 +13,7 @@
    const cstate={creating:'paymentPending',pending:'paymentPending',paid:'paymentPaid',failed:'paymentFailed',cancelled:'paymentCancelled','partially-refunded':'paymentPartialRefund',refunded:'paymentRefunded'}[entry.state];
    if(entry.testMode!==true||entry.recipient!=='business'||!cstate||typeof entry.productId!=='string'||typeof entry.reference!=='string'||!/^[a-zA-Z0-9-]{1,200}$/.test(entry.reference))continue;
    const p=['activewear','summer-fashion','mens-fashion','running','football','fishing','camping','hiking','childrens-fashion','toys','childrens-collection','grocery-pack'].indexOf(entry.productId.replace('test-product-',''));
-   const link=doc.createElement('a');link.className='customer-payment-history-link';link.href='/my-demeos.html?demeos-test=1&payment='+encodeURIComponent(entry.reference);
+   const link=doc.createElement('a');link.className='customer-payment-history-link';link.href='/my-demeos.html?payment='+encodeURIComponent(entry.reference);
    const name=doc.createElement('strong'),state=doc.createElement('span');const owned=root.DEMEOSControlledCustomerCopy[code()];name.textContent=p<0?entry.productName:owned.test+' '+owned.products[p];state.textContent=c[cstate];link.append(name,state);history.append(link);
   }
   const summary=get('customer-payment-summary');summary.replaceChildren();if(!receipt)return;
@@ -44,8 +44,13 @@
   }catch(_){if(revision===generation)message='failed';}finally{if(revision===generation){busy=false;render();}}
  }
  function clear(){get('customer-payment-panel').hidden=true;generation++;receipt=null;receipts=[];busy=false;message='paymentSignIn';render();}
- doc.addEventListener('DOMContentLoaded',()=>{
-  const panel=get('customer-payment-panel');if(!panel||new URL(root.location.href).searchParams.get('demeos-test')!=='1')return;
+ doc.addEventListener('DOMContentLoaded',async()=>{
+  const panel=get('customer-payment-panel');if(!panel)return;
+  // Receipts keep their permanent account address. The server-selected feed,
+  // rather than a public URL flag, identifies the temporary-content journey.
+  if(!new URL(root.location.href).searchParams.has('payment')){
+   try{const response=await root.fetch('/api/customer/work?source=discover&demeos-test=1',{credentials:'same-origin',cache:'no-store',headers:{'x-demeos-test-mode':'controlled-preview'}});const data=await response.json();if(!response.ok||data.testMode!==true||!Array.isArray(data.work)||!data.work.length)return;}catch(_){return;}
+  }
   panel.hidden=get('customer-auth-signed-in').hidden;render();get('customer-payment-refresh').addEventListener('click',refresh);
   get('customer-sign-out')?.addEventListener('click',clear);
   const auth=get('customer-auth-signed-in');new root.MutationObserver(()=>{if(auth.hidden)clear();else {panel.hidden=false;refresh();}}).observe(auth,{attributes:true,attributeFilter:['hidden']});

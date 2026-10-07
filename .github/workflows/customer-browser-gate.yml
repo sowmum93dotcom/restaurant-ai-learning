@@ -30,6 +30,8 @@ jobs:
         run: node browser-checks/customer-public-entry-gate.js
       - name: Run Customer Experience context continuity gate
         run: node browser-checks/customer-context-gate.js
+      - name: Run complete customer navigation and history gate
+        run: node browser-checks/customer-navigation-gate.js
       - name: Run browser language gate
         run: node browser-checks/customer-language-gate.js
       - name: Run controlled supplied media and continuation gate

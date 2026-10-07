@@ -48,7 +48,7 @@ test("older failed request cannot clear a newer successful Discover state", asyn
   const { document, list, status } = createDiscoverDocument();
   let rejectOlder;
   const older = loadCustomerWork(document, () => new Promise((resolve, reject) => { rejectOlder = reject; }), { search: "" });
-  const newer = loadCustomerWork(document, async () => ({ ok: true, json: async () => ({ work: [] }) }), { search: "" });
+  const newer = loadCustomerWork(document, async () => ({ ok: true, json: async () => ({ work: [], testMode: false }) }), { search: "" });
   await newer;
   assert.equal(status.className, "customer-empty-state");
   rejectOlder(new Error("older network failure"));
@@ -62,7 +62,7 @@ test("older successful response cannot replace newer Discover state", async () =
   const { document, status } = createDiscoverDocument();
   let resolveOlder;
   const older = loadCustomerWork(document, () => new Promise(resolve => { resolveOlder = resolve; }), { search: "" });
-  const newer = loadCustomerWork(document, async () => ({ ok: true, json: async () => ({ work: [] }) }), { search: "" });
+  const newer = loadCustomerWork(document, async () => ({ ok: true, json: async () => ({ work: [], testMode: false }) }), { search: "" });
   await newer;
   resolveOlder({ ok: true, json: async () => ({ work: [{ businessName: "Stale business" }] }) });
   await older;
@@ -75,7 +75,7 @@ test("empty Discover keeps navigation guidance hidden", async () => {
   navigationHint.hidden = false;
   await loadCustomerWork(document, async () => ({
     ok: true,
-    json: async () => ({ work: [] })
+    json: async () => ({ work: [], testMode: false })
   }), { search: "" });
   assert.equal(navigationHint.hidden, true);
 });
@@ -93,7 +93,7 @@ test("outdated failed request cannot hide newer navigation state", async () => {
   const older = loadCustomerWork(document, () => new Promise((resolve, reject) => { rejectOlder = reject; }), { search: "" });
   const newer = loadCustomerWork(document, async () => ({
     ok: true,
-    json: async () => ({ work: [] })
+    json: async () => ({ work: [], testMode: false })
   }), { search: "" });
   await newer;
   navigationHint.hidden = false;

@@ -16,7 +16,7 @@ test("Customer Interface exposes simple relationship navigation without changing
 
 test("My DEMEOS uses the official logo and accessible, current-section navigation", function () {
   const html = read("my-demeos.html");
-  assert.match(html, /href="customer\.html" aria-label="Return to the DEMEOS Customer Interface">\s*<img src="images\/demeos-logo\.png" alt="DEMEOS"/);
+  assert.match(html, /href="index\.html" aria-label="DEMEOS home" data-public-aria="home">\s*<img src="images\/demeos-logo\.png" alt="DEMEOS"/);
   assert.match(html, /<nav class="customer-journey-nav" aria-label="Customer navigation">/);
   assert.match(html, /href="customer\.html#discover">Discover<\/a>/);
   assert.match(html, /href="customer\.html#intention">I know what I want<\/a>/);
@@ -278,9 +278,9 @@ test("normal Discover rejects a controlled test feed response", function () {
   assert.match(script, /CONTROLLED TEST CONTENT — not live business content/);
 });
 
-test("normal Discover returns only published work and an honest empty state", function () {
+test("Discover prioritizes published work and keeps explicit preview isolated", function () {
   const api = read("api/customer/work.js");
-  assert.match(api, /if \(isDiscoverTestMode\(req\)\) \{[\s\S]*?work: getValidPublicCustomerWork\(discoverTestContent\(req\)\),[\s\S]*?testMode: true/);
+  assert.match(api, /if \(!mainFeed && isDiscoverTestMode\(req\)\) \{[\s\S]*?work: getValidPublicCustomerWork\(discoverTestContent\(req\)\),[\s\S]*?testMode: true/);
   assert.match(api, /work: publicWork,\s+testMode: false/);
   assert.doesNotMatch(api, /work: useSamples \?/);
   const customer = read("js/customer.js");

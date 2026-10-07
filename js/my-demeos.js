@@ -26,19 +26,27 @@
     const views = Array.from(documentObject.querySelectorAll(".my-demeos-relationship-view"));
     let activeTrigger = null;
 
-    function openView(trigger) {
+    function openView(trigger, updateHistory = true) {
       const view = documentObject.getElementById(trigger.getAttribute("data-relationship-area"));
       if (!view) return;
       activeTrigger = trigger;
+      if (updateHistory && root.history && root.location) {
+        const url = new URL(root.location.href); url.hash = view.id;
+        if (url.href !== root.location.href) root.history.pushState(root.history.state, '', url.pathname + url.search + url.hash);
+      }
       overview.hidden = true;
       views.forEach(function (candidate) { candidate.hidden = candidate !== view; });
       const heading = view.querySelector("h2");
       if (heading) heading.focus();
     }
 
-    function closeView() {
+    function closeView(updateHistory = true) {
       views.forEach(function (view) { view.hidden = true; });
       overview.hidden = false;
+      if (updateHistory && root.history && root.location) {
+        const url = new URL(root.location.href); url.hash = 'my-demeos';
+        if (url.href !== root.location.href) root.history.pushState(root.history.state, '', url.pathname + url.search + url.hash);
+      }
       if (activeTrigger) activeTrigger.focus();
     }
 
@@ -46,7 +54,7 @@
       trigger.addEventListener("click", function () { openView(trigger); });
     });
     documentObject.querySelectorAll("[data-relationship-back]").forEach(function (button) {
-      button.addEventListener("click", closeView);
+      button.addEventListener("click", function () { closeView(); });
     });
     documentObject.querySelectorAll(".relationship-sign-in").forEach(function (button) {
       button.addEventListener("click", function () {
@@ -55,7 +63,17 @@
       });
     });
 
-    if (root.location && root.location.hash === "#privacy-control") { const privacy = triggers.find(trigger => trigger.getAttribute("data-relationship-area") === "privacy-control"); if (privacy) openView(privacy); }
+    function restoreView() {
+      const current = root.location && root.location.hash.slice(1);
+      const trigger = triggers.find(candidate => candidate.getAttribute("data-relationship-area") === current);
+      if (trigger) openView(trigger, false); else closeView(false);
+    }
+    if (root.location) restoreView();
+    if (root.addEventListener) {
+      root.addEventListener("hashchange", restoreView);
+      root.addEventListener("popstate", restoreView);
+      root.addEventListener("pageshow", function (event) { if (event.persisted) restoreView(); });
+    }
     return { openView, closeView };
   }
 

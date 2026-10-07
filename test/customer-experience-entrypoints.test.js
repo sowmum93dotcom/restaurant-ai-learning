@@ -57,8 +57,8 @@ test("Customer Experience has its clear public identity without an owner authent
 
 test("public customer requests retain the minimized server-authoritative contract", function () {
   const source = read("js/customer.js");
-  assert.match(source, /url: "\/api\/customer\/work", options: undefined, testMode: false/);
-  assert.match(source, /new URLSearchParams\(search\)\.get\("demeos-test"\) === "1"/);
+  assert.match(source, /url: "\/api\/customer\/work\?source=discover&demeos-test=1"/);
+  assert.match(source, /mainFeed: true/);
   assert.match(source, /"x-demeos-test-mode": "controlled-preview"/);
   assert.match(source, /Array\.isArray\(data\.customerPackages\)/);
   assert.match(source, /`\/api\/customer\/work\/\$\{encodeURIComponent\(workItemId\)\}\/participation`/);

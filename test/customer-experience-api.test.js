@@ -516,3 +516,29 @@ test("Product Experience test feed requires both exact query and controlled head
   assert.ok(item.customerContinuation.routes.includes("demeos"));
   assert.deepEqual(controlled.body.customerPackages, []);
 });
+
+const mainDiscoverRequest = () => ({method: "GET", query: {source: "discover", "demeos-test": "1"}, headers: {"x-demeos-test-mode": "controlled-preview"}});
+test("main Discover supplies temporary content only until approved business content exists", async () => {
+  let published=[]; let reads=0;
+  const repository={async getCustomerWork(){reads++;return published;}};
+  const temporary=await runHandler("../api/customer/work.js",repository,mainDiscoverRequest());
+  assert.equal(temporary.statusCode,200);assert.equal(temporary.body.testMode,true);assert.equal(temporary.body.work.length,6);
+  published=[{workItemId:"approved",businessId:"real-business",businessName:"Real Business",content:"Approved product content",participationAction:"Interested",customerContinuation:{routes:["website"],website:"https://business.example"},products:[{productId:"real-product",businessId:"real-business",name:"Real Product",description:"Approved product",continuationRoute:"website",availability:"available"}]}];
+  const actual=await runHandler("../api/customer/work.js",repository,mainDiscoverRequest());
+  assert.equal(actual.statusCode,200);assert.equal(actual.body.testMode,false);assert.equal(actual.body.work.length,1);
+  assert.equal(actual.body.work[0].products[0].productId,"real-product");assert.doesNotMatch(JSON.stringify(actual.body),/test-discover|DEMEOS Test/);assert.equal(reads,2);
+  assert.equal(actual.headers["Cache-Control"],"private, no-store");
+});
+test("main Discover preserves the exact temporary-content gate and server disable switch",async()=>{
+ const repository={async getCustomerWork(){return [];}};
+ for(const req of [{method:"GET",query:{source:"discover","demeos-test":"1"},headers:{}},{method:"GET",query:{source:"discover"},headers:{"x-demeos-test-mode":"controlled-preview"}}]){
+  const result=await runHandler("../api/customer/work.js",repository,req);assert.equal(result.body.testMode,false);assert.deepEqual(result.body.work,[]);
+ }
+ const previous=process.env.DEMEOS_CONTROLLED_TEST_CONTENT;process.env.DEMEOS_CONTROLLED_TEST_CONTENT="disabled";
+ try{const result=await runHandler("../api/customer/work.js",repository,mainDiscoverRequest());assert.equal(result.body.testMode,false);assert.deepEqual(result.body.work,[]);}
+ finally{if(previous===undefined)delete process.env.DEMEOS_CONTROLLED_TEST_CONTENT;else process.env.DEMEOS_CONTROLLED_TEST_CONTENT=previous;}
+});
+test("main Discover never substitutes dummy content for a repository failure",async()=>{
+ const result=await runHandler("../api/customer/work.js",{async getCustomerWork(){throw Error("unavailable");}},mainDiscoverRequest());
+ assert.equal(result.statusCode,500);assert.equal(result.body.work,undefined);assert.equal(result.body.testMode,undefined);
+});
