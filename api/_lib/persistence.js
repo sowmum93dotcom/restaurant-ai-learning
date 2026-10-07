@@ -786,7 +786,7 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
               await this.getBusinessMediaAssetsByIds(row.business_id, row.campaign.media.map(function (link) { return link.assetId; })),
               createDeliveryRead
             ) : []
-          });
+          }, {forSearchClassification:forCatalogueValidation});
           if (!publicItem) continue;
           // Server-only ownership context survives until the shared public
           // catalogue performs its final validation. Public/default consumers

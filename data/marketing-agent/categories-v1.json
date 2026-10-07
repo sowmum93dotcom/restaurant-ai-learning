@@ -1,0 +1,1240 @@
+{
+  "datasetVersion": "marketing-agent-categories-v1",
+  "sectors": [
+    {
+      "sectorId": "1",
+      "sectorName": "E-Commerce and Retail"
+    },
+    {
+      "sectorId": "2",
+      "sectorName": "Finance and Payments"
+    },
+    {
+      "sectorId": "3",
+      "sectorName": "Education and Learning"
+    },
+    {
+      "sectorId": "4",
+      "sectorName": "Digital Content and Media"
+    },
+    {
+      "sectorId": "5",
+      "sectorName": "Service Agencies"
+    },
+    {
+      "sectorId": "6",
+      "sectorName": "Logistics and Fulfilment"
+    },
+    {
+      "sectorId": "7",
+      "sectorName": "Governance and Community"
+    },
+    {
+      "sectorId": "8",
+      "sectorName": "Energy and Sustainability"
+    },
+    {
+      "sectorId": "9",
+      "sectorName": "Employment and Upskilling"
+    }
+  ],
+  "categories": [
+    {
+      "categoryId": "1",
+      "categoryName": "Marketplace Stores",
+      "sectorId": "1",
+      "sectorName": "E-Commerce and Retail",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "2",
+      "categoryName": "Subscription Shops",
+      "sectorId": "1",
+      "sectorName": "E-Commerce and Retail",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "3",
+      "categoryName": "Local Merchant Marketplace",
+      "sectorId": "1",
+      "sectorName": "E-Commerce and Retail",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "4",
+      "categoryName": "Global Trading Interface",
+      "sectorId": "1",
+      "sectorName": "E-Commerce and Retail",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "5",
+      "categoryName": "Product Authenticity and Verification",
+      "sectorId": "1",
+      "sectorName": "E-Commerce and Retail",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "6",
+      "categoryName": "Brand Blocks",
+      "sectorId": "1",
+      "sectorName": "E-Commerce and Retail",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "7",
+      "categoryName": "Smart Packaging and Tracking",
+      "sectorId": "1",
+      "sectorName": "E-Commerce and Retail",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "8",
+      "categoryName": "Warranty and Returns",
+      "sectorId": "1",
+      "sectorName": "E-Commerce and Retail",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "9",
+      "categoryName": "On-Demand Groceries",
+      "sectorId": "1",
+      "sectorName": "E-Commerce and Retail",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "10",
+      "categoryName": "Fashion and Apparel Commerce",
+      "sectorId": "1",
+      "sectorName": "E-Commerce and Retail",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "11",
+      "categoryName": "Electronics and Devices",
+      "sectorId": "1",
+      "sectorName": "E-Commerce and Retail",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "12",
+      "categoryName": "Home and Living",
+      "sectorId": "1",
+      "sectorName": "E-Commerce and Retail",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "13",
+      "categoryName": "Beauty and Personal Care",
+      "sectorId": "1",
+      "sectorName": "E-Commerce and Retail",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "14",
+      "categoryName": "Bulk Procurement System",
+      "sectorId": "1",
+      "sectorName": "E-Commerce and Retail",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "15",
+      "categoryName": "Wholesale Vendor Interface",
+      "sectorId": "1",
+      "sectorName": "E-Commerce and Retail",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "16",
+      "categoryName": "Vendor Membership Engine",
+      "sectorId": "1",
+      "sectorName": "E-Commerce and Retail",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "17",
+      "categoryName": "Vendor Finance Tools",
+      "sectorId": "1",
+      "sectorName": "E-Commerce and Retail",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "18",
+      "categoryName": "Retail Analytics and Insights",
+      "sectorId": "1",
+      "sectorName": "E-Commerce and Retail",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "19",
+      "categoryName": "Customer Loyalty and Rewards",
+      "sectorId": "1",
+      "sectorName": "E-Commerce and Retail",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "20",
+      "categoryName": "SSC Wallet Infrastructure",
+      "sectorId": "2",
+      "sectorName": "Finance and Payments",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "21",
+      "categoryName": "Treasury Automation",
+      "sectorId": "2",
+      "sectorName": "Finance and Payments",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "22",
+      "categoryName": "Dividend Distribution Engine",
+      "sectorId": "2",
+      "sectorName": "Finance and Payments",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "23",
+      "categoryName": "Lending and Credit Framework",
+      "sectorId": "2",
+      "sectorName": "Finance and Payments",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "24",
+      "categoryName": "Community Investment Pools",
+      "sectorId": "2",
+      "sectorName": "Finance and Payments",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "25",
+      "categoryName": "Pooled Equity Allocator",
+      "sectorId": "2",
+      "sectorName": "Finance and Payments",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "26",
+      "categoryName": "Compliance Registry",
+      "sectorId": "2",
+      "sectorName": "Finance and Payments",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "27",
+      "categoryName": "AML Automation Engine",
+      "sectorId": "2",
+      "sectorName": "Finance and Payments",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "28",
+      "categoryName": "KYC Credential Issuer",
+      "sectorId": "2",
+      "sectorName": "Finance and Payments",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "29",
+      "categoryName": "SSC Escrow Contracts",
+      "sectorId": "2",
+      "sectorName": "Finance and Payments",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "30",
+      "categoryName": "Remittance Hub",
+      "sectorId": "2",
+      "sectorName": "Finance and Payments",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "31",
+      "categoryName": "Micro-Finance Contracts",
+      "sectorId": "2",
+      "sectorName": "Finance and Payments",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "32",
+      "categoryName": "Internal Insurance Contracts",
+      "sectorId": "2",
+      "sectorName": "Finance and Payments",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "33",
+      "categoryName": "SSC-Based Crowdfunding",
+      "sectorId": "2",
+      "sectorName": "Finance and Payments",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "34",
+      "categoryName": "Internal Share Exchange",
+      "sectorId": "2",
+      "sectorName": "Finance and Payments",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "35",
+      "categoryName": "Cross-Region Payment Routing",
+      "sectorId": "2",
+      "sectorName": "Finance and Payments",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "36",
+      "categoryName": "Tokenised Internal Assets",
+      "sectorId": "2",
+      "sectorName": "Finance and Payments",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "37",
+      "categoryName": "Financial Reporting Engine",
+      "sectorId": "2",
+      "sectorName": "Finance and Payments",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "38",
+      "categoryName": "Vendor Incentive Engine",
+      "sectorId": "2",
+      "sectorName": "Finance and Payments",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "39",
+      "categoryName": "Digital Course Marketplace",
+      "sectorId": "3",
+      "sectorName": "Education and Learning",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "40",
+      "categoryName": "Certification Engine",
+      "sectorId": "3",
+      "sectorName": "Education and Learning",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "41",
+      "categoryName": "Skill Verification Contracts",
+      "sectorId": "3",
+      "sectorName": "Education and Learning",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "42",
+      "categoryName": "Educational NFTs",
+      "sectorId": "3",
+      "sectorName": "Education and Learning",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "43",
+      "categoryName": "Internship Marketplace",
+      "sectorId": "3",
+      "sectorName": "Education and Learning",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "44",
+      "categoryName": "Vocational Training Space",
+      "sectorId": "3",
+      "sectorName": "Education and Learning",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "45",
+      "categoryName": "AI Upskilling Coach",
+      "sectorId": "3",
+      "sectorName": "Education and Learning",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "46",
+      "categoryName": "Course Royalty Contracts",
+      "sectorId": "3",
+      "sectorName": "Education and Learning",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "47",
+      "categoryName": "Accreditation Network",
+      "sectorId": "3",
+      "sectorName": "Education and Learning",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "48",
+      "categoryName": "Community Schools",
+      "sectorId": "3",
+      "sectorName": "Education and Learning",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "49",
+      "categoryName": "Academic Partnership Interfaces",
+      "sectorId": "3",
+      "sectorName": "Education and Learning",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "50",
+      "categoryName": "Multilingual Learning Engine",
+      "sectorId": "3",
+      "sectorName": "Education and Learning",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "51",
+      "categoryName": "Learning Analytics",
+      "sectorId": "3",
+      "sectorName": "Education and Learning",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "52",
+      "categoryName": "Assessment Automation",
+      "sectorId": "3",
+      "sectorName": "Education and Learning",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "53",
+      "categoryName": "Scholarship Distribution",
+      "sectorId": "3",
+      "sectorName": "Education and Learning",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "54",
+      "categoryName": "Peer Learning Tools",
+      "sectorId": "3",
+      "sectorName": "Education and Learning",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "55",
+      "categoryName": "Credential Wallet",
+      "sectorId": "3",
+      "sectorName": "Education and Learning",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "56",
+      "categoryName": "Educator SSC Payment Engine",
+      "sectorId": "3",
+      "sectorName": "Education and Learning",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "57",
+      "categoryName": "Content Licensing Contracts",
+      "sectorId": "3",
+      "sectorName": "Education and Learning",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "58",
+      "categoryName": "Video Streaming Engine",
+      "sectorId": "4",
+      "sectorName": "Digital Content and Media",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "59",
+      "categoryName": "Music Streaming",
+      "sectorId": "4",
+      "sectorName": "Digital Content and Media",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "60",
+      "categoryName": "Podcasts",
+      "sectorId": "4",
+      "sectorName": "Digital Content and Media",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "61",
+      "categoryName": "Written Articles",
+      "sectorId": "4",
+      "sectorName": "Digital Content and Media",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "62",
+      "categoryName": "Digital Art Distribution",
+      "sectorId": "4",
+      "sectorName": "Digital Content and Media",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "63",
+      "categoryName": "Licensing Engine",
+      "sectorId": "4",
+      "sectorName": "Digital Content and Media",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "64",
+      "categoryName": "NFT Contract Framework",
+      "sectorId": "4",
+      "sectorName": "Digital Content and Media",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "65",
+      "categoryName": "Influencer Channels",
+      "sectorId": "4",
+      "sectorName": "Digital Content and Media",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "66",
+      "categoryName": "Community Media Hubs",
+      "sectorId": "4",
+      "sectorName": "Digital Content and Media",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "67",
+      "categoryName": "Brand Advertising System",
+      "sectorId": "4",
+      "sectorName": "Digital Content and Media",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "68",
+      "categoryName": "Social Commerce Integration",
+      "sectorId": "4",
+      "sectorName": "Digital Content and Media",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "69",
+      "categoryName": "Audience Analytics",
+      "sectorId": "4",
+      "sectorName": "Digital Content and Media",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "70",
+      "categoryName": "Copyright Registry",
+      "sectorId": "4",
+      "sectorName": "Digital Content and Media",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "71",
+      "categoryName": "AI-Generated Content Tools",
+      "sectorId": "4",
+      "sectorName": "Digital Content and Media",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "72",
+      "categoryName": "Moderation and Compliance",
+      "sectorId": "4",
+      "sectorName": "Digital Content and Media",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "73",
+      "categoryName": "Subscription Management",
+      "sectorId": "4",
+      "sectorName": "Digital Content and Media",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "74",
+      "categoryName": "Creator Revenue Sharing",
+      "sectorId": "4",
+      "sectorName": "Digital Content and Media",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "75",
+      "categoryName": "Sponsorship Contracts",
+      "sectorId": "4",
+      "sectorName": "Digital Content and Media",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "76",
+      "categoryName": "Encrypted Archive Storage",
+      "sectorId": "4",
+      "sectorName": "Digital Content and Media",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "77",
+      "categoryName": "Creative Agency Services",
+      "sectorId": "5",
+      "sectorName": "Service Agencies",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "78",
+      "categoryName": "Marketing Services",
+      "sectorId": "5",
+      "sectorName": "Service Agencies",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "79",
+      "categoryName": "Logistics Brokerage",
+      "sectorId": "5",
+      "sectorName": "Service Agencies",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "80",
+      "categoryName": "Consulting Services",
+      "sectorId": "5",
+      "sectorName": "Service Agencies",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "81",
+      "categoryName": "Repair and Maintenance Services",
+      "sectorId": "5",
+      "sectorName": "Service Agencies",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "82",
+      "categoryName": "Health and Wellbeing Services",
+      "sectorId": "5",
+      "sectorName": "Service Agencies",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "83",
+      "categoryName": "Professional Training Services",
+      "sectorId": "5",
+      "sectorName": "Service Agencies",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "84",
+      "categoryName": "Travel Booking Agents",
+      "sectorId": "5",
+      "sectorName": "Service Agencies",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "85",
+      "categoryName": "Home Care Services",
+      "sectorId": "5",
+      "sectorName": "Service Agencies",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "86",
+      "categoryName": "Event Management",
+      "sectorId": "5",
+      "sectorName": "Service Agencies",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "87",
+      "categoryName": "Photography and Videography",
+      "sectorId": "5",
+      "sectorName": "Service Agencies",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "88",
+      "categoryName": "Cloud and Web Services",
+      "sectorId": "5",
+      "sectorName": "Service Agencies",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "89",
+      "categoryName": "Catering Services",
+      "sectorId": "5",
+      "sectorName": "Service Agencies",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "90",
+      "categoryName": "Freelance Marketplace",
+      "sectorId": "5",
+      "sectorName": "Service Agencies",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "91",
+      "categoryName": "Building and Maintenance Contractors",
+      "sectorId": "5",
+      "sectorName": "Service Agencies",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "92",
+      "categoryName": "Recruitment and Staffing",
+      "sectorId": "5",
+      "sectorName": "Service Agencies",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "93",
+      "categoryName": "Cleaning Services",
+      "sectorId": "5",
+      "sectorName": "Service Agencies",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "94",
+      "categoryName": "Professional Auditing Services",
+      "sectorId": "5",
+      "sectorName": "Service Agencies",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "95",
+      "categoryName": "Franchise Support Systems",
+      "sectorId": "5",
+      "sectorName": "Service Agencies",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "96",
+      "categoryName": "Warehousing Management",
+      "sectorId": "6",
+      "sectorName": "Logistics and Fulfilment",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "97",
+      "categoryName": "Pick-and-Pack Operations",
+      "sectorId": "6",
+      "sectorName": "Logistics and Fulfilment",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "98",
+      "categoryName": "Delivery Network Engine",
+      "sectorId": "6",
+      "sectorName": "Logistics and Fulfilment",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "99",
+      "categoryName": "Route Optimisation Systems",
+      "sectorId": "6",
+      "sectorName": "Logistics and Fulfilment",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "100",
+      "categoryName": "Drone Delivery Framework",
+      "sectorId": "6",
+      "sectorName": "Logistics and Fulfilment",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "101",
+      "categoryName": "Temperature-Controlled Shipping",
+      "sectorId": "6",
+      "sectorName": "Logistics and Fulfilment",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "102",
+      "categoryName": "Customs and Border Processing",
+      "sectorId": "6",
+      "sectorName": "Logistics and Fulfilment",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "103",
+      "categoryName": "Tracking and Scan Events",
+      "sectorId": "6",
+      "sectorName": "Logistics and Fulfilment",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "104",
+      "categoryName": "Proof-of-Delivery Contracts",
+      "sectorId": "6",
+      "sectorName": "Logistics and Fulfilment",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "105",
+      "categoryName": "Shipment Insurance Contracts",
+      "sectorId": "6",
+      "sectorName": "Logistics and Fulfilment",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "106",
+      "categoryName": "Fleet Management",
+      "sectorId": "6",
+      "sectorName": "Logistics and Fulfilment",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "107",
+      "categoryName": "Packaging Fee Engine",
+      "sectorId": "6",
+      "sectorName": "Logistics and Fulfilment",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "108",
+      "categoryName": "Cross-Border Documentation",
+      "sectorId": "6",
+      "sectorName": "Logistics and Fulfilment",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "109",
+      "categoryName": "Return Logistics",
+      "sectorId": "6",
+      "sectorName": "Logistics and Fulfilment",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "110",
+      "categoryName": "Logistics API Integration",
+      "sectorId": "6",
+      "sectorName": "Logistics and Fulfilment",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "111",
+      "categoryName": "Partner Logistics Audits",
+      "sectorId": "6",
+      "sectorName": "Logistics and Fulfilment",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "112",
+      "categoryName": "Supply Chain AI and Forecasting",
+      "sectorId": "6",
+      "sectorName": "Logistics and Fulfilment",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "113",
+      "categoryName": "Emissions Tracking",
+      "sectorId": "6",
+      "sectorName": "Logistics and Fulfilment",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "114",
+      "categoryName": "Logistics SSC Settlement Engine",
+      "sectorId": "6",
+      "sectorName": "Logistics and Fulfilment",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "115",
+      "categoryName": "Voting Contracts",
+      "sectorId": "7",
+      "sectorName": "Governance and Community",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "116",
+      "categoryName": "Proposal Submissions",
+      "sectorId": "7",
+      "sectorName": "Governance and Community",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "117",
+      "categoryName": "Community Polling",
+      "sectorId": "7",
+      "sectorName": "Governance and Community",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "118",
+      "categoryName": "Grievance Filing Engine",
+      "sectorId": "7",
+      "sectorName": "Governance and Community",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "119",
+      "categoryName": "Reputation Scoring",
+      "sectorId": "7",
+      "sectorName": "Governance and Community",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "120",
+      "categoryName": "Dispute Resolution",
+      "sectorId": "7",
+      "sectorName": "Governance and Community",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "121",
+      "categoryName": "Ethics Registry",
+      "sectorId": "7",
+      "sectorName": "Governance and Community",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "122",
+      "categoryName": "Member Verification",
+      "sectorId": "7",
+      "sectorName": "Governance and Community",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "123",
+      "categoryName": "Governance Meeting Records",
+      "sectorId": "7",
+      "sectorName": "Governance and Community",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "124",
+      "categoryName": "On-Chain Constitution",
+      "sectorId": "7",
+      "sectorName": "Governance and Community",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "125",
+      "categoryName": "Regional Councils",
+      "sectorId": "7",
+      "sectorName": "Governance and Community",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "126",
+      "categoryName": "Global Vendor Council",
+      "sectorId": "7",
+      "sectorName": "Governance and Community",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "127",
+      "categoryName": "Election Automation",
+      "sectorId": "7",
+      "sectorName": "Governance and Community",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "128",
+      "categoryName": "DAO Tools",
+      "sectorId": "7",
+      "sectorName": "Governance and Community",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "129",
+      "categoryName": "Audit Disclosure Contracts",
+      "sectorId": "7",
+      "sectorName": "Governance and Community",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "130",
+      "categoryName": "Transparency Reports",
+      "sectorId": "7",
+      "sectorName": "Governance and Community",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "131",
+      "categoryName": "Charity Pools",
+      "sectorId": "7",
+      "sectorName": "Governance and Community",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "132",
+      "categoryName": "CSR Funding",
+      "sectorId": "7",
+      "sectorName": "Governance and Community",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "133",
+      "categoryName": "Milestone Approval Engine",
+      "sectorId": "7",
+      "sectorName": "Governance and Community",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "134",
+      "categoryName": "Green Energy Credits",
+      "sectorId": "8",
+      "sectorName": "Energy and Sustainability",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "135",
+      "categoryName": "Carbon Offset Contracts",
+      "sectorId": "8",
+      "sectorName": "Energy and Sustainability",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "136",
+      "categoryName": "Solar Project Marketplace",
+      "sectorId": "8",
+      "sectorName": "Energy and Sustainability",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "137",
+      "categoryName": "Renewable Procurement Engine",
+      "sectorId": "8",
+      "sectorName": "Energy and Sustainability",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "138",
+      "categoryName": "Waste Tracking",
+      "sectorId": "8",
+      "sectorName": "Energy and Sustainability",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "139",
+      "categoryName": "Recycling Marketplace",
+      "sectorId": "8",
+      "sectorName": "Energy and Sustainability",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "140",
+      "categoryName": "Emissions Measurement",
+      "sectorId": "8",
+      "sectorName": "Energy and Sustainability",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "141",
+      "categoryName": "Electric Mobility Tools",
+      "sectorId": "8",
+      "sectorName": "Energy and Sustainability",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "142",
+      "categoryName": "ESG Reporting",
+      "sectorId": "8",
+      "sectorName": "Energy and Sustainability",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "143",
+      "categoryName": "Smart Energy Meters",
+      "sectorId": "8",
+      "sectorName": "Energy and Sustainability",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "144",
+      "categoryName": "Microgrid Contracts",
+      "sectorId": "8",
+      "sectorName": "Energy and Sustainability",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "145",
+      "categoryName": "Energy Storage Tracking",
+      "sectorId": "8",
+      "sectorName": "Energy and Sustainability",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "146",
+      "categoryName": "Environmental Auditing",
+      "sectorId": "8",
+      "sectorName": "Energy and Sustainability",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "147",
+      "categoryName": "Sustainability Analytics",
+      "sectorId": "8",
+      "sectorName": "Energy and Sustainability",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "148",
+      "categoryName": "Water Management",
+      "sectorId": "8",
+      "sectorName": "Energy and Sustainability",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "149",
+      "categoryName": "Eco-Product Labels",
+      "sectorId": "8",
+      "sectorName": "Energy and Sustainability",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "150",
+      "categoryName": "CleanTech Finance",
+      "sectorId": "8",
+      "sectorName": "Energy and Sustainability",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "151",
+      "categoryName": "Green Incentive Distribution",
+      "sectorId": "8",
+      "sectorName": "Energy and Sustainability",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "152",
+      "categoryName": "Sustainability Education Tools",
+      "sectorId": "8",
+      "sectorName": "Energy and Sustainability",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "153",
+      "categoryName": "Job Listings Marketplace",
+      "sectorId": "9",
+      "sectorName": "Employment and Upskilling",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "154",
+      "categoryName": "Career Profiles",
+      "sectorId": "9",
+      "sectorName": "Employment and Upskilling",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "155",
+      "categoryName": "Verified CV Contracts",
+      "sectorId": "9",
+      "sectorName": "Employment and Upskilling",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "156",
+      "categoryName": "Skill Wallet System",
+      "sectorId": "9",
+      "sectorName": "Employment and Upskilling",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "157",
+      "categoryName": "Apprenticeship Contracts",
+      "sectorId": "9",
+      "sectorName": "Employment and Upskilling",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "158",
+      "categoryName": "Performance Recording",
+      "sectorId": "9",
+      "sectorName": "Employment and Upskilling",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "159",
+      "categoryName": "Training Modules",
+      "sectorId": "9",
+      "sectorName": "Employment and Upskilling",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "160",
+      "categoryName": "Worker Benefit Contracts",
+      "sectorId": "9",
+      "sectorName": "Employment and Upskilling",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "161",
+      "categoryName": "Payroll Automation",
+      "sectorId": "9",
+      "sectorName": "Employment and Upskilling",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "162",
+      "categoryName": "Freelance Task Bidding",
+      "sectorId": "9",
+      "sectorName": "Employment and Upskilling",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "163",
+      "categoryName": "Time Tracking Contracts",
+      "sectorId": "9",
+      "sectorName": "Employment and Upskilling",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "164",
+      "categoryName": "Gig Worker Insurance",
+      "sectorId": "9",
+      "sectorName": "Employment and Upskilling",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "165",
+      "categoryName": "HR Analytics",
+      "sectorId": "9",
+      "sectorName": "Employment and Upskilling",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "166",
+      "categoryName": "Peer Endorsement",
+      "sectorId": "9",
+      "sectorName": "Employment and Upskilling",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "167",
+      "categoryName": "Bonus Distribution",
+      "sectorId": "9",
+      "sectorName": "Employment and Upskilling",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "168",
+      "categoryName": "Resignation Records",
+      "sectorId": "9",
+      "sectorName": "Employment and Upskilling",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "169",
+      "categoryName": "Pension Contribution Contracts",
+      "sectorId": "9",
+      "sectorName": "Employment and Upskilling",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "170",
+      "categoryName": "Employee Governance Tools",
+      "sectorId": "9",
+      "sectorName": "Employment and Upskilling",
+      "datasetVersion": "marketing-agent-categories-v1"
+    },
+    {
+      "categoryId": "171",
+      "categoryName": "Workforce SSC Payout Engine",
+      "sectorId": "9",
+      "sectorName": "Employment and Upskilling",
+      "datasetVersion": "marketing-agent-categories-v1"
+    }
+  ]
+}

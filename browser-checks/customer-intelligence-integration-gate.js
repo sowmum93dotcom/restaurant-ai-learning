@@ -2,8 +2,10 @@
  * No production provider, business data, authentication or payments are used. */
 const {chromium}=require('playwright'),assert=require('node:assert/strict'),http=require('node:http'),fs=require('node:fs'),path=require('node:path');
 const root=path.resolve(__dirname,'..');
-const work=(id,price)=>({workItemId:id,businessId:'business-'+id,businessName:id==='cheap'?'Supported jacket business':'Over-budget business',content:'Black waterproof jacket',participationAction:'Interested',location:'Manchester',customerContinuation:{routes:['website'],website:'https://example.com'},products:[{productId:'product-'+id,businessId:'business-'+id,name:'Black jacket',description:'Black waterproof jacket',price,availability:'available',continuationRoute:'website'}]});
-const catalogue=[work('expensive','£160'),work('cheap','£89')];
+const {DATASET_VERSION}=require('../api/_lib/marketing-agent-categories');
+const work=(id,price)=>({workItemId:id,businessId:'business-'+id,businessName:id==='cheap'?'Supported jacket business':'Over-budget business',content:'Black waterproof jacket',participationAction:'Interested',location:'Manchester',customerContinuation:{routes:['website'],website:'https://example.com'},products:[{productId:'product-'+id,businessId:'business-'+id,name:'Black jacket',description:'Fashion and Apparel Commerce black waterproof jacket',categoryClassification:{datasetVersion:DATASET_VERSION,categories:[{categoryId:'10',sectorId:'1'}]},price,availability:'available',continuationRoute:'website'}]});
+const opposite=work('opposite','£40');opposite.businessName='Different category business';opposite.products[0].description='Electronics and Devices black waterproof jacket';opposite.products[0].categoryClassification.categories[0].categoryId='11';
+const catalogue=[work('expensive','£160'),work('cheap','£89'),opposite];
 require('../api/_lib/persistence').getRepository=()=>({getCustomerWork:async()=>catalogue});
 require('../api/_lib/demeos-customer-authentication').resolveTrustedCustomerIdentityFromRequest=async()=>null;
 const search=require('../api/customer/possibilities'),config=require('../api/public-config'),publicWork=require('../api/customer/work');
@@ -31,9 +33,12 @@ const server=http.createServer(async(req,res)=>{
    await page.goto(base+'/customer.html#intention');await page.locator('#customer-intention-text').fill('waterproof black jacket under £100');await page.locator('#customer-intention-form button[type="submit"]').click();await page.locator('#customer-understanding-confirm').click();
    await page.locator('#customer-possibilities-list .customer-possibility-provider').filter({hasText:'Supported jacket business'}).waitFor();assert.ok(!(await page.locator('#customer-possibilities-list').innerText()).includes('Over-budget business'));
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+   await page.locator('#customer-change-intention').click();await page.locator('#customer-intention-text').fill('Fashion and Apparel Commerce black jacket under £100');await page.locator('#customer-intention-form button[type="submit"]').click();await page.locator('#customer-understanding-confirm').click();
+   await page.locator('#customer-possibilities-list .customer-possibility-provider').filter({hasText:'Supported jacket business'}).waitFor();const categoryResults=await page.locator('#customer-possibilities-list').innerText();assert.ok(!categoryResults.includes('Different category business'));assert.ok(!categoryResults.includes('Over-budget business'));assert.ok(!categoryResults.includes(DATASET_VERSION));
+
    await page.locator('#customer-change-intention').click();await page.locator('#customer-intention-text').fill('I need a service tomorrow near me');await page.locator('#customer-intention-form button[type="submit"]').click();await page.locator('#customer-clarification:not([hidden])').waitFor();assert.equal(await page.locator('#customer-clarification label').textContent(),'Which town or city should we search in?');
    await page.locator('#customer-clarification-text').fill('Manchester');await page.locator('#customer-clarification-button').click();await page.locator('#customer-understanding-confirm').click();await page.locator('#customer-no-possibilities:not([hidden])').waitFor();assert.equal(latestRequest.understanding.customerText,'I need a service tomorrow near me');assert.equal(latestRequest.place,'Manchester');
-   assert.deepEqual(errors,[]);console.log('Intelligence HTTP integration gate passed',viewport.width,'budget, location clarification, preserved request, verified no-result, no model activation');await context.close();
+   assert.deepEqual(errors,[]);console.log('Intelligence HTTP integration gate passed',viewport.width,'budget, category narrowing, location clarification, preserved request, verified no-result, no model activation');await context.close();
   }
  }finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
 })().catch(error=>{console.error(error);server.close();process.exit(1);});
