@@ -12,7 +12,7 @@ function normalizedRequiredString(value) {
   return normalized || null;
 }
 
-function toPublicCustomerWorkItem(item) {
+function toPublicCustomerWorkItem(item, {forSearchClassification = false} = {}) {
   if (!item || typeof item !== "object" || Array.isArray(item)) return null;
 
   const workItemId = normalizedRequiredString(item.workItemId);
@@ -74,7 +74,9 @@ function toPublicCustomerWorkItem(item) {
       if (!safeRoute) return null;
       const presentation = product.presentation === undefined ? undefined : customerItemContract.normalize(product.presentation);
       if (product.presentation !== undefined && !presentation) return null;
+      const categoryClassification = require('./customer-category-classification').validateClassification(product.categoryClassification, product.name.trim() + ' ' + product.description.trim());
       return {
+        ...(forSearchClassification && categoryClassification ? {categoryClassification} : {}),
         ...(presentation ? { presentation } : {}),
         productId: product.productId.trim(),
         name: product.name.trim(),
@@ -88,6 +90,10 @@ function toPublicCustomerWorkItem(item) {
       };
     }).filter(Boolean);
     if (products.length) publicItem.products = products;
+    if (forSearchClassification) {
+      const categoryClassification = require('./customer-category-classification').classificationFromProducts(products);
+      if (categoryClassification) publicItem.categoryClassification = categoryClassification;
+    }
   }
 
   if (Array.isArray(item.media)) {
@@ -116,13 +122,13 @@ function toPublicCustomerWorkItem(item) {
   return publicItem;
 }
 
-function getValidPublicCustomerWork(work, limit = DEFAULT_PUBLIC_CUSTOMER_WORK_LIMIT) {
+function getValidPublicCustomerWork(work, limit = DEFAULT_PUBLIC_CUSTOMER_WORK_LIMIT, options = {}) {
   if (!Array.isArray(work)) return [];
   const validWork = [];
   const deferredByBusiness = new Map();
   const firstBusinessPass = new Set();
   for (const item of work) {
-    const publicItem = toPublicCustomerWorkItem(item);
+    const publicItem = toPublicCustomerWorkItem(item, options);
     if (!publicItem) continue;
     const businessKey = normalizedRequiredString(item.businessId) || `work:${publicItem.workItemId}`;
     if (!firstBusinessPass.has(businessKey)) {
