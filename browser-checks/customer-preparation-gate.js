@@ -19,7 +19,9 @@ const base=process.env.DEMEOS_BROWSER_BASE_URL||'http://127.0.0.1:4173';
   await context.route('**/api/customer/identity',route=>route.fulfill({json:{authenticated}}));
   let checkoutCalls=0,checkoutKeys=[],gatewayReady=false,gatewaySelection=null;
   await context.route('**/api/customer/checkout*',async route=>{
-   checkoutCalls++;const request=route.request(),url=new URL(request.url());const req={method:request.method(),headers:{...request.headers(),host:url.host,origin:url.origin},query:Object.fromEntries(url.searchParams),body:request.postDataJSON()};checkoutKeys.push(req.headers['idempotency-key']);
+   const request=route.request(),url=new URL(request.url());const req={method:request.method(),headers:{...request.headers(),host:url.host,origin:url.origin},query:Object.fromEntries(url.searchParams),body:request.postDataJSON()};assert.ok(['GET','POST'].includes(req.method));
+   // Account receipt reads are not checkout submissions and carry no nonce.
+   if(req.method==='POST'){checkoutCalls++;checkoutKeys.push(req.headers['idempotency-key']);}else assert.equal(req.headers['idempotency-key'],undefined);
    const res={setHeader(){},status(v){this.statusCode=v;return this;},json(v){this.body=v;return this;}};
    await require('../api/_lib/customer-checkout').createHandler({authenticate:async()=>authenticated?{trustedCustomerIdentityId:'browser-only-customer'}:null,repository:()=>({getOwnedBusinessIds:async()=>[]}),...(gatewayReady?{service:{capabilities:()=>({mode:'test',livePayments:false,recipient:'business',configured:true}),begin:async(customerId,selection)=>{gatewaySelection={customerId,...selection};return {ready:true,receipt:{testMode:true,recipient:'business',reference:'browser-only-reference'},checkoutUrl:'https://gateway.example/controlled-checkout'};}}}:{})})(req,res);await route.fulfill({status:res.statusCode,json:res.body});
   });
