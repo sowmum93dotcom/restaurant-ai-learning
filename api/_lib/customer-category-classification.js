@@ -13,7 +13,9 @@ function containsCategory(text, category) {
     if (!name.every((word, offset) => tokens[index + offset]?.[0] === word)) return false;
     const prefix = normalized.slice(0,tokens[index].index);
     const boundary = Math.max(...[';', '.', '!', '?', '\n', ','].map(mark => prefix.lastIndexOf(mark)));
-    const preceding = tokens.slice(Math.max(0,index-3),index).filter(token => token.index > boundary).map(token => token[0]);
+    // Negation governs the bounded clause, even when intervening words are long.
+    // Punctuation ends that scope; the positive idiom "not only" is exempt.
+    const preceding = tokens.slice(0,index).filter(token => token.index > boundary).map(token => token[0]);
     return !preceding.some((word,offset) => ['no','not','without','avoid','exclude','excluding','except'].includes(word) && !(word === 'not' && preceding[offset+1] === 'only'));
   });
 }

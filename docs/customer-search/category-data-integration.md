@@ -38,6 +38,8 @@ The initial resolver recognises complete canonical names after case/Unicode/punc
 
 Multiple relevant categories stay candidates. Negated category names are not positive category intent. Budget, exclusions, explicit availability, exact place and unsupported date/time/distance/quantity/capacity checks remain independent and authoritative. The category layer cannot add a business, product, service, price or availability claim. It cannot change customer selections, payment, authentication or ranking approval.
 
+Literal negation checks every preceding word within the current bounded clause, rather than a fixed token window. Semicolons, full stops, exclamation/question marks, newlines and commas end that scope. The positive wording `not only` is exempt; a separate negation in the same clause still blocks classification. The same check protects customer interpretation and published product/service classification evidence. This conservative English literal rule is not a claim of general linguistic or multilingual negation understanding.
+
 ## AI, languages and privacy
 
 `validateCategoryAdvisory` provides a strict provider-independent future advisory response boundary: a known dataset version and bounded unique approved category IDs tied to literal spans of the request. Unknown IDs, renamed categories, unsupported spans and extra fields fail closed. It is not an active provider call. No external provider is connected, no candidate artifact is installed and no approval bypass is added. Baseline remains the default; shadow is invisible and candidate ranking still requires exact artifact/purpose/version/rollback approval.

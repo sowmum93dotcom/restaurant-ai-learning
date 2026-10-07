@@ -89,6 +89,45 @@ test('negated published category names cannot establish product classification',
  assert.ok(validateClassification(classification(),'Not only Fashion and Apparel Commerce'));
 });
 
+test('category negation covers the whole bounded clause in requests and published offer evidence',()=>{
+ const reference=classification('89','5');
+ const negative=[
+  'not Catering Services',
+  'No Catering Services',
+  'I do not want to use any Catering Services',
+  'We do not currently intend to offer Catering Services',
+  'We avoid offering any of the following Catering Services',
+  'We operate without any plans to provide Catering Services',
+  'We exclude from our currently published offers Catering Services',
+  'We are excluding from all our available offers Catering Services',
+  'We provide other services except for any form of Catering Services',
+  'Not only other offers but we do not currently offer Catering Services'
+ ];
+ for(const text of negative){
+  assert.deepEqual(interpretCategories(text).categoryIds,[],text);
+  assert.equal(validateClassification(reference,text),null,text);
+  assert.equal(classificationFromProducts([{name:'Published offer',description:text,categoryClassification:reference}]),null,text);
+  const start=text.indexOf('Catering');
+  assert.equal(validateCategoryAdvisory({datasetVersion:DATASET_VERSION,categories:[{categoryId:'89',start,end:start+'Catering Services'.length}]},text),null,text);
+ }
+});
+
+test('punctuation bounds negation scope without losing legitimate positive category wording',()=>{
+ for(const boundary of [';', '.', '!', '?', '\n', ',']){
+  const text='We do not currently intend to offer Cleaning Services'+boundary+' Catering Services';
+  assert.deepEqual(interpretCategories(text).categoryIds,['89'],JSON.stringify(boundary));
+  assert.ok(validateClassification(classification('89','5'),text));
+  assert.equal(validateClassification(classification('93','5'),text),null);
+  const reverse='Catering Services'+boundary+' we do not currently intend to offer Cleaning Services';
+  assert.deepEqual(interpretCategories(reverse).categoryIds,['89']);
+ }
+ for(const text of ['Fashion and Apparel Commerce','Not only Fashion and Apparel Commerce','We provide not only a wide range of Fashion and Apparel Commerce']){
+  assert.deepEqual(interpretCategories(text).categoryIds,['10'],text);
+  assert.ok(validateClassification(classification(),text),text);
+  assert.deepEqual(classificationFromProducts([{name:'Published offer',description:text,categoryClassification:classification()}]).categories,[{categoryId:'10',sectorId:'1'}]);
+ }
+});
+
 test('invalid or oversized category interpretations preserve the approved search universe',()=>{
  const items=[work()];
  for(const interpretation of [null,{datasetVersion:DATASET_VERSION,categoryIds:['172']},{datasetVersion:'wrong',categoryIds:['10']},{datasetVersion:DATASET_VERSION,categoryIds:['10','10']},{datasetVersion:DATASET_VERSION,categoryIds:Array.from({length:9},(_,i)=>String(i+1))}])assert.equal(selectCategoryWork(items,interpretation).work,items);
