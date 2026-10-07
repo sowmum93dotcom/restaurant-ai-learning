@@ -24,7 +24,8 @@ test('provider cannot introduce a possibility outside deterministic eligible can
       { possibilityId: 'eligible-2', workItemId: 'w2' }
     ]
   });
-  assert.deepEqual(result.ranked.map((x) => x.possibilityId), ['eligible-2', 'eligible-1']);
+  assert.equal(result.used, false);
+  assert.deepEqual(result.ranked, []); // Reject the entire contaminated response, not only its unknown ID.
 });
 
 test('provider failure fails closed to deterministic order', async () => {
@@ -45,4 +46,10 @@ test('ranking changes order only among already eligible possibilities', () => {
     ranked: [{ possibilityId: 'c', score: 0.9 }, { possibilityId: 'a', score: 0.7 }]
   });
   assert.deepEqual(ranked.map((x) => x.possibilityId), ['c', 'a', 'b']);
+});
+test('provider rejection values and altered or overlong IDs cannot escape the boundary',async()=>{
+ const params={request:{customerText:'jacket'},candidates:[{possibilityId:'p1',workItemId:'w1'}]};
+ assert.equal((await runCustomerIntelligence({...params,provider:{rank:async()=>Promise.reject(null)}})).reason,'provider_failure');
+ assert.equal((await runCustomerIntelligence({...params,provider:{rank:async()=>({ranked:[{possibilityId:' p1 ',score:1}]})}})).used,false);
+ assert.equal((await runCustomerIntelligence({...params,candidates:[{possibilityId:'x'.repeat(129),workItemId:'w1'}],provider:{rank:async()=>({ranked:[]})}})).used,false);
 });

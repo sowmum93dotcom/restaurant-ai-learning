@@ -56,4 +56,7 @@ function evidenceFromSearchOutcome({
   });
 }
 
-module.exports = { FEEDBACK_SIGNAL, evidenceFromCustomerFeedback, evidenceFromSearchOutcome };
+// Versioned multi-party adapter for trusted offline importers; legacy adapters
+// remain evidence-only and do not construct labels.
+function evidenceFromParty(input, policy) { return require('./customer-evidence-provenance').acceptEvidence(input, policy); }
+module.exports = { FEEDBACK_SIGNAL, evidenceFromCustomerFeedback, evidenceFromSearchOutcome, evidenceFromParty };

@@ -46,3 +46,17 @@ test('promotion requires approval and a rollback to the exact baseline', () => {
   assert.equal(approved.rollbackVersion, 'search-v1');
   assert.equal(approved.monitoringRequired, true);
 });
+test('versioned evaluation requires complete comparable evidence and zero hard-rule violations',()=>{
+ const b={...baseline,hardConstraintViolationRate:0},c={...candidate,hardConstraintViolationRate:0};
+ const report=(version,metrics)=>({...suites(),schemaVersion:1,valid:true,complete:true,safe:true,version,caseFingerprint:'judged-set-1',metrics});
+ const params={baselineVersion:'search-v1',candidateVersion:'search-v2',baselineMetrics:b,candidateMetrics:c,suiteReport:report('search-v2',c),baselineReport:report('search-v1',b)};
+ assert.equal(compareCandidate(params).promotable,true);
+ assert.equal(compareCandidate({...params,suiteReport:{...params.suiteReport,complete:false}}).promotable,false);
+ assert.equal(compareCandidate({...params,baselineReport:{...params.baselineReport,caseFingerprint:'different'}}).promotable,false);
+ assert.equal(compareCandidate({...params,candidateMetrics:{...c,hardConstraintViolationRate:0.01},gates:{minRelevance:0}}).promotable,false);
+});
+test('better ranking cannot mask regression in recall or clarification quality',()=>{
+ const {evaluateCandidate}=require('../api/_lib/customer-learning-pipeline');
+ for(const metric of ['precision','recall','mrr','ndcg','clarificationAccuracy'])assert.equal(evaluateCandidate({baseline:{...baseline,[metric]:0.9},candidate:{...candidate,[metric]:0.8}}).promotable,false);
+ assert.equal(evaluateCandidate({baseline,candidate:{...candidate,factIntegrity:0.99},gates:{minFactIntegrity:0}}).promotable,false);
+});

@@ -29,6 +29,7 @@ function compareCandidate({
   baselineMetrics,
   candidateMetrics,
   suiteReport,
+  baselineReport,
   gates
 } = {}) {
   const baseline = clean(baselineVersion, 128);
@@ -42,6 +43,8 @@ function compareCandidate({
     return { promotable: false, reason: 'required_evaluation_suite_failed', failedSuites: suite.missing };
   }
 
+  if (suiteReport?.schemaVersion === 1 && (suiteReport.valid !== true || suiteReport.complete !== true || suiteReport.safe !== true || suiteReport.version !== candidate || candidateMetrics?.hardConstraintViolationRate !== 0)) return {promotable:false,reason:'complete_safe_evaluation_required'};
+  if(suiteReport?.schemaVersion===1 && (!baselineReport || baselineReport.valid!==true || baselineReport.complete!==true || baselineReport.safe!==true || baselineReport.version!==baseline || baselineReport.caseFingerprint!==suiteReport.caseFingerprint || baselineReport.cutoff!==suiteReport.cutoff || JSON.stringify(baselineReport.metrics)!==JSON.stringify(baselineMetrics) || JSON.stringify(suiteReport.metrics)!==JSON.stringify(candidateMetrics)))return {promotable:false,reason:'comparable_evaluation_reports_required'};
   const quality = evaluateCandidate({ baseline: baselineMetrics, candidate: candidateMetrics, gates });
   return {
     ...quality,

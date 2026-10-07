@@ -5,8 +5,8 @@
  *
  * Search-time inference and model improvement are deliberately separated:
  * customer activity can create evidence, but it can never update production
- * intelligence directly. Only consented, validated, de-identified evidence can
- * enter a candidate dataset; candidate models/configurations must beat the
+ * intelligence directly. Legacy records are inspection-only; version 2
+ * adjudicated datasets are required for training. Candidate models must beat the
  * approved baseline and pass integrity gates before an explicit promotion.
  */
 
@@ -26,6 +26,7 @@ function cleanText(value, max = 2000) {
 }
 
 function buildLearningEvidence(input = {}) {
+  if(!input || typeof input!=='object' || Array.isArray(input))return {accepted:false,reason:'invalid_evidence'};
   const signal = cleanText(input.signal, 64);
   if (!ALLOWED_SIGNALS.has(signal)) return { accepted: false, reason: 'unsupported_signal' };
   if (input.learningConsent !== true) return { accepted: false, reason: 'learning_consent_required' };
@@ -57,6 +58,7 @@ function buildLearningEvidence(input = {}) {
 }
 
 function buildCandidateDataset(records = []) {
+  if(!Array.isArray(records) || records.length>10000)return {schemaVersion:1,records:[],rejected:[{reason:'bounded_records_required'}],supervisedTrainingAllowed:false,ready:false};
   const accepted = [];
   const rejected = [];
   for (const record of records) {
@@ -68,6 +70,7 @@ function buildCandidateDataset(records = []) {
     schemaVersion: 1,
     records: accepted,
     rejected,
+    supervisedTrainingAllowed: false,
     ready: accepted.length > 0
   };
 }
@@ -75,6 +78,8 @@ function buildCandidateDataset(records = []) {
 function evaluateCandidate({ baseline = {}, candidate = {}, gates = {} } = {}) {
   const required = ['relevance', 'misleadingMatchRate', 'unsupportedPrecision', 'factIntegrity'];
   const missing = required.filter((key) => !Number.isFinite(candidate[key]));
+  if (candidate.hardConstraintViolationRate !== undefined && candidate.hardConstraintViolationRate !== 0) return {promotable:false,reason:'hard_constraint_violation'};
+  if (required.some(key => Number.isFinite(candidate[key]) && (candidate[key]<0 || candidate[key]>1))) return {promotable:false,reason:'invalid_metric_range'};
   if (missing.length) return { promotable: false, reason: 'missing_metrics', missing };
 
   const baselineRelevance = Number.isFinite(baseline.relevance) ? baseline.relevance : 0;
@@ -88,10 +93,13 @@ function evaluateCandidate({ baseline = {}, candidate = {}, gates = {} } = {}) {
   const minIntegrity = Number.isFinite(gates.minFactIntegrity) ? gates.minFactIntegrity : Math.max(baselineIntegrity, 1);
 
   const failures = [];
-  if (candidate.relevance < minRelevance) failures.push('relevance');
-  if (candidate.misleadingMatchRate > maxMisleading) failures.push('misleading_match_rate');
-  if (candidate.unsupportedPrecision < minUnsupported) failures.push('unsupported_precision');
-  if (candidate.factIntegrity < minIntegrity) failures.push('fact_integrity');
+  if (candidate.relevance < Math.max(minRelevance, baselineRelevance)) failures.push('relevance');
+  if (candidate.misleadingMatchRate > Math.min(maxMisleading, baselineMisleading)) failures.push('misleading_match_rate');
+  if (candidate.unsupportedPrecision < Math.max(minUnsupported, baselineUnsupported)) failures.push('unsupported_precision');
+  if (candidate.factIntegrity !== 1 || candidate.factIntegrity < minIntegrity) failures.push('fact_integrity');
+  for(const key of ['precision','recall','mrr','ndcg','clarificationAccuracy']) {
+    if(baseline[key]!==undefined && (!Number.isFinite(baseline[key]) || baseline[key]<0 || baseline[key]>1 || !Number.isFinite(candidate[key]) || candidate[key]<baseline[key] || candidate[key]>1)) failures.push(key);
+  }
 
   return {
     promotable: failures.length === 0,

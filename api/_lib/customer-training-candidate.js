@@ -8,6 +8,8 @@
  * behind an approved adapter; production promotion remains a separate gate.
  */
 
+const { fingerprint } = require('./customer-evidence-provenance');
+const { validateTrainingDataset } = require('./customer-training-dataset');
 const { buildCandidateDataset } = require('./customer-learning-pipeline');
 
 function clean(value, max = 160) {
@@ -26,18 +28,12 @@ function stableRecord(record) {
 }
 
 function stableFingerprint(records) {
-  // FNV-1a is used only as a deterministic dataset identity, not security.
-  const input = JSON.stringify(records.map(stableRecord));
-  let hash = 0x811c9dc5;
-  for (let i = 0; i < input.length; i += 1) {
-    hash ^= input.charCodeAt(i);
-    hash = Math.imul(hash, 0x01000193);
-  }
-  return ('00000000' + (hash >>> 0).toString(16)).slice(-8);
+  return fingerprint(records.map(stableRecord));
 }
 
 function prepareTrainingCandidate({
   records = [],
+  dataset,
   baseIntelligenceVersion,
   datasetVersion,
   purpose = 'customer-search-relevance'
@@ -49,22 +45,29 @@ function prepareTrainingCandidate({
   if (!version) return { ready: false, reason: 'dataset_version_required' };
   if (!safePurpose) return { ready: false, reason: 'purpose_required' };
 
-  const dataset = buildCandidateDataset(records);
-  if (!dataset.ready) return { ready: false, reason: 'no_valid_training_evidence', rejected: dataset.rejected };
+  if (dataset !== undefined) {
+    if (!validateTrainingDataset(dataset) || dataset.datasetVersion !== version || dataset.purpose !== safePurpose) return {ready:false,reason:'invalid_controlled_dataset'};
+    return {ready:true,schemaVersion:2,job:{purpose:safePurpose,baseIntelligenceVersion:base,datasetVersion:version,
+      datasetFingerprint:dataset.fingerprint,dataset,executionAllowed:true,productionDeploymentAllowed:false},rejected:[]};
+  }
+  const legacyDataset = buildCandidateDataset(records);
+  if (!legacyDataset.ready) return { ready: false, reason: 'no_valid_training_evidence', rejected: legacyDataset.rejected };
 
-  const trainingRecords = dataset.records.map(stableRecord);
+  const trainingRecords = legacyDataset.records.map(stableRecord);
   return {
     ready: true,
     schemaVersion: 1,
     job: {
       purpose: safePurpose,
+      executionAllowed: false,
+      mode: 'evidence-inspection-only',
       baseIntelligenceVersion: base,
       datasetVersion: version,
       datasetFingerprint: stableFingerprint(trainingRecords),
       records: trainingRecords,
       productionDeploymentAllowed: false
     },
-    rejected: dataset.rejected
+    rejected: legacyDataset.rejected
   };
 }
 
@@ -75,6 +78,7 @@ function validateTrainingResult({ job, result } = {}) {
   if (!result || typeof result !== 'object' || Array.isArray(result)) {
     return { valid: false, reason: 'training_result_required' };
   }
+  if (job.executionAllowed === true && (!validateTrainingDataset(job.dataset) || job.dataset.fingerprint !== job.datasetFingerprint || result.baseIntelligenceVersion !== job.baseIntelligenceVersion || result.datasetVersion !== job.datasetVersion || result.purpose !== job.purpose)) return {valid:false,reason:'training_binding_mismatch'};
   const candidateVersion = clean(result.candidateIntelligenceVersion, 128);
   if (!candidateVersion) return { valid: false, reason: 'candidate_version_required' };
   if (result.datasetFingerprint !== job.datasetFingerprint) {
