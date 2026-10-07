@@ -597,8 +597,8 @@ async function requestCustomerPossibilities(document, understanding, fetcher, co
       confidenceState: understanding.confidenceState };
     const placeInput = document.getElementById("customer-place");
     const place = placeInput ? placeInput.value.trim().replace(/\s+/g, " ") : "";
-    const response = await fetcher("/api/customer/possibilities", {
-      method: "POST", headers: { "Content-Type": "application/json" },
+    const response = await fetcher("/api/customer/possibilities?demeos-test=1", {
+      method: "POST", cache: "no-store", headers: { "Content-Type": "application/json", "x-demeos-test-mode": "controlled-preview" },
       body: JSON.stringify(place ? { understanding: currentIntention, place } : { understanding: currentIntention })
     });
     const data = await response.json();
@@ -609,7 +609,7 @@ async function requestCustomerPossibilities(document, understanding, fetcher, co
     try {
       const identityResponse = await fetcher("/api/customer/identity", { credentials: "same-origin", headers: { Accept: "application/json" } });
       const identity = identityResponse.ok ? await identityResponse.json() : null;
-      authenticated = Boolean(identity && identity.authenticated === true);
+      authenticated = data.testMode !== true && Boolean(identity && identity.authenticated === true);
     } catch (_error) { authenticated = false; }
     if (requestSequence !== customerPossibilitiesRequestSequence) return;
     renderCustomerPossibilities(document, data.possibilities, understanding, recordParticipation,
