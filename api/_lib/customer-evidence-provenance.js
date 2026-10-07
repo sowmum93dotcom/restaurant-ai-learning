@@ -62,6 +62,20 @@ function acceptEvidence(input, {purpose='relevance-ranking', minimumTrust='verif
     const features=normalizeFeatures(s.features || [],eligibleIds);
     if (!features || features.some(x=>!x)) return reject('invalid_features');
     evidence.system={eligibleIds,rejectedIds,presentedIds,constraintsPassed:s.constraintsPassed,factIntegrityPassed:s.factIntegrityPassed,features};
+    if(s.execution!==undefined){
+      const e=s.execution;
+      if(!plain(e)||!['baseline','shadow','candidate'].includes(e.mode)||Object.keys(e).some(k=>!['mode','baselineOrdering','visibleOrdering','shadowOrdering','candidateVersion','artifactFingerprint'].includes(k)))return reject('invalid_execution_snapshot');
+      const execution={mode:e.mode};
+      for(const key of ['baselineOrdering','visibleOrdering','shadowOrdering']){
+        if(e[key]!==undefined){if(!ids(e[key])||e[key].some(x=>!eligibleIds.includes(x)))return reject('invalid_execution_snapshot');execution[key]=e[key].slice();}
+      }
+      if(!execution.baselineOrdering||!execution.visibleOrdering||execution.baselineOrdering.length!==eligibleIds.length||execution.visibleOrdering.length!==eligibleIds.length)return reject('invalid_execution_snapshot');
+      if(e.mode==='shadow'&&execution.baselineOrdering.join(',')!==execution.visibleOrdering.join(','))return reject('shadow_visibility_violation');
+      if(e.mode==='shadow'&&(!execution.shadowOrdering||execution.shadowOrdering.length!==eligibleIds.length))return reject('incomplete_shadow_snapshot');
+      if(e.candidateVersion!==undefined){if(!id(e.candidateVersion))return reject('invalid_execution_snapshot');execution.candidateVersion=e.candidateVersion;}
+      if(e.artifactFingerprint!==undefined){if(!/^[a-f0-9]{64}$/.test(e.artifactFingerprint))return reject('invalid_execution_snapshot');execution.artifactFingerprint=e.artifactFingerprint;}
+      evidence.system.execution=execution;
+    }
     if(s.clarificationAsked!==undefined){if(typeof s.clarificationAsked!=='boolean')return reject('invalid_system_snapshot');evidence.system.clarificationAsked=s.clarificationAsked;}
     if(s.rejectionReasons!==undefined){
       if(!Array.isArray(s.rejectionReasons) || s.rejectionReasons.length>200 || s.rejectionReasons.some(row=>!plain(row) || !rejectedIds.includes(row.resultId) || !ids(row.reasonCodes) || !row.reasonCodes.length) || new Set(s.rejectionReasons.map(row=>row.resultId)).size!==s.rejectionReasons.length)return reject('invalid_rejection_reasons');

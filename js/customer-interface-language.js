@@ -24,6 +24,8 @@
     fr: { stageLabel: "Étape 2 · DEMEOS comprend", heading: "Voici ce que DEMEOS a compris.", clarificationLabel: "Que souhaitez-vous accomplir ?", clarificationAction: "Mettre à jour", confirmAction: "Oui, continuer", changeAction: "Modifier", foundationTrust: "DEMEOS utilisera votre intention pour rechercher des solutions, des possibilités de participation, de la commodité et des expériences pertinentes." },
     ar: { stageLabel: "المرحلة 2 · يفهم DEMEOS", heading: "هذا ما فهمه DEMEOS.", clarificationLabel: "ما الذي تريد المساعدة في إنجازه؟", clarificationAction: "تحديث الفهم", confirmAction: "نعم، متابعة", changeAction: "تعديل", foundationTrust: "سيستخدم DEMEOS نيتك للبحث عن الحلول والمشاركة والراحة والتجارب ذات الصلة." }
   };
+  var locationQuestions={en:'Which town or city should we search in?',es:'¿En qué ciudad debemos buscar?',fr:'Dans quelle ville devons-nous chercher ?',ar:'في أي مدينة نبحث؟',pt:'Em que cidade devemos pesquisar?',zh:'您希望在哪个城市搜索？',hi:'हमें किस शहर में खोजना चाहिए?',de:'In welcher Stadt sollen wir suchen?',ja:'どの町や都市で検索しますか？'};
+  function clarificationQuestion(locale,kind){var code=normalize(locale);return kind==='location'?locationQuestions[code]:(confirmationCopy[code] || confirmationCopy.en).clarificationLabel;}
   var resultCopy = {
     en: { none: "DEMEOS doesn’t have a sufficiently supported possibility yet.", found: "Your possibilities", preparing: "Preparing possibilities connected to what you asked for…", error: "DEMEOS could not prepare possibilities. Please try again." },
     fr: { none: "DEMEOS ne dispose pas encore d’une possibilité suffisamment étayée.", found: "Vos possibilités", preparing: "Préparation des possibilités liées à votre demande…", error: "DEMEOS n’a pas pu préparer les possibilités. Veuillez réessayer." },
@@ -257,6 +259,7 @@
     });
     root.document.querySelectorAll("[data-understanding-copy]").forEach(function (element) {
       var key = element.getAttribute("data-understanding-copy");
+      if(key==='clarificationLabel' && root.document.getElementById('customer-clarification')?.getAttribute('data-clarification-kind')==='location'){element.textContent=clarificationQuestion(code,'location');return;}
       if (Object.prototype.hasOwnProperty.call(confirmationCopy[code], key)) element.textContent = confirmationCopy[code][key];
     });
     Object.keys(staticSelectors).forEach(function (key) {
@@ -388,8 +391,8 @@
     apply(preferred);
     select.addEventListener("change", function () { var code = apply(select.value); setSaved(code); });
   }
-  if (typeof module !== "undefined" && module.exports) module.exports = { normalize: normalize, copy: copy, intentionLabels: intentionLabels, journeyCopy: journeyCopy, confirmationCopy: confirmationCopy, resultCopy: resultCopy, localizeResult: localizeResult, staticCopy: staticCopy, possibilityCopy: possibilityCopy, noMatchCopy: noMatchCopy, statusCopy: statusCopy, localizeStatus: localizeStatus, additionalStatuses: additionalStatuses, feedbackCopy: feedbackCopy, localizeFeedback: localizeFeedback, discoverCopy: discoverCopy, localizeDiscoverStatus: localizeDiscoverStatus };
-  if (root) root.DEMEOSCustomerInterfaceLanguage = Object.freeze({ apply: apply, normalize: normalize, mediaPosition: controlledMediaPosition, loadingCopy: Object.keys(discoverCopy).map(function(code){return discoverCopy[code][11];}) });
+  if (typeof module !== "undefined" && module.exports) module.exports = { clarificationQuestion: clarificationQuestion, normalize: normalize, copy: copy, intentionLabels: intentionLabels, journeyCopy: journeyCopy, confirmationCopy: confirmationCopy, resultCopy: resultCopy, localizeResult: localizeResult, staticCopy: staticCopy, possibilityCopy: possibilityCopy, noMatchCopy: noMatchCopy, statusCopy: statusCopy, localizeStatus: localizeStatus, additionalStatuses: additionalStatuses, feedbackCopy: feedbackCopy, localizeFeedback: localizeFeedback, discoverCopy: discoverCopy, localizeDiscoverStatus: localizeDiscoverStatus };
+  if (root) root.DEMEOSCustomerInterfaceLanguage = Object.freeze({ apply: apply, clarificationQuestion: clarificationQuestion, normalize: normalize, mediaPosition: controlledMediaPosition, loadingCopy: Object.keys(discoverCopy).map(function(code){return discoverCopy[code][11];}) });
   if (root && root.document) {
     if (root.document.readyState === "loading") root.document.addEventListener("DOMContentLoaded", start);
     else start();

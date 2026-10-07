@@ -74,7 +74,7 @@ module.exports = async function handler(req, res) {
     });
   }
   try {
-    const work = await getRepository().getCustomerWork();
+    const work = await getRepository().getCustomerWork({forCatalogueValidation:true});
     const catalogue = mainFeed ? selectCustomerCatalogue(work, req) : {work, testMode: false};
     return res.status(200).json({
       work: getValidPublicCustomerWork(catalogue.work),

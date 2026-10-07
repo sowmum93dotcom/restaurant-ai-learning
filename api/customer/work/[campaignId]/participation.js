@@ -1,5 +1,6 @@
 const { getRepository } = require("../../../_lib/persistence.js");
 const { parseCustomerFeedback } = require("../../../_lib/customer-feedback-contract.js");
+const {queueCustomerAction}=require('../../../_lib/customer-search-events');
 const { resolveTrustedCustomerIdentityFromRequest } = require("../../../_lib/demeos-customer-authentication.js");
 const {
   DEMEOS_ACTOR_SCOPES,
@@ -31,6 +32,7 @@ async function handleFeedback(req, res, campaignId) {
     const recorded = await repository.recordCustomerFeedback(campaignId, feedback,
       customer.customerId);
     if (!recorded) return res.status(404).json({ error: "An issued, approved DEMEOS possibility was not found." });
+    queueCustomerAction({customerId:customer.customerId,workItemId:campaignId,signal:recorded.response==='Relevant'?'result_relevant':'correction'});
     return res.status(201).json({ feedback: { response: recorded.response } });
   } catch (error) {
     console.error("Could not record customer feedback:", error);
@@ -64,6 +66,7 @@ module.exports = async function handler(req, res) {
     const participation = await repository.recordCustomerParticipation(campaignId, action,
       customer.customerId);
     if (!participation) return res.status(404).json({ error: "An issued, approved DEMEOS possibility was not found." });
+    queueCustomerAction({customerId:customer.customerId,workItemId:campaignId,signal:'selection'});
     return res.status(201).json({ participation: { action: participation.action } });
   } catch (error) {
     console.error("Could not record customer participation:", error);

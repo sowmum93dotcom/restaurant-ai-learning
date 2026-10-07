@@ -13,6 +13,7 @@ const { validateCustomerIntention } = require("./_lib/customer-intention-contrac
 const { validateCustomerPreference } = require("./_lib/customer-preference-contract.js");
 const { buildTrustedCustomerUnderstanding } = require("./_lib/customer-understanding-context.js");
 const { getRepository } = require("./_lib/persistence.js");
+const {queueCustomerAction}=require('./_lib/customer-search-events');
 
 function isCustomerIdentityRequest(req) {
   return req?.query?.resource === "customer-identity" ||
@@ -141,6 +142,7 @@ async function publicConfig(req, res) {
       }
       const saved = await repository.saveCustomerPossibility(identity.trustedCustomerIdentityId, body.workItemId);
       if (!saved) return res.status(404).json({ error: "This possibility is no longer available to save." });
+      queueCustomerAction({customerId:identity.trustedCustomerIdentityId,workItemId:body.workItemId,signal:'save'});
       return res.status(201).json({ possibility: saved });
     }
     if (req.method === 'GET') return res.status(200).json({ intentions: await repository.getCustomerIntentions(identity.trustedCustomerIdentityId, 50) });

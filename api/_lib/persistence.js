@@ -750,7 +750,7 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
         timestamp: row.decided_at instanceof Date ? row.decided_at.toISOString() : row.decided_at };
     },
 
-    async getCustomerWork() {
+    async getCustomerWork({ forCatalogueValidation = false } = {}) {
       await database.ensureSchema();
       const mediaStorage = getMediaStorageAdapter();
       const createDeliveryRead = mediaStorage && typeof mediaStorage.createDeliveryRead === "function"
@@ -788,7 +788,11 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
             ) : []
           });
           if (!publicItem) continue;
-          publicWork.push(publicItem);
+          // Server-only ownership context survives until the shared public
+          // catalogue performs its final validation. Public/default consumers
+          // still receive the existing identifier-free projection.
+          publicWork.push(forCatalogueValidation ? {...publicItem,businessId:row.business_id,
+            ...(publicItem.products?{products:publicItem.products.map(product=>({...product,businessId:row.business_id}))}:{})} : publicItem);
           if (publicWork.length === 20) break;
         }
         if (result.rows.length < pageSize) break;

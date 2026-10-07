@@ -598,7 +598,7 @@ async function requestCustomerPossibilities(document, understanding, fetcher, co
     const placeInput = document.getElementById("customer-place");
     const place = placeInput ? placeInput.value.trim().replace(/\s+/g, " ") : "";
     const response = await fetcher("/api/customer/possibilities?demeos-test=1", {
-      method: "POST", cache: "no-store", headers: { "Content-Type": "application/json", "x-demeos-test-mode": "controlled-preview" },
+      method: "POST", cache: "no-store", headers: { "Content-Type": "application/json", "x-demeos-test-mode": "controlled-preview", "x-demeos-customer-locale": document.documentElement?.lang || 'en' },
       body: JSON.stringify(place ? { understanding: currentIntention, place } : { understanding: currentIntention })
     });
     const data = await response.json();
@@ -749,13 +749,20 @@ function initializeCustomerIntention(document, navigatorValue, now) {
     try {
       const response = await fetch("/api/customer/understanding", { method: "POST", credentials: "same-origin",
         headers: { "Content-Type": "application/json" }, body: JSON.stringify({
-          intention: selectedIntention, customerText, clarificationText: clarificationText || ""
+          intention: selectedIntention, customerText, clarificationText: clarificationText || "",
+          place: document.getElementById('customer-place')?.value || ''
         }) });
       const data = response.ok ? await response.json() : null;
       if (data && data.understanding) currentUnderstanding = data.understanding;
     } catch (_error) { /* The existing anonymous, intention-first flow remains available. */ }
     document.getElementById("customer-understanding-summary").textContent = currentUnderstanding.understanding;
     const needsClarification = currentUnderstanding.confidenceState === "needs-clarification";
+    const clarificationRegion=document.getElementById('customer-clarification');
+    clarificationRegion.setAttribute('data-clarification-kind',currentUnderstanding.clarificationKind || 'detail');
+    if(globalThis.DEMEOSCustomerInterfaceLanguage?.clarificationQuestion){
+      const label=clarificationRegion.querySelector('label');
+      if(label)label.textContent=globalThis.DEMEOSCustomerInterfaceLanguage.clarificationQuestion(document.documentElement.lang,currentUnderstanding.clarificationKind);
+    }
     document.getElementById("customer-clarification").hidden = !needsClarification;
     document.getElementById("customer-understanding-actions").hidden = needsClarification;
     document.getElementById("customer-understanding-confirm").hidden = false;
@@ -808,7 +815,11 @@ function initializeCustomerIntention(document, navigatorValue, now) {
   });
   document.getElementById("customer-clarification-button").addEventListener("click", function () {
     const detail = normalizedCustomerIntention(document.getElementById("customer-clarification-text").value);
-    if (detail) showUnderstanding(detail);
+    if (detail && currentUnderstanding?.clarificationKind==='location') {
+      const place=document.getElementById('customer-place');
+      if(place)place.value=detail;
+      showUnderstanding('');
+    } else if (detail) showUnderstanding(detail);
   });
   document.getElementById("customer-understanding-change").addEventListener("click", function () {
     changeIntention();
