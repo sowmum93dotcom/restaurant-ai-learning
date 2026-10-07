@@ -1,3 +1,4 @@
+const { selectCustomerCatalogue } = require("../_lib/customer-catalogue.js");
 const { getRepository } = require("../_lib/persistence.js");
 const { DEMEOS_ACTOR_SCOPES, DEMEOS_ACTIONS, canPerformDemeosAction } = require("../_lib/demeos-rules.js");
 const { createAuthenticatedCustomerContext } = require("../_lib/demeos-actor-context.js");
@@ -10,6 +11,8 @@ const {
 } = require("../_lib/customer-possibility-issuance-trust.js");
 
 module.exports = async function handler(req, res) {
+  res.setHeader("Cache-Control", "private, no-store");
+  res.setHeader("Vercel-CDN-Cache-Control", "no-store");
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return res.status(405).json({ error: "Method not allowed" });
@@ -25,11 +28,13 @@ module.exports = async function handler(req, res) {
   if (place === null) return res.status(400).json({ error: "A valid optional place is required." });
   try {
     const repository = getRepository();
-    const work = await repository.getCustomerWork();
+    const catalogue = selectCustomerCatalogue(await repository.getCustomerWork(), req);
+    const work = catalogue.work;
     let preferences = [];
     let feedback = [];
     let persistedIntention = null;
-    const identity = await resolveTrustedCustomerIdentityFromRequest(req);
+    // Fictional examples never become customer history or trusted issuance.
+    const identity = catalogue.testMode ? null : await resolveTrustedCustomerIdentityFromRequest(req);
     const customerIdentity = identity && !(await repository.getOwnedBusinessIds(identity.trustedCustomerIdentityId)).length
       ? identity : null;
     if (customerIdentity) {
@@ -66,7 +71,8 @@ module.exports = async function handler(req, res) {
       const issued = new Set(confirmedWorkItemIds);
       possibilities = possibilities.filter(function (possibility) { return issued.has(possibility.workItemId); });
     }
-    return res.status(200).json(place ? { possibilities, placeApplied: true } : { possibilities });
+    return res.status(200).json({ possibilities, ...(place ? { placeApplied: true } : {}),
+      ...(catalogue.testMode ? { testMode: true } : {}) });
   } catch (error) {
     console.error("Could not prepare customer possibilities:", error);
     return res.status(500).json({ error: "DEMEOS could not prepare possibilities." });

@@ -6,11 +6,7 @@ const {
 } = require("../_lib/demeos-rules.js");
 const { getValidPublicCustomerWork } = require("../_lib/customer-public-work-contract.js");
 
-const DISCOVER_TEST_MODE_HEADER = "x-demeos-test-mode";
-const DISCOVER_TEST_MODE_LEGACY_HEADER = "x-demeos-discover-test";
-const DISCOVER_TEST_MODE_VALUE = "controlled-preview";
-const DISCOVER_TEST_MODE_QUERY = "demeos-test";
-
+const { isDiscoverTestMode, selectCustomerCatalogue } = require("../_lib/customer-catalogue.js");
 const { productExperienceTestContent } = require("../_lib/controlled-customer-test-content.js");
 
 function legacyDiscoverTestContent() {
@@ -50,19 +46,8 @@ function legacyDiscoverTestContent() {
 
 function discoverTestContent(req) {
   const headers = req && req.headers || {};
-  if (headers[DISCOVER_TEST_MODE_LEGACY_HEADER] === DISCOVER_TEST_MODE_VALUE) return legacyDiscoverTestContent();
+  if (headers["x-demeos-discover-test"] === "controlled-preview") return legacyDiscoverTestContent();
   return productExperienceTestContent();
-}
-
-function isDiscoverTestMode(req) {
-  if (process.env.DEMEOS_CONTROLLED_TEST_CONTENT === "disabled") return false;
-  const headers = req && req.headers || {};
-  const header = headers[DISCOVER_TEST_MODE_HEADER];
-  const legacyHeader = headers[DISCOVER_TEST_MODE_LEGACY_HEADER];
-  const query = req && req.query && req.query[DISCOVER_TEST_MODE_QUERY];
-  const legacyControlledPreview = query === "1" && legacyHeader === DISCOVER_TEST_MODE_VALUE;
-  const productControlledPreview = query === "1" && header === DISCOVER_TEST_MODE_VALUE;
-  return legacyControlledPreview || productControlledPreview;
 }
 
 module.exports = async function handler(req, res) {
@@ -90,15 +75,10 @@ module.exports = async function handler(req, res) {
   }
   try {
     const work = await getRepository().getCustomerWork();
-    const publicWork = getValidPublicCustomerWork(work);
-    // Temporary content lives inside the main Discover feed until approved
-    // business content exists. A failed repository read never reveals fixtures.
-    if (mainFeed && publicWork.length === 0 && isDiscoverTestMode(req)) {
-      return res.status(200).json({work: getValidPublicCustomerWork(productExperienceTestContent()), testMode: true, customerPackages: []});
-    }
+    const catalogue = mainFeed ? selectCustomerCatalogue(work, req) : {work, testMode: false};
     return res.status(200).json({
-      work: publicWork,
-      testMode: false,
+      work: getValidPublicCustomerWork(catalogue.work),
+      testMode: catalogue.testMode,
       customerPackages: []
     });
   } catch (error) {

@@ -281,7 +281,8 @@ test("normal Discover rejects a controlled test feed response", function () {
 test("Discover prioritizes published work and keeps explicit preview isolated", function () {
   const api = read("api/customer/work.js");
   assert.match(api, /if \(!mainFeed && isDiscoverTestMode\(req\)\) \{[\s\S]*?work: getValidPublicCustomerWork\(discoverTestContent\(req\)\),[\s\S]*?testMode: true/);
-  assert.match(api, /work: publicWork,\s+testMode: false/);
+  assert.match(api, /selectCustomerCatalogue\(work, req\)/);
+  assert.match(read("api/_lib/customer-catalogue.js"), /getValidPublicCustomerWork\(work\).length \|\| !isDiscoverTestMode\(req\)/);
   assert.doesNotMatch(api, /work: useSamples \?/);
   const customer = read("js/customer.js");
   assert.match(customer, /Nothing to discover just yet/);

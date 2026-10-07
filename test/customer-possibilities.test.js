@@ -20,7 +20,7 @@ function response() {
   return { statusCode: null, body: null, headers: {}, setHeader(name, value) { this.headers[name] = value; },
     status(code) { this.statusCode = code; return this; }, json(value) { this.body = value; return this; } };
 }
-async function post(body, repository = { async getCustomerWork() { return []; } }) {
+async function post(body, repository = { async getCustomerWork() { return []; } }, requestOptions = {}) {
   const persistence = require(persistencePath);
   const issuanceTrust = require("../api/_lib/customer-possibility-issuance-trust.js");
   const original = persistence.getRepository;
@@ -33,7 +33,7 @@ async function post(body, repository = { async getCustomerWork() { return []; } 
   delete require.cache[routePath];
   const handler = require(routePath);
   const res = response();
-  try { await handler({ method: "POST", body }, res); }
+  try { await handler({ method: "POST", body, ...requestOptions }, res); }
   finally { persistence.getRepository = original; issuanceTrust.prepareCustomerPossibilityIssuanceTrust = originalPrepare;
     issuanceTrust.confirmCustomerPossibilityIssuanceDelivery = originalConfirm; delete require.cache[routePath]; }
   return res;
@@ -257,4 +257,22 @@ test("malformed place is rejected before repository access and does not disclose
     assert.equal(result.body.error, "A valid optional place is required.");
   }
   assert.equal(calls, 0);
+});
+
+const previewOptions = {query: {'demeos-test': '1'}, headers: {'x-demeos-test-mode': 'controlled-preview'}};
+test("request endpoint uses the Discover catalogue without persisting fictional examples", async () => {
+  const repository = {async getCustomerWork() {return [];}, async saveCustomerIntention() {throw new Error('No fictional history');}};
+  const res = await post({understanding: confirmed('', 'jacket')}, repository, previewOptions);
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.testMode, true);
+  assert.equal(res.body.possibilities[0].products[0].productId, 'test-product-mens-fashion');
+  assert.equal(res.headers['Cache-Control'], 'private, no-store');
+});
+test("request endpoint replaces examples with real work and does not mask repository failure", async () => {
+  const res = await post({understanding: confirmed('', 'quiet dinner')}, {async getCustomerWork() {return [work('real', 'Quiet family dinner')];}}, previewOptions);
+  assert.deepEqual(res.body.possibilities.map(x => x.workItemId), ['real']);
+  assert.equal(res.body.testMode, undefined);
+  const failed = await post({understanding: confirmed('', 'jacket')}, {async getCustomerWork() {throw new Error('repository unavailable');}}, previewOptions);
+  assert.equal(failed.statusCode, 500);
+  assert.equal(failed.body.possibilities, undefined);
 });

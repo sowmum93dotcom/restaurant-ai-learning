@@ -20,6 +20,14 @@ const STOP_WORDS = new Set([
 // without turning the Customer Experience into open-ended keyword search.  A
 // concept must be evidenced in both the current request and authorized work.
 const SOLUTION_CONCEPTS = Object.freeze([
+  // Narrow product/service families: category similarity is not suitability.
+  ...[
+    ["dress", ["dress", "dresses"]], ["jacket", ["jacket", "jackets"]],
+    ["activewear", ["activewear"]], ["groceries", ["grocery", "groceries"]],
+    ["running", ["running", "jogging"]], ["football", ["football", "soccer"]],
+    ["fishing", ["fishing"]], ["camping", ["camping", "campsite"]],
+    ["hiking", ["hiking", "hike"]]
+  ].map(([name, terms]) => Object.freeze({name, terms: Object.freeze(terms)})),
   Object.freeze({ name: "meal", terms: Object.freeze(["meal", "dinner", "lunch", "breakfast", "supper", "food", "eat", "restaurant"]) }),
   Object.freeze({ name: "bicycle care", terms: Object.freeze(["bicycle", "bike", "cycle"]) }),
   Object.freeze({ name: "wellbeing", terms: Object.freeze(["wellbeing", "wellness", "health", "massage", "fitness"]) }),
@@ -85,9 +93,11 @@ function excludedCustomerTerms(customerText) {
   const words = String(customerText || "").toLocaleLowerCase("en").match(/[\p{L}\p{N}]+/gu) || [];
   const excluded = new Set();
   for (let index = 0; index < words.length - 1; index += 1) {
-    if (![ "without", "exclude", "excluding", "avoid", "no", "except" ].includes(words[index])) continue;
+    if (![ "without", "exclude", "excluding", "avoid", "no", "except", "not" ].includes(words[index])) continue;
     let position = index + 1;
-    if (["any", "added"].includes(words[position])) position += 1;
+    // "Not only" adds possibilities; it is not an exclusion.
+    if (words[index] === "not" && words[position] === "only") continue;
+    while (["a", "an", "the", "any", "added", "too"].includes(words[position])) position += 1;
     const next = words[position];
     if (!next || next.length < 3 || STOP_WORDS.has(next)) continue;
     excluded.add(next);
@@ -119,8 +129,31 @@ function explicitAdditionalRequirements(customerText) {
   return meaningfulTerms(words.slice(index + 1, end < 0 ? undefined : end).join(" "));
 }
 
+// Specific requests and atmosphere qualifiers require evidence in the same
+// offer. A broad wellbeing, journey or shared-time category is not enough.
+const SPECIFIC_OFFER_REQUIREMENTS = Object.freeze([
+  Object.freeze(["quiet", "peaceful", "tranquil"]),
+  Object.freeze(["relaxed", "relaxing", "relaxation"]),
+  Object.freeze(["massage", "massages"]),
+  Object.freeze(["fitness", "gym", "workout", "exercise"]),
+  Object.freeze(["hotel", "hotels", "accommodation"]),
+  Object.freeze(["breakfast", "breakfasts"]),
+  Object.freeze(["dinner", "supper"]),
+  Object.freeze(["lunch", "luncheon"]),
+  Object.freeze(["sauna", "saunas"])
+]);
+function supportsRequestedOffer(customerTerms, sourceTerms) {
+  return SPECIFIC_OFFER_REQUIREMENTS.every(forms =>
+    !forms.some(term => customerTerms.has(term)) || forms.some(term => sourceTerms.has(term)));
+}
+
 function evidencedConcepts(customerTerms, contentTerms) {
   return SOLUTION_CONCEPTS.filter(function (concept) {
+    // "Running" can be a verb for an unrelated activity, such as running a
+    // workshop. Alone, or with sporting context, it can identify the sport.
+    if (concept.name === "running" && !customerTerms.has("jogging") &&
+        !(customerTerms.size === 1 && customerTerms.has("running")) &&
+        !["session", "sessions", "fitness", "exercise", "jog", "sport", "sports"].some(term => customerTerms.has(term))) return false;
     return concept.terms.some(function (term) { return customerTerms.has(term); }) &&
       concept.terms.some(function (term) { return contentTerms.has(term); });
   }).map(function (concept) { return concept.name; });
@@ -155,7 +188,7 @@ const SERVICE_WORD_FAMILIES = Object.freeze([
   Object.freeze(["deliver", "delivers", "delivered", "delivery", "deliveries", "delivering"])
 ]);
 function hasRequirementEvidence(term, sourceTerms) {
-  const family = SERVICE_WORD_FAMILIES.find(function (forms) { return forms.includes(term); });
+  const family = SERVICE_WORD_FAMILIES.concat(SPECIFIC_OFFER_REQUIREMENTS).find(function (forms) { return forms.includes(term); });
   return family ? family.some(function (form) { return sourceTerms.has(form); }) : sourceTerms.has(term);
 }
 
@@ -177,7 +210,7 @@ function productRelevance(product, customerTerms) {
   const productTerms = meaningfulTerms([product.name, product.description].join(" "));
   const evidence = Array.from(customerTerms).filter(function (term) { return productTerms.has(term); }).sort();
   const concepts = evidencedConcepts(customerTerms, productTerms);
-  if (!supportsExplicitService(customerTerms, productTerms) || (evidence.length < 2 && concepts.length === 0)) return null;
+  if (!supportsRequestedOffer(customerTerms, productTerms) || !supportsExplicitService(customerTerms, productTerms) || (evidence.length < 2 && concepts.length === 0)) return null;
   return Object.freeze({
     basis: "current-intention-product-information",
     evidence: (evidence.length >= 2 ? evidence : concepts).slice(0, 5)
@@ -210,7 +243,7 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
     ? meaningfulTerms(requestWords.slice(0, requirementStart).join(" ")) : new Set();
   const customerTerms = meaningfulTerms([understanding.intention, understanding.customerText].join(" "));
   excludedTerms.forEach(function (term) {
-    const family = SERVICE_WORD_FAMILIES.find(function (forms) { return forms.includes(term); });
+    const family = SERVICE_WORD_FAMILIES.concat(SPECIFIC_OFFER_REQUIREMENTS).find(function (forms) { return forms.includes(term); });
     (family || [term]).forEach(function (form) { customerTerms.delete(form); });
   });
   const guidanceTerms = preferenceTerms(storedPreferences);
@@ -244,7 +277,7 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
     const matchedTerms = matchingSources.reduce(function (best, terms) {
       const evidence = Array.from(customerTerms).filter(function (term) { return terms.has(term); }).sort();
       const concepts = evidencedConcepts(customerTerms, terms);
-      const strength = supportsExplicitService(customerTerms, terms) ? evidence.length + concepts.length : -1;
+      const strength = supportsRequestedOffer(customerTerms, terms) && supportsExplicitService(customerTerms, terms) ? evidence.length + concepts.length : -1;
       return !best || strength > best.strength ? { evidence, concepts, strength } : best;
     }, null);
     const evidence = matchedTerms.evidence;

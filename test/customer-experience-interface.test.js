@@ -935,7 +935,7 @@ test("a late possibilities response cannot replace the latest customer request",
   ids.forEach((id) => { document.elements[id] = new Element(); });
   const pending = [];
   const fetcher = (url) => {
-    if (url === "/api/customer/possibilities") return new Promise((resolve) => pending.push(resolve));
+    if (url === "/api/customer/possibilities?demeos-test=1") return new Promise((resolve) => pending.push(resolve));
     throw new Error("Unexpected request");
   };
   const first = requestCustomerPossibilities(document, { intention: "First", confidenceState: "confirmed" }, fetcher, {});
@@ -959,7 +959,7 @@ test("customer possibilities failure offers retry for the same confirmed request
   const requests = [];
   let resolveRetry;
   const fetcher = (url, options) => {
-    if (url !== "/api/customer/possibilities") throw new Error("Unexpected request");
+    if (url !== "/api/customer/possibilities?demeos-test=1") throw new Error("Unexpected request");
     requests.push(JSON.parse(options.body).understanding);
     if (requests.length === 1) return Promise.resolve({ ok: false, json: async () => ({}) });
     return new Promise((resolve) => { resolveRetry = resolve; });
