@@ -35,7 +35,7 @@ function constrainPossibility(possibility,intention){
   if(!intention.budget&&!intention.mustHave.length&&!intention.requireAvailability)return {accepted:true,possibility};
   const products=(possibility.products || []).filter(product=>productSatisfies(product,intention));
   if(products.length)return {accepted:true,possibility:{...possibility,products}};
-  if(!intention.budget&&(!intention.requireAvailability||['available','limited'].includes(possibility.operationalAvailability?.status))&&intention.mustHave.every(value=>positiveFact(possibility.content,value)))return {accepted:true,possibility};
+  if(!(possibility.products || []).length&&!intention.budget&&(!intention.requireAvailability||['available','limited'].includes(possibility.operationalAvailability?.status))&&intention.mustHave.every(value=>positiveFact(possibility.content,value)))return {accepted:true,possibility};
   return {accepted:false,reason:'hard_requirement_not_supported'};
 }
 module.exports={constrainPossibility,productSatisfies,meetsBudget};

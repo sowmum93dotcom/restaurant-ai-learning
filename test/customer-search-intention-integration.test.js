@@ -36,3 +36,13 @@ test('one location clarification preserves useful broad requests and existing ni
 test('expressed preferences are not silently upgraded to must-have requirements',()=>{
  const intention=structuredIntention(text('I need a jacket, preferably blue'));assert.deepEqual(intention.preferences,['blue']);assert.deepEqual(intention.mustHave,[]);
 });
+test('provider cannot upgrade a preference or reinterpret a fragment inside a word',()=>{
+ const query='jacket preferably blue',baseline=structuredIntention(text(query));const start=query.indexOf('blue');
+ assert.equal(validateUnderstandingOutput({schemaVersion:1,extractions:[{field:'mustHave',start,end:start+4}]},query,baseline),null);
+ const fragment='waterproof jacket';assert.equal(validateUnderstandingOutput({schemaVersion:1,extractions:[{field:'mustHave',start:5,end:10}]},fragment,structuredIntention(text(fragment))),null);
+ assert.ok(validateUnderstandingOutput({schemaVersion:1,extractions:[{field:'preference',start,end:start+4}]},query,baseline));
+});
+
+test('provider text excludes bearer authentication and API key assignments',()=>{
+ assert.doesNotMatch(providerText('jacket Bearer abc.def.ghi api_key=private-key authorization=private-token Authorization: Bearer xyz.secret.token'),/abc\.def|xyz\.secret|private-key|private-token/);
+});

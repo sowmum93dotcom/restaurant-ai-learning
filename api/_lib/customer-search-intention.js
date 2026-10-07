@@ -42,6 +42,11 @@ function validateUnderstandingOutput(raw, text, baseline) {
     if(!plain(item)||Object.keys(item).sort().join(',')!=='end,field,start'||!EXTRACTION_FIELDS.includes(item.field)||!Number.isInteger(item.start)||!Number.isInteger(item.end)||item.start<0||item.end<=item.start||item.end>text.length||item.end-item.start>120)return null;
     const key=JSON.stringify(item);if(seen.has(key))return null;seen.add(key);
     const value=text.slice(item.start,item.end).trim();if(!value)return null;
+    // A provider may not reinterpret a substring within a word or promote an
+    // expressed preference into a hard requirement.
+    const word=/[\p{L}\p{N}]/u;
+    if((item.start>0&&word.test(text[item.start-1])&&word.test(text[item.start]))||(item.end<text.length&&word.test(text[item.end-1])&&word.test(text[item.end])))return null;
+    if(item.field==='mustHave'&&(baseline.preferences.includes(value.toLowerCase())||/\b(?:prefer|preferably|ideally)\s*$/i.test(text.slice(Math.max(0,item.start-20),item.start))))return null;
     const preceding=text.slice(Math.max(0,item.start-20),item.start);
     if(['mustHave','preference','concept'].includes(item.field)&&(/\b(?:not|no|without|avoid)\s*$/i.test(preceding)||baseline.exclusions.includes(value.toLowerCase())))return null;
     if(item.field==='exclusion'&&!baseline.exclusions.includes(value.toLowerCase())&&!/\b(?:not|no|without|avoid|exclude|excluding)\s*$/i.test(preceding))return null;

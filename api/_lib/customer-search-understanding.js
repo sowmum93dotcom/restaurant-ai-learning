@@ -10,7 +10,7 @@ async function deadline(operation,ms=150){
 function providerText(text){
   // No profile/contact objects are sent. Redact obvious contacts/secrets in free
   // text as well; approval still requires a reviewed provider data policy.
-  return String(text).replace(/[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/g,'[redacted]').replace(/\b(?:\d[ -]?){7,19}\b/g,'[redacted]').replace(/\b(?:token|password|secret)\s*[:=]\s*\S+/gi,'[redacted]');
+  return String(text).replace(/\bBearer\s+[A-Za-z0-9._~+\/-]+=*/gi,'[redacted]').replace(/[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/g,'[redacted]').replace(/\b(?:\d[ -]?){7,19}\b/g,'[redacted]').replace(/\b(?:token|password|secret|api[_-]?key|authorization)\s*[:=]\s*\S+/gi,'[redacted]');
 }
 async function understandSearch({understanding,place='',locale='en',configuration}={}){
   const baseline=structuredIntention(understanding,place,locale);

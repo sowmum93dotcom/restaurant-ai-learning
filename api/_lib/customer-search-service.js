@@ -28,7 +28,7 @@ async function prepareCustomerSearch({understanding,work,preferences=[],feedback
 }
 async function completeCustomerSearch({prepared,possibilities,understanding,work,identity,testMode,configuration={},defer}={}){
   const baseline=possibilities;
-  const request={intention:understanding.intention,customerText:providerText(understanding.customerText),place:prepared.intention.location || '',locale:prepared.intention.locale};
+  const request={intention:providerText(understanding.intention),customerText:providerText(understanding.customerText),place:providerText(prepared.intention.location || ''),locale:prepared.intention.locale};
   const run=async()=>{
     const artifact=configuration.artifact;
     const provider=artifact&&configuration.mode==='shadow'&&configuration.featurePolicyVersion===FEATURE_POLICY?offlineShadowProvider(artifact,baseline,configuration.baselineVersion):configuration.allowProviderRequest===true?configuration.provider:null;

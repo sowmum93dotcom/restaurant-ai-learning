@@ -81,18 +81,20 @@ async function runCustomerIntelligence({ provider, request, candidates = [], tim
     ]);
   } catch (error) { return fail(error?.message === 'provider_timeout' ? 'provider_timeout' : 'provider_failure'); }
   finally {clearTimeout(timer);}
-  if (!raw || typeof raw !== 'object' || Array.isArray(raw) || Object.keys(raw).some(k => k !== 'ranked') || !Array.isArray(raw.ranked) || !raw.ranked.length || raw.ranked.length > DEFAULT_LIMITS.maxResults) return fail('invalid_provider_response');
-  const ranked = [], seen = new Set();
-  for (const item of raw.ranked) {
-    // Explanations/business facts are forbidden provider output in this rank-only contract.
-    if (!item || Object.keys(item).some(k => !['possibilityId','score','reasonCodes'].includes(k)) || typeof item.score !== 'number' || seen.has(item.possibilityId) ||
-        (item.reasonCodes !== undefined && (!Array.isArray(item.reasonCodes) || item.reasonCodes.length > 10 || item.reasonCodes.some(x => typeof x !== 'string' || !/^[a-z_]{1,64}$/.test(x))))) return fail('invalid_provider_response');
-    const valid = normalizeRankedResult(item,eligibleIds);
-    if (!valid) return fail('invalid_provider_response');
-    seen.add(valid.possibilityId);ranked.push(valid);
-  }
-  ranked.sort((a,b) => b.score-a.score);
-  return {used:true, reason:'ranked', ranked};
+  try {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw) || Object.keys(raw).some(k => k !== 'ranked') || !Array.isArray(raw.ranked) || !raw.ranked.length || raw.ranked.length > DEFAULT_LIMITS.maxResults) return fail('invalid_provider_response');
+    const ranked = [], seen = new Set();
+    for (const item of raw.ranked) {
+      // Explanations/business facts are forbidden provider output in this rank-only contract.
+      if (!item || Object.keys(item).some(k => !['possibilityId','score','reasonCodes'].includes(k)) || typeof item.score !== 'number' || seen.has(item.possibilityId) ||
+          (item.reasonCodes !== undefined && (!Array.isArray(item.reasonCodes) || item.reasonCodes.length > 10 || item.reasonCodes.some(x => typeof x !== 'string' || !/^[a-z_]{1,64}$/.test(x))))) return fail('invalid_provider_response');
+      const valid = normalizeRankedResult(item,eligibleIds);
+      if (!valid) return fail('invalid_provider_response');
+      seen.add(valid.possibilityId);ranked.push(valid);
+    }
+    ranked.sort((a,b) => b.score-a.score);
+    return {used:true, reason:'ranked', ranked};
+  } catch (_error) { return fail('invalid_provider_response'); }
 }
 
 function applyIntelligenceRanking(possibilities = [], intelligence = {}) {

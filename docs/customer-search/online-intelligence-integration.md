@@ -73,7 +73,7 @@ Rollback/default disablement means retaining the frozen baseline with providers/
 
 ## Observed local validation
 
-Complete Node suite: 1,255 passed, zero failures/skips/cancellations. Focused integration suite: 29 passed, zero failures. All eight existing Customer Experience browser gates passed at 390px, 820px and 1440px. The additional real HTTP integration gate passed at the same three widths. Local Node version was v24.19.0, Playwright 1.62.1 and Chromium 153; GitHub independently runs its existing Node 22/Playwright 1.55.0 workflow. `git diff --check` passed. These tests are controlled local verification, not live production or multilingual intelligence-quality verification.
+Complete Node suite: 1,261 passed, zero failures/skips/cancellations. Focused integration suite: 35 passed, zero failures. All eight existing Customer Experience browser gates passed at 390px, 820px and 1440px. The additional real HTTP integration gate passed at the same three widths. Local Node version was v24.19.0, Playwright 1.62.1 and Chromium 153; GitHub independently runs its existing Node 22/Playwright 1.55.0 workflow. `git diff --check` passed. These tests are controlled local verification, not live production or multilingual intelligence-quality verification.
 
 ## Changed-file inventory
 
@@ -108,3 +108,20 @@ Complete Node suite: 1,255 passed, zero failures/skips/cancellations. Focused in
 - `test/fixtures/customer-search-judged-cases.cjs`
 
 Vercel lifecycle reference: https://vercel.com/docs/functions/functions-api-reference/vercel-functions-package
+
+## PR #682 boundary review follow-up
+
+The follow-up reviewed all 29 original changed files and the shared runtime, public-work, evidence, evaluation and promotion contracts. It keeps this PR draft and unmerged.
+
+Fixed defects:
+
+- Business-level copy previously could retain an existing product that failed the newly applied product requirement or explicit availability check. Once a possibility carries products, at least one product must satisfy the hard checks; business-only fallback is reserved for possibilities without products. The current matcher can still present a business-only possibility when its approved campaign is the matching source, according to the existing architecture.
+- Understanding spans previously could upgrade an expressed preference into a hard requirement, or select characters inside a word as a new constraint. These responses now fail validation and preserve baseline understanding.
+- Ranking request redaction previously covered customer text only. It now covers intention and place too, and the shared text boundary also removes bearer credentials and API-key/authorization assignments. This is defensive pattern redaction, not a guarantee to identify all personal information inside arbitrary natural language; provider approval must still include a reviewed data policy.
+- Runtime now rejects a mismatched provider version in shadow as well as candidate mode, and checks that the ranking projection represents every eligible possibility exactly once. Candidate approval and deterministic fallback are unchanged. Malformed response accessors are also caught by the rank-only boundary and return the baseline instead of escaping into HTTP failure.
+
+No provider, artifact, evidence exporter or activation flag was installed. Production defaults remain frozen baseline. No UI, payment, authentication, owner or admin changes were made in this follow-up.
+
+Multilingual readiness remains blocked. The existing evaluation contract accepts cases for the actual nine locales, with exact eligible/expected/forbidden IDs, clarification judgment and approved fact claims. Future independently judged cases must evaluate intent preservation and constraint preservation through the structured intention, distinguish preferences from requirements, and cover negation, budget, location, clarification, relevance, fact integrity, unsupported requests and no-result behaviour. Interface translation coverage and current synthetic judgments are not independent review. A trusted review provenance service and judged corpus remain required before multilingual promotion; this change does not manufacture judgments or confer approval.
+
+Follow-up validation: complete Node suite 1,261 passed; focused integration suite 35 passed, zero failures/skips/cancellations. Browser results are recorded in the PR after completion. Tests cover every added boundary without changing existing expectations.

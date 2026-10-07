@@ -70,3 +70,30 @@ test('missing or failed lifecycle registration never starts shadow provider work
  assert.deepEqual(await completeCustomerSearch(s),s.possibilities);
  assert.deepEqual(await completeCustomerSearch({...s,defer:()=>{throw Error('no lifecycle');}}),s.possibilities);await Promise.resolve();assert.equal(called,0);
 });
+test('business copy cannot retain products that fail a hard requirement',async()=>{
+ const item=work('claim','Black waterproof jacket');item.products[0].description='Jacket is not waterproof';
+ assert.deepEqual((await search('waterproof jacket',[item])).possibilities,[]);
+ const {constrainPossibility}=require('../api/_lib/customer-search-constraints');
+ const intention=require('../api/_lib/customer-search-intention').structuredIntention({customerText:'available jacket',intention:''});
+ assert.equal(constrainPossibility({content:'Available jacket',operationalAvailability:{status:'available'},products:[{name:'Jacket',description:'Jacket',availability:'contact'}]},intention).accepted,false);
+});
+test('all ranking request text fields redact contacts and secrets',async()=>{
+ const s=await search();s.understanding={...s.understanding,intention:'token=private',customerText:'jacket private@example.com'};s.prepared.intention={...s.prepared.intention,location:'4111111111111111'};
+ const tasks=[];let payload;
+ await completeCustomerSearch({...s,configuration:{...s.configuration,mode:'shadow',allowProviderRequest:true,provider:{intelligenceVersion:'shadow-v1',rank:async input=>{payload=input.request;return {ranked:input.candidates.map(c=>({possibilityId:c.possibilityId,score:.5}))};}}},defer:p=>tasks.push(p)});await Promise.all(tasks);
+ assert.ok(payload);assert.doesNotMatch(JSON.stringify(payload),/private|4111111111111111/);
+});
+test('ranking runtime rejects provider version mismatch and non-bijective eligible projection',async()=>{
+ const {runIntelligenceRuntime}=require('../api/_lib/customer-intelligence-runtime');const s=await search();let called=0;
+ const provider={intelligenceVersion:'shadow-v1',rank:async()=>{called++;return {ranked:[]};}};
+ const input={mode:'shadow',baselineVersion:BASELINE_VERSION,candidateVersion:'wrong-v1',provider,request:s.understanding,possibilities:s.possibilities};
+ assert.equal((await runIntelligenceRuntime(input)).diagnostic.reason,'provider_version_mismatch');
+ const rows=rankingCandidates(s.possibilities);assert.equal((await runIntelligenceRuntime({...input,candidateVersion:'shadow-v1',rankingCandidates:[rows[0],rows[0]]})).diagnostic.reason,'invalid_ranking_projection');assert.equal(called,0);
+});
+
+test('malformed provider response accessors cannot break the approved baseline',async()=>{
+ const {runCustomerIntelligence}=require('../api/_lib/customer-intelligence-interface');const s=await search();
+ const raw={get ranked(){throw Error('private provider failure');}};
+ const result=await runCustomerIntelligence({provider:{rank:async()=>raw},request:s.understanding,candidates:rankingCandidates(s.possibilities)});
+ assert.equal(result.used,false);assert.equal(result.reason,'invalid_provider_response');
+});
