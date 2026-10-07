@@ -3,7 +3,7 @@ const {runCustomerIntelligence,applyIntelligenceRanking}=require('./customer-int
 const {id,plain}=require('./customer-evidence-provenance');
 // Server-owned offline-approved registry only. No environment switch or customer
 // supplied boolean can authorize a model. This module is not wired to HTTP.
-async function runIntelligenceRuntime({mode='baseline',baselineVersion,candidateVersion,purpose='relevance-ranking',provider,request,possibilities=[],resolveApproval,timeoutMs=250}={}) {
+async function runIntelligenceRuntime({mode='baseline',baselineVersion,candidateVersion,purpose='relevance-ranking',provider,request,possibilities=[],rankingCandidates,resolveApproval,timeoutMs=250}={}) {
   const baseline=Array.isArray(possibilities)?possibilities.slice():[];
   const fallback=reason=>({possibilities:baseline,modeApplied:'baseline',diagnostic:{reason}});
   if(!id(baselineVersion) || !['baseline','shadow','candidate'].includes(mode) || purpose!=='relevance-ranking')return fallback('invalid_runtime_configuration');
@@ -15,9 +15,10 @@ async function runIntelligenceRuntime({mode='baseline',baselineVersion,candidate
     try {approval=typeof resolveApproval==='function'?await Promise.race([Promise.resolve().then(()=>resolveApproval(candidateVersion)),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('approval_timeout')),deadline);})]):null;}catch(_error){return fallback('approval_unavailable');}finally{clearTimeout(timer);}
     if(!plain(approval) || approval.approved!==true || approval.candidateVersion!==candidateVersion || approval.rollbackVersion!==baselineVersion || approval.purpose!==purpose || !id(approval.decisionId) || !/^[a-f0-9]{64}$/.test(approval.artifactFingerprint || '') || provider?.intelligenceVersion!==candidateVersion || provider?.artifactFingerprint!==approval.artifactFingerprint)return fallback('candidate_approval_required');
   }
-  const result=await runCustomerIntelligence({provider,request,candidates:baseline,timeoutMs});
+  if(rankingCandidates && (!Array.isArray(rankingCandidates) || rankingCandidates.length!==baseline.length || rankingCandidates.some(c=>!c || !baseline.some(p=>p.possibilityId===c.possibilityId && p.workItemId===c.workItemId))))return fallback('invalid_ranking_projection');
+  const result=await runCustomerIntelligence({provider,request,candidates:rankingCandidates || baseline,timeoutMs});
   if(!result.used)return fallback(result.reason);
-  if(mode==='shadow')return {possibilities:baseline,modeApplied:'shadow',diagnostic:{reason:'shadow_only',candidateVersion,rankedIds:result.ranked.map(x=>x.possibilityId)}};
+  if(mode==='shadow')return {possibilities:baseline,modeApplied:'shadow',diagnostic:{reason:'shadow_only',candidateVersion,rankedIds:applyIntelligenceRanking(baseline,result).map(x=>x.possibilityId)}};
   return {possibilities:applyIntelligenceRanking(baseline,result),modeApplied:'candidate',diagnostic:{reason:'approved_candidate',candidateVersion,rollbackVersion:baselineVersion}};
 }
 function monitoringDecision({metrics,rollbackVersion,baselineVersion}={}) {

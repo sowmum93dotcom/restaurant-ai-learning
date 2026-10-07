@@ -38,6 +38,8 @@ jobs:
         run: node browser-checks/customer-controlled-media-gate.js
       - name: Run customer request search gate
         run: node browser-checks/customer-search-gate.js
+      - name: Run real HTTP intelligence integration gate
+        run: node browser-checks/customer-intelligence-integration-gate.js
       - name: Run customer registration and preparation gate
         run: node browser-checks/customer-preparation-gate.js
       - name: Run private customer payment status gate

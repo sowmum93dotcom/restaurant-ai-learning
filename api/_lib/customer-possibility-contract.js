@@ -234,7 +234,7 @@ function stablePossibilityId(workItemId) {
     .digest("base64url").slice(0, 20);
 }
 
-function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_POSSIBILITIES, storedPreferences = [], storedFeedback = [], place = "") {
+function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_POSSIBILITIES, storedPreferences = [], storedFeedback = [], place = "", eligibilityFilter) {
   const excludedTerms = excludedCustomerTerms(understanding.customerText);
   const additionalRequirements = explicitAdditionalRequirements(understanding.customerText);
   const requestWords = understanding.customerText.toLocaleLowerCase("en").match(/[\p{L}\p{N}]+/gu) || [];
@@ -309,7 +309,9 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
       if (relevantProducts.length) possibility.products = relevantProducts;
     }
     if (work.informationSource === "business-provided") possibility.informationSource = "business-provided";
-    candidates.push({ strength: concepts.length + evidence.length, guidanceOverlap, feedbackGuidanceScore, possibility });
+    const eligible = typeof eligibilityFilter === "function" ? eligibilityFilter(possibility) : possibility;
+    if (!eligible) return;
+    candidates.push({ strength: concepts.length + evidence.length, guidanceOverlap, feedbackGuidanceScore, possibility: eligible });
   });
   candidates.sort(function (left, right) {
     return right.strength - left.strength || right.guidanceOverlap - left.guidanceOverlap ||

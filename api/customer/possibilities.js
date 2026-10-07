@@ -4,13 +4,16 @@ const { DEMEOS_ACTOR_SCOPES, DEMEOS_ACTIONS, canPerformDemeosAction } = require(
 const { createAuthenticatedCustomerContext } = require("../_lib/demeos-actor-context.js");
 const { authorizeDemeosAction } = require("../_lib/demeos-authorization.js");
 const { resolveTrustedCustomerIdentityFromRequest } = require("../_lib/demeos-customer-authentication.js");
-const { findCustomerPossibilities, validateConfirmedUnderstanding, validateCustomerPlace } = require("../_lib/customer-possibility-contract.js");
+const { validateConfirmedUnderstanding, validateCustomerPlace } = require("../_lib/customer-possibility-contract.js");
+const {prepareCustomerSearch,completeCustomerSearch}=require('../_lib/customer-search-service');
+const {getCustomerSearchConfiguration,deferCustomerSearch}=require('../_lib/customer-search-registry');
 const {
   prepareCustomerPossibilityIssuanceTrust,
   confirmCustomerPossibilityIssuanceDelivery
 } = require("../_lib/customer-possibility-issuance-trust.js");
 
-module.exports = async function handler(req, res) {
+function createPossibilitiesHandler({configuration=getCustomerSearchConfiguration(),defer=deferCustomerSearch}={}) {
+return async function handler(req, res) {
   res.setHeader("Cache-Control", "private, no-store");
   res.setHeader("Vercel-CDN-Cache-Control", "no-store");
   if (req.method !== "POST") {
@@ -28,7 +31,7 @@ module.exports = async function handler(req, res) {
   if (place === null) return res.status(400).json({ error: "A valid optional place is required." });
   try {
     const repository = getRepository();
-    const catalogue = selectCustomerCatalogue(await repository.getCustomerWork(), req);
+    const catalogue = selectCustomerCatalogue(await repository.getCustomerWork({forCatalogueValidation:true}), req);
     const work = catalogue.work;
     let preferences = [];
     let feedback = [];
@@ -61,7 +64,9 @@ module.exports = async function handler(req, res) {
         feedback = await repository.getCustomerFeedback(customerIdentity.trustedCustomerIdentityId, 50);
       }
     }
-    let possibilities = findCustomerPossibilities(understanding, work, undefined, preferences, feedback, place);
+    const locale=typeof req.headers?.['x-demeos-customer-locale']==='string'?req.headers['x-demeos-customer-locale']:'en';
+    const prepared=await prepareCustomerSearch({understanding,work,preferences,feedback,place,locale,configuration});
+    let possibilities=prepared.possibilities;
     if (customerIdentity) {
       await prepareCustomerPossibilityIssuanceTrust();
       const issuedWorkItemIds = await repository.recordCustomerPossibilityIssuance(
@@ -71,6 +76,7 @@ module.exports = async function handler(req, res) {
       const issued = new Set(confirmedWorkItemIds);
       possibilities = possibilities.filter(function (possibility) { return issued.has(possibility.workItemId); });
     }
+    possibilities=await completeCustomerSearch({prepared,possibilities,understanding,work,identity:customerIdentity,testMode:catalogue.testMode,configuration,defer});
     return res.status(200).json({ possibilities, ...(place ? { placeApplied: true } : {}),
       ...(catalogue.testMode ? { testMode: true } : {}) });
   } catch (error) {
@@ -78,3 +84,6 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: "DEMEOS could not prepare possibilities." });
   }
 };
+}
+module.exports=createPossibilitiesHandler();
+module.exports.createPossibilitiesHandler=createPossibilitiesHandler;

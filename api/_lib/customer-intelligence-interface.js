@@ -35,6 +35,11 @@ function normalizeCandidate(candidate) {
   const possibilityId = cleanString(candidate.possibilityId, 128);
   const workItemId = cleanString(candidate.workItemId, 128);
   if (!possibilityId || !workItemId) return null;
+  if(candidate.rankingEvidence!==undefined){
+    const rankingEvidence=require('./customer-search-ranking').validateRankingEvidence(candidate.rankingEvidence);
+    if(!rankingEvidence)return null;
+    return {possibilityId,workItemId,rankingEvidence};
+  }
   return { possibilityId, workItemId };
 }
 

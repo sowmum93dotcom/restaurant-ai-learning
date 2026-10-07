@@ -8,6 +8,7 @@
     "@electric-sql/pglite": "0.5.8"
   },
   "dependencies": {
+    "@vercel/functions": "3.9.11",
     "@clerk/backend": "^2.14.0",
     "@vercel/postgres": "^0.10.0",
     "@vercel/blob": "^2.0.0"

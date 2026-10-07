@@ -1,6 +1,6 @@
 const { buildCustomerUnderstanding } = require("../../js/customer-understanding.js");
 
-const ALLOWED_KEYS = Object.freeze(["intention", "customerText", "clarificationText"]);
+const ALLOWED_KEYS = Object.freeze(["intention", "customerText", "clarificationText", "place"]);
 
 function cleanText(value, maximum) {
   if (value === undefined) return "";
@@ -16,9 +16,11 @@ function buildTrustedCustomerUnderstanding(body, storedPreferences, storedFeedba
   const intention = cleanText(body.intention, 80);
   const customerText = cleanText(body.customerText, 500);
   const clarificationText = cleanText(body.clarificationText, 500);
-  if (intention === null || customerText === null || clarificationText === null) return null;
-  const current = buildCustomerUnderstanding(intention, customerText, clarificationText);
+  const place = cleanText(body.place, 80);
+  if (intention === null || customerText === null || clarificationText === null || place === null || (place && !/^[\p{L}\p{M}\p{N} .,'-]+$/u.test(place))) return null;
+  let current = buildCustomerUnderstanding(intention, customerText, clarificationText);
   if (!current) return null;
+  if (/\bnear me\b/i.test(current.customerText) && !place) current = {...current,confidenceState:'needs-clarification',clarificationKind:'location'};
 
   // Preferences stay separate from the current intention: they are optional guidance,
   // never facts about a business and never inputs from any other evidence stream.
