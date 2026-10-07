@@ -19,7 +19,7 @@ https://nlp.stanford.edu/IR-book/html/htmledition/evaluation-of-unranked-retriev
 The review of query expansion by Azad and Deepak explains expansion using related expressions and the need to evaluate the resulting retrieval:
 https://arxiv.org/abs/1708.00247
 
-Our small regression collection specifies exact expected results for fifteen independently judged requests. It includes atmosphere, service, exclusions, place and unsupported requests. Additional endpoint tests cover automatic real-content replacement, supplied products, no-store responses and repository failure. This is regression evidence, not an estimate of accuracy across all customers.
+Our small regression collection specifies exact expected results for seventeen independently judged requests. It includes atmosphere, service, exclusions, negation, place and unsupported requests. Separate ambiguity tests distinguish the sport of running from running a workshop, and negation tests preserve “not only” as an additive phrase. Additional endpoint tests cover automatic real-content replacement, supplied products, no-store responses and repository failure. This is regression evidence, not an estimate of accuracy across all customers.
 
 Run `npm test` and `node browser-checks/customer-search-gate.js` with the same static server and Playwright setup as the existing customer browser workflow. The new browser gate executes the real possibilities handler against an isolated repository and verifies visible results at 390, 820 and 1440 pixels.
 

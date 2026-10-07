@@ -15,7 +15,8 @@ const catalogue = [work('quiet','Quiet restaurant for family dinner'),work('loud
 // Judged requests are intentionally separate from implementation vocabulary.
 // Both false positives and missed relevant offers fail this evaluation.
 const judgments = [
-  ['quiet dinner','London',['quiet']], ['peaceful dinner','London',['quiet']],
+  ['quiet dinner','London',['quiet']], ['not quiet dinner','London',['loud']],
+  ['dinner not a peaceful place','London',['loud']], ['peaceful dinner','London',['quiet']],
   ['relaxed place together','London',['relaxed']], ['relaxing place together','London',['relaxed']],
   ['bicycle repair with home collection','London',['repair']],
   ['bicycle rental','London',['rental']], ['quiet dinner','Paris',['paris']],
@@ -46,4 +47,14 @@ test('published catalogue replaces examples and activation needs both query and 
   const previous=process.env.DEMEOS_CONTROLLED_TEST_CONTENT;
   try {process.env.DEMEOS_CONTROLLED_TEST_CONTENT='disabled';assert.equal(selectCustomerCatalogue([],previewRequest).testMode,false);}
   finally {if(previous===undefined)delete process.env.DEMEOS_CONTROLLED_TEST_CONTENT;else process.env.DEMEOS_CONTROLLED_TEST_CONTENT=previous;}
+});
+
+test('running a workshop does not recommend running-session fixtures', () => {
+  const selected=selectCustomerCatalogue([],previewRequest);
+  assert.deepEqual(findCustomerPossibilities(request('running a workshop'),selected.work),[]);
+  assert.equal(findCustomerPossibilities(request('running'),selected.work).length,1);
+  assert.equal(findCustomerPossibilities(request('jogging'),selected.work).length,1);
+});
+test('not only is not an exclusion', () => {
+  assert.deepEqual(findCustomerPossibilities(request('not only quiet dinner'),[work('quiet','Quiet dinner')]).map(x=>x.workItemId),['quiet']);
 });

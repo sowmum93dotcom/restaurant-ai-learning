@@ -33,11 +33,14 @@ async function serve(handler,route){
   }
   await search('jacket');assert.equal(await page.locator('.customer-possibility-surface').count(),1);
   await page.locator('.customer-possibility-surface').click();await page.locator('#customer-focused-possibility [data-product-id="test-product-mens-fashion"]').waitFor();
+  await search('running a workshop');assert.equal(await page.locator('#customer-no-possibilities').isVisible(),true);
   await search('quiet dinner');assert.equal(await page.locator('#customer-no-possibilities').isVisible(),true);
   records=[{workItemId:'quiet',businessName:'Quiet business',content:'Quiet family dinner',location:'London',participationAction:'Interested'},
     {workItemId:'loud',businessName:'Lively business',content:'Lively family dinner',location:'London',participationAction:'Interested'}];
   await search('peaceful dinner','London');assert.equal(await page.locator('.customer-possibility-surface').count(),1);
   assert.match(await page.locator('.customer-possibility-surface').innerText(),/Quiet business/);
+  await search('not quiet dinner','London');assert.equal(await page.locator('.customer-possibility-surface').count(),1);
+  assert.match(await page.locator('.customer-possibility-surface').innerText(),/Lively business/);
   await search('peaceful dinner','Paris');assert.equal(await page.locator('#customer-no-place-match-note').isVisible(),true);
   assert.deepEqual(errors,[]);console.log('Customer search gate passed',viewport.width);await context.close();
  }

@@ -93,9 +93,11 @@ function excludedCustomerTerms(customerText) {
   const words = String(customerText || "").toLocaleLowerCase("en").match(/[\p{L}\p{N}]+/gu) || [];
   const excluded = new Set();
   for (let index = 0; index < words.length - 1; index += 1) {
-    if (![ "without", "exclude", "excluding", "avoid", "no", "except" ].includes(words[index])) continue;
+    if (![ "without", "exclude", "excluding", "avoid", "no", "except", "not" ].includes(words[index])) continue;
     let position = index + 1;
-    if (["any", "added"].includes(words[position])) position += 1;
+    // "Not only" adds possibilities; it is not an exclusion.
+    if (words[index] === "not" && words[position] === "only") continue;
+    while (["a", "an", "the", "any", "added", "too"].includes(words[position])) position += 1;
     const next = words[position];
     if (!next || next.length < 3 || STOP_WORDS.has(next)) continue;
     excluded.add(next);
@@ -136,6 +138,8 @@ const SPECIFIC_OFFER_REQUIREMENTS = Object.freeze([
   Object.freeze(["fitness", "gym", "workout", "exercise"]),
   Object.freeze(["hotel", "hotels", "accommodation"]),
   Object.freeze(["breakfast", "breakfasts"]),
+  Object.freeze(["dinner", "supper"]),
+  Object.freeze(["lunch", "luncheon"]),
   Object.freeze(["sauna", "saunas"])
 ]);
 function supportsRequestedOffer(customerTerms, sourceTerms) {
@@ -145,6 +149,11 @@ function supportsRequestedOffer(customerTerms, sourceTerms) {
 
 function evidencedConcepts(customerTerms, contentTerms) {
   return SOLUTION_CONCEPTS.filter(function (concept) {
+    // "Running" can be a verb for an unrelated activity, such as running a
+    // workshop. Alone, or with sporting context, it can identify the sport.
+    if (concept.name === "running" && !customerTerms.has("jogging") &&
+        !(customerTerms.size === 1 && customerTerms.has("running")) &&
+        !["session", "sessions", "fitness", "exercise", "jog", "sport", "sports"].some(term => customerTerms.has(term))) return false;
     return concept.terms.some(function (term) { return customerTerms.has(term); }) &&
       concept.terms.some(function (term) { return contentTerms.has(term); });
   }).map(function (concept) { return concept.name; });
@@ -179,7 +188,7 @@ const SERVICE_WORD_FAMILIES = Object.freeze([
   Object.freeze(["deliver", "delivers", "delivered", "delivery", "deliveries", "delivering"])
 ]);
 function hasRequirementEvidence(term, sourceTerms) {
-  const family = SERVICE_WORD_FAMILIES.find(function (forms) { return forms.includes(term); });
+  const family = SERVICE_WORD_FAMILIES.concat(SPECIFIC_OFFER_REQUIREMENTS).find(function (forms) { return forms.includes(term); });
   return family ? family.some(function (form) { return sourceTerms.has(form); }) : sourceTerms.has(term);
 }
 
@@ -234,7 +243,7 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
     ? meaningfulTerms(requestWords.slice(0, requirementStart).join(" ")) : new Set();
   const customerTerms = meaningfulTerms([understanding.intention, understanding.customerText].join(" "));
   excludedTerms.forEach(function (term) {
-    const family = SERVICE_WORD_FAMILIES.find(function (forms) { return forms.includes(term); });
+    const family = SERVICE_WORD_FAMILIES.concat(SPECIFIC_OFFER_REQUIREMENTS).find(function (forms) { return forms.includes(term); });
     (family || [term]).forEach(function (form) { customerTerms.delete(form); });
   });
   const guidanceTerms = preferenceTerms(storedPreferences);
