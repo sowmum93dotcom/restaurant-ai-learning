@@ -7,7 +7,7 @@ This engine retrieves from the same validated catalogue used by Discover. It is 
 - Approved repository work always replaces supplied examples. Repository errors remain errors. The existing explicit header/query gate and server disable switch control temporary examples.
 - Fictional examples never create trusted issuance or automatic customer history. Saving an example is not offered as an authenticated result.
 - Exact declared town/city remains a filter, not inferred distance or proximity.
-- Narrow product concepts permit short requests such as jacket, dress and camping. Quiet/peaceful and relaxed/relaxing qualifiers need evidence in the same offer. Separate products cannot be combined to invent a capability.
+- Narrow product concepts permit short requests such as jacket, dress and camping. Quiet/peaceful and relaxed/relaxing qualifiers need evidence in the same offer. Specific massage, fitness, hotel, breakfast and sauna requests cannot be satisfied by broad category similarity. Separate products cannot be combined to invent a capability.
 - Unavailable, hidden and invalid items remain excluded. Explicit requirements and exclusions remain constraints. Previous preferences and feedback cannot create relevance for an unrelated current request.
 
 ## Evaluation and research
@@ -19,7 +19,7 @@ https://nlp.stanford.edu/IR-book/html/htmledition/evaluation-of-unranked-retriev
 The review of query expansion by Azad and Deepak explains expansion using related expressions and the need to evaluate the resulting retrieval:
 https://arxiv.org/abs/1708.00247
 
-Our small regression collection specifies exact expected results for eleven independently judged requests. It includes atmosphere, service, exclusions, place and unsupported requests. Additional endpoint tests cover automatic real-content replacement, supplied products, no-store responses and repository failure. This is regression evidence, not an estimate of accuracy across all customers.
+Our small regression collection specifies exact expected results for fifteen independently judged requests. It includes atmosphere, service, exclusions, place and unsupported requests. Additional endpoint tests cover automatic real-content replacement, supplied products, no-store responses and repository failure. This is regression evidence, not an estimate of accuracy across all customers.
 
 Run `npm test` and `node browser-checks/customer-search-gate.js` with the same static server and Playwright setup as the existing customer browser workflow. The new browser gate executes the real possibilities handler against an isolated repository and verifies visible results at 390, 820 and 1440 pixels.
 

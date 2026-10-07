@@ -8,7 +8,10 @@ const work = (id, content, location='London') => ({workItemId:id,businessName:id
 const catalogue = [work('quiet','Quiet restaurant for family dinner'),work('loud','Lively restaurant for family dinner'),
   work('relaxed','Relaxing place to spend time together'),work('party','Busy group celebration together'),
   work('repair','Bicycle repair with home collection'),work('rental','Bicycle rental'),
-  work('paris','Quiet restaurant for family dinner','Paris')];
+  work('paris','Quiet restaurant for family dinner','Paris'),
+  work('massage','Massage and wellness appointment'),work('gym','Fitness and wellness session'),
+  work('hotel','Hotel stay for your journey'),work('trip','Travel journey and guided visit'),
+  work('breakfast','Breakfast in our restaurant')];
 // Judged requests are intentionally separate from implementation vocabulary.
 // Both false positives and missed relevant offers fail this evaluation.
 const judgments = [
@@ -17,6 +20,8 @@ const judgments = [
   ['bicycle repair with home collection','London',['repair']],
   ['bicycle rental','London',['rental']], ['quiet dinner','Paris',['paris']],
   ['quiet dinner','Unknown',[]], ['bicycle repair without collection','London',[]],
+  ['massage','London',['massage']], ['fitness','London',['gym']],
+  ['hotel','London',['hotel']], ['breakfast','London',['breakfast']],
   ['spa with sauna','London',[]], ['the business today','London',[]]
 ];
 for (const [text,place,expected] of judgments) test(`judged search: ${text} / ${place}`, () => {

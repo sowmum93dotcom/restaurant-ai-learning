@@ -127,14 +127,19 @@ function explicitAdditionalRequirements(customerText) {
   return meaningfulTerms(words.slice(index + 1, end < 0 ? undefined : end).join(" "));
 }
 
-// Stated atmosphere must have evidence in the same offer; a shared category
-// such as "meal" or "shared time" must not erase the customer's qualifier.
-const ATMOSPHERE_REQUIREMENTS = Object.freeze([
+// Specific requests and atmosphere qualifiers require evidence in the same
+// offer. A broad wellbeing, journey or shared-time category is not enough.
+const SPECIFIC_OFFER_REQUIREMENTS = Object.freeze([
   Object.freeze(["quiet", "peaceful", "tranquil"]),
-  Object.freeze(["relaxed", "relaxing", "relaxation"])
+  Object.freeze(["relaxed", "relaxing", "relaxation"]),
+  Object.freeze(["massage", "massages"]),
+  Object.freeze(["fitness", "gym", "workout", "exercise"]),
+  Object.freeze(["hotel", "hotels", "accommodation"]),
+  Object.freeze(["breakfast", "breakfasts"]),
+  Object.freeze(["sauna", "saunas"])
 ]);
-function supportsRequestedAtmosphere(customerTerms, sourceTerms) {
-  return ATMOSPHERE_REQUIREMENTS.every(forms =>
+function supportsRequestedOffer(customerTerms, sourceTerms) {
+  return SPECIFIC_OFFER_REQUIREMENTS.every(forms =>
     !forms.some(term => customerTerms.has(term)) || forms.some(term => sourceTerms.has(term)));
 }
 
@@ -196,7 +201,7 @@ function productRelevance(product, customerTerms) {
   const productTerms = meaningfulTerms([product.name, product.description].join(" "));
   const evidence = Array.from(customerTerms).filter(function (term) { return productTerms.has(term); }).sort();
   const concepts = evidencedConcepts(customerTerms, productTerms);
-  if (!supportsRequestedAtmosphere(customerTerms, productTerms) || !supportsExplicitService(customerTerms, productTerms) || (evidence.length < 2 && concepts.length === 0)) return null;
+  if (!supportsRequestedOffer(customerTerms, productTerms) || !supportsExplicitService(customerTerms, productTerms) || (evidence.length < 2 && concepts.length === 0)) return null;
   return Object.freeze({
     basis: "current-intention-product-information",
     evidence: (evidence.length >= 2 ? evidence : concepts).slice(0, 5)
@@ -263,7 +268,7 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
     const matchedTerms = matchingSources.reduce(function (best, terms) {
       const evidence = Array.from(customerTerms).filter(function (term) { return terms.has(term); }).sort();
       const concepts = evidencedConcepts(customerTerms, terms);
-      const strength = supportsRequestedAtmosphere(customerTerms, terms) && supportsExplicitService(customerTerms, terms) ? evidence.length + concepts.length : -1;
+      const strength = supportsRequestedOffer(customerTerms, terms) && supportsExplicitService(customerTerms, terms) ? evidence.length + concepts.length : -1;
       return !best || strength > best.strength ? { evidence, concepts, strength } : best;
     }, null);
     const evidence = matchedTerms.evidence;
