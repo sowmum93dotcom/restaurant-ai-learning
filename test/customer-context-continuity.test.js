@@ -8,80 +8,38 @@ function page(path,storage=new Map(),hrefs=[]){
   document:{addEventListener:(n,fn)=>events[n]=fn,querySelectorAll:()=>links}};
  vm.runInNewContext(source,{window:root,URL});events.DOMContentLoaded();return {root,links,storage,events};
 }
-test('fresh public entry never opts into controlled data',()=>{const p=page('/index.html',undefined,['customer.html','my-demeos.html']);assert.deepEqual(p.links.map(l=>l.href),['customer.html','my-demeos.html']);assert.equal(p.storage.size,0);});
-test('explicit activation survives homepage, account and information returns in one tab',()=>{
- const storage=new Map();page('/customer.html?demeos-test=1#discover',storage);
- for(const path of ['/index.html','/my-demeos.html','/privacy.html','/terms.html','/contact.html']){
-  const p=page(path,storage,['customer.html#discover','my-demeos.html#privacy-control','index.html']);
-  for(const link of p.links)assert.equal(new URL(link.href,'https://www.demeos.io').searchParams.get('demeos-test'),'1');
- }
- const p=page('/customer.html?resume=1#product-experience',storage);
- const url=new URL(p.root.location.href);assert.equal(url.searchParams.get('demeos-test'),'1');assert.equal(url.searchParams.get('resume'),'1');assert.equal(url.hash,'#product-experience');assert.deepEqual(p.root.history.state,{preserved:true});
-});
-test('purchase authentication URL and selection draft stay intact',()=>{
- const storage=new Map([[key,'controlled'],['demeos-controlled-preparation-v1','exact selected options']]);
- const p=page('/my-demeos.html?prepare=1',storage,['customer.html#discover']);assert.equal(p.root.location.href,'https://www.demeos.io/my-demeos.html?prepare=1');assert.equal(storage.get('demeos-controlled-preparation-v1'),'exact selected options');assert.match(p.links[0].href,/demeos-test=1#discover$/);
-});
-test('explicit exit wins over remembered context and remains normal across navigation',()=>{
- const storage=new Map([[key,'controlled']]);const active=page('/customer.html?demeos-test=1',storage,['customer.html?demeos-test=0#discover']);assert.equal(active.links[0].href,'customer.html?demeos-test=0#discover');
- page('/customer.html?demeos-test=0#discover',storage);assert.equal(storage.get(key),'production');
- const home=page('/index.html',storage,['customer.html']);assert.equal(home.links[0].href,'customer.html');
-});
-test('external, owner, admin and same-screen links never inherit controlled context',()=>{
- const hrefs=['https://vendor.example/customer.html','business-workspace.html','admin.html','#discover','mailto:support@example.com'];const p=page('/customer.html?demeos-test=1',undefined,hrefs);assert.deepEqual(p.links.map(l=>l.href),hrefs);
-});
-test('unsupported activation is fail closed, and fresh tabs stay public',()=>{
- const storage=new Map([[key,'controlled']]);page('/index.html?demeos-test=true',storage);assert.equal(storage.get(key),'production');
- assert.equal(new URL(page('/customer.html#discover').root.location.href).searchParams.has('demeos-test'),false);
-});
-test('dynamically created customer links preserve context on click',()=>{const p=page('/customer.html?demeos-test=1');const link={href:'my-demeos.html#privacy-control',getAttribute(){return this.href;},setAttribute(_,v){this.href=v;}};p.events.click({target:{closest:()=>link}});assert.equal(link.href,'/my-demeos.html?demeos-test=1#privacy-control');});
-test('explicit URL navigation still works when session storage is blocked',()=>{
- const events={},link={href:'customer.html',getAttribute(){return this.href;},setAttribute(_,v){this.href=v;}};
- const root={location:{href:'https://www.demeos.io/index.html?demeos-test=1'},get sessionStorage(){throw Error('blocked');},document:{addEventListener:(n,f)=>events[n]=f,querySelectorAll:()=>[link]}};
- vm.runInNewContext(source,{window:root,URL});events.DOMContentLoaded();assert.equal(link.href,'/customer.html?demeos-test=1');
-});
-
-test('homepage Enter action selects supplied content without activating the homepage or account',()=>{
- const p=page('/index.html',undefined,['customer.html?demeos-test=1#discover','my-demeos.html']);
- const entry=p.links[0];entry.getAttribute=function(name){return name==='data-customer-content-entry'?'controlled':this.href;};
- p.events.click({target:{closest:()=>entry}});
- assert.equal(new URL(entry.href,'https://www.demeos.io').searchParams.get('demeos-test'),'1');
- assert.equal(p.storage.size,0,'only arrival at Discover remembers the selected context');
- assert.equal(p.links[1].href,'my-demeos.html','homepage sign-in does not opt into test data');
-});
-test('explicit public choice overrides the supplied homepage Enter destination',()=>{
- const storage=new Map();page('/customer.html?demeos-test=0',storage);
- for(const path of ['/index.html','/index.html?demeos-test=true']) {
-  const p=page(path,storage,['customer.html?demeos-test=1#discover']);const entry=p.links[0];
-  entry.getAttribute=function(name){return name==='data-customer-content-entry'?'controlled':this.href;};
-  p.events.click({target:{closest:()=>entry}});
-  assert.equal(new URL(entry.href,'https://www.demeos.io').searchParams.get('demeos-test'),'0');
+test('every homepage and account link keeps one canonical customer address',()=>{
+ for(const path of ['/index.html','/customer.html','/my-demeos.html','/privacy.html','/terms.html','/contact.html']){
+  const p=page(path,undefined,['customer.html#discover','my-demeos.html']);
+  assert.deepEqual(p.links.map(l=>l.href),['customer.html#discover','my-demeos.html']);
  }
 });
-
-test('cached homepage and account links honor an exit made after their initial load',()=>{
- const storage=new Map();const home=page('/index.html',storage,['customer.html?demeos-test=1#discover']);const entry=home.links[0];
- entry.getAttribute=function(name){return name==='data-customer-content-entry'?'controlled':this.href;};
- home.events.DOMContentLoaded();
- page('/customer.html?demeos-test=1',storage);
- const account=page('/my-demeos.html',storage,['customer.html#discover']);
- assert.match(account.links[0].href,/demeos-test=1/);
- page('/customer.html?demeos-test=0',storage);
- home.events.pageshow();
- assert.equal(new URL(entry.href,'https://www.demeos.io').searchParams.get('demeos-test'),'0');
- account.events.pageshow();
- assert.equal(account.links[0].href,'customer.html#discover');
- // Click also reads current storage when a restore does not emit pageshow.
- storage.set(key,'controlled');home.events.click({target:{closest:()=>entry}});
- assert.equal(new URL(entry.href,'https://www.demeos.io').searchParams.get('demeos-test'),'1');
- storage.set(key,'production');home.events.click({target:{closest:()=>entry}});
- assert.equal(new URL(entry.href,'https://www.demeos.io').searchParams.get('demeos-test'),'0');
+test('old preview and public bookmarks converge without losing selection or history',()=>{
+ for(const flag of ['1','0','true']){
+  const storage=new Map([[key,'controlled'],['demeos-controlled-preparation-v1','selected options']]);
+  const p=page('/customer.html?demeos-test='+flag+'&work=w&product=p&resume=1#product-experience',storage);
+  const url=new URL(p.root.location.href);
+  assert.equal(url.searchParams.has('demeos-test'),false);
+  assert.equal(url.searchParams.get('work'),'w');assert.equal(url.searchParams.get('product'),'p');
+  assert.equal(url.searchParams.get('resume'),'1');assert.equal(url.hash,'#product-experience');
+  assert.deepEqual(p.root.history.state,{preserved:true});assert.equal(storage.has(key),false);
+  assert.equal(storage.get('demeos-controlled-preparation-v1'),'selected options');
+ }
 });
-
-test('navigation decoration keeps later changes made by the purchase flow',()=>{
- const p=page('/customer.html?demeos-test=1',undefined,['my-demeos.html']);
- const link=p.links[0];link.href='my-demeos.html?prepare=1';
- p.events.click({target:{closest:()=>link}});
- const target=new URL(link.href,'https://www.demeos.io');
- assert.equal(target.searchParams.get('prepare'),'1');assert.equal(target.searchParams.get('demeos-test'),'1');
+test('old customer links normalize but unrelated destinations stay intact',()=>{
+ const unrelated=['https://vendor.example/customer.html?demeos-test=1','business-workspace.html?demeos-test=1','admin.html?demeos-test=1','#discover','mailto:support@example.com'];
+ const p=page('/customer.html',undefined,['my-demeos.html?demeos-test=1&prepare=1#privacy-control',...unrelated]);
+ assert.equal(p.links[0].href,'/my-demeos.html?prepare=1#privacy-control');
+ assert.deepEqual(p.links.slice(1).map(l=>l.href),unrelated);
+});
+test('cached and dynamic links normalize on restore and click',()=>{
+ const p=page('/customer.html',undefined,['customer.html']);const link=p.links[0];
+ link.href='customer.html?demeos-test=0#discover';p.events.pageshow();assert.equal(link.href,'/customer.html#discover');
+ link.href='my-demeos.html?prepare=1&demeos-test=1';p.events.click({target:{closest:()=>link}});
+ assert.equal(link.href,'/my-demeos.html?prepare=1');
+});
+test('blocked session storage does not prevent canonical navigation',()=>{
+ const events={},link={href:'customer.html?demeos-test=1#discover',getAttribute(){return this.href;},setAttribute(_,v){this.href=v;}};
+ const root={location:{href:'https://www.demeos.io/index.html'},get sessionStorage(){throw Error('blocked');},document:{addEventListener:(n,f)=>events[n]=f,querySelectorAll:()=>[link]}};
+ vm.runInNewContext(source,{window:root,URL});events.DOMContentLoaded();assert.equal(link.href,'/customer.html#discover');
 });

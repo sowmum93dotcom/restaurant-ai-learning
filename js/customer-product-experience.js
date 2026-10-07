@@ -71,7 +71,7 @@
     if (typeof document.querySelectorAll === "function") document.querySelectorAll("#discover video, #product-experience video").forEach(function (video) { video.pause(); });
   }
 
-  function openProductExperience(document, work, product, destination) {
+  function openProductExperience(document, work, product, destination, navigationOptions = {}) {
     const surface = document.getElementById("product-experience");
     const discover = document.getElementById("discover");
     const intention = document.getElementById("intention");
@@ -113,6 +113,7 @@
     surface.setAttribute("data-product-id", text(product.productId));
     surface.setAttribute("data-continuation-type", continuationType(product));
     if (window.DEMEOSCustomerItemPresentation) window.DEMEOSCustomerItemPresentation.open(document, surface, product, destination, work);
+    if (window.DEMEOSCustomerNavigation) window.DEMEOSCustomerNavigation.product(work, product, navigationOptions);
     surface.querySelector(".customer-product-experience-shell").scrollTop = 0;
     window.scrollTo({ top: 0, behavior: "instant" });
     title.focus({ preventScroll: true });
@@ -129,7 +130,8 @@
     discover.hidden = false;
     surface.removeAttribute("data-product-id");
     surface.removeAttribute("data-continuation-type");
-    if (window.location.hash !== "#discover") history.replaceState(null, "", "#discover");
+    if (window.DEMEOSCustomerNavigation) window.DEMEOSCustomerNavigation.navigate("#discover");
+    else if (window.location.hash !== "#discover") history.replaceState(null, "", "#discover");
     window.scrollTo({ top: 0, behavior: "instant" });
   }
 
@@ -205,7 +207,7 @@
       if (action.getAttribute("aria-disabled") === "true") { event.preventDefault(); return; }
       if(action.getAttribute("data-demeos-purchase")!=="pending"){
         const selected=window.DEMEOSCustomerItemPresentation&&window.DEMEOSCustomerItemPresentation.snapshot();
-        if(selected&&selected.surface.getAttribute("data-controlled-test")==="true"&&new URL(window.location.href).searchParams.get("demeos-test")==="1"){
+        if(selected&&selected.surface.getAttribute("data-controlled-test")==="true"){
           if(isFictionalDiscoverDestination(action.getAttribute("href"))){
             event.preventDefault();const safety=document.getElementById("product-experience-safety");
             if(safety){safety.setAttribute("role","status");safety.setAttribute("tabindex","-1");safety.focus({preventScroll:true});}
@@ -237,6 +239,6 @@
   }
 
   if (typeof module !== "undefined" && module.exports) module.exports = { isFictionalDiscoverDestination, pauseExperienceVideos, closeProductExperience, availabilityCopy, configureAction, continuationType, openProductExperience, priceCopy, recoverDiscoverIfNeeded, safeHttps };
-  if (typeof window !== "undefined") window.DEMEOSCustomerProductExperience = Object.freeze({open: openProductExperience});
+  if (typeof window !== "undefined") window.DEMEOSCustomerProductExperience = Object.freeze({open: openProductExperience, productFromCard});
   if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", function () { initialize(document); });
 })();

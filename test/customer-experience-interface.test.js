@@ -736,20 +736,15 @@ test("Discover populated surface is organised as a responsive business experienc
 });
 
 
-test("Discover controlled preview is explicit and normal requests stay unchanged", function () {
-  assert.deepEqual(getDiscoverRequest({ search: "" }), { url: "/api/customer/work", options: undefined, testMode: false });
-  assert.deepEqual(getDiscoverRequest({ search: "?demeos-test=1" }), {
-    url: "/api/customer/work?demeos-test=1",
-    options: { cache: "no-store", headers: { "x-demeos-test-mode": "controlled-preview" } },
-    testMode: true
-  });
-  assert.equal(getDiscoverRequest({ search: "?demeos-test=0" }).testMode, false);
+test("all customer addresses request the same server-selected main Discover feed", function () {
+  const expected = {url: "/api/customer/work?source=discover&demeos-test=1", options: {cache: "no-store", headers: {"x-demeos-test-mode": "controlled-preview"}}, testMode: true, mainFeed: true};
+  for (const search of ["", "?demeos-test=1", "?demeos-test=0", "?demeos-test=true"]) assert.deepEqual(getDiscoverRequest({search}), expected);
 });
 
 test("Discover controlled preview visibly identifies populated test content", async function () {
   const document = fakeDocument();
   await loadCustomerWork(document, async function (url, options) {
-    assert.equal(url, "/api/customer/work?demeos-test=1");
+    assert.equal(url, "/api/customer/work?source=discover&demeos-test=1");
     assert.equal(options.headers["x-demeos-test-mode"], "controlled-preview");
     return { ok: true, async json() { return { testMode: true, work: [
       { workItemId: "test-a", businessName: "DEMEOS Test Bistro", content: "Controlled preview content", participationAction: "Interested" }
@@ -1140,15 +1135,15 @@ test("Discover tablet presentation keeps business and media lanes contained", fu
 });
 
 
-test("controlled testing always offers normal-mode exit even on disabled or failed requests", async function () {
+test("main Discover has no alternate feed controls on disabled or failed requests", async function () {
   for (const response of [{ok:true,json:async()=>({work:[],testMode:false})},{ok:false,json:async()=>({error:"unavailable"})}]) {
     const document = fakeDocument();
     document.elements["customer-controlled-test-entry"] = new Element("a");
     document.elements["customer-controlled-test-exit"] = new Element("a");
     await loadCustomerWork(document,async()=>response,{search:"?demeos-test=1"});
     assert.equal(document.elements["customer-controlled-test-entry"].hidden,true);
-    assert.equal(document.elements["customer-controlled-test-exit"].hidden,false);
+    assert.equal(document.elements["customer-controlled-test-exit"].hidden,true);
     assert.equal(document.elements["customer-work-list"].children.length,0);
-    assert.match(document.elements["customer-work-status"].className,/customer-load-error/);
+    assert.equal(/customer-load-error/.test(document.elements["customer-work-status"].className),!response.ok);
   }
 });

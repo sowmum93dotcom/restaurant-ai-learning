@@ -1354,11 +1354,9 @@ function getServerCustomerPackages(data) {
 }
 
 function getDiscoverRequest(location) {
-  const search = location && typeof location.search === "string" ? location.search : "";
-  const testMode = new URLSearchParams(search).get("demeos-test") === "1";
-  return testMode
-    ? { url: "/api/customer/work?demeos-test=1", options: { cache: "no-store", headers: { "x-demeos-test-mode": "controlled-preview" } }, testMode: true }
-    : { url: "/api/customer/work", options: undefined, testMode: false };
+  // One main feed. The exact query/header pair authorizes temporary fixtures;
+  // the server prefers approved business content and never mixes the two.
+  return { url: "/api/customer/work?source=discover&demeos-test=1", options: { cache: "no-store", headers: { "x-demeos-test-mode": "controlled-preview" } }, testMode: true, mainFeed: true };
 }
 
 const discoverRequestVersions = new WeakMap();
@@ -1371,12 +1369,12 @@ async function loadCustomerWork(document, fetcher, location) {
   const testEntry = document.getElementById("customer-controlled-test-entry");
   const testExit = document.getElementById("customer-controlled-test-exit");
   if (testEntry) testEntry.hidden = true;
-  if (testExit) testExit.hidden = !request.testMode;
+  if (testExit) testExit.hidden = true;
   try {
     const response = await fetcher(request.url, request.options);
     const data = await response.json();
     if (discoverRequestVersions.get(document) !== version) return;
-    if (!response.ok || !data || !Array.isArray(data.work) || (request.testMode && data.testMode !== true) || (!request.testMode && data.testMode === true) || (data.testMode === true && data.work.length === 0)) throw new Error();
+    if (!response.ok || !data || !Array.isArray(data.work) || (request.mainFeed ? typeof data.testMode !== "boolean" : (request.testMode && data.testMode !== true) || (!request.testMode && data.testMode === true)) || (data.testMode === true && data.work.length === 0)) throw new Error();
     if (document.body && document.body.classList) document.body.classList.toggle("demeos-controlled-test", data.testMode === true);
     renderCustomerWork(document, data.work, getServerCustomerPackages(data), recordParticipation);
     const workList = document.getElementById("customer-work-list");
@@ -1387,6 +1385,7 @@ async function loadCustomerWork(document, fetcher, location) {
       status.className = "customer-work-status customer-test-content-status";
       status.textContent = "CONTROLLED TEST CONTENT — not live business content";
     }
+    if (typeof document.dispatchEvent === "function") document.dispatchEvent(new CustomEvent("demeos:customer-work-loaded"));
   } catch (error) {
     if (discoverRequestVersions.get(document) !== version) return;
     // A failed refresh must not leave previously rendered business content visible.
@@ -1431,11 +1430,14 @@ function applyCustomerSurfaceRoute(document, hash) {
   if (!discover || !intention) return;
   const itemSurface = document.getElementById("product-experience");
   const preparationSurface = document.getElementById("purchase-preparation");
-  if (itemSurface) itemSurface.hidden = true;
-  if (preparationSurface) preparationSurface.hidden = true;
   const showIntention = hash === "#intention" || hash === "#customer-intention-form";
+  const showProduct = ["#product-experience", "#product-experience-options"].includes(hash) && Boolean(itemSurface && itemSurface.getAttribute("data-product-id"));
+  const showPreparation = hash === "#purchase-preparation" && Boolean(preparationSurface);
+  if (itemSurface) itemSurface.hidden = !showProduct;
+  if (preparationSurface) preparationSurface.hidden = !showPreparation;
   if (showIntention) pauseDiscoverVideos(document);
-  discover.hidden = showIntention;
+  if (showProduct || showPreparation) pauseDiscoverVideos(document);
+  discover.hidden = showIntention || showProduct || showPreparation;
   intention.hidden = !showIntention;
   document.querySelectorAll(".customer-journey-nav a[href^='#']").forEach(function (link) {
     const current = showIntention ? link.getAttribute("href") === "#intention" : link.getAttribute("href") === "#discover";
@@ -1448,10 +1450,6 @@ function applyCustomerSurfaceRoute(document, hash) {
 if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", function () {
   initializeCustomerIntention(document, navigator, new Date());
   loadCustomerWork(document, fetch, window.location);
-  applyCustomerSurfaceRoute(document, window.location.hash);
-  window.addEventListener("hashchange", function () { applyCustomerSurfaceRoute(document, window.location.hash); });
-  document.querySelectorAll(".customer-journey-nav a[href^='#']").forEach(function (link) { link.addEventListener("click", function () { applyCustomerSurfaceRoute(document, link.getAttribute("href")); }); });
   document.addEventListener("visibilitychange", function () { if (document.hidden) pauseDiscoverVideos(document); });
   window.addEventListener("pagehide", function () { pauseDiscoverVideos(document); });
 });
-

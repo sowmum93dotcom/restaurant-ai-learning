@@ -80,7 +80,8 @@ module.exports = async function handler(req, res) {
   })) {
     return res.status(403).json({ error: "DEMEOS permission denied." });
   }
-  if (isDiscoverTestMode(req)) {
+  const mainFeed = req.query && req.query.source === "discover";
+  if (!mainFeed && isDiscoverTestMode(req)) {
     return res.status(200).json({
       work: getValidPublicCustomerWork(discoverTestContent(req)),
       customerPackages: [],
@@ -90,6 +91,11 @@ module.exports = async function handler(req, res) {
   try {
     const work = await getRepository().getCustomerWork();
     const publicWork = getValidPublicCustomerWork(work);
+    // Temporary content lives inside the main Discover feed until approved
+    // business content exists. A failed repository read never reveals fixtures.
+    if (mainFeed && publicWork.length === 0 && isDiscoverTestMode(req)) {
+      return res.status(200).json({work: getValidPublicCustomerWork(productExperienceTestContent()), testMode: true, customerPackages: []});
+    }
     return res.status(200).json({
       work: publicWork,
       testMode: false,

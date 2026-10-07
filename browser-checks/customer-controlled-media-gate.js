@@ -40,7 +40,7 @@ async function openProduct(page,option,product,work,language='en') {
    const errors=[];page.on('pageerror', e=>errors.push(String(e)));
    if(local) {
     await page.route('**/api/customer/work', route=>route.fulfill({json:{work:[],customerPackages:[],testMode:false}}));
-    await page.route('**/api/customer/work?demeos-test=1', route=>{
+    await page.route('**/api/customer/work?source=discover&demeos-test=1', route=>{
      const request=route.request();assert.equal(request.headers()['x-demeos-test-mode'],'controlled-preview');
      return route.fulfill({json:{work:getValidPublicCustomerWork(fixtures()),customerPackages:[],testMode:true}});
     });
@@ -173,8 +173,8 @@ async function openProduct(page,option,product,work,language='en') {
    await page.waitForFunction(b=>document.querySelector('#customer-work-status').textContent===b,copy.ja.banner);
    assert.equal(await cards.count(),6,'direct entry and reload remain controlled');
    await page.goto(base+'/customer.html?demeos-test=0#discover',{waitUntil:'networkidle'});
-   await page.locator('#customer-work-list[data-controlled-test="false"]').waitFor({state:'attached'});
-   assert.equal(await page.locator('[data-work-item-id^="test-discover-"]').count(),0,'normal mode never shows controlled records');
+   await page.locator('#customer-work-list[data-controlled-test="true"]').waitFor({state:'attached'});
+   assert.equal(await page.locator('[data-work-item-id^="test-discover-"]').count(),6,'old public bookmarks use the same main feed');
    assert.equal(await page.locator('#customer-controlled-test-entry').isVisible(),false,'ordinary public browsing never exposes a testing control');
    await page.goto(base+'/customer.html?demeos-test=1#discover',{waitUntil:'networkidle'});
    await page.locator('#customer-work-list[data-controlled-test="true"]').waitFor();
@@ -184,17 +184,14 @@ async function openProduct(page,option,product,work,language='en') {
    await page.locator('#customer-work-list img').evaluateAll(async images=>{images.forEach(im=>{im.loading='eager';});await Promise.all(images.map(im=>im.decode()));});
    await page.screenshot({path:'/tmp/demeos-controlled-'+viewport.width+'.png',fullPage:true});
    if(local) {
-    await page.route('**/api/customer/work?demeos-test=1',route=>route.fulfill({json:{work:[],testMode:false}}));
+    await page.route('**/api/customer/work?source=discover&demeos-test=1',route=>route.fulfill({json:{work:[],testMode:false}}));
     await page.reload({waitUntil:'networkidle'});
-    await page.locator('.customer-discover-retry').waitFor();
-    assert.equal(await page.locator('#customer-controlled-test-exit').getAttribute('href'),'customer.html?demeos-test=0#discover','explicit exit clears the controlled choice');
-    assert.equal(await page.locator('#customer-controlled-test-exit').isVisible(),true,'explicit exit remains available when the controlled feed fails closed');
-    assert.ok(!(await page.locator('#customer-controlled-test-entry').isVisible()));
-    assert.equal(await page.locator('.customer-work-card').count(),0,'disabled test mode fails closed');
-    await page.locator('#customer-controlled-test-exit').click();
     await page.locator('#customer-work-list[data-controlled-test="false"]').waitFor({state:'attached'});
-    assert.equal(await page.evaluate(()=>sessionStorage.getItem('demeos-customer-content-context-v1')),'production','failed controlled load can exit and clear the remembered context');
-    assert.equal(await page.locator('#customer-controlled-test-exit').isVisible(),false,'exit remains hidden on the public data path');
+    assert.equal(await page.locator('#customer-controlled-test-exit').isVisible(),false);
+    assert.equal(await page.locator('#customer-controlled-test-entry').isVisible(),false);
+    assert.equal(await page.locator('.customer-work-card').count(),0,'server disable still prevents temporary content');
+    assert.equal(new URL(page.url()).searchParams.has('demeos-test'),false);
+
    }
    assert.deepEqual(errors,[]);
    console.log('Controlled media and continuation verified at '+viewport.width+'px');

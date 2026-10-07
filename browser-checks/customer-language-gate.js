@@ -1,14 +1,15 @@
 const { chromium } = require("playwright");
 const assert = require("node:assert/strict");
+const base = process.env.DEMEOS_BROWSER_BASE_URL || "http://127.0.0.1:4173";
 
 (async () => {
   const browser = await chromium.launch({ headless: true });
   try {
-    for (const viewport of [{ width: 390, height: 844 }, { width: 820, height: 1180 }]) {
+    for (const viewport of [{ width: 390, height: 844 }, { width: 820, height: 1180 }, { width: 1440, height: 1000 }]) {
       const page = await browser.newPage({ viewport });
       const errors = [];
       page.on("pageerror", error => errors.push(String(error && error.stack ? error.stack : error)));
-      await page.goto("http://127.0.0.1:4173/customer.html#discover", { waitUntil: "networkidle" });
+      await page.goto(base + "/customer.html#discover", { waitUntil: "networkidle" });
       assert.ok((await page.locator("body").innerText()).trim().length > 100, "Customer Experience must render meaningful content");
       assert.equal(await page.locator("#customer-language").count(), 1, "Language selector must render");
       assert.deepEqual(await page.locator("#customer-language option").evaluateAll(options => options.map(o => o.value)), ["en","es","fr","ar","pt","zh","hi","de","ja"], "All verified languages must be publicly selectable");
@@ -18,7 +19,7 @@ const assert = require("node:assert/strict");
     }
 
     const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
-    await page.goto("http://127.0.0.1:4173/customer.html#discover", { waitUntil: "networkidle" });
+    await page.goto(base + "/customer.html#discover", { waitUntil: "networkidle" });
     const result = await page.evaluate(() => {
       const languages = ["es","pt","zh","hi","de","ja"];
       return languages.map(code => {
