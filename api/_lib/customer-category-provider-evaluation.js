@@ -26,7 +26,7 @@ async function evaluateCategoryProvider({categoryUnderstanding,cases=CASES.filte
   const rows=report.rows.filter(row=>row.locale===locale),evaluated=providerRows.filter(row=>row.locale===locale);
   return [locale,{cases:rows.length,providerCases:evaluated.length,providerAccuracy:evaluated.length?evaluated.filter(row=>row.status==='correct-classification').length/evaluated.length:null,unsafeClassificationRate:rows.length?rows.filter(row=>row.status==='unsafe-classification').length/rows.length:null}];
  }));
- const rows=report.rows.map(row=>({...row,executionOrigin:executions.get(row.caseId).providerEvaluated?'provider':'baseline'}));
+ const rows=report.rows.map(row=>({...row,executionOrigin:executions.get(row.caseId).providerEvaluated?'provider':'baseline',executionReason:executions.get(row.caseId).reason}));
  const result={...report,rows,providerVersion,artifactFingerprint,metrics,localeMetrics,releaseGatePassed:report.releaseGatePassed&&!!providerVersion&&!!artifactFingerprint&&failures.length===0&&LOCALES.every(locale=>localeMetrics[locale].providerCases>0)};
  return {...result,reportFingerprint:fingerprint(result)};
 }

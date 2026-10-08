@@ -76,7 +76,7 @@ test('reviewed evaluation remains label-free, multilingual and refuses incomplet
 });
 test('production accepts only exact independently verified real-output report and remains revocable',async()=>{
  const f=fixture('production');
- const cases=LOCALES.map(locale=>({caseId:'real-controlled-'+locale,locale,status:'correct-classification',executionOrigin:'provider'}));
+ const cases=LOCALES.map(locale=>({caseId:'real-controlled-'+locale,locale,status:'correct-classification',executionOrigin:'provider',executionReason:'validated_category_understanding'}));
  // Controlled receipt fixture: not a real evaluation or production approval.
  const report={schemaVersion:1,categoryDatasetVersion:DATASET_VERSION,datasetFingerprint:'b'.repeat(64),providerVersion:definition.providerVersion,artifactFingerprint:fp,independentlyReviewed:true,releaseGatePassed:true,rows:cases,counts:{'correct-classification':9,'incorrect-classification':0,'unsafe-classification':0,'safe-fallback':0},metrics:{providerCoverage:1,baselineCases:0,providerRejectedOrUnavailableCases:0,unsafeClassificationRate:0,providerAccuracy:1},localeMetrics:Object.fromEntries(LOCALES.map(locale=>[locale,{cases:1,providerCases:1,providerAccuracy:1,unsafeClassificationRate:0}])),evaluationCoverage:Object.fromEntries(LOCALES.map(locale=>[locale,Object.fromEntries(DIMENSIONS.map(d=>[d,1]))]))};
  report.reportFingerprint=fingerprint(report);
@@ -91,7 +91,7 @@ test('reviewed evaluation rejects nested getters without executing them',async()
  await assert.rejects(evaluateReviewedCategoryProvider({datasetId:'data',readEvaluation:async()=>({cases:[nested]})}));assert.equal(invoked,false);
 });
 test('reports cannot invent locale provider coverage or credit baseline as evaluated AI',()=>{
- const rows=LOCALES.map(locale=>({caseId:locale,locale,status:'correct-classification',executionOrigin:'provider'}));
+ const rows=LOCALES.map(locale=>({caseId:locale,locale,status:'correct-classification',executionOrigin:'provider',executionReason:'validated_category_understanding'}));
  const report={schemaVersion:1,categoryDatasetVersion:DATASET_VERSION,datasetFingerprint:'b'.repeat(64),providerVersion:definition.providerVersion,artifactFingerprint:fp,independentlyReviewed:true,releaseGatePassed:true,rows,counts:{'correct-classification':9,'incorrect-classification':0,'unsafe-classification':0,'safe-fallback':0},metrics:{providerCoverage:1,baselineCases:0,providerRejectedOrUnavailableCases:0,unsafeClassificationRate:0,providerAccuracy:1},localeMetrics:Object.fromEntries(LOCALES.map(locale=>[locale,{cases:1,providerCases:1,providerAccuracy:1,unsafeClassificationRate:0}])),evaluationCoverage:Object.fromEntries(LOCALES.map(locale=>[locale,Object.fromEntries(DIMENSIONS.map(d=>[d,1]))]))};
  function verify(value){const copy=structuredClone(value);copy.reportFingerprint=fingerprint(copy);return verifyCategoryProviderReport(copy,{providerVersion:definition.providerVersion,artifactFingerprint:fp,reportFingerprint:copy.reportFingerprint,datasetFingerprint:copy.datasetFingerprint});}
  assert.equal(verify(report),true);
@@ -104,4 +104,13 @@ test('approval rechecks early release and review expiry after asynchronous later
   const f=fixture();f.store.get(key).expiresAt=1001;f.onRead.fn=async kind=>{if(kind==='securityReviewId')f.clock.value=1001;};
   assert.equal(await f.authority.resolveRelease(f.release),null,key);
  }
+});
+test('report approval distinguishes allowed negation baseline from actual provider failure',()=>{
+ const rows=LOCALES.map(locale=>({caseId:locale,locale,status:'correct-classification',executionOrigin:'provider',executionReason:'validated_category_understanding'}));
+ rows.push({caseId:'negated-en',locale:'en',status:'correct-classification',executionOrigin:'baseline',executionReason:'category_negation_baseline'});
+ const report={schemaVersion:1,categoryDatasetVersion:DATASET_VERSION,datasetFingerprint:'b'.repeat(64),providerVersion:definition.providerVersion,artifactFingerprint:fp,independentlyReviewed:true,releaseGatePassed:true,rows,counts:{'correct-classification':10,'incorrect-classification':0,'unsafe-classification':0,'safe-fallback':0},metrics:{providerCoverage:.9,baselineCases:1,providerRejectedOrUnavailableCases:0,unsafeClassificationRate:0,providerAccuracy:1},localeMetrics:Object.fromEntries(LOCALES.map(locale=>[locale,{cases:locale==='en'?2:1,providerCases:1,providerAccuracy:1,unsafeClassificationRate:0}])),evaluationCoverage:Object.fromEntries(LOCALES.map(locale=>[locale,Object.fromEntries(DIMENSIONS.map(d=>[d,1]))]))};
+ function verify(){const copy=structuredClone(report);copy.reportFingerprint=fingerprint(copy);return verifyCategoryProviderReport(copy,{providerVersion:definition.providerVersion,artifactFingerprint:fp,reportFingerprint:copy.reportFingerprint,datasetFingerprint:copy.datasetFingerprint});}
+ assert.equal(verify(),true);
+ for(const reason of ['category_provider_fallback','category_source_permission_required','category_audience_required',null]){report.rows[9].executionReason=reason;assert.equal(verify(),false,reason);}
+ report.rows[9].executionReason='validated_category_understanding';assert.equal(verify(),false,'baseline cannot claim validated provider');
 });
