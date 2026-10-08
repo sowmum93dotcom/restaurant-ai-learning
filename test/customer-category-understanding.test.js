@@ -11,7 +11,7 @@ function response(text,categoryId='89',sectorId='5'){
 }
 // Explicit controlled test doubles. No real intelligence/approval/policy exists.
 function configured(classify=input=>response(input.text)){
- const c={mode:'approved',version:'controlled-category-v1',allowProviderRequest:true,provider:{intelligenceVersion:'controlled-category-v1',artifactFingerprint:'a'.repeat(64),classify},
+ const c={audience:'production',mode:'approved',version:'controlled-category-v1',allowProviderRequest:true,provider:{intelligenceVersion:'controlled-category-v1',artifactFingerprint:'a'.repeat(64),classify},
  resolveApproval:async(_version,{locale})=>({approved:true,purpose:PURPOSE,candidateVersion:'controlled-category-v1',artifactFingerprint:'a'.repeat(64),rollbackVersion:BASELINE_VERSION,decisionId:'controlled-approval',locale}),
  authorizeData:async request=>({allowed:true,purpose:PURPOSE,requestFingerprint:request.requestFingerprint,policyVersion:'controlled-policy'}),
  resolveValidation:async request=>({approved:true,purpose:PURPOSE,decisionId:'controlled-validation',requestFingerprint:request.requestFingerprint,candidateFingerprint:request.candidateFingerprint,datasetVersion:DATASET_VERSION,locale:request.locale,scope:request.scope,constraintsPreserved:true,exclusionsPreserved:true})};

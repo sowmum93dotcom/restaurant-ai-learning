@@ -43,11 +43,12 @@ function validateSemanticCandidates(value,text){
   }catch(_error){return null;}
 }
 function fallback(text,scope,reason){return {interpretation:scope==='customer-request'?interpretCategories(text):{datasetVersion:DATASET_VERSION,categoryIds:[],source:'baseline-fallback'},reason};}
-async function understandCategoryText({text,locale='en',scope='customer-request',sourceReference=null,configuration}={}){
+async function understandCategoryText({text,locale='en',scope='customer-request',sourceReference=null,configuration,executionAudience='production'}={}){
   const baseline=reason=>fallback(text,scope,reason);
   const c=configuration?.categoryUnderstanding;
   try{
     if(!['customer-request','published-offer'].includes(scope)||typeof text!=='string'||!text.trim()||text.length>(scope==='customer-request'?500:10000)||!LOCALES.includes(locale))return baseline('invalid_category_input');
+    if(c&&c.audience!==executionAudience)return baseline('category_audience_required');
     if(!c||c.mode!=='approved'||c.allowProviderRequest!==true||!id(c.version)||c.provider?.intelligenceVersion!==c.version||typeof c.provider?.classify!=='function'||typeof c.resolveApproval!=='function'||typeof c.authorizeData!=='function'||typeof c.resolveValidation!=='function')return baseline('baseline_category_understanding');
     // Existing redaction guard plus a reviewed, source-bound data-policy hook.
     // No redacted text is submitted: offsets and meaning must stay reproducible.
@@ -66,7 +67,7 @@ async function understandCategoryText({text,locale='en',scope='customer-request'
       const raw=await c.provider.classify(Object.freeze({schemaVersion:SCHEMA_VERSION,datasetVersion:DATASET_VERSION,scope,locale,text,categories:REGISTRY,dataOnly:true,signal}));
       if(signal.aborted)return baseline('category_deadline');
       const candidates=validateSemanticCandidates(raw,text);
-      if(!candidates||!candidates.length)return baseline('invalid_or_empty_category_response');
+      if(!candidates)return baseline('invalid_category_response');
       // Explicit canonical category evidence is already deterministic. An
       // advisory must not discard it in favour of a different known category.
       const literal=interpretCategories(text);
@@ -84,6 +85,10 @@ async function understandCategoryText({text,locale='en',scope='customer-request'
 async function understandCustomerCategories({text,locale,configuration}={}){
   return understandCategoryText({text,locale,configuration,scope:'customer-request'});
 }
+// Explicit internal offline entry, never selected by request/header/env flags.
+async function evaluateCustomerCategories({text,locale,configuration}={}){
+  return understandCategoryText({text,locale,configuration,scope:'customer-request',executionAudience:'offline-evaluation'});
+}
 async function suggestPublishedOfferCategories({work,workItemId,productId,locale='en',configuration,testMode=false}={}){
   // Call only with the existing approved repository catalogue. Publication
   // provenance must ALSO be authorized by the internal data-policy service.
@@ -99,4 +104,4 @@ async function suggestPublishedOfferCategories({work,workItemId,productId,locale
   if(!product)return fallback('','published-offer','published_offer_missing');
   return understandCategoryText({text:product.name+' '+product.description,locale,scope:'published-offer',sourceReference:Object.freeze({workItemId:item.workItemId,productId:product.productId}),configuration});
 }
-module.exports={SCHEMA_VERSION,BASELINE_VERSION,PURPOSE,validateSemanticCandidates,understandCustomerCategories,suggestPublishedOfferCategories};
+module.exports={SCHEMA_VERSION,BASELINE_VERSION,PURPOSE,validateSemanticCandidates,understandCustomerCategories,evaluateCustomerCategories,suggestPublishedOfferCategories};
