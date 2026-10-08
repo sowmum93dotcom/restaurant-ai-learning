@@ -16,9 +16,9 @@ function configuration({span,fail=false}={}){
  resolveRetrievalPhrase:async r=>[...Object.values(requests),'banquet','Catering Services'].includes(r.phrase)?{approved:true,purpose:r.purpose,decisionId:'reviewed-phrase',categoryId:r.categoryId,locale:r.locale,phrase:r.phrase,requestFingerprint:r.requestFingerprint,candidateFingerprint:r.candidateFingerprint,phraseFingerprint:fingerprint({categoryId:r.categoryId,locale:r.locale,phrase:r.phrase})}:null,
  resolveValidation:async r=>({approved:true,purpose:PURPOSE,decisionId:'fixture-validation',requestFingerprint:r.requestFingerprint,candidateFingerprint:r.candidateFingerprint,datasetVersion:DATASET_VERSION,locale:r.locale,scope:r.scope,constraintsPreserved:true,exclusionsPreserved:true})}};
 }
-async function search(text,{work=catalogue(),locale='en',config=configuration(),testMode=false}={}){
+async function search(text,{work=catalogue(),locale='en',config=configuration(),testMode=false,place=''}={}){
  const understanding=confirmCustomerUnderstanding(buildCustomerUnderstanding('',text));
- const prepared=await prepareCustomerSearch({understanding,work,locale,configuration:config,testMode});
+ const prepared=await prepareCustomerSearch({understanding,work,locale,configuration:config,testMode,place});
  return completeCustomerSearch({prepared,possibilities:prepared.possibilities,understanding,work,configuration:config,testMode});
 }
 const requests={en:'A banquet provider',es:'Un proveedor de banquetes',fr:'Un prestataire de banquets',ar:'مزود ولائم',pt:'Um fornecedor de banquetes',zh:'宴会供应商',hi:'भोज प्रदाता',de:'Ein Bankettanbieter',ja:'宴会の提供者'};
@@ -96,4 +96,13 @@ test('parsed location is enforced against business place independently of produc
  assert.deepEqual(await search(prefix+' near London',{config}),[]);
  assert.equal((await search(prefix+' under £100 near Manchester',{config})).length,1);
  assert.deepEqual(await search(prefix+' under £50 near Manchester',{config}),[]);
+});
+
+test('clarified near-me uses the supplied business location while keeping unknown place fail-closed',async()=>{
+ const config=configuration({span:{start:0,end:7}});
+ assert.deepEqual(await search('banquet near me',{config}),[]);
+ assert.equal((await search('banquet near me',{config,place:'Manchester'})).length,1);
+ assert.deepEqual(await search('banquet near me',{config,place:'London'}),[]);
+ assert.equal((await search('banquet near me under £100',{config,place:'Manchester'})).length,1);
+ assert.deepEqual(await search('banquet near me under £50',{config,place:'Manchester'}),[]);
 });
