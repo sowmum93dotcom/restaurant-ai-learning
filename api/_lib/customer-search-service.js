@@ -26,6 +26,10 @@ async function prepareCustomerSearch({understanding,work,preferences=[],feedback
     const candidate=categoryUnderstanding.retrievalCandidates[0];
     let remainingText=understanding.customerText.slice(0,candidate.evidence.start)+' '+understanding.customerText.slice(candidate.evidence.end);
     if(intention.budget)remainingText=remainingText.replace(intention.budget.sourceText,'');
+    // The exact declared place is enforced against the business independently;
+    // it is not a product-description requirement. Remove only its literal
+    // request phrase, never unrelated words or an unverified provider location.
+    if(intention.location)remainingText=remainingText.replace(/\b(?:near|in|around|at)\s+([\p{L}]+(?:\s+[\p{L}]+)?)(?=[,.!?]|$)/iu,(phrase,location)=>location.normalize('NFKC').toLowerCase()===intention.location.normalize('NFKC').toLowerCase()?'':phrase);
     semanticRetrieval={categoryId:candidate.categoryId,remainingText};
   }
   const rejected=categorySelection.rejectedWorkItemIds.map(workItemId=>({resultId:stablePossibilityId(workItemId),reason:'category_classification_mismatch'}));

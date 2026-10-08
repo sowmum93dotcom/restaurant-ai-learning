@@ -89,3 +89,11 @@ test('retrieval phrase permission is bound to the exact source, locale, category
   assert.deepEqual(await search('A banquet provider',{config:c}),[],field);
  }
 });
+
+test('parsed location is enforced against business place independently of product wording',async()=>{
+ const prefix='A banquet provider',config=configuration({span:{start:0,end:prefix.length}});
+ const result=await search(prefix+' near Manchester',{config});assert.equal(result.length,1);assert.equal(result[0].location,'Manchester');
+ assert.deepEqual(await search(prefix+' near London',{config}),[]);
+ assert.equal((await search(prefix+' under £100 near Manchester',{config})).length,1);
+ assert.deepEqual(await search(prefix+' under £50 near Manchester',{config}),[]);
+});
