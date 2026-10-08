@@ -66,7 +66,7 @@ async function understandCategoryText({text,locale='en',scope='customer-request'
       const raw=await c.provider.classify(Object.freeze({schemaVersion:SCHEMA_VERSION,datasetVersion:DATASET_VERSION,scope,locale,text,categories:REGISTRY,dataOnly:true,signal}));
       if(signal.aborted)return baseline('category_deadline');
       const candidates=validateSemanticCandidates(raw,text);
-      if(!candidates||!candidates.length)return baseline('invalid_or_empty_category_response');
+      if(!candidates)return baseline('invalid_category_response');
       // Explicit canonical category evidence is already deterministic. An
       // advisory must not discard it in favour of a different known category.
       const literal=interpretCategories(text);
