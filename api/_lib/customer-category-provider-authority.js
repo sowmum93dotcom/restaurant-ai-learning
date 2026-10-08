@@ -33,19 +33,23 @@ function createCategoryProviderAuthority({definition,readRecord,now=Date.now,aud
    if(!release||release.audience!==request.audience||!release.locales.includes(request.locale))return null;
    const p=record(release.payload,['providerIdentity','endpoint','modelVersion','configurationFingerprint','rollbackVersion','privacyReviewId','securityReviewId','evaluationReviewId','regressionReviewId','rollbackReviewId','activationDecisionId']);
    if(!p||p.providerIdentity!==artifact.providerIdentity||p.endpoint!==artifact.endpoint||p.modelVersion!==artifact.modelVersion||p.configurationFingerprint!==fp||p.rollbackVersion!==BASELINE_VERSION)return null;
+   let expiresAt=release.expiresAt;
    const requirements=['privacyReviewId','securityReviewId',...(request.audience==='production'?['evaluationReviewId','regressionReviewId','rollbackReviewId','activationDecisionId']:[])];
    for(const key of requirements){
     const review=await read(key,p[key],request.signal);
     if(!review||review.audience!==request.audience||!review.locales.includes(request.locale))return null;
+    expiresAt=Math.min(expiresAt,review.expiresAt);
     const receipt=record(review.payload,['rollbackVersion','configurationFingerprint','independentlyVerified','reportFingerprint','datasetFingerprint','realProviderOutputs']);
     if(!receipt||receipt.rollbackVersion!==BASELINE_VERSION||receipt.configurationFingerprint!==fp||receipt.independentlyVerified!==true)return null;
     if(key==='evaluationReviewId'){
      const verified=await read('evaluation-report',receipt.reportFingerprint,request.signal);
      if(!verified||verified.audience!==request.audience||!LOCALES.every(locale=>verified.locales.includes(locale)))return null;
+     expiresAt=Math.min(expiresAt,verified.expiresAt);
      const report=verified.payload;
      if(receipt.realProviderOutputs!==true||!verifyCategoryProviderReport(report,{providerVersion:artifact.providerVersion,artifactFingerprint:fp,reportFingerprint:receipt.reportFingerprint,datasetFingerprint:receipt.datasetFingerprint}))return null;
     }
    }
+   const issuedAt=now();if(request.signal.aborted||!Number.isSafeInteger(issuedAt)||expiresAt<=issuedAt)return null;
    return Object.freeze({approved:true,candidateVersion:artifact.providerVersion,artifactFingerprint:fp,purpose:PURPOSE,rollbackVersion:BASELINE_VERSION,decisionId:release.decisionId,audience:request.audience,locale:request.locale,...Object.fromEntries(['privacyReviewId','securityReviewId','evaluationReviewId','regressionReviewId','rollbackReviewId','activationDecisionId'].map(key=>[key,p[key]]))});
   }catch(_error){return null;}
  }
@@ -71,9 +75,14 @@ function verifyCategoryProviderReport(report,binding){
   if(!report||Object.getPrototypeOf(report)!==Object.prototype)return false;
   const copy=snapshotData(report,250000),claimed=copy.reportFingerprint;delete copy.reportFingerprint;
   if(copy.schemaVersion!==1||copy.categoryDatasetVersion!==DATASET_VERSION||claimed!==binding.reportFingerprint||fingerprint(copy)!==claimed||copy.datasetFingerprint!==binding.datasetFingerprint||copy.providerVersion!==binding.providerVersion||copy.artifactFingerprint!==binding.artifactFingerprint||copy.independentlyReviewed!==true||copy.releaseGatePassed!==true)return false;
-  if(!Array.isArray(copy.rows)||!copy.rows.length||copy.rows.length>1000||copy.rows.some(row=>row.status!=='correct-classification')||new Set(copy.rows.map(row=>row.caseId)).size!==copy.rows.length)return false;
+  if(!Array.isArray(copy.rows)||!copy.rows.length||copy.rows.length>1000||copy.rows.some(row=>!id(row.caseId)||!LOCALES.includes(row.locale)||row.status!=='correct-classification'||!['provider','baseline'].includes(row.executionOrigin))||new Set(copy.rows.map(row=>row.caseId)).size!==copy.rows.length)return false;
   if(copy.counts['correct-classification']!==copy.rows.length||['incorrect-classification','unsafe-classification','safe-fallback'].some(key=>copy.counts[key]!==0)||copy.metrics.providerRejectedOrUnavailableCases!==0||copy.metrics.unsafeClassificationRate!==0||copy.metrics.providerAccuracy!==1)return false;
-  return LOCALES.every(locale=>DIMENSIONS.every(dimension=>Number.isInteger(copy.evaluationCoverage?.[locale]?.[dimension])&&copy.evaluationCoverage[locale][dimension]>0)&&copy.localeMetrics[locale].cases===copy.rows.filter(row=>row.locale===locale).length&&copy.localeMetrics[locale].providerCases>0&&copy.localeMetrics[locale].providerAccuracy===1&&copy.localeMetrics[locale].unsafeClassificationRate===0);
+  const providerCases=copy.rows.filter(row=>row.executionOrigin==='provider').length;
+  if(copy.metrics.providerCoverage!==providerCases/copy.rows.length||copy.metrics.baselineCases!==copy.rows.length-providerCases)return false;
+  return LOCALES.every(locale=>{
+   const rows=copy.rows.filter(row=>row.locale===locale),evaluated=rows.filter(row=>row.executionOrigin==='provider'),metrics=copy.localeMetrics[locale];
+   return rows.length>0&&evaluated.length>0&&metrics.cases===rows.length&&metrics.providerCases===evaluated.length&&metrics.providerAccuracy===1&&metrics.unsafeClassificationRate===0&&DIMENSIONS.every(dimension=>Number.isInteger(copy.evaluationCoverage?.[locale]?.[dimension])&&copy.evaluationCoverage[locale][dimension]>0&&copy.evaluationCoverage[locale][dimension]<=rows.length);
+  });
  }catch(_error){return false;}
 }
 module.exports={createCategoryProviderAuthority,verifyCategoryProviderReport};

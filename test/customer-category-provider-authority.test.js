@@ -15,9 +15,10 @@ function fixture(audience='offline-evaluation'){
  const payload={providerIdentity:definition.providerIdentity,endpoint:definition.endpoint,modelVersion:definition.modelVersion,configurationFingerprint:fp,rollbackVersion:BASELINE_VERSION,privacyReviewId:'privacy',securityReviewId:'security',evaluationReviewId:null,regressionReviewId:null,rollbackReviewId:null,activationDecisionId:null};
  store.set('provider-release:controlled-v2',envelope('provider-release','controlled-v2',payload));
  for(const [kind,key] of [['privacyReviewId','privacy'],['securityReviewId','security']])store.set(kind+':'+key,envelope(kind,key,{...receipt}));
- const authority=createCategoryProviderAuthority({definition,audience,now:()=>1000,readRecord:async({kind,reference})=>store.get(kind+':'+reference)});
+ const clock={value:1000},onRead={fn:null};
+ const authority=createCategoryProviderAuthority({definition,audience,now:()=>clock.value,readRecord:async({kind,reference})=>{if(onRead.fn)await onRead.fn(kind,reference);return store.get(kind+':'+reference);}});
  const release={candidateVersion:definition.providerVersion,artifactFingerprint:fp,purpose:PURPOSE,rollbackVersion:BASELINE_VERSION,audience,locale:'en',scope:'customer-request',signal};
- return {authority,store,envelope,receipt,payload,release,signal};
+ return {authority,clock,onRead,store,envelope,receipt,payload,release,signal};
 }
 test('server authority binds provider identity, endpoint, model and fingerprint with current reviews',async()=>{
  const f=fixture();assert.equal((await f.authority.resolveRelease(f.release)).approved,true);
@@ -75,9 +76,9 @@ test('reviewed evaluation remains label-free, multilingual and refuses incomplet
 });
 test('production accepts only exact independently verified real-output report and remains revocable',async()=>{
  const f=fixture('production');
- const cases=LOCALES.map(locale=>({caseId:'real-controlled-'+locale,locale,status:'correct-classification'}));
+ const cases=LOCALES.map(locale=>({caseId:'real-controlled-'+locale,locale,status:'correct-classification',executionOrigin:'provider'}));
  // Controlled receipt fixture: not a real evaluation or production approval.
- const report={schemaVersion:1,categoryDatasetVersion:DATASET_VERSION,datasetFingerprint:'b'.repeat(64),providerVersion:definition.providerVersion,artifactFingerprint:fp,independentlyReviewed:true,releaseGatePassed:true,rows:cases,counts:{'correct-classification':9,'incorrect-classification':0,'unsafe-classification':0,'safe-fallback':0},metrics:{providerRejectedOrUnavailableCases:0,unsafeClassificationRate:0,providerAccuracy:1},localeMetrics:Object.fromEntries(LOCALES.map(locale=>[locale,{cases:1,providerCases:1,providerAccuracy:1,unsafeClassificationRate:0}])),evaluationCoverage:Object.fromEntries(LOCALES.map(locale=>[locale,Object.fromEntries(DIMENSIONS.map(d=>[d,1]))]))};
+ const report={schemaVersion:1,categoryDatasetVersion:DATASET_VERSION,datasetFingerprint:'b'.repeat(64),providerVersion:definition.providerVersion,artifactFingerprint:fp,independentlyReviewed:true,releaseGatePassed:true,rows:cases,counts:{'correct-classification':9,'incorrect-classification':0,'unsafe-classification':0,'safe-fallback':0},metrics:{providerCoverage:1,baselineCases:0,providerRejectedOrUnavailableCases:0,unsafeClassificationRate:0,providerAccuracy:1},localeMetrics:Object.fromEntries(LOCALES.map(locale=>[locale,{cases:1,providerCases:1,providerAccuracy:1,unsafeClassificationRate:0}])),evaluationCoverage:Object.fromEntries(LOCALES.map(locale=>[locale,Object.fromEntries(DIMENSIONS.map(d=>[d,1]))]))};
  report.reportFingerprint=fingerprint(report);
  for(const key of ['evaluationReviewId','regressionReviewId','rollbackReviewId','activationDecisionId']){f.payload[key]=key;f.store.set(key+':'+key,f.envelope(key,key,{...f.receipt,reportFingerprint:report.reportFingerprint,datasetFingerprint:report.datasetFingerprint,realProviderOutputs:true}));}
  f.store.set('evaluation-report:'+report.reportFingerprint,f.envelope('evaluation-report',report.reportFingerprint,report));
@@ -88,4 +89,19 @@ test('production accepts only exact independently verified real-output report an
 test('reviewed evaluation rejects nested getters without executing them',async()=>{
  let invoked=false;const nested={};Object.defineProperty(nested,'text',{get(){invoked=true;return 'private';},enumerable:true});
  await assert.rejects(evaluateReviewedCategoryProvider({datasetId:'data',readEvaluation:async()=>({cases:[nested]})}));assert.equal(invoked,false);
+});
+test('reports cannot invent locale provider coverage or credit baseline as evaluated AI',()=>{
+ const rows=LOCALES.map(locale=>({caseId:locale,locale,status:'correct-classification',executionOrigin:'provider'}));
+ const report={schemaVersion:1,categoryDatasetVersion:DATASET_VERSION,datasetFingerprint:'b'.repeat(64),providerVersion:definition.providerVersion,artifactFingerprint:fp,independentlyReviewed:true,releaseGatePassed:true,rows,counts:{'correct-classification':9,'incorrect-classification':0,'unsafe-classification':0,'safe-fallback':0},metrics:{providerCoverage:1,baselineCases:0,providerRejectedOrUnavailableCases:0,unsafeClassificationRate:0,providerAccuracy:1},localeMetrics:Object.fromEntries(LOCALES.map(locale=>[locale,{cases:1,providerCases:1,providerAccuracy:1,unsafeClassificationRate:0}])),evaluationCoverage:Object.fromEntries(LOCALES.map(locale=>[locale,Object.fromEntries(DIMENSIONS.map(d=>[d,1]))]))};
+ function verify(value){const copy=structuredClone(value);copy.reportFingerprint=fingerprint(copy);return verifyCategoryProviderReport(copy,{providerVersion:definition.providerVersion,artifactFingerprint:fp,reportFingerprint:copy.reportFingerprint,datasetFingerprint:copy.datasetFingerprint});}
+ assert.equal(verify(report),true);
+ const english=structuredClone(report);english.rows=english.rows.slice(0,1);english.counts['correct-classification']=1;for(const locale of LOCALES.slice(1))english.localeMetrics[locale].cases=0;assert.equal(verify(english),false);
+ const fallback=structuredClone(report);fallback.rows[1].executionOrigin='baseline';assert.equal(verify(fallback),false);
+ const excessive=structuredClone(report);excessive.localeMetrics.fr.providerCases=2;assert.equal(verify(excessive),false);
+});
+test('approval rechecks early release and review expiry after asynchronous later reads',async()=>{
+ for(const key of ['provider-release:controlled-v2','privacyReviewId:privacy']){
+  const f=fixture();f.store.get(key).expiresAt=1001;f.onRead.fn=async kind=>{if(kind==='securityReviewId')f.clock.value=1001;};
+  assert.equal(await f.authority.resolveRelease(f.release),null,key);
+ }
 });
