@@ -24,8 +24,14 @@ function hasNegation(text){
 function validateSemanticCandidates(value,text){
   try{
     if(typeof text!=='string'||!text.trim()||text.length>10000||!keys(value,['schemaVersion','datasetVersion','candidates'])||value.schemaVersion!==SCHEMA_VERSION||value.datasetVersion!==DATASET_VERSION||!Array.isArray(value.candidates)||value.candidates.length>MAX_CATEGORIES||hasNegation(text))return null;
+    const supplied=value.candidates,length=supplied.length;
+    if(Object.getPrototypeOf(supplied)!==Array.prototype||Reflect.ownKeys(supplied).length!==length+1)return null;
     const seen=new Set(),candidates=[];
-    for(const row of value.candidates){
+    // Provider arrays are data, never iterators or executable accessor values.
+    for(let index=0;index<length;index++){
+      const descriptor=Object.getOwnPropertyDescriptor(supplied,String(index));
+      if(!descriptor||!Object.hasOwn(descriptor,'value'))return null;
+      const row=descriptor.value;
       if(!keys(row,['categoryId','sectorId','confidence','evidence'])||!keys(row.evidence,['start','end']))return null;
       const reference=validateReference({categoryId:row.categoryId,sectorId:row.sectorId});
       const {start,end}=row.evidence;

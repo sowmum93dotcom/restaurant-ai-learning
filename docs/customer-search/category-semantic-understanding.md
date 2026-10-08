@@ -56,6 +56,8 @@ The reproducible dataset fingerprint binds exact cases and judgement metadata. T
 
 The shared registry ID-list validator checks every own index explicitly and returns an immutable dense snapshot. Sparse arrays, inherited/accessor indices, duplicate or unknown IDs cannot be accepted as evaluation results or expected labels. Comparison does not invoke overridden array callbacks/iterators. The existing catalogue category selector uses the same check, so malformed sparse interpretations preserve the baseline universe rather than narrowing it. This corrects the independent Codex review finding without changing category data or search authority.
 
+Semantic provider candidate arrays also require plain dense own data entries. Inherited entries, accessors, custom iterators and extra array fields are rejected without executing them; malformed responses restore baseline before semantic validation or category narrowing.
+
 Evaluation validates and freezes sanitized copies of all cases and expected labels before fingerprinting or calling an evaluator. It captures independent-review eligibility before execution, so caller/evaluator mutation cannot change labels, judgement, locales or approval during a run. The evaluator receives only case ID, locale, source text and response-scenario metadata; expected labels and safety/judgement policy stay inside the harness. Extra/private case fields and accessor/sparse case inputs are rejected. Controlled oracle tests deliberately use an external specification fixture; that fixture is not passed as intelligence input or claimed as AI quality.
 
 ## Remaining inactive work and limitations

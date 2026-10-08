@@ -51,6 +51,22 @@ test('strict semantic response rejects unknown IDs, wrong sectors, names, facts,
  assert.equal(validateSemanticCandidates(response('   '),'   '),null);
 });
 
+test('provider candidate arrays reject holes, inherited entries, accessors and iterator overrides without executing them',async()=>{
+ const text='food for a wedding',row=response(text).candidates[0];let executed=0;
+ const inherited=Array(1);Object.setPrototypeOf(inherited,Object.assign(Object.create(Array.prototype),{0:row}));
+ const accessor=Array(1);Object.defineProperty(accessor,'0',{enumerable:true,get(){executed++;return row;}});
+ const iterator=[row];iterator[Symbol.iterator]=function*(){executed++;yield row;};
+ const iteratorGetter=[row];Object.defineProperty(iteratorGetter,Symbol.iterator,{get(){executed++;return Array.prototype[Symbol.iterator];}});
+ for(const candidates of [Array(1),inherited,accessor,iterator,iteratorGetter]){
+  const raw={...response(text),candidates};assert.equal(validateSemanticCandidates(raw,text),null);
+  let validated=0;const configuration=configured(()=>raw);
+  configuration.categoryUnderstanding.resolveValidation=()=>{validated++;throw new Error('malformed candidates must not reach validation');};
+  const result=await understandCustomerCategories({text,configuration});
+  assert.deepEqual(result.interpretation,interpretCategories(text));assert.equal(validated,0);
+ }
+ assert.equal(executed,0);assert.ok(validateSemanticCandidates(response(text),text));
+});
+
 test('evaluation harness exercises actual category boundary and malformed semantic fallback',async()=>{
  const {CASES}=require('../api/_lib/customer-category-eval-set');
  const {evaluateCategoryUnderstanding}=require('../api/_lib/customer-category-evaluation');
