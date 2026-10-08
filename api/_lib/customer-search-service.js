@@ -7,10 +7,12 @@ const {runIntelligenceRuntime}=require('./customer-intelligence-runtime');
 const {rankingCandidates,offlineShadowProvider,FEATURE_POLICY}=require('./customer-search-ranking');
 const {searchReference,emitSearchEvidence}=require('./customer-search-events');
 const {scheduleCustomerSearch}=require('./customer-search-registry');
-const {interpretCategories,selectCategoryWork}=require('./customer-category-classification');
+const {selectCategoryWork}=require('./customer-category-classification');
+const {understandCustomerCategories}=require('./customer-category-understanding');
 async function prepareCustomerSearch({understanding,work,preferences=[],feedback=[],place='',locale='en',configuration}={}){
   const parsed=await understandSearch({understanding,place,locale,configuration});
-  const categoryInterpretation=interpretCategories(understanding.customerText);
+  const categoryUnderstanding=await understandCustomerCategories({text:understanding.customerText,locale:parsed.intention.locale,configuration});
+  const categoryInterpretation=categoryUnderstanding.interpretation;
   const intention={...parsed.intention,category:categoryInterpretation.categoryIds.length===1?categoryInterpretation.categoryIds[0]:null,categoryInterpretation};
   const categorySelection=selectCategoryWork(work,categoryInterpretation);
   // Separate a parsed monetary phrase from lexical requirements; the explicit

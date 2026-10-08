@@ -2,7 +2,7 @@
 // Server-owned configuration. No request/query/header/environment boolean can
 // install a provider, authorize training, or activate an intelligence artifact.
 const BASELINE_VERSION='demeos-deterministic-search-v1';
-const SAFE_CONFIGURATION=Object.freeze({mode:'baseline',baselineVersion:BASELINE_VERSION,understanding:null,provider:null,artifact:null,evidence:null});
+const SAFE_CONFIGURATION=Object.freeze({mode:'baseline',baselineVersion:BASELINE_VERSION,understanding:null,categoryUnderstanding:null,provider:null,artifact:null,evidence:null});
 function getCustomerSearchConfiguration(){return SAFE_CONFIGURATION;}
 function deferCustomerSearch(task){
   // Vercel keeps the invocation alive; no untracked fire-and-forget work.

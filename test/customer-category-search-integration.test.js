@@ -132,6 +132,15 @@ test('invalid or oversized category interpretations preserve the approved search
  const items=[work()];
  for(const interpretation of [null,{datasetVersion:DATASET_VERSION,categoryIds:['172']},{datasetVersion:'wrong',categoryIds:['10']},{datasetVersion:DATASET_VERSION,categoryIds:['10','10']},{datasetVersion:DATASET_VERSION,categoryIds:Array.from({length:9},(_,i)=>String(i+1))}])assert.equal(selectCategoryWork(items,interpretation).work,items);
 });
+
+test('sparse or inherited category interpretations cannot narrow the approved search universe',()=>{
+ const items=[work()];const inherited=Array(1);Object.setPrototypeOf(inherited,{0:'11'});
+ const duplicates=['11','11'];duplicates[Symbol.iterator]=function*(){yield '10';yield '11';};
+ for(const categoryIds of [Array(1),['11',,'10'],inherited,duplicates]){
+  const selected=selectCategoryWork(items,{datasetVersion:DATASET_VERSION,categoryIds});
+  assert.equal(selected.work,items);assert.deepEqual(selected.rejectedWorkItemIds,[]);
+ }
+});
 test('a classified service uses the existing presentation and search contracts',async()=>{
  const service=work('service');service.content='Catering Services';service.products[0]={...service.products[0],name:'Catering Services',description:'Published catering offer',categoryClassification:classification('89','5'),presentation:{categoryId:'services.appointments',pricing:{mode:'quote'},options:[],variants:[]}};
  const internal=getValidPublicCustomerWork([service],20,{forSearchClassification:true});assert.equal(internal[0].products[0].presentation.kind,'service');assert.equal(internal[0].categoryClassification.categories[0].categoryId,'89');

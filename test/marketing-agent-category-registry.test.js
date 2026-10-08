@@ -1,6 +1,6 @@
 'use strict';
 const test = require('node:test'), assert = require('node:assert/strict'), crypto = require('node:crypto');
-const {DATASET_VERSION, SECTORS, CATEGORIES, getCategory, getSector, validateReference, validateDataset} = require('../api/_lib/marketing-agent-categories');
+const {DATASET_VERSION, SECTORS, CATEGORIES, getCategory, getSector, validateReference, validateDataset, validateCategoryIds} = require('../api/_lib/marketing-agent-categories');
 const data = require('../data/marketing-agent/categories-v1.json');
 test('canonical classification exactly preserves nine supplied sectors and all 171 names and relationships', () => {
   assert.equal(SECTORS.length,9); assert.equal(CATEGORIES.length,171);
@@ -27,4 +27,10 @@ test('runtime records are immutable and isolated from writable JSON loader objec
   assert.throws(()=>{CATEGORIES.push({categoryId:'172'});},TypeError);
   assert.throws(()=>{SECTORS[0].sectorName='Changed';},TypeError);
   const prior=data.categories[9].categoryName;data.categories[9].categoryName='Untrusted mutation';assert.equal(getCategory('10').categoryName,prior);data.categories[9].categoryName=prior;
+});
+
+test('category ID list validation returns an immutable dense snapshot and respects explicit bounds', () => {
+ const input=['89','93'],validated=validateCategoryIds(input,2);assert.deepEqual(validated,input);assert.ok(Object.isFrozen(validated));assert.notEqual(validated,input);
+ input[0]='172';assert.deepEqual(validated,['89','93']);assert.deepEqual(validateCategoryIds([],0),[]);
+ for(const [ids,limit] of [[['89'],0],[['172'],8],[['89','89'],8],[Array(1),8],[['89'],-1],[[],172],[[],NaN]])assert.equal(validateCategoryIds(ids,limit),null);
 });
