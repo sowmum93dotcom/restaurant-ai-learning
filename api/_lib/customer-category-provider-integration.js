@@ -12,8 +12,9 @@ function record(value,fields){
  const copy={};for(const key of fields){const d=Object.getOwnPropertyDescriptor(value,key);if(!d||!Object.hasOwn(d,'value'))return null;copy[key]=d.value;}return copy;
 }
 function definitionSnapshot(value){
- const row=record(value,['schemaVersion','providerVersion','endpoint','protocol','datasetVersion']);
- if(!row||row.schemaVersion!==1||!id(row.providerVersion)||!endpointUrl(row.endpoint)||row.protocol!==PROTOCOL||row.datasetVersion!==DATASET_VERSION)throw new Error('invalid_category_provider_definition');
+ const fields=value?.schemaVersion===2?['schemaVersion','providerVersion','providerIdentity','modelVersion','endpoint','protocol','datasetVersion']:['schemaVersion','providerVersion','endpoint','protocol','datasetVersion'];
+ const row=record(value,fields);
+ if(!row||![1,2].includes(row.schemaVersion)|| (row.schemaVersion===2&&(!id(row.providerIdentity)||!id(row.modelVersion)))||!id(row.providerVersion)||!endpointUrl(row.endpoint)||row.protocol!==PROTOCOL||row.datasetVersion!==DATASET_VERSION)throw new Error('invalid_category_provider_definition');
  return Object.freeze(row);
 }
 function definitionFingerprint(value){
@@ -61,7 +62,7 @@ function createCategoryProviderIntegration({definition,resolveRelease,authorizeD
   const authorization=await resolveCredentials(Object.freeze({providerVersion:artifact.providerVersion,artifactFingerprint,signal:row.signal}));
   if(row.signal.aborted)throw new Error('category_provider_aborted');
   if(typeof authorization!=='string'||!/^Bearer [A-Za-z0-9._~+\/-]{1,4096}=*$/.test(authorization))throw new Error('category_credentials_required');
-  const body=JSON.stringify({protocol:PROTOCOL,instructions:INSTRUCTIONS,responseSchema:{schemaVersion:SCHEMA_VERSION,datasetVersion:DATASET_VERSION,maxCandidates:8,fields:['categoryId','sectorId','confidence','evidence']},data:{text:row.text,locale:row.locale,scope:row.scope},categories:REGISTRY});
+  const body=JSON.stringify({...(artifact.schemaVersion===2?{modelVersion:artifact.modelVersion}:{}),protocol:PROTOCOL,instructions:INSTRUCTIONS,responseSchema:{schemaVersion:SCHEMA_VERSION,datasetVersion:DATASET_VERSION,maxCandidates:8,fields:['categoryId','sectorId','confidence','evidence']},data:{text:row.text,locale:row.locale,scope:row.scope},categories:REGISTRY});
   const raw=await transport(Object.freeze({endpoint:artifact.endpoint,body,authorization,signal:row.signal,timeoutMs}));
   if(row.signal.aborted||typeof raw!=='string'||Buffer.byteLength(raw)>MAX_RESPONSE_BYTES)throw new Error('invalid_category_provider_response');
   let parsed;try{parsed=JSON.parse(raw);}catch(_error){throw new Error('invalid_category_provider_response');}
@@ -71,4 +72,4 @@ function createCategoryProviderIntegration({definition,resolveRelease,authorizeD
  const validateSource=request=>resolveValidation(Object.freeze({...request,providerVersion:artifact.providerVersion,artifactFingerprint,audience}));
  return Object.freeze({audience,mode:'approved',version:artifact.providerVersion,allowProviderRequest:true,provider,resolveApproval,authorizeData:permittedData,resolveValidation:validateSource,timeoutMs});
 }
-module.exports={PROTOCOL,INSTRUCTIONS,definitionFingerprint,createCategoryProviderIntegration};
+module.exports={PROTOCOL,INSTRUCTIONS,definitionSnapshot,definitionFingerprint,createCategoryProviderIntegration};
