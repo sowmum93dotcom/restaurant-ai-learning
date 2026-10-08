@@ -58,6 +58,8 @@ The shared registry ID-list validator checks every own index explicitly and retu
 
 Semantic provider candidate arrays also require plain dense own data entries. Inherited entries, accessors, custom iterators and extra array fields are rejected without executing them; malformed responses restore baseline before semantic validation or category narrowing.
 
+Exact published-offer suggestions locate the requested work and product before applying the existing public projection to that one offer. Discovery's 20-record and public-product presentation limits do not hide a valid requested source. Ownership, visibility and continuation validation still apply, and unrelated products are not classification evidence.
+
 Evaluation validates and freezes sanitized copies of all cases and expected labels before fingerprinting or calling an evaluator. It captures independent-review eligibility before execution, so caller/evaluator mutation cannot change labels, judgement, locales or approval during a run. The evaluator receives only case ID, locale, source text and response-scenario metadata; expected labels and safety/judgement policy stay inside the harness. Extra/private case fields and accessor/sparse case inputs are rejected. Controlled oracle tests deliberately use an external specification fixture; that fixture is not passed as intelligence input or claimed as AI quality.
 
 ## Remaining inactive work and limitations

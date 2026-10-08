@@ -138,6 +138,20 @@ test('business suggestions use only same ownership-validated public offer and ne
  payload=null;item.products[0].businessId='another-owner';await suggestPublishedOfferCategories({work:[item],workItemId:'offer',productId:'product',configuration});assert.equal(payload,null);
  payload=null;await suggestPublishedOfferCategories({work:[before],workItemId:'offer',productId:'product',configuration,testMode:true});assert.equal(payload,null);
 });
+test('exact business offer classification is independent of discovery and product page limits',async()=>{
+ const item=offer();item.products=Array.from({length:101},(_,index)=>({...item.products[0],productId:'product-'+index,name:index===100?'Requested offer':'Other offer',description:index===100?'Prepare food for wedding guests':'Unrelated description'}));
+ const work=Array.from({length:25},(_,index)=>({...offer(),workItemId:'other-'+index,businessId:'owner-'+index,products:[]}));work.push(item);
+ const before=structuredClone(work);let payload,source;
+ const configuration=configured(input=>{payload=input;return response(input.text);});const authorize=configuration.categoryUnderstanding.authorizeData;
+ configuration.categoryUnderstanding.authorizeData=async request=>{source=request.sourceReference;return authorize(request);};
+ const result=await suggestPublishedOfferCategories({work,workItemId:'offer',productId:'product-100',configuration});
+ assert.deepEqual(result.interpretation.categoryIds,['89']);assert.equal(payload.text,'Requested offer Prepare food for wedding guests');assert.deepEqual(source,{workItemId:'offer',productId:'product-100'});assert.deepEqual(work,before);
+ for(const patch of [{businessId:'another-owner'},{customerVisible:false},{continuationRoute:'unapproved-route'}]){
+  Object.assign(item.products[100],before[25].products[100],patch);payload=null;
+  assert.equal((await suggestPublishedOfferCategories({work,workItemId:'offer',productId:'product-100',configuration})).reason,'published_offer_missing');assert.equal(payload,null);
+ }
+});
+
 test('semantic category narrowing preserves deterministic budget, location, date and exclusion controls and guarded ranking',async()=>{
  const work=offer();work.products[0].name='Black jacket';work.products[0].description='Fashion and Apparel Commerce black jacket';work.products[0].categoryClassification={datasetVersion:DATASET_VERSION,categories:[{categoryId:'10',sectorId:'1'}]};
  const configuration=configured(input=>response(input.text,'10','1'));

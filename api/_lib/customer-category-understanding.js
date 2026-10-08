@@ -89,8 +89,12 @@ async function suggestPublishedOfferCategories({work,workItemId,productId,locale
   // provenance must ALSO be authorized by the internal data-policy service.
   // No business slogan, another offer, profile or continuation data is sent.
   if(testMode)return fallback('', 'published-offer','controlled_content_disabled');
-  const {getValidPublicCustomerWork}=require('./customer-public-work-contract');
-  const item=getValidPublicCustomerWork(work).find(row=>row.workItemId===workItemId);
+  const {toPublicCustomerWorkItem}=require('./customer-public-work-contract');
+  // Exact classification is not a discovery page: select the requested source
+  // first, then retain the same public/ownership validation for that offer.
+  const raw=Array.isArray(work)?work.find(row=>typeof row?.workItemId==='string'&&row.workItemId.trim()===workItemId):null;
+  const offer=Array.isArray(raw?.products)?raw.products.find(row=>typeof row?.productId==='string'&&row.productId.trim()===productId):null;
+  const item=raw&&offer?toPublicCustomerWorkItem({...raw,products:[offer]}):null;
   const product=item?.products?.find(row=>row.productId===productId);
   if(!product)return fallback('','published-offer','published_offer_missing');
   return understandCategoryText({text:product.name+' '+product.description,locale,scope:'published-offer',sourceReference:Object.freeze({workItemId:item.workItemId,productId:product.productId}),configuration});
