@@ -1,6 +1,7 @@
 'use strict';
 const {definitionSnapshot,definitionFingerprint}=require('./customer-category-provider-integration');
 const {PURPOSE,BASELINE_VERSION,SCHEMA_VERSION}=require('./customer-category-understanding');
+const {VERSION:EVALUATION_VERSION}=require('./customer-category-eval-set');
 const {DATASET_VERSION}=require('./marketing-agent-categories');
 const {LOCALES,id,fingerprint}=require('./customer-evidence-provenance');
 const {DIMENSIONS,snapshotData}=require('./customer-category-reviewed-evaluation');
@@ -72,13 +73,13 @@ function createCategoryProviderAuthority({definition,readRecord,now=Date.now,aud
 }
 function verifyCategoryProviderReport(report,binding){
  try{
-  if(!report||Object.getPrototypeOf(report)!==Object.prototype)return false;
+  if(!report||Object.getPrototypeOf(report)!==Object.prototype||!binding||!['reportFingerprint','datasetFingerprint','artifactFingerprint'].every(key=>typeof binding[key]==='string'&&/^[a-f0-9]{64}$/.test(binding[key]))||!id(binding.providerVersion))return false;
   const copy=snapshotData(report,250000),claimed=copy.reportFingerprint;delete copy.reportFingerprint;
-  if(copy.schemaVersion!==1||copy.categoryDatasetVersion!==DATASET_VERSION||claimed!==binding.reportFingerprint||fingerprint(copy)!==claimed||copy.datasetFingerprint!==binding.datasetFingerprint||copy.providerVersion!==binding.providerVersion||copy.artifactFingerprint!==binding.artifactFingerprint||copy.independentlyReviewed!==true||copy.releaseGatePassed!==true)return false;
+  if(copy.datasetVersion!==EVALUATION_VERSION||!id(copy.reviewDecisionId)||copy.schemaVersion!==1||copy.categoryDatasetVersion!==DATASET_VERSION||claimed!==binding.reportFingerprint||fingerprint(copy)!==claimed||copy.datasetFingerprint!==binding.datasetFingerprint||copy.providerVersion!==binding.providerVersion||copy.artifactFingerprint!==binding.artifactFingerprint||copy.independentlyReviewed!==true||copy.releaseGatePassed!==true)return false;
   if(!Array.isArray(copy.rows)||!copy.rows.length||copy.rows.length>1000||copy.rows.some(row=>!id(row.caseId)||!LOCALES.includes(row.locale)||row.status!=='correct-classification'||!['provider','baseline'].includes(row.executionOrigin)||row.executionReason!==(row.executionOrigin==='provider'?'validated_category_understanding':'category_negation_baseline'))||new Set(copy.rows.map(row=>row.caseId)).size!==copy.rows.length)return false;
   if(copy.counts['correct-classification']!==copy.rows.length||['incorrect-classification','unsafe-classification','safe-fallback'].some(key=>copy.counts[key]!==0)||copy.metrics.providerRejectedOrUnavailableCases!==0||copy.metrics.unsafeClassificationRate!==0||copy.metrics.providerAccuracy!==1)return false;
   const providerCases=copy.rows.filter(row=>row.executionOrigin==='provider').length;
-  if(copy.metrics.providerCoverage!==providerCases/copy.rows.length||copy.metrics.baselineCases!==copy.rows.length-providerCases)return false;
+  if(copy.metrics.pipelineAccuracy!==1||copy.metrics.baselineAccuracy!==(copy.rows.length>providerCases?1:null)||copy.metrics.providerCoverage!==providerCases/copy.rows.length||copy.metrics.baselineCases!==copy.rows.length-providerCases)return false;
   return LOCALES.every(locale=>{
    const rows=copy.rows.filter(row=>row.locale===locale),evaluated=rows.filter(row=>row.executionOrigin==='provider'),metrics=copy.localeMetrics[locale];
    return rows.length>0&&evaluated.length>0&&metrics.cases===rows.length&&metrics.providerCases===evaluated.length&&metrics.providerAccuracy===1&&metrics.unsafeClassificationRate===0&&DIMENSIONS.every(dimension=>Number.isInteger(copy.evaluationCoverage?.[locale]?.[dimension])&&copy.evaluationCoverage[locale][dimension]>0&&copy.evaluationCoverage[locale][dimension]<=rows.length);
