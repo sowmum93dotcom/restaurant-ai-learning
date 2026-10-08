@@ -106,3 +106,23 @@ test('clarified near-me uses the supplied business location while keeping unknow
  assert.equal((await search('banquet near me under £100',{config,place:'Manchester'})).length,1);
  assert.deepEqual(await search('banquet near me under £50',{config,place:'Manchester'}),[]);
 });
+
+test('reviewed category evidence replaces primary lexical terms while with-qualifiers remain same-offer requirements',async()=>{
+ const work=catalogue();work[0].products[0].description='Catering Services Fresh vegan meals';
+ const config=configuration({span:{start:0,end:7}});assert.equal((await search('banquet with vegan',{work,config})).length,1);
+ assert.deepEqual(await search('banquet with glutenfree',{work,config}),[]);
+ const other={...work[0].products[0],productId:'sibling',description:'Fresh glutenfree meals',categoryClassification:undefined};work[0].products.push(other);
+ assert.deepEqual(await search('banquet with glutenfree',{work,config}),[]);
+});
+test('matching explanation contains only offers surviving independent budget filtering',async()=>{
+ const work=catalogue();work[0].products[0].name='Expensive Catering Services';work[0].products[0].price='£200';
+ work[0].products.push({...work[0].products[0],productId:'cheap',name:'Affordable Catering Services',price:'£50'});
+ const result=await search('banquet under £100',{work,config:configuration({span:{start:0,end:7}})});
+ assert.equal(result.length,1);assert.deepEqual(result[0].products.map(p=>p.productId),['cheap']);assert.deepEqual(result[0].relevance.evidence,['Affordable Catering Services']);
+});
+test('unclassified sibling text cannot affect semantic ordering or displace a valid result at the cap',async()=>{
+ const work=Array.from({length:6},(_,index)=>{const row=catalogue()[0];row.workItemId='business-'+index;return row;});
+ const before=await search('A banquet provider',{work});assert.equal(before.length,5);
+ const last=work[5];last.products.push({...last.products[0],productId:'sibling',name:'A banquet provider',description:'A banquet provider',categoryClassification:undefined});
+ assert.deepEqual(await search('A banquet provider',{work}),before);
+});

@@ -281,7 +281,9 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
     const evidenceSources = [contentTerms].concat((Array.isArray(work.products) ? work.products : [])
       .filter(function (product) { return product && product.availability !== "unavailable"; })
       .map(function (product) { return meaningfulTerms([product.name, product.description].join(" ")); }));
-    const matchingSources = additionalRequirements.size
+    const matchingSources = semanticRetrieval
+      ? (work.products || []).filter(product => semanticProducts.has(product.productId)).map(product => meaningfulTerms(product.name + ' ' + product.description))
+      : additionalRequirements.size
       ? evidenceSources.filter(function (terms) {
         return [...additionalRequirements, ...primaryRequirements].every(function (term) { return hasRequirementEvidence(term, terms); });
       })
@@ -320,6 +322,7 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
       });
       const relevantProducts = [...semanticMatches, ...(semanticRetrieval ? [] : relevantProductsForCustomer(work.products, customerTerms)).filter(product => !semanticProducts.has(product.productId))]
         .filter(function (product) {
+          if (semanticRetrieval) return semanticProducts.has(product.productId);
           if (!additionalRequirements.size) return true;
           const productTerms = meaningfulTerms([product.name, product.description].join(" "));
           return [...additionalRequirements, ...primaryRequirements].every(function (term) { return hasRequirementEvidence(term, productTerms); });
@@ -327,9 +330,21 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
       if (relevantProducts.length) possibility.products = relevantProducts;
     }
     if (work.informationSource === "business-provided") possibility.informationSource = "business-provided";
-    const eligible = typeof eligibilityFilter === "function" ? eligibilityFilter(possibility) : possibility;
+    let eligible = typeof eligibilityFilter === "function" ? eligibilityFilter(possibility) : possibility;
     if (!eligible) return;
-    candidates.push({ strength: concepts.length + evidence.length, guidanceOverlap, feedbackGuidanceScore, possibility: eligible });
+    let strength = concepts.length + evidence.length;
+    if (semanticRetrieval) {
+      const retained = (eligible.products || []).filter(product => semanticProducts.has(product.productId));
+      if (!retained.length) return;
+      eligible = {...eligible, products: retained, relevance: {...eligible.relevance, evidence: retained.map(product => product.name.slice(0,60)).slice(0,5)}};
+      // Relevance strength and visible support come from the SAME surviving
+      // offers; neither rejected nor unclassified siblings can affect the cap.
+      strength = Math.max(...retained.map(product => {
+        const source = meaningfulTerms(product.name + ' ' + product.description);
+        return 1 + [...customerTerms].filter(term => source.has(term)).length + evidencedConcepts(customerTerms, source).length;
+      }));
+    }
+    candidates.push({ strength, guidanceOverlap, feedbackGuidanceScore, possibility: eligible });
   });
   candidates.sort(function (left, right) {
     return right.strength - left.strength || right.guidanceOverlap - left.guidanceOverlap ||
