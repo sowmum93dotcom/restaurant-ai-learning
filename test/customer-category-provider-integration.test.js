@@ -1,7 +1,7 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict');
 const {PROTOCOL,definitionFingerprint,createCategoryProviderIntegration}=require('../api/_lib/customer-category-provider-integration');
-const {SCHEMA_VERSION,BASELINE_VERSION,PURPOSE,understandCustomerCategories,suggestPublishedOfferCategories}=require('../api/_lib/customer-category-understanding');
+const {SCHEMA_VERSION,BASELINE_VERSION,PURPOSE,understandCustomerCategories,evaluateCustomerCategories,suggestPublishedOfferCategories}=require('../api/_lib/customer-category-understanding');
 const {DATASET_VERSION}=require('../api/_lib/marketing-agent-categories');
 const {getCustomerSearchConfiguration}=require('../api/_lib/customer-search-registry');
 const {evaluateCategoryProvider}=require('../api/_lib/customer-category-provider-evaluation');
@@ -12,7 +12,20 @@ const definition=()=>({schemaVersion:1,providerVersion:'controlled-json-provider
 const answer=(text,ids=['89'])=>JSON.stringify({schemaVersion:SCHEMA_VERSION,datasetVersion:DATASET_VERSION,candidates:ids.map(categoryId=>({categoryId,sectorId:categoryId==='10'?'1':'5',confidence:.9,evidence:{start:0,end:text.length}}))});
 // Explicit controlled services/transport doubles. No real provider is configured.
 function services(patch={}){return {definition:definition(),resolveRelease:async request=>({approved:true,candidateVersion:request.candidateVersion,artifactFingerprint:request.artifactFingerprint,purpose:PURPOSE,rollbackVersion:BASELINE_VERSION,decisionId:'controlled-release',audience:request.audience,locale:request.locale,privacyReviewId:'controlled-privacy',securityReviewId:'controlled-security',evaluationReviewId:null,regressionReviewId:null,rollbackReviewId:null,activationDecisionId:null}),authorizeData:async request=>({allowed:true,purpose:PURPOSE,requestFingerprint:request.requestFingerprint,policyVersion:'controlled-data-policy'}),resolveValidation:async request=>({approved:true,purpose:PURPOSE,decisionId:'controlled-source-validation',requestFingerprint:request.requestFingerprint,candidateFingerprint:request.candidateFingerprint,datasetVersion:DATASET_VERSION,locale:request.locale,scope:request.scope,constraintsPreserved:true,exclusionsPreserved:true}),resolveCredentials:async()=> 'Bearer controlled-test-secret',transport:async request=>answer(JSON.parse(request.body).data.text),...patch};}
-const search=(text,integration,locale='en')=>understandCustomerCategories({text,locale,configuration:{categoryUnderstanding:integration}});
+const search=(text,integration,locale='en')=>(integration.audience==='production'?understandCustomerCategories:evaluateCustomerCategories)({text,locale,configuration:{categoryUnderstanding:integration}});
+function productionServices(patch={}){
+ const options=services({...patch,audience:'production'}),release=options.resolveRelease;
+ return {...options,resolveRelease:async request=>({...await release(request),evaluationReviewId:'controlled-evaluation',regressionReviewId:'controlled-regression',rollbackReviewId:'controlled-rollback',activationDecisionId:'controlled-activation'})};
+}
+test('online boundary rejects offline audience and customer-supplied audience overrides before any egress',async()=>{
+ let calls=0;const integration=createCategoryProviderIntegration(services({transport:async request=>{calls++;return answer(JSON.parse(request.body).data.text);}}));
+ assert.equal(integration.audience,'offline-evaluation');
+ for(const extra of [{},{audience:'offline-evaluation'},{executionAudience:'offline-evaluation'}]){
+  const result=await understandCustomerCategories({text:'wedding food',configuration:{categoryUnderstanding:integration},...extra});
+  assert.equal(result.reason,'category_audience_required');assert.equal(calls,0);
+ }
+ const missing={...integration};delete missing.audience;assert.equal((await understandCustomerCategories({text:'food',configuration:{categoryUnderstanding:missing}})).reason,'category_audience_required');assert.equal(calls,0);
+});
 test('adapter definition snapshots bind endpoint, protocol, prompt and canonical registry to its artifact fingerprint',()=>{
  const input=definition(),fp=definitionFingerprint(input),integration=createCategoryProviderIntegration(services({definition:input}));
  input.endpoint='https://evil.example.org/category';assert.notEqual(definitionFingerprint(input),fp);assert.equal(integration.provider.artifactFingerprint,fp);assert.ok(Object.isFrozen(integration));assert.ok(Object.isFrozen(integration.provider));
@@ -81,7 +94,7 @@ test('clause-wide exclusions block provider requests and deadlines prevent late 
 });
 function offer(){return {workItemId:'offer',businessId:'owner',businessName:'Public business',content:'Unrelated slogan',participationAction:'Interested',customerContinuation:{routes:['website'],website:'https://business.example.org'},products:[{productId:'product',businessId:'owner',name:'Wedding food',description:'Food prepared for wedding guests',continuationRoute:'website',availability:'available',price:'£89'}]};}
 test('same verified product source reaches policy, never provider payload, and test/ownership restrictions persist',async()=>{
- let payload,source;const options=services(),policy=options.authorizeData;options.authorizeData=async request=>{source=request.sourceReference;return policy(request);};options.transport=async request=>{payload=JSON.parse(request.body);return answer(payload.data.text);};
+ let payload,source;const options=productionServices(),policy=options.authorizeData;options.authorizeData=async request=>{source=request.sourceReference;return policy(request);};options.transport=async request=>{payload=JSON.parse(request.body);return answer(payload.data.text);};
  const integration=createCategoryProviderIntegration(options),work=[offer()];
  assert.deepEqual((await suggestPublishedOfferCategories({work,workItemId:'offer',productId:'product',configuration:{categoryUnderstanding:integration}})).interpretation.categoryIds,['89']);assert.deepEqual(source,{workItemId:'offer',productId:'product'});assert.equal(payload.data.text,'Wedding food Food prepared for wedding guests');assert.doesNotMatch(JSON.stringify(payload),/Unrelated slogan|£89|workItemId|productId/);
  payload=null;await suggestPublishedOfferCategories({work,workItemId:'offer',productId:'product',configuration:{categoryUnderstanding:integration},testMode:true});assert.equal(payload,null);
@@ -89,7 +102,7 @@ test('same verified product source reaches policy, never provider payload, and t
 });
 test('semantic retrieval still uses the existing catalogue and cannot create eligibility or paraphrase relevance',async()=>{
  const item=offer();item.location='Manchester';item.products[0].name='Black jacket';item.products[0].description='Fashion and Apparel Commerce black jacket';item.products[0].categoryClassification={datasetVersion:DATASET_VERSION,categories:[{categoryId:'10',sectorId:'1'}]};
- const configuration={categoryUnderstanding:createCategoryProviderIntegration(services({transport:async request=>answer(JSON.parse(request.body).data.text,['10'])}))};
+ const configuration={categoryUnderstanding:createCategoryProviderIntegration(productionServices({transport:async request=>answer(JSON.parse(request.body).data.text,['10'])}))};
  for(const text of ['black jacket under £50','black jacket near London','black jacket tomorrow','jacket not black','I want clothes for my children']){
   const understanding=confirmCustomerUnderstanding(buildCustomerUnderstanding('',text));assert.deepEqual((await prepareCustomerSearch({understanding,work:[item],configuration})).possibilities,[],text);
  }
@@ -108,6 +121,10 @@ test('unsafe semantic classifications fail the independent evaluation gate separ
 test('failed provider and literal-only baseline cannot be reported as semantic accuracy or pass offline release',async()=>{
  const cases=CASES.filter(row=>row.caseId==='canonical');
  for(const categoryUnderstanding of [null,createCategoryProviderIntegration(services({transport:async()=>{throw new Error('provider unavailable');}}))]){
-  const report=await evaluateCategoryProvider({categoryUnderstanding,cases});assert.equal(report.metrics.providerAccuracy,null);assert.equal(report.metrics.providerCoverage,0);assert.equal(report.counts['safe-fallback'],1);assert.equal(report.releaseGatePassed,false);
+  const report=await evaluateCategoryProvider({categoryUnderstanding,cases});assert.equal(report.metrics.providerAccuracy,null);assert.equal(report.metrics.providerCoverage,0);assert.equal(report.counts['correct-classification'],1);assert.equal(report.metrics.pipelineAccuracy,1);assert.equal(report.metrics.baselineAccuracy,1);assert.equal(report.releaseGatePassed,false);
  }
+});
+test('default real-output evaluation excludes transport fault-injection specifications',async()=>{
+ const report=await evaluateCategoryProvider({categoryUnderstanding:null});
+ assert.equal(report.rows.length,24);assert.ok(!report.rows.some(row=>['malformed','invented','wrong-sector'].includes(row.caseId)));assert.equal(report.releaseGatePassed,false);
 });

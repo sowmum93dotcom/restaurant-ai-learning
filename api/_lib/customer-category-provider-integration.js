@@ -69,6 +69,6 @@ function createCategoryProviderIntegration({definition,resolveRelease,authorizeD
   return parsed;
  }});
  const validateSource=request=>resolveValidation(Object.freeze({...request,providerVersion:artifact.providerVersion,artifactFingerprint,audience}));
- return Object.freeze({mode:'approved',version:artifact.providerVersion,allowProviderRequest:true,provider,resolveApproval,authorizeData:permittedData,resolveValidation:validateSource,timeoutMs});
+ return Object.freeze({audience,mode:'approved',version:artifact.providerVersion,allowProviderRequest:true,provider,resolveApproval,authorizeData:permittedData,resolveValidation:validateSource,timeoutMs});
 }
 module.exports={PROTOCOL,INSTRUCTIONS,definitionFingerprint,createCategoryProviderIntegration};
