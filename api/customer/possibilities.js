@@ -65,7 +65,7 @@ return async function handler(req, res) {
       }
     }
     const locale=typeof req.headers?.['x-demeos-customer-locale']==='string'?req.headers['x-demeos-customer-locale']:'en';
-    const prepared=await prepareCustomerSearch({understanding,work,preferences,feedback,place,locale,configuration});
+    const prepared=await prepareCustomerSearch({understanding,work,preferences,feedback,place,locale,configuration,testMode:catalogue.testMode});
     let possibilities=prepared.possibilities;
     if (customerIdentity) {
       await prepareCustomerPossibilityIssuanceTrust();

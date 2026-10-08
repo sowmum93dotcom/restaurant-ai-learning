@@ -128,3 +128,13 @@ test('default real-output evaluation excludes transport fault-injection specific
  const report=await evaluateCategoryProvider({categoryUnderstanding:null});
  assert.equal(report.rows.length,24);assert.ok(!report.rows.some(row=>['malformed','invented','wrong-sector'].includes(row.caseId)));assert.equal(report.releaseGatePassed,false);
 });
+
+test('approved HTTPS adapter carries independent exact phrase review into actual catalogue retrieval',async()=>{
+ const {fingerprint}=require('../api/_lib/customer-evidence-provenance');
+ const item=offer();item.products[0].name='Catering Services';item.products[0].description='Catering Services prepared banquet';item.products[0].categoryClassification={datasetVersion:DATASET_VERSION,categories:[{categoryId:'89',sectorId:'5'}]};
+ let reviewed;const options=productionServices({transport:async request=>answer(JSON.parse(request.body).data.text)});
+ options.resolveRetrievalPhrase=async r=>{reviewed=r;return r.phrase==='A banquet provider'?{approved:true,purpose:r.purpose,decisionId:'independent-fixture',categoryId:r.categoryId,locale:r.locale,phrase:r.phrase,requestFingerprint:r.requestFingerprint,candidateFingerprint:r.candidateFingerprint,phraseFingerprint:fingerprint({categoryId:r.categoryId,locale:r.locale,phrase:r.phrase})}:null;};
+ const integration=createCategoryProviderIntegration(options),understanding=confirmCustomerUnderstanding(buildCustomerUnderstanding('','A banquet provider'));
+ const result=await prepareCustomerSearch({understanding,work:[item],configuration:{categoryUnderstanding:integration}});
+ assert.equal(result.possibilities.length,1);assert.equal(result.possibilities[0].products[0].productId,'product');assert.equal(reviewed.artifactFingerprint,integration.provider.artifactFingerprint);assert.equal(reviewed.audience,'production');
+});

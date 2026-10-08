@@ -19,7 +19,7 @@ function hasNegation(text){
   return text.normalize('NFKC').toLowerCase().split(/[;.!?\n,]/u).some(clause=>{
     const words=clause.match(/[\p{L}\p{N}]+/gu)||[];
     return words.some((word,index)=>['no','not','without','avoid','exclude','excluding','except'].includes(word)&&!(word==='not'&&words[index+1]==='only'));
-  })||/\b(?:don['’]t|isn['’]t|aren['’]t|won['’]t|never)\b/iu.test(text);
+  })||/(?:\b(?:sin|excepto|evitar|sans|sauf|éviter|sem|exceto|evitar|ohne|kein|keine|keinen|nicht|außer)\b|بدون|ليس|لا\s|不要|不含|除了|没有|नहीं|बिना|除外|なし|ない|不要)/iu.test(text)||/\b(?:don['’]t|isn['’]t|aren['’]t|won['’]t|never)\b/iu.test(text);
 }
 function validateSemanticCandidates(value,text){
   try{
@@ -78,7 +78,17 @@ async function understandCategoryText({text,locale='en',scope='customer-request'
       const decision=await c.resolveValidation(Object.freeze({purpose:PURPOSE,scope,locale,text,sourceReference,requestFingerprint,candidateFingerprint,candidates,signal}));
       if(signal.aborted)return baseline('category_deadline');
       if(!keys(decision,['approved','purpose','decisionId','requestFingerprint','candidateFingerprint','datasetVersion','locale','scope','constraintsPreserved','exclusionsPreserved'])||decision.approved!==true||decision.purpose!==PURPOSE||!id(decision.decisionId)||decision.requestFingerprint!==requestFingerprint||decision.candidateFingerprint!==candidateFingerprint||decision.datasetVersion!==DATASET_VERSION||decision.locale!==locale||decision.scope!==scope||decision.constraintsPreserved!==true||decision.exclusionsPreserved!==true)return baseline('category_validation_required');
-      return {interpretation:{datasetVersion:DATASET_VERSION,categoryIds:candidates.map(row=>row.categoryId),source:'validated-semantic-advisory'},reason:'validated_category_understanding',validation:{decisionId:decision.decisionId,requestFingerprint,candidateFingerprint}};
+      // Category spans alone do not prove that every word is category-only.
+      // Retrieval requires an independently reviewed exact phrase decision;
+      // this service must resolve a pre-reviewed phrase, never generate one.
+      let retrievalCandidates=[];
+      if(scope==='customer-request'&&candidates.length===1&&typeof c.resolveRetrievalPhrase==='function'){
+        const candidate=candidates[0],phrase=text.slice(candidate.evidence.start,candidate.evidence.end);
+        const reviewed=await c.resolveRetrievalPhrase(Object.freeze({purpose:'category-retrieval',categoryId:candidate.categoryId,locale,phrase,requestFingerprint,candidateFingerprint,signal}));
+        if(signal.aborted)return baseline('category_deadline');
+        if(keys(reviewed,['approved','purpose','decisionId','categoryId','locale','phrase','requestFingerprint','candidateFingerprint','phraseFingerprint'])&&reviewed.approved===true&&reviewed.purpose==='category-retrieval'&&id(reviewed.decisionId)&&reviewed.categoryId===candidate.categoryId&&reviewed.locale===locale&&reviewed.phrase===phrase&&reviewed.requestFingerprint===requestFingerprint&&reviewed.candidateFingerprint===candidateFingerprint&&reviewed.phraseFingerprint===fingerprint({categoryId:candidate.categoryId,locale,phrase}))retrievalCandidates=candidates;
+      }
+      return {interpretation:{datasetVersion:DATASET_VERSION,categoryIds:candidates.map(row=>row.categoryId),source:'validated-semantic-advisory'},reason:'validated_category_understanding',validation:{decisionId:decision.decisionId,requestFingerprint,candidateFingerprint},retrievalCandidates};
     },c.timeoutMs);
   }catch(_error){return baseline('category_understanding_fallback');}
 }
