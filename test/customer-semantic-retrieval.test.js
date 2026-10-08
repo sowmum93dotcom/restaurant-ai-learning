@@ -126,3 +126,9 @@ test('unclassified sibling text cannot affect semantic ordering or displace a va
  const last=work[5];last.products.push({...last.products[0],productId:'sibling',name:'A banquet provider',description:'A banquet provider',categoryClassification:undefined});
  assert.deepEqual(await search('A banquet provider',{work}),before);
 });
+
+test('duplicate product IDs cannot let an unclassified sibling borrow semantic category evidence',async()=>{
+ const work=catalogue();work[0].products[0].price='£200';
+ work[0].products.push({...work[0].products[0],name:'Jacket',description:'A banquet provider jacket',price:'£50',categoryClassification:undefined});
+ assert.deepEqual(await search('banquet under £100',{work,config:configuration({span:{start:0,end:7}})}),[]);
+});
