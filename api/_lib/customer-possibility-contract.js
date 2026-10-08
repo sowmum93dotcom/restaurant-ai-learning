@@ -297,7 +297,7 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
     const concepts = matchedTerms.concepts;
     // Generic token overlap alone is not a defensible connection. Require either
     // two specific shared expressions or a transparent DEMEOS solution concept.
-    if (!semanticProducts.size && (matchedTerms.strength < 0 || (evidence.length < 2 && concepts.length === 0))) return;
+    if (semanticRetrieval ? !semanticProducts.size : (matchedTerms.strength < 0 || (evidence.length < 2 && concepts.length === 0))) return;
     const guidanceOverlap = Array.from(guidanceTerms).filter(function (term) { return contentTerms.has(term); }).length;
     const feedbackGuidanceScore = Array.from(contentTerms).reduce(function (score, term) {
       return score + (feedbackSignals.get(term) || 0);
@@ -305,7 +305,7 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
     const possibility = {
       possibilityId: stablePossibilityId(work.workItemId), workItemId: work.workItemId,
       businessName: work.businessName, content: work.content, participationAction: "Interested",
-      relevance: { basis: "current-intention-authorized-work", evidence: (semanticProducts.size ? work.products.filter(product => semanticProducts.has(product.productId)).map(product => product.name) : evidence.length >= 2 ? evidence : concepts).slice(0, 5),
+      relevance: { basis: "current-intention-authorized-work", evidence: (semanticProducts.size ? work.products.filter(product => semanticProducts.has(product.productId)).map(product => product.name.slice(0,60)) : evidence.length >= 2 ? evidence : concepts).slice(0, 5),
         explanation: "This authorized possibility connects to your current request." }
     };
     if (work.location) possibility.location = work.location;
@@ -314,11 +314,11 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
     if (work.operationalAvailability) possibility.operationalAvailability = work.operationalAvailability;
     if (Array.isArray(work.products) && work.products.length) {
       const semanticMatches = (work.products || []).filter(product => semanticProducts.has(product.productId)).map(product => {
-        const publicProduct = {...product, relevance: {basis: "current-intention-product-information", evidence: [product.name]}};
+        const publicProduct = {...product, relevance: {basis: "current-intention-product-information", evidence: [product.name.slice(0,60)]}};
         delete publicProduct.categoryClassification;
         return publicProduct;
       });
-      const relevantProducts = [...semanticMatches, ...relevantProductsForCustomer(work.products, customerTerms).filter(product => !semanticProducts.has(product.productId))]
+      const relevantProducts = [...semanticMatches, ...(semanticRetrieval ? [] : relevantProductsForCustomer(work.products, customerTerms)).filter(product => !semanticProducts.has(product.productId))]
         .filter(function (product) {
           if (!additionalRequirements.size) return true;
           const productTerms = meaningfulTerms([product.name, product.description].join(" "));

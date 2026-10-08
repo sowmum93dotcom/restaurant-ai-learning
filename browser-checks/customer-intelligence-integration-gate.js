@@ -17,6 +17,7 @@ const fixtureSearch=search.createPossibilitiesHandler({configuration:{...require
  provider:{intelligenceVersion:'browser-fixture-v1',artifactFingerprint:'a'.repeat(64),classify:async input=>({schemaVersion:SCHEMA_VERSION,datasetVersion:DATASET_VERSION,candidates:[{categoryId:'89',sectorId:'5',confidence:.9,evidence:{start:0,end:input.text.length}}]})},
  resolveApproval:async(_version,{locale})=>({approved:true,purpose:PURPOSE,candidateVersion:'browser-fixture-v1',artifactFingerprint:'a'.repeat(64),rollbackVersion:BASELINE_VERSION,decisionId:'browser-fixture',locale}),
  authorizeData:async r=>({allowed:true,purpose:PURPOSE,requestFingerprint:r.requestFingerprint,policyVersion:'browser-fixture'}),
+ resolveRetrievalPhrase:async r=>r.phrase==='A banquet provider'?{approved:true,purpose:r.purpose,decisionId:'reviewed-browser-phrase',categoryId:r.categoryId,locale:r.locale,phrase:r.phrase,requestFingerprint:r.requestFingerprint,candidateFingerprint:r.candidateFingerprint,phraseFingerprint:require('../api/_lib/customer-evidence-provenance').fingerprint({categoryId:r.categoryId,locale:r.locale,phrase:r.phrase})}:null,
  resolveValidation:async r=>({approved:true,purpose:PURPOSE,decisionId:'browser-fixture',requestFingerprint:r.requestFingerprint,candidateFingerprint:r.candidateFingerprint,datasetVersion:DATASET_VERSION,locale:r.locale,scope:r.scope,constraintsPreserved:true,exclusionsPreserved:true})}}});
 let latestRequest;
 const server=http.createServer(async(req,res)=>{

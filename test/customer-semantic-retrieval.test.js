@@ -4,6 +4,7 @@ const test=require('node:test'),assert=require('node:assert/strict');
 const {prepareCustomerSearch,completeCustomerSearch}=require('../api/_lib/customer-search-service');
 const {getCustomerSearchConfiguration}=require('../api/_lib/customer-search-registry');
 const {SCHEMA_VERSION,BASELINE_VERSION,PURPOSE,suggestPublishedOfferCategories}=require('../api/_lib/customer-category-understanding');
+const {fingerprint}=require('../api/_lib/customer-evidence-provenance');
 const {DATASET_VERSION}=require('../api/_lib/marketing-agent-categories');
 const {buildCustomerUnderstanding,confirmCustomerUnderstanding}=require('../js/customer-understanding');
 function catalogue(){return [{workItemId:'catering',businessId:'owner',businessName:'Verified fixture',content:'Published offer',participationAction:'Interested',location:'Manchester',customerContinuation:{routes:['website'],website:'https://example.org'},products:[{productId:'meal',businessId:'owner',name:'Catering Services',description:'Catering Services prepared banquet',price:'£89',availability:'available',continuationRoute:'website',categoryClassification:{datasetVersion:DATASET_VERSION,categories:[{categoryId:'89',sectorId:'5'}]}}]}];}
@@ -12,6 +13,7 @@ function configuration({span,fail=false}={}){
  provider:{intelligenceVersion:'fixture-v1',artifactFingerprint:'a'.repeat(64),classify:async input=>{if(fail)throw Error('fixture failure');return {schemaVersion:SCHEMA_VERSION,datasetVersion:DATASET_VERSION,candidates:[{categoryId:'89',sectorId:'5',confidence:.9,evidence:span||{start:0,end:input.text.length}}]};}},
  resolveApproval:async(_version,{locale})=>({approved:true,purpose:PURPOSE,candidateVersion:'fixture-v1',artifactFingerprint:'a'.repeat(64),rollbackVersion:BASELINE_VERSION,decisionId:'fixture-approval',locale}),
  authorizeData:async r=>({allowed:true,purpose:PURPOSE,requestFingerprint:r.requestFingerprint,policyVersion:'fixture-policy'}),
+ resolveRetrievalPhrase:async r=>[...Object.values(requests),'banquet','Catering Services'].includes(r.phrase)?{approved:true,purpose:r.purpose,decisionId:'reviewed-phrase',categoryId:r.categoryId,locale:r.locale,phrase:r.phrase,requestFingerprint:r.requestFingerprint,candidateFingerprint:r.candidateFingerprint,phraseFingerprint:fingerprint({categoryId:r.categoryId,locale:r.locale,phrase:r.phrase})}:null,
  resolveValidation:async r=>({approved:true,purpose:PURPOSE,decisionId:'fixture-validation',requestFingerprint:r.requestFingerprint,candidateFingerprint:r.candidateFingerprint,datasetVersion:DATASET_VERSION,locale:r.locale,scope:r.scope,constraintsPreserved:true,exclusionsPreserved:true})}};
 }
 async function search(text,{work=catalogue(),locale='en',config=configuration(),testMode=false}={}){
@@ -64,4 +66,26 @@ test('controlled completion cannot export catalogue candidates to ranking provid
  let calls=0;const c=configuration();c.mode='candidate';c.allowProviderRequest=true;c.provider={intelligenceVersion:'rank-fixture',artifactFingerprint:'a'.repeat(64),rank:async()=>{calls++;throw Error('controlled ranking egress');}};
  c.resolveApproval=async()=>({approved:true,purpose:'relevance-ranking',candidateVersion:'rank-fixture',artifactFingerprint:'a'.repeat(64),rollbackVersion:c.baselineVersion,decisionId:'rank-fixture'});
  const result=await search('Catering Services',{config:c,testMode:true});assert.equal(result.length,1);assert.equal(calls,0);
+});
+
+test('qualifiers inside an oversized semantic span cannot gain retrieval authority',async()=>{
+ for(const text of ['vegan banquet','gluten-free banquet','wheelchair accessible banquet'])assert.deepEqual(await search(text),[]);
+ const c=configuration();delete c.categoryUnderstanding.resolveRetrievalPhrase;assert.deepEqual(await search('A banquet provider',{config:c}),[]);
+});
+test('lexical sibling products cannot bypass same-offer category and residual evidence',async()=>{
+ const work=catalogue();work[0].products.push({...work[0].products[0],productId:'jacket',name:'Jacket',description:'Black jacket',categoryClassification:undefined});
+ assert.deepEqual(await search('banquet jacket',{work,config:configuration({span:{start:0,end:7}})}),[]);
+});
+test('long published names keep matching evidence within the existing browser contract',async()=>{
+ const work=catalogue();work[0].products[0].name='Catering Services '+ 'banquet '.repeat(20);
+ const result=await search('A banquet provider',{work});assert.equal(result.length,1);
+ const {toCustomerPossibility}=require('../js/customer');assert.ok(toCustomerPossibility(result[0]));
+ assert.ok(result[0].relevance.evidence.every(value=>value.length<=60));assert.ok(result[0].products[0].relevance.evidence.every(value=>value.length<=60));
+});
+test('retrieval phrase permission is bound to the exact source, locale, category and reviewed phrase',async()=>{
+ for(const field of ['phrase','categoryId','locale','requestFingerprint','candidateFingerprint','phraseFingerprint','decisionId']){
+  const c=configuration(),resolve=c.categoryUnderstanding.resolveRetrievalPhrase;
+  c.categoryUnderstanding.resolveRetrievalPhrase=async r=>({...await resolve(r),[field]:field==='decisionId'?'':'wrong'});
+  assert.deepEqual(await search('A banquet provider',{config:c}),[],field);
+ }
 });

@@ -23,7 +23,7 @@ function definitionFingerprint(value){
 function requestFingerprint(value){return fingerprint({text:value.text,locale:value.locale,scope:value.scope});}
 // Authority/policy/validation/credentials are internal services, NEVER client
 // flags. This factory is not installed in the production search registry.
-function createCategoryProviderIntegration({definition,resolveRelease,authorizeData,resolveValidation,resolveCredentials,transport=createCategoryTransport(),audience='offline-evaluation',timeoutMs=150}={}){
+function createCategoryProviderIntegration({definition,resolveRelease,authorizeData,resolveValidation,resolveRetrievalPhrase,resolveCredentials,transport=createCategoryTransport(),audience='offline-evaluation',timeoutMs=150}={}){
  const artifact=definitionSnapshot(definition),artifactFingerprint=definitionFingerprint(artifact);
  if(!['offline-evaluation','production'].includes(audience)||!Number.isInteger(timeoutMs)||timeoutMs<1||timeoutMs>250||[resolveRelease,authorizeData,resolveValidation,resolveCredentials,transport].some(fn=>typeof fn!=='function'))throw new Error('category_provider_services_required');
  const approvals=new WeakMap(),permissions=new WeakMap();
@@ -69,7 +69,8 @@ function createCategoryProviderIntegration({definition,resolveRelease,authorizeD
   if(!validateSemanticCandidates(parsed,row.text))throw new Error('invalid_category_provider_response');
   return parsed;
  }});
+ const reviewedRetrieval=typeof resolveRetrievalPhrase==='function'?request=>resolveRetrievalPhrase(Object.freeze({...request,providerVersion:artifact.providerVersion,artifactFingerprint,audience})):undefined;
  const validateSource=request=>resolveValidation(Object.freeze({...request,providerVersion:artifact.providerVersion,artifactFingerprint,audience}));
- return Object.freeze({audience,mode:'approved',version:artifact.providerVersion,allowProviderRequest:true,provider,resolveApproval,authorizeData:permittedData,resolveValidation:validateSource,timeoutMs});
+ return Object.freeze({audience,mode:'approved',version:artifact.providerVersion,allowProviderRequest:true,provider,resolveApproval,authorizeData:permittedData,resolveValidation:validateSource,...(reviewedRetrieval?{resolveRetrievalPhrase:reviewedRetrieval}:{}),timeoutMs});
 }
 module.exports={PROTOCOL,INSTRUCTIONS,definitionSnapshot,definitionFingerprint,createCategoryProviderIntegration};
