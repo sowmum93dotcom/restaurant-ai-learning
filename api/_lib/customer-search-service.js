@@ -42,6 +42,8 @@ async function prepareCustomerSearch({understanding,work,preferences=[],feedback
   return {possibilities,intention,reason,rejected,reference:searchReference(getValidPublicCustomerWork(work,20,{forSearchClassification:true}),locale)};
 }
 async function completeCustomerSearch({prepared,possibilities,understanding,work,identity,testMode,configuration={},defer}={}){
+  // Controlled catalogue results stay local, including ranking and evidence.
+  if(testMode)configuration={...configuration,mode:'baseline',allowProviderRequest:false,provider:null,artifact:null,evidence:null};
   const baseline=possibilities;
   const request={intention:providerText(understanding.intention),customerText:providerText(understanding.customerText),place:providerText(prepared.intention.location || ''),locale:prepared.intention.locale};
   const run=async()=>{

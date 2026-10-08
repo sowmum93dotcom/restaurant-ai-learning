@@ -59,3 +59,9 @@ test('same-offer suggestions remain candidates only and never write classificati
  const result=await suggestPublishedOfferCategories({work,workItemId:'catering',productId:'meal',configuration:configuration()});assert.deepEqual(result.interpretation.categoryIds,['89']);assert.deepEqual(work,before);
  const wrong=await suggestPublishedOfferCategories({work,workItemId:'catering',productId:'another',configuration:configuration()});assert.equal(wrong.reason,'published_offer_missing');
 });
+
+test('controlled completion cannot export catalogue candidates to ranking providers',async()=>{
+ let calls=0;const c=configuration();c.mode='candidate';c.allowProviderRequest=true;c.provider={intelligenceVersion:'rank-fixture',artifactFingerprint:'a'.repeat(64),rank:async()=>{calls++;throw Error('controlled ranking egress');}};
+ c.resolveApproval=async()=>({approved:true,purpose:'relevance-ranking',candidateVersion:'rank-fixture',artifactFingerprint:'a'.repeat(64),rollbackVersion:c.baselineVersion,decisionId:'rank-fixture'});
+ const result=await search('Catering Services',{config:c,testMode:true});assert.equal(result.length,1);assert.equal(calls,0);
+});

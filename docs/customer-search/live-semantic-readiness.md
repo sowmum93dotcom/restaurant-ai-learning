@@ -18,7 +18,7 @@ Returned products remove internal classification; canonical IDs, approval receip
 
 This is conservative category-level retrieval, not translation of arbitrary product qualifiers. Same-source validation must establish that the interpreted span describes a category request and preserves all remaining constraints. Unknown linguistic constraints require denial/clarification by that independently reviewed service. Automated fixtures cannot certify that service or real semantic accuracy. Common negative forms in all nine supported languages additionally keep baseline behavior before any provider request. This finite safeguard is not a complete multilingual language parser.
 
-The HTTP handler now passes the existing catalogue test-mode flag into preparation. Controlled searches bypass both query-understanding and category-understanding providers. Same-offer classification already denies controlled mode. Existing production privacy authority requires `controlledTest:false`, verified source and minimum-data review. No test catalogue or private customer/business objects are supplied to providers.
+The HTTP handler now passes the existing catalogue test-mode flag into preparation. Controlled searches bypass query-understanding, category-understanding, ranking and evidence providers. Same-offer classification already denies controlled mode. Existing production privacy authority requires `controlledTest:false`, verified source and minimum-data review. No test catalogue or private customer/business objects are supplied to providers.
 
 ## Future HTTPS protocol contract
 
