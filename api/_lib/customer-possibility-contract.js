@@ -305,7 +305,7 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
     const possibility = {
       possibilityId: stablePossibilityId(work.workItemId), workItemId: work.workItemId,
       businessName: work.businessName, content: work.content, participationAction: "Interested",
-      relevance: { basis: "current-intention-authorized-work", evidence: (semanticProducts.size ? ["verified-category-offer"] : evidence.length >= 2 ? evidence : concepts).slice(0, 5),
+      relevance: { basis: "current-intention-authorized-work", evidence: (semanticProducts.size ? work.products.filter(product => semanticProducts.has(product.productId)).map(product => product.name) : evidence.length >= 2 ? evidence : concepts).slice(0, 5),
         explanation: "This authorized possibility connects to your current request." }
     };
     if (work.location) possibility.location = work.location;
@@ -314,7 +314,7 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
     if (work.operationalAvailability) possibility.operationalAvailability = work.operationalAvailability;
     if (Array.isArray(work.products) && work.products.length) {
       const semanticMatches = (work.products || []).filter(product => semanticProducts.has(product.productId)).map(product => {
-        const publicProduct = {...product, relevance: {basis: "current-intention-product-information", evidence: ["verified-category-offer"]}};
+        const publicProduct = {...product, relevance: {basis: "current-intention-product-information", evidence: [product.name]}};
         delete publicProduct.categoryClassification;
         return publicProduct;
       });
