@@ -30,4 +30,20 @@ function validateReference(reference) {
   const category = getCategory(reference.categoryId);
   return category && reference.sectorId === category.sectorId ? Object.freeze({categoryId:category.categoryId, sectorId:category.sectorId}) : null;
 }
-module.exports = {DATASET_VERSION, SECTORS, CATEGORIES, getCategory, getSector, validateReference, validateDataset};
+function validateCategoryIds(ids, limit = CATEGORIES.length) {
+  try {
+    if (!Number.isInteger(limit) || limit < 0 || limit > CATEGORIES.length || !Array.isArray(ids)) return null;
+    const length = ids.length;
+    if (!Number.isInteger(length) || length < 0 || length > limit) return null;
+    const validated = [], seen = new Set();
+    // Do not use every/map/iteration on untrusted arrays: holes and inherited
+    // indices are not category IDs, and callback/iterator overrides are data.
+    for (let index = 0; index < length; index++) {
+      const descriptor = Object.getOwnPropertyDescriptor(ids, String(index));
+      if (!descriptor || !Object.hasOwn(descriptor, 'value') || !getCategory(descriptor.value) || seen.has(descriptor.value)) return null;
+      seen.add(descriptor.value); validated.push(descriptor.value);
+    }
+    return Object.freeze(validated);
+  } catch (_error) { return null; }
+}
+module.exports = {DATASET_VERSION, SECTORS, CATEGORIES, getCategory, getSector, validateReference, validateDataset, validateCategoryIds};

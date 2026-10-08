@@ -34,3 +34,26 @@ test('independent gate binds reviewed cases and all locales; synthetic or fallba
 test('evaluation rejects invalid case datasets instead of reporting misleading success',async()=>{
  for(const cases of [[],[CASES[0],CASES[0]],[{...CASES[0],expectedCategoryIds:['172']}],[{...CASES[0],locale:'unknown'}]])await assert.rejects(()=>evaluateCategoryUnderstanding({cases,evaluate:oracle}),/Invalid/);
 });
+
+test('sparse output cannot masquerade as a category or pass an independently reviewed release gate',async()=>{
+ const cases=CASES.map(row=>({...row,judgement:'independently-judged'}));
+ const independentReview={approved:true,datasetVersion:VERSION,datasetFingerprint:fingerprint(cases),decisionId:'controlled-independent-fixture',locales:[...LOCALES]};
+ const result=await evaluateCategoryUnderstanding({cases,independentReview,evaluate:row=>answer(row.expectedCategoryIds.length===1?Array(1):row.expectedCategoryIds)});
+ assert.equal(result.counts['unsafe-classification'],cases.filter(row=>row.expectedCategoryIds.length===1).length);
+ assert.equal(result.releaseGatePassed,false);
+ for(const ids of [Array(1),['89',,'93']]){
+  const result=await evaluateCategoryUnderstanding({cases:[CASES[0]],evaluate:()=>answer(ids)});assert.equal(result.rows[0].status,'unsafe-classification');
+ }
+ await assert.rejects(()=>evaluateCategoryUnderstanding({cases:[{...CASES[0],expectedCategoryIds:Array(1)}],evaluate:oracle}),/Invalid category evaluation case/);
+});
+
+test('category evaluation ignores overridden callbacks/iterators and rejects inherited/accessor indices',async()=>{
+ const inherited=Array(1);Object.setPrototypeOf(inherited,{0:'89'});
+ const accessor=['89'];Object.defineProperty(accessor,0,{get(){throw new Error('must not execute');}});
+ const duplicates=['89','89'];duplicates[Symbol.iterator]=function*(){yield '89';yield '93';};
+ for(const ids of [inherited,accessor,duplicates]){
+  const result=await evaluateCategoryUnderstanding({cases:[CASES[0]],evaluate:()=>answer(ids)});assert.equal(result.rows[0].status,'unsafe-classification');
+ }
+ const wrong=['93'];wrong.every=()=>true;
+ const result=await evaluateCategoryUnderstanding({cases:[CASES[0]],evaluate:()=>answer(wrong)});assert.equal(result.rows[0].status,'incorrect-classification');assert.equal(result.releaseGatePassed,false);
+});

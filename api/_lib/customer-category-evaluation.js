@@ -1,10 +1,18 @@
 'use strict';
-const {DATASET_VERSION,getCategory}=require('./marketing-agent-categories');
+const {DATASET_VERSION,validateCategoryIds}=require('./marketing-agent-categories');
 const {LOCALES,id,fingerprint}=require('./customer-evidence-provenance');
 const {MAX_CATEGORIES}=require('./customer-category-classification');
 const {VERSION,CASES}=require('./customer-category-eval-set');
-function validIds(ids){return Array.isArray(ids)&&ids.length<=MAX_CATEGORIES&&ids.every(x=>getCategory(x))&&new Set(ids).size===ids.length;}
-function same(a,b){return a.length===b.length&&a.every(x=>b.includes(x));}
+function validIds(ids){return validateCategoryIds(ids,MAX_CATEGORIES)!==null;}
+function same(a,b){
+  if(a.length!==b.length)return false;
+  for(let index=0;index<a.length;index++){
+    let matched=false;
+    for(let other=0;other<b.length;other++)if(a[index]===b[other])matched=true;
+    if(!matched)return false;
+  }
+  return true;
+}
 async function evaluateCategoryUnderstanding({evaluate,cases=CASES,independentReview=null}={}){
   if(typeof evaluate!=='function'||!Array.isArray(cases)||!cases.length||cases.length>1000)throw new Error('Invalid category evaluation input');
   const seen=new Set();
@@ -21,10 +29,11 @@ async function evaluateCategoryUnderstanding({evaluate,cases=CASES,independentRe
     let status;
     try{
       const result=output?.interpretation;
-      if(!result||result.datasetVersion!==DATASET_VERSION||!validIds(result.categoryIds))status='unsafe-classification';
-      else if(result.categoryIds.length&&row.positiveUnsafe)status='unsafe-classification';
-      else if(same(result.categoryIds,row.expectedCategoryIds))status='correct-classification';
-      else if(!result.categoryIds.length&&row.allowFallback)status='safe-fallback';
+      const categoryIds=result?.datasetVersion===DATASET_VERSION?validateCategoryIds(result.categoryIds,MAX_CATEGORIES):null;
+      if(!categoryIds)status='unsafe-classification';
+      else if(categoryIds.length&&row.positiveUnsafe)status='unsafe-classification';
+      else if(same(categoryIds,row.expectedCategoryIds))status='correct-classification';
+      else if(!categoryIds.length&&row.allowFallback)status='safe-fallback';
       else status='incorrect-classification';
     }catch(_error){status='unsafe-classification';}
     rows.push({caseId:row.caseId,locale:row.locale,status});

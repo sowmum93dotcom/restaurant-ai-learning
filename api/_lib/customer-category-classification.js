@@ -1,5 +1,5 @@
 'use strict';
-const {DATASET_VERSION, CATEGORIES, getCategory, validateReference} = require('./marketing-agent-categories');
+const {DATASET_VERSION, CATEGORIES, getCategory, validateReference, validateCategoryIds} = require('./marketing-agent-categories');
 const MAX_CATEGORIES = 8;
 const plain = value => value !== null && typeof value === 'object' && !Array.isArray(value) && Object.getPrototypeOf(value) === Object.prototype;
 function canonicalWords(text) {
@@ -58,7 +58,8 @@ function validateCategoryAdvisory(value, text) {
 }
 // Same catalogue records, narrowed copies only; classification cannot add offers.
 function selectCategoryWork(work, interpretation) {
-  if (!plain(interpretation) || interpretation.datasetVersion !== DATASET_VERSION || !Array.isArray(interpretation.categoryIds) || interpretation.categoryIds.length > MAX_CATEGORIES || interpretation.categoryIds.some(id => !getCategory(id)) || new Set(interpretation.categoryIds).size !== interpretation.categoryIds.length || !interpretation.categoryIds.length) return {work, rejectedWorkItemIds:[]};
+  const categoryIds = plain(interpretation) && interpretation.datasetVersion === DATASET_VERSION ? validateCategoryIds(interpretation.categoryIds, MAX_CATEGORIES) : null;
+  if (!categoryIds || !categoryIds.length) return {work, rejectedWorkItemIds:[]};
   const {getValidPublicCustomerWork} = require('./customer-public-work-contract');
   const projected = getValidPublicCustomerWork(work, 20, {forSearchClassification:true});
   const byWork = new Map(projected.map(item => [item.workItemId,item]));
@@ -67,7 +68,7 @@ function selectCategoryWork(work, interpretation) {
     const publicItem = byWork.get(item?.workItemId);
     if (!publicItem) continue;
     const products = publicItem.products || [];
-    const kept = products.filter(product => !product.categoryClassification || product.categoryClassification.categories.some(reference => interpretation.categoryIds.includes(reference.categoryId)));
+    const kept = products.filter(product => !product.categoryClassification || product.categoryClassification.categories.some(reference => categoryIds.includes(reference.categoryId)));
     if (products.length && !kept.length) { rejectedWorkItemIds.push(item.workItemId); continue; }
     // Carry the raw ownership context to the existing deterministic projection.
     const allowed = new Set(kept.map(product => product.productId));
