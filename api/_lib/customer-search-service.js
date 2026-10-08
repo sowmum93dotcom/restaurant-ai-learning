@@ -9,19 +9,29 @@ const {searchReference,emitSearchEvidence}=require('./customer-search-events');
 const {scheduleCustomerSearch}=require('./customer-search-registry');
 const {selectCategoryWork}=require('./customer-category-classification');
 const {understandCustomerCategories}=require('./customer-category-understanding');
-async function prepareCustomerSearch({understanding,work,preferences=[],feedback=[],place='',locale='en',configuration}={}){
-  const parsed=await understandSearch({understanding,place,locale,configuration});
-  const categoryUnderstanding=await understandCustomerCategories({text:understanding.customerText,locale:parsed.intention.locale,configuration});
+async function prepareCustomerSearch({understanding,work,preferences=[],feedback=[],place='',locale='en',configuration,testMode=false}={}){
+  const safeConfiguration=testMode?{...configuration,understanding:null,categoryUnderstanding:null}:configuration;
+  const parsed=await understandSearch({understanding,place,locale,configuration:safeConfiguration});
+  const categoryUnderstanding=await understandCustomerCategories({text:understanding.customerText,locale:parsed.intention.locale,configuration:safeConfiguration});
   const categoryInterpretation=categoryUnderstanding.interpretation;
   const intention={...parsed.intention,category:categoryInterpretation.categoryIds.length===1?categoryInterpretation.categoryIds[0]:null,categoryInterpretation};
   const categorySelection=selectCategoryWork(work,categoryInterpretation);
   // Separate a parsed monetary phrase from lexical requirements; the explicit
   // monetary restriction is enforced independently before the final result cap.
   const matchingRequest=intention.budget?{...understanding,customerText:understanding.customerText.replace(intention.budget.sourceText,'')}:understanding;
+  // Only separately approved source-bound semantics may extend retrieval. Mask
+  // their exact spans; every remaining request term still needs same-offer evidence.
+  let semanticRetrieval=null;
+  if(categoryUnderstanding.reason==='validated_category_understanding'&&categoryUnderstanding.retrievalCandidates?.length===1){
+    const candidate=categoryUnderstanding.retrievalCandidates[0];
+    let remainingText=understanding.customerText.slice(0,candidate.evidence.start)+' '+understanding.customerText.slice(candidate.evidence.end);
+    if(intention.budget)remainingText=remainingText.replace(intention.budget.sourceText,'');
+    semanticRetrieval={categoryId:candidate.categoryId,remainingText};
+  }
   const rejected=categorySelection.rejectedWorkItemIds.map(workItemId=>({resultId:stablePossibilityId(workItemId),reason:'category_classification_mismatch'}));
   const possibilities=findCustomerPossibilities(matchingRequest,categorySelection.work,undefined,preferences,feedback,intention.location || '',p=>{
     const checked=constrainPossibility(p,intention);if(!checked.accepted){rejected.push({resultId:p.possibilityId,reason:checked.reason});return null;}return checked.possibility;
-  });
+  },semanticRetrieval);
   const eligible=new Set(possibilities.map(p=>p.possibilityId));
   const known=new Set(rejected.map(r=>r.resultId));
   for(const w of getValidPublicCustomerWork(work)){

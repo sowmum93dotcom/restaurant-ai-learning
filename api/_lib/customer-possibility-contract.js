@@ -133,6 +133,7 @@ function explicitAdditionalRequirements(customerText) {
 // offer. A broad wellbeing, journey or shared-time category is not enough.
 const SPECIFIC_OFFER_REQUIREMENTS = Object.freeze([
   Object.freeze(["quiet", "peaceful", "tranquil"]),
+  Object.freeze(["children", "child", "kids", "kid"]),
   Object.freeze(["relaxed", "relaxing", "relaxation"]),
   Object.freeze(["massage", "massages"]),
   Object.freeze(["fitness", "gym", "workout", "exercise"]),
@@ -223,7 +224,7 @@ function relevantProductsForCustomer(products, customerTerms) {
     if (!product || product.availability === "unavailable") return matches;
     const relevance = productRelevance(product, customerTerms);
     if (!relevance) return matches;
-    const publicProduct = { ...product, relevance }; delete publicProduct.customerVisible;
+    const publicProduct = { ...product, relevance }; delete publicProduct.customerVisible; delete publicProduct.categoryClassification;
     matches.push(publicProduct);
     return matches;
   }, []);
@@ -234,7 +235,7 @@ function stablePossibilityId(workItemId) {
     .digest("base64url").slice(0, 20);
 }
 
-function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_POSSIBILITIES, storedPreferences = [], storedFeedback = [], place = "", eligibilityFilter) {
+function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_POSSIBILITIES, storedPreferences = [], storedFeedback = [], place = "", eligibilityFilter, semanticRetrieval) {
   const excludedTerms = excludedCustomerTerms(understanding.customerText);
   const additionalRequirements = explicitAdditionalRequirements(understanding.customerText);
   const requestWords = understanding.customerText.toLocaleLowerCase("en").match(/[\p{L}\p{N}]+/gu) || [];
@@ -249,7 +250,19 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
   const guidanceTerms = preferenceTerms(storedPreferences);
   const feedbackSignals = feedbackGuidance(storedFeedback);
   const candidates = [];
-  getValidPublicCustomerWork(repositoryWork).forEach(function (work) {
+  (semanticRetrieval ? getValidPublicCustomerWork(repositoryWork, 20, {forSearchClassification:true}) : getValidPublicCustomerWork(repositoryWork)).forEach(function (work) {
+    const semanticProducts = new Set();
+    if (semanticRetrieval) {
+      const remaining = meaningfulTerms(semanticRetrieval.remainingText);
+      for (const product of work.products || []) {
+        const source = meaningfulTerms(product.name + ' ' + product.description);
+        if (product.availability !== 'unavailable' &&
+            product.categoryClassification?.categories.some(row => row.categoryId === semanticRetrieval.categoryId) &&
+            [...remaining].every(term => hasRequirementEvidence(term, source)) &&
+            supportsRequestedOffer(customerTerms, source) && supportsExplicitService(customerTerms, source) &&
+            [...additionalRequirements].every(term => hasRequirementEvidence(term, source))) semanticProducts.add(product.productId);
+      }
+    }
     // An explicitly unavailable business cannot be presented as a current possibility.
     // Unknown/contact status is not treated as confirmed availability.
     if (work.operationalAvailability && work.operationalAvailability.status === "unavailable") return;
@@ -284,7 +297,7 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
     const concepts = matchedTerms.concepts;
     // Generic token overlap alone is not a defensible connection. Require either
     // two specific shared expressions or a transparent DEMEOS solution concept.
-    if (matchedTerms.strength < 0 || (evidence.length < 2 && concepts.length === 0)) return;
+    if (!semanticProducts.size && (matchedTerms.strength < 0 || (evidence.length < 2 && concepts.length === 0))) return;
     const guidanceOverlap = Array.from(guidanceTerms).filter(function (term) { return contentTerms.has(term); }).length;
     const feedbackGuidanceScore = Array.from(contentTerms).reduce(function (score, term) {
       return score + (feedbackSignals.get(term) || 0);
@@ -292,7 +305,7 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
     const possibility = {
       possibilityId: stablePossibilityId(work.workItemId), workItemId: work.workItemId,
       businessName: work.businessName, content: work.content, participationAction: "Interested",
-      relevance: { basis: "current-intention-authorized-work", evidence: (evidence.length >= 2 ? evidence : concepts).slice(0, 5),
+      relevance: { basis: "current-intention-authorized-work", evidence: (semanticProducts.size ? ["verified-category-offer"] : evidence.length >= 2 ? evidence : concepts).slice(0, 5),
         explanation: "This authorized possibility connects to your current request." }
     };
     if (work.location) possibility.location = work.location;
@@ -300,7 +313,12 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
     if (work.fulfilment) possibility.fulfilment = work.fulfilment;
     if (work.operationalAvailability) possibility.operationalAvailability = work.operationalAvailability;
     if (Array.isArray(work.products) && work.products.length) {
-      const relevantProducts = relevantProductsForCustomer(work.products, customerTerms)
+      const semanticMatches = (work.products || []).filter(product => semanticProducts.has(product.productId)).map(product => {
+        const publicProduct = {...product, relevance: {basis: "current-intention-product-information", evidence: ["verified-category-offer"]}};
+        delete publicProduct.categoryClassification;
+        return publicProduct;
+      });
+      const relevantProducts = [...semanticMatches, ...relevantProductsForCustomer(work.products, customerTerms).filter(product => !semanticProducts.has(product.productId))]
         .filter(function (product) {
           if (!additionalRequirements.size) return true;
           const productTerms = meaningfulTerms([product.name, product.description].join(" "));

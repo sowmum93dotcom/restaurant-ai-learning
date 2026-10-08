@@ -19,7 +19,7 @@ function hasNegation(text){
   return text.normalize('NFKC').toLowerCase().split(/[;.!?\n,]/u).some(clause=>{
     const words=clause.match(/[\p{L}\p{N}]+/gu)||[];
     return words.some((word,index)=>['no','not','without','avoid','exclude','excluding','except'].includes(word)&&!(word==='not'&&words[index+1]==='only'));
-  })||/\b(?:don['’]t|isn['’]t|aren['’]t|won['’]t|never)\b/iu.test(text);
+  })||/(?:\b(?:sin|excepto|evitar|sans|sauf|éviter|sem|exceto|evitar|ohne|kein|keine|keinen|nicht|außer)\b|بدون|ليس|لا\s|不要|不含|除了|没有|नहीं|बिना|除外|なし|ない|不要)/iu.test(text)||/\b(?:don['’]t|isn['’]t|aren['’]t|won['’]t|never)\b/iu.test(text);
 }
 function validateSemanticCandidates(value,text){
   try{
@@ -78,7 +78,7 @@ async function understandCategoryText({text,locale='en',scope='customer-request'
       const decision=await c.resolveValidation(Object.freeze({purpose:PURPOSE,scope,locale,text,sourceReference,requestFingerprint,candidateFingerprint,candidates,signal}));
       if(signal.aborted)return baseline('category_deadline');
       if(!keys(decision,['approved','purpose','decisionId','requestFingerprint','candidateFingerprint','datasetVersion','locale','scope','constraintsPreserved','exclusionsPreserved'])||decision.approved!==true||decision.purpose!==PURPOSE||!id(decision.decisionId)||decision.requestFingerprint!==requestFingerprint||decision.candidateFingerprint!==candidateFingerprint||decision.datasetVersion!==DATASET_VERSION||decision.locale!==locale||decision.scope!==scope||decision.constraintsPreserved!==true||decision.exclusionsPreserved!==true)return baseline('category_validation_required');
-      return {interpretation:{datasetVersion:DATASET_VERSION,categoryIds:candidates.map(row=>row.categoryId),source:'validated-semantic-advisory'},reason:'validated_category_understanding',validation:{decisionId:decision.decisionId,requestFingerprint,candidateFingerprint}};
+      return {interpretation:{datasetVersion:DATASET_VERSION,categoryIds:candidates.map(row=>row.categoryId),source:'validated-semantic-advisory'},reason:'validated_category_understanding',validation:{decisionId:decision.decisionId,requestFingerprint,candidateFingerprint},retrievalCandidates:candidates};
     },c.timeoutMs);
   }catch(_error){return baseline('category_understanding_fallback');}
 }
