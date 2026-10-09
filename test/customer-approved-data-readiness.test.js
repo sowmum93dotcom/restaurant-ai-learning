@@ -17,6 +17,7 @@ async function load(rows=[row()],assets=[asset()],report){const summaries=[],que
 async function search(work,text='Fashion and Apparel Commerce black waterproof jacket') {return (await prepareCustomerSearch({work,understanding:confirmCustomerUnderstanding(buildCustomerUnderstanding('',text))})).possibilities;}
 test('consistent approved joined records reach existing category, eligibility and customer receiving contracts',async()=>{
  const input=row(),before=structuredClone(input),loaded=await load([input]);assert.deepEqual(loaded.summaries,[]);
+ assert.deepEqual(loaded.work[0].products[0].categoryClassification,{datasetVersion:DATASET_VERSION,categories:[{categoryId:'10',sectorId:'1'}]});
  assert.match(loaded.queries[0],/JOIN demeos_businesses/);assert.match(loaded.queries[0],/c\.approved_at, c\.updated_at AS campaign_updated_at/);
  const received=toCustomerPossibility((await search(loaded.work))[0]);assert.equal(received.products[0].productId,'offer');assert.equal(received.products[0].price,'£89');
  assert.equal(toCustomerWorkItem(loaded.work[0]).media[0].relatedEntityId,'offer');assert.deepEqual(input,before);
@@ -25,9 +26,15 @@ test('consistent approved joined records reach existing category, eligibility an
 test('approved service records use the same owned offer path and canonical registry',async()=>{
  const input=row();Object.assign(input.profile.products[0],{name:'Cleaning Services',description:'Cleaning Services professional cleaning appointment',categoryClassification:{datasetVersion:DATASET_VERSION,categories:[{categoryId:'93',sectorId:'5'}]},presentation:{categoryId:'services.appointments',pricing:{mode:'fixed',currency:'GBP',amount:89},options:[],variants:[]}});
  const loaded=await load([input],[{...asset(),purpose:'service'}]);
+ assert.deepEqual(loaded.work[0].products[0].categoryClassification,{datasetVersion:DATASET_VERSION,categories:[{categoryId:'93',sectorId:'5'}]});
  const result=toCustomerPossibility((await search(loaded.work,'Cleaning Services cleaning appointment'))[0]);
  assert.equal(result.products[0].productId,'offer');assert.equal(result.products[0].presentation.kind,'service');assert.equal(result.products[0].presentation.pricing.amount,89);
- assert.equal(loaded.work[0].media[0].relatedEntityId,'offer');assert.deepEqual(loaded.summaries,[]);
+ const received=toCustomerWorkItem(loaded.work[0]);
+ assert.equal(received.media[0].purpose,'service');assert.equal(received.media[0].relatedEntityId,'offer');assert.deepEqual(loaded.summaries,[]);
+ input.profile.products[0].description+=' Catering Services';input.profile.products[0].categoryClassification.categories[0]={categoryId:'89',sectorId:'5'};
+ const mismatched=await load([input],[{...asset(),purpose:'service'}]);
+ assert.equal(mismatched.work[0].products[0].categoryClassification.categories[0].categoryId,'89');
+ assert.deepEqual(await search(mismatched.work,'Cleaning Services cleaning appointment'),[]);
 });
 test('embedded identity conflicts cannot override database ownership or campaign identity',async()=>{
  for(const change of [r=>r.profile.businessId='foreign',r=>r.campaign.businessId='foreign',r=>r.campaign.id='another',r=>r.business_id='',r=>r.campaign_id=null]){
