@@ -69,7 +69,7 @@ function selectCategoryWork(work, interpretation) {
     if (!publicItem) continue;
     const products = publicItem.products || [];
     const kept = products.filter(product => !product.categoryClassification || product.categoryClassification.categories.some(reference => categoryIds.includes(reference.categoryId)));
-    if (products.length && !kept.length) { rejectedWorkItemIds.push(item.workItemId); continue; }
+    if (products.length && !kept.length) { rejectedWorkItemIds.push(publicItem.workItemId); continue; }
     // Carry the raw ownership context to the existing deterministic projection.
     // The shared projection rejects duplicate IDs before this association.
     const allowed = new Set(kept.map(product => product.productId));

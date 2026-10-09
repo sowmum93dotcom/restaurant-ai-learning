@@ -86,6 +86,14 @@ test('unique normalized source identifiers preserve exact raw records during cat
   const selected=selectCategoryWork(work,interpretCategories('Fashion and Apparel Commerce')).work;
   assert.equal(selected[0].products[0],work[0].products[0]);assert.equal((await search(selected))[0].products[0].productId,'jacket');
 });
+test('category rejection evidence uses the same normalized identity as public results',async()=>{
+  const work=await catalogue();work[0].workItemId=' campaign ';
+  const selected=selectCategoryWork(work,interpretCategories('Electronics and Devices'));
+  assert.deepEqual(selected.rejectedWorkItemIds,['campaign']);
+  const prepared=await prepareCustomerSearch({work,understanding:confirmCustomerUnderstanding(buildCustomerUnderstanding('','Electronics and Devices black jacket'))});
+  const expected=require('../api/_lib/customer-possibility-contract').stablePossibilityId('campaign');
+  assert.deepEqual(prepared.rejected.filter(row=>row.resultId===expected).map(row=>row.reason),['category_classification_mismatch']);
+});
 test('advisory classification refuses ambiguous source identities before any approval or provider service',async()=>{
   const work=await catalogue();let calls=0;const configuration={mode:'approved',allowProviderRequest:true,provider:{classify:async()=>{calls++;}}};
   for(const ambiguous of [[...work,{...work[0],workItemId:' campaign '}],[{...work[0],products:[...work[0].products,{...work[0].products[0],productId:' jacket '}]}]]){
