@@ -764,10 +764,20 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
       let offset = 0;
       while (publicWork.length < 20) {
         const result = await database.query(
-          `SELECT c.campaign_id, c.business_id, c.campaign, b.profile,
+          `WITH invalid_publications AS (
+             SELECT campaign_id FROM demeos_campaigns
+             WHERE campaign->>'approvalStatus' = 'Approved'
+               AND (COALESCE(campaign->>'campaignType', '') NOT IN ('full', 'social', 'email')
+                 OR COALESCE(BTRIM(campaign->>'campaignText'), '') = '')
+             ORDER BY updated_at DESC, campaign_id DESC LIMIT 50
+           )
+           SELECT c.campaign_id, c.business_id, c.campaign, b.profile,
                   c.approved_at, c.updated_at AS campaign_updated_at FROM demeos_campaigns c
            JOIN demeos_businesses b ON b.business_id = c.business_id
            WHERE c.campaign->>'approvalStatus' = 'Approved'
+             AND ((c.campaign->>'campaignType' IN ('full', 'social', 'email')
+                   AND COALESCE(BTRIM(c.campaign->>'campaignText'), '') <> '')
+               OR c.campaign_id IN (SELECT campaign_id FROM invalid_publications))
            ORDER BY c.updated_at DESC, c.campaign_id DESC
            LIMIT $1 OFFSET $2`, [pageSize, offset]);
         for (const row of result.rows) {

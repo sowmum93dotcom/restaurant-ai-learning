@@ -15,7 +15,7 @@ async function load(rows=[row()],assets=[asset()],report){const summaries=[],que
  const work=await repository.getCustomerWork({forCatalogueValidation:true});return {work,summaries,queries};
 }
 async function search(work,text='Fashion and Apparel Commerce black waterproof jacket') {return (await prepareCustomerSearch({work,understanding:confirmCustomerUnderstanding(buildCustomerUnderstanding('',text))})).possibilities;}
-test('real database selection diagnoses invalid approved rows and paginates to eligible records',async t=>{
+test('real database selection bounds invalid publication sampling and paginates to eligible records',async t=>{
  const {PGlite}=require('@electric-sql/pglite');
  const {createDatabase}=require('../api/_lib/database');
  const client=new PGlite();t.after(()=>client.close());
@@ -32,7 +32,7 @@ test('real database selection diagnoses invalid approved rows and paginates to e
  const repository=createPersistenceRepository(database,{reportCatalogueDiagnostics:summary=>summaries.push(summary)});
  const work=await repository.getCustomerWork({forCatalogueValidation:true});
  assert.deepEqual(work.map(item=>item.workItemId),['a-valid']);
- assert.deepEqual(summaries,[{publication_ineligible:51}]);
+ assert.deepEqual(summaries,[{publication_ineligible:50}]);
  const received=toCustomerPossibility((await search(work))[0]);
  assert.equal(received.workItemId,'a-valid');assert.equal(received.products[0].productId,'offer');
  await database.query('DELETE FROM demeos_campaigns');
