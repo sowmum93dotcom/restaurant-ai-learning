@@ -22,7 +22,7 @@ function getOwnerNavigationSection(locationObject, workspaceView) {
   const view = workspaceView || (locationObject && typeof locationObject.hash === "string"
     ? locationObject.hash.slice(1) : "");
   if (view === "business-profile") return "business-profile";
-  if (view === "recommends") return "recommends";
+  if (view === "products") return "products";
   return "marketing";
 }
 
@@ -107,7 +107,7 @@ function getOwnerWorkspaceContext(storage) {
     return {
       name: (typeof campaign.promoText === "string" && campaign.promoText.trim()) ||
         campaign.campaignTypeLabel || campaign.campaignType || "Marketing work",
-      status: campaign.approvalStatus || "Status not recorded"
+      status: campaign.preparationOnly ? (campaign.ownerReviewState === "submitted" ? "Submitted for review" : "Private draft") : campaign.approvalStatus || "Status not recorded"
     };
   });
   return { profile, currentWork };
@@ -193,13 +193,16 @@ function getTrustedOwnerNextAction(record, activeBusinessId) {
     return campaign && typeof campaign === "object" && !Array.isArray(campaign) &&
       campaign.businessId === activeBusinessId;
   });
-  if (campaigns.some(function (campaign) { return campaign.approvalStatus === "Unapproved"; })) {
+  if (campaigns.some(function (campaign) { return campaign.approvalStatus === "Unapproved" && campaign.ownerReviewState !== "submitted"; })) {
     return {
       title: "Review your campaign",
       explanation: "Marketing work is waiting for your approval or revision.",
       action: "Review Campaign",
       destination: "marketing.html#campaigns"
     };
+  }
+  if (campaigns.some(function (campaign) {return campaign.preparationOnly === true && campaign.ownerReviewState === "submitted";})) {
+    return {title:"Draft submitted for review", explanation:"Your reviewed draft remains private. Publication review is not available yet; you can continue preparing your business information.", action:"Review submitted draft", destination:"marketing.html#campaigns"};
   }
   if (campaigns.some(function (campaign) {
     return campaign.approvalStatus === "Approved" &&
@@ -255,6 +258,8 @@ async function loadOwnerNextAction(documentObject, storage, fetchFunction) {
     ? storage.getItem("demeosActiveBusinessId") : null;
   if (!activeBusinessId || typeof fetchFunction !== "function") {
     renderOwnerNextAction(documentObject, unavailableOwnerNextAction);
+    renderOwnerWorkspace(documentObject, {getItem() {return null;}});
+    renderOwnerModels(documentObject, null, null);
     return unavailableOwnerNextAction;
   }
   try {
@@ -262,13 +267,45 @@ async function loadOwnerNextAction(documentObject, storage, fetchFunction) {
       method: "GET", credentials: "same-origin"
     });
     if (!response.ok) throw new Error("Business record unavailable");
-    const nextAction = getTrustedOwnerNextAction(await response.json(), activeBusinessId);
+    const record = await response.json();
+    const nextAction = getTrustedOwnerNextAction(record, activeBusinessId);
+    if (record.businessProfile?.businessId === activeBusinessId) {
+      const serverStorage = {getItem(key) {return key === "demeosBusinessProfiles" ? JSON.stringify([record.businessProfile]) : key === "demeosActiveBusinessId" ? activeBusinessId : key === "demeosCampaignHistory" ? JSON.stringify(record.campaigns || []) : null;}};
+      renderOwnerWorkspace(documentObject, serverStorage);
+      renderOwnerModels(documentObject, record.workspaceReadiness, activeBusinessId);
+    }
     renderOwnerNextAction(documentObject, nextAction);
     return nextAction;
   } catch (_error) {
+    const identity = documentObject.getElementById("workspace-business-identity");
+    const work = documentObject.getElementById("workspace-current-work");
+    if (identity) identity.textContent = "Business information could not be confirmed.";
+    if (work) work.textContent = "Current activity is unavailable. Open Marketing to retry.";
+    renderOwnerModels(documentObject, null, activeBusinessId);
     renderOwnerNextAction(documentObject, unavailableOwnerNextAction);
     return unavailableOwnerNextAction;
   }
+}
+
+function renderOwnerModels(documentObject, readiness, businessId) {
+  const container = documentObject.getElementById("owner-operating-models");
+  if (!container) return;
+  container.replaceChildren();
+  if (!readiness || readiness.businessId !== businessId) {
+    container.textContent = "Business model permissions could not be confirmed. Select an owned business in My Business.";
+    return;
+  }
+  const models = [
+    ["Marketing Products and Services", "Customers discover your offers and continue to your approved website, booking or contact destination.", readiness.marketing?.canPrepare === true ? "Draft preparation available" : "Permission unavailable"],
+    ["Sell Products Through DEMEOS", "Prepare accurate products and availability here. Selling requires verified merchant, product and purchase permissions through the existing purchase system.", readiness.selling?.canSell === false ? "Preparation only. Selling is not enabled." : "Selling permission could not be confirmed."]
+  ];
+  models.forEach(function (model) {
+    const card = documentObject.createElement("article");card.className = "owner-model-card";
+    const title = documentObject.createElement("h3");title.textContent = model[0];
+    const description = documentObject.createElement("p");description.textContent = model[1];
+    const status = documentObject.createElement("strong");status.textContent = model[2];
+    card.append(title, description, status);container.appendChild(card);
+  });
 }
 
 function bindOwnerClerkSession(clerk, documentObject, storage, elements, fetchFunction) {
@@ -279,7 +316,7 @@ function bindOwnerClerkSession(clerk, documentObject, storage, elements, fetchFu
       syncAuthorizedOwnerBusinessContext(storage, fetchFunction).then(function () {
         // An earlier request must not render after sign-out or an account switch.
         if (!clerk.user || clerk.user.id !== authenticatedUserId) return;
-        renderOwnerWorkspace(documentObject, storage);
+        if (typeof documentObject.dispatchEvent === "function") documentObject.dispatchEvent(new CustomEvent("owner-business-ready"));
         if (typeof fetchFunction === "function") loadOwnerNextAction(documentObject, storage, fetchFunction);
       });
       return;
@@ -454,7 +491,7 @@ function installOwnerBusinessSecurity(windowObject, documentObject, localStorage
   windowObject.fetch = async function (input, init) {
     const url = getRequestUrl(input);
     const method = getRequestMethod(input, init);
-    if (url === "/api/businesses" && method === "GET") await ownerAuthReady;
+    if (/^\/api\/businesses(?:\/|$)/.test(url) && method === "GET") await ownerAuthReady;
     try {
       const response = await originalFetch(input, init);
       const match = method === "PUT" && typeof url === "string"
@@ -539,7 +576,7 @@ function installOwnerBusinessSecurity(windowObject, documentObject, localStorage
 
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
-    getOwnerWorkspaceContext, migrateWorkspaceBusinessContext, showOwnerAuthenticationState,
+    renderOwnerModels, getOwnerWorkspaceContext, migrateWorkspaceBusinessContext, showOwnerAuthenticationState,
     renderOwnerWorkspace, bindOwnerClerkSession, initialiseOwnerAuthentication,
     getTrustedOwnerNextAction, renderOwnerNextAction, loadOwnerNextAction,
     getOwnerNavigationSection, updateOwnerNavigation, syncOwnerWorkspaceFromLocation,

@@ -10,7 +10,7 @@ const {
 const destinations = [
   [{ pathname: "/business-workspace.html", hash: "" }, "overview"],
   [{ pathname: "/index.html", hash: "#business-profile" }, "business-profile"],
-  [{ pathname: "/index.html", hash: "#recommends" }, "recommends"],
+  [{ pathname: "/index.html", hash: "#products" }, "products"],
   [{ pathname: "/index.html", hash: "" }, "marketing"],
   [{ pathname: "/business-results.html", hash: "" }, "results"]
 ];
@@ -54,7 +54,7 @@ test("owner navigation has exactly one active item for every destination", funct
 
 test("displayed profile and recommendation views override Marketing without changing its logic", function () {
   assert.equal(getOwnerNavigationSection({ pathname: "/index.html", hash: "" }, "business-profile"), "business-profile");
-  assert.equal(getOwnerNavigationSection({ pathname: "/index.html", hash: "" }, "recommends"), "recommends");
+  assert.equal(getOwnerNavigationSection({ pathname: "/index.html", hash: "" }, "products"), "products");
   assert.equal(getOwnerNavigationSection({ pathname: "/index.html", hash: "" }, "campaigns"), "marketing");
 });
 

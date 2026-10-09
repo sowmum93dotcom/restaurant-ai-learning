@@ -26,7 +26,7 @@ function getCustomerFacingContent(campaign) {
 }
 
 function canPublishToDemeosCustomerExperience(campaign) {
-  if (!campaign || campaign.approvalStatus !== "Approved") return false;
+  if (!campaign || campaign.preparationOnly === true || campaign.approvalStatus !== "Approved") return false;
   if (!supportedCustomerExperienceCampaignTypes.includes(campaign.campaignType)) return false;
 
   const capability = getCapabilityForRecommendationType(campaign.campaignType);

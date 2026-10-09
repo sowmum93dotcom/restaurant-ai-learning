@@ -26,6 +26,8 @@ jobs:
           for i in {1..30}; do curl -fsS http://127.0.0.1:4173/customer.html >/dev/null && exit 0; sleep 1; done
           cat /tmp/demeos-http.log
           exit 1
+      - name: Run owner workspace SQL, permission and draft gate
+        run: node browser-checks/business-workspace-gate.js
       - name: Run approved source SQL and customer continuation gate
         run: node browser-checks/customer-approved-source-gate.js
       - name: Run public homepage and information gate
@@ -63,3 +65,4 @@ jobs:
             /tmp/demeos-context-*.png
             /tmp/demeos-contact-*.png
             /tmp/demeos-account-*.png
+            /tmp/demeos-owner-*.png

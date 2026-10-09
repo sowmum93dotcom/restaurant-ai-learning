@@ -1,12 +1,13 @@
 const { randomUUID } = require("node:crypto");
-const { getRepository } = require("../../_lib/persistence.js");
-const { authorizeBusinessOwnerRequest } = require("../../_lib/demeos-business-owner-authorization.js");
-const { DEMEOS_ACTIONS } = require("../../_lib/demeos-rules.js");
-const { normalizeMediaAsset, getMediaGuidance } = require("../../_lib/media-asset-contract.js");
-const { createMediaUploadSession } = require("../../_lib/media-upload-session.js");
-const { getConfiguredMediaStorageAdapter } = require("../../_lib/media-storage-driver.js");
+const { getRepository } = require("../../../_lib/persistence.js");
+const { authorizeBusinessOwnerRequest } = require("../../../_lib/demeos-business-owner-authorization.js");
+const { DEMEOS_ACTIONS } = require("../../../_lib/demeos-rules.js");
+const { normalizeMediaAsset, getMediaGuidance } = require("../../../_lib/media-asset-contract.js");
+const { createMediaUploadSession } = require("../../../_lib/media-upload-session.js");
+const { getConfiguredMediaStorageAdapter } = require("../../../_lib/media-storage-driver.js");
 
 module.exports = async function handler(req, res) {
+  res.setHeader("Cache-Control", "private, no-store");
   if (req.method !== "GET" && req.method !== "POST") {
     res.setHeader("Allow", "GET, POST");
     return res.status(405).json({ error: "Method not allowed" });
@@ -28,9 +29,21 @@ module.exports = async function handler(req, res) {
       createdAt: new Date().toISOString()
     }, businessId);
     if (!asset) return res.status(400).json({ error: "DEMEOS received invalid media information." });
+    if (asset.relatedEntityId || ["product", "service"].includes(asset.purpose)) {
+      const record = await repository.getKnownBusiness(businessId);
+      const products = record?.businessProfile?.businessId === businessId && Array.isArray(record.businessProfile.products) ? record.businessProfile.products : [];
+      if (!asset.relatedEntityId || !products.some(product => product && product.businessId === businessId && product.productId === asset.relatedEntityId)) {
+        return res.status(409).json({error:"Save an owned product or service before attaching its media."});
+      }
+    }
+
     const saved = await repository.saveBusinessMediaAsset(businessId, asset);
     if (!saved) return res.status(409).json({ error: "Media asset could not be registered for this business." });
-    const uploadSession = createMediaUploadSession(saved);\n    const storage = uploadSession ? getConfiguredMediaStorageAdapter() : null;\n    const storageUpload = storage ? await storage.createUpload(saved, uploadSession) : null;\n    return res.status(201).json({ asset: saved, guidance: getMediaGuidance(saved),\n      ...(uploadSession && storageUpload ? { uploadSession: { uploadToken: uploadSession.uploadToken, expiresAt: uploadSession.expiresAt, storageKey: storageUpload.storageKey, uploadUrl: storageUpload.uploadUrl } } : { uploadStatus: "storage-not-configured" }) });
+    const uploadSession = createMediaUploadSession(saved);
+    const storage = uploadSession ? getConfiguredMediaStorageAdapter() : null;
+    const storageUpload = storage ? await storage.createUpload(saved, uploadSession) : null;
+    return res.status(201).json({ asset: saved, guidance: getMediaGuidance(saved),
+      ...(uploadSession && storageUpload ? { uploadSession: { uploadToken: uploadSession.uploadToken, expiresAt: uploadSession.expiresAt, storageKey: storageUpload.storageKey, uploadUrl: storageUpload.uploadUrl } } : { uploadStatus: "storage-not-configured" }) });
   } catch (error) {
     console.error("Could not manage business media:", error);
     return res.status(500).json({ error: "DEMEOS could not manage business media." });

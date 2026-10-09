@@ -1,3 +1,4 @@
+const {workspaceReadiness} = require("../_lib/business-workspace-readiness.js");
 const customerItemContract = require("../../js/customer-item-contract.js");
 const { getRepository } = require("../_lib/persistence.js");
 const {
@@ -149,6 +150,8 @@ function getValidatedProfile(req) {
 }
 
 module.exports = async function handler(req, res) {
+  res.setHeader("Cache-Control", "private, no-store");
+  res.setHeader("Vercel-CDN-Cache-Control", "no-store");
   if (req.method !== "GET" && req.method !== "PUT") {
     res.setHeader("Allow", "GET, PUT");
     return res.status(405).json({ error: "Method not allowed" });
@@ -232,7 +235,7 @@ module.exports = async function handler(req, res) {
     }
     const record = await repository.getKnownBusiness(businessId);
     if (!record) return res.status(404).json({ error: "Business not found." });
-    return res.status(200).json(record);
+    return res.status(200).json({ ...record, workspaceReadiness: workspaceReadiness(record, businessId) });
   } catch (error) {
     console.error("Could not restore known business:", error);
     return res.status(500).json({ error: "DEMEOS could not restore this business." });

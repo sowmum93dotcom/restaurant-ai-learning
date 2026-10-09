@@ -688,20 +688,32 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
         [profile.businessId, JSON.stringify(profile)]);
     },
 
+    async getBusinessCampaign(businessId, campaignId) {
+      if (!isNonEmptyString(businessId) || !isNonEmptyString(campaignId)) return null;
+      await database.ensureSchema();
+      const result = await database.query('SELECT campaign FROM demeos_campaigns WHERE business_id = $1 AND campaign_id = $2', [businessId, campaignId]);
+      return result.rows.length ? {...result.rows[0].campaign, id:campaignId, businessId} : null;
+    },
+
     async saveCampaign(campaign) {
       await database.ensureSchema();
       const result = await database.query(
         `INSERT INTO demeos_campaigns (campaign_id, business_id, campaign)
          SELECT $1, $2, $3::jsonb
-         WHERE NOT ($3::jsonb ? 'recommendationDecisionId') OR EXISTS (
+         WHERE NOT (COALESCE($3::jsonb->>'preparationOnly', 'false') = 'true' AND $3::jsonb->>'approvalStatus' = 'Approved')
+           AND (NOT ($3::jsonb ? 'recommendationDecisionId') OR EXISTS (
            SELECT 1 FROM demeos_recommendation_decisions d
            WHERE d.business_id = $2 AND d.decision_id::text = $3::jsonb->>'recommendationDecisionId'
-             AND d.decision IN ('used', 'modified'))
+             AND d.decision IN ('used', 'modified')))
          ON CONFLICT (campaign_id) DO UPDATE SET campaign =
            CASE WHEN demeos_campaigns.campaign ? 'recommendationDecisionId'
              THEN jsonb_set(EXCLUDED.campaign, '{recommendationDecisionId}', demeos_campaigns.campaign->'recommendationDecisionId', true)
-             ELSE EXCLUDED.campaign END, updated_at = NOW()
+             ELSE EXCLUDED.campaign END ||
+           CASE WHEN demeos_campaigns.campaign->>'preparationOnly' = 'true'
+             THEN jsonb_build_object('preparationOnly', true, 'approvalStatus', 'Unapproved')
+             ELSE '{}'::jsonb END, updated_at = NOW()
          WHERE demeos_campaigns.business_id = EXCLUDED.business_id
+           AND NOT (COALESCE(demeos_campaigns.campaign->>'preparationOnly', 'false') = 'true' AND EXCLUDED.campaign->>'approvalStatus' = 'Approved')
          RETURNING campaign`,
         [campaign.id, campaign.businessId, JSON.stringify(campaign)]);
       return result.rows.length
@@ -718,6 +730,7 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
              approved_at = COALESCE(approved_at, NOW()), updated_at = NOW()
          WHERE campaign_id = $1 AND business_id = $2
            AND campaign->>'approvalStatus' = 'Unapproved'
+           AND COALESCE(campaign->>'preparationOnly', 'false') <> 'true'
          RETURNING campaign`,
         [campaignId, businessId]);
       return result.rows.length

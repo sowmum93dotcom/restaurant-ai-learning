@@ -22,7 +22,7 @@ function getBusinessResults(record, activeBusinessId) {
     const signal = participationByCampaign.get(campaign.id);
     const customerFeedback = feedbackByCampaign.get(campaign.id);
     return campaign.approvalStatus === "Approved" ||
-      Boolean(campaign.outcome && typeof campaign.outcome.outcome === "string") || Boolean(signal) || Boolean(customerFeedback);
+      Boolean(campaign.outcome && typeof campaign.outcome.outcome === "string") || Boolean(signal && signal.latestParticipationAt) || Boolean(customerFeedback && customerFeedback.latestFeedbackAt);
   }).map(function (campaign) {
     const signal = participationByCampaign.get(campaign.id);
     const customerFeedback = feedbackByCampaign.get(campaign.id);
@@ -84,12 +84,25 @@ function getRecommendationDecisions(record, activeBusinessId) {
   });
 }
 
+function getOwnerActivityMetrics(record, businessId) {
+  if (!record?.businessProfile || record.businessProfile.businessId !== businessId) return null;
+  const results = getBusinessResults(record, businessId);
+  const count = results.reduce((total, result) => total + (Number.isSafeInteger(result.customerInterestCount) && result.customerInterestCount >= 0 ? result.customerInterestCount : 0), 0);
+  return [
+    {label:"Product impressions", value:null, detail:"Product display counts are not recorded yet."},
+    {label:"Product views", value:null, detail:"Opening an offer is not currently recorded as a product view."},
+    {label:"Customer interactions", value:count, detail:"Recorded Interested actions for up to 20 recent campaigns. This is not a count of unique visitors."},
+    {label:"Contact and external actions", value:null, detail:"Contact clicks, enquiries and external purchases are not recorded here."},
+    {label:"Verified purchases", value:null, detail:"Verified purchase reporting is not connected for this business."}
+  ];
+}
+
 const getDemeosUnderstanding = typeof module !== "undefined" && module.exports
   ? require("./demeos-understanding.js").getDemeosUnderstanding
   : DemeosUnderstanding.getDemeosUnderstanding;
 
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { getBusinessResults, getRecommendationDecisions, getDemeosUnderstanding };
+  module.exports = { getOwnerActivityMetrics, getBusinessResults, getRecommendationDecisions, getDemeosUnderstanding };
 }
 
 if (typeof document !== "undefined") {
@@ -158,7 +171,7 @@ if (typeof document !== "undefined") {
   }
 
   function renderDemeosUnderstanding(understanding) {
-    byId("demeos-understanding-state").textContent = understanding.evidenceAvailable
+    byId("demeos-understanding-state").textContent = (understanding.campaignOutcomeCount > 0 || understanding.customerInterestCount > 0 || Object.values(understanding.customerFeedback).some(v=>v>0) || Object.values(understanding.recommendationDecisions).some(v=>v>0))
       ? "Understanding is growing" : "Building understanding";
     byId("demeos-understanding-outcomes").textContent = understanding.campaignOutcomeCount;
     byId("demeos-understanding-interest").textContent = understanding.customerInterestCount;
@@ -178,6 +191,15 @@ if (typeof document !== "undefined") {
       const response = await fetch(`/api/businesses/${encodeURIComponent(businessId)}`);
       if (!response.ok) throw new Error("Stored business results could not be loaded.");
       const record = await response.json();
+      if (record.businessProfile?.businessId !== businessId) throw Error("Business identity could not be confirmed.");
+      const metrics = byId("owner-results-metrics");
+      if (metrics) {
+        metrics.textContent = "";
+        getOwnerActivityMetrics(record, businessId).forEach(metric => {
+          const card = document.createElement("article");card.className = "owner-metric";
+          addText(card,"h3",metric.label);addText(card,"strong",metric.value === null ? "Not recorded" : String(metric.value));addText(card,"p",metric.detail);metrics.appendChild(card);
+        });
+      }
       const results = getBusinessResults(record, businessId);
       const decisions = getRecommendationDecisions(record, businessId);
       const understanding = getDemeosUnderstanding(record, businessId);
@@ -189,8 +211,9 @@ if (typeof document !== "undefined") {
       renderRecommendationDecisions(decisions);
     } catch (error) {
       status.textContent = error.message;
-      zero.hidden = false;
+      zero.hidden = true;
+      if (byId("owner-results-metrics")) byId("owner-results-metrics").textContent = "Results could not be confirmed. Reload to retry.";
     }
   }
-  load();
+  document.addEventListener("owner-business-ready", load);
 }

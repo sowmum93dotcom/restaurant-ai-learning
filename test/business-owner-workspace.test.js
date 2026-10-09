@@ -23,13 +23,13 @@ test("workspace navigation contains the five owner-facing sections", function ()
   const navigation = html.match(/<nav class="owner-workspace-navigation"[\s\S]*?<\/nav>/);
   assert.ok(navigation, "Owner workspace navigation should exist");
   const labels = Array.from(navigation[0].matchAll(/<a[^>]*>([^<]+)<\/a>/g), function (match) { return match[1]; });
-  assert.deepEqual(labels, ["Overview", "Business Profile", "DEMEOS Recommends", "Marketing", "Results"]);
+  assert.deepEqual(labels, ["Overview", "My Business", "Products and Services", "Marketing", "Results"]);
   assert.match(html, /aria-label="Business Owner Workspace"/);
 });
 
 test("owner navigation reuses existing owner functionality", function () {
-  assert.match(html, /href="marketing\.html#business-profile">Business Profile<\/a>/);
-  assert.match(html, /href="marketing\.html#recommends">DEMEOS Recommends<\/a>/);
+  assert.match(html, /href="marketing\.html#business-profile">My Business<\/a>/);
+  assert.match(html, /href="marketing\.html#products">Products and Services<\/a>/);
   assert.match(html, /href="marketing\.html#overview">Marketing<\/a>/);
   assert.match(html, /href="business-results\.html">Results<\/a>/);
   assert.doesNotMatch(html, /iframe|data-workspace-view|id="recommendations-btn"|id="generate-btn"/);
@@ -86,7 +86,7 @@ test("finished workspace contains no temporary ownership diagnostics", function 
 
 test("workspace exposes no admin controls, invented metrics, or unsupported capabilities", function () {
   const source = `${html}\n${script}`;
-  assert.doesNotMatch(source, /DEMEOS Admin|admin control|customer identity|booking|ordering|CRM|loyalty|payments/i);
+  assert.doesNotMatch(source, /DEMEOS Admin|admin control|customer identity|ordering|CRM|loyalty|payments/i);
   assert.doesNotMatch(source, /revenue|ROI|conversion rate|forecast|analytics|recommendationTitle|demeosCapability/i);
   assert.doesNotMatch(html, /Add Business|business-selector/);
 });

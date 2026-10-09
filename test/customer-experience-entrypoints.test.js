@@ -29,7 +29,7 @@ test("every Business Owner navigation exposes one separate public Customer Exper
 
     const ownerSections = links.filter((link) => /data-owner-section/.test(link[1]));
     assert.deepEqual(ownerSections.map((link) => link[1].match(/data-owner-section="([^"]+)"/)[1]),
-      ["overview", "business-profile", "recommends", "marketing", "results"]);
+      ["overview", "business-profile", "products", "marketing", "results"]);
   }
 });
 
