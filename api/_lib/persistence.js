@@ -679,6 +679,20 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
       return result.rows.map(function (row) { return row.asset; });
     },
 
+    async submitBusinessForReview(trustedIdentityId, businessId, reviewedProfile) {
+      if (!isNonEmptyString(trustedIdentityId) || !isNonEmptyString(businessId) || reviewedProfile?.businessId !== businessId) return null;
+      await database.ensureSchema();
+      const result = await database.query(
+        `UPDATE demeos_businesses b
+         SET profile = jsonb_set(profile, '{informationStatus}',
+           (profile->'informationStatus') || jsonb_build_object('reviewState', 'submitted',
+             'submittedAt', COALESCE(profile->'informationStatus'->>'submittedAt', $4))), updated_at = NOW()
+         WHERE business_id = $1 AND profile = $3::jsonb
+           AND EXISTS (SELECT 1 FROM demeos_business_owners o WHERE o.business_id = b.business_id AND o.trusted_identity_id = $2)
+         RETURNING profile`, [businessId, trustedIdentityId, JSON.stringify(reviewedProfile), new Date().toISOString()]);
+      return result.rows[0]?.profile || null;
+    },
+
     async saveBusiness(profile) {
       await database.ensureSchema();
       await database.query(

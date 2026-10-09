@@ -146,8 +146,8 @@ function renderOwnerWorkspace(documentObject, storage) {
   identity.replaceChildren();
   work.replaceChildren();
   if (!context.profile) {
-    identity.textContent = "No saved business is selected.";
-    work.textContent = "Save a Business Profile before starting work in DEMEOS.";
+    identity.textContent = "Start with your business details.";
+    work.textContent = "Set up your business privately, then continue preparation.";
     return;
   }
   const name = context.profile.name || "Saved business";
@@ -162,7 +162,7 @@ function renderOwnerWorkspace(documentObject, storage) {
     detail.textContent = value;
     identity.appendChild(detail);
   });
-  const saved = documentObject.createElement("span"); saved.textContent = "Business information saved. Public content requires approval."; identity.appendChild(saved);
+  const saved = documentObject.createElement("span"); saved.textContent = context.profile.informationStatus?.reviewState === "submitted" ? "Submitted privately. Administrative review is not available yet; approval is not granted." : "Private preparation. Business approval is not recorded."; identity.appendChild(saved);
   if (!context.currentWork.length) {
     work.textContent = "No marketing work is stored for this business yet.";
     return;
@@ -269,7 +269,7 @@ async function loadOwnerNextAction(documentObject, storage, fetchFunction) {
   const activeBusinessId = storage && typeof storage.getItem === "function"
     ? storage.getItem("demeosActiveBusinessId") : null;
   if (!activeBusinessId || typeof fetchFunction !== "function") {
-    renderOwnerNextAction(documentObject, unavailableOwnerNextAction);
+    renderOwnerNextAction(documentObject, {title:"Set up your business", explanation:"Add your business details, review them and submit privately. Approval is a separate step.", action:"Start business setup", destination:"marketing.html#business-profile"});
     renderOwnerWorkspace(documentObject, {getItem() {return null;}});
     renderOwnerModels(documentObject, null, null);
     renderOwnerDashboardSummary(documentObject, null, null);

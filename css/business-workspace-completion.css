@@ -97,3 +97,15 @@
 .owner-workspace-body .owner-combinations summary:focus-visible{outline:3px solid #9a7525;outline-offset:4px;}
 .owner-workspace-body #owner-category-guidance{margin-block:8px 16px;}
 .owner-workspace-body #owner-product-options .owner-combinations>summary{color:#14233c!important;background:transparent!important;opacity:1!important;}
+
+.onboarding-step {border:1px solid rgba(201,165,83,.3);border-radius:16px;padding:18px;min-width:0;background:rgba(9,27,48,.45)}
+.onboarding-step > summary {cursor:pointer;color:#e3c477;margin:0 0 18px;font-size:1.12rem}
+.onboarding-step .profile-step-heading > span {display:none}
+.onboarding-step[open]>summary {margin-bottom:18px}
+.onboarding-step:not([open])>summary {margin:0}
+.onboarding-step>summary:focus-visible {outline:2px solid #e3c477;outline-offset:4px}
+.onboarding-actions {display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+#business-onboarding-status {color:#e3c477;padding:12px 0}
+#business-onboarding-review dl {display:grid;grid-template-columns:minmax(90px,1fr) minmax(0,2fr);gap:10px;margin-bottom:20px}
+#business-onboarding-review dd {margin:0;overflow-wrap:anywhere}
+@media(max-width:600px){.onboarding-step{padding:14px}.onboarding-actions>*{width:100%}#business-onboarding-review dl{grid-template-columns:1fr}#business-onboarding-review dt{font-weight:600}}
