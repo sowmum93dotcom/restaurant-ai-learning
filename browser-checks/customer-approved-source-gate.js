@@ -5,6 +5,7 @@ const {PGlite}=require('@electric-sql/pglite');
 const {createDatabase}=require('../api/_lib/database');
 const persistence=require('../api/_lib/persistence');
 const {sourceRow}=require('../test/fixtures/approved-search-source.cjs');
+const {verifyEmptyReadiness}=require('./customer-empty-readiness.cjs');
 const root=path.resolve(__dirname,'..'),client=new PGlite(),database=createDatabase(client);
 const repository=persistence.createPersistenceRepository(database,{reportCatalogueDiagnostics:()=>{}});
 persistence.getRepository=()=>repository;
@@ -71,6 +72,20 @@ const server=http.createServer(async(req,res)=>{
    await page.locator('#product-experience:not([hidden])').waitFor();assert.equal(await page.locator('#product-experience-title').textContent(),'Cleaning Services');assert.equal(await page.locator('#product-experience-action').getAttribute('href'),'https://example.org/book');
    await request('Fashion and Apparel Commerce jacket under £50');await page.locator('#customer-no-possibilities:not([hidden])').waitFor();assert.equal(await result.count(),0);
    assert.deepEqual(errors,[]);console.log('Approved source SQL/HTTP/browser continuation passed',viewport.width);await context.close();
+  }
+  // This database exists only in this process. Removing its engineering rows
+  // verifies the actual empty SQL -> HTTP -> nine-language browser journey.
+  await database.query('DELETE FROM demeos_campaigns');
+  await database.query('DELETE FROM demeos_businesses');
+  // The existing browser sends controlled-preview opt-in headers even on the
+  // normal route. Match genuine production's disabled fallback explicitly.
+  const previousControlledMode=process.env.DEMEOS_CONTROLLED_TEST_CONTENT;
+  process.env.DEMEOS_CONTROLLED_TEST_CONTENT='disabled';
+  const emptyContext=await browser.newContext({reducedMotion:'reduce'});
+  try{await verifyEmptyReadiness(emptyContext,base);}finally{
+   await emptyContext.close();
+   if(previousControlledMode===undefined)delete process.env.DEMEOS_CONTROLLED_TEST_CONTENT;
+   else process.env.DEMEOS_CONTROLLED_TEST_CONTENT=previousControlledMode;
   }
  }finally{await browser.close();await new Promise(resolve=>server.close(resolve));await client.close();}
 })().catch(error=>{console.error(error);server.close();client.close();process.exit(1);});
