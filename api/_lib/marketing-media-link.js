@@ -53,7 +53,8 @@ function resolveApprovedMarketingMedia(campaign,businessId,assets){
   const asset=byId.get(link.assetId);if(!hasControlledManagedIdentity(asset))return null;
   const publicAsset=toPublicMediaAsset(asset,businessId),variant=selectCustomerMediaVariant(asset);
   if(!publicAsset)return null;
-  if(variant) return {...link,assetId:publicAsset.assetId,kind:publicAsset.kind,deliveryUrl:variant.deliveryUrl,...(variant.contentType?{contentType:variant.contentType}:{})};
+  if(variant) return {...link,assetId:publicAsset.assetId,kind:publicAsset.kind,deliveryUrl:variant.deliveryUrl,...(variant.contentType?{contentType:variant.contentType}:{}),
+   ...(publicAsset.purpose?{purpose:publicAsset.purpose}:{}),...(publicAsset.relatedEntityId?{relatedEntityId:publicAsset.relatedEntityId}:{})};
   return {...link,...publicAsset};
  });
  return resolved.every(Boolean)?resolved:[];

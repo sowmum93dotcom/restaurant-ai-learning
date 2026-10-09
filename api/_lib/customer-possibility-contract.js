@@ -250,6 +250,9 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
   const guidanceTerms = preferenceTerms(storedPreferences);
   const feedbackSignals = feedbackGuidance(storedFeedback);
   const candidates = [];
+  const offerWorkIds = new Set((Array.isArray(repositoryWork) ? repositoryWork : [])
+    .filter(item => typeof item?.workItemId === 'string' && (item.hasDeclaredOffers === true || (Array.isArray(item.products) && item.products.length)))
+    .map(item => item.workItemId.trim()));
   (semanticRetrieval ? getValidPublicCustomerWork(repositoryWork, 20, {forSearchClassification:true}) : getValidPublicCustomerWork(repositoryWork)).forEach(function (work) {
     const semanticProducts = new Set(), semanticPublicProducts = new Set();
     if (semanticRetrieval) {
@@ -266,6 +269,10 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
     // An explicitly unavailable business cannot be presented as a current possibility.
     // Unknown/contact status is not treated as confirmed availability.
     if (work.operationalAvailability && work.operationalAvailability.status === "unavailable") return;
+    // A campaign cannot stand in for declared offers when every offer is
+    // rejected or unavailable. Existing business-copy matching remains valid
+    // when at least one independently validated offer is still available.
+    if (offerWorkIds.has(work.workItemId) && !(work.products || []).some(product => product.availability !== 'unavailable')) return;
     if (place && !sameDeclaredPlace(place, work.location)) return;
     const contentTerms = meaningfulTerms(work.content);
     const productTerms = meaningfulTerms((Array.isArray(work.products) ? work.products : []).map(function (product) {
