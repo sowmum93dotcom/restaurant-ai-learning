@@ -46,4 +46,7 @@
 .business-product-card,.business-products-manager-summary>div{background:#f5f7fa;}
 .owner-media-preview[data-layout=square]{position:relative;aspect-ratio:1;background:#12223c;}
 .owner-media-preview[data-layout=square] img,.owner-media-preview[data-layout=square] video{position:absolute;inset:0;width:100%;height:100%;max-height:none;object-fit:contain;}
+.business-media-upload{background:#f5f7fa;color:#14233c;border:1px solid #9ca8b8;border-radius:10px;}
+.business-media-upload label,.business-media-upload p{color:#14233c;}
+.business-media-upload input[type=file]{max-width:100%;background:#fff;color:#14233c;border:1px solid #738198;}
 @media(max-width:600px){.owner-preparation-steps{grid-template-columns:repeat(2,minmax(0,1fr));}.owner-price-controls{grid-template-columns:minmax(0,1fr);}}
