@@ -26,6 +26,8 @@ jobs:
           for i in {1..30}; do curl -fsS http://127.0.0.1:4173/customer.html >/dev/null && exit 0; sleep 1; done
           cat /tmp/demeos-http.log
           exit 1
+      - name: Run approved source SQL and customer continuation gate
+        run: node browser-checks/customer-approved-source-gate.js
       - name: Run public homepage and information gate
         run: node browser-checks/customer-public-entry-gate.js
       - name: Run Customer Experience context continuity gate
@@ -40,8 +42,6 @@ jobs:
         run: node browser-checks/customer-search-gate.js
       - name: Run real HTTP intelligence integration gate
         run: node browser-checks/customer-intelligence-integration-gate.js
-      - name: Run approved source SQL and customer continuation gate
-        run: node browser-checks/customer-approved-source-gate.js
       - name: Run customer registration and preparation gate
         run: node browser-checks/customer-preparation-gate.js
       - name: Run private customer payment status gate

@@ -37,7 +37,8 @@ const server=http.createServer(async(req,res)=>{
  const browser=await chromium.launch({headless:true});
  try{
   for(const viewport of [{width:390,height:844},{width:820,height:1180},{width:1440,height:1000}]){
-   const context=await browser.newContext({viewport}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(String(e)));
+   // Verify the accessible result action without racing the decorative 3D animation.
+   const context=await browser.newContext({viewport,reducedMotion:'reduce'}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(String(e)));
    async function request(text){
     await page.goto(base+'/customer.html#intention');
     await page.locator('#customer-intention-text').fill(text);
@@ -52,7 +53,8 @@ const server=http.createServer(async(req,res)=>{
    }
    await request('Fashion and Apparel Commerce black waterproof jacket under £100');
    const result=page.locator('#customer-possibilities-list .customer-possibility-surface');await result.filter({hasText:'Engineering source 60'}).waitFor();assert.equal(await result.count(),1);
-   assert.match(await result.innerText(),/Engineering source 60/);await result.click({position:{x:20,y:20}});
+   assert.match(await result.innerText(),/Engineering source 60/);await result.press('Enter');
+   await page.locator('#customer-focused-possibility[data-work-item-id="fixture-campaign-060"]:not([hidden])').waitFor();
    await page.locator('#customer-focused-possibility [data-product-id="fixture-offer-60"] .customer-product-continue-action, #customer-focused-possibility [data-product-id="fixture-offer-60"] .customer-item-details').first().click();
    await page.locator('#product-experience:not([hidden])').waitFor();
    assert.equal(await page.locator('#product-experience-title').textContent(),'Black waterproof jacket');
@@ -63,7 +65,8 @@ const server=http.createServer(async(req,res)=>{
    assert.equal(await page.locator('#product-experience-action').getAttribute('href'),'https://example.org/shop');
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
    await page.screenshot({path:'/tmp/demeos-genuine-search-'+viewport.width+'.png'});
-   await request('Cleaning Services cleaning appointment');await result.filter({hasText:'Engineering source 61'}).waitFor();assert.equal(await result.count(),1);await result.click({position:{x:20,y:20}});
+   await request('Cleaning Services cleaning appointment');await result.filter({hasText:'Engineering source 61'}).waitFor();assert.equal(await result.count(),1);await result.press('Enter');
+   await page.locator('#customer-focused-possibility[data-work-item-id="fixture-campaign-061"]:not([hidden])').waitFor();
    await page.locator('#customer-focused-possibility [data-product-id="fixture-offer-61"] .customer-product-continue-action, #customer-focused-possibility [data-product-id="fixture-offer-61"] .customer-item-details').first().click();
    await page.locator('#product-experience:not([hidden])').waitFor();assert.equal(await page.locator('#product-experience-title').textContent(),'Cleaning Services');assert.equal(await page.locator('#product-experience-action').getAttribute('href'),'https://example.org/book');
    await request('Fashion and Apparel Commerce jacket under £50');await page.locator('#customer-no-possibilities:not([hidden])').waitFor();assert.equal(await result.count(),0);
