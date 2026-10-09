@@ -768,8 +768,6 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
                   c.approved_at, c.updated_at AS campaign_updated_at FROM demeos_campaigns c
            JOIN demeos_businesses b ON b.business_id = c.business_id
            WHERE c.campaign->>'approvalStatus' = 'Approved'
-             AND c.campaign->>'campaignType' IN ('full', 'social', 'email')
-             AND COALESCE(BTRIM(c.campaign->>'campaignText'), '') <> ''
            ORDER BY c.updated_at DESC, c.campaign_id DESC
            LIMIT $1 OFFSET $2`, [pageSize, offset]);
         for (const row of result.rows) {

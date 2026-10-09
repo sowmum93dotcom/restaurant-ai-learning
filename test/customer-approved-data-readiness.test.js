@@ -15,6 +15,27 @@ async function load(rows=[row()],assets=[asset()],report){const summaries=[],que
  const work=await repository.getCustomerWork({forCatalogueValidation:true});return {work,summaries,queries};
 }
 async function search(work,text='Fashion and Apparel Commerce black waterproof jacket') {return (await prepareCustomerSearch({work,understanding:confirmCustomerUnderstanding(buildCustomerUnderstanding('',text))})).possibilities;}
+test('real database selection diagnoses invalid approved rows and paginates to eligible records',async t=>{
+ const {PGlite}=require('@electric-sql/pglite');
+ const {createDatabase}=require('../api/_lib/database');
+ const client=new PGlite();t.after(()=>client.close());
+ const database=createDatabase(client);await database.ensureSchema();
+ const input=row();input.campaign.media=[];
+ await database.query('INSERT INTO demeos_businesses (business_id,profile) VALUES ($1,$2)',[input.business_id,JSON.stringify(input.profile)]);
+ for(let index=0;index<53;index++){
+  const campaign={...input.campaign,id:index===51?'a-valid':`z-${index}`};
+  if(index<51){if(index%2)campaign.campaignType='unsupported';else campaign.campaignText=' ';}
+  if(index===52)campaign.approvalStatus='Unapproved';
+  await database.query('INSERT INTO demeos_campaigns (campaign_id,business_id,campaign,approved_at,updated_at) VALUES ($1,$2,$3,$4,$4)',[campaign.id,input.business_id,JSON.stringify(campaign),input.approved_at]);
+ }
+ const summaries=[];
+ const repository=createPersistenceRepository(database,{reportCatalogueDiagnostics:summary=>summaries.push(summary)});
+ const work=await repository.getCustomerWork({forCatalogueValidation:true});
+ assert.deepEqual(work.map(item=>item.workItemId),['a-valid']);
+ assert.deepEqual(summaries,[{publication_ineligible:51}]);
+ const received=toCustomerPossibility((await search(work))[0]);
+ assert.equal(received.workItemId,'a-valid');assert.equal(received.products[0].productId,'offer');
+});
 test('consistent approved joined records reach existing category, eligibility and customer receiving contracts',async()=>{
  const input=row(),before=structuredClone(input),loaded=await load([input]);assert.deepEqual(loaded.summaries,[]);
  assert.deepEqual(loaded.work[0].products[0].categoryClassification,{datasetVersion:DATASET_VERSION,categories:[{categoryId:'10',sectorId:'1'}]});
