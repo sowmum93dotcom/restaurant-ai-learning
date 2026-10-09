@@ -251,8 +251,10 @@
 
         <section id="create" class="workspace-view" data-workspace-panel hidden aria-labelledby="create-heading">
           <div class="view-heading"><h2 id="create-heading">Create Marketing</h2><p>Prepare from your saved offers, then review your draft.</p></div>
+          <ol class="owner-preparation-steps" aria-label="Preparation steps"><li data-owner-copy="select">Select an offer</li><li data-owner-copy="review">Review information</li><li data-owner-copy="media">Select matching media</li><li data-owner-copy="prepare">Prepare a draft</li><li data-owner-copy="edit">Review and edit</li><li data-owner-copy="submit">Submit for approval</li></ol>
           <section class="content-card assistant-section">
             <label for="draft-product">Prepare from a saved product or service</label><select id="draft-product"><option value="">Choose a saved offer</option></select><label for="draft-media">Matching business media</label><select id="draft-media"><option value="">No media attached</option></select><p>DEMEOS can organise your saved facts into a draft for you to edit. Your original images are retained; image generation is not available.</p><button id="prepare-draft-btn" class="demeos-primary-button" type="button">Prepare factual draft</button><p id="prepare-draft-status" role="status"></p>
+            <div id="owner-offer-review" class="owner-offer-review" aria-live="polite"></div><label for="owner-media-framing">Preview layout</label><select id="owner-media-framing"><option value="natural">Original proportions</option><option value="square">Square frame, full image</option></select><p>Preview only. Your original media and customer presentation are unchanged.</p><div id="owner-draft-media-preview" class="owner-media-preview"></div><p id="owner-preparation-next" role="status"></p><button type="button" class="text-button" data-open-view="products" data-owner-copy="change">Review offer information</button>
             <details class="owner-writing-tools"><summary>Other writing tools</summary><p>Existing assisted writing requires a configured provider. It is separate from factual draft preparation.</p>            <label for="promo-input">What would you like DEMEOS to help you achieve?</label>
             <p class="assistant-intro">Describe what you want customers to know.</p>
             <textarea id="promo-input" rows="5" placeholder="Example: We are launching a new service this weekend and want more local customers to know about it."></textarea>
@@ -287,6 +289,7 @@
 
         <section id="products" class="workspace-view" data-workspace-panel hidden aria-labelledby="products-heading">
           <div class="view-heading"><h2 id="products-heading">Products and Services</h2><p>Keep your offers and their images accurate. Changes are saved with your business information.</p></div>
+          <div class="owner-preparation-guide"><label for="owner-preparation-language">Preparation language</label><select id="owner-preparation-language"></select><p data-owner-copy="guide">Review the offer, save accurate information, then prepare a private marketing draft. Business facts are kept in their original language.</p></div>
           <section class="content-card"><div class="business-profile-grid">              <section id="business-profile-offering" class="profile-step profile-long-field"><div class="profile-step-heading"><span>Step 2</span><div><h4>Products &amp; services</h4><p>Describe what the business genuinely provides.</p></div></div></section>
               <div class="profile-long-field"><label for="business-products-services">What does your business provide?</label><textarea id="business-products-services" name="business-products-services" rows="5" placeholder="Example: Birthday cakes, celebration cakes and cupcakes made to order."></textarea><p>Describe only products and services your business genuinely provides. DEMEOS will not invent products, availability or prices.</p></div>
               <div class="profile-long-field business-products-manager">
@@ -300,6 +303,7 @@
                 <div class="business-product-form">
                   <input type="hidden" id="business-product-id" />
                   <div><label for="business-product-name">Product / service name</label><input id="business-product-name" type="text" maxlength="200" placeholder="Example: Chocolate celebration cake" /></div>
+                  <div class="profile-long-field"><label for="owner-product-category">Product or service category</label><select id="owner-product-category"></select><p>These are the existing supported product formats. Other offers retain the business category. Offers with recorded options keep their category.</p><details class="owner-options-details"><summary>Options, variants and prices</summary><div id="owner-product-options" hidden></div></details></div>
                   <div><label for="business-product-price-mode">Price</label><select id="business-product-price-mode"><option value="contact">Contact for price</option><option value="fixed">Fixed price</option><option value="from">From price</option><option value="range">Price range</option></select></div>
                   <div id="business-product-price-value-wrap" hidden><label for="business-product-price">Price information</label><input id="business-product-price" type="text" maxlength="100" placeholder="Example: £45 or £45–£65" /><p>Enter only business-provided price information. DEMEOS does not calculate or infer prices.</p></div>
                   <div class="profile-long-field"><label for="business-product-description">Description</label><textarea id="business-product-description" rows="3" maxlength="1200" placeholder="Describe only what the customer will genuinely receive."></textarea></div>
@@ -418,6 +422,12 @@
   <footer><p>&copy; 2026 DEMEOS — One System. Real Value. Shared Future.</p></footer>
   <script src="js/business-workspace.js"></script>
   <script src="js/demeos-understanding.js"></script>
+  <script src="js/customer-item-contract.js"></script>
+  <script src="js/demeos-language-registry.js"></script>
+  <script src="js/demeos-product-experience-copy.js"></script>
+  <script src="js/demeos-item-presentation-copy.js"></script>
+  <script src="js/business-product-preparation.js"></script>
+  <script src="js/business-preparation-language.js"></script>
   <script src="js/script.js"></script>
 </body>
 </html>

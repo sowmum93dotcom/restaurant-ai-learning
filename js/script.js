@@ -525,6 +525,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     document.querySelectorAll("[data-workspace-panel]").forEach(function (panel) {
       const active = panel.id === viewId;
       panel.hidden = !active;
+      if(!active && typeof panel.querySelectorAll==="function")panel.querySelectorAll("video").forEach(video=>video.pause());
       panel.classList.toggle("is-active", active);
     });
     document.querySelectorAll("[data-workspace-view]").forEach(function (button) {
@@ -886,23 +887,36 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   const productsVisible = byId("business-products-visible");
   const productsImages = byId("business-products-images");
   let draftProducts = [];
+  const productPreparation = typeof window !== "undefined" ? window.DEMEOSBusinessProductPreparation : null;
+  const productEditor = productPreparation?.createEditor(document);
+
+  function appendMediaPreview(container, asset) {
+    if (!container || !asset || asset.businessId !== state.activeBusinessId || asset.state !== "ready" || !/^https:\/\//i.test(asset.deliveryUrl || "")) return;
+    const preview = document.createElement(asset.kind === "video" ? "video" : "img");
+    preview.src = asset.deliveryUrl;
+    if (asset.kind === "video") {preview.controls=true;preview.preload="metadata";preview.playsInline=true;}
+    else {preview.alt=asset.originalFilename || "Matching business image";preview.loading="lazy";}
+    preview.addEventListener("error",()=>{const notice=document.createElement("p");notice.textContent="This browser cannot preview this media. Your original is retained.";container.append(notice);},{once:true});
+    container.appendChild(preview);
+  }
 
   function renderBusinessMedia() {
     renderDraftSources();
     if (!businessMediaList || !businessMediaEmpty) return;
+    businessMediaList.querySelectorAll?.("video").forEach(video=>video.pause());
     businessMediaList.textContent = "";
     businessMediaEmpty.hidden = businessMediaAssets.length > 0;
-    businessMediaAssets.forEach(function (asset) {
+    businessMediaAssets.filter(asset=>asset.businessId===state.activeBusinessId).forEach(function (asset) {
       const item = document.createElement("article"); item.className = "business-media-item";
       const title = document.createElement("strong"); title.textContent = asset.kind === "video" ? "Video" : "Image";
       const stateLabel = document.createElement("span"); stateLabel.textContent = asset.state === "ready" ? "Ready" : asset.state === "failed" ? "Could not process" : "Processing";
       item.append(title, stateLabel);
-      if (asset.state === "ready" && asset.deliveryUrl) {
-        const preview = asset.kind === "video" ? document.createElement("video") : document.createElement("img");
-        preview.src = asset.deliveryUrl;
-        if (asset.kind === "video") { preview.controls = true; preview.preload = "metadata"; }
-        else preview.alt = "Business media preview";
-        item.appendChild(preview);
+      const offer = activeProfile()?.products?.find(p=>p.productId===asset.relatedEntityId && p.businessId===state.activeBusinessId);
+      const caption=document.createElement("p");caption.textContent=offer ? offer.name : "Business marketing media";item.append(caption);
+      appendMediaPreview(item,asset);
+      if (offer && asset.state === "ready") {
+        const use=document.createElement("button");use.type="button";use.className="text-button";use.textContent="Prepare marketing with this media";
+        use.addEventListener("click",()=>{showWorkspaceView("create");byId("draft-product").value=offer.productId;renderDraftSources();byId("draft-media").value=asset.assetId;renderOfferReview();});item.append(use);
       }
       businessMediaList.appendChild(item);
     });
@@ -928,9 +942,11 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     if (file.size > maxBytes) { businessMediaStatus.textContent = kind === "video" ? "Video must be 250 MB or smaller." : "Image must be 15 MB or smaller."; return; }
     businessMediaUploadBtn.disabled = true; businessMediaStatus.textContent = "Preparing secure upload…";
     try {
+      const relatedProductId=byId("business-media-product")?.value;
+      const relatedProduct=activeProfile()?.products?.find(p=>p.productId===relatedProductId);
       const register = await fetch(`/api/businesses/${encodeURIComponent(businessId)}/media`, {
         method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ asset: { kind, purpose: byId("business-media-product")?.value ? "product" : "marketing", ...(byId("business-media-product")?.value ? {relatedEntityId:byId("business-media-product").value} : {}), contentType: file.type, sizeBytes: file.size } })
+        body: JSON.stringify({ asset: { kind, purpose: relatedProductId ? (relatedProduct?.presentation?.kind === "service" ? "service" : "product") : "marketing", ...(relatedProductId ? {relatedEntityId:relatedProductId} : {}), contentType: file.type, sizeBytes: file.size } })
       });
       const registered = await register.json();
       if (!register.ok || !registered.asset || !registered.uploadSession) throw new Error(registered.error || "Secure media storage is unavailable.");
@@ -959,7 +975,9 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     if (productFulfilmentOptions && typeof productFulfilmentOptions.querySelectorAll === "function") productFulfilmentOptions.querySelectorAll("input[type=checkbox]").forEach(function (input) { input.checked = selected.has(input.value); });
   }
   function updateProductPriceControls() {
-    if (productPriceValueWrap) productPriceValueWrap.hidden = productFields.priceMode.value === "contact";
+    const structured=Boolean(byId("owner-product-category")?.value);
+    const priceModeContainer=productFields.priceMode?.parentElement;if(priceModeContainer)priceModeContainer.hidden=structured;
+    if (productPriceValueWrap) productPriceValueWrap.hidden = structured || productFields.priceMode.value === "contact";
     if (productFields.priceMode.value === "contact") productFields.price.value = "";
   }
   function updateProductFulfilmentControls() {
@@ -1015,6 +1033,8 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
         productFields.visibility.value = product.customerVisible === false ? "hidden" : "visible";
         productFields.fulfilmentMode.value = product.fulfilment && Array.isArray(product.fulfilment.methods) ? "specific" : "business";
         setProductFulfilment(product.fulfilment && product.fulfilment.methods); updateProductFulfilmentControls();
+        productEditor?.load(product);
+        updateProductPriceControls();
         productAddBtn.textContent = "Update product / service"; productCancelBtn.hidden = false;
         if (typeof productFields.name.focus === "function") productFields.name.focus();
       });
@@ -1025,10 +1045,14 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
         if (removingEditedProduct) resetProductForm();
         renderBusinessProducts();
       });
-      actions.append(edit, remove); body.append(name, description, meta, visibility, actions); card.appendChild(body); productsList.appendChild(card);
+      const prepare=document.createElement("button");prepare.type="button";prepare.className="text-button";prepare.textContent="Prepare marketing";
+      prepare.addEventListener("click",()=>{showWorkspaceView("create");renderDraftSources();byId("draft-product").value=product.productId;renderDraftSources();renderOfferReview();});
+      actions.append(edit, remove, prepare); body.append(name, description, meta, visibility, actions); card.appendChild(body); productsList.appendChild(card);
     });
+    renderOfferReview();
   }
   function resetProductForm() {
+    productEditor?.load(null);
     productFields.id.value = ""; productFields.name.value = ""; productFields.price.value = "";
     productFields.description.value = ""; productFields.image.value = ""; productFields.route.value = "";
     productFields.availability.value = "contact"; productFields.visibility.value = "visible"; productFields.priceMode.value = "contact";
@@ -1047,16 +1071,24 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     if (!route) { alert("Select a customer continuation route before adding this product."); return; }
     if (!selectedRoutes.includes(route)) { alert("Select that customer route in the Business Profile before assigning it to a product."); return; }
     const productId = productFields.id.value || ("product-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8));
-    const priceMode = productFields.priceMode.value;
-    const price = productFields.price.value.trim();
+    let priceMode = productFields.priceMode.value;
+    let price = productFields.price.value.trim();
+    let presentation;
+    try {presentation=productEditor?.read();} catch(error) {alert(error.message);return;}
     if (priceMode !== "contact" && !price) { alert("Add the business-provided price information for this product."); return; }
     const productFulfilment = selectedProductFulfilment();
     if (productFields.fulfilmentMode.value === "specific" && !productFulfilment.length) { alert("Choose at least one fulfilment method for this product."); return; }
     const existingProduct = draftProducts.find(function (entry) { return entry.productId === productId; });
-    if (existingProduct?.presentation && (existingProduct.price !== price || existingProduct.priceMode !== priceMode)) {alert("This offer has structured pricing and options. Keep its recorded price until supported option management is available.");return;}
-    const product = { ...(existingProduct || {}), productId, name, description, price, priceMode, imageUrl,
+    if (presentation) {
+      if (JSON.stringify(presentation.pricing)!==JSON.stringify(existingProduct?.presentation?.pricing)) {
+        priceMode=["none","quote"].includes(presentation.pricing.mode)?"contact":presentation.pricing.mode;
+        price=priceMode==="contact"?"":productPreparation.priceText(presentation.pricing).replace(/^From /,"");
+      } else if(existingProduct){priceMode=existingProduct.priceMode;price=existingProduct.price;}
+    }
+    const product = { ...(existingProduct || {}), ...(!addingBusiness && state.activeBusinessId ? {businessId:state.activeBusinessId} : {}), productId, name, description, price, priceMode, imageUrl,
       continuationRoute: route, availability: productFields.availability.value, customerVisible: productFields.visibility.value !== "hidden",
       imageSource: imageUrl ? "business-provided" : "",
+      ...(presentation ? {presentation} : {}),
       ...(productFields.fulfilmentMode.value === "specific" ? { fulfilment: { methods: productFulfilment } } : {}) };
     if (productFields.fulfilmentMode.value !== "specific") delete product.fulfilment;
     const existingIndex = draftProducts.findIndex(function (entry) { return entry.productId === productId; });
@@ -1066,6 +1098,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   if (productAddBtn) productAddBtn.addEventListener("click", addDraftProduct);
   if (productCancelBtn) productCancelBtn.addEventListener("click", resetProductForm);
   if (productFields.priceMode) productFields.priceMode.addEventListener("change", updateProductPriceControls);
+  byId("owner-product-category")?.addEventListener("change",updateProductPriceControls);
   if (productFields.fulfilmentMode) productFields.fulfilmentMode.addEventListener("change", updateProductFulfilmentControls);
   if (productFields.image) productFields.image.addEventListener("input", updateProductImagePreview);
   if (productFields.name) productFields.name.addEventListener("input", updateProductImagePreview);
@@ -1405,6 +1438,8 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
         }
         addingBusiness = false;
         removePendingBusinessProfileSync(localStorage, result.profile.businessId);
+        if(state.activeBusinessId===result.profile.businessId)await hydrateActiveBusiness();
+        renderDraftSources();
         if (wasAddingBusiness) {
           clearRecommendations();
           clearBusinessSituation();
@@ -1489,6 +1524,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   });
 
   function renderPreparedDraft(campaign) {
+    updatePreparationProgress(campaign?.preparationOnly ? (campaign.ownerReviewState==="submitted"?6:5) : 1);
     const panel = byId("draft-edit-panel");
     if (!panel) return;
     const prepared = campaign && campaign.preparationOnly === true;
@@ -1513,11 +1549,29 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     products.forEach(function (product) {addOption(select,product.name,product.productId);});
     if (products.some(p => p.productId === chosen)) select.value = chosen;
     const mediaSelect = byId("draft-media");if (!mediaSelect) return;mediaSelect.textContent = "";addOption(mediaSelect,"No media attached", "");
-    businessMediaAssets.filter(a => a.businessId === state.activeBusinessId && a.relatedEntityId === select.value && ["product","service"].includes(a.purpose) && a.state === "ready").forEach(a => addOption(mediaSelect,a.originalFilename || a.assetId,a.assetId));
+    businessMediaAssets.filter(a => a.businessId === state.activeBusinessId && a.relatedEntityId === select.value && ["product","service"].includes(a.purpose) && a.state === "ready").forEach((a,index) => addOption(mediaSelect,a.originalFilename || (a.kind === "video" ? "Video " : "Image ") + (index+1),a.assetId));
     const uploadSelect = byId("business-media-product");
     if (uploadSelect) {const previous = uploadSelect.value;uploadSelect.textContent="";addOption(uploadSelect,"Business marketing media","");products.forEach(p=>addOption(uploadSelect,p.name,p.productId));if(products.some(p=>p.productId===previous))uploadSelect.value=previous;}
+    renderOfferReview();
   }
+  function renderOfferReview() {
+    const container=byId("owner-offer-review"),preview=byId("owner-draft-media-preview"),next=byId("owner-preparation-next");if(!container||!preview)return;
+    container.textContent="";preview.querySelectorAll?.("video").forEach(video=>video.pause());preview.textContent="";
+    const product=activeProfile()?.products?.find(p=>p.productId===byId("draft-product").value && p.businessId===state.activeBusinessId);
+    if(!product){byId("prepare-draft-btn").disabled=true;updatePreparationProgress(1);if(next)next.textContent="Choose a saved product or service to begin.";return;}
+    updatePreparationProgress(byId("draft-media").value?4:3);
+    const title=document.createElement("h4");title.textContent=product.name;
+    const description=document.createElement("p");description.textContent=product.description;
+    const facts=document.createElement("p");facts.textContent=[product.presentation ? productPreparation.priceText(product.presentation.pricing) : product.price || "Contact for pricing",product.availability||"contact",product.continuationRoute].join(" · ");container.append(title,description,facts);
+    const asset=businessMediaAssets.find(a=>a.assetId===byId("draft-media").value && a.relatedEntityId===product.productId && ["product","service"].includes(a.purpose));appendMediaPreview(preview,asset);
+    const unsaved=JSON.stringify(draftProducts)!==JSON.stringify(activeProfile()?.products||[]) || readPendingBusinessProfileSyncIds(localStorage).includes(state.activeBusinessId);
+    byId("prepare-draft-btn").disabled=unsaved;
+    if(next)next.textContent=unsaved?"Review and save your offer changes before preparing marketing.":"Check these saved facts and matching media, then prepare your private draft.";
+  }
+  function updatePreparationProgress(step){if(typeof document.querySelectorAll!=="function")return;document.querySelectorAll(".owner-preparation-steps li").forEach((item,index)=>{if(index===step-1)item.setAttribute("aria-current","step");else item.removeAttribute("aria-current");});}
   byId("draft-product")?.addEventListener("change", renderDraftSources);
+  byId("draft-media")?.addEventListener("change",renderOfferReview);
+  byId("owner-media-framing")?.addEventListener("change",()=>{byId("owner-draft-media-preview").dataset.layout=byId("owner-media-framing").value;});
   byId("prepare-draft-btn")?.addEventListener("click", async function () {
     const profile = activeProfile(), productId = byId("draft-product").value, assetId = byId("draft-media").value;
     const status = byId("prepare-draft-status"),button = byId("prepare-draft-btn");
@@ -1526,6 +1580,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     try {
       const response = await fetch("/api/generate", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({businessId:profile.businessId,preparationMode:"business-facts",productId,assetId})});
       const data = await response.json();
+      if (state.activeBusinessId !== profile.businessId) return;
       if (!response.ok || data.preparationOnly !== true || typeof data.campaign !== "string") throw Error(data.error || "Draft could not be prepared.");
       if (state.activeBusinessId !== profile.businessId || addingBusiness) return;
       const saved = await saveCampaign(data.campaign, "Prepared product draft", "social", "Social Media Campaign", profile, null, null, data);
@@ -1601,6 +1656,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     if (!campaign) return;
     if (!canAccessCampaign(campaign, activeProfile())) { alert("This campaign belongs to a different business profile."); return; }
     if (campaign.preparationOnly === true) {
+      if(byId("draft-edit-text").value.trim()!==campaign.campaignText.trim()){byId("draft-edit-status").textContent="Save your draft changes before submitting.";return;}
       approveBtn.disabled = true;
       try {
         const response = await fetch(`/api/businesses/${encodeURIComponent(campaign.businessId)}/campaigns/${encodeURIComponent(campaign.id)}`, {method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"submit-draft"})});

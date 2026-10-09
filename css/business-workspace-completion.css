@@ -29,3 +29,21 @@
 .marketing-capability-main textarea::placeholder {color:#aebbc9;opacity:1;}
 .owner-writing-tools summary {color:#78551b;}
 #campaign-revision-controls label {color:#10253e;}
+/* Product preparation stays within the existing owner workspace. */
+.owner-preparation-guide,.owner-offer-review{padding:1rem;border:1px solid rgba(193,155,71,.35);border-radius:12px;margin-block:1rem;background:#f5f7fa;color:#14233c;}
+.owner-preparation-guide select{max-width:20rem;}
+.owner-preparation-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.6rem;padding:0;list-style-position:inside;color:#152642;}
+.owner-preparation-steps li{padding:.8rem;border-radius:10px;background:#eef1f5;overflow-wrap:anywhere;}
+.owner-preparation-steps [aria-current=step]{background:#14233c;color:#f4d68c;outline:2px solid #c29d4e;}
+.owner-options-details{margin-block:1rem;}.owner-options-details summary{cursor:pointer;padding:.8rem;border:1px solid #b3914b;border-radius:8px;font-weight:600;}
+#owner-product-options{margin-block:1rem;}#owner-product-options fieldset{min-width:0;margin-block:1rem;border:1px solid #9ca8b8;border-radius:8px;padding:1rem;}
+.owner-price-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.8rem;}
+.owner-price-controls label,#owner-product-options label{display:block;min-width:0;color:#14233c;}
+#owner-product-options input,#owner-product-options select,#owner-product-options textarea,#owner-product-category{width:100%;box-sizing:border-box;min-height:44px;background:#fff;color:#14233c;border:1px solid #738198;border-radius:6px;padding:.65rem;}
+.owner-media-preview img,.owner-media-preview video,.business-media-item img,.business-media-item video{display:block;width:100%;max-height:320px;height:auto;object-fit:contain;background:#12223c;border-radius:10px;}
+.business-media-item{min-width:0;overflow-wrap:anywhere;background:#f5f7fa;color:#14233c;}.owner-media-preview:empty{display:none;}
+#owner-product-options legend,.owner-options-details summary,.business-products-manager-summary strong,.business-products-manager-summary span,.business-product-card h5,.business-product-card p{color:#14233c;}
+.business-product-card,.business-products-manager-summary>div{background:#f5f7fa;}
+.owner-media-preview[data-layout=square]{position:relative;aspect-ratio:1;background:#12223c;}
+.owner-media-preview[data-layout=square] img,.owner-media-preview[data-layout=square] video{position:absolute;inset:0;width:100%;height:100%;max-height:none;object-fit:contain;}
+@media(max-width:600px){.owner-preparation-steps{grid-template-columns:repeat(2,minmax(0,1fr));}.owner-price-controls{grid-template-columns:minmax(0,1fr);}}
