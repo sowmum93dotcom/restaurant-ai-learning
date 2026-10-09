@@ -37,6 +37,7 @@
   function readOptions(){return choices.map(row=>{const values=row.fields.map(entry=>({...entry.choice,label:entry.field.value.trim()}));
    for(const label of row.add.value.split('\n').map(s=>s.trim()).filter(Boolean))values.push({value:label,label});
    return values.length?{...row.option,key:row.key,values}:null;}).filter(Boolean);}
+  function refreshVariantChoices(){const options=readOptions();for(const row of variants)for(const choice of row.selection){const option=options.find(o=>o.key===choice.key),selected=choice.field.value;choice.field.textContent='';const empty=el('option','Choose an option');empty.value='';choice.field.append(empty);for(const value of option?.values||[]){const node=el('option',value.label);node.value=value.value;choice.field.append(node);}choice.field.value=option?.values.some(v=>v.value===selected)?selected:'';choice.field.disabled=!option;choice.field.parentElement.hidden=!option;}}
   function priceControls(price){
    const p=price||{mode:'quote'},box=el('div');box.className='owner-price-controls';
    const mode=optionSelect('Pricing',[['quote','Contact for price'],['none','No listed price'],['fixed','Fixed price'],['from','From price'],['range','Price range']],p.mode);
@@ -53,12 +54,12 @@
    const guidance=el('p','Keep every option accurate. Existing option and variant identities are retained. Changing these fields does not enable selling.');panel.append(guidance);
    for(const key of cat.fields){
     const option=current?.options?.find(o=>o.key===key),box=el('fieldset'),legend=el('legend',key==='packSize'?'Pack size':key[0].toUpperCase()+key.slice(1));legend.dataset.ownerField=key;box.append(legend);
-    const fields=(option?.values||[]).map(choice=>{const entry=input('Label',choice.label);entry.field.dataset.optionValue=choice.value;box.append(entry.wrap);return {choice,field:entry.field};});
-    const add=input('Add choices (one per line)','');const textarea=el('textarea');textarea.rows=2;textarea.maxLength=12000;add.field.replaceWith(textarea);box.append(add.wrap);panel.append(box);choices.push({key,option,fields,add:textarea});
+    const fields=(option?.values||[]).map(choice=>{const entry=input('Label',choice.label);entry.field.dataset.optionValue=choice.value;entry.field.addEventListener('input',refreshVariantChoices);box.append(entry.wrap);return {choice,field:entry.field};});
+    const add=input('Add choices (one per line)','');const textarea=el('textarea');textarea.rows=2;textarea.maxLength=12000;textarea.addEventListener('input',refreshVariantChoices);add.field.replaceWith(textarea);box.append(add.wrap);panel.append(box);choices.push({key,option,fields,add:textarea});
    }
    const list=el('div');panel.append(el('h5','Variants'),el('p','When you record specific variants, only the combinations you list can continue. Set availability and prices yourself; DEMEOS does not infer stock.'),list);
    function addVariant(variant,isNew){const box=el('fieldset');box.className='owner-variant';box.append(el('legend',isNew?'New variant':Object.values(variant.selection).join(' · ')));
-    const selection=[];if(isNew)for(const option of readOptions()){const field=optionSelect(option.key[0].toUpperCase()+option.key.slice(1)+' choice',option.values.map(v=>[v.value,v.label]),variant.selection[option.key]);box.append(field.wrap);selection.push({key:option.key,field:field.field});}
+    const selection=[];for(const key of cat.fields.filter(key=>isNew||!Object.hasOwn(variant.selection,key))){const option=readOptions().find(o=>o.key===key),field=optionSelect(key[0].toUpperCase()+key.slice(1)+' choice',[['','Choose an option'],...(option?.values||[]).map(v=>[v.value,v.label])],variant.selection[key]||'');field.wrap.hidden=!option;field.field.disabled=!option;box.append(field.wrap);selection.push({key,field:field.field});}
     const status=optionSelect('Availability',[['available','Available'],['limited','Limited availability'],['unavailable','Unavailable'],['contact','Contact to confirm']],variant.availability),price=priceControls(variant.pricing||current?.pricing);box.append(status.wrap,price.box);list.append(box);variants.push({variant,status:status.field,price,selection});
    }
    for(const variant of current?.variants||[])addVariant(variant,false);
@@ -73,7 +74,7 @@
   return {load,read(){
    if(!category.value)return undefined;
    const options=readOptions();
-   const candidate={...(current||{}),categoryId:category.value,pricing:basePrice.read(),options,variants:variants.map(row=>({...row.variant,...(row.selection.length?{selection:Object.fromEntries(row.selection.map(s=>[s.key,s.field.value]))}:{}),availability:row.status.value,pricing:row.price.read()}))};
+   const candidate={...(current||{}),categoryId:category.value,pricing:basePrice.read(),options,variants:variants.map(row=>({...row.variant,...(row.selection.length?{selection:{...row.variant.selection,...Object.fromEntries(row.selection.filter(s=>options.some(o=>o.key===s.key)).map(s=>[s.key,s.field.value]))}}:{}),availability:row.status.value,pricing:row.price.read()}))};
    if(!contract.normalize(candidate))throw Error('Check option labels, unique choices, currency and prices. Prices must be zero or more; the maximum must not be below the minimum.');
    return {...candidate,kind:contract.categories[category.value].kind,version:1};
   }};
