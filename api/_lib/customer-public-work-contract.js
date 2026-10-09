@@ -12,6 +12,19 @@ function normalizedRequiredString(value) {
   return normalized || null;
 }
 
+// IDs are continuation authority. Reject every occurrence of an ambiguous ID,
+// including malformed siblings, rather than choosing a first/last record.
+function duplicateIdentifiers(records, field) {
+  const seen = new Set(), duplicates = new Set();
+  for (const record of records) {
+    const id = normalizedRequiredString(record && record[field]);
+    if (!id) continue;
+    if (seen.has(id)) duplicates.add(id);
+    seen.add(id);
+  }
+  return duplicates;
+}
+
 function toPublicCustomerWorkItem(item, {forSearchClassification = false} = {}) {
   if (!item || typeof item !== "object" || Array.isArray(item)) return null;
 
@@ -61,8 +74,10 @@ function toPublicCustomerWorkItem(item, {forSearchClassification = false} = {}) 
     }
   }
   if (Array.isArray(item.products)) {
+    const duplicateProductIds = duplicateIdentifiers(item.products, "productId");
     const products = item.products.filter(function (product) {
       return product && typeof product === "object" && !Array.isArray(product) && product.customerVisible !== false &&
+        !duplicateProductIds.has(normalizedRequiredString(product.productId)) &&
         normalizedRequiredString(product.productId) && normalizedRequiredString(product.name) &&
         normalizedRequiredString(product.description) &&
         (!product.imageUrl || /^https?:\/\//i.test(product.imageUrl)) &&
@@ -124,10 +139,12 @@ function toPublicCustomerWorkItem(item, {forSearchClassification = false} = {}) 
 
 function getValidPublicCustomerWork(work, limit = DEFAULT_PUBLIC_CUSTOMER_WORK_LIMIT, options = {}) {
   if (!Array.isArray(work)) return [];
+  const duplicateWorkIds = duplicateIdentifiers(work, "workItemId");
   const validWork = [];
   const deferredByBusiness = new Map();
   const firstBusinessPass = new Set();
   for (const item of work) {
+    if (duplicateWorkIds.has(normalizedRequiredString(item && item.workItemId))) continue;
     const publicItem = toPublicCustomerWorkItem(item, options);
     if (!publicItem) continue;
     const businessKey = normalizedRequiredString(item.businessId) || `work:${publicItem.workItemId}`;

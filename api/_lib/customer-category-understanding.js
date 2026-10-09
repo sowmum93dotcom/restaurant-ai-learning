@@ -107,8 +107,10 @@ async function suggestPublishedOfferCategories({work,workItemId,productId,locale
   const {toPublicCustomerWorkItem}=require('./customer-public-work-contract');
   // Exact classification is not a discovery page: select the requested source
   // first, then retain the same public/ownership validation for that offer.
-  const raw=Array.isArray(work)?work.find(row=>typeof row?.workItemId==='string'&&row.workItemId.trim()===workItemId):null;
-  const offer=Array.isArray(raw?.products)?raw.products.find(row=>typeof row?.productId==='string'&&row.productId.trim()===productId):null;
+  const sources=Array.isArray(work)?work.filter(row=>typeof row?.workItemId==='string'&&row.workItemId.trim()===workItemId):[];
+  const raw=sources.length===1?sources[0]:null;
+  const offers=Array.isArray(raw?.products)?raw.products.filter(row=>typeof row?.productId==='string'&&row.productId.trim()===productId):[];
+  const offer=offers.length===1?offers[0]:null;
   const item=raw&&offer?toPublicCustomerWorkItem({...raw,products:[offer]}):null;
   const product=item?.products?.find(row=>row.productId===productId);
   if(!product)return fallback('','published-offer','published_offer_missing');

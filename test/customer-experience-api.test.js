@@ -196,7 +196,9 @@ test("customer feed excludes malformed repository items and minimizes every retu
     { ...valid, participationAction: "Purchase" }
   ];
   const res = await runHandler("../api/customer/work.js", {
-    async getCustomerWork() { return [valid, ...malformed]; }
+    // Malformed-field coverage uses distinct source identities. Duplicate
+    // identities are ambiguous and are rejected by the catalogue contract.
+    async getCustomerWork() { return [valid, ...malformed.map((item,index)=>({...item,workItemId:item.workItemId ? 'malformed-'+index : ''}))]; }
   }, { method: "GET" });
 
   assert.equal(res.statusCode, 200);
