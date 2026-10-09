@@ -73,7 +73,9 @@ function selectCategoryWork(work, interpretation) {
     // Carry the raw ownership context to the existing deterministic projection.
     // The shared projection rejects duplicate IDs before this association.
     const allowed = new Set(kept.map(product => product.productId));
-    selected.push({...item, ...(Array.isArray(item.products) ? {products:item.products.filter(product => typeof product?.productId === 'string' && allowed.has(product.productId.trim()))} : {})});
+    selected.push({...item, ...(Array.isArray(item.products) ? {
+      ...(item.products.length ? {hasDeclaredOffers:true} : {}),
+      products:item.products.filter(product => typeof product?.productId === 'string' && allowed.has(product.productId.trim()))} : {})});
   }
   return {work:selected, rejectedWorkItemIds};
 }

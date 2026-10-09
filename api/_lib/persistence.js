@@ -792,6 +792,9 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
           // catalogue performs its final validation. Public/default consumers
           // still receive the existing identifier-free projection.
           publicWork.push(forCatalogueValidation ? {...publicItem,businessId:row.business_id,
+            // Retain only the declaration, never rejected/private products.
+            // Search must not substitute campaign copy for ineligible offers.
+            ...(Array.isArray(row.profile?.products)&&row.profile.profileVersion>=4&&row.profile.products.length?{hasDeclaredOffers:true}:{}),
             ...(publicItem.products?{products:publicItem.products.map(product=>({...product,businessId:row.business_id}))}:{})} : publicItem);
           if (publicWork.length === 20) break;
         }
