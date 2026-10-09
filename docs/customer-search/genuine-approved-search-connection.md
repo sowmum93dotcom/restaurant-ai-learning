@@ -8,6 +8,8 @@ The previous 20-record catalogue cut-off occurred before customer eligibility. A
 
 These are bounded catalogue windows, not whole-database coverage or customer-facing cursor pagination. A matching record outside the window can still be absent. The source uses the existing updated-at/campaign-ID order and OFFSET pagination; concurrent lifecycle updates between pages are not a transaction snapshot. No new catalogue, storage, approval, indexing or publication mechanism was introduced.
 
+The SQL/browser journey also exposed a receiving bug: a grouped DOM selector chose the earlier campaign headline instead of the business label. Product Experience now selects the explicit business-name nodes in priority order, without treating a generic heading as identity.
+
 Reserved controlled-content identity namespaces and supplied controlled-image paths fail publication inspection even if a stored campaign says Approved. Opt-in controlled content remains in its existing local fallback and never becomes genuine publication authority.
 
 Validation uses isolated engineering rows, including a real PostgreSQL-compatible database in the browser gate. Later-page products/services reach the real HTTP handlers and existing product selection/continuation screen on phone, tablet and desktop. Tests also cover all nine locale values, privacy projection, exclusions, invalid ownership, bounded pagination, empty results, ordering and deterministic fallback. Existing nine-language/browser/security gates remain required. Fixtures are never inserted into deployed databases and are not evidence of actual approved-business accuracy.
