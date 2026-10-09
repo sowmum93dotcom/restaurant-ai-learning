@@ -1,0 +1,31 @@
+/* Existing workspace shell; scoped additions for owner guidance. */
+.owner-operating-models {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:20px 0;}
+.owner-model-card,.owner-metric {border:1px solid rgba(205,174,91,.35);border-radius:16px;padding:20px;background:#10253e;color:#f4f6fa;min-width:0;}
+.owner-model-card h3 {color:#ead18b;margin:0 0 10px;font-size:1.05rem;}
+.owner-model-card p,.owner-metric p {color:#d4deeb;line-height:1.6;overflow-wrap:anywhere;}
+.owner-model-card strong {display:block;color:#ead18b;font-size:.9rem;}
+.owner-writing-tools {margin-top:20px;}
+.owner-writing-tools summary {cursor:pointer;min-height:44px;display:flex;align-items:center;color:#ead18b;}
+#draft-edit-panel textarea {width:100%;min-height:200px;box-sizing:border-box;}
+.owner-metrics {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:20px 0;}
+.owner-metric h3 {font-size:1rem;color:#ead18b;margin:0 0 10px;}
+.owner-metric strong {display:block;font-size:1.5rem;}
+.owner-workspace-main [hidden] {display:none!important;}
+.owner-workspace-main :is(input,select,textarea) {max-width:100%;box-sizing:border-box;}
+.owner-workspace-main :is(button,a):focus-visible {outline:3px solid #ead18b;outline-offset:4px;}
+#products .business-profile-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;}
+#products .profile-long-field {grid-column:1/-1;}
+#draft-edit-status,#prepare-draft-status {color:#ead18b;line-height:1.6;}
+@media(max-width:800px){.owner-operating-models {grid-template-columns:1fr;}.owner-metrics {grid-template-columns:repeat(2,minmax(0,1fr));}#products .business-profile-grid {grid-template-columns:1fr;}.owner-model-card {padding:16px;}}
+@media(max-width:480px){.owner-metrics {grid-template-columns:1fr;}.owner-workspace-main {min-width:0;} .owner-workspace-navigation a {min-height:44px;}}
+.owner-business-identity strong,.owner-next-action-content strong,.owner-work-list strong {color:#f4f6fa;overflow-wrap:anywhere;}
+.owner-workspace-header :is(.restaurant-name,.cuisine-type) {color:#f4f6fa;}
+.owner-workspace-navigation a,.owner-workspace-navigation a:visited {color:#dce6f4!important;background:#102b46!important;}
+.owner-workspace-navigation a.is-active {color:#ead18b!important;border-bottom:2px solid #d6b35c;}
+.owner-current-work #workspace-current-work {color:#d4deeb;}
+.marketing-capability-main .content-card :is(label,h4),#draft-edit-panel label,#results-content {color:#10253e;}
+.marketing-capability-main :is(input,select,textarea) {width:100%;min-height:44px;}
+.marketing-capability-main input[type=checkbox] {width:auto;min-height:0;}
+.marketing-capability-main textarea::placeholder {color:#aebbc9;opacity:1;}
+.owner-writing-tools summary {color:#78551b;}
+#campaign-revision-controls label {color:#10253e;}

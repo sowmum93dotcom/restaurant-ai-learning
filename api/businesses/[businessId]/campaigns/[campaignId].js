@@ -15,7 +15,7 @@ function findCampaign(record, campaignId) {
 
 async function handleLifecycleChange(req, res, repository, businessId, campaignId) {
   const action = req.body && req.body.action;
-  if (action !== "withdraw" && action !== "reactivate") {
+  if (action !== "withdraw" && action !== "reactivate" && action !== "submit-draft") {
     return res.status(400).json({ error: "A supported lifecycle action is required." });
   }
 
@@ -34,6 +34,16 @@ async function handleLifecycleChange(req, res, repository, businessId, campaignI
     return res.status(404).json({ error: "Campaign was not found for this business." });
   }
 
+  if (existing.preparationOnly === true) {
+    if (action === "withdraw") {
+      const saved = await repository.saveCampaign({...existing,id:campaignId,businessId,approvalStatus:"Unapproved",ownerReviewState:"draft",ownerReviewedAt:null});
+      return saved ? res.status(200).json({workItemId:campaignId,approvalStatus:"Unapproved",currentCustomerPublication:false}) : res.status(409).json({error:"Draft could not be withdrawn."});
+    }
+    if (action !== "submit-draft") return res.status(409).json({error:"Prepared drafts require publication review."});
+    const saved = await repository.saveCampaign({...existing, id:campaignId, businessId, approvalStatus:"Unapproved", ownerReviewState:"submitted", ownerReviewedAt:new Date().toISOString()});
+    return saved ? res.status(200).json({workItemId:campaignId, ownerReviewState:"submitted", approvalStatus:"Unapproved", currentCustomerPublication:false}) : res.status(409).json({error:"Draft could not be submitted."});
+  }
+  if (action === "submit-draft") return res.status(409).json({error:"This work is not a prepared draft."});
   if (action === "withdraw") {
     // DEMEOS already uses Unapproved as the non-publishable state. Reuse that
     // lifecycle instead of inventing a parallel archive/expiry system. Historical
@@ -60,6 +70,7 @@ async function handleLifecycleChange(req, res, repository, businessId, campaignI
 }
 
 module.exports = async function handler(req, res) {
+  res.setHeader("Cache-Control", "private, no-store");
   if (req.method !== "PUT" && req.method !== "PATCH") {
     res.setHeader("Allow", "PUT, PATCH");
     return res.status(405).json({ error: "Method not allowed" });
@@ -102,11 +113,22 @@ module.exports = async function handler(req, res) {
         campaignCapability.supportedOutputType !== campaign.campaignType) {
       return res.status(400).json({ error: "DEMEOS received invalid campaign data." });
     }
+    const currentRecord = await repository.getKnownBusiness(businessId);
+    const storedCampaign = findCampaign(currentRecord, campaignId);
+    const preparationOnly = campaign.preparationOnly === true || storedCampaign?.preparationOnly === true;
+    if (preparationOnly && isApprovalRequest) return res.status(409).json({error:"Prepared drafts require publication review and cannot be published by an owner."});
     let campaignForPersistence = { ...campaign, campaignTypeLabel: campaignCapability.ownerFacingName };
+    if (preparationOnly && !(currentRecord?.businessProfile?.products || []).some(product => product && product.productId === campaign.productId && product.businessId === businessId)) {
+      return res.status(409).json({error:"The draft product could not be confirmed for this business."});
+    }
+    if (preparationOnly) campaignForPersistence = {...campaignForPersistence, preparationOnly:true, approvalStatus:"Unapproved", ownerReviewState:"draft", ownerReviewedAt:null};
+    else { delete campaignForPersistence.ownerReviewState; delete campaignForPersistence.ownerReviewedAt; }
+
     if (campaign.media !== undefined) {
       const requestedIds = Array.isArray(campaign.media) ? campaign.media.map(function (link) { return link && link.assetId; }).filter(Boolean) : [];
       const ownedAssets = await repository.getBusinessMediaAssetsByIds(businessId, requestedIds);
       const trustedMedia = normalizeMarketingMediaLinks(campaign.media, businessId, ownedAssets);
+      if (preparationOnly && ownedAssets.some(asset => asset && (!(["product","service"].includes(asset.purpose)) || asset.relatedEntityId !== campaign.productId))) return res.status(409).json({error:"Draft media must match the selected product."});
       if (!trustedMedia) return res.status(409).json({ error: "Campaign media could not be verified for this business." });
       campaignForPersistence.media = trustedMedia;
     }

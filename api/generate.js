@@ -62,6 +62,19 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: "Business not found." });
     }
     const businessProfile = storedBusiness.businessProfile;
+    if (req.body.preparationMode === "business-facts") {
+      const {prepareBusinessDraft} = require("./_lib/business-marketing-draft.js");
+      res.setHeader("Cache-Control", "private, no-store");
+      const {productId, assetId} = req.body;
+      if (typeof productId !== "string" || !productId || productId.length > 120 ||
+          (assetId !== undefined && (typeof assetId !== "string" || assetId.length > 120))) {
+        return res.status(400).json({error:"Choose a saved product and matching business media."});
+      }
+      const assets = assetId ? await repository.getBusinessMediaAssetsByIds(requestedBusinessId, [assetId]) : [];
+      const draft = prepareBusinessDraft(storedBusiness, requestedBusinessId, productId, assetId, assets);
+      return draft ? res.status(200).json(draft) : res.status(409).json({error:"The saved offer or matching media could not be confirmed."});
+    }
+
 
     if (!["full", "social", "email"].includes(campaignType)) {
 

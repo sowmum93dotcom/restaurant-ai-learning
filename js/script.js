@@ -533,6 +533,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       if (active) button.setAttribute("aria-current", "page");
       else button.removeAttribute("aria-current");
     });
+    if (window.location.hash !== "#" + viewId && window.history && typeof window.history.replaceState === "function") window.history.replaceState(null, "", "#" + viewId);
     const navigation = byId("workspace-navigation");
     const menuToggle = byId("workspace-menu-toggle");
     if (navigation) navigation.classList.remove("is-open");
@@ -728,6 +729,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   }
 
   function renderCampaign(campaign) {
+    renderPreparedDraft(campaign);
     const workspace = getCampaignWorkspace(campaign);
     currentCampaignText = workspace.campaignText;
     resultsContent.textContent = "";
@@ -775,7 +777,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     const campaign = getCampaignHistory().find(function (entry) { return entry.id === campaignId; });
     if (!canAccessCampaign(campaign, activeProfile())) { alert("This campaign belongs to a different business profile."); return; }
     clearRevisionTarget(); revisionInstruction.value = ""; openCampaignId = campaign.id || null;
-    renderCampaign(campaign); renderCampaignVersions(); showApprovalStatus(campaign.approvalStatus); renderCampaignOutcome(campaign);
+    renderCampaign(campaign); renderCampaignVersions(); showApprovalStatus(campaign.approvalStatus); renderCampaignOutcome(campaign); renderPreparedDraft(campaign);
     resultsArea.hidden = false; copyBtn.hidden = false; revisionControls.hidden = false;
     resultsArea.scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -792,6 +794,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     customerParticipationResults = getCustomerParticipationResults(result.customerParticipationResults, requestedBusinessId);
     renderRecommendsUnderstanding(result.record, requestedBusinessId);
     fillProfile(activeProfile()); renderSelector(); renderActiveMarketingWork(); renderCustomerParticipationResults(); renderCampaignHistory();
+    if (typeof renderOwnerModels === "function") renderOwnerModels(document, result.record.workspaceReadiness, requestedBusinessId);
   }
   async function persistBusiness(profile, options) {
     if (!profile || typeof window === "undefined" || typeof fetch !== "function") return false;
@@ -884,6 +887,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   let draftProducts = [];
 
   function renderBusinessMedia() {
+    renderDraftSources();
     if (!businessMediaList || !businessMediaEmpty) return;
     businessMediaList.textContent = "";
     businessMediaEmpty.hidden = businessMediaAssets.length > 0;
@@ -904,14 +908,17 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   }
   async function loadBusinessMedia() {
     if (!state.activeBusinessId || !businessMediaList) return;
+    const requestedBusinessId = state.activeBusinessId;
     try {
-      const response = await fetch(`/api/businesses/${encodeURIComponent(state.activeBusinessId)}/media`, { credentials: "same-origin" });
+      const response = await fetch(`/api/businesses/${encodeURIComponent(requestedBusinessId)}/media`, { credentials: "same-origin" });
       const payload = response.ok ? await response.json() : { assets: [] };
+      if (state.activeBusinessId !== requestedBusinessId) return;
       businessMediaAssets = Array.isArray(payload.assets) ? payload.assets : [];
-    } catch (_error) { businessMediaAssets = []; }
+    } catch (_error) { if (state.activeBusinessId !== requestedBusinessId) return; businessMediaAssets = []; }
     renderBusinessMedia();
   }
   async function uploadBusinessMedia() {
+    const businessId = state.activeBusinessId;
     const file = businessMediaFile && businessMediaFile.files && businessMediaFile.files[0];
     if (!file || !state.activeBusinessId) { businessMediaStatus.textContent = "Choose an image or video first."; return; }
     const kind = file.type.startsWith("video/") ? "video" : file.type.startsWith("image/") ? "image" : "";
@@ -920,9 +927,9 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     if (file.size > maxBytes) { businessMediaStatus.textContent = kind === "video" ? "Video must be 250 MB or smaller." : "Image must be 15 MB or smaller."; return; }
     businessMediaUploadBtn.disabled = true; businessMediaStatus.textContent = "Preparing secure upload…";
     try {
-      const register = await fetch(`/api/businesses/${encodeURIComponent(state.activeBusinessId)}/media`, {
+      const register = await fetch(`/api/businesses/${encodeURIComponent(businessId)}/media`, {
         method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ asset: { kind, purpose: "marketing", contentType: file.type, sizeBytes: file.size } })
+        body: JSON.stringify({ asset: { kind, purpose: byId("business-media-product")?.value ? "product" : "marketing", ...(byId("business-media-product")?.value ? {relatedEntityId:byId("business-media-product").value} : {}), contentType: file.type, sizeBytes: file.size } })
       });
       const registered = await register.json();
       if (!register.ok || !registered.asset || !registered.uploadSession) throw new Error(registered.error || "Secure media storage is unavailable.");
@@ -930,11 +937,12 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       const upload = await fetch(registered.uploadSession.uploadUrl, { method: "PUT", headers: { "Content-Type": file.type }, body: file });
       if (!upload.ok) throw new Error("The media upload did not complete.");
       businessMediaStatus.textContent = "Processing media…";
-      const complete = await fetch(`/api/businesses/${encodeURIComponent(state.activeBusinessId)}/media/${encodeURIComponent(registered.asset.assetId)}`, {
+      const complete = await fetch(`/api/businesses/${encodeURIComponent(businessId)}/media/${encodeURIComponent(registered.asset.assetId)}`, {
         method: "PATCH", credentials: "same-origin", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "complete-upload", uploadToken: registered.uploadSession.uploadToken, storageKey: registered.uploadSession.storageKey })
       });
       if (!complete.ok) { const failure = await complete.json(); throw new Error(failure.error || "DEMEOS could not process this media."); }
+      if (state.activeBusinessId !== businessId) return;
       businessMediaFile.value = ""; businessMediaStatus.textContent = "Media received. DEMEOS is processing it safely.";
       await loadBusinessMedia();
     } catch (error) { businessMediaStatus.textContent = error.message || "DEMEOS could not add this media."; }
@@ -1043,10 +1051,13 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     if (priceMode !== "contact" && !price) { alert("Add the business-provided price information for this product."); return; }
     const productFulfilment = selectedProductFulfilment();
     if (productFields.fulfilmentMode.value === "specific" && !productFulfilment.length) { alert("Choose at least one fulfilment method for this product."); return; }
-    const product = { productId, name, description, price, priceMode, imageUrl,
+    const existingProduct = draftProducts.find(function (entry) { return entry.productId === productId; });
+    if (existingProduct?.presentation && (existingProduct.price !== price || existingProduct.priceMode !== priceMode)) {alert("This offer has structured pricing and options. Keep its recorded price until supported option management is available.");return;}
+    const product = { ...(existingProduct || {}), productId, name, description, price, priceMode, imageUrl,
       continuationRoute: route, availability: productFields.availability.value, customerVisible: productFields.visibility.value !== "hidden",
       imageSource: imageUrl ? "business-provided" : "",
       ...(productFields.fulfilmentMode.value === "specific" ? { fulfilment: { methods: productFulfilment } } : {}) };
+    if (productFields.fulfilmentMode.value !== "specific") delete product.fulfilment;
     const existingIndex = draftProducts.findIndex(function (entry) { return entry.productId === productId; });
     if (existingIndex >= 0) draftProducts.splice(existingIndex, 1, product); else draftProducts.push(product);
     resetProductForm(); renderBusinessProducts();
@@ -1059,6 +1070,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   if (productFields.name) productFields.name.addEventListener("input", updateProductImagePreview);
 
   function fillProfile(profile) {
+    if (typeof renderDraftSources === "function") renderDraftSources();
     draftProducts = profile && Array.isArray(profile.products) ? profile.products.map(function (product) { return { ...product }; }) : [];
     renderBusinessProducts();
     resetProductForm();
@@ -1299,14 +1311,14 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     clearRecommendations(); clearBusinessSituation(); fillProfile(activeProfile()); renderSelector(); clearCampaignWorkspace(); renderActiveMarketingWork(); renderCustomerParticipationResults(); renderCampaignHistory();
     hydrateActiveBusiness();
   }
-  async function saveCampaign(text, promo, type, typeLabel, profile, sourceId, recommendationDecision) {
+  async function saveCampaign(text, promo, type, typeLabel, profile, sourceId, recommendationDecision, draftMetadata) {
     const campaigns = getCampaignHistory();
     const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const source = sourceId ? campaigns.find(function (entry) { return entry.id === sourceId; }) : null;
     const continuity = createCampaignContinuity(id, source);
     const campaign = { id, campaignText: text, campaignType: type, campaignTypeLabel: typeLabel, promoText: promo,
       businessName: profile.name, businessId: getCampaignBusinessId(profile, source), createdAt: new Date().toISOString(),
-      approvalStatus: "Unapproved", ...(recommendationDecision && recommendationDecision.decisionId
+      approvalStatus: "Unapproved", ...((draftMetadata || (source && source.preparationOnly)) ? {preparationOnly:true, ownerReviewState:"draft", productId:draftMetadata ? draftMetadata.productId : source.productId, media:draftMetadata ? draftMetadata.media : source.media} : {}), ...(recommendationDecision && recommendationDecision.decisionId
         ? { recommendationDecisionId: recommendationDecision.decisionId,
           recommendationId: recommendationDecision.recommendationId,
           recommendationAction: recommendationDecision.decision } : source && source.recommendationDecisionId
@@ -1475,6 +1487,63 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     } finally { recommendationsBtn.disabled = false; }
   });
 
+  function renderPreparedDraft(campaign) {
+    const panel = byId("draft-edit-panel");
+    if (!panel) return;
+    const prepared = campaign && campaign.preparationOnly === true;
+    panel.hidden = !prepared;
+    reviseBtn.hidden = prepared;revisionInstruction.hidden = prepared;
+    if (typeof document.querySelector === "function") {const label = document.querySelector('[for="revision-instruction"]');if (label) label.hidden = prepared;}
+    if (prepared) {
+      campaignApprovalStatus.textContent = "Private draft";
+      byId("draft-edit-text").value = campaign.campaignText;
+      byId("draft-edit-status").textContent = campaign.ownerReviewState === "submitted" ? "Submitted for review. This draft is not public." : "Private draft. Review the facts before submitting.";
+      approveBtn.textContent = "Submit for review";
+      approveBtn.hidden = campaign.ownerReviewState === "submitted";
+    } else approveBtn.textContent = "Approve Campaign";
+  }
+  function renderDraftSources() {
+    const select = byId("draft-product");
+    if (!select) return;
+    const chosen = select.value;select.textContent = "";
+    function addOption(parent, label, value) {const option = document.createElement("option");option.textContent = label;option.value = value;parent.appendChild(option);}
+    addOption(select,"Choose a saved offer", "");
+    const profile = activeProfile(),products = profile && Array.isArray(profile.products) ? profile.products : [];
+    products.forEach(function (product) {addOption(select,product.name,product.productId);});
+    if (products.some(p => p.productId === chosen)) select.value = chosen;
+    const mediaSelect = byId("draft-media");if (!mediaSelect) return;mediaSelect.textContent = "";addOption(mediaSelect,"No media attached", "");
+    businessMediaAssets.filter(a => a.businessId === state.activeBusinessId && a.relatedEntityId === select.value && ["product","service"].includes(a.purpose) && a.state === "ready").forEach(a => addOption(mediaSelect,a.originalFilename || a.assetId,a.assetId));
+    const uploadSelect = byId("business-media-product");
+    if (uploadSelect) {const previous = uploadSelect.value;uploadSelect.textContent="";addOption(uploadSelect,"Business marketing media","");products.forEach(p=>addOption(uploadSelect,p.name,p.productId));if(products.some(p=>p.productId===previous))uploadSelect.value=previous;}
+  }
+  byId("draft-product")?.addEventListener("change", renderDraftSources);
+  byId("prepare-draft-btn")?.addEventListener("click", async function () {
+    const profile = activeProfile(), productId = byId("draft-product").value, assetId = byId("draft-media").value;
+    const status = byId("prepare-draft-status"),button = byId("prepare-draft-btn");
+    if (!profile || !productId) {status.textContent = "Save your business and choose a saved offer first.";return;}
+    button.disabled = true;status.textContent = "Preparing your saved facts…";
+    try {
+      const response = await fetch("/api/generate", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({businessId:profile.businessId,preparationMode:"business-facts",productId,assetId})});
+      const data = await response.json();
+      if (!response.ok || data.preparationOnly !== true || typeof data.campaign !== "string") throw Error(data.error || "Draft could not be prepared.");
+      if (state.activeBusinessId !== profile.businessId || addingBusiness) return;
+      const saved = await saveCampaign(data.campaign, "Prepared product draft", "social", "Social Media Campaign", profile, null, null, data);
+      openCampaign(saved.id);status.textContent = saved.persisted ? "Your private draft is ready to review." : "Draft is on this device only. Save again before submitting.";
+    } catch (error) {if (state.activeBusinessId === profile.businessId) status.textContent = error.message;}
+    finally {button.disabled = false;}
+  });
+  byId("save-draft-edit")?.addEventListener("click", async function () {
+    const campaigns = getCampaignHistory(), campaign = campaigns.find(c => c.id === openCampaignId), profile = activeProfile();
+    if (!campaign?.preparationOnly || !canAccessCampaign(campaign,profile)) return;
+    const text = byId("draft-edit-text").value.trim();if (!text) return;
+    const button = byId("save-draft-edit"),edited = {...campaign,campaignText:text,approvalStatus:"Unapproved",ownerReviewState:"draft"};button.disabled = true;
+    try {
+      if (!await persistCampaign(profile,edited)) throw Error("Draft changes could not be saved. Please retry.");
+      if (state.activeBusinessId !== profile.businessId) return;
+      Object.assign(campaign,edited);localStorage.setItem(campaignHistoryKey,JSON.stringify(campaigns));currentCampaignText=text;renderCampaign(campaign);renderPreparedDraft(campaign);
+      byId("draft-edit-status").textContent = "Draft changes saved. Review before submitting.";
+    } catch(error) {byId("draft-edit-status").textContent=error.message;} finally {button.disabled=false;}
+  });
   generateBtn.addEventListener("click", async function () {
     const profile = activeProfile(); const promo = promoInput.value.trim();
     if (!profile) { alert("Please complete and save your Business Manager Profile before creating marketing work."); return; }
@@ -1530,6 +1599,17 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     const campaigns = getCampaignHistory(); const campaign = campaigns.find(function (entry) { return entry.id === openCampaignId; });
     if (!campaign) return;
     if (!canAccessCampaign(campaign, activeProfile())) { alert("This campaign belongs to a different business profile."); return; }
+    if (campaign.preparationOnly === true) {
+      approveBtn.disabled = true;
+      try {
+        const response = await fetch(`/api/businesses/${encodeURIComponent(campaign.businessId)}/campaigns/${encodeURIComponent(campaign.id)}`, {method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"submit-draft"})});
+        const data = await response.json();
+        if (!response.ok || data.ownerReviewState !== "submitted") throw Error(data.error || "Draft could not be submitted.");
+        if (state.activeBusinessId !== campaign.businessId) return;
+        campaign.ownerReviewState = "submitted";localStorage.setItem(campaignHistoryKey,JSON.stringify(campaigns));renderPreparedDraft(campaign);
+      } catch(error) {byId("draft-edit-status").textContent = error.message;} finally {approveBtn.disabled=false;}
+      return;
+    }
     campaign.approvalStatus = "Approved"; localStorage.setItem(campaignHistoryKey, JSON.stringify(campaigns));
     renderActiveMarketingWork(); renderCampaignHistory(); approveBtn.disabled = true; approveBtn.textContent = "Saving Approval...";
     try {

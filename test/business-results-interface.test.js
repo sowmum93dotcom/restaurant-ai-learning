@@ -138,7 +138,7 @@ class Element {
 
 test("the page renders server-returned decisions and ignores browser decision storage", async function () {
   const elements = new Map();
-  const document = { createElement() { return new Element(); }, getElementById(id) {
+  const document = { addEventListener(event, callback) {if (event === "owner-business-ready") callback();}, createElement() { return new Element(); }, getElementById(id) {
     if (!elements.has(id)) elements.set(id, new Element());
     return elements.get(id);
   } };
