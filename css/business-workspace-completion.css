@@ -91,3 +91,9 @@
 
 .owner-workspace-body .business-results-intro h2{font-size:1.6rem;line-height:1.25;}
 @media(min-width:601px) and (max-width:980px){.owner-workspace-body .owner-metrics{grid-template-columns:repeat(2,minmax(0,1fr))!important;}}
+/* Category fields are immediate; combination-specific selling detail stays optional. */
+.owner-workspace-body .owner-combinations{margin-block:16px;padding:12px;border:1px solid #c6b47c;border-radius:10px;}
+.owner-workspace-body .owner-combinations summary{min-height:44px;display:list-item;cursor:pointer;font-weight:600;color:#14233c;}
+.owner-workspace-body .owner-combinations summary:focus-visible{outline:3px solid #9a7525;outline-offset:4px;}
+.owner-workspace-body #owner-category-guidance{margin-block:8px 16px;}
+.owner-workspace-body #owner-product-options .owner-combinations>summary{color:#14233c!important;background:transparent!important;opacity:1!important;}
