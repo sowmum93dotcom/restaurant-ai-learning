@@ -1,6 +1,6 @@
 const crypto = require("node:crypto");
 const { buildCustomerUnderstanding } = require("../../js/customer-understanding.js");
-const { getValidPublicCustomerWork } = require("./customer-public-work-contract.js");
+const { getValidPublicCustomerWork, MAX_SEARCH_CATALOGUE_RECORDS } = require("./customer-public-work-contract.js");
 
 const SUPPORTED_INTENTIONS = Object.freeze([
   "Eat & enjoy", "Take care of myself", "Spend time together",
@@ -253,7 +253,7 @@ function findCustomerPossibilities(understanding, repositoryWork, limit = MAX_PO
   const offerWorkIds = new Set((Array.isArray(repositoryWork) ? repositoryWork : [])
     .filter(item => typeof item?.workItemId === 'string' && (item.hasDeclaredOffers === true || (Array.isArray(item.products) && item.products.length)))
     .map(item => item.workItemId.trim()));
-  (semanticRetrieval ? getValidPublicCustomerWork(repositoryWork, 20, {forSearchClassification:true}) : getValidPublicCustomerWork(repositoryWork)).forEach(function (work) {
+  getValidPublicCustomerWork(repositoryWork, MAX_SEARCH_CATALOGUE_RECORDS, {forSearchClassification:Boolean(semanticRetrieval)}).forEach(function (work) {
     const semanticProducts = new Set(), semanticPublicProducts = new Set();
     if (semanticRetrieval) {
       const remaining = meaningfulTerms(semanticRetrieval.remainingText);

@@ -1,6 +1,8 @@
 const customerItemContract = require("../../js/customer-item-contract.js");
 const MAX_PUBLIC_CUSTOMER_MEDIA = 10;
 const DEFAULT_PUBLIC_CUSTOMER_WORK_LIMIT = 20;
+// Search eligibility runs over a bounded candidate set before its five-result cap.
+const MAX_SEARCH_CATALOGUE_RECORDS = 200;
 const CUSTOMER_PARTICIPATION_ACTION = "Interested";
 const ALLOWED_CONTINUATION_ROUTES = new Set(["website", "phone", "whatsapp", "email", "visit", "booking", "quote", "demeos"]);
 const ALLOWED_FULFILMENT_METHODS = new Set(["collection", "delivery", "shipping", "premises", "customer-location", "appointment", "digital"]);
@@ -175,6 +177,7 @@ function getValidPublicCustomerWork(work, limit = DEFAULT_PUBLIC_CUSTOMER_WORK_L
 module.exports = {
   MAX_PUBLIC_CUSTOMER_MEDIA,
   DEFAULT_PUBLIC_CUSTOMER_WORK_LIMIT,
+  MAX_SEARCH_CATALOGUE_RECORDS,
   CUSTOMER_PARTICIPATION_ACTION,
   getValidPublicCustomerWork,
   toPublicCustomerWorkItem

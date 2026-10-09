@@ -233,7 +233,7 @@
       event.preventDefault();
       if(window.DEMEOSCustomerPurchasePreparation)window.DEMEOSCustomerPurchasePreparation.cancelPending();
       const workCard = card.closest(".customer-focused-possibility, .customer-work-card, article[data-discover-position]");
-      const businessNameNode = workCard && workCard.querySelector ? workCard.querySelector(".customer-possibility-provider, .customer-business-name, .customer-work-business-name, h3") : null;
+      const businessNameNode = workCard && workCard.querySelector ? firstNode(workCard, [".customer-possibility-provider", ".customer-business-name", ".customer-work-business-name"]) : null;
       openProductExperience(document, { businessName: businessNameNode ? businessNameNode.textContent : "", workItemId: workCard ? workCard.getAttribute("data-work-item-id") : "" }, product, destination);
     });
   }

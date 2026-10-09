@@ -1,6 +1,6 @@
 'use strict';
 const {findCustomerPossibilities,stablePossibilityId}=require('./customer-possibility-contract');
-const {getValidPublicCustomerWork}=require('./customer-public-work-contract');
+const {getValidPublicCustomerWork,MAX_SEARCH_CATALOGUE_RECORDS}=require('./customer-public-work-contract');
 const {understandSearch,providerText}=require('./customer-search-understanding');
 const {constrainPossibility}=require('./customer-search-constraints');
 const {runIntelligenceRuntime}=require('./customer-intelligence-runtime');
@@ -39,12 +39,12 @@ async function prepareCustomerSearch({understanding,work,preferences=[],feedback
   },semanticRetrieval);
   const eligible=new Set(possibilities.map(p=>p.possibilityId));
   const known=new Set(rejected.map(r=>r.resultId));
-  for(const w of getValidPublicCustomerWork(work)){
+  for(const w of getValidPublicCustomerWork(work,MAX_SEARCH_CATALOGUE_RECORDS)){
     const resultId=stablePossibilityId(w.workItemId);
     if(!eligible.has(resultId)&&!known.has(resultId))rejected.push({resultId,reason:'deterministic_relevance_or_result_limit'});
   }
   const reason=intention.ambiguity.length?'clarification_required':possibilities.length?'supported_results':!work?.length?'empty_catalogue':rejected.some(r=>r.reason==='hard_requirement_not_supported'||r.reason==='requirement_not_verifiable')?'hard_requirements_unverified':'unsupported_request';
-  return {possibilities,intention,reason,rejected,reference:searchReference(getValidPublicCustomerWork(work,20,{forSearchClassification:true}),locale)};
+  return {possibilities,intention,reason,rejected,reference:searchReference(getValidPublicCustomerWork(work,MAX_SEARCH_CATALOGUE_RECORDS,{forSearchClassification:true}),locale)};
 }
 async function completeCustomerSearch({prepared,possibilities,understanding,work,identity,testMode,configuration={},defer}={}){
   // Controlled catalogue results stay local, including ranking and evidence.
