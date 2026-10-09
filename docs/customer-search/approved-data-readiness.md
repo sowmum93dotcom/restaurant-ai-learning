@@ -19,7 +19,7 @@ Findings before implementation:
 2. Optional information provenance can contradict the existing business-provided state without a rejection.
 3. Approved media can retain a product relationship to an absent, hidden or rejected offer. It must remain view-only, with the invalid continuation relationship removed.
 4. Rejected or inconsistent records currently have no bounded, content-free readiness diagnostics at catalogue selection.
-5. Database approval/update timestamps can identify changes since approval, but do not establish expiry. Outcome updates can be legitimate. Diagnose these changes without inventing a freshness policy or replacing approval authority. Legacy rows without metadata remain distinguishable as freshness-unverified.
+5. Database `approved_at` records initial approval and survives withdrawal/reactivation; `updated_at` also advances for legitimate outcome and lifecycle updates. These timestamps cannot establish the effective current approval time or expiry. When updates follow initial approval, report freshness as unverified without claiming an unreviewed publication change, inventing an expiry policy, or changing historical approval evidence. Missing metadata is likewise freshness-unverified; current publication eligibility remains governed by the existing approval status.
 
 Implementation will extend existing publication/projection/repository modules. Diagnostics will contain fixed reason codes and aggregate counts only, never identifiers, text, contact details, prices or media URLs. No new database, approval system, customer interface or external service is required. Engineering fixtures are separate from genuine production validation.
 

@@ -61,7 +61,9 @@ function inspectCustomerPublication(row) {
     const timestamp = value => value instanceof Date ? value.getTime() : typeof value === "string" ? Date.parse(value) : NaN;
     const approved = timestamp(row.approved_at), updated = timestamp(row.campaign_updated_at);
     if (!Number.isFinite(approved) || !Number.isFinite(updated)) reasons.push("freshness_unverified");
-    else if (updated > approved) reasons.push("publication_changed_since_approval");
+    // approved_at records initial approval, including after withdrawal/reactivation.
+    // Later updates cannot establish the effective current approval time.
+    else if (updated > approved) reasons.push("freshness_unverified");
   }
   return {eligible, reasons};
 }

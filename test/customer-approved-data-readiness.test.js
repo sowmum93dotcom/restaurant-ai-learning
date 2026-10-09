@@ -52,10 +52,14 @@ test('publication and explicit information provenance contradictions are rejecte
   const input=row();change(input);const loaded=await load([input]);assert.deepEqual(loaded.work,[]);assert.ok(loaded.summaries[0]);
  }
 });
-test('changes since approval are review diagnostics and cannot silently revoke or grant approval',async()=>{
+test('initial approval timestamps cannot establish current freshness or revoke or grant approval',async()=>{
  const input=row();input.campaign_updated_at='2026-01-03T00:00:00Z';const loaded=await load([input]);
- assert.equal((await search(loaded.work)).length,1);assert.deepEqual(loaded.summaries,[{publication_changed_since_approval:1}]);
+ assert.equal((await search(loaded.work)).length,1);assert.deepEqual(loaded.summaries,[{freshness_unverified:1}]);
  input.campaign.approvalStatus='Unapproved';assert.deepEqual((await load([input])).work,[]);
+ // Existing reactivation retains initial approved_at while advancing updated_at.
+ input.campaign.approvalStatus='Approved';input.campaign_updated_at='2026-01-04T00:00:00Z';
+ const reactivated=await load([input]);assert.equal((await search(reactivated.work)).length,1);
+ assert.deepEqual(reactivated.summaries,[{freshness_unverified:1}]);
 });
 test('legacy missing freshness metadata and optional location stay unknown rather than invented',async()=>{
  const input=row();delete input.approved_at;delete input.campaign_updated_at;delete input.profile.location;delete input.profile.informationStatus;
