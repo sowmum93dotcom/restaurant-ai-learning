@@ -33,7 +33,41 @@ function canPublishToDemeosCustomerExperience(campaign) {
   return Boolean(capability && capability.available && getCustomerFacingContent(campaign));
 }
 
+// Database keys remain authority. Optional embedded claims may corroborate
+// them, but cannot contradict them or supply publication permission.
+function inspectCustomerPublication(row) {
+  const reasons = [];
+  const text = value => typeof value === "string" && value.trim() ? value.trim() : null;
+  const record = value => value && typeof value === "object" && !Array.isArray(value);
+  const businessId = text(row && row.business_id), campaignId = text(row && row.campaign_id);
+  const profile = row && row.profile, campaign = row && row.campaign;
+  if (!businessId || !campaignId) reasons.push("missing_source_identity");
+  if (!record(profile) || !text(profile.name)) reasons.push("missing_business_fields");
+  if (record(profile) && Number(profile.profileVersion) >= 4 && profile.products !== undefined && !Array.isArray(profile.products)) reasons.push("offers_format_invalid");
+  if (!canPublishToDemeosCustomerExperience(campaign)) reasons.push("publication_ineligible");
+  if ((record(profile) && Object.hasOwn(profile, "businessId") && text(profile.businessId) !== businessId) ||
+      (record(campaign) && Object.hasOwn(campaign, "businessId") && text(campaign.businessId) !== businessId) ||
+      (record(campaign) && Object.hasOwn(campaign, "id") && text(campaign.id) !== campaignId)) reasons.push("source_identity_mismatch");
+  if (record(profile) && profile.informationStatus !== undefined) {
+    const status = profile.informationStatus;
+    if (!record(status) || status.status !== "business-provided" ||
+        (Object.hasOwn(status, "source") && status.source !== "business-owner") ||
+        (Object.hasOwn(status, "ownerConfirmedAt") && (!text(status.ownerConfirmedAt) || !Number.isFinite(Date.parse(status.ownerConfirmedAt))))) reasons.push("information_provenance_invalid");
+  }
+  const eligible = reasons.length === 0;
+  if (eligible) {
+    if (!record(profile.informationStatus) || !text(profile.informationStatus.ownerConfirmedAt)) reasons.push("information_provenance_unverified");
+    if (!text(profile.location)) reasons.push("location_unverified");
+    const timestamp = value => value instanceof Date ? value.getTime() : typeof value === "string" ? Date.parse(value) : NaN;
+    const approved = timestamp(row.approved_at), updated = timestamp(row.campaign_updated_at);
+    if (!Number.isFinite(approved) || !Number.isFinite(updated)) reasons.push("freshness_unverified");
+    else if (updated > approved) reasons.push("publication_changed_since_approval");
+  }
+  return {eligible, reasons};
+}
+
 module.exports = {
   canPublishToDemeosCustomerExperience,
-  getCustomerFacingContent
+  getCustomerFacingContent,
+  inspectCustomerPublication
 };
