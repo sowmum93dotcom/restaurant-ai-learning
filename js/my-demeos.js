@@ -41,7 +41,7 @@
       // Bring the chosen account area below the shared sticky header instead
       // of leaving its heading at the bottom of the mobile viewport.
       if (heading && typeof root.requestAnimationFrame === 'function' && typeof root.scrollTo === 'function') root.requestAnimationFrame(function(){
-        if (view.hidden) return;
+        if (view.hidden || documentObject.activeElement !== heading) return;
         const header = documentObject.querySelector('.customer-header');
         root.scrollTo({top:Math.max(0,root.scrollY+heading.getBoundingClientRect().top-(header?header.getBoundingClientRect().height:0)-16),behavior:'instant'});
       });

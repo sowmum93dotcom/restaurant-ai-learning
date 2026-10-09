@@ -17,7 +17,9 @@
       else link.removeAttribute('aria-current');
     });
     if (!position || !['#discover', '#intention', '#customer-intention-form'].includes(root.location.hash)) return;
+    const focus = doc.activeElement, version = restoreVersion;
     root.requestAnimationFrame(() => {
+      if (version !== restoreVersion || doc.activeElement !== focus) return;
       const section = doc.querySelector(current), header = doc.querySelector('.customer-header');
       if (!section || section.hidden || !header) return;
       root.scrollTo({ top: Math.max(0, root.scrollY + section.getBoundingClientRect().top - header.getBoundingClientRect().height), behavior: 'instant' });
@@ -109,7 +111,9 @@
       const focused = get('customer-focused-possibility');
       (focused && !focused.hidden ? focused : get('customer-possibilities-heading'))?.focus({preventScroll:true});
     } else {
+      const focus = doc.activeElement, version = restoreVersion;
       root.requestAnimationFrame(()=>{
+        if (version !== restoreVersion || doc.activeElement !== focus) return;
         const business=Array.from(doc.querySelectorAll('.customer-work-card')).find(card=>card.getAttribute('data-work-item-id')===work);
         business?.scrollIntoView({block:'start',behavior:'instant'});
         business?.focus({preventScroll:true});
