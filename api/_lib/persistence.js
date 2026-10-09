@@ -795,8 +795,9 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
             ) : []
           }, {forSearchClassification:forCatalogueValidation,validateMediaRelationships:true});
           if (!publicItem) { note("public_projection_invalid"); continue; }
-          if (Array.isArray(row.profile.products) && row.profile.profileVersion >= 4 &&
-              (publicItem.products || []).length < row.profile.products.length) note("offers_rejected");
+          const declaredVisibleOffers = Array.isArray(row.profile.products) && row.profile.profileVersion >= 4
+            ? row.profile.products.filter(product => product?.customerVisible !== false) : [];
+          if ((publicItem.products || []).length < declaredVisibleOffers.length) note("offers_rejected");
           if (Array.isArray(row.campaign.media) && (publicItem.media || []).length < Math.min(MAX_PUBLIC_CUSTOMER_MEDIA, row.campaign.media.length)) note("media_unavailable");
           if ((publicItem.media || []).some(asset => ["product", "service"].includes(asset.purpose) && !asset.relatedEntityId)) note("media_relationship_unverified");
           // Server-only ownership context survives until the shared public

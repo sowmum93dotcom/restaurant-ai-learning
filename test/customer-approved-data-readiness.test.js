@@ -85,6 +85,13 @@ test('intentional public media cap does not report valid assets as unavailable',
  assert.deepEqual(loaded.summaries,[]);
  const missing=await load([input],assets.slice(1));assert.equal(missing.summaries[0].media_unavailable,1);
 });
+test('intentional offer visibility does not generate rejected-data telemetry',async()=>{
+ const input=row();input.campaign.media=[];
+ input.profile.products.push({...input.profile.products[0],productId:'hidden',customerVisible:false});
+ const loaded=await load([input],[]);assert.equal(loaded.work[0].products.length,1);assert.deepEqual(loaded.summaries,[]);
+ input.profile.products.push({...input.profile.products[0],productId:'unauthorized',businessId:'foreign'});
+ const invalid=await load([input],[]);assert.equal(invalid.work[0].products.length,1);assert.equal(invalid.summaries[0].offers_rejected,1);
+});
 test('diagnostics aggregate fixed codes once and never expose record content to customers or providers',async()=>{
  const first=row();first.profile.businessId='foreign';const second=row();second.campaign.approvalStatus='Pending';
  const loaded=await load([first,first,second]);assert.deepEqual(loaded.summaries,[{source_identity_mismatch:2,publication_ineligible:1}]);
