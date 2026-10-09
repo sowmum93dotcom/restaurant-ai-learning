@@ -29,7 +29,7 @@ async function handleLifecycleChange(req, res, repository, businessId, campaignI
   if (!access.allowed) return res.status(403).json({ error: "Forbidden." });
 
   const record = await repository.getKnownBusiness(businessId);
-  const existing = findCampaign(record, campaignId);
+  const existing = typeof repository.getBusinessCampaign === "function" ? await repository.getBusinessCampaign(businessId, campaignId) : findCampaign(record, campaignId);
   if (!existing || existing.businessId !== businessId) {
     return res.status(404).json({ error: "Campaign was not found for this business." });
   }
@@ -114,7 +114,7 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: "DEMEOS received invalid campaign data." });
     }
     const currentRecord = await repository.getKnownBusiness(businessId);
-    const storedCampaign = findCampaign(currentRecord, campaignId);
+    const storedCampaign = typeof repository.getBusinessCampaign === "function" ? await repository.getBusinessCampaign(businessId, campaignId) : findCampaign(currentRecord, campaignId);
     const preparationOnly = campaign.preparationOnly === true || storedCampaign?.preparationOnly === true;
     if (preparationOnly && isApprovalRequest) return res.status(409).json({error:"Prepared drafts require publication review and cannot be published by an owner."});
     let campaignForPersistence = { ...campaign, campaignTypeLabel: campaignCapability.ownerFacingName };

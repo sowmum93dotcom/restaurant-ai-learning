@@ -26,3 +26,26 @@ test('activity distinguishes unavailable product metrics and private stored inte
  assert.deepEqual(metrics.map(m=>m.value),[null,null,3,null,null]);assert.doesNotMatch(JSON.stringify(metrics),/999|identity|customerId/);
  assert.equal(getOwnerActivityMetrics({businessProfile:profile},'foreign'),null);
 });
+test('persisted private marker survives old-window and stale writes atomically',async()=>{
+ const {PGlite}=require('@electric-sql/pglite'),{createDatabase}=require('../api/_lib/database'),{createPersistenceRepository}=require('../api/_lib/persistence');
+ const client=new PGlite(),database=createDatabase(client),repo=createPersistenceRepository(database);
+ try{
+  await database.ensureSchema();await repo.saveBusiness(profile);
+  const original={id:'private-old',businessId:'owned',campaignText:'Private reviewed content',campaignType:'social',campaignTypeLabel:'Social Media Campaign',businessName:profile.name,createdAt:'2020-01-01T00:00:00Z',approvalStatus:'Unapproved',preparationOnly:true,productId:'offer'};
+  await repo.saveCampaign(original);
+  await database.query("UPDATE demeos_campaigns SET created_at = '2020-01-01' WHERE campaign_id = $1",[original.id]);
+  for(let i=0;i<21;i++)await repo.saveCampaign({...original,id:'recent-'+i,preparationOnly:false});
+  assert.ok(!(await repo.getKnownBusiness('owned')).campaigns.some(c=>c.id===original.id));
+  assert.equal((await repo.getBusinessCampaign('owned',original.id)).preparationOnly,true);
+  assert.equal(await repo.getBusinessCampaign('foreign',original.id),null);
+  assert.equal(await repo.approveCampaign('owned',original.id),null);
+  assert.equal(await repo.saveCampaign({...original,preparationOnly:false,approvalStatus:'Approved'}),null);
+  const stale=await repo.saveCampaign({...original,preparationOnly:false});assert.equal(stale.preparationOnly,true);assert.equal(stale.approvalStatus,'Unapproved');
+  assert.equal(await repo.saveCampaign({...original,id:'insert-approved',approvalStatus:'Approved'}),null);
+ }finally{await client.close();}
+});
+test('public projection rejects a prepared draft even with an invalid approved flag',()=>{
+ const {canPublishToDemeosCustomerExperience}=require('../api/_lib/customer-publication-rules');
+ assert.equal(canPublishToDemeosCustomerExperience({approvalStatus:'Approved',campaignType:'social',campaignText:'Reviewed draft',preparationOnly:true}),false);
+ assert.equal(canPublishToDemeosCustomerExperience({approvalStatus:'Approved',campaignType:'social',campaignText:'Existing legacy campaign'}),true);
+});

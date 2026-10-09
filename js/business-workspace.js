@@ -107,7 +107,7 @@ function getOwnerWorkspaceContext(storage) {
     return {
       name: (typeof campaign.promoText === "string" && campaign.promoText.trim()) ||
         campaign.campaignTypeLabel || campaign.campaignType || "Marketing work",
-      status: campaign.approvalStatus || "Status not recorded"
+      status: campaign.preparationOnly ? (campaign.ownerReviewState === "submitted" ? "Submitted for review" : "Private draft") : campaign.approvalStatus || "Status not recorded"
     };
   });
   return { profile, currentWork };
@@ -193,13 +193,16 @@ function getTrustedOwnerNextAction(record, activeBusinessId) {
     return campaign && typeof campaign === "object" && !Array.isArray(campaign) &&
       campaign.businessId === activeBusinessId;
   });
-  if (campaigns.some(function (campaign) { return campaign.approvalStatus === "Unapproved"; })) {
+  if (campaigns.some(function (campaign) { return campaign.approvalStatus === "Unapproved" && campaign.ownerReviewState !== "submitted"; })) {
     return {
       title: "Review your campaign",
       explanation: "Marketing work is waiting for your approval or revision.",
       action: "Review Campaign",
       destination: "marketing.html#campaigns"
     };
+  }
+  if (campaigns.some(function (campaign) {return campaign.preparationOnly === true && campaign.ownerReviewState === "submitted";})) {
+    return {title:"Draft submitted for review", explanation:"Your reviewed draft remains private. Publication review is not available yet; you can continue preparing your business information.", action:"Review submitted draft", destination:"marketing.html#campaigns"};
   }
   if (campaigns.some(function (campaign) {
     return campaign.approvalStatus === "Approved" &&
