@@ -77,6 +77,14 @@ test('unapproved or wrong-owner media cannot become approved business evidence',
   assert.equal((await search(loaded.work))[0].products[0].productId,'offer');
  }
 });
+test('intentional public media cap does not report valid assets as unavailable',async()=>{
+ const input=row(),assets=Array.from({length:12},(_,index)=>({...asset(),assetId:'asset-'+index}));
+ input.campaign.media=assets.map((media,index)=>({assetId:media.assetId,role:index===0?'primary':'supporting'}));
+ const loaded=await load([input],assets);
+ assert.equal(loaded.work[0].media.length,require('../api/_lib/customer-public-work-contract').MAX_PUBLIC_CUSTOMER_MEDIA);
+ assert.deepEqual(loaded.summaries,[]);
+ const missing=await load([input],assets.slice(1));assert.equal(missing.summaries[0].media_unavailable,1);
+});
 test('diagnostics aggregate fixed codes once and never expose record content to customers or providers',async()=>{
  const first=row();first.profile.businessId='foreign';const second=row();second.campaign.approvalStatus='Pending';
  const loaded=await load([first,first,second]);assert.deepEqual(loaded.summaries,[{source_identity_mismatch:2,publication_ineligible:1}]);

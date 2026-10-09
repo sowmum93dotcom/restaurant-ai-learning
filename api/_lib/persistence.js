@@ -6,7 +6,7 @@ const {
   getCustomerFacingContent,
   inspectCustomerPublication
 } = require("./customer-publication-rules.js");
-const { toPublicCustomerWorkItem } = require("./customer-public-work-contract.js");
+const { toPublicCustomerWorkItem, MAX_PUBLIC_CUSTOMER_MEDIA } = require("./customer-public-work-contract.js");
 
 function createPersistenceRepository(database, { getMediaStorageAdapter = getConfiguredMediaStorageAdapter,
   reportCatalogueDiagnostics = summary => console.warn("Customer catalogue readiness", summary) } = {}) {
@@ -797,7 +797,7 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
           if (!publicItem) { note("public_projection_invalid"); continue; }
           if (Array.isArray(row.profile.products) && row.profile.profileVersion >= 4 &&
               (publicItem.products || []).length < row.profile.products.length) note("offers_rejected");
-          if (Array.isArray(row.campaign.media) && (publicItem.media || []).length < row.campaign.media.length) note("media_unavailable");
+          if (Array.isArray(row.campaign.media) && (publicItem.media || []).length < Math.min(MAX_PUBLIC_CUSTOMER_MEDIA, row.campaign.media.length)) note("media_unavailable");
           if ((publicItem.media || []).some(asset => ["product", "service"].includes(asset.purpose) && !asset.relatedEntityId)) note("media_relationship_unverified");
           // Server-only ownership context survives until the shared public
           // catalogue performs its final validation. Public/default consumers
