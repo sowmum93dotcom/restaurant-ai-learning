@@ -80,7 +80,8 @@ const server=http.createServer(async(req,res)=>{try{
    await page.locator('#approve-btn').click();await page.locator('#draft-edit-status').filter({hasText:'Submitted for review'}).waitFor();
    const latest=(await repository.getKnownBusiness('engineering-a')).campaigns.find(c=>c.preparationOnly);assert.equal(latest.approvalStatus,'Unapproved');assert.equal(latest.ownerReviewState,'submitted');assert.equal(latest.media[0].assetId,'engineering-image');
    const foreignDraft=base+'/api/businesses/engineering-b/campaigns/'+latest.id;
-   assert.equal((await context.request.get(foreignDraft)).status(),403);
+   // Draft reads use the owner-only business endpoint; this endpoint rejects GET.
+   const unsupportedRead=await context.request.get(foreignDraft);assert.equal(unsupportedRead.status(),405);assert.doesNotMatch(await unsupportedRead.text(),/Exact jacket|Owner reviewed jacket/);
    assert.equal((await context.request.put(foreignDraft,{data:{campaign:latest}})).status(),403);
    assert.equal((await context.request.patch(foreignDraft,{data:{action:'submit-draft'}})).status(),403);
    for(const body of [{campaign:{...latest,preparationOnly:false,approvalStatus:'Approved'}},{action:'reactivate'}]){
