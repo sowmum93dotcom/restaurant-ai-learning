@@ -54,20 +54,20 @@
    panel.textContent='';choices=[];variants=[];panel.hidden=!category.value;
    const cat=contract.categories[category.value];if(!cat){basePrice=null;return;}
    basePrice=priceControls(current?.pricing);panel.append(basePrice.box);
-   const guidance=el('p','Keep every option accurate. Existing option and variant identities are retained. Changing these fields does not enable selling.');panel.append(guidance);
+   const guidance=el('p','Add the choices customers can genuinely receive. Keep prices and availability accurate.');panel.append(guidance);
    for(const key of cat.fields){
     const option=current?.options?.find(o=>o.key===key),box=el('fieldset'),legend=el('legend',key==='packSize'?'Pack size':key[0].toUpperCase()+key.slice(1));legend.dataset.ownerField=key;box.append(legend);
     const fields=(option?.values||[]).map(choice=>{const entry=input('Label',choice.label);entry.field.dataset.optionValue=choice.value;entry.field.addEventListener('input',refreshVariantChoices);box.append(entry.wrap);return {choice,field:entry.field};});
     const add=input('Add choices (one per line)','');const textarea=el('textarea');textarea.rows=2;textarea.maxLength=12000;textarea.addEventListener('input',refreshVariantChoices);add.field.replaceWith(textarea);box.append(add.wrap);panel.append(box);choices.push({key,option,fields,add:textarea});
    }
-   const list=el('div');panel.append(el('h5','Variants'),el('p','When you record specific variants, only the combinations you list can continue. Set availability and prices yourself; DEMEOS does not infer stock.'),list);
-   function addVariant(variant,isNew){const box=el('fieldset');box.className='owner-variant';box.append(el('legend',isNew?'New variant':Object.values(variant.selection).join(' · ')));
+   const list=el('div');panel.append(el('h5','Specific combinations'),el('p','List combinations you offer, such as a large blue jacket, and confirm each price and availability.'),list);
+   function addVariant(variant,isNew){const box=el('fieldset');box.className='owner-variant';box.append(el('legend',isNew?'New combination':Object.values(variant.selection).join(' · ')));
     const selection=[];for(const key of cat.fields.filter(key=>isNew||!Object.hasOwn(variant.selection,key))){const option=readOptions().find(o=>o.key===key),field=optionSelect(key[0].toUpperCase()+key.slice(1)+' choice',[['','Choose an option'],...(option?.values||[]).map(v=>[v.value,v.label])],variant.selection[key]||'');field.wrap.hidden=!option;field.field.disabled=!option;box.append(field.wrap);selection.push({key,field:field.field});}
     const status=optionSelect('Availability',[['available','Available'],['limited','Limited availability'],['unavailable','Unavailable'],['contact','Contact to confirm']],variant.availability),price=priceControls(variant.pricing||current?.pricing);box.append(status.wrap,price.box);list.append(box);variants.push({variant,status:status.field,price,selection});
    }
    for(const variant of current?.variants||[])addVariant(variant,false);
-   if(cat.fields.length){const add=el('button','Add a specific variant'),message=el('p');add.type='button';add.className='text-button';message.setAttribute('role','status');panel.append(add,message);
-    add.addEventListener('click',()=>{const options=readOptions();if(!options.length||variants.length>=500){message.textContent='Add option choices first. Up to 500 variants are supported.';return;}
+   if(cat.fields.length){const add=el('button','Add a size or colour combination'),message=el('p');add.type='button';add.className='text-button';message.setAttribute('role','status');panel.append(add,message);
+    add.addEventListener('click',()=>{const options=readOptions();if(!options.length||variants.length>=500){message.textContent='Add choices above first. Up to 500 combinations are supported.';return;}
      addVariant({variantId:'variant-'+(root.crypto?.randomUUID?.()||Date.now()+'-'+variants.length),selection:Object.fromEntries(options.map(o=>[o.key,''])),availability:'contact',pricing:basePrice.read()},true);message.textContent='Choose a unique combination, then confirm its price and availability.';});
    }
    root.DEMEOSBusinessPreparationLanguage?.apply(document.getElementById('owner-preparation-language')?.value);

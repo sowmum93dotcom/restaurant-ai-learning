@@ -50,3 +50,44 @@
 .business-media-upload label,.business-media-upload p{color:#14233c;}
 .business-media-upload input[type=file]{max-width:100%;background:#fff;color:#14233c;border:1px solid #738198;}
 @media(max-width:600px){.owner-preparation-steps{grid-template-columns:repeat(2,minmax(0,1fr));}.owner-price-controls{grid-template-columns:minmax(0,1fr);}}
+/* PR 695: one permission summary and a focused owner dashboard. */
+.owner-workspace-body .owner-operating-models{display:block;min-width:0;margin:0 0 1.25rem;grid-column:1/-1;grid-row:auto;}
+.owner-workspace-body .owner-model-card{padding:18px 20px;background:#10253e;border-color:rgba(205,174,91,.4);}
+.owner-workspace-body .owner-model-card h3,.owner-workspace-body .owner-metric h3{font-family:Arial,sans-serif;font-size:1rem;color:#ead18b!important;}
+.owner-workspace-body .owner-model-card p{margin:.6rem 0;color:#d4deeb!important;}
+.owner-workspace-body .owner-model-card strong{color:#ead18b;}
+.owner-model-views{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;}
+.owner-model-views button{min-height:44px;padding:.65rem 1rem;border:1px solid #b79446;border-radius:9px;background:#10253e;color:#f4f6fa;font-weight:600;cursor:pointer;}
+.owner-model-views button[aria-pressed=true]{background:#ead18b;color:#10253e;}
+.owner-workspace-body .owner-model-note{font-size:.85rem;margin:.6rem 0 0;}
+.owner-dashboard-results{grid-column:1/-1;grid-row:5;min-width:0;}
+.owner-section-heading{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;}
+.owner-section-heading a{color:#ead18b;min-height:44px;display:flex;align-items:center;}
+.owner-workspace-body .owner-dashboard-results .owner-metric strong{font-size:1.35rem;color:#fff;}
+.owner-workspace-body .owner-dashboard-results .owner-metric p{font-size:.9rem;}
+.owner-workspace-body .owner-results-details{margin-block:24px;}
+.owner-results-details summary{min-height:44px;padding:12px;border:1px solid #b79446;border-radius:10px;cursor:pointer;font-weight:600;}
+.owner-workspace-body .marketing-secondary-sidebar[hidden]{display:none!important;}
+.owner-workspace-body .owner-preparation-guide p,.owner-workspace-body .owner-offer-review p{color:#14233c;}
+.owner-workspace-body .owner-preparation-steps{grid-template-columns:repeat(3,minmax(0,1fr));}
+@media(max-width:600px){.owner-workspace-body .owner-preparation-steps{grid-template-columns:1fr;}.owner-workspace-body .owner-model-card{padding:16px;}.owner-model-views button{flex:1 1 140px;}.owner-workspace-body .owner-model-card .owner-card-action{width:100%;box-sizing:border-box;text-align:center;}}
+/* Keep these placements ahead of the inherited reference-dashboard rules. */
+.owner-workspace-body:has(#owner-overview-heading):has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-main>section[aria-labelledby="owner-overview-heading"]{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:20px!important;}
+.owner-workspace-body:has(#owner-overview-heading):has(#owner-authenticated-workspace:not([hidden])) .owner-identity-card{grid-column:1!important;grid-row:2!important;order:0!important;padding:20px;}
+.owner-workspace-body:has(#owner-overview-heading):has(#owner-authenticated-workspace:not([hidden])) .owner-next-action{grid-column:2!important;grid-row:2!important;order:0!important;padding:20px;}
+.owner-workspace-body:has(#owner-overview-heading):has(#owner-authenticated-workspace:not([hidden])) #owner-operating-models{grid-column:1/-1!important;grid-row:3!important;order:0!important;}
+.owner-workspace-body:has(#owner-overview-heading):has(#owner-authenticated-workspace:not([hidden])) .owner-current-work{grid-column:1/-1!important;grid-row:4!important;order:0!important;}
+.owner-workspace-body:has(#owner-overview-heading):has(#owner-authenticated-workspace:not([hidden])) .owner-dashboard-results{grid-column:1/-1!important;grid-row:5!important;order:0!important;}
+@media(max-width:980px){
+ .owner-workspace-body:has(#owner-overview-heading):has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-main>section[aria-labelledby="owner-overview-heading"]{grid-template-columns:1fr!important;}
+ .owner-workspace-body:has(#owner-overview-heading):has(#owner-authenticated-workspace:not([hidden])) .owner-identity-card{grid-column:1!important;grid-row:2!important;}
+ .owner-workspace-body:has(#owner-overview-heading):has(#owner-authenticated-workspace:not([hidden])) .owner-next-action{grid-column:1!important;grid-row:3!important;}
+ .owner-workspace-body:has(#owner-overview-heading):has(#owner-authenticated-workspace:not([hidden])) #owner-operating-models{grid-column:1!important;grid-row:4!important;}
+ .owner-workspace-body:has(#owner-overview-heading):has(#owner-authenticated-workspace:not([hidden])) .owner-current-work{grid-column:1!important;grid-row:5!important;}
+ .owner-workspace-body:has(#owner-overview-heading):has(#owner-authenticated-workspace:not([hidden])) .owner-dashboard-results{grid-column:1!important;grid-row:6!important;}
+ .owner-workspace-body .owner-dashboard-results .owner-metrics{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+}
+@media(max-width:600px){.owner-workspace-body .owner-dashboard-results .owner-metrics{grid-template-columns:1fr!important;}}
+
+.owner-workspace-body .business-results-intro h2{font-size:1.6rem;line-height:1.25;}
+@media(min-width:601px) and (max-width:980px){.owner-workspace-body .owner-metrics{grid-template-columns:repeat(2,minmax(0,1fr))!important;}}

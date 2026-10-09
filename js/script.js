@@ -535,6 +535,11 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       else button.removeAttribute("aria-current");
     });
     if (window.location.hash !== "#" + viewId && window.history && typeof window.history.replaceState === "function") window.history.replaceState(null, "", "#" + viewId);
+    const area = byId("owner-area-heading");
+    const section = viewId === "products" ? "Products and Services" : viewId === "business-profile" ? "My Business" : "Marketing";
+    if (area) area.textContent = section;
+    const secondary = document.querySelector?.(".marketing-secondary-sidebar");
+    if (secondary) secondary.hidden = section !== "Marketing";
     const navigation = byId("workspace-navigation");
     const menuToggle = byId("workspace-menu-toggle");
     if (navigation) navigation.classList.remove("is-open");
@@ -1568,7 +1573,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     byId("prepare-draft-btn").disabled=unsaved;
     if(next)next.textContent=unsaved?"Review and save your offer changes before preparing marketing.":"Check these saved facts and matching media, then prepare your private draft.";
   }
-  function updatePreparationProgress(step){if(typeof document.querySelectorAll!=="function")return;document.querySelectorAll(".owner-preparation-steps li").forEach((item,index)=>{if(index===step-1)item.setAttribute("aria-current","step");else item.removeAttribute("aria-current");});}
+  function updatePreparationProgress(step){if(typeof document.querySelectorAll!=="function")return;document.querySelectorAll(".owner-preparation-steps li").forEach((item,index)=>{if(index===(step<=3?0:step<=5?1:2))item.setAttribute("aria-current","step");else item.removeAttribute("aria-current");});}
   byId("draft-product")?.addEventListener("change", renderDraftSources);
   byId("draft-media")?.addEventListener("change",renderOfferReview);
   byId("owner-media-framing")?.addEventListener("change",()=>{byId("owner-draft-media-preview").dataset.layout=byId("owner-media-framing").value;});

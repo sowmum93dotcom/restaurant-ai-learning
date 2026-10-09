@@ -168,24 +168,23 @@
     <main class="owner-workspace-main marketing-capability-main">
       <section id="owner-operating-models" class="owner-operating-models" aria-label="Business models" aria-live="polite"><p>Confirming your business permissions…</p></section>
       <div class="marketing-capability-heading">
-        <h2>Marketing Agent</h2>
-        <p>See your next action, create marketing and manage current work.</p>
+        <h2 id="owner-area-heading">Marketing</h2>
+        <p>Prepare accurate offers, review your drafts and submit them for review.</p>
       </div>
       <aside class="workspace-sidebar marketing-secondary-sidebar">
         <button id="workspace-menu-toggle" class="workspace-menu-toggle" type="button" aria-expanded="false" aria-controls="workspace-navigation">Marketing menu</button>
         <nav id="workspace-navigation" class="workspace-navigation" aria-label="Marketing tools">
-          <button class="workspace-nav-item is-active" type="button" data-workspace-view="overview" aria-current="page">Overview</button>
-          <button class="workspace-nav-item" type="button" data-workspace-view="recommends">DEMEOS Recommends</button>
-          <button class="workspace-nav-item" type="button" data-workspace-view="create">Create Marketing</button>
-          <button class="workspace-nav-item" type="button" data-workspace-view="campaigns">Campaigns</button>
-          <button class="workspace-nav-item" type="button" data-workspace-view="results-view">Results</button>
-          <button class="workspace-nav-item" type="button" data-workspace-view="business-profile">Business Profile</button>
+          <button class="workspace-nav-item is-active" type="button" data-workspace-view="overview" aria-current="page">Start here</button>
+          <button class="workspace-nav-item" type="button" data-workspace-view="recommends">Plan your marketing</button>
+          <button class="workspace-nav-item" type="button" data-workspace-view="create">Prepare a draft</button>
+          <button class="workspace-nav-item" type="button" data-workspace-view="campaigns">My drafts</button>
         </nav>
       </aside>
 
+          <div class="owner-preparation-guide"><label for="owner-preparation-language">Preparation language</label><select id="owner-preparation-language"></select><p data-owner-copy="guide">Review the offer, save accurate information, then prepare a private marketing draft. Business facts are kept in their original language.</p></div>
       <div class="workspace-main marketing-workspace-main">
         <section id="overview" class="workspace-view is-active" data-workspace-panel aria-labelledby="overview-heading">
-          <div class="view-heading"><h2 id="overview-heading">Overview</h2><p>Your current marketing priorities and recent work in one place.</p></div>
+          <div class="view-heading"><h2 id="overview-heading">Make your next offer ready</h2><p>No marketing experience needed. Start with a saved product or service, then review every fact before submission.</p></div>
           <div class="overview-grid">
             <section class="dashboard-card recommendation-summary" aria-labelledby="overview-recommendation-heading">
               <h3 id="overview-recommendation-heading">DEMEOS Recommendation</h3>
@@ -198,12 +197,12 @@
               <button class="text-button workspace-link" type="button" data-open-view="campaigns">Manage campaigns</button>
             </section>
             <section class="dashboard-card dashboard-card-wide" aria-labelledby="quick-create-heading">
-              <h3 id="quick-create-heading">Quick Create</h3>
+              <h3 id="quick-create-heading">Prepare your next draft</h3><p>Use accurate product details and matching photos or videos from your business.</p><button class="demeos-primary-button" type="button" data-open-view="create">Prepare marketing</button><details class="owner-writing-tools"><summary>Other campaign formats</summary>
               <div class="quick-create-actions">
                 <button type="button" data-quick-create="full"><strong>Full Marketing Campaign</strong><span>Create a complete campaign workspace.</span></button>
                 <button type="button" data-quick-create="social"><strong>Social Media Campaign</strong><span>Create social campaign content.</span></button>
                 <button type="button" data-quick-create="email"><strong>Email Campaign</strong><span>Create an email campaign.</span></button>
-              </div>
+              </div></details>
             </section>
             <section class="dashboard-card" aria-labelledby="overview-results-heading">
               <h3 id="overview-results-heading">Recent Marketing Results</h3>
@@ -250,8 +249,8 @@
         </section>
 
         <section id="create" class="workspace-view" data-workspace-panel hidden aria-labelledby="create-heading">
-          <div class="view-heading"><h2 id="create-heading">Create Marketing</h2><p>Prepare from your saved offers, then review your draft.</p></div>
-          <ol class="owner-preparation-steps" aria-label="Preparation steps"><li data-owner-copy="select">Select an offer</li><li data-owner-copy="review">Review information</li><li data-owner-copy="media">Select matching media</li><li data-owner-copy="prepare">Prepare a draft</li><li data-owner-copy="edit">Review and edit</li><li data-owner-copy="submit">Submit for approval</li></ol>
+          <div class="view-heading"><h2 id="create-heading">Prepare marketing</h2><p>Prepare from your saved offers, then review your draft.</p></div>
+          <ol class="owner-preparation-steps" aria-label="Preparation steps"><li data-owner-copy="offerStage">Offer and media</li><li data-owner-copy="draftStage">Prepare and edit</li><li data-owner-copy="submitStage">Submit for review</li></ol>
           <section class="content-card assistant-section">
             <label for="draft-product">Prepare from a saved product or service</label><select id="draft-product"><option value="">Choose a saved offer</option></select><label for="draft-media">Matching business media</label><select id="draft-media"><option value="">No media attached</option></select><p>DEMEOS can organise your saved facts into a draft for you to edit. Your original images are retained; image generation is not available.</p><button id="prepare-draft-btn" class="demeos-primary-button" type="button">Prepare factual draft</button><p id="prepare-draft-status" role="status"></p>
             <div id="owner-offer-review" class="owner-offer-review" aria-live="polite"></div><label for="owner-media-framing">Preview layout</label><select id="owner-media-framing"><option value="natural">Original proportions</option><option value="square">Square frame, full image</option></select><p>Preview only. Your original media and customer presentation are unchanged.</p><div id="owner-draft-media-preview" class="owner-media-preview"></div><p id="owner-preparation-next" role="status"></p><button type="button" class="text-button" data-open-view="products" data-owner-copy="change">Review offer information</button>
@@ -274,7 +273,7 @@
         </section>
 
         <section id="campaigns" class="workspace-view" data-workspace-panel hidden aria-labelledby="campaigns-heading">
-          <div class="view-heading"><h2 id="campaigns-heading">Campaigns</h2><p>See what needs your attention and find earlier campaigns.</p></div>
+          <div class="view-heading"><h2 id="campaigns-heading">My marketing drafts</h2><p>See what needs your attention and find earlier campaigns.</p></div>
           <section class="active-marketing-work content-card" aria-labelledby="active-marketing-work-heading"><h3 id="active-marketing-work-heading">Active Marketing Work</h3><p class="active-marketing-work-helper">Your current marketing work and anything that needs your attention.</p><p id="active-marketing-work-empty">No active marketing work yet.</p><div id="active-marketing-work-list"></div></section>
           <section class="campaign-history content-card" aria-labelledby="campaign-history-heading"><h3 id="campaign-history-heading">Earlier Campaigns</h3><p id="campaign-history-empty">No saved campaigns yet.</p><div id="campaign-history-list"></div></section>
         </section>
@@ -289,21 +288,21 @@
 
         <section id="products" class="workspace-view" data-workspace-panel hidden aria-labelledby="products-heading">
           <div class="view-heading"><h2 id="products-heading">Products and Services</h2><p>Keep your offers and their images accurate. Changes are saved with your business information.</p></div>
-          <div class="owner-preparation-guide"><label for="owner-preparation-language">Preparation language</label><select id="owner-preparation-language"></select><p data-owner-copy="guide">Review the offer, save accurate information, then prepare a private marketing draft. Business facts are kept in their original language.</p></div>
-          <section class="content-card"><div class="business-profile-grid">              <section id="business-profile-offering" class="profile-step profile-long-field"><div class="profile-step-heading"><span>Step 2</span><div><h4>Products &amp; services</h4><p>Describe what the business genuinely provides.</p></div></div></section>
+
+          <section class="content-card"><div class="business-profile-grid">              <section id="business-profile-offering" class="profile-step profile-long-field"><div class="profile-step-heading"><span>Your offers</span><div><h4>Products &amp; services</h4><p>Describe what the business genuinely provides.</p></div></div></section>
               <div class="profile-long-field"><label for="business-products-services">What does your business provide?</label><textarea id="business-products-services" name="business-products-services" rows="5" placeholder="Example: Birthday cakes, celebration cakes and cupcakes made to order."></textarea><p>Describe only products and services your business genuinely provides. DEMEOS will not invent products, availability or prices.</p></div>
               <div class="profile-long-field business-products-manager">
-                <div class="profile-step-heading"><div><h4>Products customers can see</h4><p>Add genuine products or services. A product image is optional and is always tied to this business.</p></div></div>
+                <div class="profile-step-heading"><div><h4>Your products and services</h4><p>Add genuine products or services. A product image is optional and is always tied to this business.</p></div></div>
                 <div class="business-products-manager-summary" aria-live="polite">
                   <div><strong id="business-products-total">0</strong><span>Products &amp; services</span></div>
-                  <div><strong id="business-products-visible">0</strong><span>Visible to customers</span></div>
+                  <div><strong id="business-products-visible">0</strong><span>Marked for customer discovery</span></div>
                   <div><strong id="business-products-images">0</strong><span>With business images</span></div>
                 </div>
                 <p class="business-products-customer-connection"><strong>Customer connection:</strong> visible products can appear only when genuinely relevant to a customer's request. The same business-provided image and approved continuation route stay attached to that product.</p>
                 <div class="business-product-form">
                   <input type="hidden" id="business-product-id" />
                   <div><label for="business-product-name">Product / service name</label><input id="business-product-name" type="text" maxlength="200" placeholder="Example: Chocolate celebration cake" /></div>
-                  <div class="profile-long-field"><label for="owner-product-category">Product or service category</label><select id="owner-product-category"></select><p>These are the existing supported product formats. Other offers retain the business category. Offers with recorded options keep their category.</p><details class="owner-options-details"><summary>Options, variants and prices</summary><div id="owner-product-options" hidden></div></details></div>
+                  <div class="profile-long-field"><label for="owner-product-category">Product or service category</label><select id="owner-product-category"></select><p>Choose the closest category, then add prices and choices such as size or colour. A saved offer with choices keeps its category.</p><details class="owner-options-details"><summary>Sizes, choices and prices</summary><div id="owner-product-options" hidden></div></details></div>
                   <div><label for="business-product-price-mode">Price</label><select id="business-product-price-mode"><option value="contact">Contact for price</option><option value="fixed">Fixed price</option><option value="from">From price</option><option value="range">Price range</option></select></div>
                   <div id="business-product-price-value-wrap" hidden><label for="business-product-price">Price information</label><input id="business-product-price" type="text" maxlength="100" placeholder="Example: £45 or £45–£65" /><p>Enter only business-provided price information. DEMEOS does not calculate or infer prices.</p></div>
                   <div class="profile-long-field"><label for="business-product-description">Description</label><textarea id="business-product-description" rows="3" maxlength="1200" placeholder="Describe only what the customer will genuinely receive."></textarea></div>

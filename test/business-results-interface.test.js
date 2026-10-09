@@ -42,14 +42,14 @@ test("Recommendation Decisions is separate from campaign evidence and has an emp
   assert.match(html, /<h3 id="recommendation-decisions-heading">Recommendation Decisions<\/h3>/);
   assert.match(html, /Recorded choices you made about DEMEOS recommendations\. These are owner decisions, not campaign performance results\./);
   assert.match(html, /id="recommendation-decisions-empty"[^>]* hidden>No recommendation decisions recorded yet\./);
-  assert.ok(html.indexOf("Marketing Work Evidence") < html.indexOf("Recommendation Decisions"));
+  assert.ok(html.indexOf("Recorded marketing results") < html.indexOf("Recommendation Decisions"));
   assert.ok(html.indexOf("business-results-list") < html.indexOf("recommendation-decisions-list"));
   assert.deepEqual(getRecommendationDecisions({ businessProfile: { businessId: "business-a" } }, "business-a"), []);
 });
 
 test("DEMEOS Understanding is placed between outcomes and decisions with explicit trust language", function () {
   assert.match(html, /<h3 id="demeos-understanding-heading">DEMEOS Understanding<\/h3>/);
-  assert.ok(html.indexOf("Marketing Work Evidence") < html.indexOf("DEMEOS Understanding"));
+  assert.ok(html.indexOf("Recorded marketing results") < html.indexOf("DEMEOS Understanding"));
   assert.ok(html.indexOf("DEMEOS Understanding") < html.indexOf("Recommendation Decisions"));
   assert.match(html, /Customer Feedback describes possibility relevance only/);
   assert.match(html, /Customer Feedback, customer participation, owner-recorded outcomes and your recommendation decisions are kept separate/);
@@ -159,7 +159,7 @@ test("the page renders server-returned decisions and ignores browser decision st
   assert.equal(cards.length, 1);
   assert.deepEqual(cards[0].children.map((child) => child.textContent), ["Trusted server idea", "Campaign type: Email Campaign",
     "Owner decision: Not for me", `Decision date: ${new Date("2026-09-12T12:00:00.000Z").toLocaleString()}`]);
-  assert.deepEqual(reads, ["demeosActiveBusinessId"]);
+  assert.deepEqual(reads, ["demeosActiveBusinessId", "demeosActiveBusinessId"]);
   assert.equal(document.getElementById("recommendation-decisions-empty").hidden, true);
   assert.equal(document.getElementById("business-results-list").children.length, 1);
   assert.equal(document.getElementById("business-results-list").children[0].children[2].children.length, 3);
@@ -244,4 +244,25 @@ test("approved campaign with zero participation remains visible", function () {
 test("the interface contains no invented performance metrics", function () {
   const source = `${html}\n${script}`;
   assert.doesNotMatch(source, /\b(?:KPI|conversion rate|revenue|ROI|forecast|performance claim|customer identity|chart)\b/i);
+});
+
+test("a late Results response cannot render a previously selected business", async function () {
+  const elements = new Map(); let callback, active = "business-a", resolve;
+  const document = {addEventListener(_event,fn){callback=fn;},createElement(){return new Element();},getElementById(id){if(!elements.has(id))elements.set(id,new Element());return elements.get(id);}};
+  vm.runInNewContext(script,{document,DemeosUnderstanding:require("../js/demeos-understanding"),localStorage:{getItem(){return active;}},fetch:()=>new Promise(r=>resolve=r)});
+  const pending=callback();active="business-b";resolve({ok:true,json:async()=>storedRecord()});await pending;
+  assert.equal(elements.get("business-results-list").children.length,0);
+  assert.equal(elements.get("recommendation-decisions-list").children.length,0);
+});
+
+for (const staleResponse of ["failure", "success"]) test(`an older ${staleResponse} cannot replace newer same-business Results`, async function () {
+  const elements = new Map(); let callback; const requests=[];
+  const document = {addEventListener(_event,fn){callback=fn;},createElement(){return new Element();},getElementById(id){if(!elements.has(id))elements.set(id,new Element());return elements.get(id);}};
+  vm.runInNewContext(script,{document,DemeosUnderstanding:require("../js/demeos-understanding"),localStorage:{getItem(){return "business-a";}},fetch:()=>new Promise((resolve,reject)=>requests.push({resolve,reject}))});
+  const old=callback(),latest=callback();
+  const current=storedRecord();current.campaigns[0].promoText="Current successful result";
+  requests[1].resolve({ok:true,json:async()=>current});await latest;
+  if(staleResponse==="failure")requests[0].reject(Error("Old request failed"));else requests[0].resolve({ok:true,json:async()=>storedRecord()});await old;
+  assert.equal(elements.get("business-results-list").children[0].children[0].textContent,"Current successful result");
+  assert.equal(elements.get("business-results-status").textContent,"1 campaign result");
 });
