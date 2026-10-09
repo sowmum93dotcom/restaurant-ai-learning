@@ -46,3 +46,14 @@ test('the next action follows confirmed preparation access and fails closed with
  assert.equal(getTrustedOwnerNextAction({...record,workspaceReadiness:ready({selling:{canPrepare:true,canSell:false}})},businessId).destination,'marketing.html#products');
  assert.equal(getTrustedOwnerNextAction({...record,workspaceReadiness:ready({marketing:{canPrepare:false},selling:{canPrepare:false}})},businessId).title,'Next action unavailable');
 });
+
+for(const staleResponse of ['failure','success']) test(`an older ${staleResponse} cannot clear a newer same-business Overview`,async()=>{
+ const card={children:[],replaceChildren(){this.children=[];},append(...children){this.children.push(...children);}};
+ const document={getElementById(id){return id==='workspace-next-action'?card:null;},createElement(tagName){return {tagName,textContent:''};}};
+ const requests=[],storage={getItem:()=>businessId};
+ const fetch=()=>new Promise((resolve,reject)=>requests.push({resolve,reject}));
+ const old=loadOwnerNextAction(document,storage,fetch),latest=loadOwnerNextAction(document,storage,fetch);
+ requests[1].resolve({ok:true,json:async()=>({businessProfile:{businessId,products:[]},campaigns:[]})});await latest;
+ if(staleResponse==='failure')requests[0].reject(Error('Old request failed'));else requests[0].resolve({ok:true,json:async()=>({businessProfile:{businessId},campaigns:[{businessId,approvalStatus:'Unapproved'}]})});await old;
+ assert.equal(card.children[0].textContent,'Add your first product or service');
+});

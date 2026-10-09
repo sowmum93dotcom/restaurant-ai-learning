@@ -11,7 +11,7 @@ Baseline: latest main verified as `f9f8557fd232fdb93b36a67b8d8bd310a4138afc` (PR
 - Three guided stages: offer and media; prepare and edit; submit for review. Preserve exact products, option values, variant identifiers, prices and matching original image/video relationships. Simplify owner-facing combination labels without changing the authoritative category/attribute contracts.
 - Move the existing preparation language selector into the shared marketing preparation area. Add the three stage labels to its existing nine-language contract and existing preference. Saved business facts remain in their original language; full legacy workspace localization remains future work.
 - Reuse recorded Interested activity for the Overview summary. Missing feeds display unavailable rather than zero. Unrecorded product impressions/views, external continuation and verified purchases remain explicitly unavailable. Counts describe the bounded recent campaign feed and never imply unique visitors, conversions or revenue.
-- Discard late Overview responses for a previously selected business. Clear stale results cards on a failed private read.
+- Discard late Overview and Results responses or failures for a previously selected business or older request generation. Overlapping same-business authentication refreshes cannot clear or replace fresher cards. Clear stale results cards only on the current failed private read.
 
 ## Verification and release conditions
 

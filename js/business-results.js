@@ -186,14 +186,16 @@ if (typeof document !== "undefined" && document.getElementById("business-results
     byId("demeos-understanding-rejected").textContent = understanding.recommendationDecisions.rejected;
   }
 
+  let loadGeneration = 0;
   async function load() {
+    const generation = ++loadGeneration;
     const businessId = localStorage.getItem("demeosActiveBusinessId");
     if (!businessId) { status.textContent = "No active business selected."; zero.hidden = false; return; }
     try {
       const response = await fetch(`/api/businesses/${encodeURIComponent(businessId)}`);
       if (!response.ok) throw new Error("Stored business results could not be loaded.");
       const record = await response.json();
-      if (localStorage.getItem("demeosActiveBusinessId") !== businessId) return;
+      if (generation !== loadGeneration || localStorage.getItem("demeosActiveBusinessId") !== businessId) return;
       if (record.businessProfile?.businessId !== businessId) throw Error("Business identity could not be confirmed.");
       const metrics = byId("owner-results-metrics");
       if (metrics) {
@@ -213,6 +215,7 @@ if (typeof document !== "undefined" && document.getElementById("business-results
       renderDemeosUnderstanding(understanding);
       renderRecommendationDecisions(decisions);
     } catch (error) {
+      if (generation !== loadGeneration || localStorage.getItem("demeosActiveBusinessId") !== businessId) return;
       list.textContent = "";
       decisionsList.textContent = "";
       decisionsEmpty.hidden = true;

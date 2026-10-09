@@ -262,7 +262,10 @@ function renderOwnerNextAction(documentObject, nextAction) {
   container.append(title, explanation, action);
 }
 
+const ownerOverviewLoads = new WeakMap();
 async function loadOwnerNextAction(documentObject, storage, fetchFunction) {
+  const generation = (ownerOverviewLoads.get(documentObject) || 0) + 1;
+  ownerOverviewLoads.set(documentObject, generation);
   const activeBusinessId = storage && typeof storage.getItem === "function"
     ? storage.getItem("demeosActiveBusinessId") : null;
   if (!activeBusinessId || typeof fetchFunction !== "function") {
@@ -279,7 +282,7 @@ async function loadOwnerNextAction(documentObject, storage, fetchFunction) {
     if (!response.ok) throw new Error("Business record unavailable");
     const record = await response.json();
     // Discard responses for a business that is no longer selected.
-    if (storage.getItem("demeosActiveBusinessId") !== activeBusinessId) return unavailableOwnerNextAction;
+    if (ownerOverviewLoads.get(documentObject) !== generation || storage.getItem("demeosActiveBusinessId") !== activeBusinessId) return unavailableOwnerNextAction;
     if (record.businessProfile?.businessId !== activeBusinessId) throw new Error("Business identity unavailable");
     const nextAction = getTrustedOwnerNextAction(record, activeBusinessId);
     renderOwnerDashboardSummary(documentObject, record, activeBusinessId);
@@ -291,7 +294,7 @@ async function loadOwnerNextAction(documentObject, storage, fetchFunction) {
     renderOwnerNextAction(documentObject, nextAction);
     return nextAction;
   } catch (_error) {
-    if (storage.getItem("demeosActiveBusinessId") !== activeBusinessId) return unavailableOwnerNextAction;
+    if (ownerOverviewLoads.get(documentObject) !== generation || storage.getItem("demeosActiveBusinessId") !== activeBusinessId) return unavailableOwnerNextAction;
     const identity = documentObject.getElementById("workspace-business-identity");
     const work = documentObject.getElementById("workspace-current-work");
     if (identity) identity.textContent = "Business information could not be confirmed.";

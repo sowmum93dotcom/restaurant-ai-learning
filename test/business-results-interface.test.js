@@ -254,3 +254,15 @@ test("a late Results response cannot render a previously selected business", asy
   assert.equal(elements.get("business-results-list").children.length,0);
   assert.equal(elements.get("recommendation-decisions-list").children.length,0);
 });
+
+for (const staleResponse of ["failure", "success"]) test(`an older ${staleResponse} cannot replace newer same-business Results`, async function () {
+  const elements = new Map(); let callback; const requests=[];
+  const document = {addEventListener(_event,fn){callback=fn;},createElement(){return new Element();},getElementById(id){if(!elements.has(id))elements.set(id,new Element());return elements.get(id);}};
+  vm.runInNewContext(script,{document,DemeosUnderstanding:require("../js/demeos-understanding"),localStorage:{getItem(){return "business-a";}},fetch:()=>new Promise((resolve,reject)=>requests.push({resolve,reject}))});
+  const old=callback(),latest=callback();
+  const current=storedRecord();current.campaigns[0].promoText="Current successful result";
+  requests[1].resolve({ok:true,json:async()=>current});await latest;
+  if(staleResponse==="failure")requests[0].reject(Error("Old request failed"));else requests[0].resolve({ok:true,json:async()=>storedRecord()});await old;
+  assert.equal(elements.get("business-results-list").children[0].children[0].textContent,"Current successful result");
+  assert.equal(elements.get("business-results-status").textContent,"1 campaign result");
+});
