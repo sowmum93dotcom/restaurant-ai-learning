@@ -20,6 +20,11 @@ const SCHEMA_STATEMENTS = [
   )`,
   `CREATE INDEX IF NOT EXISTS demeos_campaigns_business_id_idx
     ON demeos_campaigns (business_id)`,
+  `CREATE INDEX IF NOT EXISTS demeos_campaigns_invalid_publication_diagnostics_idx
+    ON demeos_campaigns (updated_at DESC, campaign_id DESC)
+    WHERE campaign->>'approvalStatus' = 'Approved'
+      AND (COALESCE(campaign->>'campaignType', '') NOT IN ('full', 'social', 'email')
+        OR COALESCE(BTRIM(campaign->>'campaignText'), '') = '')`,
   `ALTER TABLE demeos_campaigns
     ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ NULL`,
   `CREATE TABLE IF NOT EXISTS demeos_recommendation_decisions (

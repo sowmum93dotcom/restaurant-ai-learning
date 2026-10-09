@@ -3,11 +3,13 @@ const { getConfiguredMediaStorageAdapter } = require("./media-storage-driver.js"
 const { getDatabase } = require("./database.js");
 const {
   canPublishToDemeosCustomerExperience,
-  getCustomerFacingContent
+  getCustomerFacingContent,
+  inspectCustomerPublication
 } = require("./customer-publication-rules.js");
-const { toPublicCustomerWorkItem } = require("./customer-public-work-contract.js");
+const { toPublicCustomerWorkItem, MAX_PUBLIC_CUSTOMER_MEDIA } = require("./customer-public-work-contract.js");
 
-function createPersistenceRepository(database, { getMediaStorageAdapter = getConfiguredMediaStorageAdapter } = {}) {
+function createPersistenceRepository(database, { getMediaStorageAdapter = getConfiguredMediaStorageAdapter,
+  reportCatalogueDiagnostics = summary => console.warn("Customer catalogue readiness", summary) } = {}) {
   function isNonEmptyString(value) {
     return typeof value === "string" && value.trim().length > 0;
   }
@@ -757,18 +759,31 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
         ? mediaStorage.createDeliveryRead.bind(mediaStorage) : undefined;
       const pageSize = 50;
       const publicWork = [];
+      const diagnostics = Object.create(null);
+      const note = reason => { diagnostics[reason] = Math.min(1000000, (diagnostics[reason] || 0) + 1); };
       let offset = 0;
       while (publicWork.length < 20) {
         const result = await database.query(
-          `SELECT c.campaign_id, c.business_id, c.campaign, b.profile FROM demeos_campaigns c
+          `WITH invalid_publications AS (
+             SELECT campaign_id FROM demeos_campaigns
+             WHERE campaign->>'approvalStatus' = 'Approved'
+               AND (COALESCE(campaign->>'campaignType', '') NOT IN ('full', 'social', 'email')
+                 OR COALESCE(BTRIM(campaign->>'campaignText'), '') = '')
+             ORDER BY updated_at DESC, campaign_id DESC LIMIT 50
+           )
+           SELECT c.campaign_id, c.business_id, c.campaign, b.profile,
+                  c.approved_at, c.updated_at AS campaign_updated_at FROM demeos_campaigns c
            JOIN demeos_businesses b ON b.business_id = c.business_id
            WHERE c.campaign->>'approvalStatus' = 'Approved'
-             AND c.campaign->>'campaignType' IN ('full', 'social', 'email')
-             AND COALESCE(BTRIM(c.campaign->>'campaignText'), '') <> ''
+             AND ((c.campaign->>'campaignType' IN ('full', 'social', 'email')
+                   AND COALESCE(BTRIM(c.campaign->>'campaignText'), '') <> '')
+               OR c.campaign_id IN (SELECT campaign_id FROM invalid_publications))
            ORDER BY c.updated_at DESC, c.campaign_id DESC
            LIMIT $1 OFFSET $2`, [pageSize, offset]);
         for (const row of result.rows) {
-          if (!canPublishToDemeosCustomerExperience(row.campaign)) continue;
+          const readiness = inspectCustomerPublication(row);
+          readiness.reasons.forEach(note);
+          if (!readiness.eligible || publicWork.length >= 20) continue;
           const publicItem = toPublicCustomerWorkItem({
             workItemId: row.campaign_id,
             businessName: row.profile && row.profile.name,
@@ -786,8 +801,13 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
               await this.getBusinessMediaAssetsByIds(row.business_id, row.campaign.media.map(function (link) { return link.assetId; })),
               createDeliveryRead
             ) : []
-          }, {forSearchClassification:forCatalogueValidation});
-          if (!publicItem) continue;
+          }, {forSearchClassification:forCatalogueValidation,validateMediaRelationships:true});
+          if (!publicItem) { note("public_projection_invalid"); continue; }
+          const declaredVisibleOffers = Array.isArray(row.profile.products) && row.profile.profileVersion >= 4
+            ? row.profile.products.filter(product => product?.customerVisible !== false) : [];
+          if ((publicItem.products || []).length < declaredVisibleOffers.length) note("offers_rejected");
+          if (Array.isArray(row.campaign.media) && (publicItem.media || []).length < Math.min(MAX_PUBLIC_CUSTOMER_MEDIA, row.campaign.media.length)) note("media_unavailable");
+          if ((publicItem.media || []).some(asset => ["product", "service"].includes(asset.purpose) && !asset.relatedEntityId)) note("media_relationship_unverified");
           // Server-only ownership context survives until the shared public
           // catalogue performs its final validation. Public/default consumers
           // still receive the existing identifier-free projection.
@@ -796,10 +816,17 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
             // Search must not substitute campaign copy for ineligible offers.
             ...(Array.isArray(row.profile?.products)&&row.profile.profileVersion>=4&&row.profile.products.length?{hasDeclaredOffers:true}:{}),
             ...(publicItem.products?{products:publicItem.products.map(product=>({...product,businessId:row.business_id}))}:{})} : publicItem);
-          if (publicWork.length === 20) break;
         }
         if (result.rows.length < pageSize) break;
         offset += pageSize;
+      }
+      if (Object.keys(diagnostics).length && typeof reportCatalogueDiagnostics === "function") {
+        // Fixed codes and bounded aggregate counts only. Logging failure cannot
+        // change catalogue eligibility or become a customer-facing error.
+        try {
+          const reported = reportCatalogueDiagnostics(Object.freeze({...diagnostics}));
+          if (reported && typeof reported.then === "function") Promise.resolve(reported).catch(() => {});
+        } catch (_error) {}
       }
       return publicWork;
     },

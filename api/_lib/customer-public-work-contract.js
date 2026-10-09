@@ -25,7 +25,7 @@ function duplicateIdentifiers(records, field) {
   return duplicates;
 }
 
-function toPublicCustomerWorkItem(item, {forSearchClassification = false} = {}) {
+function toPublicCustomerWorkItem(item, {forSearchClassification = false, validateMediaRelationships = false} = {}) {
   if (!item || typeof item !== "object" || Array.isArray(item)) return null;
 
   const workItemId = normalizedRequiredString(item.workItemId);
@@ -120,7 +120,12 @@ function toPublicCustomerWorkItem(item, {forSearchClassification = false} = {}) 
         ...(asset.contentType ? { contentType: asset.contentType } : {}),
         ...(asset.kind === "video" && asset.fallbackSource && asset.fallbackSource.contentType === "video/webm" && /^https:\/\//i.test(asset.fallbackSource.deliveryUrl || "") ? { fallbackSource: { deliveryUrl: asset.fallbackSource.deliveryUrl, contentType: "video/webm" } } : {}),
         ...(normalizedRequiredString(asset.purpose) ? { purpose: asset.purpose.trim() } : {}),
-        ...(normalizedRequiredString(asset.relatedEntityId) ? { relatedEntityId: asset.relatedEntityId.trim() } : {}) };
+        // Invalid offer links remain view-only; never attach a hidden/rejected
+        // product merely because the media claims its ID. Exact unavailable
+        // offers retain identity; existing continuation rules block purchase.
+        ...(normalizedRequiredString(asset.relatedEntityId) && (!validateMediaRelationships || !["product", "service"].includes(asset.purpose) ||
+          (publicItem.products || []).some(product => product.productId === normalizedRequiredString(asset.relatedEntityId)))
+          ? { relatedEntityId: asset.relatedEntityId.trim() } : {}) };
     });
     if (media.length) publicItem.media = media;
   }
