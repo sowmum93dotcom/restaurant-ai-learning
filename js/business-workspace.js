@@ -162,6 +162,7 @@ function renderOwnerWorkspace(documentObject, storage) {
     detail.textContent = value;
     identity.appendChild(detail);
   });
+  const saved = documentObject.createElement("span"); saved.textContent = "Business information saved. Public content requires approval."; identity.appendChild(saved);
   if (!context.currentWork.length) {
     work.textContent = "No marketing work is stored for this business yet.";
     return;
@@ -189,6 +190,11 @@ function getTrustedOwnerNextAction(record, activeBusinessId) {
     !record.businessProfile || record.businessProfile.businessId !== activeBusinessId ||
     !Array.isArray(record.campaigns)) return unavailableOwnerNextAction;
 
+  if (record.workspaceReadiness) {
+    const views = getOwnerModelViews(record.workspaceReadiness, activeBusinessId);
+    if (!views.length) return unavailableOwnerNextAction;
+    if (!views.some(view => view.id === "marketing")) return {title:"Review your products", explanation:"Prepare accurate prices, choices and availability. Selling remains subject to your existing permissions.", action:"Review products", destination:"marketing.html#products"};
+  }
   const campaigns = record.campaigns.filter(function (campaign) {
     return campaign && typeof campaign === "object" && !Array.isArray(campaign) &&
       campaign.businessId === activeBusinessId;
@@ -196,8 +202,8 @@ function getTrustedOwnerNextAction(record, activeBusinessId) {
   if (campaigns.some(function (campaign) { return campaign.approvalStatus === "Unapproved" && campaign.ownerReviewState !== "submitted"; })) {
     return {
       title: "Review your campaign",
-      explanation: "Marketing work is waiting for your approval or revision.",
-      action: "Review Campaign",
+      explanation: "Review the facts and save any edits before submitting your private draft for administrative review.",
+      action: "Review drafts",
       destination: "marketing.html#campaigns"
     };
   }
@@ -228,6 +234,9 @@ function getTrustedOwnerNextAction(record, activeBusinessId) {
     };
   }
   if (!campaigns.length) {
+    if (Array.isArray(record.businessProfile.products) && !record.businessProfile.products.some(product => product?.productId)) {
+      return {title:"Add your first product or service", explanation:"Add accurate details, prices and matching photos or videos, then save your offer before preparing marketing.", action:"Add a product or service", destination:"marketing.html#products"};
+    }
     return {
       title: "Create your first marketing work",
       explanation: "Your Business Profile is ready. Start supported marketing when you are ready.",
@@ -260,6 +269,7 @@ async function loadOwnerNextAction(documentObject, storage, fetchFunction) {
     renderOwnerNextAction(documentObject, unavailableOwnerNextAction);
     renderOwnerWorkspace(documentObject, {getItem() {return null;}});
     renderOwnerModels(documentObject, null, null);
+    renderOwnerDashboardSummary(documentObject, null, null);
     return unavailableOwnerNextAction;
   }
   try {
@@ -268,7 +278,11 @@ async function loadOwnerNextAction(documentObject, storage, fetchFunction) {
     });
     if (!response.ok) throw new Error("Business record unavailable");
     const record = await response.json();
+    // Discard responses for a business that is no longer selected.
+    if (storage.getItem("demeosActiveBusinessId") !== activeBusinessId) return unavailableOwnerNextAction;
+    if (record.businessProfile?.businessId !== activeBusinessId) throw new Error("Business identity unavailable");
     const nextAction = getTrustedOwnerNextAction(record, activeBusinessId);
+    renderOwnerDashboardSummary(documentObject, record, activeBusinessId);
     if (record.businessProfile?.businessId === activeBusinessId) {
       const serverStorage = {getItem(key) {return key === "demeosBusinessProfiles" ? JSON.stringify([record.businessProfile]) : key === "demeosActiveBusinessId" ? activeBusinessId : key === "demeosCampaignHistory" ? JSON.stringify(record.campaigns || []) : null;}};
       renderOwnerWorkspace(documentObject, serverStorage);
@@ -277,34 +291,89 @@ async function loadOwnerNextAction(documentObject, storage, fetchFunction) {
     renderOwnerNextAction(documentObject, nextAction);
     return nextAction;
   } catch (_error) {
+    if (storage.getItem("demeosActiveBusinessId") !== activeBusinessId) return unavailableOwnerNextAction;
     const identity = documentObject.getElementById("workspace-business-identity");
     const work = documentObject.getElementById("workspace-current-work");
     if (identity) identity.textContent = "Business information could not be confirmed.";
     if (work) work.textContent = "Current activity is unavailable. Open Marketing to retry.";
     renderOwnerModels(documentObject, null, activeBusinessId);
+    renderOwnerDashboardSummary(documentObject, null, activeBusinessId);
     renderOwnerNextAction(documentObject, unavailableOwnerNextAction);
     return unavailableOwnerNextAction;
   }
+}
+
+// Views describe server-confirmed preparation permissions. Choosing a view never changes them.
+function getOwnerModelViews(readiness, businessId) {
+  if (!businessId || !readiness || readiness.businessId !== businessId) return [];
+  const views = [];
+  if (readiness.marketing?.canPrepare === true) views.push({
+    id: "marketing", title: "Marketing", status: "Marketing preparation available · £149 per month",
+    description: "Promote your products and services. Customers buy, book or enquire directly with your business through approved destinations.",
+    action: "Prepare marketing", destination: "marketing.html#create"
+  });
+  if (readiness.selling?.canPrepare === true) views.push({
+    id: "selling", title: "Selling through DEMEOS",
+    status: readiness.selling.canSell === true ? "Selling permission confirmed" : readiness.selling.canSell === false ? "Preparation only. Selling is not enabled." : "Selling permission could not be confirmed.",
+    description: "Prepare products, prices and availability in the same catalogue. Purchase actions remain subject to the existing server checks. This workspace does not activate selling.",
+    action: "Review products", destination: "marketing.html#products"
+  });
+  return views;
 }
 
 function renderOwnerModels(documentObject, readiness, businessId) {
   const container = documentObject.getElementById("owner-operating-models");
   if (!container) return;
   container.replaceChildren();
-  if (!readiness || readiness.businessId !== businessId) {
+  const views = getOwnerModelViews(readiness, businessId);
+  if (!views.length) {
     container.textContent = "Business model permissions could not be confirmed. Select an owned business in My Business.";
     return;
   }
-  const models = [
-    ["Marketing Products and Services", "Customers discover your offers and continue to your approved website, booking or contact destination.", readiness.marketing?.canPrepare === true ? "Draft preparation available" : "Permission unavailable"],
-    ["Sell Products Through DEMEOS", "Prepare accurate products and availability here. Selling requires verified merchant, product and purchase permissions through the existing purchase system.", readiness.selling?.canSell === false ? "Preparation only. Selling is not enabled." : "Selling permission could not be confirmed."]
-  ];
-  models.forEach(function (model) {
-    const card = documentObject.createElement("article");card.className = "owner-model-card";
-    const title = documentObject.createElement("h3");title.textContent = model[0];
-    const description = documentObject.createElement("p");description.textContent = model[1];
-    const status = documentObject.createElement("strong");status.textContent = model[2];
-    card.append(title, description, status);container.appendChild(card);
+  const card = documentObject.createElement("article"); card.className = "owner-model-card";
+  const heading = documentObject.createElement("h3");
+  const status = documentObject.createElement("strong");
+  const description = documentObject.createElement("p");
+  const action = documentObject.createElement("a"); action.className = "demeos-secondary-button owner-card-action";
+  const show = function (view) {
+    heading.textContent = view.title; status.textContent = view.status; description.textContent = view.description;
+    action.textContent = view.action; action.href = view.destination;
+    if (typeof tabs?.querySelectorAll === "function") tabs.querySelectorAll("button").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.ownerModel === view.id)));
+  };
+  let tabs;
+  if (views.length > 1) {
+    tabs = documentObject.createElement("div"); tabs.className = "owner-model-views"; tabs.setAttribute("role", "group"); tabs.setAttribute("aria-label", "Available business workflows");
+    views.forEach(view => {const button = documentObject.createElement("button"); button.type = "button"; button.textContent = view.title;
+      button.dataset.ownerModel = view.id; button.setAttribute("aria-pressed", String(view === views[0])); button.addEventListener("click", () => show(view)); tabs.appendChild(button);});
+    container.appendChild(tabs);
+  }
+  card.append(heading, status, description, action); container.appendChild(card); show(views[0]);
+  if (views.some(view => view.id === "selling") && readiness.selling?.canSell !== true) {
+    const note = documentObject.createElement("p"); note.className = "owner-model-note";
+    note.textContent = readiness.selling?.canSell === false ? "Selling is not enabled. You can prepare products without activating purchases." : "Selling permission is unavailable. Purchases cannot be activated here.";
+    container.appendChild(note);
+  }
+}
+
+function renderOwnerDashboardSummary(documentObject, record, businessId) {
+  const container = documentObject.getElementById("owner-dashboard-summary");
+  if (!container) return;
+  container.replaceChildren();
+  if (!record || record.businessProfile?.businessId !== businessId || !Array.isArray(record.campaigns)) {
+    container.textContent = "Recorded activity could not be confirmed. Reload to retry."; return;
+  }
+  const campaigns = record.campaigns.filter(item => item?.businessId === businessId);
+  const metrics = typeof window !== "undefined" ? window.DEMEOSOwnerResults?.getOwnerActivityMetrics(record, businessId) : require("./business-results.js").getOwnerActivityMetrics(record, businessId);
+  const cards = [
+    {label:"Drafts to review", value:campaigns.filter(item => item.approvalStatus === "Unapproved" && item.ownerReviewState !== "submitted").length, detail:"Drafts awaiting your review among up to 20 recent campaigns. Submission keeps them private."},
+    metrics?.[2], {label:"External enquiries and verified sales", value:null, detail:"Not recorded here. Customer interest is reported separately."}
+  ].filter(Boolean);
+  cards.forEach(metric => {
+    const card = documentObject.createElement("article"); card.className = "owner-metric";
+    for (const [tag,text] of [["h3",metric.label],["strong",metric.value === null ? "Not recorded" : String(metric.value)],["p",metric.detail]]) {
+      const element = documentObject.createElement(tag); element.textContent = text; card.appendChild(element);
+    }
+    container.appendChild(card);
   });
 }
 
@@ -576,7 +645,7 @@ function installOwnerBusinessSecurity(windowObject, documentObject, localStorage
 
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
-    renderOwnerModels, getOwnerWorkspaceContext, migrateWorkspaceBusinessContext, showOwnerAuthenticationState,
+    getOwnerModelViews, renderOwnerDashboardSummary, renderOwnerModels, getOwnerWorkspaceContext, migrateWorkspaceBusinessContext, showOwnerAuthenticationState,
     renderOwnerWorkspace, bindOwnerClerkSession, initialiseOwnerAuthentication,
     getTrustedOwnerNextAction, renderOwnerNextAction, loadOwnerNextAction,
     getOwnerNavigationSection, updateOwnerNavigation, syncOwnerWorkspaceFromLocation,

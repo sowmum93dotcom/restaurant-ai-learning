@@ -33,15 +33,11 @@ test("every Business Owner navigation exposes one separate public Customer Exper
   }
 });
 
-test("Business Owner Overview provides a privacy-safe public-entry action below Current work", function () {
+test("Business Owner Overview keeps one privacy-safe public entry without duplicate dashboard cards", function () {
   const html = read("business-workspace.html");
-  const currentWork = html.indexOf('class="owner-current-work"');
-  const publicCard = html.indexOf('class="owner-customer-experience-card"');
-  assert.ok(currentWork >= 0 && publicCard > currentWork);
-  assert.match(html.slice(publicCard), /<h3 id="customer-experience-heading">Customer Experience<\/h3>/);
-  assert.match(html.slice(publicCard), /See the public experience where customers discover approved work from DEMEOS businesses\./);
-  assert.match(html.slice(publicCard), /href="customer\.html">Open Customer Experience<\/a>/);
-  assert.doesNotMatch(html.slice(publicCard), /customer\.html\?|businessId|ownerId|campaignId/);
+  assert.equal((html.match(/href="customer\.html"/g) || []).length, 1);
+  assert.doesNotMatch(html, /owner-customer-experience-card|owner-explore-grid|customer\.html\?/);
+  assert.doesNotMatch(ownerNavigation(html), /businessId|ownerId|campaignId/);
 });
 
 test("Customer Experience has its clear public identity without an owner authentication boundary", function () {

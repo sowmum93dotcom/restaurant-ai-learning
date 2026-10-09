@@ -1,7 +1,7 @@
 /* Preparation copy uses the shared nine-language registry and preference.
    Business facts and the surrounding legacy English workspace are not translated. */
 (function(root){'use strict';
- const keys=['select','review','media','prepare','edit','submit','change','guide'];
+ const keys=['select','review','media','prepare','edit','submit','change','guide','offerStage','draftStage','submitStage'];
  const copy={
  en:['Select an offer','Review information','Select matching media','Prepare a draft','Review and edit','Submit for approval','Review offer information','Review the offer, save accurate information, then prepare a private marketing draft. Business facts are kept in their original language.'],
  es:['Seleccionar una oferta','Revisar información','Seleccionar contenido multimedia relacionado','Preparar un borrador','Revisar y editar','Enviar para aprobación','Revisar la información de la oferta','Revisa la oferta, guarda información precisa y prepara un borrador de marketing privado. Los datos del negocio conservan su idioma original.'],
@@ -12,6 +12,8 @@
  hi:['उत्पाद या सेवा चुनें','जानकारी की समीक्षा करें','संबंधित मीडिया चुनें','ड्राफ्ट तैयार करें','समीक्षा करें और संपादित करें','अनुमोदन के लिए भेजें','उत्पाद या सेवा की जानकारी देखें','उत्पाद या सेवा की समीक्षा करें, सही जानकारी सहेजें और निजी मार्केटिंग ड्राफ्ट तैयार करें। व्यवसाय की जानकारी मूल भाषा में रहेगी।'],
  de:['Angebot auswählen','Informationen prüfen','Passende Medien auswählen','Entwurf vorbereiten','Prüfen und bearbeiten','Zur Freigabe einreichen','Angebotsinformationen prüfen','Prüfen Sie das Angebot, speichern Sie korrekte Informationen und erstellen Sie einen privaten Marketingentwurf. Unternehmensangaben bleiben in ihrer Originalsprache.'],
  ja:['商品・サービスを選ぶ','情報を確認する','対応する画像・動画を選ぶ','下書きを作成する','確認・編集する','承認を申請する','商品・サービス情報を確認する','商品・サービスを確認し、正確な情報を保存して非公開のマーケティング下書きを作成します。事業者の情報は元の言語を保持します。']};
+ const stages={"en": ["Offer and media", "Prepare and edit", "Submit for review"], "es": ["Oferta y contenido multimedia", "Preparar y editar", "Enviar para revisión"], "fr": ["Offre et médias", "Préparer et modifier", "Soumettre pour examen"], "ar": ["العرض والوسائط", "جهّز وعدّل", "أرسل للمراجعة"], "pt": ["Oferta e mídia", "Preparar e editar", "Enviar para revisão"], "zh": ["产品与媒体", "准备并编辑", "提交审核"], "hi": ["उत्पाद और मीडिया", "तैयार करें और संपादित करें", "समीक्षा के लिए भेजें"], "de": ["Angebot und Medien", "Vorbereiten und bearbeiten", "Zur Prüfung einreichen"], "ja": ["商品・サービスと画像・動画", "作成・編集する", "審査に提出する"]};
+ Object.keys(copy).forEach(code=>copy[code].push(...stages[code]));
  function apply(value){const language=root.DEMEOSLanguageRegistry.resolve(value);root.document.querySelectorAll('[data-owner-copy]').forEach(node=>{const index=keys.indexOf(node.dataset.ownerCopy);if(index>=0){node.textContent=copy[language.code][index];node.lang=language.code;node.dir=language.direction;}});
   const existing=root.DEMEOSItemPresentationCopy?.[language.code];if(existing)root.document.querySelectorAll('[data-owner-field],[data-owner-category]').forEach(node=>{const text=node.dataset.ownerField?existing.fields[node.dataset.ownerField]:existing.categories[node.dataset.ownerCategory];if(text){node.textContent=text;node.lang=language.code;node.dir=language.direction;}});
   return language.code;}

@@ -11,12 +11,12 @@ function primaryNavigationLabels(source) {
   return Array.from(primary[0].matchAll(/<a[^>]*>([^<]+)<\/a>/g), (match) => match[1]);
 }
 
-test("Marketing Agent exposes its six workspace views and keeps Business Results separate", function () {
+test("Marketing Agent exposes its four marketing tools and keeps Business Results separate", function () {
   const labels = Array.from(html.matchAll(/data-workspace-view="[^"]+"[^>]*>([^<]+)<\/button>/g), function (match) {
     return match[1];
   });
   assert.deepEqual(labels, [
-    "Overview", "DEMEOS Recommends", "Create Marketing", "Campaigns", "Results", "Business Profile"
+    "Start here", "Plan your marketing", "Prepare a draft", "My drafts"
   ]);
   assert.match(html, /href="business-results\.html">View Business Results<\/a>/);
   assert.match(html, /id="results-view"/);
@@ -25,7 +25,7 @@ test("Marketing Agent exposes its six workspace views and keeps Business Results
 test("Marketing shares the Business Owner Workspace shell and primary navigation", function () {
   assert.match(html, /<body class="owner-workspace-body marketing-capability-body">/);
   assert.match(html, /<h1 class="restaurant-name">Business Owner Workspace<\/h1>/);
-  assert.match(html, /<h2>Marketing Agent<\/h2>/);
+  assert.match(html, /<h2 id="owner-area-heading">Marketing<\/h2>/);
   assert.deepEqual(primaryNavigationLabels(html), ["Overview", "My Business", "Products and Services", "Marketing", "Results"]);
   assert.match(html, /class="is-active" href="marketing.html#overview" aria-current="page">Marketing/);
   assert.doesNotMatch(html, /Business Marketing Intelligence|<p class="agent-label">DEMEOS<\/p>/);
