@@ -776,6 +776,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   function openCampaign(campaignId) {
     const campaign = getCampaignHistory().find(function (entry) { return entry.id === campaignId; });
     if (!canAccessCampaign(campaign, activeProfile())) { alert("This campaign belongs to a different business profile."); return; }
+    showWorkspaceView("create");
     clearRevisionTarget(); revisionInstruction.value = ""; openCampaignId = campaign.id || null;
     renderCampaign(campaign); renderCampaignVersions(); showApprovalStatus(campaign.approvalStatus); renderCampaignOutcome(campaign); renderPreparedDraft(campaign);
     resultsArea.hidden = false; copyBtn.hidden = false; revisionControls.hidden = false;

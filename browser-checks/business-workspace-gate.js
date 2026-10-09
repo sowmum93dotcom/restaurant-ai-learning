@@ -27,7 +27,7 @@ const server=http.createServer(async(req,res)=>{try{
  res.setHeader('Content-Type',({'.html':'text/html','.js':'application/javascript','.css':'text/css'})[path.extname(file)]||'application/octet-stream');fs.createReadStream(file).pipe(res);
 }catch(error){console.error(error);if(!res.writableEnded){res.statusCode=500;res.end('{}');}}});
 (async()=>{
- await database.ensureSchema();await repository.createBusinessForOwner('owner-a',profile);await repository.createBusinessForOwner('owner-b',{...profile,businessId:'engineering-b',name:'Private Owner B',products:[]});await repository.saveBusinessMediaAsset(profile.businessId,asset);
+ await database.ensureSchema();await repository.createBusinessForOwner('owner-a',profile);await repository.createBusinessForOwner('owner-b',{...profile,businessId:'engineering-b',name:'Private Owner B',products:[]});await repository.saveBusinessMediaAsset(profile.businessId,asset);await repository.saveCampaign({id:'legacy-private',businessId:profile.businessId,campaignText:'Existing normal campaign',campaignType:'social',campaignTypeLabel:'Social Media Campaign',businessName:profile.name,createdAt:new Date().toISOString(),approvalStatus:'Unapproved'});
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base='http://127.0.0.1:'+server.address().port;
  const browser=await chromium.launch({headless:true});
  try{
@@ -43,7 +43,7 @@ const server=http.createServer(async(req,res)=>{try{
    assert.equal((await context.request.post(base+'/api/generate',{data:{businessId:'engineering-b',preparationMode:'business-facts',productId:'offer-a'}})).status(),403);
    assert.equal((await context.request.post(base+'/api/businesses/engineering-a/media',{data:{asset:{kind:'image',purpose:'product',relatedEntityId:'foreign',contentType:'image/png',sizeBytes:100}}})).status(),409);
    await page.screenshot({fullPage:true,path:'/tmp/demeos-owner-overview-'+viewport.width+'.png'});
-   await page.locator('[data-owner-section="products"]').click();await page.locator('#business-products-list').filter({hasText:'Exact jacket'}).waitFor();
+   await page.locator('[data-owner-section="business-profile"]').click();await page.locator('.business-profile-progress a[href="#products"]').click();await page.locator('#business-products-list').filter({hasText:'Exact jacket'}).waitFor();
    assert.equal(new URL(page.url()).hash,'#products');assert.equal(await page.locator('[data-owner-section="products"]').getAttribute('aria-current'),'page');assert.equal(await page.locator('#business-product-id').count(),1);
    await page.locator('#business-products-list button').filter({hasText:'Edit'}).first().click();await page.locator('#business-product-description').fill('Saved jacket description');await page.locator('#business-product-add-btn').click();
    await page.locator('#products-review-save').click();await page.locator('#business-accuracy-confirmation').check();
@@ -60,6 +60,12 @@ const server=http.createServer(async(req,res)=>{try{
    }
    assert.deepEqual((await (await context.request.get(base+'/api/customer/work')).json()).work,[]);
    await page.screenshot({fullPage:true,path:'/tmp/demeos-owner-draft-'+viewport.width+'.png'});
+   if (!await page.locator('[data-workspace-view="campaigns"]').isVisible()) await page.locator('#workspace-menu-toggle').click();
+   await page.locator('[data-workspace-view="campaigns"]').click();await page.locator('.campaign-history-item').filter({hasText:'Existing normal campaign'}).getByRole('button',{name:'Open',exact:true}).click();
+   // Opening an existing campaign from history must return to its receiving panel.
+   await page.locator('#create:not([hidden])').waitFor();
+   assert.equal(await page.locator('#draft-edit-panel').isVisible(),false);assert.equal(await page.locator('#revise-btn').isVisible(),true);assert.equal(await page.locator('#revision-instruction').isVisible(),true);
+
    await page.locator('[data-owner-section="results"]').click();await page.locator('#owner-results-metrics .owner-metric').first().waitFor();assert.equal(await page.locator('#owner-results-metrics .owner-metric').count(),5);assert.match(await page.locator('#owner-results-metrics').innerText(),/Not recorded/);assert.doesNotMatch(await page.locator('body').innerText(),/Private Owner B|owner-a|owner-b/);
    await page.screenshot({fullPage:true,path:'/tmp/demeos-owner-results-'+viewport.width+'.png'});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'No horizontal overflow');
    await page.locator('#owner-sign-out').click();await page.locator('#owner-auth-signed-out:not([hidden])').waitFor();assert.doesNotMatch(await page.locator('body').innerText(),/Engineering Owner A|Exact jacket/);assert.deepEqual(errors,[]);
