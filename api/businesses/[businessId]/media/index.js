@@ -32,7 +32,9 @@ module.exports = async function handler(req, res) {
     if (asset.relatedEntityId || ["product", "service"].includes(asset.purpose)) {
       const record = await repository.getKnownBusiness(businessId);
       const products = record?.businessProfile?.businessId === businessId && Array.isArray(record.businessProfile.products) ? record.businessProfile.products : [];
-      if (!asset.relatedEntityId || !products.some(product => product && product.businessId === businessId && product.productId === asset.relatedEntityId)) {
+      const product=products.find(product => product && product.businessId === businessId && product.productId === asset.relatedEntityId);
+      if (!asset.relatedEntityId || !product || !["product","service"].includes(asset.purpose) ||
+          (product.presentation?.kind && product.presentation.kind !== asset.purpose)) {
         return res.status(409).json({error:"Save an owned product or service before attaching its media."});
       }
     }

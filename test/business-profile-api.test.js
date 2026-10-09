@@ -23,6 +23,41 @@ function completeProfile(overrides) {
     goal: "Increase reservations", ...overrides };
 }
 
+test("product saves preserve recorded structured options and extensions omitted by older editors", async () => {
+  const product={productId:"offer",businessId:"business-a",name:"Jacket",description:"Owner facts",price:"£45",priceMode:"fixed",availability:"available",continuationRoute:"website",privateExtension:{reference:"kept"},presentation:{categoryId:"fashion.apparel",pricing:{mode:"fixed",currency:"GBP",amount:45},options:[{key:"size",values:[{value:"M",label:"Medium",future:"retained"}]}],variants:[],future:"retained"}};
+  const base=completeProfile({businessId:"business-a",profileVersion:4,productsServices:"Clothing",customerContinuation:{routes:["website"],website:"https://example.org"},fulfilment:{methods:["shipping"]},operationalAvailability:{status:"available"},products:[product]});
+  const edited={...product,description:"Updated facts"};delete edited.presentation;delete edited.privateExtension;
+  const result=await invoke({method:"PUT",body:{businessProfile:{...base,products:[edited]},ownerAccuracyConfirmed:true},knownBusiness:{businessProfile:base}});
+  assert.equal(result.response.statusCode,204);assert.deepEqual(result.savedProfiles[0].products[0].presentation,product.presentation);assert.deepEqual(result.savedProfiles[0].products[0].privateExtension,product.privateExtension);
+  const partial={...edited,presentation:{categoryId:"fashion.apparel",pricing:{mode:"fixed",currency:"GBP",amount:45}}};
+  const preserved=await invoke({method:"PUT",body:{businessProfile:{...base,products:[partial]},ownerAccuracyConfirmed:true},knownBusiness:{businessProfile:base}});
+  assert.equal(preserved.response.statusCode,204);assert.equal(preserved.savedProfiles[0].products[0].presentation.options[0].values[0].value,"M");
+  const omitted={...base};delete omitted.products;
+  const entireList=await invoke({method:"PUT",body:{businessProfile:omitted,ownerAccuracyConfirmed:true},knownBusiness:{businessProfile:base}});
+  assert.equal(entireList.response.statusCode,204);assert.equal(entireList.savedProfiles[0].products.length,1);assert.deepEqual(entireList.savedProfiles[0].products[0].presentation,product.presentation);
+  const invalidList=await invoke({method:"PUT",body:{businessProfile:{...base,products:null},ownerAccuracyConfirmed:true},knownBusiness:{businessProfile:base}});
+  assert.equal(invalidList.response.statusCode,400);assert.equal(invalidList.savedProfiles.length,0);
+  const foreign=await invoke({method:"PUT",body:{businessProfile:{...base,products:[{...edited,businessId:"foreign"}]},ownerAccuracyConfirmed:true},knownBusiness:{businessProfile:base}});
+  assert.equal(foreign.response.statusCode,400);assert.equal(foreign.savedProfiles.length,0);
+  const ambiguous=await invoke({method:"PUT",body:{businessProfile:{...base,products:[{...edited,price:"£99"}]},ownerAccuracyConfirmed:true},knownBusiness:{businessProfile:base}});
+  assert.equal(ambiguous.response.statusCode,409);assert.equal(ambiguous.savedProfiles.length,0);
+});
+
+test('profile persistence clears an offer fulfilment override without losing structured identity', async () => {
+  const product={productId:"offer",businessId:"business-a",name:"Jacket",description:"Owner facts",price:"£45",priceMode:"fixed",availability:"available",continuationRoute:"website",fulfilment:{methods:["collection"]},privateExtension:{reference:"kept"},presentation:{categoryId:"fashion.apparel",pricing:{mode:"fixed",currency:"GBP",amount:45},options:[],variants:[]}};
+  const base=completeProfile({businessId:"business-a",profileVersion:4,productsServices:"Clothing",customerContinuation:{routes:["website"],website:"https://example.org"},fulfilment:{methods:["shipping"]},operationalAvailability:{status:"available"},products:[product]});
+  const edited={...product};delete edited.fulfilment;delete edited.privateExtension;
+  const result=await invoke({method:"PUT",body:{businessProfile:{...base,products:[edited]},ownerAccuracyConfirmed:true},knownBusiness:{businessProfile:base}});
+  assert.equal(result.response.statusCode,204);
+  const saved=result.savedProfiles[0];assert.equal(Object.hasOwn(saved.products[0],"fulfilment"),false);
+  assert.deepEqual(saved.fulfilment.methods,["shipping"]);assert.equal(saved.products[0].productId,"offer");
+  assert.deepEqual(saved.products[0].privateExtension,product.privateExtension);
+  assert.deepEqual(saved.products[0].presentation,require('../js/customer-item-contract').normalize(product.presentation));
+  const omitted={...base};delete omitted.products;
+  const untouched=await invoke({method:"PUT",body:{businessProfile:omitted,ownerAccuracyConfirmed:true},knownBusiness:{businessProfile:base}});
+  assert.equal(untouched.response.statusCode,204);assert.deepEqual(untouched.savedProfiles[0].products[0].fulfilment,{methods:["collection"]});
+});
+
 async function invoke({
   method = "GET", businessId = "business-a", body, authenticated = true, allowed = true,
   knownBusiness = { businessId: "business-a", businessProfile: completeProfile() },

@@ -71,12 +71,14 @@ function getValidatedProfile(req) {
   if (enhancedProfile && continuation.routes.includes("visit") && !cleanString(continuation.visitAddress, 500)) return null;
   if (enhancedProfile && continuation.routes.includes("quote") &&
       !continuation.routes.some(function (route) { return ["email", "phone", "whatsapp", "website", "booking"].includes(route); })) return null;
+  if(profile.products!==undefined && !Array.isArray(profile.products))return null;
   const rawProducts = Array.isArray(profile.products) ? profile.products : [];
   if (rawProducts.length > MAX_PRODUCTS) return null;
   const products = [];
   const productIds = new Set();
   for (const item of rawProducts) {
     if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+    if (item.businessId !== undefined && item.businessId !== req.query.businessId) return null;
     const productId = cleanString(item.productId, 120);
     const name = cleanString(item.name, 200);
     const description = cleanString(item.description, 1200);
@@ -188,6 +190,23 @@ module.exports = async function handler(req, res) {
           return res.status(400).json({ error: "Please explicitly confirm that the Business Profile information is current before saving." });
         }
         const existingBusiness = await repository.getKnownBusiness(businessId);
+        const previousProducts = existingBusiness?.businessProfile?.products || [];
+        if(req.body.businessProfile.products===undefined)profile.products=previousProducts;
+        try {
+          const { preserveProduct } = require("../../js/business-product-preparation.js");
+          profile.products = (profile.products || []).map(function (product) {
+            const previous = previousProducts.find(p => p.productId === product.productId);
+            const raw = req.body.businessProfile.products?.find(p => p.productId === product.productId);
+            if (previous?.presentation && raw?.presentation === undefined &&
+                (previous.price !== product.price || previous.priceMode !== product.priceMode)) throw Error("Review the recorded product pricing and options before changing its price.");
+            if (previous?.presentation && raw?.presentation) {
+              if(raw.presentation.options===undefined)product.presentation.options=previous.presentation.options;
+              if(raw.presentation.variants===undefined)product.presentation.variants=previous.presentation.variants;
+              if(!customerItemContract.normalize(product.presentation))throw Error("Review the recorded options and variants before changing this offer.");
+            }
+            return preserveProduct(previous, product);
+          });
+        } catch (error) { return res.status(409).json({ error: error.message }); }
         const previousInformationStatus = existingBusiness && existingBusiness.informationStatus && typeof existingBusiness.informationStatus === "object"
           ? existingBusiness.informationStatus : {};
         await repository.saveBusiness({

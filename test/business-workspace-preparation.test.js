@@ -8,7 +8,7 @@ const asset={businessId:'owned',assetId:'media-owned',relatedEntityId:'offer',pu
 test('factual preparation uses only saved facts and exact media, and never publishes',()=>{
  const draft=prepareBusinessDraft({businessProfile:profile},'owned','offer','media-owned',[asset]);
  assert.equal(draft.preparationOnly,true);assert.deepEqual(draft.media,[{assetId:'media-owned',role:'primary'}]);
- assert.equal(draft.campaign,'Engineering shop\n\nExact jacket\n\nOwner supplied description\n\n£89\n\nLimited availability\n\nLondon\n\nVisit our website.');
+ assert.equal(draft.campaign,'Exact jacket\n\nEngineering shop\n\nOwner supplied description\n\n£89\n\nLimited availability\n\nLondon\n\nVisit our website.');
  assert.equal(prepareBusinessDraft({businessProfile:profile},'foreign','offer'),null);
  for(const override of [{businessId:'foreign'},{relatedEntityId:'wrong'},{state:'processing'},{purpose:'marketing'}])assert.equal(prepareBusinessDraft({businessProfile:profile},'owned','offer','media-owned',[{...asset,...override}]),null);
 });

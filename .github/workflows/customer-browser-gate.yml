@@ -7,6 +7,8 @@ on:
 
 jobs:
   browser:
+    env:
+      DEMEOS_BROWSER_CHANNEL: chrome
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -19,7 +21,7 @@ jobs:
       - name: Install browser test dependency
         run: npm install --no-save playwright@1.55.0
       - name: Install browser
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium chrome
       - name: Start static Customer Experience
         run: |
           npx --yes http-server . -p 4173 -c-1 > /tmp/demeos-http.log 2>&1 &

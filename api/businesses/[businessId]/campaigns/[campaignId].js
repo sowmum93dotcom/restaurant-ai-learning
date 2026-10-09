@@ -40,6 +40,12 @@ async function handleLifecycleChange(req, res, repository, businessId, campaignI
       return saved ? res.status(200).json({workItemId:campaignId,approvalStatus:"Unapproved",currentCustomerPublication:false}) : res.status(409).json({error:"Draft could not be withdrawn."});
     }
     if (action !== "submit-draft") return res.status(409).json({error:"Prepared drafts require publication review."});
+    const product=(record?.businessProfile?.products||[]).find(p=>p.productId===existing.productId && p.businessId===businessId);
+    if(!product)return res.status(409).json({error:"Review the saved offer before submitting this draft."});
+    const links=existing.media || [];
+    if(!Array.isArray(links))return res.status(409).json({error:"Review matching media before submitting this draft."});
+    const assets=links.length ? await repository.getBusinessMediaAssetsByIds(businessId,links.map(link=>link.assetId)) : [];
+    if(!normalizeMarketingMediaLinks(links,businessId,assets) || assets.some(asset=>!["product","service"].includes(asset.purpose) || asset.relatedEntityId!==product.productId || (product.presentation?.kind && asset.purpose!==product.presentation.kind)))return res.status(409).json({error:"Review matching media before submitting this draft."});
     const saved = await repository.saveCampaign({...existing, id:campaignId, businessId, approvalStatus:"Unapproved", ownerReviewState:"submitted", ownerReviewedAt:new Date().toISOString()});
     return saved ? res.status(200).json({workItemId:campaignId, ownerReviewState:"submitted", approvalStatus:"Unapproved", currentCustomerPublication:false}) : res.status(409).json({error:"Draft could not be submitted."});
   }
@@ -128,7 +134,8 @@ module.exports = async function handler(req, res) {
       const requestedIds = Array.isArray(campaign.media) ? campaign.media.map(function (link) { return link && link.assetId; }).filter(Boolean) : [];
       const ownedAssets = await repository.getBusinessMediaAssetsByIds(businessId, requestedIds);
       const trustedMedia = normalizeMarketingMediaLinks(campaign.media, businessId, ownedAssets);
-      if (preparationOnly && ownedAssets.some(asset => asset && (!(["product","service"].includes(asset.purpose)) || asset.relatedEntityId !== campaign.productId))) return res.status(409).json({error:"Draft media must match the selected product."});
+      const draftProduct=(currentRecord?.businessProfile?.products||[]).find(p=>p.productId===campaign.productId);
+      if (preparationOnly && ownedAssets.some(asset => asset && (!(["product","service"].includes(asset.purpose)) || asset.relatedEntityId !== campaign.productId || (draftProduct?.presentation?.kind && asset.purpose!==draftProduct.presentation.kind)))) return res.status(409).json({error:"Draft media must match the selected product."});
       if (!trustedMedia) return res.status(409).json({ error: "Campaign media could not be verified for this business." });
       campaignForPersistence.media = trustedMedia;
     }
