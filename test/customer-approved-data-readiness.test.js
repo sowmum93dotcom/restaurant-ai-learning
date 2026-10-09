@@ -22,6 +22,13 @@ test('consistent approved joined records reach existing category, eligibility an
  assert.equal(toCustomerWorkItem(loaded.work[0]).media[0].relatedEntityId,'offer');assert.deepEqual(input,before);
  assert.doesNotMatch(JSON.stringify(received),/private@example|ownerConfirmedAt|informationStatus|approved_at|diagnostic|businessId/);
 });
+test('approved service records use the same owned offer path and canonical registry',async()=>{
+ const input=row();Object.assign(input.profile.products[0],{name:'Cleaning Services',description:'Cleaning Services professional cleaning appointment',categoryClassification:{datasetVersion:DATASET_VERSION,categories:[{categoryId:'93',sectorId:'5'}]},presentation:{categoryId:'services.appointments',pricing:{mode:'fixed',currency:'GBP',amount:89},options:[],variants:[]}});
+ const loaded=await load([input],[{...asset(),purpose:'service'}]);
+ const result=toCustomerPossibility((await search(loaded.work,'Cleaning Services cleaning appointment'))[0]);
+ assert.equal(result.products[0].productId,'offer');assert.equal(result.products[0].presentation.kind,'service');assert.equal(result.products[0].presentation.pricing.amount,89);
+ assert.equal(loaded.work[0].media[0].relatedEntityId,'offer');assert.deepEqual(loaded.summaries,[]);
+});
 test('embedded identity conflicts cannot override database ownership or campaign identity',async()=>{
  for(const change of [r=>r.profile.businessId='foreign',r=>r.campaign.businessId='foreign',r=>r.campaign.id='another',r=>r.business_id='',r=>r.campaign_id=null]){
   const input=row();change(input);const loaded=await load([input]);assert.deepEqual(loaded.work,[]);assert.equal(loaded.summaries.length,1);
