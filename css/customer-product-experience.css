@@ -91,3 +91,5 @@
 #purchase-preparation #customer-payment-message{font-size:.9rem;line-height:1.5;padding:.85rem;background:#102039;border-radius:10px}
 #purchase-preparation .customer-product-experience-shell{padding-top:1.25rem}
 @media(max-width:380px){#purchase-preparation #purchase-preparation-summary{grid-template-columns:1fr;gap:.2rem}#purchase-preparation #purchase-preparation-summary dd{margin-bottom:.6rem}}
+
+.customer-body #product-experience .customer-product-experience-image-fallback{color:#cbd5e2;padding:.75rem 0}

@@ -36,6 +36,8 @@ jobs:
         run: node browser-checks/customer-navigation-gate.js
       - name: Run browser language gate
         run: node browser-checks/customer-language-gate.js
+      - name: Run customer account completion gate
+        run: node browser-checks/customer-account-completion-gate.js
       - name: Run controlled supplied media and continuation gate
         run: node browser-checks/customer-controlled-media-gate.js
       - name: Run customer request search gate
@@ -59,3 +61,5 @@ jobs:
             /tmp/demeos-controlled-*.png
             /tmp/demeos-genuine-search-*.png
             /tmp/demeos-context-*.png
+            /tmp/demeos-contact-*.png
+            /tmp/demeos-account-*.png

@@ -168,6 +168,9 @@
     }
     set(doc.getElementById("customer-controlled-test-entry"), c.entry);
     set(doc.getElementById("customer-controlled-test-exit"), c.exit);
+    var returnCopy = doc.getElementById('product-experience')?.getAttribute('data-return-route') === '#intention' ? c.backResults : c.back;
+    set(doc.querySelector("#product-experience-back span"),returnCopy);
+    set(doc.getElementById("product-experience-back"),returnCopy,"aria-label");
     var list = doc.getElementById("customer-work-list");
     if (!list || list.getAttribute("data-controlled-test") !== "true") return;
     var ids = ["fashion", "groceries", "sports", "outdoors", "family", "garden"];
@@ -228,12 +231,11 @@
         set(doc.getElementById("product-experience-action"),surface.getAttribute("data-continuation-type")==="booking"?c.book:c.buy);
       }
     }
-    set(doc.querySelector("#product-experience-back span"),c.back);
-    set(doc.getElementById("product-experience-back"),c.back,"aria-label");
     set(doc.getElementById("product-experience-safety"),c.safety);
     set(doc.getElementById("product-experience-image-fallback"),root.DEMEOSProductExperienceCopy[code].imageUnavailable);
     if (root.DEMEOSCustomerItemPresentation) root.DEMEOSCustomerItemPresentation.localize();
     if (root.DEMEOSCustomerPurchasePreparation) root.DEMEOSCustomerPurchasePreparation.localize();
+    root.DEMEOSCustomerProductExperience?.localizeAction();
   }
 
   function apply(language) {
@@ -384,7 +386,7 @@
       });
       ["customer-work-list", "product-experience"].forEach(function (id) {
         var node = root.document.getElementById(id);
-        if (node) controlledObserver.observe(node, { childList:true, characterData:true, subtree:true, attributes:true, attributeFilter:["data-controlled-test", "data-product-id", "data-continuation-type", "data-media-index"] });
+        if (node) controlledObserver.observe(node, { childList:true, characterData:true, subtree:true, attributes:true, attributeFilter:["data-controlled-test", "data-product-id", "data-continuation-type", "data-media-index", "data-return-route"] });
       });
     }
     var preferred = getSaved() || (root.navigator && root.navigator.language) || "en";

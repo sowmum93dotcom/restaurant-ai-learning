@@ -6,6 +6,7 @@ const {createDatabase}=require('../api/_lib/database');
 const persistence=require('../api/_lib/persistence');
 const {sourceRow}=require('../test/fixtures/approved-search-source.cjs');
 const {verifyEmptyReadiness}=require('./customer-empty-readiness.cjs');
+const {LOCALES}=require('../api/_lib/customer-evidence-provenance');
 const root=path.resolve(__dirname,'..'),client=new PGlite(),database=createDatabase(client);
 const repository=persistence.createPersistenceRepository(database,{reportCatalogueDiagnostics:()=>{}});
 persistence.getRepository=()=>repository;
@@ -41,6 +42,7 @@ const server=http.createServer(async(req,res)=>{
    // Verify the accessible result action without racing the decorative 3D animation.
    const context=await browser.newContext({viewport,reducedMotion:'reduce'}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(String(e)));
    async function request(text){
+    await page.goto(base+'/index.html');
     await page.goto(base+'/customer.html#intention');
     await page.locator('#customer-intention-text').fill(text);
     await page.locator('#customer-intention-form button[type="submit"]').click();
@@ -64,6 +66,25 @@ const server=http.createServer(async(req,res)=>{
    if(await size.isEnabled())await size.selectOption('M');
    assert.equal(await size.inputValue(),'M');
    assert.equal(await page.locator('#product-experience-action').getAttribute('href'),'https://example.org/shop');
+   // This exact result is beyond Discover's window. Reload must revalidate
+   // the confirmed search, not restore a fabricated cached offer or lose it.
+   await page.reload();
+   await page.locator('#product-experience:not([hidden])[data-product-id="fixture-offer-60"]').waitFor();
+   assert.equal(await page.locator('#product-experience-business').textContent(),'Engineering source 60');
+   assert.equal(await size.inputValue(),'M');
+   await page.locator('#product-experience-back').click();
+   assert.equal(new URL(page.url()).hash,'#intention');
+   await page.locator('#customer-focused-possibility:not([hidden])').waitFor();
+   await page.locator('#customer-focused-possibility [data-product-id="fixture-offer-60"] .customer-product-continue-action').click();
+   for(const locale of LOCALES){
+    await page.locator('#customer-language').selectOption(locale);
+    assert.equal(await page.locator('html').getAttribute('dir'),locale==='ar'?'rtl':'ltr');
+    assert.equal(await page.locator('#product-experience-business').textContent(),'Engineering source 60');
+    assert.equal(await size.inputValue(),'M');
+    assert.equal(await page.locator('#product-experience-action').getAttribute('href'),'https://example.org/shop');
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+   }
+   await page.locator('#customer-language').selectOption('en');
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
    await page.screenshot({path:'/tmp/demeos-genuine-search-'+viewport.width+'.png'});
    await request('Cleaning Services cleaning appointment');await result.filter({hasText:'Engineering source 61'}).waitFor();assert.equal(await result.count(),1);await result.press('Enter');
@@ -72,6 +93,37 @@ const server=http.createServer(async(req,res)=>{
    await page.locator('#product-experience:not([hidden])').waitFor();assert.equal(await page.locator('#product-experience-title').textContent(),'Cleaning Services');assert.equal(await page.locator('#product-experience-action').getAttribute('href'),'https://example.org/book');
    await request('Fashion and Apparel Commerce jacket under £50');await page.locator('#customer-no-possibilities:not([hidden])').waitFor();assert.equal(await result.count(),0);
    assert.deepEqual(errors,[]);console.log('Approved source SQL/HTTP/browser continuation passed',viewport.width);await context.close();
+  }
+  // Real repository projection must preserve approved phone/email destinations
+  // through structured item rendering, locale changes and Product Experience.
+  for(const [index,route,detail] of [[62,'phone','+44 161 123 4567'],[63,'email','hello@example.org']]){
+   const row=sourceRow(index,{service:true});
+   row.profile.customerContinuation={routes:[route],[route]:detail};
+   row.profile.products[0].continuationRoute=route;
+   row.profile.products[0].name=route+' consultation';
+   await database.query('INSERT INTO demeos_businesses (business_id,profile) VALUES ($1,$2)',[row.business_id,JSON.stringify(row.profile)]);
+   await database.query('INSERT INTO demeos_campaigns (campaign_id,business_id,campaign,approved_at,updated_at) VALUES ($1,$2,$3,$4,$4)',[row.campaign_id,row.business_id,JSON.stringify(row.campaign),'2026-10-02T00:00:00Z']);
+  }
+  for(const viewport of [{width:390,height:844},{width:820,height:1180},{width:1440,height:1000}]){
+   const context=await browser.newContext({viewport,reducedMotion:'reduce'}),page=await context.newPage(),errors=[];
+   page.on('pageerror',error=>errors.push(String(error)));
+   await page.goto(base+'/customer.html#discover');
+   for(const locale of LOCALES){
+    await page.locator('#customer-language').selectOption(locale);
+    for(const [index,href] of [[62,'tel:+44 161 123 4567'],[63,'mailto:hello@example.org']]){
+     await page.locator('[data-product-id="fixture-offer-'+index+'"] .customer-product-continue-action').click();
+     await page.locator('#product-experience:not([hidden])').waitFor();
+     assert.equal(await page.locator('#product-experience-business').textContent(),'Engineering source '+index);
+     assert.equal(await page.locator('#product-experience-action').getAttribute('href'),href);
+     assert.equal(await page.locator('#product-experience-action').getAttribute('aria-disabled'),null);
+     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+     if(locale==='en')await page.screenshot({path:'/tmp/demeos-contact-'+viewport.width+'.png'});
+     await page.locator('#product-experience-back').click();
+     assert.equal(new URL(page.url()).hash,'#discover');
+     await page.waitForFunction(id=>document.activeElement?.getAttribute('data-work-item-id')===id,'fixture-campaign-'+String(index).padStart(3,'0'));
+    }
+   }
+   assert.deepEqual(errors,[]);console.log('Approved contact/identity/Discover return: nine languages passed',viewport.width);await context.close();
   }
   // This database exists only in this process. Removing its engineering rows
   // verifies the actual empty SQL -> HTTP -> nine-language browser journey.

@@ -42,6 +42,24 @@ async function serve(handler,route){
   await search('not quiet dinner','London');assert.equal(await page.locator('.customer-possibility-surface').count(),1);
   assert.match(await page.locator('.customer-possibility-surface').innerText(),/Lively business/);
   await search('peaceful dinner','Paris');assert.equal(await page.locator('#customer-no-place-match-note').isVisible(),true);
+  // A response from a request the customer changed must never overwrite the
+  // current understanding or supply the next confirmed search.
+  let releaseOld;
+  await context.route('**/api/customer/understanding',async route=>{
+   const body=route.request().postDataJSON();
+   if(body.customerText==='old jacket')await new Promise(resolve=>{releaseOld=resolve;});
+   await route.fulfill({json:{understanding:buildCustomerUnderstanding(body.intention,body.customerText,body.clarificationText)}});
+  });
+  await page.goto(base+'/index.html');await page.goto(base+'/customer.html#intention');
+  await page.locator('#customer-intention-text').fill('old jacket');await page.locator('#customer-intention-form button[type="submit"]').click();
+  await page.locator('#customer-understanding-change').click();
+  await page.locator('#customer-intention-text').fill('new jacket');await page.locator('#customer-intention-form button[type="submit"]').click();
+  await page.waitForFunction(()=>document.getElementById('customer-understanding-summary').textContent.includes('new jacket'));
+  const oldResponse=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/customer/understanding'&&r.request().postDataJSON().customerText==='old jacket');
+  releaseOld();await oldResponse;
+  // Await subsequent UI work, rather than asserting only the immediate response.
+  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+  assert.match(await page.locator('#customer-understanding-summary').textContent(),/new jacket/);
   assert.deepEqual(errors,[]);console.log('Customer search gate passed',viewport.width);await context.close();
  }
 }finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1);});
