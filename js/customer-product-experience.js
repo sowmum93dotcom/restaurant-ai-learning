@@ -10,6 +10,29 @@
     return /^https:\/\//i.test(candidate) ? candidate : "";
   }
 
+  // Preserve the existing approved route contract on the receiving screen.
+  // Contact links never become scripts or arbitrary application destinations.
+  function safeContinuation(product, value) {
+    if (typeof value !== 'string' || /[\r\n\x00]/.test(value)) return "";
+    const candidate = text(value), route = product && product.continuationRoute;
+    if (!candidate || /[\r\n\x00]/.test(candidate)) return "";
+    const digits = candidate.replace(/\D/g, "").length;
+    if ((route === "phone" || route === "quote") && /^tel:\+?[0-9][0-9 ()-]{6,24}$/.test(candidate) && digits >= 7 && digits <= 15) return candidate;
+    if ((route === "email" || route === "quote") && /^mailto:[^\s@?:]+@[^\s@?:]+\.[^\s@?:]+$/.test(candidate)) return candidate;
+    if (!["website", "booking", "whatsapp", "visit", "quote"].includes(route) || !/^https?:\/\//i.test(candidate)) return "";
+    try { const url = new URL(candidate); return url.hostname && !url.username && !url.password ? candidate : ""; } catch (_) { return ""; }
+  }
+
+  function externalActionCopy(product) {
+    const locale = document.documentElement.lang || "en";
+    const copy = window.DEMEOSControlledCustomerCopy?.[locale] || window.DEMEOSControlledCustomerCopy?.en;
+    const publicCopy = window.DEMEOSPublicCopy?.[locale] || window.DEMEOSPublicCopy?.en;
+    if (["phone", "email", "whatsapp"].includes(product.continuationRoute)) return publicCopy?.contact || "Contact";
+    if (product.continuationRoute === "quote") return window.DEMEOSItemPresentationCopy?.[locale]?.quote || "Contact business for a quote";
+    if (product.continuationRoute === "visit") return window.DEMEOSProductExperienceCopy?.[locale]?.premises || "At the business";
+    return product.continuationRoute === "booking" ? copy?.book || "Book with business" : copy?.buy || "Where to buy";
+  }
+
   function isFictionalDiscoverDestination(value) { return ["https://www.demeos.io/customer.html?demeos-test=1#discover","https://demeos.io/customer.html?demeos-test=1#discover"].includes(value); }
 
   function availabilityCopy(value) {
@@ -38,7 +61,7 @@
     if (!action) return false;
     const routeType = continuationType(product);
     const available = product && product.availability !== "unavailable";
-    const safeDestination = safeHttps(destination);
+    const safeDestination = safeContinuation(product, destination);
 
     action.hidden = true;
     action.removeAttribute("href");
@@ -61,9 +84,8 @@
     if (!safeDestination) return false;
     action.hidden = false;
     action.href = safeDestination;
-    action.target = "_blank";
-    action.rel = "noopener noreferrer";
-    action.textContent = routeType === "booking" ? "Book with business" : "Where to buy";
+    if (/^https?:/i.test(safeDestination)) { action.target = "_blank"; action.rel = "noopener noreferrer"; }
+    action.textContent = typeof window !== 'undefined' ? externalActionCopy(product) : routeType === "booking" ? "Book with business" : "Where to buy";
     return true;
   }
 
@@ -112,6 +134,7 @@
     surface.hidden = false;
     surface.setAttribute("data-product-id", text(product.productId));
     surface.setAttribute("data-continuation-type", continuationType(product));
+    surface.setAttribute("data-continuation-route", product.continuationRoute);
     if (window.DEMEOSCustomerItemPresentation) window.DEMEOSCustomerItemPresentation.open(document, surface, product, destination, work);
     if (window.DEMEOSCustomerNavigation) window.DEMEOSCustomerNavigation.product(work, product, navigationOptions);
     surface.querySelector(".customer-product-experience-shell").scrollTop = 0;
@@ -130,9 +153,11 @@
     discover.hidden = false;
     surface.removeAttribute("data-product-id");
     surface.removeAttribute("data-continuation-type");
-    if (window.DEMEOSCustomerNavigation) window.DEMEOSCustomerNavigation.navigate("#discover");
-    else if (window.location.hash !== "#discover") history.replaceState(null, "", "#discover");
-    window.scrollTo({ top: 0, behavior: "instant" });
+    if (window.DEMEOSCustomerNavigation) window.DEMEOSCustomerNavigation.returnFromProduct();
+    else {
+      if (window.location.hash !== "#discover") history.replaceState(null, "", "#discover");
+      window.scrollTo({ top: 0, behavior: "instant" });
+    }
   }
 
   function firstNode(card, selectors) {
@@ -227,9 +252,9 @@
       if (!target) return;
       const card = target.closest(".customer-product-card, .customer-discover-option");
       if (!card) return;
-      const destination = safeHttps(target.getAttribute("data-customer-destination") || target.href);
       const product = productFromCard(card);
       if (!product) return;
+      const destination = safeContinuation(product, target.getAttribute("data-customer-destination") || target.href);
       event.preventDefault();
       if(window.DEMEOSCustomerPurchasePreparation)window.DEMEOSCustomerPurchasePreparation.cancelPending();
       const workCard = card.closest(".customer-focused-possibility, .customer-work-card, article[data-discover-position]");
@@ -238,7 +263,12 @@
     });
   }
 
-  if (typeof module !== "undefined" && module.exports) module.exports = { isFictionalDiscoverDestination, pauseExperienceVideos, closeProductExperience, availabilityCopy, configureAction, continuationType, openProductExperience, priceCopy, recoverDiscoverIfNeeded, safeHttps };
-  if (typeof window !== "undefined") window.DEMEOSCustomerProductExperience = Object.freeze({open: openProductExperience, productFromCard});
+  if (typeof module !== "undefined" && module.exports) module.exports = { isFictionalDiscoverDestination, pauseExperienceVideos, closeProductExperience, availabilityCopy, configureAction, continuationType, openProductExperience, priceCopy, recoverDiscoverIfNeeded, safeHttps, safeContinuation };
+  function localizeAction() {
+    const surface=document.getElementById('product-experience'),action=document.getElementById('product-experience-action');
+    if (!surface || !action || action.hidden || window.DEMEOSCustomerItemPresentation?.snapshot() || surface.getAttribute('data-continuation-route')==='demeos') return;
+    action.textContent=externalActionCopy({continuationRoute:surface.getAttribute('data-continuation-route')});
+  }
+  if (typeof window !== "undefined") window.DEMEOSCustomerProductExperience = Object.freeze({open: openProductExperience, productFromCard, safeContinuation, externalActionCopy, localizeAction});
   if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", function () { initialize(document); });
 })();

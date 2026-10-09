@@ -3,7 +3,7 @@
     if (!globalThis.CustomerUnderstanding || typeof globalThis.CustomerUnderstanding.buildCustomerUnderstanding !== "function") return;
     const selected = Array.from(document.querySelectorAll("#customer-intention-options .customer-intention-option"))
       .find(function (button) { return button.getAttribute("aria-pressed") === "true"; });
-    const intention = selected ? selected.textContent : "";
+    const intention = selected ? selected.getAttribute("data-canonical-intention") || selected.textContent : "";
     const customerText = document.getElementById("customer-intention-text")?.value || "";
     const local = globalThis.CustomerUnderstanding.buildCustomerUnderstanding(intention, customerText, clarificationText || "");
     if (!local) return;

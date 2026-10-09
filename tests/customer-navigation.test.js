@@ -44,7 +44,7 @@ function navigation(hash, geometry = {}) {
     }
   };
   vm.runInNewContext(script, { window, document });
-  return { links, window, listeners, frames, scrolls, section };
+  return { links, window, listeners, frames, scrolls, section, document };
 }
 
 test('Discover is selected by default and unknown hashes do not select My DEMEOS', () => {
@@ -91,4 +91,11 @@ test('default Discover entry preserves browser-restored scrolling', () => {
   assert.equal(state.frames.length, 0);
   assert.equal(state.scrolls.length, 0);
   assert.equal(state.links[0].attrs['aria-current'], 'location');
+});
+
+test('queued section positioning respects a newer customer focus', () => {
+  const state = navigation('#discover');
+  state.document.activeElement = { customerSelected: true };
+  state.frames.shift()();
+  assert.deepEqual(state.scrolls, []);
 });

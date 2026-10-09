@@ -17,7 +17,9 @@
       else link.removeAttribute('aria-current');
     });
     if (!position || !['#discover', '#intention', '#customer-intention-form'].includes(root.location.hash)) return;
+    const focus = doc.activeElement, version = restoreVersion;
     root.requestAnimationFrame(() => {
+      if (version !== restoreVersion || doc.activeElement !== focus) return;
       const section = doc.querySelector(current), header = doc.querySelector('.customer-header');
       if (!section || section.hidden || !header) return;
       root.scrollTo({ top: Math.max(0, root.scrollY + section.getBoundingClientRect().top - header.getBoundingClientRect().height), behavior: 'instant' });
@@ -47,7 +49,9 @@
     const same = url.searchParams.get('work') === work.workItemId && url.searchParams.get('product') === item.productId && itemHashes.has(url.hash);
     url.searchParams.set('work', work.workItemId); url.searchParams.set('product', item.productId);
     if (!options.preserveRoute) { url.searchParams.delete('resume'); url.hash = 'product-experience'; }
-    if (!restoring) root.history[same || options.replace ? 'replaceState' : 'pushState'](same ? root.history.state : null, '', url.pathname + url.search + url.hash);
+    const origin = same || restoring ? root.history.state?.demeosCustomerOrigin : root.location.hash === '#intention' ? '#intention' : '#discover';
+    if (!restoring) root.history[same || options.replace ? 'replaceState' : 'pushState']({ ...root.history.state, demeosCustomerOrigin: origin }, '', url.pathname + url.search + url.hash);
+    get('product-experience')?.setAttribute('data-return-route', origin || '#discover');
     restoredUrl = root.location.href;
     updateActiveSection(false);
   }
@@ -72,7 +76,7 @@
     if (!card || !api) return false;
     if (url.hash === '#purchase-preparation') return true; // The preparation controller validates its draft.
     const business = card.closest('[data-work-item-id]');
-    const heading = business.querySelector('.customer-work-business-name, .customer-business-name, .customer-possibility-provider, h3');
+    const heading = ['.customer-possibility-provider', '.customer-business-name', '.customer-work-business-name'].map(selector => business.querySelector(selector)).find(Boolean);
     const action = card.querySelector('.customer-product-continue-action, a');
     const destination = action?.getAttribute('data-customer-destination') || action?.href || '';
     const saved = root.history.state?.demeosCustomerSelection;
@@ -99,7 +103,24 @@
     if (root.location.hash === '#purchase-preparation') root.DEMEOSCustomerPurchasePreparation?.resume();
   }
 
-  root.DEMEOSCustomerNavigation = Object.freeze({ navigate, product, render, rememberSelection });
+  function returnFromProduct() {
+    const origin = root.history.state?.demeosCustomerOrigin === '#intention' ? '#intention' : '#discover';
+    const work = new URL(root.location.href).searchParams.get('work');
+    navigate(origin);
+    if (origin === '#intention') {
+      const focused = get('customer-focused-possibility');
+      (focused && !focused.hidden ? focused : get('customer-possibilities-heading'))?.focus({preventScroll:true});
+    } else {
+      const focus = doc.activeElement, version = restoreVersion;
+      root.requestAnimationFrame(()=>{
+        if (version !== restoreVersion || doc.activeElement !== focus) return;
+        const business=Array.from(doc.querySelectorAll('.customer-work-card')).find(card=>card.getAttribute('data-work-item-id')===work);
+        business?.scrollIntoView({block:'start',behavior:'instant'});
+        business?.focus({preventScroll:true});
+      });
+    }
+  }
+  root.DEMEOSCustomerNavigation = Object.freeze({ navigate, product, render, rememberSelection, returnFromProduct });
   root.addEventListener('hashchange', () => { if (!root.location.href || restoredUrl !== root.location.href) restore(); });
   root.addEventListener('popstate', restore);
   root.addEventListener('pageshow', event => { if (event.persisted) restore(); });
@@ -117,9 +138,19 @@
       root.queueMicrotask(() => { if (version === restoreVersion) rememberSelection(); });
     };
     doc.addEventListener('change', save); doc.addEventListener('input', save);
-    doc.addEventListener('demeos:customer-work-loaded', () => {
+    doc.addEventListener('demeos:customer-work-loaded', async () => {
       const url = new URL(root.location.href);
-      if (!restoreProduct() && itemHashes.has(root.location.hash) && url.searchParams.has('product') && url.searchParams.get('resume') !== '1') navigate('#discover', { replace: true });
+      if (!restoreProduct() && itemHashes.has(root.location.hash) && url.searchParams.has('product') && url.searchParams.get('resume') !== '1') {
+        const version = restoreVersion;
+        // Revalidate a later-page search selection through the SAME search API.
+        // History stores only the customer request, never catalogue authority.
+        if (root.history.state?.demeosCustomerOrigin === '#intention' && root.DEMEOSCustomerSearchJourney) {
+          const restored = await root.DEMEOSCustomerSearchJourney.restore(root.history.state.demeosCustomerSearch);
+          if (version !== restoreVersion) return;
+          if (restored && restoreProduct()) return;
+        }
+        navigate('#discover', { replace: true });
+      }
     });
     doc.addEventListener('DOMContentLoaded', () => render(false));
   }

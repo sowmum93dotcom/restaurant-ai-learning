@@ -7,7 +7,7 @@ const {
   configureAction,
   continuationType,
   priceCopy,
-  safeHttps
+  safeHttps, safeContinuation
 } = require("../js/customer-product-experience.js");
 
 function actionStub() {
@@ -23,6 +23,16 @@ function actionStub() {
     getAttribute(name) { return attributes[name] || null; }
   };
 }
+
+test('approved contact routes survive receiving without admitting scripts or route substitutions', () => {
+  for (const [route,destination] of [['phone','tel:+44 161 123 4567'],['email','mailto:hello@example.org'],['quote','mailto:quotes@example.org'],['website','http://example.org/shop'],['booking','https://example.org/book']]) {
+    assert.equal(safeContinuation({continuationRoute:route},destination),destination);
+    const action=actionStub();assert.equal(configureAction(action,{continuationRoute:route,availability:'available'},destination),true);assert.equal(action.href,destination);
+  }
+  for (const [route,destination] of [['website','tel:+441611234567'],['phone','https://example.org'],['email','mailto:a@example.org?body=private'],['quote','javascript:alert(1)'],['website','https://user:password@example.org'],['website','https://'],['phone','tel:+441611234567\n'],['email','mailto:not-an-address']]) {
+    assert.equal(safeContinuation({continuationRoute:route},destination),'');
+  }
+});
 
 test("Product Experience only accepts HTTPS continuation destinations", () => {
   assert.equal(safeHttps("https://example.com/buy"), "https://example.com/buy");

@@ -207,7 +207,8 @@ test("trusted empty-state refinement is explicit, bounded, and returns through f
   assert.match(emptyMarkup, /textarea[^>]*maxlength="500"/);
   assert.match(source, /customer-add-detail[^]*addEventListener\("click"[^]*\.focus\(\)/);
   assert.match(source, /customer-add-detail-form[^]*addEventListener\("submit"[^]*preventDefault[^]*source: "customer-provided"|customer-add-detail-form[^]*addEventListener\("submit"[^]*showUnderstanding/);
-  assert.match(source, /showUnderstanding\(""\);[^]*customer-understanding-confirm[^]*confirmCustomerUnderstanding[^]*requestCustomerPossibilities/);
+  assert.match(source, /showUnderstanding\(""\);[^]*function confirmUnderstanding[^]*confirmCustomerUnderstanding[^]*requestCustomerPossibilities/);
+  assert.match(source, /customer-understanding-confirm"\)\.addEventListener\("click", confirmUnderstanding\)/);
   assert.match(source, /customer-empty-change-intention[^]*changeIntention/);
   assert.doesNotMatch(source.slice(source.indexOf('customer-empty-change-intention'), source.indexOf('customer-understanding-confirm')), /selectedIntention\s*=\s*""/);
   assert.match(continuation, /intentionText\.value = ""[^]*clarificationText\.value = ""[^]*aria-pressed", "false"/);

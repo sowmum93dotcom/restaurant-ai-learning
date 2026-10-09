@@ -52,6 +52,16 @@ async function verifyEmptyReadiness(context, base) {
         assert.equal(await page.locator('#customer-possibilities-list .customer-possibility-surface').count(),0);
         assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'No horizontal overflow: '+locale+'/'+viewport.width);
       }
+      await page.goto(base+'/my-demeos.html');
+      for (const locale of LOCALES) {
+        await page.locator('#customer-language').selectOption(locale);
+        assert.equal(await page.locator('#use-preferences-as-guidance').count(),1);
+        assert.equal(await page.locator('#use-feedback-as-guidance').count(),1);
+        assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+      }
+      await page.locator('.customer-journey-nav a').first().click();
+      await page.locator('#customer-work-list[data-controlled-test="false"]').waitFor({state:'attached'});
+      assert.equal(await page.locator('.customer-work-card').count(),0);
       console.log('Empty catalogue: nine language journeys passed',viewport.width);
     }
     assert.deepEqual(errors,[]);

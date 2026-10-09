@@ -56,9 +56,10 @@ test("confirmation is explicit and only then prepares server-authoritative possi
   const confirmed = confirmCustomerUnderstanding(ready);
   assert.equal(confirmed.confidenceState, "confirmed");
   const source = fs.readFileSync(path.join(__dirname, "..", "js/customer.js"), "utf8");
-  const confirmationHandler = source.slice(source.indexOf('getElementById("customer-understanding-confirm").addEventListener'),
+  const confirmationHandler = source.slice(source.indexOf('function confirmUnderstanding()'),
     source.indexOf("function toCustomerWorkItem"));
   assert.match(confirmationHandler, /confirmCustomerUnderstanding[\s\S]*requestCustomerPossibilities/);
+  assert.match(confirmationHandler, /customer-understanding-confirm"\)\.addEventListener\("click", confirmUnderstanding\)/);
   assert.doesNotMatch(confirmationHandler, /\/api\/customer\/work|participation|localStorage|geolocation/);
 });
 

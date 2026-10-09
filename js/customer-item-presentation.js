@@ -37,7 +37,7 @@
   // External continuation belongs only to the resolved selection surface.
   card.querySelectorAll('a').forEach(link=>{
    const destination=link.getAttribute('href')||'';
-   if(/^https:\/\//i.test(destination))link.setAttribute('data-customer-destination',destination);
+   if(root.DEMEOSCustomerProductExperience.safeContinuation(product,destination))link.setAttribute('data-customer-destination',destination);
    link.setAttribute('href','#product-experience');
    link.removeAttribute('target');link.removeAttribute('rel');
    if(link.classList.contains('customer-product-continue-action')){
@@ -122,8 +122,9 @@
   }else if(!state.canContinue){
    set(action,state.availability==='selection-required'?c.selectionRequired:p.variants.length&&state.variantId===null?c.missingCombination:availability(state.availability,p.kind));
   }else{
-   set(action,product.continuationRoute==='booking'?root.DEMEOSControlledCustomerCopy[locale()].book:root.DEMEOSControlledCustomerCopy[locale()].buy);
-   if(/^https:\/\//i.test(destination)){action.href=destination;action.removeAttribute('aria-disabled');}
+   set(action,root.DEMEOSCustomerProductExperience.externalActionCopy(product));
+   const safe=root.DEMEOSCustomerProductExperience.safeContinuation(product,destination);
+   if(safe){action.href=safe;action.removeAttribute('aria-disabled');}
   }
   const guidance=doc.getElementById('product-experience-selection-guidance');
   set(guidance,p.options.length&&product.continuationRoute!=='demeos'?c.confirmBusiness:'');guidance.hidden=!p.options.length||product.continuationRoute==='demeos';
