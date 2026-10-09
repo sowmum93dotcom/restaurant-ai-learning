@@ -32,6 +32,11 @@ test("product saves preserve recorded structured options and extensions omitted 
   const partial={...edited,presentation:{categoryId:"fashion.apparel",pricing:{mode:"fixed",currency:"GBP",amount:45}}};
   const preserved=await invoke({method:"PUT",body:{businessProfile:{...base,products:[partial]},ownerAccuracyConfirmed:true},knownBusiness:{businessProfile:base}});
   assert.equal(preserved.response.statusCode,204);assert.equal(preserved.savedProfiles[0].products[0].presentation.options[0].values[0].value,"M");
+  const omitted={...base};delete omitted.products;
+  const entireList=await invoke({method:"PUT",body:{businessProfile:omitted,ownerAccuracyConfirmed:true},knownBusiness:{businessProfile:base}});
+  assert.equal(entireList.response.statusCode,204);assert.equal(entireList.savedProfiles[0].products.length,1);assert.deepEqual(entireList.savedProfiles[0].products[0].presentation,product.presentation);
+  const invalidList=await invoke({method:"PUT",body:{businessProfile:{...base,products:null},ownerAccuracyConfirmed:true},knownBusiness:{businessProfile:base}});
+  assert.equal(invalidList.response.statusCode,400);assert.equal(invalidList.savedProfiles.length,0);
   const foreign=await invoke({method:"PUT",body:{businessProfile:{...base,products:[{...edited,businessId:"foreign"}]},ownerAccuracyConfirmed:true},knownBusiness:{businessProfile:base}});
   assert.equal(foreign.response.statusCode,400);assert.equal(foreign.savedProfiles.length,0);
   const ambiguous=await invoke({method:"PUT",body:{businessProfile:{...base,products:[{...edited,price:"£99"}]},ownerAccuracyConfirmed:true},knownBusiness:{businessProfile:base}});

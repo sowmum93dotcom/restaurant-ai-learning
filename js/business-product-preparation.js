@@ -49,7 +49,7 @@
   }
   function render(){
    panel.textContent='';choices=[];variants=[];panel.hidden=!category.value;
-   const cat=contract.categories[category.value];if(!cat)return;
+   const cat=contract.categories[category.value];if(!cat){basePrice=null;return;}
    basePrice=priceControls(current?.pricing);panel.append(basePrice.box);
    const guidance=el('p','Keep every option accurate. Existing option and variant identities are retained. Changing these fields does not enable selling.');panel.append(guidance);
    for(const key of cat.fields){
@@ -65,12 +65,12 @@
    for(const variant of current?.variants||[])addVariant(variant,false);
    if(cat.fields.length){const add=el('button','Add a specific variant'),message=el('p');add.type='button';add.className='text-button';message.setAttribute('role','status');panel.append(add,message);
     add.addEventListener('click',()=>{const options=readOptions();if(!options.length||variants.length>=500){message.textContent='Add option choices first. Up to 500 variants are supported.';return;}
-     addVariant({variantId:'variant-'+(root.crypto?.randomUUID?.()||Date.now()+'-'+variants.length),selection:Object.fromEntries(options.map(o=>[o.key,o.values[0].value])),availability:'contact',pricing:basePrice.read()},true);message.textContent='Choose a unique combination, then confirm its price and availability.';});
+     addVariant({variantId:'variant-'+(root.crypto?.randomUUID?.()||Date.now()+'-'+variants.length),selection:Object.fromEntries(options.map(o=>[o.key,''])),availability:'contact',pricing:basePrice.read()},true);message.textContent='Choose a unique combination, then confirm its price and availability.';});
    }
    root.DEMEOSBusinessPreparationLanguage?.apply(document.getElementById('owner-preparation-language')?.value);
   }
-  function load(product){current=product?.presentation?clone(product.presentation):null;category.value=current?.categoryId||'';category.disabled=Boolean(current?.options?.length||current?.variants?.length);render();const details=panel.closest('details');if(details)details.open=Boolean(current);}
-  category.addEventListener('change',()=>{current=null;render();const details=panel.closest('details');if(details)details.open=Boolean(category.value);});
+  function load(product){current=product?.presentation?clone(product.presentation):null;empty.disabled=Boolean(current);category.value=current?.categoryId||'';category.disabled=Boolean(current?.options?.length||current?.variants?.length);render();const details=panel.closest('details');if(details)details.open=Boolean(current);}
+  category.addEventListener('change',()=>{const pricing=basePrice?.read();current=category.value&&pricing?{...(current||{}),categoryId:category.value,pricing,options:[],variants:[]}:null;render();const details=panel.closest('details');if(details)details.open=Boolean(category.value);});
   return {load,read(){
    if(!category.value)return undefined;
    const options=readOptions();
