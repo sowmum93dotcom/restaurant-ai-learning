@@ -29,7 +29,7 @@ const server=http.createServer(async(req,res)=>{try{
 (async()=>{
  await database.ensureSchema();await repository.createBusinessForOwner('owner-a',profile);await repository.createBusinessForOwner('owner-b',{...profile,businessId:'engineering-b',name:'Private Owner B',products:[]});await repository.saveBusinessMediaAsset(profile.businessId,asset);await repository.saveBusinessMediaAsset(profile.businessId,{...asset,assetId:'engineering-video',kind:'video',contentType:'video/mp4',deliveryUrl:'https://example.org/exact.mp4'});await repository.saveCampaign({id:'legacy-private',businessId:profile.businessId,campaignText:'Existing normal campaign',campaignType:'social',campaignTypeLabel:'Social Media Campaign',businessName:profile.name,createdAt:new Date().toISOString(),approvalStatus:'Unapproved'});
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base='http://127.0.0.1:'+server.address().port;
- const browser=await chromium.launch({headless:true});
+ const browser=await chromium.launch({headless:true,...(process.env.DEMEOS_BROWSER_CHANNEL?{channel:process.env.DEMEOS_BROWSER_CHANNEL}:{})});
  try{
   for(const viewport of [{width:390,height:844},{width:820,height:1180},{width:1440,height:1000}]){
    await repository.saveBusiness(profile);

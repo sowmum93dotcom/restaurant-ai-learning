@@ -33,7 +33,7 @@ async function openProduct(page,option,product,work,language='en') {
 }
 
 (async () => {
- const browser = await chromium.launch({headless:true});
+ const browser = await chromium.launch({headless:true,...(process.env.DEMEOS_BROWSER_CHANNEL?{channel:process.env.DEMEOS_BROWSER_CHANNEL}:{})});
  try {
   for (const viewport of [{width:390,height:844},{width:820,height:1180},{width:1440,height:1000}]) {
    const page = await browser.newPage({viewport});
