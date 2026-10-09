@@ -7,6 +7,9 @@
  // have already passed the existing contract; omissions must not erase options.
  function preserveProduct(previous,incoming){
   const next={...(previous||{}),...incoming};
+  // Omitting this supported override explicitly restores business defaults.
+  // Retain unknown extensions, but do not restore a cleared fulfilment choice.
+  if(!Object.hasOwn(incoming,'fulfilment'))delete next.fulfilment;
   if(!previous?.presentation)return next;
   if(!incoming.presentation){next.presentation=clone(previous.presentation);return next;}
   const old=previous.presentation,value=incoming.presentation;

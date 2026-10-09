@@ -4,6 +4,14 @@ const {preserveProduct,priceText}=require('../js/business-product-preparation');
 const contract=require('../js/customer-item-contract');
 const {prepareBusinessDraft}=require('../api/_lib/business-marketing-draft');
 const presentation={categoryId:'fashion.apparel',pricing:{mode:'fixed',currency:'GBP',amount:45},options:[{key:'size',values:[{value:'M',label:'Medium'}]}],variants:[{variantId:'exact-m',selection:{size:'M'},availability:'limited',pricing:{mode:'fixed',currency:'GBP',amount:49}}]};
+test('clearing product fulfilment restores business defaults while preserving identities and extensions',()=>{
+ const previous={productId:'exact',fulfilment:{methods:['collection']},privateExtension:{reference:'retained'},presentation};
+ const restored=preserveProduct(previous,{productId:'exact',description:'Updated'});
+ assert.equal(Object.hasOwn(restored,'fulfilment'),false);
+ assert.equal(restored.productId,'exact');assert.deepEqual(restored.presentation,presentation);assert.deepEqual(restored.privateExtension,previous.privateExtension);
+ assert.deepEqual(previous.fulfilment,{methods:['collection']});
+ assert.deepEqual(preserveProduct(previous,{productId:'exact',fulfilment:{methods:['delivery']}}).fulfilment,{methods:['delivery']});
+});
 test('a legacy product edit preserves omitted structured data and private extensions without taking incoming unknown fields',()=>{
  const previous={productId:'exact',description:'Old',privateExtension:{reference:'retained'},presentation:{...presentation,extension:{source:'existing'}}};
  const edited=preserveProduct(previous,{productId:'exact',description:'Updated'});assert.equal(edited.description,'Updated');assert.deepEqual(edited.presentation,previous.presentation);assert.deepEqual(edited.privateExtension,previous.privateExtension);
