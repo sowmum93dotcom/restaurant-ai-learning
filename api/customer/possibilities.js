@@ -31,7 +31,7 @@ return async function handler(req, res) {
   if (place === null) return res.status(400).json({ error: "A valid optional place is required." });
   try {
     const repository = getRepository();
-    const catalogue = selectCustomerCatalogue(await repository.getCustomerWork({forCatalogueValidation:true}), req);
+    const catalogue = selectCustomerCatalogue(await repository.getCustomerWork({forCatalogueValidation:true,forSearch:true}), req);
     const work = catalogue.work;
     let preferences = [];
     let feedback = [];

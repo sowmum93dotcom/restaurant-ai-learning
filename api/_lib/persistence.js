@@ -6,7 +6,7 @@ const {
   getCustomerFacingContent,
   inspectCustomerPublication
 } = require("./customer-publication-rules.js");
-const { toPublicCustomerWorkItem, MAX_PUBLIC_CUSTOMER_MEDIA } = require("./customer-public-work-contract.js");
+const { toPublicCustomerWorkItem, MAX_PUBLIC_CUSTOMER_MEDIA, MAX_SEARCH_CATALOGUE_RECORDS } = require("./customer-public-work-contract.js");
 
 function createPersistenceRepository(database, { getMediaStorageAdapter = getConfiguredMediaStorageAdapter,
   reportCatalogueDiagnostics = summary => console.warn("Customer catalogue readiness", summary) } = {}) {
@@ -752,7 +752,12 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
         timestamp: row.decided_at instanceof Date ? row.decided_at.toISOString() : row.decided_at };
     },
 
-    async getCustomerWork({ forCatalogueValidation = false } = {}) {
+    async getCustomerWork({ forCatalogueValidation = false, forSearch = false } = {}) {
+      // A server-selected search request may inspect more than the Discover feed.
+      // Neither customer input nor a provider chooses these retrieval bounds.
+      forCatalogueValidation = forCatalogueValidation || forSearch;
+      const candidateLimit = forSearch ? MAX_SEARCH_CATALOGUE_RECORDS : 20;
+      const sourceRowLimit = forSearch ? 1000 : Infinity;
       await database.ensureSchema();
       const mediaStorage = getMediaStorageAdapter();
       const createDeliveryRead = mediaStorage && typeof mediaStorage.createDeliveryRead === "function"
@@ -762,7 +767,7 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
       const diagnostics = Object.create(null);
       const note = reason => { diagnostics[reason] = Math.min(1000000, (diagnostics[reason] || 0) + 1); };
       let offset = 0;
-      while (publicWork.length < 20) {
+      while (publicWork.length < candidateLimit && offset < sourceRowLimit) {
         const result = await database.query(
           `WITH invalid_publications AS (
              SELECT campaign_id FROM demeos_campaigns
@@ -783,7 +788,7 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
         for (const row of result.rows) {
           const readiness = inspectCustomerPublication(row);
           readiness.reasons.forEach(note);
-          if (!readiness.eligible || publicWork.length >= 20) continue;
+          if (!readiness.eligible || publicWork.length >= candidateLimit) continue;
           const publicItem = toPublicCustomerWorkItem({
             workItemId: row.campaign_id,
             businessName: row.profile && row.profile.name,

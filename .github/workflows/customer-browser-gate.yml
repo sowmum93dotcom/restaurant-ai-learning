@@ -40,6 +40,8 @@ jobs:
         run: node browser-checks/customer-search-gate.js
       - name: Run real HTTP intelligence integration gate
         run: node browser-checks/customer-intelligence-integration-gate.js
+      - name: Run approved source SQL and customer continuation gate
+        run: node browser-checks/customer-approved-source-gate.js
       - name: Run customer registration and preparation gate
         run: node browser-checks/customer-preparation-gate.js
       - name: Run private customer payment status gate
@@ -55,4 +57,5 @@ jobs:
             /tmp/customer-quality-*.png
             /tmp/issue669-*.png
             /tmp/demeos-controlled-*.png
+            /tmp/demeos-genuine-search-*.png
             /tmp/demeos-context-*.png

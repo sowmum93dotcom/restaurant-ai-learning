@@ -60,8 +60,8 @@ function validateCategoryAdvisory(value, text) {
 function selectCategoryWork(work, interpretation) {
   const categoryIds = plain(interpretation) && interpretation.datasetVersion === DATASET_VERSION ? validateCategoryIds(interpretation.categoryIds, MAX_CATEGORIES) : null;
   if (!categoryIds || !categoryIds.length) return {work, rejectedWorkItemIds:[]};
-  const {getValidPublicCustomerWork} = require('./customer-public-work-contract');
-  const projected = getValidPublicCustomerWork(work, 20, {forSearchClassification:true});
+  const {getValidPublicCustomerWork, MAX_SEARCH_CATALOGUE_RECORDS} = require('./customer-public-work-contract');
+  const projected = getValidPublicCustomerWork(work, MAX_SEARCH_CATALOGUE_RECORDS, {forSearchClassification:true});
   const byWork = new Map(projected.map(item => [item.workItemId,item]));
   const rejectedWorkItemIds = [], selected = [];
   for (const item of Array.isArray(work) ? work : []) {

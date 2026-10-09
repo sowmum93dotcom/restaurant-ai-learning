@@ -33,6 +33,18 @@ function canPublishToDemeosCustomerExperience(campaign) {
   return Boolean(capability && capability.available && getCustomerFacingContent(campaign));
 }
 
+// These namespaces and media paths belong exclusively to opt-in controlled
+// content. An Approved flag in storage must never promote them to genuine work.
+function containsControlledCustomerContent(row) {
+  const profile = row && row.profile, campaign = row && row.campaign;
+  const reservedId = value => typeof value === "string" && /^test-(?:business|discover|product|media|bistro|studio)-/i.test(value.trim());
+  const controlledUrl = value => typeof value === "string" && /\/images\/controlled-test\//i.test(value);
+  if ([row && row.business_id, row && row.campaign_id, profile && profile.businessId, campaign && campaign.businessId, campaign && campaign.id].some(reservedId)) return true;
+  if (Array.isArray(profile && profile.products) && profile.products.some(product => product &&
+      ([product.productId, product.businessId].some(reservedId) || controlledUrl(product.imageUrl)))) return true;
+  return Array.isArray(campaign && campaign.media) && campaign.media.some(link => link && reservedId(link.assetId));
+}
+
 // Database keys remain authority. Optional embedded claims may corroborate
 // them, but cannot contradict them or supply publication permission.
 function inspectCustomerPublication(row) {
@@ -42,6 +54,7 @@ function inspectCustomerPublication(row) {
   const businessId = text(row && row.business_id), campaignId = text(row && row.campaign_id);
   const profile = row && row.profile, campaign = row && row.campaign;
   if (!businessId || !campaignId) reasons.push("missing_source_identity");
+  if (containsControlledCustomerContent(row)) reasons.push("controlled_content_not_genuine");
   if (!record(profile) || !text(profile.name)) reasons.push("missing_business_fields");
   if (record(profile) && Number(profile.profileVersion) >= 4 && profile.products !== undefined && !Array.isArray(profile.products)) reasons.push("offers_format_invalid");
   if (!canPublishToDemeosCustomerExperience(campaign)) reasons.push("publication_ineligible");
