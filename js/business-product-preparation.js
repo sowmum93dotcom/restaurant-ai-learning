@@ -18,7 +18,8 @@
  }
  function priceText(price){
   const p=contract.pricing(price);if(!p)return '';
-  if(['none','quote'].includes(p.mode))return 'Contact the business for pricing';
+  if(p.mode==='none')return 'No listed price';
+  if(p.mode==='quote')return 'Contact the business for pricing';
   const number=n=>String(n)+' '+p.currency;
   return p.mode==='range'?number(p.min)+' – '+number(p.max):(p.mode==='from'?'From ':'')+number(p.amount);
  }

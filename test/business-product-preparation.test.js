@@ -27,3 +27,15 @@ test('service drafts keep authoritative appointment choices without fabricated d
 test('pricing summaries preserve zero, currency, range and quote states',()=>{
  assert.equal(priceText({mode:'fixed',currency:'JPY',amount:0}),'0 JPY');assert.equal(priceText({mode:'range',currency:'EUR',min:10,max:20}),'10 EUR – 20 EUR');assert.match(priceText({mode:'quote'}),/Contact/);assert.equal(priceText({mode:'range',currency:'GBP',min:20,max:10}),'');
 });
+test('no listed price remains distinct from asking for a price',()=>{
+ assert.equal(priceText({mode:'none'}),'No listed price');assert.notEqual(priceText({mode:'none'}),priceText({mode:'quote'}));
+ const record={businessProfile:{businessId:'owned',name:'Shop',products:[{productId:'offer',businessId:'owned',name:'Offer',description:'Saved description',availability:'contact',presentation:{categoryId:'family.toys',pricing:{mode:'none'},options:[],variants:[]}}]}};
+ const draft=prepareBusinessDraft(record,'owned','offer');assert.match(draft.campaign,/No listed price/);assert.doesNotMatch(draft.campaign,/for pricing|for a quote/);
+});
+test('valid large offers prepare bounded factual summaries without losing stored option identity',()=>{
+ const options=[{key:'size',values:Array.from({length:100},(_,i)=>({value:'s'+i,label:'Size '+i+' '+ 'x'.repeat(100)}))},{key:'colour',values:Array.from({length:5},(_,i)=>({value:'c'+i,label:'Colour '+i+' '+ 'y'.repeat(100)}))}];
+ const variants=options[0].values.flatMap(size=>options[1].values.map(colour=>({variantId:size.value+'-'+colour.value,selection:{size:size.value,colour:colour.value},availability:'contact',pricing:{mode:'fixed',currency:'GBP',amount:25}})));
+ const value={categoryId:'fashion.apparel',pricing:{mode:'fixed',currency:'GBP',amount:25},options,variants};assert.ok(contract.normalize(value));
+ const record={businessProfile:{businessId:'owned',name:'Saved business',products:[{businessId:'owned',productId:'offer',name:'Saved offer',description:'d'.repeat(1200),availability:'contact',presentation:value}]}};
+ const before=JSON.stringify(record),draft=prepareBusinessDraft(record,'owned','offer');assert.ok(draft);assert.ok(draft.campaign.length<=12000);assert.match(draft.campaign,/Other choices are recorded/);assert.match(draft.campaign,/More variants are recorded/);assert.equal(JSON.stringify(record),before);assert.equal(draft.preparationOnly,true);
+});

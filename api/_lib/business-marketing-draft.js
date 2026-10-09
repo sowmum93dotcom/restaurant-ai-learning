@@ -24,11 +24,12 @@ function prepareBusinessDraft(record, businessId, productId, assetId, assets = [
   else if (product.price && product.priceMode !== 'contact') lines.push((product.priceMode === 'from' ? 'From ' : '') + product.price);
   else lines.push('Contact the business for pricing.');
   if (presentation) {
-    for (const option of presentation.options) lines.push(itemCopy.fields[option.key] + ': ' + option.values.map(v=>v.label).join(', '));
-    for (const variant of presentation.variants) {
+    for (const option of presentation.options) lines.push(itemCopy.fields[option.key] + ': ' + option.values.slice(0,3).map(v=>v.label).join(', ') + (option.values.length>3 ? '. Other choices are recorded; confirm your selection with the business.' : ''));
+    for (const variant of presentation.variants.slice(0,10)) {
       const labels=presentation.options.map(o=>o.values.find(v=>v.value===variant.selection[o.key]).label);
       lines.push(labels.join(' / ') + ': ' + priceText(variant.pricing) + '. ' + availability[product.availability==='unavailable'?'unavailable':variant.availability]);
     }
+    if(presentation.variants.length>10)lines.push('More variants are recorded for this offer. Confirm the exact price and availability of your selection with the business.');
   }
   lines.push(presentation?.variants.length && product.availability!=='unavailable' ? 'Choose an option and confirm its availability with the business.' : availability[product.availability] || availability.contact);
   if (profile.location) lines.push(profile.location);
