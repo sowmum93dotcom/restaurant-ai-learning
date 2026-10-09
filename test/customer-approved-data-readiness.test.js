@@ -35,6 +35,17 @@ test('real database selection diagnoses invalid approved rows and paginates to e
  assert.deepEqual(summaries,[{publication_ineligible:51}]);
  const received=toCustomerPossibility((await search(work))[0]);
  assert.equal(received.workItemId,'a-valid');assert.equal(received.products[0].productId,'offer');
+ await database.query('DELETE FROM demeos_campaigns');
+ for(let index=0;index<21;index++){
+  const campaign={...input.campaign,id:`z-valid-${index}`};
+  await database.query('INSERT INTO demeos_campaigns (campaign_id,business_id,campaign,approved_at,updated_at) VALUES ($1,$2,$3,$4,$4)',[campaign.id,input.business_id,JSON.stringify(campaign),input.approved_at]);
+ }
+ const invalid={...input.campaign,id:'a-invalid-after-cap',campaignText:' '};
+ await database.query('INSERT INTO demeos_campaigns (campaign_id,business_id,campaign,approved_at,updated_at) VALUES ($1,$2,$3,$4,$4)',[invalid.id,input.business_id,JSON.stringify(invalid),input.approved_at]);
+ summaries.length=0;
+ const capped=await repository.getCustomerWork({forCatalogueValidation:true});
+ assert.equal(capped.length,20);assert.ok(capped.every(item=>item.workItemId.startsWith('z-valid-')));
+ assert.deepEqual(summaries,[{publication_ineligible:1}]);
 });
 test('consistent approved joined records reach existing category, eligibility and customer receiving contracts',async()=>{
  const input=row(),before=structuredClone(input),loaded=await load([input]);assert.deepEqual(loaded.summaries,[]);

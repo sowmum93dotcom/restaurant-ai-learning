@@ -773,7 +773,7 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
         for (const row of result.rows) {
           const readiness = inspectCustomerPublication(row);
           readiness.reasons.forEach(note);
-          if (!readiness.eligible) continue;
+          if (!readiness.eligible || publicWork.length >= 20) continue;
           const publicItem = toPublicCustomerWorkItem({
             workItemId: row.campaign_id,
             businessName: row.profile && row.profile.name,
@@ -806,7 +806,6 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
             // Search must not substitute campaign copy for ineligible offers.
             ...(Array.isArray(row.profile?.products)&&row.profile.profileVersion>=4&&row.profile.products.length?{hasDeclaredOffers:true}:{}),
             ...(publicItem.products?{products:publicItem.products.map(product=>({...product,businessId:row.business_id}))}:{})} : publicItem);
-          if (publicWork.length === 20) break;
         }
         if (result.rows.length < pageSize) break;
         offset += pageSize;
