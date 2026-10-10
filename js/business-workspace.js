@@ -28,8 +28,10 @@ function getOwnerNavigationSection(locationObject, workspaceView) {
 }
 
 function updateOwnerNavigation(documentObject, locationObject, workspaceView) {
-  const activeSection = getOwnerNavigationSection(locationObject, workspaceView);
-  documentObject.querySelectorAll(".owner-workspace-navigation [data-owner-section]").forEach(function (link) {
+  let activeSection = getOwnerNavigationSection(locationObject, workspaceView);
+  const links = documentObject.querySelectorAll(".owner-workspace-navigation [data-owner-section]");
+  if (activeSection === "product-options" && !Array.from(links).some(link => link.getAttribute("data-owner-section") === "product-options")) activeSection = "products";
+  links.forEach(function (link) {
     const active = link.getAttribute("data-owner-section") === activeSection;
     link.classList.toggle("is-active", active);
     if (active) link.setAttribute("aria-current", "page");

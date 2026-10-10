@@ -32,11 +32,11 @@
     unavailable: ['Workspace could not be loaded', 'Try again. Your saved information has not changed.']
   };
   function getState(doc) { return states.get(doc)?.state || {status: 'loading', model: null, allowed: []}; }
-  function apply(doc, record, businessId, failure) {
+  function apply(doc, record, businessId, failure, requestedModel) {
     const previous = states.get(doc);
-    let preference = null;
-    try { preference = root.sessionStorage?.getItem('demeosOwnerView:' + businessId); } catch (_) {}
-    const state = resolve(record, businessId, preference, failure);
+    let preference = previous?.businessId === businessId ? previous.state.model : null;
+    try { preference = root.sessionStorage?.getItem('demeosOwnerView:' + businessId) || preference; } catch (_) {}
+    const state = resolve(record, businessId, requestedModel || preference, failure);
     states.set(doc, {state, record, businessId});
     doc.body.dataset.ownerModel = state.model || 'none';
     doc.body.dataset.ownerAccess = state.status;
@@ -61,8 +61,8 @@
           button.addEventListener('click', () => {
             // A preference is never permission; re-resolve only against this exact server record.
             if (!state.allowed.includes(model)) return;
-            try { root.sessionStorage?.setItem('demeosOwnerView:' + businessId, model); } catch (_) { return; }
-            apply(doc, record, businessId);
+            try { root.sessionStorage?.setItem('demeosOwnerView:' + businessId, model); } catch (_) {}
+            apply(doc, record, businessId, undefined, model);
             if (typeof root.loadOwnerNextAction === 'function') root.loadOwnerNextAction(doc, root.localStorage, root.fetch.bind(root));
           });
           switcher.appendChild(button);

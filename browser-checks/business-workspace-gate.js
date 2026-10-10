@@ -103,6 +103,7 @@ const server=http.createServer(async(req,res)=>{try{
       await page.goto(base+'/marketing.html#product-options');await page.locator('body[data-owner-access="ready"]').waitFor();
       // Product options are shared factual catalogue fields, never a stock or selling operation.
       assert.equal(await page.locator('[data-owner-section="product-options"]').count(),0);
+      assert.equal(await page.locator('[data-owner-section="products"]').getAttribute('aria-current'),'page');
       assert.equal((await context.request.post(base+'/api/businesses/engineering-a/orders',{data:{}})).status(),404);
       assert.equal((await context.request.post(base+'/api/businesses/engineering-a/inventory',{data:{}})).status(),404);
     }
@@ -136,6 +137,9 @@ const server=http.createServer(async(req,res)=>{try{
       assert.equal(await page.evaluate(()=>localStorage.getItem('demeosActiveBusinessId')),'engineering-a');
       await page.locator('.owner-model-switch [data-owner-model=marketing]').click();await page.locator('body[data-owner-model=marketing]').waitFor();
       assert.equal(await page.locator('[data-owner-section="marketing"]').count(),1);
+      await page.evaluate(()=>Object.defineProperty(window,'sessionStorage',{configurable:true,get(){throw Error('Storage blocked');}}));
+      await page.locator('.owner-model-switch [data-owner-model=selling]').click();await page.locator('body[data-owner-model=selling]').waitFor();
+      await page.locator('.owner-model-switch [data-owner-model=marketing]').click();await page.locator('body[data-owner-model=marketing]').waitFor();
     }
     if(!model){assert.equal(await page.locator('.owner-workspace-navigation a').count(),2);await page.goto(base+'/marketing.html#create');await page.locator('body[data-owner-access="'+status+'"]').waitFor();assert.equal(await page.locator('#create').isVisible(),false);}
     await page.goto(base+'/business-workspace.html');await page.locator('body[data-owner-access="'+status+'"]').waitFor();

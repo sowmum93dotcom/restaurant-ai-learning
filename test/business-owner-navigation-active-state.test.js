@@ -101,3 +101,12 @@ test("location sync leaves nonempty hashes and non-Marketing pages to their exis
   assert.equal(syncOwnerWorkspaceFromLocation(documentObject, { pathname: "/index.html", hash: "#recommends" }), false);
   assert.equal(syncOwnerWorkspaceFromLocation(documentObject, { pathname: "/business-results.html", hash: "" }), false);
 });
+
+test("direct options links retain the correct primary destination for either model",function(){
+  for(const selling of [false,true]){
+    const links=['overview','business-profile','products',...(selling?['product-options']:['marketing','results'])].map(section=>makeItem('data-owner-section',section,false));
+    const selected=updateOwnerNavigation({querySelectorAll:()=>links},{pathname:'/marketing.html',hash:'#product-options'});
+    assert.equal(selected,selling?'product-options':'products');
+    assert.equal(links.filter(link=>link.current()==='page').length,1);
+  }
+});
