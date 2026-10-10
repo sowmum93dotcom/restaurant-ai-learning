@@ -521,9 +521,16 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   }
 
   function showWorkspaceView(viewId) {
+    const ownerModel = globalThis.window?.DEMEOSOwnerWorkspace;
+    if (ownerModel?.getState(document).status === 'loading') return;
+    if (ownerModel && !ownerModel.canOpen(ownerModel.getState(document), viewId)) viewId = "business-profile";
+    const panelView = viewId === "product-options" ? "products" : viewId;
+    if (document.body?.dataset) document.body.dataset.ownerView = viewId;
+    const productForm = document.querySelector?.(".business-product-form");
+    if (productForm) productForm.hidden = viewId === "product-options" && !byId("business-product-id")?.value;
     if (typeof document.querySelectorAll !== "function") return;
     document.querySelectorAll("[data-workspace-panel]").forEach(function (panel) {
-      const active = panel.id === viewId;
+      const active = panel.id === panelView;
       panel.hidden = !active;
       if(!active && typeof panel.querySelectorAll==="function")panel.querySelectorAll("video").forEach(video=>video.pause());
       panel.classList.toggle("is-active", active);
@@ -536,8 +543,10 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     });
     if (window.location.hash !== "#" + viewId && window.history && typeof window.history.replaceState === "function") window.history.replaceState(null, "", "#" + viewId);
     const area = byId("owner-area-heading");
-    const section = viewId === "products" ? "Products and Services" : viewId === "business-profile" ? "My Business" : "Marketing";
+    const section = viewId === "product-options" ? "Options and Availability" : viewId === "products" ? (window.DEMEOSOwnerWorkspace?.getState(document).model === "selling" ? "Product Catalogue" : "Products and Services") : viewId === "business-profile" ? "My Business" : "Marketing";
     if (area) area.textContent = section;
+    const productsHeading = byId("products-heading");
+    if (productsHeading && panelView === "products") productsHeading.textContent = section;
     const secondary = document.querySelector?.(".marketing-secondary-sidebar");
     if (secondary) secondary.hidden = section !== "Marketing";
     const navigation = byId("workspace-navigation");
@@ -569,15 +578,19 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       menuToggle.setAttribute("aria-expanded", String(open));
       navigation.classList.toggle("is-open", open);
     });
+    document.addEventListener("owner-model-ready", function () {
+      const view = window.location.hash.slice(1) || "overview";
+      showWorkspaceView(view);
+    });
     const requestedView = window.location.hash.slice(1);
-    if (document.getElementById(requestedView) &&
-        document.getElementById(requestedView).hasAttribute("data-workspace-panel")) {
+    if ((requestedView === "product-options" || (document.getElementById(requestedView) &&
+        document.getElementById(requestedView).hasAttribute("data-workspace-panel")))) {
       showWorkspaceView(requestedView);
     }
     window.addEventListener("hashchange", function () {
       const hashView = window.location.hash.slice(1);
       const panel = document.getElementById(hashView);
-      if (panel && panel.hasAttribute("data-workspace-panel")) showWorkspaceView(hashView);
+      if (hashView === "product-options" || (panel && panel.hasAttribute("data-workspace-panel"))) showWorkspaceView(hashView);
     });
   }
 
@@ -794,14 +807,16 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     if (!requestedBusinessId || typeof window === "undefined" || typeof fetch !== "function") return;
     const result = await hydrateKnownBusiness(localStorage, requestedBusinessId, fetch);
     if (!result.hydrated || state.activeBusinessId !== requestedBusinessId) {
-      if (state.activeBusinessId === requestedBusinessId) renderRecommendsUnderstanding(null, requestedBusinessId);
+      if (state.activeBusinessId === requestedBusinessId) { renderRecommendsUnderstanding(null, requestedBusinessId);
+        globalThis.window?.DEMEOSOwnerWorkspace?.apply(document, null, requestedBusinessId, "unavailable");
+      }
       return;
     }
     state.profiles = result.profiles;
     customerParticipationResults = getCustomerParticipationResults(result.customerParticipationResults, requestedBusinessId);
     renderRecommendsUnderstanding(result.record, requestedBusinessId);
     fillProfile(activeProfile()); globalThis.window?.DEMEOSBusinessOnboarding?.confirm(result.record.businessProfile, result.record.workspaceReadiness); renderSelector(); renderActiveMarketingWork(); renderCustomerParticipationResults(); renderCampaignHistory();
-    if (typeof renderOwnerModels === "function") renderOwnerModels(document, result.record.workspaceReadiness, requestedBusinessId);
+    if (typeof renderOwnerModels === "function") renderOwnerModels(document, result.record.workspaceReadiness, requestedBusinessId, result.record);
   }
   async function persistBusiness(profile, options) {
     if (!profile || typeof window === "undefined" || typeof fetch !== "function") return false;
@@ -920,8 +935,8 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       const caption=document.createElement("p");caption.textContent=offer ? offer.name : "Business marketing media";item.append(caption);
       appendMediaPreview(item,asset);
       if (offer && asset.state === "ready") {
-        const use=document.createElement("button");use.type="button";use.className="text-button";use.textContent="Prepare marketing with this media";
-        use.addEventListener("click",()=>{showWorkspaceView("create");byId("draft-product").value=offer.productId;renderDraftSources();byId("draft-media").value=asset.assetId;renderOfferReview();});item.append(use);
+        const use=document.createElement("button");use.type="button";use.className="text-button";use.textContent="Prepare marketing with this media";use.dataset.ownerMarketing="";
+        use.addEventListener("click",()=>{if(globalThis.window?.DEMEOSOwnerWorkspace && !window.DEMEOSOwnerWorkspace.canOpen(window.DEMEOSOwnerWorkspace.getState(document),"create"))return;showWorkspaceView("create");byId("draft-product").value=offer.productId;renderDraftSources();byId("draft-media").value=asset.assetId;renderOfferReview();});item.append(use);
       }
       businessMediaList.appendChild(item);
     });
@@ -1041,7 +1056,11 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
         productEditor?.load(product);
         updateProductPriceControls();
         productAddBtn.textContent = "Update product / service"; productCancelBtn.hidden = false;
-        if (typeof productFields.name.focus === "function") productFields.name.focus();
+        if (document.body?.dataset?.ownerView === "product-options") {
+          const form=document.querySelector(".business-product-form");if(form)form.hidden=false;
+          byId("owner-product-category").parentElement.scrollIntoView?.({block:"start"});
+          byId("owner-product-options").querySelector("input,select,textarea")?.focus();
+        } else if (typeof productFields.name.focus === "function") productFields.name.focus();
       });
       const remove = document.createElement("button"); remove.type = "button"; remove.className = "demeos-secondary-button"; remove.textContent = "Remove";
       remove.addEventListener("click", function () {
@@ -1051,8 +1070,8 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
         if (removingEditedProduct) resetProductForm();
         renderBusinessProducts();
       });
-      const prepare=document.createElement("button");prepare.type="button";prepare.className="text-button";prepare.textContent="Prepare marketing";
-      prepare.addEventListener("click",()=>{showWorkspaceView("create");renderDraftSources();byId("draft-product").value=product.productId;renderDraftSources();renderOfferReview();});
+      const prepare=document.createElement("button");prepare.type="button";prepare.className="text-button";prepare.textContent="Prepare marketing";prepare.dataset.ownerMarketing="";
+      prepare.addEventListener("click",()=>{if(globalThis.window?.DEMEOSOwnerWorkspace && !window.DEMEOSOwnerWorkspace.canOpen(window.DEMEOSOwnerWorkspace.getState(document),"create"))return;showWorkspaceView("create");renderDraftSources();byId("draft-product").value=product.productId;renderDraftSources();renderOfferReview();});
       actions.append(edit, remove, prepare); body.append(name, description, meta, visibility, actions); card.appendChild(body); productsList.appendChild(card);
     });
     renderOfferReview();
@@ -1348,6 +1367,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   function switchBusiness(businessId) {
     if (!state.profiles.some(function (profile) { return profile.businessId === businessId; })) return;
     state.activeBusinessId = businessId; addingBusiness = false;
+    globalThis.window?.DEMEOSOwnerWorkspace?.apply(document, null, businessId, "loading");
     localStorage.setItem("demeosActiveBusinessId", businessId);
     customerParticipationResults = []; selectedRecommendationDecision = null;
     renderRecommendsUnderstanding(null, businessId);
@@ -1383,6 +1403,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   else hydrateActiveBusiness();
   businessSelector.addEventListener("change", function () { switchBusiness(businessSelector.value); });
   addBusinessBtn.addEventListener("click", function () {
+    globalThis.window?.DEMEOSOwnerWorkspace?.apply(document, null, null, "setup");
     addingBusiness = true; customerParticipationResults = []; selectedRecommendationDecision = null; businessSelector.value = ""; fillProfile(null); clearRecommendations(); clearBusinessSituation(); clearCampaignWorkspace(); renderActiveMarketingWork(); renderCustomerParticipationResults(); renderRecommendationDecisionResults(); renderRecommendsUnderstanding(null, null);
   });
   saveBusinessProfileBtn.addEventListener("click", async function () {

@@ -23,7 +23,7 @@ test("Marketing Agent exposes its four marketing tools and keeps Business Result
 });
 
 test("Marketing shares the Business Owner Workspace shell and primary navigation", function () {
-  assert.match(html, /<body class="owner-workspace-body marketing-capability-body">/);
+  assert.match(html, /<body[^>]*class="owner-workspace-body marketing-capability-body">/);
   assert.match(html, /<h1 class="restaurant-name">Business workspace<\/h1>/);
   assert.match(html, /<h2 id="owner-area-heading">Marketing<\/h2>/);
   assert.deepEqual(primaryNavigationLabels(html), ["Overview", "My Business", "Products and Services", "Marketing", "Results"]);

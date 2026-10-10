@@ -118,7 +118,7 @@
   <link rel="stylesheet" href="css/business-profile-mobile-fix.css" />
   <link rel="stylesheet" href="css/business-workspace-completion.css" />
 </head>
-<body class="owner-workspace-body marketing-capability-body">
+<body data-owner-access="loading" data-owner-model="none" class="owner-workspace-body marketing-capability-body">
   <header class="workspace-header owner-workspace-header">
     <a class="demeos-brand" href="business-workspace.html" aria-label="DEMEOS Business Owner Workspace home">
       <img src="images/demeos-logo.png" alt="DEMEOS logo" class="demeos-logo" />
@@ -297,6 +297,7 @@
                   <div><strong id="business-products-images">0</strong><span>With business images</span></div>
                 </div>
                 <p class="business-products-customer-connection"><strong>Customer connection:</strong> visible products can appear only when genuinely relevant to a customer's request. The same business-provided image and approved continuation route stay attached to that product.</p>
+                <p id="owner-options-guidance">Select Edit on a saved product to review its options and availability.</p>
                 <div class="business-product-form">
                   <input type="hidden" id="business-product-id" />
                   <div><label for="business-product-name">Product / service name</label><input id="business-product-name" type="text" maxlength="200" placeholder="Example: Chocolate celebration cake" /></div>
@@ -424,6 +425,7 @@
     </main>
   </div>
   <footer><a class="owner-public-destination" href="customer.html">Customer Experience</a><p>&copy; 2026 DEMEOS — One System. Real Value. Shared Future.</p></footer>
+  <script src="js/owner-workspace-model.js"></script>
   <script src="js/business-workspace.js"></script>
   <script src="js/demeos-understanding.js"></script>
   <script src="js/customer-item-contract.js"></script>
