@@ -22,13 +22,14 @@ const generatorModule={exports:{}};
 vm.runInNewContext(fs.readFileSync(path.join(root,'api/generate.js'),'utf8').replace('export default async function handler','module.exports = async function handler'),{module:generatorModule,require:createRequire(path.join(root,'api/generate.js')),console,process:{env:{}},fetch(){throw Error('No external provider may be called');}});
 const asset={businessId:'engineering-a',assetId:'engineering-image',relatedEntityId:'offer-a',purpose:'product',kind:'image',state:'ready',deliveryUrl:'https://example.org/exact.jpg'};
 const profile={businessId:'engineering-a',name:'Engineering Owner A',type:'Fashion',location:'London',brandVoice:'Clear',targetCustomer:'Local customers',goal:'Share saved products',profileVersion:4,preparationModel:'selling',offeringCategoryId:'fashion.apparel',productsServices:'Owner products',customerContinuation:{routes:['website'],website:'https://example.org/shop'},fulfilment:{methods:['shipping']},operationalAvailability:{status:'available'},products:[{businessId:'engineering-a',productId:'offer-a',name:'Exact jacket',description:'Saved jacket description',price:'£89',priceMode:'fixed',availability:'available',continuationRoute:'website',customerVisible:true,fulfilment:{methods:['collection']},presentation:{version:1,categoryId:'fashion.apparel',pricing:{mode:'fixed',currency:'GBP',amount:89},options:[{key:'size',values:[{value:'M',label:'Medium'}]}],variants:[{variantId:'exact-medium',selection:{size:'M'},availability:'limited',pricing:{mode:'fixed',currency:'GBP',amount:91},future:'retained'}],future:'retained'}}]};
-const inventory=require('../api/businesses/[businessId]/inventory'),products=require('../api/businesses/[businessId]/products');
+const inventory=require('../api/businesses/[businessId]/inventory'),products=require('../api/businesses/[businessId]/products'),ordersHandler=require('../api/businesses/[businessId]/orders');
+const orderFoundation=require('../api/_lib/vendor-orders').createVendorOrders(database,{authorizePurchase:()=>true}); // isolated test authority only
 const server=http.createServer(async(req,res)=>{try{
  const url=new URL(req.url,'http://localhost');req.query=Object.fromEntries(url.searchParams);let raw='';for await(const chunk of req){raw+=chunk;if(raw.length>25000){res.writeHead(413);res.end();return;}}req.body=raw?JSON.parse(raw):{};
  res.status=code=>{res.statusCode=code;return res;};res.json=value=>{res.setHeader('Content-Type','application/json');res.end(JSON.stringify(value));return res;};
  if(url.pathname==='/api/public-config')return res.json({clerkPublishableKey:'pk_test_'+Buffer.from('clerk.test$').toString('base64')});
  if(url.pathname==='/api/businesses')return await list(req,res);
- const vendorRoute=url.pathname.match(/^\/api\/businesses\/([^/]+)\/(inventory|products)$/);if(vendorRoute){req.query.businessId=vendorRoute[1];return await (vendorRoute[2]==='inventory'?inventory:products)(req,res);}
+ const vendorRoute=url.pathname.match(/^\/api\/businesses\/([^/]+)\/(inventory|products|orders)$/);if(vendorRoute){req.query.businessId=vendorRoute[1];return await (vendorRoute[2]==='inventory'?inventory:vendorRoute[2]==='orders'?ordersHandler:products)(req,res);}
  let match=url.pathname.match(/^\/api\/businesses\/([^/]+)(?:\/campaigns\/([^/]+))?$/);
  if(match){req.query.businessId=decodeURIComponent(match[1]);if(match[2]){req.query.campaignId=decodeURIComponent(match[2]);return await campaign(req,res);}return await business(req,res);}
  match=url.pathname.match(/^\/api\/businesses\/([^/]+)\/media\/([^/]+)$/);if(match){req.query.businessId=match[1];req.query.assetId=match[2];return await completeMedia(req,res);}
@@ -56,10 +57,24 @@ const server=http.createServer(async(req,res)=>{try{
    await context.route('https://example.org/**',r=>r.fulfill({contentType:'image/webp',body:fs.readFileSync(path.join(root,'images/controlled-test/mens-fashion.webp'))}));
    const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(String(e)));page.on('dialog',dialog=>dialog.accept());
    await page.goto(base+'/marketing.html#inventory');await page.locator('.vendor-stock-row').first().waitFor().catch(async e=>{console.log(await page.evaluate(()=>({model:document.body.dataset.ownerModel,view:document.body.dataset.ownerView,status:document.getElementById('vendor-stock-status').textContent,text:document.body.innerText.slice(-2500)})),errors);await page.screenshot({path:'/tmp/vendor-failed.png',fullPage:true});throw e;});
+   await database.query('DELETE FROM demeos_vendor_order_requests');await database.query('DELETE FROM demeos_vendor_order_events');await database.query('DELETE FROM demeos_vendor_orders');
+   await page.goto(base+'/marketing.html#orders');await page.locator('#vendor-orders-list').filter({hasText:'No orders yet. Live ordering is not active.'}).waitFor();
+   const orderCopy=require('../js/vendor-inventory-copy').copy;
+   for(const code of Object.keys(orderCopy)){await page.locator('#owner-preparation-language').selectOption(code);assert.equal(await page.locator('#vendor-orders-list').innerText(),orderCopy[code].ordersEmpty);assert.equal(await page.locator('#vendor-orders-heading').innerText(),orderCopy[code].orders);assert.equal(await page.locator('#vendor-orders-list').getAttribute('dir'),code==='ar'?'rtl':'ltr');assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));}
+   await page.locator('#owner-preparation-language').selectOption('en');await page.screenshot({path:'/tmp/demeos-owner-vendor-orders-empty-'+viewport.width+'.png',fullPage:true});
+   assert.equal((await context.request.get(base+'/api/businesses/engineering-b/orders')).status(),403);assert.equal((await context.request.post(base+'/api/businesses/engineering-a/orders',{data:{quantity:1}})).status(),405);
+   await page.goto(base+'/marketing.html#inventory');await page.locator('.vendor-stock-row').first().waitFor();
    const count=String(10+viewport.width);await page.locator('.vendor-stock-row input[type=number]').first().fill(count);
    await page.locator('#vendor-stock-reason').fill('Isolated browser count');await page.locator('#vendor-stock-save').click();await page.locator('#vendor-stock-review button').first().click();
    await page.waitForFunction(()=>document.getElementById('vendor-stock-status').textContent==='Stock saved.');
    await page.reload();await page.locator('.vendor-stock-row').first().waitFor();assert.equal(await page.locator('.vendor-stock-row input[type=number]').first().inputValue(),count);
+   const savedOrderProfile=(await repository.getKnownBusiness(profile.businessId)).businessProfile,orderInventory=require('../api/_lib/vendor-inventory');
+   const reservedOrder=await orderFoundation.reserve('isolated-customer','browser-order-'+viewport.width,{businessId:profile.businessId,productId:'offer-a',variantId:'exact-medium',selection:{size:'M'},quantity:1,catalogueRevision:orderInventory.catalogueRevision(savedOrderProfile),stockIdentity:orderInventory.stockIdentity(savedOrderProfile.products[0],savedOrderProfile.products[0].presentation.variants[0])});
+   await page.goto(base+'/marketing.html#orders');await page.locator('.vendor-order-row').waitFor();assert.match(await page.locator('.vendor-order-row').innerText(),/Exact jacket/);assert.doesNotMatch(await page.locator('#vendor-orders-list').innerText(),/isolated-customer/);
+   await page.screenshot({path:'/tmp/demeos-owner-vendor-orders-'+viewport.width+'.png',fullPage:true});
+   await orderFoundation.release(reservedOrder.id,'cancelled','isolated-customer');
+   const refreshedStock=page.waitForResponse(response=>response.url().endsWith('/inventory')&&response.request().method()==='GET');
+   await page.goto(base+'/marketing.html#inventory');await refreshedStock;await page.waitForFunction(()=>document.getElementById('vendor-stock-status').textContent==='');await page.locator('.vendor-stock-row').first().waitFor();
    await page.locator('.vendor-stock-row input[type=number]').first().fill(String(Number(count)+1));
    await page.locator('#vendor-stock-reason').fill('Failure recovery');
    await page.route('**/inventory',route=>route.request().method()==='PUT'?route.fulfill({status:503,json:{error:'Controlled save failure. Your edits are retained.'}}):route.continue());
@@ -150,6 +165,7 @@ const server=http.createServer(async(req,res)=>{try{
    await page.goto(base+'/marketing.html#products');await page.locator('#vendor-products-save:not([disabled])').waitFor();
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
    await page.screenshot({path:'/tmp/demeos-owner-vendor-catalogue-'+viewport.width+'.png',fullPage:true});
+   await page.goto(base+'/marketing.html#orders');await page.locator('.vendor-order-row').waitFor();await page.evaluate(()=>window.Clerk.signOut());await page.locator('#owner-auth-signed-out:not([hidden])').waitFor();await page.waitForFunction(()=>document.getElementById('vendor-orders-list').textContent==='');await context.clearCookies();assert.equal((await context.request.get(base+'/api/businesses/engineering-a/orders')).status(),401);
    assert.deepEqual(errors,[]);await context.close();
    // Restore exact catalogue for the next device without clearing stock history.
    await repository.saveBusiness(profile);

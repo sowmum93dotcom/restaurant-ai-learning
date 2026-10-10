@@ -98,7 +98,7 @@
   const save=el('products-review-save');if(save)save.hidden=selling;
  }
  function activate(){compactCatalogue();const state=root.DEMEOSOwnerWorkspace.getState(doc);if(state.status!=='ready'||state.model!=='selling'){reset();return;}if(context===state.businessId)return;reset();context=state.businessId;load();loadCatalogue();}
- doc.addEventListener('owner-model-ready',activate);root.addEventListener('hashchange',()=>{if(root.location.hash==='#inventory'&&!stock)load();});
+ doc.addEventListener('owner-model-ready',activate);root.addEventListener('hashchange',()=>{if(root.location.hash==='#inventory'&&!pending.size)load();});
  el('owner-preparation-language')?.addEventListener('change',translate);
  el('vendor-stock-search').addEventListener('input',()=>stock&&render());el('vendor-stock-filter').addEventListener('change',()=>stock&&render());
  el('vendor-stock-save').addEventListener('click',review);el('vendor-stock-reload').addEventListener('click',()=>{if(pending.size&&!root.confirm(t('changed')+' — '+t('reload')+'?'))return;el('vendor-stock-review').hidden=true;load(true);});

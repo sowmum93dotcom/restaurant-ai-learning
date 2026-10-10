@@ -21,7 +21,7 @@
     if (view === 'business-profile') return true;
     if (state?.status !== 'ready') return false;
     if (view === 'products' || view === 'product-options') return true;
-    if (view === 'inventory') return state.model === 'selling';
+    if (view === 'inventory' || view === 'orders') return state.model === 'selling';
     return state.model === 'marketing' && marketingViews.has(view);
   }
   const messages = {
@@ -80,10 +80,10 @@
       if (state.status === 'ready') {
         links.push(['products', state.model === 'selling' ? 'Product Catalogue' : 'Products and Services', 'marketing.html#products']);
         if (state.model === 'marketing') links.push(['marketing', 'Marketing', 'marketing.html#overview'], ['results', 'Results', 'business-results.html']);
-        else links.push(['product-options', 'Options', 'marketing.html#product-options'], ['inventory', 'Stock', 'marketing.html#inventory']);
+        else links.push(['inventory', 'Stock', 'marketing.html#inventory'], ['orders', 'Orders', 'marketing.html#orders']);
       }
       nav.replaceChildren();
-      for (const [id, label, href] of links) { const a = doc.createElement('a'); a.dataset.ownerSection = id; a.textContent = label; a.href = href; nav.appendChild(a); }
+      for (const [id, label, href] of links) { const a = doc.createElement('a'); a.dataset.ownerSection = id; if(id === 'orders') a.dataset.vendorCopy='orders'; a.textContent = label; a.href = href; nav.appendChild(a); }
       nav.style.setProperty('--owner-nav-columns', String(links.length));
       nav.style.setProperty('--owner-nav-template', links.length === 5 ? '1fr .9fr 1.4fr 1fr .8fr' : 'repeat(' + links.length + ',minmax(0,1fr))');
       root.updateOwnerNavigation?.(doc, root.location);

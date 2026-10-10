@@ -544,7 +544,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     });
     if (window.location.hash !== "#" + viewId && window.history && typeof window.history.replaceState === "function") window.history.replaceState(null, "", "#" + viewId);
     const area = byId("owner-area-heading");
-    const section = viewId === "inventory" ? "Stock" : viewId === "product-options" ? "Options and Availability" : viewId === "products" ? (globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model === "selling" ? "Product Catalogue" : "Products and Services") : viewId === "business-profile" ? "My Business" : "Marketing";
+    const section = viewId === "orders" ? vendorText("orders", "Orders") : viewId === "inventory" ? "Stock" : viewId === "product-options" ? "Options and Availability" : viewId === "products" ? (globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model === "selling" ? "Product Catalogue" : "Products and Services") : viewId === "business-profile" ? "My Business" : "Marketing";
     if (area) area.textContent = section;
     const productsHeading = byId("products-heading");
     if (productsHeading && panelView === "products") productsHeading.textContent = section;

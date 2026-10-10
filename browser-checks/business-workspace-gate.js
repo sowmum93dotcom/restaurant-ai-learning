@@ -116,9 +116,10 @@ const server=http.createServer(async(req,res)=>{try{
     if(model==='selling'){
       assert.equal(await page.locator('[data-owner-section="marketing"]').count(),0);
       assert.equal(await page.locator('[data-owner-section="results"]').count(),0);
-      assert.equal(await page.locator('[data-owner-section="product-options"]').count(),1);
+      assert.equal(await page.locator('[data-owner-section="orders"]').count(),1);
       assert.equal(await page.locator('#owner-selling-dependencies').isVisible(),true);
-      await page.locator('[data-owner-section="product-options"]').click();await page.locator('#products:not([hidden])').waitFor();
+      await page.locator('[data-owner-section="products"]').click();await page.locator('#products:not([hidden])').waitFor();assert.equal(await page.locator('#vendor-catalogue-tools [data-vendor-copy="productOptions"]').count(),1);
+      await page.locator('#vendor-catalogue-tools [data-vendor-copy="productOptions"]').click();await page.locator('#products:not([hidden])').waitFor();
       await page.locator('#business-products-list button').filter({hasText:'Edit'}).first().click();
       assert.equal(await page.locator('.owner-variant legend').first().innerText(),'Medium');
       assert.equal(await page.getByRole('button',{name:'Prepare marketing',exact:true}).isVisible(),false);
