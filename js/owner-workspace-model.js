@@ -21,6 +21,7 @@
     if (view === 'business-profile') return true;
     if (state?.status !== 'ready') return false;
     if (view === 'products' || view === 'product-options') return true;
+    if (view === 'inventory') return state.model === 'selling';
     return state.model === 'marketing' && marketingViews.has(view);
   }
   const messages = {
@@ -52,7 +53,7 @@
       const status = doc.createElement('span');
       status.textContent = state.model === 'marketing' ? 'Private marketing preparation' : state.model === 'selling' ? 'Preparation only. Selling is not enabled.' : messages[state.status][1];
       container.appendChild(status);
-      if (state.allowed.length === 2) {
+      if (state.allowed.length === 2 && record.businessProfile.preparationModel !== 'selling') {
         const switcher = doc.createElement('div'); switcher.className = 'owner-model-switch';
         switcher.setAttribute('role', 'group'); switcher.setAttribute('aria-label', 'Business workflow');
         for (const model of state.allowed) {
@@ -79,7 +80,7 @@
       if (state.status === 'ready') {
         links.push(['products', state.model === 'selling' ? 'Product Catalogue' : 'Products and Services', 'marketing.html#products']);
         if (state.model === 'marketing') links.push(['marketing', 'Marketing', 'marketing.html#overview'], ['results', 'Results', 'business-results.html']);
-        else links.push(['product-options', 'Options and Availability', 'marketing.html#product-options']);
+        else links.push(['product-options', 'Options', 'marketing.html#product-options'], ['inventory', 'Stock', 'marketing.html#inventory']);
       }
       nav.replaceChildren();
       for (const [id, label, href] of links) { const a = doc.createElement('a'); a.dataset.ownerSection = id; a.textContent = label; a.href = href; nav.appendChild(a); }
@@ -88,7 +89,8 @@
       root.updateOwnerNavigation?.(doc, root.location);
     }
     const header = doc.querySelector('.restaurant-name');
-    if (header) header.textContent = state.model === 'marketing' ? 'Marketing workspace' : state.model === 'selling' ? 'Selling workspace' : 'Business workspace';
+    if (header) header.textContent = state.model === 'marketing' ? 'Marketing workspace' : state.model === 'selling' ? record.businessProfile.name : 'Business workspace';
+    const businessCaption=doc.querySelector('.cuisine-type');if(businessCaption&&state.model==='selling')businessCaption.textContent='Selling workspace';
     const guide = doc.querySelector('.owner-preparation-guide');
     if (guide) { guide.hidden = false; const text=guide.querySelector('[data-owner-copy=guide]'); if(text)text.hidden=state.model !== 'marketing'; }
     const secondary = doc.querySelector('.marketing-secondary-sidebar');

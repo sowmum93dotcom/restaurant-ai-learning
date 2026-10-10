@@ -117,6 +117,7 @@
   </style>
   <link rel="stylesheet" href="css/business-profile-mobile-fix.css" />
   <link rel="stylesheet" href="css/business-workspace-completion.css" />
+  <link rel="stylesheet" href="css/vendor-inventory.css" />
 </head>
 <body data-owner-access="loading" data-owner-model="none" class="owner-workspace-body marketing-capability-body">
   <header class="workspace-header owner-workspace-header">
@@ -288,7 +289,7 @@
           <div class="view-heading"><h2 id="products-heading">Products and Services</h2><p>Keep your offers and their images accurate. Changes are saved with your business information.</p></div>
 
           <section class="content-card"><div class="business-profile-grid">              <section id="business-profile-offering" class="profile-step profile-long-field"><div class="profile-step-heading"><span>Your offers</span><div><h4>Products &amp; services</h4><p>Describe what the business genuinely provides.</p></div></div></section>
-              <p class="profile-long-field">Your general business activity is recorded in <a href="marketing.html#business-profile">My Business</a>. Add individual offers below when ready.</p>
+              <p class="profile-long-field" data-owner-marketing>Your general business activity is recorded in <a href="marketing.html#business-profile">My Business</a>. Add individual offers below when ready.</p>
               <div class="profile-long-field business-products-manager">
                 <div class="profile-step-heading"><div><h4>Your products and services</h4><p>Add genuine products or services. A product image is optional and is always tied to this business.</p></div></div>
                 <div class="business-products-manager-summary" aria-live="polite">
@@ -296,7 +297,7 @@
                   <div><strong id="business-products-visible">0</strong><span>Marked for customer discovery</span></div>
                   <div><strong id="business-products-images">0</strong><span>With business images</span></div>
                 </div>
-                <p class="business-products-customer-connection"><strong>Customer connection:</strong> visible products can appear only when genuinely relevant to a customer's request. The same business-provided image and approved continuation route stay attached to that product.</p>
+                <p class="business-products-customer-connection" data-owner-marketing><strong>Customer connection:</strong> visible products can appear only when genuinely relevant to a customer's request. The same business-provided image and approved continuation route stay attached to that product.</p>
                 <p id="owner-options-guidance">Select Edit on a saved product to review its options and availability.</p>
                 <div class="business-product-form">
                   <input type="hidden" id="business-product-id" />
@@ -313,6 +314,7 @@
                   <fieldset id="business-product-fulfilment-options" class="profile-choice-group profile-long-field" hidden><legend>Product fulfilment methods</legend><div class="profile-choice-grid"><label><input type="checkbox" value="collection" /> Collection</label><label><input type="checkbox" value="delivery" /> Business delivery</label><label><input type="checkbox" value="shipping" /> Shipping / post</label><label><input type="checkbox" value="premises" /> At our premises</label><label><input type="checkbox" value="customer-location" /> At customer location</label><label><input type="checkbox" value="appointment" /> Appointment / booked service</label><label><input type="checkbox" value="digital" /> Digital / remote delivery</label></div></fieldset>
                   <div class="profile-long-field business-product-form-actions"><button id="business-product-add-btn" class="demeos-secondary-button" type="button">Add product / service</button><button id="business-product-cancel-btn" class="text-button" type="button" hidden>Cancel edit</button></div>
                 </div>
+                <div id="vendor-catalogue-tools" data-owner-selling hidden><label><span data-vendor-copy="catalogueSearch">Find a product</span><input id="vendor-catalogue-search" type="search" /></label><label><input id="vendor-products-confirm" type="checkbox" /><span data-vendor-copy="accurate">These product details are accurate.</span></label><button id="vendor-products-save" type="button" class="demeos-primary-button" data-vendor-copy="saveProducts">Save products</button><p id="vendor-products-status" role="status" aria-live="polite"></p></div>
                 <div id="business-products-list" class="business-products-list" aria-live="polite"></div>
                 <p id="business-products-empty">No individual products or services added yet. Your general products/services description will still be used.</p>
               </div>
@@ -330,7 +332,20 @@
                 <p id="business-media-empty">No business images or videos added yet.</p>
               </section>
 
-</div><p>Review your business details and confirm accuracy before saving these changes.</p><button id="products-review-save" class="demeos-primary-button" type="button" data-open-view="business-profile">Review and save business information</button></section>
+</div><p data-owner-marketing>Review your business details and confirm accuracy before saving these changes.</p><button id="products-review-save" class="demeos-primary-button" type="button" data-open-view="business-profile">Review and save business information</button></section>
+        </section>
+        <section id="inventory" class="workspace-view" data-workspace-panel hidden aria-labelledby="vendor-stock-heading">
+          <div class="view-heading"><h2 id="vendor-stock-heading" data-vendor-copy="stock">Stock</h2><p data-vendor-copy="intro">Manage quantities for your saved products. Selling activation is separate.</p></div>
+          <section class="content-card vendor-stock-card">
+            <div class="vendor-stock-summary" id="vendor-stock-summary"></div>
+            <div class="vendor-stock-toolbar"><label><span data-vendor-copy="search">Find a product or stock code</span><input id="vendor-stock-search" type="search" /></label><label><span data-vendor-copy="filter">Show</span><select id="vendor-stock-filter"><option value="all" data-vendor-copy="all">All stock</option><option value="low" data-vendor-copy="low">Low stock</option><option value="sold-out" data-vendor-copy="soldOut">Sold out</option><option value="untracked" data-vendor-copy="untracked">Not recorded</option></select></label><button id="vendor-stock-reload" type="button" data-vendor-copy="reload">Reload</button></div>
+            <p id="vendor-stock-status" role="status" aria-live="polite"></p>
+            <div id="vendor-stock-list"></div>
+            <div class="vendor-stock-actions"><label><span data-vendor-copy="reason">Reason for adjustment</span><input id="vendor-stock-reason" maxlength="300" /></label><button id="vendor-stock-save" type="button" class="demeos-primary-button" data-vendor-copy="save">Review changes</button></div>
+            <div id="vendor-stock-review" hidden></div>
+            <details class="vendor-stock-tools"><summary data-vendor-copy="bulk">Update several products</summary><p data-vendor-copy="csvNote">Download your stock file, update quantities, then import it to review before saving.</p><button id="vendor-stock-export" type="button" data-vendor-copy="export">Download CSV</button><label><span data-vendor-copy="import">Import stock CSV</span><input id="vendor-stock-import" type="file" accept=".csv,text/csv" /></label></details>
+            <details class="vendor-stock-tools"><summary data-vendor-copy="history">Adjustment history</summary><div id="vendor-stock-history"></div></details>
+          </section>
         </section>
         <section id="business-profile" class="workspace-view" data-workspace-panel hidden aria-labelledby="business-profile-heading">
           <div class="view-heading"><h2 id="business-profile-heading">My Business</h2><p>Keep your business information accurate so DEMEOS can use it correctly.</p></div>
@@ -436,5 +451,7 @@
   <script src="js/business-preparation-language.js"></script>
   <script src="js/business-onboarding.js"></script>
   <script src="js/script.js"></script>
+  <script src="js/vendor-inventory-copy.js"></script>
+  <script src="js/vendor-inventory.js"></script>
 </body>
 </html>

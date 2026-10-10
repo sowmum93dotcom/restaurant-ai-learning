@@ -20,7 +20,19 @@ module.exports = async function handler(req, res) {
     if (!access.authenticated) return res.status(401).json({ error: "Authentication required." });
     if (!access.allowed) return res.status(403).json({ error: "Forbidden." });
     if (req.method === "GET") {
-      const assets = await repository.getBusinessMediaAssets(businessId, 100);
+      let assets = await repository.getBusinessMediaAssets(businessId, 100);
+      const record = await repository.getKnownBusiness(businessId);
+      const profile = record?.businessProfile;
+      if (profile?.businessId === businessId && ["selling", "both"].includes(profile.preparationModel)) {
+        // Recent uploads stay bounded, but saved galleries must survive catalogue reopening.
+        const galleries = (Array.isArray(profile.products) ? profile.products : []).slice(0, 100)
+          .filter(product => product?.businessId === businessId && Array.isArray(product.mediaGallery?.assetIds));
+        const saved = await Promise.all(galleries.map(async product => {
+          const linked = await repository.getBusinessMediaAssetsByIds(businessId, product.mediaGallery.assetIds.slice(0, 20));
+          return linked.filter(asset => asset.relatedEntityId === product.productId && asset.businessId === businessId);
+        }));
+        assets = Array.from(new Map([...assets, ...saved.flat()].map(asset => [asset.assetId, asset])).values());
+      }
       return res.status(200).json({ assets });
     }
     const supplied = req.body && req.body.asset;

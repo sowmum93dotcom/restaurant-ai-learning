@@ -32,6 +32,8 @@ jobs:
         run: git fetch --no-tags --depth=1 origin 8c4ccbc93af01480f41e6444446b79a321a11ef9
       - name: Run owner workspace SQL, permission and draft gate
         run: node browser-checks/business-workspace-gate.js
+      - name: Run selling vendor inventory SQL and rendered gate
+        run: node browser-checks/vendor-inventory-gate.js
       - name: Run private administrative application review gate
         run: node browser-checks/admin-business-review-gate.js
       - name: Run approved source SQL and customer continuation gate

@@ -737,6 +737,47 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
       return result.rows[0]?.profile || null;
     },
 
+    async getVendorInventory(businessId) {
+      await database.ensureSchema();
+      const result=await database.query('SELECT revision, entries FROM demeos_vendor_inventory WHERE business_id=$1',[businessId]);
+      const history=await database.query('SELECT revision, changes, recorded_at FROM demeos_vendor_stock_history WHERE business_id=$1 ORDER BY revision DESC LIMIT 30',[businessId]);
+      return {...(result.rows[0]||{revision:0,entries:{}}),history:history.rows};
+    },
+    async saveVendorInventory(identity,businessId,profile,revision,entries,changes) {
+      await database.ensureSchema();
+      // A catalogue row lock and snapshot check protect against concurrent option
+      // changes; ownership and saved selling intent are rechecked in the write.
+      const result=await database.query(`WITH owned AS (
+        SELECT b.business_id FROM demeos_businesses b
+        WHERE b.business_id=$1 AND b.profile=$2::jsonb
+          AND b.profile->>'preparationModel' IN ('selling','both')
+          AND EXISTS(SELECT 1 FROM demeos_business_owners o WHERE o.business_id=b.business_id AND o.trusted_identity_id=$3)
+        FOR UPDATE
+      ), saved AS (
+        INSERT INTO demeos_vendor_inventory (business_id,revision,entries)
+        SELECT business_id,1,$5::jsonb FROM owned WHERE $4=0
+        ON CONFLICT(business_id) DO UPDATE SET revision=demeos_vendor_inventory.revision+1,entries=EXCLUDED.entries,updated_at=NOW()
+        WHERE demeos_vendor_inventory.revision=$4
+        RETURNING revision
+      ), updated AS (
+        UPDATE demeos_vendor_inventory SET revision=revision+1,entries=$5::jsonb,updated_at=NOW()
+        WHERE business_id IN (SELECT business_id FROM owned) AND revision=$4 AND $4>0
+        RETURNING revision
+      ), changed AS (SELECT revision FROM saved UNION ALL SELECT revision FROM updated), logged AS (
+        INSERT INTO demeos_vendor_stock_history(business_id,revision,trusted_identity_id,changes)
+        SELECT $1,revision,$3,$6::jsonb FROM changed RETURNING revision
+      ) SELECT revision FROM logged`,[businessId,JSON.stringify(profile),identity,revision,JSON.stringify(entries),JSON.stringify(changes)]);
+      return result.rows[0]||null;
+    },
+    async saveSellingProducts(identity,businessId,previousProfile,profile) {
+      await database.ensureSchema();
+      const result=await database.query(`UPDATE demeos_businesses b SET profile=$4::jsonb,updated_at=NOW()
+        WHERE b.business_id=$1 AND b.profile=$2::jsonb AND b.profile->>'preparationModel' IN ('selling','both')
+          AND EXISTS(SELECT 1 FROM demeos_business_owners o WHERE o.business_id=b.business_id AND o.trusted_identity_id=$3)
+        RETURNING profile`,[businessId,JSON.stringify(previousProfile),identity,JSON.stringify(profile)]);
+      return result.rows[0]?.profile||null;
+    },
+
     async saveBusiness(profile) {
       await database.ensureSchema();
       await database.query(
