@@ -36,6 +36,8 @@ Local original-video playback uses the existing truthful codec fallback where H2
 
 ## Release requirements and remaining limits
 
+Independent review identified and resolved a mobile cascade issue: an equally specific max800px rule now stacks both workflow cards, with rendered bounding-box assertions proving readable full-width cards and preserving side-by-side tablet/desktop presentation. No blocking findings remain in the reviewed source. GitHub Codex review was quota-limited; an independently authorised reviewer agent reviewed source, screenshots and focused tests.
+
 Required exact-final-head V1 Baseline Tests and Customer Experience Browser Gate, independent Codex review, READY exact-head preview and safe deployment verification must pass before merge. After merge, verify exact production commit READY and www.demeos.io alias, owner authentication/private API boundaries and nine-language read-only Customer Experience regression checks. Final hashes, workflow runs, review outcome and deployment IDs are recorded in the PR release report.
 
 Production checks do not create businesses, applications, drafts, approvals or payments. Genuine authenticated owner usability is not claimed from isolated identity tests or signed-out production checks. Preparation permission is distinct from publication, business approval, selling and merchant payment authorisation; those remain subject to the existing separate authority. No external AI or public onboarding is activated. Work stops after PR 699.

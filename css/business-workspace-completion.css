@@ -92,6 +92,7 @@
 
 /* Both existing workflows stay visible before activity and preparation summaries. */
 .owner-workspace-body .owner-operating-models{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;}
+@media(max-width:800px){.owner-workspace-body .owner-operating-models{grid-template-columns:1fr;}}
 .owner-model-introduction{grid-column:1/-1;}
 .owner-workspace-body .owner-model-introduction h3{margin:0;color:#ead18b;font:600 1.2rem Arial,sans-serif;}
 .owner-workspace-body .owner-model-introduction p{margin:.6rem 0 0;color:#d4deeb;line-height:1.6;}

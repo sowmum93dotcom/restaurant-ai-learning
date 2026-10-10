@@ -62,6 +62,11 @@ const server=http.createServer(async(req,res)=>{try{
     await link.focus();const focused=await link.boundingBox();assert.ok(focused.x>=0&&focused.x+focused.width<=viewport.width,'Keyboard focus reveals each navigation destination: '+JSON.stringify({focused,viewport,label:await link.innerText()}));
    }
    assert.equal(await page.locator('footer .owner-public-destination').getAttribute('href'),'customer.html');
+   const modelBoxes=await page.locator('#owner-operating-models .owner-model-card').evaluateAll(cards=>cards.map(card=>{const {x,y,width,height}=card.getBoundingClientRect();return {x,y,width,height};}));
+   assert.equal(modelBoxes.length,2);
+   if(viewport.width<=800){assert.equal(modelBoxes[0].x,modelBoxes[1].x);assert.ok(modelBoxes[1].y>=modelBoxes[0].y+modelBoxes[0].height,'Mobile workflows stack at readable full width');}
+   else assert.equal(modelBoxes[0].y,modelBoxes[1].y,'Wider screens present workflows side by side');
+   after.models=modelBoxes;
    await page.evaluate(()=>{document.activeElement?.blur();scrollTo(0,0);});
    await page.screenshot({path:'/tmp/demeos-owner-after-first-screen-'+viewport.width+'.png'});
    await page.screenshot({fullPage:true,path:'/tmp/demeos-owner-after-overview-'+viewport.width+'.png'});
