@@ -63,7 +63,7 @@
     if (activeRoute) {
       doc.querySelectorAll('a[href]').forEach(link => {
         const href = link.getAttribute('href');
-        if (href === 'business-workspace.html') link.href = destination(activeRoute, 'dashboard');
+        if (href === 'business-workspace.html' || href === '/business-workspace.html') link.href = destination(activeRoute, 'dashboard');
         else if (href === 'business-results.html') link.href = destination(activeRoute, 'results');
         else if (href.startsWith('marketing.html')) link.href = destination(activeRoute, href.split('#')[1] || 'overview');
       });
