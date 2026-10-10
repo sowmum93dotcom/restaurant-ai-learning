@@ -10,6 +10,16 @@
     const path = root.location?.pathname || '';
     return path.startsWith('/marketing-business') ? 'marketing' : path.startsWith('/selling-vendor') ? 'selling' : null;
   }
+  function identifyApplication(doc) {
+    const application = routeApplication(); if (!application) return;
+    const name = copy(application === 'selling' ? 'sellingApplication' : 'marketingApplication', application === 'selling' ? 'Selling Vendor Application' : 'Marketing Business Application');
+    const header = doc.querySelector('.restaurant-name'); if (header) header.textContent = name;
+    doc.title = name + ' | DEMEOS';
+    const signedOut = doc.getElementById('owner-auth-signed-out');
+    const heading = signedOut?.querySelector('h2'), detail = signedOut?.querySelector('h2+p');
+    if (heading) heading.textContent = copy('applicationSignIn', 'Sign in to continue');
+    if (detail) detail.textContent = copy('applicationSignInDetail', 'Use your DEMEOS account to access this application.');
+  }
   function destination(model, view) {
     const base = model === 'selling' ? '/selling-vendor' : '/marketing-business';
     return view === 'dashboard' ? base : view === 'results' ? base + '/results' : base + '/manage#' + view;
@@ -47,6 +57,7 @@
   };
   function getState(doc) { return states.get(doc)?.state || {status: 'loading', model: null, allowed: []}; }
   function apply(doc, record, businessId, failure, requestedModel) {
+    identifyApplication(doc);
     const previous = states.get(doc);
     const activeRoute = routeApplication();
     if (activeRoute) {
@@ -155,5 +166,5 @@
   }
   const api = {routeApplication, destination, resolve, canOpen, apply, getState, messages};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
-  else root.DEMEOSOwnerWorkspace = api;
+  else {root.DEMEOSOwnerWorkspace = api;identifyApplication(root.document);}
 })(typeof window !== 'undefined' ? window : globalThis);

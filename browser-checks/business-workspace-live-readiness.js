@@ -18,8 +18,10 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict');
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(String(e)));
   for(const viewport of [{width:390,height:844},{width:820,height:1180},{width:1440,height:1000}]){
    await page.setViewportSize(viewport);
-   for(const file of ['business-workspace.html','marketing.html','business-results.html']){
+   for(const file of ['business-workspace.html','marketing.html','business-results.html','marketing-business','marketing-business/manage','marketing-business/results','selling-vendor','selling-vendor/manage']){
     await page.goto(base.origin+'/'+file);await page.locator(config.expectUnavailable===true?'#owner-auth-error:not([hidden])':'#owner-auth-signed-out:not([hidden])').waitFor({timeout:45000});
+    if(file.startsWith('marketing-business'))assert.equal(await page.locator('h1').innerText(),'Marketing Business Application');
+    if(file.startsWith('selling-vendor'))assert.equal(await page.locator('h1').innerText(),'Selling Vendor Application');
     assert.equal(await page.locator('#owner-sign-in:visible').count(),config.expectUnavailable===true?0:1);assert.equal(await page.locator('#owner-authenticated-workspace').isVisible(),false);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
    }
    console.log(config.expectUnavailable===true?'Preview authentication unavailable boundary and private API isolation passed':'Deployed owner sign-in boundary and private API isolation passed',viewport.width);
