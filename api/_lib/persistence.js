@@ -10,6 +10,7 @@ const { toPublicCustomerWorkItem, MAX_PUBLIC_CUSTOMER_MEDIA, MAX_SEARCH_CATALOGU
 
 function createPersistenceRepository(database, { getMediaStorageAdapter = getConfiguredMediaStorageAdapter,
   reportCatalogueDiagnostics = summary => console.warn("Customer catalogue readiness", summary) } = {}) {
+  const vendorOrders = require('./vendor-orders').createVendorOrders(database);
   function isNonEmptyString(value) {
     return typeof value === "string" && value.trim().length > 0;
   }
@@ -736,6 +737,8 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
          RETURNING profile`, [businessId, trustedIdentityId, JSON.stringify(reviewedProfile), new Date().toISOString()]);
       return result.rows[0]?.profile || null;
     },
+
+    async getVendorOrders(identity, businessId) { return vendorOrders.listOwned(identity, businessId); },
 
     async getVendorInventory(businessId) {
       await database.ensureSchema();

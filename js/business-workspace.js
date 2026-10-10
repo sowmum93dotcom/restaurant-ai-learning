@@ -25,6 +25,7 @@ function getOwnerNavigationSection(locationObject, workspaceView) {
   if (view === "products") return "products";
   if (view === "product-options") return "product-options";
   if (view === "inventory") return "inventory";
+  if (view === "orders") return "orders";
   return "marketing";
 }
 

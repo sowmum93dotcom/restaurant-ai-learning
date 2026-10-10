@@ -37,6 +37,49 @@ const SCHEMA_STATEMENTS = [
     recorded_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     PRIMARY KEY (business_id, revision)
   )`,
+  `CREATE TABLE IF NOT EXISTS demeos_vendor_orders (
+    order_id TEXT PRIMARY KEY,
+    business_id TEXT NOT NULL REFERENCES demeos_businesses(business_id),
+    customer_id TEXT NOT NULL,
+    request_key TEXT NOT NULL,
+    request_signature TEXT NOT NULL,
+    record JSONB NOT NULL,
+    state TEXT NOT NULL CHECK (state IN ('reserved','cancelled','expired')),
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(customer_id, request_key),
+    CHECK (record @> '{"source":"authoritative-catalogue","mode":"live","paymentState":"not-started"}'::jsonb),
+    CHECK (record ?& ARRAY['id','businessId','customerId','state','line','remainingReserved','expiresAt']),
+    CHECK ((record->>'expiresAt')::timestamptz = expires_at),
+    CHECK ((record->>'remainingReserved')::integer >= 0 AND (record->>'remainingReserved')::integer <= (record->'line'->>'quantity')::integer),
+    CHECK ((state='reserved' AND (record->>'remainingReserved')::integer > 0) OR (state<>'reserved' AND (record->>'remainingReserved')::integer=0)),
+    CHECK (record->>'source' = 'authoritative-catalogue'),
+    CHECK (record->>'mode' = 'live'),
+    CHECK (record->>'businessId' = business_id),
+    CHECK (record->>'customerId' = customer_id),
+    CHECK (record->>'id' = order_id),
+    CHECK (record->>'state' = state),
+    CHECK (record->>'paymentState' = 'not-started')
+  )`,
+  `CREATE INDEX IF NOT EXISTS demeos_vendor_orders_expiry_idx
+    ON demeos_vendor_orders(expires_at, order_id) WHERE state = 'reserved'`,
+  `CREATE TABLE IF NOT EXISTS demeos_vendor_order_requests (
+    customer_id TEXT NOT NULL,
+    request_key TEXT NOT NULL,
+    request_signature TEXT NOT NULL,
+    business_id TEXT NOT NULL REFERENCES demeos_businesses(business_id),
+    result JSONB NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY(customer_id, request_key)
+  )`,
+  `CREATE TABLE IF NOT EXISTS demeos_vendor_order_events (
+    order_id TEXT NOT NULL REFERENCES demeos_vendor_orders(order_id),
+    event TEXT NOT NULL CHECK (event IN ('reserved','cancelled','expired')),
+    actor_id TEXT NOT NULL,
+    inventory_revision INTEGER NOT NULL,
+    recorded_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY(order_id, event)
+  )`,
   `CREATE TABLE IF NOT EXISTS demeos_campaigns (
     campaign_id TEXT PRIMARY KEY,
     business_id TEXT NOT NULL REFERENCES demeos_businesses(business_id),
@@ -222,6 +265,22 @@ function createDatabase(client) {
 
   return {
     ensureSchema,
+    // All reservation reads/writes must share one connection. Never BEGIN on a pool.
+    async transaction(work) {
+      await ensureSchema();
+      if (typeof client.transaction === 'function') return client.transaction(work);
+      if (typeof client.connect !== 'function') throw new Error('Pinned transactions unavailable');
+      const connection = await client.connect();
+      try {
+        await connection.query('BEGIN');
+        const result = await work(connection);
+        await connection.query('COMMIT');
+        return result;
+      } catch (error) {
+        await connection.query('ROLLBACK');
+        throw error;
+      } finally { connection.release(); }
+    },
     query: function (text, values) { return client.query(text, values); }
   };
 }
