@@ -160,8 +160,16 @@ const server=http.createServer(async(req,res)=>{try{
    assert.equal((await context.request.put(base+'/api/businesses/engineering-a',{data:{action:'submit-business',ownerAccuracyConfirmed:true,reviewedProfile:profile}})).status(),403);
    const before=record.businessProfile;const body={action:'submit-business',ownerAccuracyConfirmed:true,reviewedProfile:before};
    assert.equal((await context.request.put(base+'/api/businesses/'+businessId,{data:{...body,reviewedProfile:{...before,name:'Wrong snapshot'}}})).status(),409);
+   // Keep the unchanged reviewed profile retryable through server errors and lost success responses.
+   const submitUrl=base+'/api/businesses/'+businessId;
+   await page.route(submitUrl,route=>route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'Temporary test failure'})}),{times:1});
+   await page.locator('#submit-business-btn').click();await page.locator('#business-onboarding-status').filter({hasText:'Could not submit'}).waitFor();assert.equal(await page.locator('#submit-business-btn').isEnabled(),true);
+   assert.equal((await repository.getKnownBusiness(businessId)).businessProfile.informationStatus.reviewState,undefined);
+   await page.route(submitUrl,async route=>{assert.equal((await route.fetch()).status(),200);await route.abort('failed');},{times:1});
+   await page.locator('#submit-business-btn').click();await page.waitForFunction(()=>!document.getElementById('submit-business-btn').disabled&&document.getElementById('business-onboarding-status').textContent.includes('Could not submit'));
+   const ambiguousStamp=(await repository.getKnownBusiness(businessId)).businessProfile.informationStatus.submittedAt;assert.ok(ambiguousStamp);
    await page.locator('#business-accuracy-confirmation').check();const submitted=page.waitForResponse(r=>r.request().postDataJSON()?.action==='submit-business');await page.locator('#submit-business-btn').click();assert.equal((await submitted).status(),200);await page.locator('#business-onboarding-status').filter({hasText:'Submitted privately'}).waitFor();
-   record=await repository.getKnownBusiness(businessId);assert.equal(record.businessProfile.informationStatus.reviewState,'submitted');const stamp=record.businessProfile.informationStatus.submittedAt;assert.equal((await context.request.put(base+'/api/businesses/'+businessId,{data:body})).status(),200);
+   record=await repository.getKnownBusiness(businessId);assert.equal(record.businessProfile.informationStatus.reviewState,'submitted');const stamp=record.businessProfile.informationStatus.submittedAt;assert.equal(stamp,ambiguousStamp);assert.equal((await context.request.put(base+'/api/businesses/'+businessId,{data:body})).status(),200);
    assert.equal((await context.request.put(base+'/api/businesses/'+businessId,{data:{...body,reviewedProfile:record.businessProfile}})).status(),200);assert.equal((await repository.getKnownBusiness(businessId)).businessProfile.informationStatus.submittedAt,stamp);
    const readiness=(await (await context.request.get(base+'/api/businesses/'+businessId)).json()).workspaceReadiness;assert.equal(readiness.selling.canSell,false);assert.equal(readiness.onboarding.approved,false);assert.equal(readiness.publication.draftsPublic,false);
    assert.deepEqual((await (await context.request.get(base+'/api/customer/work')).json()).work,[]);
