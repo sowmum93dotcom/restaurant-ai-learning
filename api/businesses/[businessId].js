@@ -287,9 +287,12 @@ module.exports = async function handler(req, res) {
     }
     const record = await repository.getKnownBusiness(businessId);
     if (!record) return res.status(404).json({ error: "Business not found." });
-    return res.status(200).json({ ...record, workspaceReadiness: workspaceReadiness(record, businessId) });
+    const applicationReview = await repository.getBusinessApplicationOwnerStatus?.(businessId, record.businessProfile);
+    return res.status(200).json({ ...record, applicationReview, workspaceReadiness: workspaceReadiness({...record,applicationReview}, businessId) });
   } catch (error) {
     console.error("Could not restore known business:", error);
     return res.status(500).json({ error: "DEMEOS could not restore this business." });
   }
 };
+
+module.exports.validateProfile = getValidatedProfile;

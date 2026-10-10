@@ -5,6 +5,16 @@ const SCHEMA_STATEMENTS = [
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`,
+  `CREATE TABLE IF NOT EXISTS demeos_business_application_reviews (
+    business_id TEXT NOT NULL REFERENCES demeos_businesses(business_id),
+    application_revision TEXT NOT NULL CHECK (application_revision ~ '^[a-f0-9]{64}$'),
+    administrator_id TEXT NOT NULL,
+    decision TEXT NOT NULL CHECK (decision IN ('reviewed', 'changes-requested')),
+    notes TEXT NOT NULL CHECK (CHAR_LENGTH(notes) <= 2000),
+    reviewed_snapshot JSONB NOT NULL,
+    decided_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (business_id, application_revision)
+  )`,
   `CREATE TABLE IF NOT EXISTS demeos_business_owners (
     trusted_identity_id TEXT NOT NULL,
     business_id TEXT NOT NULL REFERENCES demeos_businesses(business_id),
