@@ -31,13 +31,14 @@
   byId('owner-preparation-language')?.addEventListener('change',localize);
   byId('submit-business-btn').addEventListener('click',submit);
   doc.querySelectorAll('.business-profile-progress a').forEach(link=>link.addEventListener('click',()=>{const target=byId(link.hash.slice(1));const group=target?.closest('details');if(group)group.open=true;}));localize();}
+ function markDirty(){dirty=true;failure=false;render();}
  function fill(profile){setup();doc.querySelectorAll('.onboarding-step').forEach((group,index)=>{group.open=!!profile||index===0;});failure=false;saved=null;dirty=true;byId('business-offering-category').value=profile?.offeringCategoryId||'';byId('business-preparation-model').value=profile?.preparationModel||'';render();}
  function confirm(profile){setup();if(!profile||profile.businessId!==root.localStorage.getItem('demeosActiveBusinessId'))return;saved=JSON.parse(JSON.stringify(profile));dirty=false;render();}
  async function submit(){if(busy||dirty||!saved)return;if(!byId('business-accuracy-confirmation').checked){byId('business-onboarding-status').textContent=text('review');byId('business-accuracy-confirmation').focus();return;}
   const snapshot=saved;busy=true;failure=false;render();try{const response=await root.fetch('/api/businesses/'+encodeURIComponent(snapshot.businessId),{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'submit-business',ownerAccuracyConfirmed:true,reviewedProfile:snapshot})});
    if(!response.ok){if(response.status===409&&saved===snapshot)dirty=true;throw Error('Submission unavailable');}const result=await response.json();if(saved!==snapshot||root.localStorage.getItem('demeosActiveBusinessId')!==snapshot.businessId)return;saved={...snapshot,informationStatus:result.informationStatus};
   }catch(_){if(saved===snapshot){failure=true;byId('business-onboarding-status').textContent=text('failed');}}finally{busy=false;render();}}
- root.DEMEOSBusinessOnboarding={fill,confirm,localize,copy,keys};
+ root.DEMEOSBusinessOnboarding={fill,confirm,localize,markDirty,copy,keys};
  if(typeof module==='object'&&module.exports)module.exports={copy,keys};
  if(doc)doc.addEventListener('DOMContentLoaded',setup);
 }(typeof window==='object'?window:{}));

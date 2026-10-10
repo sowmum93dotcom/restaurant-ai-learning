@@ -1047,6 +1047,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       remove.addEventListener("click", function () {
         const removingEditedProduct = productFields.id.value === product.productId;
         draftProducts = draftProducts.filter(function (entry) { return entry.productId !== product.productId; });
+        globalThis.window?.DEMEOSBusinessOnboarding?.markDirty();
         if (removingEditedProduct) resetProductForm();
         renderBusinessProducts();
       });
@@ -1098,6 +1099,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     if (productFields.fulfilmentMode.value !== "specific") delete product.fulfilment;
     const existingIndex = draftProducts.findIndex(function (entry) { return entry.productId === productId; });
     if (existingIndex >= 0) draftProducts.splice(existingIndex, 1, product); else draftProducts.push(product);
+    globalThis.window?.DEMEOSBusinessOnboarding?.markDirty();
     resetProductForm(); renderBusinessProducts();
   }
   if (productAddBtn) productAddBtn.addEventListener("click", addDraftProduct);

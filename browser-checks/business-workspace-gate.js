@@ -65,6 +65,12 @@ const server=http.createServer(async(req,res)=>{try{
    await page.screenshot({fullPage:true,path:'/tmp/demeos-owner-overview-'+viewport.width+'.png'});
    await page.locator('[data-owner-section="business-profile"]').click();await page.locator('[data-owner-section="products"]').click();await page.locator('#business-products-list').filter({hasText:'Exact jacket'}).waitFor();
    assert.equal(new URL(page.url()).hash,'#products');assert.equal(await page.locator('[data-owner-section="products"]').getAttribute('aria-current'),'page');assert.equal(await page.locator('#business-product-id').count(),1);
+   // Removing an offer by click must invalidate the saved onboarding review.
+   assert.equal(await page.locator('#submit-business-btn').isEnabled(),true);
+   await page.locator('#business-products-list').getByRole('button',{name:'Remove',exact:true}).click();
+   await page.locator('[data-owner-section="business-profile"]').click();assert.equal(await page.locator('#submit-business-btn').isEnabled(),false);
+   assert.match(await page.locator('#business-onboarding-status').innerText(),/Save your changes/);assert.equal((await repository.getKnownBusiness('engineering-a')).businessProfile.products.length,1);
+   await page.reload();await page.locator('#submit-business-btn:enabled').waitFor();await page.locator('[data-owner-section="products"]').click();await page.locator('#business-products-list').filter({hasText:'Exact jacket'}).waitFor();
    // Fields come only from the authoritative contract; no owner mapping or selling setup.
    const categories=await page.evaluate(()=>Object.entries(DEMEOSCustomerItemContract.categories).map(([id,category])=>[id,category.fields]));
    for(const [id,fields] of categories){
