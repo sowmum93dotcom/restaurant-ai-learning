@@ -128,12 +128,15 @@ const server=http.createServer(async(req,res)=>{try{
        await page.locator('body[data-owner-access=denied]').waitFor();
        assert.equal(await page.locator('.owner-current-work').isVisible(),false);
      } else {
+       assert.ok(await page.evaluate(()=>JSON.parse(localStorage.getItem('demeosCampaignHistory')||'[]').some(item=>item.businessId==='engineering-a')));
        await page.locator('.owner-application-entries a[href="/selling-vendor"]').click();
        await page.waitForURL(base+'/selling-vendor');await page.locator('body[data-owner-model=selling]').waitFor();
        await page.locator('#owner-authenticated-workspace:not([hidden])').waitFor();await page.locator('#workspace-business-identity strong').filter({hasText:'Engineering Owner A'}).waitFor();
        await page.screenshot({fullPage:true,path:'/tmp/demeos-owner-application-selling-dual-'+viewport.width+'.png'});
        await page.locator('[data-owner-section=products]').click();await page.locator('#products:not([hidden])').waitFor();
        assert.equal(new URL(page.url()).pathname,'/selling-vendor/manage');
+       await page.waitForFunction(()=>!JSON.parse(localStorage.getItem('demeosCampaignHistory')||'[]').some(item=>item.businessId==='engineering-a'));
+       assert.equal(await page.locator('#campaign-history-list').innerText(),'');
        assert.equal(await page.evaluate(()=>localStorage.getItem('demeosActiveBusinessId')),'engineering-a');
        await page.reload();await page.locator('body[data-owner-model=selling]').waitFor();
        await page.goto(base+'/marketing.html#orders');await page.waitForURL(base+'/selling-vendor/manage#orders');await page.locator('body[data-owner-model=selling]').waitFor();

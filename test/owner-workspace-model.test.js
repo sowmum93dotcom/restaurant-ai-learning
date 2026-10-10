@@ -27,6 +27,15 @@ test('invalidated detail responses cannot overwrite profiles, pending edits or c
   const forbidden=await hydrateKnownBusiness(storage,'owned',async()=>({ok:false,status:403}));
   assert.equal(forbidden.reason,'forbidden');assert.equal(JSON.stringify([...data]),before);
 });
+test('Selling hydration evicts active business Marketing cache without losing shared identity or another business cache',()=>{
+  const {mergeKnownBusinessPersistence}=require('../js/script');
+  const profiles=[{businessId:'owned',name:'Same business',products:[{productId:'exact-product'}]}];
+  const campaigns=[{id:'cached-private-draft',businessId:'owned'},{id:'other-private-draft',businessId:'other'}];
+  const server={businessProfile:profiles[0],campaigns:[]};
+  const selling=mergeKnownBusinessPersistence(profiles,campaigns,'owned',server,false,[],'selling');
+  assert.deepEqual(selling.campaigns,[campaigns[1]]);assert.deepEqual(selling.profiles,profiles);
+  assert.deepEqual(mergeKnownBusinessPersistence(profiles,campaigns,'owned',server,false,[],'marketing').campaigns,campaigns);
+});
 test('setup, pending, denied, service failure and foreign readiness remain distinct and closed',()=>{
   const pending=record(undefined,undefined);pending.workspaceReadiness.onboarding={status:'submitted'};
   const cases=[[null,null,null,'setup'],[pending,'owned',null,'pending'],[record(false,false),'owned',null,'denied'],[record(true,true),'foreign',null,'unavailable'],[record('true',1),'owned',null,'unavailable'],[record(true,true),'owned','forbidden','forbidden'],[record(true,true),'owned','unavailable','unavailable']];

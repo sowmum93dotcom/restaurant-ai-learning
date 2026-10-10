@@ -230,7 +230,7 @@ function enforceBusinessCampaignLimit(campaigns, businessId, maximumCampaigns, p
   return retained;
 }
 
-function mergeKnownBusinessPersistence(profiles, campaigns, businessId, serverRecord, preserveLocalProfile, decisions) {
+function mergeKnownBusinessPersistence(profiles, campaigns, businessId, serverRecord, preserveLocalProfile, decisions, application) {
   const serverProfile = serverRecord && serverRecord.businessProfile;
   if (!businessId || !serverProfile || serverProfile.businessId !== businessId) {
     throw new Error("The restored business did not match the requested business.");
@@ -242,12 +242,14 @@ function mergeKnownBusinessPersistence(profiles, campaigns, businessId, serverRe
   if (!preserveLocalProfile) {
     nextProfiles[profileIndex] = { ...profiles[profileIndex], ...serverProfile, businessId };
   }
-  const serverCampaigns = Array.isArray(serverRecord.campaigns) ? serverRecord.campaigns : [];
+  const serverCampaigns = application !== 'selling' && Array.isArray(serverRecord.campaigns) ? serverRecord.campaigns : [];
   const validServerCampaigns = serverCampaigns.filter(function (campaign) {
     return campaign && typeof campaign.id === "string" && campaign.businessId === businessId;
   });
   const serverById = new Map(validServerCampaigns.map(function (campaign) { return [campaign.id, campaign]; }));
-  const mergedCampaigns = campaigns.map(function (campaign) {
+  const mergedCampaigns = campaigns.filter(function (campaign) {
+    return application !== 'selling' || campaign?.businessId !== businessId;
+  }).map(function (campaign) {
     const restored = campaign && serverById.get(campaign.id);
     if (!restored) return campaign;
     serverById.delete(campaign.id);
@@ -276,7 +278,8 @@ async function hydrateKnownBusiness(storage, businessId, fetchImpl, acceptRespon
     return { hydrated: false, reason: "unknown-business" };
   }
   try {
-    const response = await fetchImpl(`/api/businesses/${encodeURIComponent(businessId)}${typeof window !== "undefined" && window.DEMEOSOwnerWorkspace?.routeApplication() ? "?application=" + window.DEMEOSOwnerWorkspace.routeApplication() : ""}`);
+    const application = typeof window !== "undefined" ? window.DEMEOSOwnerWorkspace?.routeApplication() : null;
+    const response = await fetchImpl(`/api/businesses/${encodeURIComponent(businessId)}${application ? "?application=" + application : ""}`);
     if (!response.ok) return { hydrated: false, reason: response.status === 403 ? "forbidden" : "server-error" };
     const serverRecord = await response.json();
     if (acceptResponse && !acceptResponse()) return {hydrated:false,reason:"stale-response"};
@@ -291,7 +294,7 @@ async function hydrateKnownBusiness(storage, businessId, fetchImpl, acceptRespon
       Array.isArray(currentCampaigns) ? currentCampaigns : [],
       businessId,
       serverRecord,
-      readPendingBusinessProfileSyncIds(storage).includes(businessId), currentDecisions
+      readPendingBusinessProfileSyncIds(storage).includes(businessId), currentDecisions, application
     );
     storage.setItem("demeosBusinessProfiles", JSON.stringify(merged.profiles));
     storage.setItem("demeosCampaignHistory", JSON.stringify(merged.campaigns));
