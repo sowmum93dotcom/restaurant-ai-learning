@@ -192,7 +192,7 @@ if (typeof document !== "undefined" && document.getElementById("business-results
     const businessId = localStorage.getItem("demeosActiveBusinessId");
     if (!businessId) { status.textContent = "No active business selected."; zero.hidden = false; return; }
     try {
-      const response = await fetch(`/api/businesses/${encodeURIComponent(businessId)}`);
+      const response = await fetch(`/api/businesses/${encodeURIComponent(businessId)}${typeof window !== "undefined" && window.DEMEOSOwnerWorkspace?.routeApplication() ? "?application=" + window.DEMEOSOwnerWorkspace.routeApplication() : ""}`);
       if (!response.ok) throw new Error("Stored business results could not be loaded.");
       const record = await response.json();
       if (generation !== loadGeneration || localStorage.getItem("demeosActiveBusinessId") !== businessId) return;

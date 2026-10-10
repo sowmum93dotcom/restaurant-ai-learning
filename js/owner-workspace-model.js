@@ -71,12 +71,15 @@
     let preference = previous?.businessId === businessId ? previous.state.model : null;
     try { if (!preference) preference = root.sessionStorage?.getItem('demeosOwnerView:' + businessId); } catch (_) {}
     const application = routeApplication();
-    const state = resolve(record, businessId, application || requestedModel || (['marketing','selling'].includes(preference) ? preference : null), failure);
+    const remembered = record?.workspaceReadiness?.[preference]?.canPrepare === true ? preference : null;
+    const state = resolve(record, businessId, application || requestedModel || remembered, failure);
     if (!application && state.status === 'ready') {
       const path = root.location?.pathname || '';
       if (path.endsWith('/marketing.html') || path.endsWith('/business-results.html') || state.allowed.length === 1) {
-        const selected = path.endsWith('/business-results.html') ? 'marketing' : state.model;
-        if (state.allowed.includes(selected)) root.location?.replace(destination(selected, path.endsWith('/business-workspace.html') ? 'dashboard' : path.endsWith('/business-results.html') ? 'results' : root.location?.hash?.slice(1) || (selected === 'selling' ? 'products' : 'overview')));
+        const view = root.location?.hash?.slice(1);
+        const legacyApplication = ['inventory','orders','product-options'].includes(view) ? 'selling' : ['overview','recommends','create','campaigns','results-view'].includes(view) || path.endsWith('/business-results.html') ? 'marketing' : state.model;
+        const selected = state.allowed.includes(legacyApplication) ? legacyApplication : state.model;
+        if (state.allowed.includes(selected)) root.location?.replace(destination(selected, path.endsWith('/business-workspace.html') ? 'dashboard' : path.endsWith('/business-results.html') ? (selected === 'marketing' ? 'results' : 'dashboard') : root.location?.hash?.slice(1) || (selected === 'selling' ? 'products' : 'overview')));
         else root.location?.replace(destination(state.model, 'dashboard'));
       }
     }

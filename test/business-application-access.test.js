@@ -44,6 +44,12 @@ test('shared SQL identity enforces separate application access, private evidence
   await repo.saveBusinessMediaAsset('owned',{assetId:'campaign-media',businessId:'owned',purpose:'marketing',kind:'image',state:'ready'});
   await repo.saveBusinessMediaAsset('owned',{assetId:'product-media',businessId:'owned',purpose:'product',kind:'image',state:'ready'});
   assert.deepEqual((await call(media)).data.assets.map(a=>a.assetId),['product-media']);
+  assert.equal((await call(media,'owner','GET',{}, {businessId:'owned',application:'marketing'})).code,403);
+  await repo.saveBusiness({...profile,applicationAccess:{marketing:true,selling:true}});
+  assert.deepEqual((await call(media,'owner','GET',{}, {businessId:'owned',application:'selling'})).data.assets.map(a=>a.assetId),['product-media']);
+  assert.equal((await call(media,'owner','GET',{}, {businessId:'owned',application:'marketing'})).data.assets.length,2);
+  assert.deepEqual((await call(business,'owner','GET',{}, {businessId:'owned',application:'selling'})).data.campaigns,[]);
+  await repo.saveBusiness({...profile,applicationAccess:{marketing:false,selling:true}});
   assert.equal((await call(media,'owner','POST',{asset:{purpose:'marketing'}})).code,403);
   const before=(await repo.getKnownBusiness('owned')).businessProfile;
   await repo.saveBusiness({...before,applicationAccess:{marketing:false,selling:false}});

@@ -21,6 +21,9 @@ module.exports = async function handler(req, res) {
     if (!access.allowed) return res.status(403).json({ error: "Forbidden." });
     const accessRecord = await repository.getKnownBusiness(businessId);
     const grants = require('../../../_lib/business-application-access').applicationAccess(accessRecord, businessId);
+    const application = req.query.application;
+    if (application !== undefined && (!['marketing','selling'].includes(application) || !grants[application]))
+      return res.status(403).json({error:'Application access required.'});
     if (req.method === "GET") {
       let assets = await repository.getBusinessMediaAssets(businessId, 100);
       const record = await repository.getKnownBusiness(businessId);
@@ -35,7 +38,7 @@ module.exports = async function handler(req, res) {
         }));
         assets = Array.from(new Map([...assets, ...saved.flat()].map(asset => [asset.assetId, asset])).values());
       }
-      return res.status(200).json({ assets: grants.marketing ? assets : assets.filter(asset => asset.purpose !== 'marketing') });
+      return res.status(200).json({ assets: grants.marketing && application !== 'selling' ? assets : assets.filter(asset => asset.purpose !== 'marketing') });
     }
     const supplied = req.body && req.body.asset;
     if (supplied?.purpose === 'marketing' && !grants.marketing) return res.status(403).json({error:'Marketing application access required.'});

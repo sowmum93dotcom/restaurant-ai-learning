@@ -276,7 +276,7 @@ async function hydrateKnownBusiness(storage, businessId, fetchImpl, acceptRespon
     return { hydrated: false, reason: "unknown-business" };
   }
   try {
-    const response = await fetchImpl(`/api/businesses/${encodeURIComponent(businessId)}`);
+    const response = await fetchImpl(`/api/businesses/${encodeURIComponent(businessId)}${typeof window !== "undefined" && window.DEMEOSOwnerWorkspace?.routeApplication() ? "?application=" + window.DEMEOSOwnerWorkspace.routeApplication() : ""}`);
     if (!response.ok) return { hydrated: false, reason: response.status === 403 ? "forbidden" : "server-error" };
     const serverRecord = await response.json();
     if (acceptResponse && !acceptResponse()) return {hydrated:false,reason:"stale-response"};
@@ -980,7 +980,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     if (!state.activeBusinessId || !businessMediaList) return;
     const requestedBusinessId = state.activeBusinessId;
     try {
-      const response = await fetch(`/api/businesses/${encodeURIComponent(requestedBusinessId)}/media`, { credentials: "same-origin" });
+      const response = await fetch(`/api/businesses/${encodeURIComponent(requestedBusinessId)}/media${window.DEMEOSOwnerWorkspace?.routeApplication() ? "?application=" + window.DEMEOSOwnerWorkspace.routeApplication() : ""}`, { credentials: "same-origin" });
       const payload = response.ok ? await response.json() : { assets: [] };
       if (state.activeBusinessId !== requestedBusinessId) return;
       businessMediaAssets = Array.isArray(payload.assets) ? payload.assets : [];

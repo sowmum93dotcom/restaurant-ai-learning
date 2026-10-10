@@ -43,7 +43,7 @@ const server=http.createServer(async(req,res)=>{try{
    await context.route('https://clerk.test/npm/@clerk/ui@1/dist/ui.browser.js',r=>r.fulfill({contentType:'text/javascript',body:'window.__internal_ClerkUICtor={};'}));
    await context.route('https://clerk.test/npm/@clerk/clerk-js@6/dist/clerk.browser.js',r=>r.fulfill({contentType:'text/javascript',body:"window.Clerk={user:sessionStorage.getItem('signed-out')?null:{id:'owner-a'},session:null,async load(){},addListener(fn){this.listener=fn;},openSignIn(){},async signOut(){sessionStorage.setItem('signed-out','1');this.user=null;this.listener({user:null});}};"}));
    await context.route('https://example.org/**',r=>r.request().url().endsWith('.mp4')?r.fulfill({contentType:'video/mp4',body:fs.readFileSync(path.join(root,'images/controlled-test/garden-wildlife.mp4'))}):r.fulfill({contentType:'image/webp',body:fs.readFileSync(path.join(root,'images/controlled-test/mens-fashion.webp'))}));
-   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(String(e)));page.on('dialog',dialog=>dialog.accept());
+   const page=await context.newPage(),errors=[],scopedReads=[];page.on('request',request=>{const ref=request.headers().referer;if(!ref||request.method()!=='GET')return;const source=new URL(ref),target=new URL(request.url()),application=source.pathname.startsWith('/selling-vendor')?'selling':source.pathname.startsWith('/marketing-business')?'marketing':null;if(application&&/^\/api\/businesses\/engineering-a(?:\/media)?$/.test(target.pathname))scopedReads.push([application,target.searchParams.get('application')]);});page.on('pageerror',e=>errors.push(String(e)));page.on('dialog',dialog=>dialog.accept());
    // Render the exact earlier PR head against the same isolated owner and SQL data before comparing.
    for(const [file,body] of baselineFiles)await context.route(base+'/'+file,r=>r.fulfill({contentType:file.endsWith('.html')?'text/html':file.endsWith('.css')?'text/css':'application/javascript',body}));
    await page.goto(base+'/business-workspace.html');await page.locator('#workspace-business-identity').filter({hasText:'Engineering Owner A'}).waitFor();
@@ -66,7 +66,7 @@ const server=http.createServer(async(req,res)=>{try{
     const box=await link.boundingBox();assert.ok(box.height>=44&&box.height<=60,'Navigation has compact accessible touch targets: '+JSON.stringify({box,label:await link.innerText()}));
     await link.focus();const focused=await link.boundingBox();assert.ok(focused.x>=0&&focused.x+focused.width<=viewport.width,'Keyboard focus reveals each navigation destination: '+JSON.stringify({focused,viewport,label:await link.innerText()}));
    }
-   assert.equal(await page.locator('footer .owner-public-destination').getAttribute('href'),'customer.html');
+   assert.equal(await page.locator('footer .owner-public-destination').getAttribute('href'),'/customer.html');
    await page.screenshot({path:'/tmp/demeos-owner-after-first-screen-'+viewport.width+'.png'});
    fs.writeFileSync('/tmp/demeos-owner-layout-'+viewport.width+'.json',JSON.stringify({baseline:designBaseline,viewport,before,after},null,2));
    assert.equal(await page.locator('.owner-workspace-navigation [data-owner-section]').count(),6);
@@ -80,6 +80,7 @@ const server=http.createServer(async(req,res)=>{try{
      ['selling-only',{marketing:false,selling:true},'selling'],
      ['dual',{marketing:true,selling:true},'marketing']]) {
      await repository.saveBusiness({...profile,applicationAccess:grants});
+     await page.evaluate(value=>sessionStorage.setItem('demeosOwnerView:engineering-a',value),application==='marketing'?'selling':'marketing');
      await page.goto(base+'/business-workspace.html');
      if(name==='dual') {
        await page.locator('.owner-application-entries a').first().waitFor();
@@ -94,6 +95,7 @@ const server=http.createServer(async(req,res)=>{try{
      assert.equal(await page.locator('[data-owner-section=inventory]').count(),application==='selling'?1:0);
      assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
      await page.screenshot({fullPage:true,path:'/tmp/demeos-owner-application-'+application+'-'+name+'-'+viewport.width+'.png'});
+     const customerLink=await page.locator('footer .owner-public-destination').evaluate(node=>node.href);assert.equal(customerLink,base+'/customer.html');assert.equal((await context.request.get(customerLink)).status(),200);
      await page.locator('[data-owner-section=media]').click();
      await page.locator('#products:not([hidden])').waitFor();
      assert.equal(new URL(page.url()).pathname,application==='selling'?'/selling-vendor/manage':'/marketing-business/manage');
@@ -129,6 +131,7 @@ const server=http.createServer(async(req,res)=>{try{
        assert.equal(new URL(page.url()).pathname,'/selling-vendor/manage');
        assert.equal(await page.evaluate(()=>localStorage.getItem('demeosActiveBusinessId')),'engineering-a');
        await page.reload();await page.locator('body[data-owner-model=selling]').waitFor();
+       await page.goto(base+'/marketing.html#orders');await page.waitForURL(base+'/selling-vendor/manage#orders');await page.locator('body[data-owner-model=selling]').waitFor();
      }
    }
    await repository.saveBusiness({...profile,applicationAccess:{marketing:false,selling:false},preparationModel:'both'});
@@ -240,6 +243,7 @@ const server=http.createServer(async(req,res)=>{try{
    await context.clearCookies();await page.goto(base+'/business-workspace.html');await page.locator('#owner-auth-signed-out:not([hidden])').waitFor();
    assert.equal(await page.locator('#owner-operating-models').isVisible(),false);assert.equal((await context.request.get(base+'/api/businesses/engineering-a')).status(),401);
    await page.screenshot({fullPage:true,path:'/tmp/demeos-owner-models-unauthorised-'+viewport.width+'.png'});
+   assert.ok(scopedReads.length>0);assert.ok(scopedReads.every(([required,supplied])=>required===supplied),JSON.stringify(scopedReads));
    await context.close();console.log('Owner SQL, model permissions, product/media, factual draft, private submission, results and sign-out passed',viewport.width);
   }
   // New owner onboarding exercises the actual existing profile, ownership SQL and APIs.
