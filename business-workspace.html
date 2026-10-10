@@ -15,9 +15,8 @@
       <img src="images/demeos-logo.png" alt="DEMEOS logo" class="demeos-logo" />
     </a>
     <div class="workspace-identity">
-      <p class="agent-label">Business owner workspace</p>
-      <h1 class="restaurant-name">Business Owner Workspace</h1>
-      <p id="workspace-header-business" class="cuisine-type">Your business workspace</p>
+      <h1 class="restaurant-name">Business workspace</h1>
+      <p id="workspace-header-business" class="cuisine-type" hidden>Your business workspace</p>
     </div>
     <div id="owner-account-control" class="owner-account-control" hidden>
       <span>Signed in</span>
@@ -53,7 +52,6 @@
         <a data-owner-section="products" href="marketing.html#products">Products and Services</a>
         <a data-owner-section="marketing" href="marketing.html#overview">Marketing</a>
         <a data-owner-section="results" href="business-results.html">Results</a>
-        <a class="owner-public-destination" href="customer.html">Customer Experience <span aria-hidden="true">↗</span></a>
       </nav>
     </aside>
 
@@ -61,19 +59,18 @@
       <section aria-labelledby="owner-overview-heading">
         <div class="owner-overview-heading">
           <div>
-            <p class="workspace-eyebrow">Business Owner Workspace</p>
-            <h2 id="owner-overview-heading">Welcome back</h2>
-            <p>See what needs your attention and continue your work.</p>
+            <h2 id="owner-overview-heading">Overview</h2>
           </div>
         </div>
 
+
+        <div class="owner-overview-summary">
         <section class="owner-identity-card" aria-labelledby="selected-business-heading">
-          <h3 id="selected-business-heading">My business</h3>
+          <h3 id="selected-business-heading" class="owner-visually-hidden">Your business</h3>
           <div id="workspace-business-identity" class="owner-business-identity" aria-live="polite"></div>
-          <a class="demeos-secondary-button owner-card-action" href="marketing.html#business-profile">Review business details</a>
+          <a class="owner-summary-link" href="marketing.html#business-profile">Review business details</a>
         </section>
 
-        <section id="owner-operating-models" class="owner-operating-models" aria-label="Business models" aria-live="polite"><p>Confirming your business permissions…</p></section>
         <section class="owner-next-action" aria-labelledby="next-action-heading">
           <h3 id="next-action-heading">What to do next</h3>
           <div id="workspace-next-action" class="owner-next-action-content" aria-live="polite">
@@ -83,13 +80,17 @@
           </div>
         </section>
 
+        </div>
+
         <section class="owner-current-work" aria-labelledby="current-work-heading">
           <div>
             <h3 id="current-work-heading">Current work</h3>
           </div>
           <div id="workspace-current-work" class="owner-work-list" aria-live="polite"></div>
-          <a class="demeos-primary-button owner-card-action" href="marketing.html#campaigns">Review marketing drafts</a>
+          <a class="owner-summary-link" href="marketing.html#campaigns">View all marketing drafts</a>
         </section>
+
+        <section id="owner-operating-models" class="owner-operating-models" aria-label="Business models" aria-live="polite"><p>Confirming your business permissions…</p></section>
 
         <section class="owner-dashboard-results" aria-labelledby="owner-dashboard-results-heading">
           <div class="owner-section-heading"><h3 id="owner-dashboard-results-heading">Your marketing at a glance</h3><a href="business-results.html">Review results</a></div>
@@ -99,7 +100,7 @@
       </section>
     </main>
   </div>
-  <footer><p>&copy; 2026 DEMEOS — One System. Real Value. Shared Future.</p></footer>
+  <footer><a class="owner-public-destination" href="customer.html">Customer Experience</a><p>&copy; 2026 DEMEOS — One System. Real Value. Shared Future.</p></footer>
   <script src="js/demeos-understanding.js"></script>
   <script src="js/business-results.js"></script>
   <script src="js/business-workspace.js"></script>

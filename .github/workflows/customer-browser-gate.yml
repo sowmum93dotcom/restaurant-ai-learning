@@ -28,6 +28,8 @@ jobs:
           for i in {1..30}; do curl -fsS http://127.0.0.1:4173/customer.html >/dev/null && exit 0; sleep 1; done
           cat /tmp/demeos-http.log
           exit 1
+      - name: Fetch exact owner design comparison baseline
+        run: git fetch --no-tags --depth=1 origin 8c4ccbc93af01480f41e6444446b79a321a11ef9
       - name: Run owner workspace SQL, permission and draft gate
         run: node browser-checks/business-workspace-gate.js
       - name: Run private administrative application review gate
@@ -70,4 +72,5 @@ jobs:
             /tmp/demeos-contact-*.png
             /tmp/demeos-account-*.png
             /tmp/demeos-owner-*.png
+            /tmp/demeos-owner-layout-*.json
             /tmp/demeos-admin-*.png

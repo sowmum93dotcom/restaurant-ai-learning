@@ -4,6 +4,8 @@
 const {chromium}=require('playwright'),{PGlite}=require('@electric-sql/pglite');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http'),vm=require('node:vm'),{createRequire}=require('node:module');
 const {createDatabase}=require('../api/_lib/database'),persistence=require('../api/_lib/persistence'),auth=require('../api/_lib/demeos-authentication');
+const designBaseline='8c4ccbc93af01480f41e6444446b79a321a11ef9';
+const baselineFiles=['business-workspace.html','css/business-workspace-completion.css','js/business-workspace.js'].map(file=>[file,require('node:child_process').execFileSync('git',['show',designBaseline+':'+file],{cwd:path.resolve(__dirname,'..'),encoding:'utf8'})]);
 const root=path.resolve(__dirname,'..'),client=new PGlite(),database=createDatabase(client),repository=persistence.createPersistenceRepository(database);
 persistence.getRepository=()=>repository;
 auth.resolveTrustedIdentityFromRequest=async req=>{const id=req.headers.cookie?.match(/engineering-owner=(owner-[a-z0-9-]+)/)?.[1];return id?{trustedIdentityId:id}:null;};
@@ -38,29 +40,94 @@ const server=http.createServer(async(req,res)=>{try{
    await context.route('https://clerk.test/npm/@clerk/clerk-js@6/dist/clerk.browser.js',r=>r.fulfill({contentType:'text/javascript',body:"window.Clerk={user:sessionStorage.getItem('signed-out')?null:{id:'owner-a'},session:null,async load(){},addListener(fn){this.listener=fn;},openSignIn(){},async signOut(){sessionStorage.setItem('signed-out','1');this.user=null;this.listener({user:null});}};"}));
    await context.route('https://example.org/**',r=>r.request().url().endsWith('.mp4')?r.fulfill({contentType:'video/mp4',body:fs.readFileSync(path.join(root,'images/controlled-test/garden-wildlife.mp4'))}):r.fulfill({contentType:'image/webp',body:fs.readFileSync(path.join(root,'images/controlled-test/mens-fashion.webp'))}));
    const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(String(e)));page.on('dialog',dialog=>dialog.accept());
+   // Render the exact earlier PR head against the same isolated owner and SQL data before comparing.
+   for(const [file,body] of baselineFiles)await context.route(base+'/'+file,r=>r.fulfill({contentType:file.endsWith('.html')?'text/html':file.endsWith('.css')?'text/css':'application/javascript',body}));
    await page.goto(base+'/business-workspace.html');await page.locator('#workspace-business-identity').filter({hasText:'Engineering Owner A'}).waitFor();
+   const before={navigation:await page.locator('.owner-workspace-navigation').boundingBox(),identity:await page.locator('#workspace-business-identity').boundingBox(),nextAction:await page.locator('#workspace-next-action a').boundingBox()};
+   await page.screenshot({path:'/tmp/demeos-owner-before-first-screen-'+viewport.width+'.png'});
+   await page.screenshot({fullPage:true,path:'/tmp/demeos-owner-before-overview-'+viewport.width+'.png'});
+   for(const [file] of baselineFiles)await context.unroute(base+'/'+file);
+   await page.reload();await page.locator('#workspace-business-identity').filter({hasText:'Engineering Owner A'}).waitFor();
+   const after={navigation:await page.locator('.owner-workspace-navigation').boundingBox(),identity:await page.locator('#workspace-business-identity').boundingBox(),nextAction:await page.locator('#workspace-next-action a').boundingBox(),activity:await page.locator('#current-work-heading').boundingBox()};
+   if(viewport.width<=980)assert.ok(after.navigation.height<=64,'Five areas use one compact navigation row: '+JSON.stringify(after.navigation));
+   assert.ok(after.identity.y+after.identity.height<viewport.height,'Business identity and accurate approval status fit the first screen');
+   assert.ok(after.nextAction.y+after.nextAction.height<viewport.height,'The next useful action fits the first screen');
+   assert.ok(after.activity.y+after.activity.height<viewport.height,'Relevant activity is visible on the first screen');
+   if(viewport.width===390){assert.ok(before.nextAction.y>viewport.height,'The earlier design buried the next action');assert.ok(after.navigation.height<before.navigation.height/2,'Navigation no longer dominates mobile');}
+   assert.equal(await page.locator('.owner-overview-summary .demeos-primary-button').count(),1);
+   assert.equal(await page.locator('h1').count(),1);assert.equal(await page.locator('#owner-overview-heading').innerText(),'Overview');
+   assert.match(await page.locator('#workspace-business-identity').innerText(),/Private preparation. Business approval is not recorded/);
+   for(const link of await page.locator('.owner-workspace-navigation a').all()){
+    const box=await link.boundingBox();assert.ok(box.height>=44&&box.height<=60,'Navigation has compact accessible touch targets');
+    await link.focus();const focused=await link.boundingBox();assert.ok(focused.x>=0&&focused.x+focused.width<=viewport.width,'Keyboard focus reveals each navigation destination: '+JSON.stringify({focused,viewport,label:await link.innerText()}));
+   }
+   assert.equal(await page.locator('footer .owner-public-destination').getAttribute('href'),'customer.html');
+   const modelBoxes=await page.locator('#owner-operating-models .owner-model-card').evaluateAll(cards=>cards.map(card=>{const {x,y,width,height}=card.getBoundingClientRect();return {x,y,width,height};}));
+   assert.equal(modelBoxes.length,2);
+   if(viewport.width<=800){assert.equal(modelBoxes[0].x,modelBoxes[1].x);assert.ok(modelBoxes[1].y>=modelBoxes[0].y+modelBoxes[0].height,'Mobile workflows stack at readable full width');}
+   else assert.equal(modelBoxes[0].y,modelBoxes[1].y,'Wider screens present workflows side by side');
+   after.models=modelBoxes;
+   await page.evaluate(()=>{document.activeElement?.blur();scrollTo(0,0);});
+   await page.screenshot({path:'/tmp/demeos-owner-after-first-screen-'+viewport.width+'.png'});
+   await page.screenshot({fullPage:true,path:'/tmp/demeos-owner-after-overview-'+viewport.width+'.png'});
+   fs.writeFileSync('/tmp/demeos-owner-layout-'+viewport.width+'.json',JSON.stringify({baseline:designBaseline,viewport,before,after},null,2));
+
    assert.equal(await page.locator('.owner-workspace-navigation [data-owner-section]').count(),5);assert.match(await page.locator('#owner-operating-models').innerText(),/Selling is not enabled/);
    assert.equal((await context.request.get(base+'/api/businesses/engineering-b')).status(),403);
    assert.equal((await context.request.post(base+'/api/generate',{data:{businessId:'engineering-b',preparationMode:'business-facts',productId:'offer-a'}})).status(),403);
    assert.equal((await context.request.get(base+'/api/businesses/engineering-b/media')).status(),403);
    assert.equal((await context.request.post(base+'/api/businesses/engineering-b/media',{data:{asset:{kind:'image',purpose:'product',relatedEntityId:'offer-a',contentType:'image/png',sizeBytes:100}}})).status(),403);
    assert.equal((await context.request.post(base+'/api/businesses/engineering-a/media',{data:{asset:{kind:'image',purpose:'product',relatedEntityId:'foreign',contentType:'image/png',sizeBytes:100}}})).status(),409);
-   // Exercise view-only presentation of authoritative model states. The real API remains preparation-only.
-   for(const state of [
-    {marketing:{canPrepare:true},selling:{canPrepare:false}},
-    {marketing:{canPrepare:false},selling:{canPrepare:true,canSell:true}},
-    {marketing:{canPrepare:true},selling:{canPrepare:true,canSell:false}},
-    {marketing:{canPrepare:false},selling:{canPrepare:false}},
-    {marketing:{canPrepare:'true'},selling:{canPrepare:true}}
-   ]) {
-    await page.evaluate(state=>renderOwnerModels(document,{businessId:'engineering-a',...state},'engineering-a'),state);
-    const views=Object.entries(state).filter(([,value])=>value.canPrepare===true);
-    assert.equal(await page.locator('#owner-operating-models .owner-model-card').count(),views.length?1:0);
-    if(views.length===2){await page.locator('[data-owner-model="selling"]').click();assert.match(await page.locator('#owner-operating-models .owner-model-card').innerText(),/Preparation only/);await page.locator('[data-owner-model="marketing"]').click();assert.match(await page.locator('#owner-operating-models .owner-model-card').innerText(),/£149 per month/);}
-    if(views.length===1&&views[0][0]==='selling')assert.match(await page.locator('#owner-operating-models').innerText(),state.selling.canSell===true?/Selling permission confirmed/:/could not be confirmed/);
+   // Isolated readiness responses exercise the authenticated rendered workspace, not a DOM-only call.
+   // All business data still comes from the real SQL/API; no permission or profile is persisted by this adapter.
+   const modelStates=[
+    ['marketing-only',{marketing:{canPrepare:true},selling:{canPrepare:false}}],
+    ['selling-preparation',{marketing:{canPrepare:false},selling:{canPrepare:true,canSell:false}}],
+    ['both',{marketing:{canPrepare:true},selling:{canPrepare:true,canSell:false}}],
+    ['unavailable',{marketing:{canPrepare:false},selling:{canPrepare:false}}],
+    ['missing',null],
+    ['malformed',{marketing:{canPrepare:'true'},selling:{canPrepare:1,canSell:true}}],
+    ['foreign',{businessId:'engineering-b',marketing:{canPrepare:true},selling:{canPrepare:true,canSell:true}}],
+    ['selling-confirmed',{marketing:{canPrepare:false},selling:{canPrepare:true,canSell:true}}]
+   ];
+   for(const [name,state] of modelStates) {
+    const endpoint=base+'/api/businesses/engineering-a';
+    await context.route(endpoint,async route=>{
+     const response=await route.fetch(),record=await response.json();
+     record.workspaceReadiness=state?{businessId:'engineering-a',...state}:null;
+     await route.fulfill({response,json:record});
+    });
+    await page.reload();await page.locator('#workspace-business-identity').filter({hasText:'Engineering Owner A'}).waitFor();
+    const cards=page.locator('#owner-operating-models .owner-model-card');assert.equal(await cards.count(),2);
+    const trusted=state&&(!state.businessId||state.businessId==='engineering-a');
+    for(const model of ['marketing','selling']){
+     const card=cards.filter({has:page.locator('#owner-model-'+model)}),available=!!trusted&&state[model]?.canPrepare===true;
+     assert.equal(await card.getAttribute('data-preparation-available'),String(available));
+     assert.equal(await card.locator('a').count(),available?1:0);
+     assert.match(await card.innerText(),model==='marketing'?/approved destination/:/Selling and payments need separate authorisation/);
+     if(!available)assert.match(await card.innerText(),/Review your business details/);
+    }
+    if(['unavailable','missing','malformed','foreign'].includes(name))assert.match(await page.locator('#workspace-next-action').innerText(),/Next action unavailable/);
+    if(name==='selling-preparation'||name==='both')assert.match(await cards.nth(1).innerText(),/Preparation only. Selling is not enabled/);
+    if(name==='selling-confirmed')assert.match(await cards.nth(1).innerText(),/Selling permission confirmed/);
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+    await page.locator('#owner-operating-models').screenshot({path:'/tmp/demeos-owner-models-'+name+'-'+viewport.width+'.png'});
+    await context.unroute(endpoint);
+   }
+   await page.reload();await page.locator('#workspace-business-identity').filter({hasText:'Engineering Owner A'}).waitFor();
+   // Both workflow actions reuse existing authenticated pages and keep the exact owned business context.
+   for(const [model,hash,section] of [['marketing','#create','marketing'],['selling','#products','products']]){
+    await page.locator('[data-owner-model="'+model+'"] a').click();
+    await page.locator('#owner-authenticated-workspace:not([hidden])').waitFor();
+    assert.equal(new URL(page.url()).hash,hash);
+    if(viewport.width<=980)assert.ok((await page.locator('.owner-workspace-navigation').boundingBox()).height<=64);
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+    assert.equal(await page.evaluate(()=>localStorage.getItem('demeosActiveBusinessId')),'engineering-a');
+    assert.equal(await page.locator('[data-owner-section="'+section+'"]').getAttribute('aria-current'),'page');
+    await page.locator('[data-owner-section="overview"]').click();await page.locator('#workspace-business-identity').filter({hasText:'Engineering Owner A'}).waitFor();
    }
    const confirmed=await (await context.request.get(base+'/api/businesses/engineering-a')).json();assert.equal(confirmed.workspaceReadiness.selling.canSell,false);
-   await page.evaluate(readiness=>renderOwnerModels(document,readiness,'engineering-a'),confirmed.workspaceReadiness);
+   assert.equal((await context.request.get(base+'/api/customer/work')).status(),200);
    assert.equal(await page.locator('#owner-dashboard-summary .owner-metric').count(),3);
    await page.screenshot({fullPage:true,path:'/tmp/demeos-owner-overview-'+viewport.width+'.png'});
    await page.locator('[data-owner-section="business-profile"]').click();await page.locator('[data-owner-section="products"]').click();await page.locator('#business-products-list').filter({hasText:'Exact jacket'}).waitFor();
@@ -139,8 +206,12 @@ const server=http.createServer(async(req,res)=>{try{
    assert.equal(await page.locator('#draft-edit-panel').isVisible(),false);assert.equal(await page.locator('#revise-btn').isVisible(),true);assert.equal(await page.locator('#revision-instruction').isVisible(),true);
 
    await page.locator('[data-owner-section="results"]').click();await page.locator('#owner-results-metrics .owner-metric').first().waitFor();assert.equal(await page.locator('#owner-results-metrics .owner-metric').count(),5);assert.match(await page.locator('#owner-results-metrics').innerText(),/Not recorded/);assert.doesNotMatch(await page.locator('body').innerText(),/Private Owner B|owner-a|owner-b/);
+   if(viewport.width<=980)assert.ok((await page.locator('.owner-workspace-navigation').boundingBox()).height<=64);
    await page.screenshot({fullPage:true,path:'/tmp/demeos-owner-results-'+viewport.width+'.png'});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'No horizontal overflow');
    await page.locator('#owner-sign-out').click();await page.locator('#owner-auth-signed-out:not([hidden])').waitFor();assert.doesNotMatch(await page.locator('body').innerText(),/Engineering Owner A|Exact jacket/);assert.deepEqual(errors,[]);
+   await context.clearCookies();await page.goto(base+'/business-workspace.html');await page.locator('#owner-auth-signed-out:not([hidden])').waitFor();
+   assert.equal(await page.locator('#owner-operating-models').isVisible(),false);assert.equal((await context.request.get(base+'/api/businesses/engineering-a')).status(),401);
+   await page.screenshot({fullPage:true,path:'/tmp/demeos-owner-models-unauthorised-'+viewport.width+'.png'});
    await context.close();console.log('Owner SQL, model permissions, product/media, factual draft, private submission, results and sign-out passed',viewport.width);
   }
   // New owner onboarding exercises the actual existing profile, ownership SQL and APIs.

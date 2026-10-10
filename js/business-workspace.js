@@ -191,7 +191,7 @@ function getTrustedOwnerNextAction(record, activeBusinessId) {
     !record.businessProfile || record.businessProfile.businessId !== activeBusinessId ||
     !Array.isArray(record.campaigns)) return unavailableOwnerNextAction;
 
-  if (record.workspaceReadiness) {
+  if (Object.prototype.hasOwnProperty.call(record, "workspaceReadiness")) {
     const views = getOwnerModelViews(record.workspaceReadiness, activeBusinessId);
     if (!views.length) return unavailableOwnerNextAction;
     if (!views.some(view => view.id === "marketing")) return {title:"Review your products", explanation:"Prepare accurate prices, choices and availability. Selling remains subject to your existing permissions.", action:"Review products", destination:"marketing.html#products"};
@@ -307,56 +307,62 @@ async function loadOwnerNextAction(documentObject, storage, fetchFunction) {
   }
 }
 
-// Views describe server-confirmed preparation permissions. Choosing a view never changes them.
+// Presentation describes existing workflows; only matching server readiness enables a next action.
+const ownerModelDescriptions = [
+  {id: "marketing", title: "Marketing through DEMEOS",
+   description: "Customers buy, book or enquire directly with your business through its approved destination.",
+   action: "Prepare marketing", destination: "marketing.html#create"},
+  {id: "selling", title: "Selling through DEMEOS",
+   description: "Prepare products for DEMEOS purchases. Selling and payments need separate authorisation and cannot be activated here.",
+   action: "Prepare products", destination: "marketing.html#products"}
+];
+
+function getOwnerModelPresentations(readiness, businessId) {
+  const confirmed = !!businessId && readiness?.businessId === businessId;
+  return ownerModelDescriptions.map(model => {
+    const permission = confirmed ? readiness[model.id] : null;
+    const available = permission?.canPrepare === true;
+    let status = "Preparation permission could not be confirmed.";
+    if (permission?.canPrepare === false) status = "Preparation is not authorised for this business.";
+    if (available && model.id === "marketing") status = "Marketing preparation available · £149 per month";
+    if (available && model.id === "selling") status = permission.canSell === true
+      ? "Selling permission confirmed" : permission.canSell === false
+      ? "Preparation only. Selling is not enabled." : "Selling permission could not be confirmed.";
+    return {...model, available, status};
+  });
+}
+
 function getOwnerModelViews(readiness, businessId) {
-  if (!businessId || !readiness || readiness.businessId !== businessId) return [];
-  const views = [];
-  if (readiness.marketing?.canPrepare === true) views.push({
-    id: "marketing", title: "Marketing", status: "Marketing preparation available · £149 per month",
-    description: "Promote your products and services. Customers buy, book or enquire directly with your business through approved destinations.",
-    action: "Prepare marketing", destination: "marketing.html#create"
-  });
-  if (readiness.selling?.canPrepare === true) views.push({
-    id: "selling", title: "Selling through DEMEOS",
-    status: readiness.selling.canSell === true ? "Selling permission confirmed" : readiness.selling.canSell === false ? "Preparation only. Selling is not enabled." : "Selling permission could not be confirmed.",
-    description: "Prepare products, prices and availability in the same catalogue. Purchase actions remain subject to the existing server checks. This workspace does not activate selling.",
-    action: "Review products", destination: "marketing.html#products"
-  });
-  return views;
+  return getOwnerModelPresentations(readiness, businessId).filter(model => model.available);
 }
 
 function renderOwnerModels(documentObject, readiness, businessId) {
   const container = documentObject.getElementById("owner-operating-models");
   if (!container) return;
   container.replaceChildren();
-  const views = getOwnerModelViews(readiness, businessId);
-  if (!views.length) {
-    container.textContent = "Business model permissions could not be confirmed. Select an owned business in My Business.";
-    return;
-  }
-  const card = documentObject.createElement("article"); card.className = "owner-model-card";
-  const heading = documentObject.createElement("h3");
-  const status = documentObject.createElement("strong");
-  const description = documentObject.createElement("p");
-  const action = documentObject.createElement("a"); action.className = "demeos-secondary-button owner-card-action";
-  const show = function (view) {
-    heading.textContent = view.title; status.textContent = view.status; description.textContent = view.description;
-    action.textContent = view.action; action.href = view.destination;
-    if (typeof tabs?.querySelectorAll === "function") tabs.querySelectorAll("button").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.ownerModel === view.id)));
-  };
-  let tabs;
-  if (views.length > 1) {
-    tabs = documentObject.createElement("div"); tabs.className = "owner-model-views"; tabs.setAttribute("role", "group"); tabs.setAttribute("aria-label", "Available business workflows");
-    views.forEach(view => {const button = documentObject.createElement("button"); button.type = "button"; button.textContent = view.title;
-      button.dataset.ownerModel = view.id; button.setAttribute("aria-pressed", String(view === views[0])); button.addEventListener("click", () => show(view)); tabs.appendChild(button);});
-    container.appendChild(tabs);
-  }
-  card.append(heading, status, description, action); container.appendChild(card); show(views[0]);
-  if (views.some(view => view.id === "selling") && readiness.selling?.canSell !== true) {
-    const note = documentObject.createElement("p"); note.className = "owner-model-note";
-    note.textContent = readiness.selling?.canSell === false ? "Selling is not enabled. You can prepare products without activating purchases." : "Selling permission is unavailable. Purchases cannot be activated here.";
-    container.appendChild(note);
-  }
+  const introduction = documentObject.createElement("div"); introduction.className = "owner-model-introduction";
+  const heading = documentObject.createElement("h3"); heading.textContent = "Marketing and selling";
+  const explanation = documentObject.createElement("p");
+  explanation.textContent = "Preparation does not publish content or activate selling or payments.";
+  introduction.append(heading, explanation); container.appendChild(introduction);
+  getOwnerModelPresentations(readiness, businessId).forEach(view => {
+    const card = documentObject.createElement("article"); card.className = "owner-model-card";
+    card.dataset.ownerModel = view.id; card.dataset.preparationAvailable = String(view.available);
+    const title = documentObject.createElement("h4"); title.id = "owner-model-" + view.id; title.textContent = view.title;
+    card.setAttribute("aria-labelledby", title.id);
+    const status = documentObject.createElement("strong"); status.textContent = view.status;
+    const description = documentObject.createElement("p"); description.textContent = view.description;
+    card.append(title, status, description);
+    if (view.available) {
+      const action = documentObject.createElement("a"); action.className = "demeos-secondary-button owner-card-action";
+      action.textContent = view.action; action.href = view.destination; card.appendChild(action);
+    } else {
+      const next = documentObject.createElement("p"); next.className = "owner-model-next-step";
+      next.textContent = "Review your business details in My Business. Preparation will be available when DEMEOS confirms your permissions.";
+      card.appendChild(next);
+    }
+    container.appendChild(card);
+  });
 }
 
 function renderOwnerDashboardSummary(documentObject, record, businessId) {
@@ -649,7 +655,7 @@ function installOwnerBusinessSecurity(windowObject, documentObject, localStorage
 
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
-    getOwnerModelViews, renderOwnerDashboardSummary, renderOwnerModels, getOwnerWorkspaceContext, migrateWorkspaceBusinessContext, showOwnerAuthenticationState,
+    getOwnerModelViews, getOwnerModelPresentations, renderOwnerDashboardSummary, renderOwnerModels, getOwnerWorkspaceContext, migrateWorkspaceBusinessContext, showOwnerAuthenticationState,
     renderOwnerWorkspace, bindOwnerClerkSession, initialiseOwnerAuthentication,
     getTrustedOwnerNextAction, renderOwnerNextAction, loadOwnerNextAction,
     getOwnerNavigationSection, updateOwnerNavigation, syncOwnerWorkspaceFromLocation,

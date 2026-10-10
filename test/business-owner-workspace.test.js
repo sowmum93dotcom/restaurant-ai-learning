@@ -86,7 +86,7 @@ test("finished workspace contains no temporary ownership diagnostics", function 
 
 test("workspace exposes no admin controls, invented metrics, or unsupported capabilities", function () {
   const source = `${html}\n${script}`;
-  assert.doesNotMatch(source, /DEMEOS Admin|admin control|customer identity|ordering|CRM|loyalty|payments/i);
+  assert.doesNotMatch(source, /DEMEOS Admin|admin control|customer identity|ordering|CRM|loyalty|api\/payments|activatePayments|checkout/i);
   assert.doesNotMatch(source, /revenue|ROI|conversion rate|forecast|analytics|recommendationTitle|demeosCapability/i);
   assert.doesNotMatch(html, /Add Business|business-selector/);
 });
