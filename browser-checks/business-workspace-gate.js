@@ -93,6 +93,7 @@ const server=http.createServer(async(req,res)=>{try{
     });
     await page.goto(base+'/business-workspace.html');await page.locator('body[data-owner-access="'+status+'"]').waitFor();
     assert.equal(await page.locator('body').getAttribute('data-owner-model'),model||'none');
+    if(viewport.width<=980)assert.ok((await page.locator('.owner-workspace-sidebar').boundingBox()).height<=80,'Compact navigation must not absorb spare workspace height');
     assert.equal(await page.locator('.owner-model-switch').count(),name==='dual'?1:0);
     if(model==='marketing'){
       assert.equal(await page.locator('[data-owner-section="marketing"]').count(),1);

@@ -151,7 +151,7 @@
 .owner-workspace-body:has(#owner-overview-heading):has(#owner-authenticated-workspace:not([hidden])) .owner-dashboard-results .owner-metric{padding:0!important;border:0!important;background:transparent!important;border-radius:0!important;}
 .owner-workspace-body:has(#owner-overview-heading):has(#owner-authenticated-workspace:not([hidden])) .owner-dashboard-results p{font-size:14px!important;line-height:1.5!important;}
 @media(max-width:980px){
- .owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-shell{grid-template-columns:1fr!important;}
+ .owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-shell{grid-template-columns:1fr!important;grid-template-rows:auto 1fr!important;}
  .owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-sidebar{padding:4px 12px!important;overflow:hidden!important;}
  .owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-navigation{flex-direction:row;flex-wrap:nowrap!important;overflow-x:auto!important;overflow-y:hidden!important;gap:4px!important;scrollbar-width:thin;}
  .owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-navigation a{flex:0 0 auto;white-space:nowrap!important;border-left:0!important;}
