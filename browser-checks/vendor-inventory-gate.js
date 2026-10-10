@@ -45,6 +45,7 @@ const server=http.createServer(async(req,res)=>{try{
  await repository.createBusinessForOwner('owner-b',{...profile,businessId:'engineering-b',products:[],name:'Other business'});
  await repository.saveBusinessMediaAsset(profile.businessId,asset);
  await repository.saveBusinessMediaAsset(profile.businessId,{...asset,assetId:'engineering-image-two'});
+ await repository.saveBusinessMediaAsset(profile.businessId,{...asset,assetId:'private-marketing-image',relatedEntityId:undefined,purpose:'marketing'});
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base='http://127.0.0.1:'+server.address().port;
  const browser=await chromium.launch({headless:true,...(process.env.DEMEOS_BROWSER_CHANNEL?{channel:process.env.DEMEOS_BROWSER_CHANNEL}:{})});
  try{
@@ -74,6 +75,7 @@ const server=http.createServer(async(req,res)=>{try{
    await page.goto(base+'/marketing.html#products');await page.locator('#vendor-products-save:not([disabled])').waitFor();
    await page.locator('.business-product-card-actions button').filter({hasText:'Edit'}).first().click();assert.equal(await page.locator('#business-product-id').inputValue(),'offer-a');
    await page.locator('#vendor-product-editor > summary').click();await page.locator('#vendor-product-editor > summary').click();assert.equal(await page.locator('#business-product-id').inputValue(),'');
+   assert.equal((await page.locator('#business-media-list').textContent()).includes('Business marketing media'),false);
    let failedOnce=false;const uploadedNames=[];
    await context.route('https://controlled-upload.example/**',async route=>{
     const id=new URL(route.request().url()).pathname.slice(1),stored=uploads.get(id);assert.equal(stored.asset.businessId,profile.businessId);assert.equal(stored.asset.relatedEntityId,'offer-a');
@@ -95,7 +97,7 @@ const server=http.createServer(async(req,res)=>{try{
    const saved=await repository.getKnownBusiness(profile.businessId);assert.equal(saved.businessProfile.products[0].mediaGallery.assetIds.length,1);assert.ok(saved.businessProfile.products[0].mediaGallery.mainAssetId);
    await page.locator('#business-media-list button').filter({hasText:'Add to gallery'}).first().click();
    await page.locator('#business-media-list button').filter({hasText:'Move later'}).first().click();
-   for(const language of ['en','es','fr','ar','pt','zh','hi','de','ja']){await page.locator('#owner-preparation-language').selectOption(language);const expected=require('../js/vendor-inventory-copy').copy[language];assert.ok((await page.locator('#business-media-list').textContent()).includes(expected.removeGallery));assert.equal(await page.locator('.business-product-card-actions button[data-vendor-copy=duplicate]').first().textContent(),expected.duplicate);}
+   for(const language of ['en','es','fr','ar','pt','zh','hi','de','ja']){await page.locator('#owner-preparation-language').selectOption(language);const expected=require('../js/vendor-inventory-copy').copy[language];assert.ok((await page.locator('#business-media-list').textContent()).includes(expected.removeGallery));assert.equal(await page.locator('#business-media-product option[value=""]').textContent(),expected.chooseProduct);await page.evaluate(()=>{window.__originalConfirm=window.confirm;window.confirm=message=>{window.__removePrompt=message;return false;};});await page.locator('.business-product-card-actions button').filter({hasText:'Remove'}).first().click();assert.equal(await page.evaluate(()=>window.__removePrompt),expected.removeProduct.replace('{name}','Exact jacket'));await page.evaluate(()=>window.confirm=window.__originalConfirm);assert.equal(await page.locator('.business-product-card-actions button[data-vendor-copy=duplicate]').first().textContent(),expected.duplicate);}
    await page.locator('#owner-preparation-language').selectOption('en');
    const expectedOrder=await page.evaluate(()=>window.DEMEOSVendorProducts.read().products[0].mediaGallery.assetIds);
    await page.route('**/products',route=>route.request().method()==='PUT'?route.fulfill({status:503,json:{error:'Controlled save failure. Your edits are retained.'}}):route.continue());
@@ -106,6 +108,16 @@ const server=http.createServer(async(req,res)=>{try{
    assert.deepEqual((await repository.getKnownBusiness(profile.businessId)).businessProfile.products[0].mediaGallery.assetIds,expectedOrder);
    await page.locator('.business-product-card-actions button').filter({hasText:'Duplicate'}).first().click();await page.locator('#vendor-products-confirm').check();await page.locator('#vendor-products-save').click();await page.waitForFunction(()=>document.getElementById('vendor-products-status').textContent==='Products saved.');
    const catalog=await repository.getKnownBusiness(profile.businessId),duplicate=catalog.businessProfile.products.at(-1);assert.equal(duplicate.customerVisible,false);assert.notEqual(duplicate.productId,'offer-a');assert.equal(duplicate.mediaGallery,undefined);
+   await page.goto(base+'/marketing.html#inventory');await page.locator('.vendor-stock-row').first().waitFor();
+   const beforeBulk=await repository.getVendorInventory(profile.businessId),bulkRows=require('../api/_lib/vendor-inventory').rowsFor(catalog.businessProfile,beforeBulk.entries);
+   const csv=[['productId','variantId','onHand','lowStock','sku'],...bulkRows.map((row,index)=>[row.productId,row.variantId,Number(count)+index+2,4,'bulk-'+viewport.width+'-'+index])].map(row=>row.map(require('../js/vendor-inventory').csvCell).join(',')).join('\r\n');
+   await page.locator('#vendor-stock-import').setInputFiles({name:'stock.csv',mimeType:'text/csv',buffer:Buffer.from(csv)});await page.waitForFunction(()=>document.getElementById('vendor-stock-status').textContent.includes('Unsaved'));
+   assert.equal((await repository.getVendorInventory(profile.businessId)).revision,beforeBulk.revision);
+   await page.locator('#vendor-stock-reason').fill('Reviewed CSV count');await page.locator('#vendor-stock-save').click();assert.equal((await repository.getVendorInventory(profile.businessId)).revision,beforeBulk.revision);
+   await page.locator('#vendor-stock-review button').first().click();await page.waitForFunction(()=>document.getElementById('vendor-stock-status').textContent==='Stock saved.');
+   const afterBulk=await repository.getVendorInventory(profile.businessId);assert.equal(afterBulk.revision,beforeBulk.revision+1);assert.equal(afterBulk.history[0].changes.length,2);
+   for(const [index,row] of bulkRows.entries())assert.equal(afterBulk.entries[JSON.stringify([row.productId,row.variantId])].onHand,Number(count)+index+2);
+   await page.goto(base+'/marketing.html#products');await page.locator('#vendor-products-save:not([disabled])').waitFor();
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
    await page.screenshot({path:'/tmp/demeos-owner-vendor-catalogue-'+viewport.width+'.png',fullPage:true});
    assert.deepEqual(errors,[]);await context.close();

@@ -931,8 +931,9 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     if (!businessMediaList || !businessMediaEmpty) return;
     businessMediaList.querySelectorAll?.("video").forEach(video=>video.pause());
     businessMediaList.textContent = "";
-    businessMediaEmpty.hidden = businessMediaAssets.length > 0;
-    const mediaToRender=businessMediaAssets.filter(asset=>asset.businessId===state.activeBusinessId);
+    const sellingMedia=globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model==="selling";
+    const mediaToRender=businessMediaAssets.filter(asset=>asset.businessId===state.activeBusinessId&&(!sellingMedia||activeProfile()?.products?.some(product=>product.productId===asset.relatedEntityId)));
+    businessMediaEmpty.hidden = mediaToRender.length > 0;
     if(globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model==="selling")mediaToRender.sort((a,b)=>{
       if(a.relatedEntityId!==b.relatedEntityId)return String(a.relatedEntityId).localeCompare(String(b.relatedEntityId));
       const order=draftProducts.find(p=>p.productId===a.relatedEntityId)?.mediaGallery?.assetIds||[],rank=asset=>order.includes(asset.assetId)?order.indexOf(asset.assetId):order.length;
@@ -1132,7 +1133,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       });
       const remove = document.createElement("button"); remove.type = "button"; remove.className = "demeos-secondary-button"; remove.textContent = "Remove";
       remove.addEventListener("click", function () {
-        if(globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model==="selling"&&!window.confirm("Remove "+product.name+" from the saved catalogue?"))return;
+        if(globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model==="selling"&&!window.confirm(vendorText("removeProduct","Remove {name} from the saved catalogue?").replace("{name}",product.name)))return;
         const removingEditedProduct = productFields.id.value === product.productId;
         draftProducts = draftProducts.filter(function (entry) { return entry.productId !== product.productId; });
         globalThis.window?.DEMEOSBusinessOnboarding?.markDirty();
@@ -1144,7 +1145,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       const duplicate=document.createElement("button");duplicate.type="button";duplicate.className="text-button";duplicate.textContent=vendorText("duplicate","Duplicate");duplicate.dataset.ownerSelling="";duplicate.dataset.vendorCopy="duplicate";
       duplicate.addEventListener("click",()=>{
         if(globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model!=="selling")return;
-        if(draftProducts.length>=100){alert("Up to 100 products are supported.");return;}
+        if(draftProducts.length>=100){alert(vendorText("productLimit","Up to 100 products are supported."));return;}
         const copy=JSON.parse(JSON.stringify(product));copy.productId="product-"+crypto.randomUUID();copy.name=product.name+" ("+vendorText("duplicate","Duplicate")+")";copy.customerVisible=false;copy.imageUrl="";copy.imageSource="";delete copy.mediaGallery;
         // A duplicate starts without the original product's exact media or stock.
         if(copy.presentation?.variants)copy.presentation.variants=copy.presentation.variants.map(v=>({...v,variantId:"variant-"+crypto.randomUUID()}));
@@ -1683,7 +1684,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     const mediaSelect = byId("draft-media");if (!mediaSelect) return;mediaSelect.textContent = "";addOption(mediaSelect,"No media attached", "");
     businessMediaAssets.filter(a => a.businessId === state.activeBusinessId && a.relatedEntityId === select.value && ["product","service"].includes(a.purpose) && a.state === "ready").forEach((a,index) => addOption(mediaSelect,a.originalFilename || (a.kind === "video" ? "Video " : "Image ") + (index+1),a.assetId));
     const uploadSelect = byId("business-media-product");
-    if (uploadSelect) {const previous = uploadSelect.value;uploadSelect.textContent="";addOption(uploadSelect,globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model==="selling"?"Choose a saved product":"Business marketing media","");products.forEach(p=>addOption(uploadSelect,p.name,p.productId));if(products.some(p=>p.productId===previous))uploadSelect.value=previous;}
+    if (uploadSelect) {const previous = uploadSelect.value;uploadSelect.textContent="";addOption(uploadSelect,globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model==="selling"?vendorText("chooseProduct","Choose a saved product"):"Business marketing media","");products.forEach(p=>addOption(uploadSelect,p.name,p.productId));if(products.some(p=>p.productId===previous))uploadSelect.value=previous;}
     renderOfferReview();
   }
   function renderOfferReview() {

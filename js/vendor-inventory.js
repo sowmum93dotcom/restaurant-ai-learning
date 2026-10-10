@@ -75,7 +75,7 @@
   if(!el('vendor-products-confirm').checked){el('vendor-products-status').textContent=t('accurate');return;}
   const token=generation,businessId=context;busy=true;el('vendor-products-save').disabled=true;el('products').inert=true;
   try{const result=await request('products',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({catalogueRevision:catalogue.catalogueRevision,products:current.products,accuracyConfirmed:true})});
-   if(token!==generation||businessId!==context)return;catalogue=result;root.DEMEOSVendorProducts.saved(result.products,result.informationStatus);el('vendor-products-confirm').checked=false;el('vendor-products-status').textContent=t('productsSaved');
+   if(token!==generation||businessId!==context)return;catalogue=result;if(!pending.size){stock=null;el('vendor-stock-list').replaceChildren();}root.DEMEOSVendorProducts.saved(result.products,result.informationStatus);el('vendor-products-confirm').checked=false;el('vendor-products-status').textContent=t('productsSaved');
   }catch(error){if(token===generation)el('vendor-products-status').textContent=error.message;}
   finally{if(token===generation){busy=false;el('vendor-products-save').disabled=false;el('products').inert=false;}}
  }
