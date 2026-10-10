@@ -24,7 +24,7 @@ test("Marketing Agent exposes its four marketing tools and keeps Business Result
 
 test("Marketing shares the Business Owner Workspace shell and primary navigation", function () {
   assert.match(html, /<body class="owner-workspace-body marketing-capability-body">/);
-  assert.match(html, /<h1 class="restaurant-name">Business Owner Workspace<\/h1>/);
+  assert.match(html, /<h1 class="restaurant-name">Business workspace<\/h1>/);
   assert.match(html, /<h2 id="owner-area-heading">Marketing<\/h2>/);
   assert.deepEqual(primaryNavigationLabels(html), ["Overview", "My Business", "Products and Services", "Marketing", "Results"]);
   assert.match(html, /class="is-active" href="marketing.html#overview" aria-current="page">Marketing/);
@@ -42,7 +42,7 @@ test("Marketing uses the owner authentication presentation boundary", function (
 });
 
 test("Business Results shares the same owner shell, navigation and authentication boundary", function () {
-  assert.match(resultsHtml, /<h1 class="restaurant-name">Business Owner Workspace<\/h1>/);
+  assert.match(resultsHtml, /<h1 class="restaurant-name">Business workspace<\/h1>/);
   assert.deepEqual(primaryNavigationLabels(resultsHtml), ["Overview", "My Business", "Products and Services", "Marketing", "Results"]);
   assert.match(resultsHtml, /class="is-active" href="business-results.html" aria-current="page">Results/);
   assert.doesNotMatch(resultsHtml, /Back to Marketing Agent|<h1 class="restaurant-name">Business Results<\/h1>/);

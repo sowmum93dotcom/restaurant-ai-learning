@@ -310,10 +310,10 @@ async function loadOwnerNextAction(documentObject, storage, fetchFunction) {
 // Presentation describes existing workflows; only matching server readiness enables a next action.
 const ownerModelDescriptions = [
   {id: "marketing", title: "Marketing through DEMEOS",
-   description: "Prepare and promote your products or services. Customers buy, book or enquire directly with your business through its approved destination.",
+   description: "Customers buy, book or enquire directly with your business through its approved destination.",
    action: "Prepare marketing", destination: "marketing.html#create"},
   {id: "selling", title: "Selling through DEMEOS",
-   description: "Prepare products for customers to purchase through DEMEOS. Selling and payments need separate authorisation and cannot be activated here.",
+   description: "Prepare products for DEMEOS purchases. Selling and payments need separate authorisation and cannot be activated here.",
    action: "Prepare products", destination: "marketing.html#products"}
 ];
 
@@ -341,9 +341,9 @@ function renderOwnerModels(documentObject, readiness, businessId) {
   if (!container) return;
   container.replaceChildren();
   const introduction = documentObject.createElement("div"); introduction.className = "owner-model-introduction";
-  const heading = documentObject.createElement("h3"); heading.textContent = "Two ways to work with DEMEOS";
+  const heading = documentObject.createElement("h3"); heading.textContent = "Marketing and selling";
   const explanation = documentObject.createElement("p");
-  explanation.textContent = "Choose your next preparation step. Preparing content does not publish it or activate selling or payments.";
+  explanation.textContent = "Preparation does not publish content or activate selling or payments.";
   introduction.append(heading, explanation); container.appendChild(introduction);
   getOwnerModelPresentations(readiness, businessId).forEach(view => {
     const card = documentObject.createElement("article"); card.className = "owner-model-card";

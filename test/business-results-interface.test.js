@@ -28,7 +28,7 @@ function storedRecord() {
 }
 
 test("Business Results uses the authenticated Business Owner Workspace shell with a clear zero state", function () {
-  assert.match(html, /<h1 class="restaurant-name">Business Owner Workspace<\/h1>/);
+  assert.match(html, /<h1 class="restaurant-name">Business workspace<\/h1>/);
   assert.match(html, /id="owner-authenticated-workspace"[^>]* hidden/);
   assert.match(html, /class="is-active" href="business-results\.html" aria-current="page">Results<\/a>/);
   assert.doesNotMatch(html, /Back to Marketing Agent/);

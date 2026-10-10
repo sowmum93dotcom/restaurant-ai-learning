@@ -8,7 +8,7 @@ The real owner renderer created only one model card. With both preparation permi
 
 ## Focused changes
 
-Both existing workflows now have simultaneously visible, labelled cards immediately after the welcome heading, before business identity/activity. Marketing explains approved direct business continuation; Selling explains the existing DEMEOS purchase journey and separate selling/payment authorisation. Each permitted preparation action links to its existing authenticated Marketing or Products page. The five workspace areas and owned-business context remain intact.
+The initial screen now uses compact navigation and a single Overview heading. Business identity, accurate approval status and one primary next action share a simple summary, followed by recorded activity. Both existing workflows then have simultaneously visible, labelled cards. Marketing explains approved direct business continuation; Selling explains the existing DEMEOS purchase journey and separate selling/payment authorisation. Each permitted preparation action links to its existing authenticated Marketing or Products page. The five workspace areas and owned-business context remain intact. All five areas fit in one 48px row on a 390px phone, use a compact horizontal bar on tablet and a compact sidebar on desktop. Customer Experience is a quiet, privacy-safe footer destination on all three owner pages. Duplicate workspace titles, the large welcome message and unnecessary summary card borders are removed.
 
 Both explanations remain visible when permissions cannot be confirmed, with explicit unavailable/not-authorised status and no preparation action. Only exact matching business readiness and boolean true enable preparation links. Explicit missing readiness also prevents the Overview from suggesting a confirmed preparation action. Choosing an action never writes commercial permissions. Existing prices, contracts, catalogue, publication, authentication, payments, administrative review and external AI configuration are unchanged.
 
@@ -20,8 +20,13 @@ The extended existing owner browser gate uses real isolated PostgreSQL/PGlite, o
 
 Each state verifies two rendered cards, exact permitted links, unavailable next action, readable continuation/authorisation explanation and no horizontal overflow. Both workflow actions traverse the actual existing pages, preserve the exact business ID and correct active navigation, then return to Overview. Existing category/options/variants/media/factual draft/private submission/Results/sign-out and nine-language onboarding tests continue. Cross-business reads/writes and media/draft associations remain rejected. Signed-out workspace stays hidden and the real owner API returns 401. Real selling readiness remains false and controlled content never becomes public.
 
+The browser comparison renders exact pre-correction head `8c4ccbc93af01480f41e6444446b79a321a11ef9` against the same isolated owner and SQL records before loading the corrected source. At all three widths it verifies accessible navigation targets, keyboard visibility, one primary summary action and business identity/approval, next action and activity inside the initial viewport. On 390px navigation falls from 184px to 48px; the previous next action was below the first screen. Both Marketing and Products destinations and Results also retain compact navigation. No navigation or commercial business logic is replaced.
+
 Screenshot evidence is retained by the required GitHub Customer Experience Browser Gate in its `customer-experience-review` artifact:
 
+- `demeos-owner-before-first-screen-{390,820,1440}.png` and `demeos-owner-after-first-screen-{390,820,1440}.png`: exact before-and-after initial views.
+- `demeos-owner-before-overview-{390,820,1440}.png` and `demeos-owner-after-overview-{390,820,1440}.png`: complete layouts for comparison.
+- `demeos-owner-layout-{390,820,1440}.json`: measured navigation, identity, next action and activity positions.
 - `demeos-owner-models-both-{390,820,1440}.png`: both workflow presentations.
 - `demeos-owner-models-{marketing-only,selling-preparation,unavailable,missing,malformed,foreign,selling-confirmed}-{390,820,1440}.png`: isolated permission states.
 - `demeos-owner-models-unauthorised-{390,820,1440}.png`: signed-out boundaries.

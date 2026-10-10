@@ -32,7 +32,7 @@ function renderDocument() {
 test("Overview contains the owner-facing Next Action card and business context", function () {
   assert.match(html, /<h3 id="next-action-heading">What to do next<\/h3>/);
   assert.match(html, /id="workspace-next-action"/);
-  assert.match(html, /id="selected-business-heading">My business<\/h3>/);
+  assert.match(html, /id="selected-business-heading" class="owner-visually-hidden">Your business<\/h3>/);
   assert.match(html, /id="current-work-heading">Current work<\/h3>/);
   assert.match(html, />Review business details<\/a>/);
   assert.match(html, />Open Marketing<\/a>/);
