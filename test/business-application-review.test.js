@@ -52,3 +52,9 @@ test('private review pagination, incomplete submissions and concurrent revisions
   assert.equal((await repository.getBusinessApplicationOwnerStatus(id,changed)).status,'draft');assert.equal((await repository.getBusinessApplicationOwnerStatus(id,changed)).approved,false);
  }finally{await client.close();}
 });
+
+test('administrative continuation presentation preserves every supported route detail',()=>{
+ const {continuationText}=require('../js/admin-business-review');
+ const saved={routes:['website','phone','whatsapp','email','booking','visit','quote'],website:'https://example.org',phone:'+442012345678',whatsapp:'+442098765432',email:'owner@example.org',bookingLink:'https://example.org/appointments',visitAddress:'Exact saved customer address'};
+ const text=continuationText(saved);for(const key of ['website','phone','whatsapp','email','bookingLink','visitAddress'])assert.ok(text.includes(saved[key]));assert.equal(text.split('\n').length,7);assert.equal(continuationText(null),'');assert.equal(continuationText({routes:'invalid'}),'');assert.equal(continuationText({...saved,routes:['website']}),'website · https://example.org');
+});
