@@ -76,27 +76,43 @@ const server=http.createServer(async(req,res)=>{try{
    await page.locator('.business-product-card-actions button').filter({hasText:'Edit'}).first().click();assert.equal(await page.locator('#business-product-id').inputValue(),'offer-a');
    await page.locator('#vendor-product-editor > summary').click();await page.locator('#vendor-product-editor > summary').click();assert.equal(await page.locator('#business-product-id').inputValue(),'');
    assert.equal((await page.locator('#business-media-list').textContent()).includes('Business marketing media'),false);
-   let failedOnce=false;const uploadedNames=[];
+   let failedOnce=false;const uploadedNames=[],completionCalls=new Map();let registrations=0;
+   page.on('request',request=>{if(request.method()==='POST'&&request.url().endsWith('/media'))registrations++;});
+   await page.route('**/media/*',async route=>{
+    if(route.request().method()!=='PATCH')return route.continue();
+    const id=new URL(route.request().url()).pathname.split('/').at(-1),attempt=(completionCalls.get(id)||0)+1;completionCalls.set(id,attempt);
+    const response=await route.fetch();
+    if(uploads.get(id)?.bytes==='completion-file'&&attempt===1)return route.fulfill({status:503,json:{error:'Controlled lost completion response'}});
+    return route.fulfill({response});
+   });
    await context.route('https://controlled-upload.example/**',async route=>{
     const id=new URL(route.request().url()).pathname.slice(1),stored=uploads.get(id);assert.equal(stored.asset.businessId,profile.businessId);assert.equal(stored.asset.relatedEntityId,'offer-a');
-    const bytes=route.request().postDataBuffer();const text=bytes.toString();uploadedNames.push(text);
+    const bytes=route.request().postDataBuffer();const text=bytes.toString();stored.bytes=text;uploadedNames.push(text);
     if(text==='retry-file'&&!failedOnce){failedOnce=true;return route.fulfill({status:500});}
     stored.uploaded=true;return route.fulfill({status:200});
    });
    await page.locator('#business-media-product').selectOption('offer-a');
-   await page.locator('#business-media-file').setInputFiles([{name:'success.png',mimeType:'image/png',buffer:Buffer.from('success-file')},{name:'retry.png',mimeType:'image/png',buffer:Buffer.from('retry-file')}]);
+   await page.locator('#business-media-file').setInputFiles([{name:'success.png',mimeType:'image/png',buffer:Buffer.from('success-file')},{name:'retry.png',mimeType:'image/png',buffer:Buffer.from('retry-file')},{name:'completion.png',mimeType:'image/png',buffer:Buffer.from('completion-file')}]);
    await page.locator('#business-media-upload-btn').click();await page.waitForFunction(()=>document.getElementById('business-media-upload-btn').disabled===false);
    assert.match(await page.locator('#business-media-status').textContent(),/retry.png/);
-   assert.equal(await page.locator('#business-media-file').evaluate(input=>input.files.length),1);
+   assert.equal(await page.locator('#business-media-file').evaluate(input=>input.files.length),2);
+   await page.locator('#business-media-product').selectOption(''); // Retries retain their original saved product.
    await page.locator('#business-media-upload-btn').click();await page.waitForFunction(()=>document.getElementById('business-media-upload-btn').disabled===false);
-   assert.deepEqual(uploadedNames,['success-file','retry-file','retry-file']);
+   assert.deepEqual(uploadedNames,['success-file','retry-file','completion-file','retry-file']);assert.equal(registrations,3);
+   const completionAsset=[...uploads.values()].find(x=>x.bytes==='completion-file'&&completionCalls.has(x.asset.assetId));assert.equal(completionCalls.get(completionAsset.asset.assetId),2);
+   await page.unroute('**/media/*');
    assert.equal(await page.locator('#business-media-file').evaluate(input=>input.files.length),0);
-   const storedUploads=[...uploads.values()].filter(x=>x.uploaded);for(const stored of storedUploads){const savedAsset=await repository.getBusinessMediaAsset(profile.businessId,stored.asset.assetId);assert.equal(savedAsset.state,'processing');}
-   await page.locator('#business-media-list button').filter({hasText:'Add to gallery'}).first().click();await page.locator('#business-media-list button').filter({hasText:'Set as main image'}).first().click();
+   const storedUploads=[...uploads.values()].filter(x=>x.uploaded&&completionCalls.has(x.asset.assetId));for(const stored of storedUploads){const savedAsset=await repository.getBusinessMediaAsset(profile.businessId,stored.asset.assetId);assert.equal(savedAsset.state,'processing');}
+   // Advance fresh uploads through the real SQL queue/lifecycle using an isolated processor result.
+   const {processNextMediaJob}=require('../api/_lib/media-processing-queue');
+   for(let job;job=await processNextMediaJob(repository,async asset=>({success:true,storageKey:'businesses/'+asset.businessId+'/media/'+asset.assetId+'/processed/master.webp',deliveryUrl:'https://example.org/'+asset.assetId+'.webp',width:1200,height:800}));)assert.equal(job.status,'completed');
+   await page.reload();await page.locator('#vendor-products-save:not([disabled])').waitFor();
+   const freshCard=id=>page.locator('.business-media-item').filter({has:page.locator('img[src="https://example.org/'+id+'.webp"]')});
+   await freshCard(storedUploads[0].asset.assetId).getByRole('button',{name:'Add to gallery',exact:true}).click();await freshCard(storedUploads[0].asset.assetId).getByRole('button',{name:'Set as main image',exact:true}).click();
    await page.locator('#vendor-products-confirm').check();await page.locator('#vendor-products-save').click();await page.waitForFunction(()=>document.getElementById('vendor-products-status').textContent==='Products saved.');
    const saved=await repository.getKnownBusiness(profile.businessId);assert.equal(saved.businessProfile.products[0].mediaGallery.assetIds.length,1);assert.ok(saved.businessProfile.products[0].mediaGallery.mainAssetId);
-   await page.locator('#business-media-list button').filter({hasText:'Add to gallery'}).first().click();
-   await page.locator('#business-media-list button').filter({hasText:'Move later'}).first().click();
+   await freshCard(storedUploads[1].asset.assetId).getByRole('button',{name:'Add to gallery',exact:true}).click();
+   await freshCard(storedUploads[0].asset.assetId).getByRole('button',{name:'Move later',exact:true}).click();
    for(const language of ['en','es','fr','ar','pt','zh','hi','de','ja']){await page.locator('#owner-preparation-language').selectOption(language);const expected=require('../js/vendor-inventory-copy').copy[language];assert.ok((await page.locator('#business-media-list').textContent()).includes(expected.removeGallery));assert.equal(await page.locator('#business-media-product option[value=""]').textContent(),expected.chooseProduct);await page.evaluate(()=>{window.__originalConfirm=window.confirm;window.confirm=message=>{window.__removePrompt=message;return false;};});await page.locator('.business-product-card-actions button').filter({hasText:'Remove'}).first().click();assert.equal(await page.evaluate(()=>window.__removePrompt),expected.removeProduct.replace('{name}','Exact jacket'));await page.evaluate(()=>window.confirm=window.__originalConfirm);assert.equal(await page.locator('.business-product-card-actions button[data-vendor-copy=duplicate]').first().textContent(),expected.duplicate);}
    await page.locator('#owner-preparation-language').selectOption('en');
    const expectedOrder=await page.evaluate(()=>window.DEMEOSVendorProducts.read().products[0].mediaGallery.assetIds);
@@ -106,6 +122,16 @@ const server=http.createServer(async(req,res)=>{try{
    assert.equal((await repository.getKnownBusiness(profile.businessId)).businessProfile.products[0].mediaGallery.assetIds.length,1);
    await page.unroute('**/products');await page.locator('#vendor-products-save').click();await page.waitForFunction(()=>document.getElementById('vendor-products-status').textContent==='Products saved.');
    assert.deepEqual((await repository.getKnownBusiness(profile.businessId)).businessProfile.products[0].mediaGallery.assetIds,expectedOrder);
+   // Saved references remain visible beyond the recent-upload cap, through API and reopening.
+   for(let index=0;index<101;index++)await repository.saveBusinessMediaAsset(profile.businessId,{...asset,assetId:'recent-'+viewport.width+'-'+index,relatedEntityId:undefined,purpose:'marketing',createdAt:new Date(Date.now()+index*1000).toISOString()});
+   const reopenedAssets=await (await context.request.get(base+'/api/businesses/'+profile.businessId+'/media')).json();
+   for(const id of expectedOrder)assert.ok(reopenedAssets.assets.some(asset=>asset.assetId===id));
+   const foreign=await context.request.get(base+'/api/businesses/engineering-b/media');assert.equal(foreign.status(),403);
+   await page.reload();await page.locator('#vendor-products-save:not([disabled])').waitFor();
+   for(const id of expectedOrder){await freshCard(id).getByRole('button',{name:'Remove from gallery',exact:true}).waitFor();assert.equal(await freshCard(id).locator('img').evaluate(image=>image.complete&&image.naturalWidth>0),true);}
+   assert.deepEqual(await page.evaluate(()=>window.DEMEOSVendorProducts.read().products[0].mediaGallery.assetIds),expectedOrder);
+   await freshCard(storedUploads[0].asset.assetId).getByRole('button',{name:'Main image',exact:true}).waitFor();
+   assert.deepEqual(await page.locator('.business-media-item').filter({has:page.getByRole('button',{name:'Remove from gallery',exact:true})}).locator('img').evaluateAll(images=>images.map(image=>image.src)),expectedOrder.map(id=>'https://example.org/'+id+'.webp'));
    // Hold the real product response so navigation happens while the save is pending.
    let releaseProductResponse;const productResponseHeld=new Promise(resolve=>releaseProductResponse=resolve);
    await page.route('**/products',async route=>{if(route.request().method()!=='PUT')return route.continue();const response=await route.fetch();await productResponseHeld;return route.fulfill({response});});
@@ -127,6 +153,7 @@ const server=http.createServer(async(req,res)=>{try{
    assert.deepEqual(errors,[]);await context.close();
    // Restore exact catalogue for the next device without clearing stock history.
    await repository.saveBusiness(profile);
+   await database.query("DELETE FROM demeos_business_media_assets WHERE business_id=$1 AND asset_id LIKE 'recent-%'",[profile.businessId]);
   }
   console.log('Vendor inventory: SQL/API/rendered stock, reload, private gallery, duplication, Japanese and responsive checks passed at 390/820/1440.');
  }finally{await browser.close();server.close();await client.close();}

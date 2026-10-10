@@ -1020,32 +1020,46 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     } catch (error) { businessMediaStatus.textContent = error.message || "DEMEOS could not add this media."; }
     finally { businessMediaUploadBtn.disabled = false; }
   }
+  let sellingMediaRetries = [];
+  businessMediaFile?.addEventListener("change", () => { sellingMediaRetries = []; });
   async function uploadBusinessMedia() {
     if(globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model!=="selling")return uploadMarketingMedia();
     const businessId=state.activeBusinessId,files=Array.from(businessMediaFile?.files||[]),relatedProductId=byId("business-media-product")?.value;
     const selling=globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model==="selling";
     if(!businessId||!files.length){businessMediaStatus.textContent=vendorText("chooseFiles","Choose images or videos first.");return;}
     if(files.length>20){businessMediaStatus.textContent=vendorText("fileLimit","Choose up to 20 files at a time.");return;}
-    if(selling&&!relatedProductId){businessMediaStatus.textContent=vendorText("chooseProduct","Choose the saved product these images belong to.");return;}
+    if(selling&&!sellingMediaRetries.length&&!relatedProductId){businessMediaStatus.textContent=vendorText("chooseProduct","Choose the saved product these images belong to.");return;}
     const relatedProduct=activeProfile()?.products?.find(p=>p.productId===relatedProductId);
-    if(relatedProductId&&!relatedProduct){businessMediaStatus.textContent=vendorText("saveProductFirst","Save and select the product first.");return;}
+    if(!sellingMediaRetries.length&&relatedProductId&&!relatedProduct){businessMediaStatus.textContent=vendorText("saveProductFirst","Save and select the product first.");return;}
+    if(sellingMediaRetries.some(retry=>retry.businessId!==businessId)){
+      businessMediaStatus.textContent=vendorText("chooseProduct","Choose the saved product these images belong to.");return;
+    }
+    const attempts=sellingMediaRetries.length?sellingMediaRetries:files.map(file=>({file,businessId,productId:relatedProductId,purpose:relatedProduct?.presentation?.kind==="service"?"service":"product",registered:null,uploaded:false}));
     businessMediaUploadBtn.disabled=true;
-    const failed=[],failedFiles=[];
-    for(let index=0;index<files.length;index++){
+    const failed=[],failedFiles=[],retryAttempts=[];
+    for(let index=0;index<attempts.length;index++){
       if(state.activeBusinessId!==businessId)break;
-      const file=files[index],kind=file.type.startsWith("video/")?"video":file.type.startsWith("image/")?"image":"";
+      const attempt=attempts[index],file=attempt.file,kind=file.type.startsWith("video/")?"video":file.type.startsWith("image/")?"image":"";
       businessMediaStatus.textContent=`${vendorText("uploading","Uploading")} ${index+1}/${files.length}: ${file.name}`;
       try{
         if(!kind||file.size>(kind==="video"?250:15)*1024*1024)throw Error(vendorText("fileError","Check the file format and size."));
-        const register=await fetch(`/api/businesses/${encodeURIComponent(businessId)}/media`,{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({asset:{kind,purpose:relatedProductId?(relatedProduct?.presentation?.kind==="service"?"service":"product"):"marketing",...(relatedProductId?{relatedEntityId:relatedProductId}:{}),contentType:file.type,sizeBytes:file.size}})});
-        const registered=await register.json();
-        if(!register.ok||!registered.asset||!registered.uploadSession)throw Error(registered.error||"Secure media storage is unavailable.");
-        const upload=await fetch(registered.uploadSession.uploadUrl,{method:"PUT",headers:{"Content-Type":file.type},body:file});
-        if(!upload.ok)throw Error(vendorText("uploadError","Upload did not complete."));
-        const complete=await fetch(`/api/businesses/${encodeURIComponent(businessId)}/media/${encodeURIComponent(registered.asset.assetId)}`,{method:"PATCH",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"complete-upload",uploadToken:registered.uploadSession.uploadToken,storageKey:registered.uploadSession.storageKey})});
+        if(!attempt.registered){
+          const register=await fetch(`/api/businesses/${encodeURIComponent(attempt.businessId)}/media`,{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({asset:{kind,purpose:attempt.purpose,relatedEntityId:attempt.productId,contentType:file.type,sizeBytes:file.size}})});
+          const registered=await register.json();
+          if(!register.ok||!registered.asset||!registered.uploadSession)throw Error(registered.error||"Secure media storage is unavailable.");
+          attempt.registered=registered;
+        }
+        const registered=attempt.registered;
+        if(!attempt.uploaded){
+          const upload=await fetch(registered.uploadSession.uploadUrl,{method:"PUT",headers:{"Content-Type":file.type},body:file});
+          if(!upload.ok)throw Error(vendorText("uploadError","Upload did not complete."));
+          attempt.uploaded=true;
+        }
+        const complete=await fetch(`/api/businesses/${encodeURIComponent(attempt.businessId)}/media/${encodeURIComponent(registered.asset.assetId)}`,{method:"PATCH",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"complete-upload",uploadToken:registered.uploadSession.uploadToken,storageKey:registered.uploadSession.storageKey})});
         if(!complete.ok){const error=await complete.json();throw Error(error.error||"Media could not be processed.");}
-      }catch(error){failed.push(file.name+": "+vendorText("uploadError","Upload failed. Retry this file."));failedFiles.push(file);}
+      }catch(error){failed.push(file.name+": "+vendorText("uploadError","Upload failed. Retry this file."));failedFiles.push(file);retryAttempts.push(attempt);}
     }
+    sellingMediaRetries=retryAttempts;
     businessMediaUploadBtn.disabled=false;
     if(state.activeBusinessId!==businessId)return;
     if(!failed.length)businessMediaFile.value="";
