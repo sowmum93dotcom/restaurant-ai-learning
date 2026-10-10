@@ -194,7 +194,7 @@
 
 .owner-workspace-body:not([data-owner-model=marketing]) [data-owner-marketing]{display:none!important;}
 #owner-options-guidance{display:none;}
-body[data-owner-view=product-options] #owner-options-guidance{display:block;color:#d4deeb;}
+body[data-owner-view=product-options] #owner-options-guidance{display:block;color:#334155;}
 body[data-owner-view=product-options] .business-products-manager{display:flex;flex-direction:column;}
 body[data-owner-view=product-options] #owner-options-guidance{order:-3;}
 body[data-owner-view=product-options] #business-products-list{order:-2;}

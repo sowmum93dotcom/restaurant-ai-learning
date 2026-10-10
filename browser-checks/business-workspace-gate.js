@@ -123,6 +123,10 @@ const server=http.createServer(async(req,res)=>{try{
       assert.equal(await page.getByRole('button',{name:'Prepare marketing',exact:true}).isVisible(),false);
       assert.equal(await page.locator('.business-media-manager').isVisible(),false);
       assert.equal(await page.locator('#business-product-description').isVisible(),false);
+      const guidanceContrast=await page.locator('#owner-options-guidance').evaluate(node=>{
+        const rgb=getComputedStyle(node).color.match(/[\d.]+/g).slice(0,3).map(Number).map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4;});
+        return 1.05/(.2126*rgb[0]+.7152*rgb[1]+.0722*rgb[2]+.05);
+      });assert.ok(guidanceContrast>=4.5,'Options guidance needs readable contrast on its white card');
       await page.screenshot({fullPage:true,path:'/tmp/demeos-owner-selling-options-'+viewport.width+'.png'});
       await page.goto(base+'/marketing.html#create');await page.locator('body[data-owner-model=selling]').waitFor();
       assert.equal(await page.locator('#create').isVisible(),false);assert.equal(new URL(page.url()).hash,'#business-profile');
