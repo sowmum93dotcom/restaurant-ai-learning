@@ -41,12 +41,12 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ assets: grants.marketing && application !== 'selling' ? assets : assets.filter(asset => asset.purpose !== 'marketing') });
     }
     const supplied = req.body && req.body.asset;
-    if (supplied?.purpose === 'marketing' && !grants.marketing) return res.status(403).json({error:'Marketing application access required.'});
     const asset = normalizeMediaAsset({
       ...supplied, assetId: "media-" + randomUUID(), businessId, state: "pending-upload",
       createdAt: new Date().toISOString()
     }, businessId);
     if (!asset) return res.status(400).json({ error: "DEMEOS received invalid media information." });
+    if (asset.purpose === 'marketing' && !grants.marketing) return res.status(403).json({error:'Marketing application access required.'});
     if (asset.relatedEntityId || ["product", "service"].includes(asset.purpose)) {
       const record = await repository.getKnownBusiness(businessId);
       const products = record?.businessProfile?.businessId === businessId && Array.isArray(record.businessProfile.products) ? record.businessProfile.products : [];

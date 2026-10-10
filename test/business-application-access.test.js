@@ -50,7 +50,11 @@ test('shared SQL identity enforces separate application access, private evidence
   assert.equal((await call(media,'owner','GET',{}, {businessId:'owned',application:'marketing'})).data.assets.length,2);
   assert.deepEqual((await call(business,'owner','GET',{}, {businessId:'owned',application:'selling'})).data.campaigns,[]);
   await repo.saveBusiness({...profile,applicationAccess:{marketing:false,selling:true}});
-  assert.equal((await call(media,'owner','POST',{asset:{purpose:'marketing'}})).code,403);
+  for(const purpose of ['marketing',' marketing ','\tmarketing\n']) {
+   const denied=await call(media,'owner','POST',{asset:{purpose,kind:'image',contentType:'image/png'}});
+   assert.equal(denied.code,403);assert.equal(denied.data.uploadSession,undefined);
+  }
+  assert.deepEqual((await repo.getBusinessMediaAssets('owned',100)).map(asset=>asset.assetId).sort(),['campaign-media','product-media']);
   const before=(await repo.getKnownBusiness('owned')).businessProfile;
   await repo.saveBusiness({...before,applicationAccess:{marketing:false,selling:false}});
   assert.equal(await repo.saveOwnedBusinessProfile('owner','owned',before,{...before,name:'Stale edit'}),false);
