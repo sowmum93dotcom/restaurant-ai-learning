@@ -270,7 +270,7 @@ function mergeKnownBusinessPersistence(profiles, campaigns, businessId, serverRe
     recommendationDecisions: otherBusinessDecisions.concat(restoredDecisions), customerParticipationResults };
 }
 
-async function hydrateKnownBusiness(storage, businessId, fetchImpl) {
+async function hydrateKnownBusiness(storage, businessId, fetchImpl, acceptResponse) {
   const profiles = parseStoredJson(storage, "demeosBusinessProfiles", []);
   if (!Array.isArray(profiles) || !profiles.some(function (profile) { return profile.businessId === businessId; })) {
     return { hydrated: false, reason: "unknown-business" };
@@ -279,6 +279,7 @@ async function hydrateKnownBusiness(storage, businessId, fetchImpl) {
     const response = await fetchImpl(`/api/businesses/${encodeURIComponent(businessId)}`);
     if (!response.ok) return { hydrated: false, reason: response.status === 403 ? "forbidden" : "server-error" };
     const serverRecord = await response.json();
+    if (acceptResponse && !acceptResponse()) return {hydrated:false,reason:"stale-response"};
     const currentProfiles = parseStoredJson(storage, "demeosBusinessProfiles", []);
     const currentCampaigns = parseStoredJson(storage, "demeosCampaignHistory", []);
     const currentDecisions = parseStoredJson(storage, "demeosRecommendationDecisions", []);
@@ -807,7 +808,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     const generation = ++hydrationGeneration;
     const requestedBusinessId = state.activeBusinessId;
     if (!requestedBusinessId || typeof window === "undefined" || typeof fetch !== "function") return;
-    const result = await hydrateKnownBusiness(localStorage, requestedBusinessId, fetch);
+    const result = await hydrateKnownBusiness(localStorage, requestedBusinessId, fetch, () => generation === hydrationGeneration && !addingBusiness && state.activeBusinessId === requestedBusinessId);
     if (generation !== hydrationGeneration || addingBusiness) return;
     if (!result.hydrated || state.activeBusinessId !== requestedBusinessId) {
       if (state.activeBusinessId === requestedBusinessId) { renderRecommendsUnderstanding(null, requestedBusinessId);

@@ -10,6 +10,7 @@ const root=path.resolve(__dirname,'..'),client=new PGlite(),database=createDatab
 persistence.getRepository=()=>repository;
 auth.resolveTrustedIdentityFromRequest=async req=>{const id=req.headers.cookie?.match(/engineering-owner=(owner-[a-z0-9-]+)/)?.[1];return id?{trustedIdentityId:id}:null;};
 const list=require('../api/businesses'),business=require('../api/businesses/[businessId]'),campaign=require('../api/businesses/[businessId]/campaigns/[campaignId]'),media=require('../api/businesses/[businessId]/media/index'),publicWork=require('../api/customer/work');
+const checkout=require('../api/_lib/customer-checkout').createHandler({authenticate:async req=>{const identity=await auth.resolveTrustedIdentityFromRequest(req);return identity?{trustedCustomerIdentityId:identity.trustedIdentityId}:null;},repository:()=>repository});
 const generatorModule={exports:{}};
 vm.runInNewContext(fs.readFileSync(path.join(root,'api/generate.js'),'utf8').replace('export default async function handler','module.exports = async function handler'),{module:generatorModule,require:createRequire(path.join(root,'api/generate.js')),console,process:{env:{}},fetch(){throw Error('No external provider may be called');}});
 const asset={businessId:'engineering-a',assetId:'engineering-image',relatedEntityId:'offer-a',purpose:'product',kind:'image',state:'ready',deliveryUrl:'https://example.org/exact.jpg'};
@@ -22,6 +23,7 @@ const server=http.createServer(async(req,res)=>{try{
  let match=url.pathname.match(/^\/api\/businesses\/([^/]+)(?:\/campaigns\/([^/]+))?$/);
  if(match){req.query.businessId=decodeURIComponent(match[1]);if(match[2]){req.query.campaignId=decodeURIComponent(match[2]);return await campaign(req,res);}return await business(req,res);}
  match=url.pathname.match(/^\/api\/businesses\/([^/]+)\/media$/);if(match){req.query.businessId=match[1];return await media(req,res);}
+ if(url.pathname==='/api/customer/checkout')return await checkout(req,res);
  if(url.pathname==='/api/generate')return await generatorModule.exports(req,res);
  if(url.pathname==='/api/customer/work')return await publicWork(req,res);
  if(url.pathname.startsWith('/api/'))return res.status(404).json({error:'Not configured'});
@@ -104,6 +106,11 @@ const server=http.createServer(async(req,res)=>{try{
       assert.equal((await context.request.post(base+'/api/businesses/engineering-a/orders',{data:{}})).status(),404);
       assert.equal((await context.request.post(base+'/api/businesses/engineering-a/inventory',{data:{}})).status(),404);
     }
+    if(model){
+      const payment=await context.request.post(base+'/api/customer/checkout?demeos-test=1',{headers:{'x-demeos-test-mode':'controlled-preview',origin:base},data:{draft:{businessId:'engineering-a',selling:true},details:{}}});
+      assert.equal(payment.status(),403);assert.equal((await payment.json()).reason,'customer-only');
+      assert.deepEqual((await (await context.request.get(base+'/api/customer/work')).json()).work,[]);
+    }
     if(model==='selling'){
       assert.equal(await page.locator('[data-owner-section="marketing"]').count(),0);
       assert.equal(await page.locator('[data-owner-section="results"]').count(),0);
@@ -112,6 +119,9 @@ const server=http.createServer(async(req,res)=>{try{
       await page.locator('[data-owner-section="product-options"]').click();await page.locator('#products:not([hidden])').waitFor();
       await page.locator('#business-products-list button').filter({hasText:'Edit'}).first().click();
       assert.equal(await page.locator('.owner-variant legend').first().innerText(),'Medium');
+      assert.equal(await page.getByRole('button',{name:'Prepare marketing',exact:true}).isVisible(),false);
+      assert.equal(await page.locator('.business-media-manager').isVisible(),false);
+      assert.equal(await page.locator('#business-product-description').isVisible(),false);
       await page.screenshot({fullPage:true,path:'/tmp/demeos-owner-selling-options-'+viewport.width+'.png'});
       await page.goto(base+'/marketing.html#create');await page.locator('body[data-owner-model=selling]').waitFor();
       assert.equal(await page.locator('#create').isVisible(),false);assert.equal(new URL(page.url()).hash,'#business-profile');
@@ -133,6 +143,16 @@ const server=http.createServer(async(req,res)=>{try{
     await page.screenshot({fullPage:true,path:'/tmp/demeos-owner-workspace-'+name+'-'+viewport.width+'.png'});
     await context.unroute(endpoint);
    }
+   // A failed owner list is a service error, not a new-business invitation or cache deletion.
+   await page.evaluate(()=>{localStorage.setItem('demeosPendingBusinessProfileSync','["engineering-a"]');});
+   const cacheBefore=await page.evaluate(()=>localStorage.getItem('demeosBusinessProfiles'));
+   await context.route(base+'/api/businesses',route=>route.fulfill({status:503,json:{error:'List unavailable'}}));
+   await page.goto(base+'/marketing.html#products');await page.locator('body[data-owner-access=unavailable]').waitFor();
+   assert.equal(await page.locator('#products').isVisible(),false);
+   assert.equal(await page.evaluate(()=>localStorage.getItem('demeosBusinessProfiles')),cacheBefore);
+   assert.equal(await page.evaluate(()=>localStorage.getItem('demeosPendingBusinessProfileSync')),'["engineering-a"]');
+   await page.screenshot({fullPage:true,path:'/tmp/demeos-owner-workspace-list-failed-'+viewport.width+'.png'});
+   await context.unroute(base+'/api/businesses');await page.evaluate(()=>localStorage.removeItem('demeosPendingBusinessProfileSync'));
    // The saved onboarding intent selects only a permitted workspace; browser facts cannot grant access.
    await repository.saveBusiness({...profile,preparationModel:'selling'});
    await page.evaluate(()=>sessionStorage.removeItem('demeosOwnerView:engineering-a'));
@@ -237,7 +257,7 @@ const server=http.createServer(async(req,res)=>{try{
    await context.route('https://clerk.test/npm/@clerk/ui@1/dist/ui.browser.js',r=>r.fulfill({contentType:'text/javascript',body:'window.__internal_ClerkUICtor=function(){};'}));
    await context.route('https://clerk.test/npm/@clerk/clerk-js@6/dist/clerk.browser.js',r=>r.fulfill({contentType:'text/javascript',body:'window.Clerk={user:{id:'+JSON.stringify(owner)+'},session:null,async load(){},addListener(fn){this.listener=fn},openSignIn(){throw Error("Duplicate sign in")},async signOut(){this.user=null;this.listener({user:null})}};'}));
    const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(String(e)));page.on('dialog',d=>d.accept());
-   await page.goto(base+'/business-workspace.html');await page.getByRole('link',{name:'Start business setup',exact:true}).click();
+   await page.goto(base+'/business-workspace.html');await page.locator('body[data-owner-access=setup]').waitFor();await page.screenshot({fullPage:true,path:'/tmp/demeos-owner-workspace-missing-business-'+width+'.png'});await page.getByRole('link',{name:'Start business setup',exact:true}).click();
    await page.locator('#owner-authenticated-workspace:not([hidden])').waitFor();await page.locator('#business-offering-category option').last().waitFor({state:'attached'});
    assert.equal(await page.locator('#submit-business-btn').isEnabled(),false);
    assert.equal((await context.request.put(base+'/api/businesses/not-created',{data:{action:'submit-business',ownerAccuracyConfirmed:true}})).status(),403);
