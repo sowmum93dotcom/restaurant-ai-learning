@@ -45,22 +45,54 @@ const server=http.createServer(async(req,res)=>{try{
    assert.equal((await context.request.get(base+'/api/businesses/engineering-b/media')).status(),403);
    assert.equal((await context.request.post(base+'/api/businesses/engineering-b/media',{data:{asset:{kind:'image',purpose:'product',relatedEntityId:'offer-a',contentType:'image/png',sizeBytes:100}}})).status(),403);
    assert.equal((await context.request.post(base+'/api/businesses/engineering-a/media',{data:{asset:{kind:'image',purpose:'product',relatedEntityId:'foreign',contentType:'image/png',sizeBytes:100}}})).status(),409);
-   // Exercise view-only presentation of authoritative model states. The real API remains preparation-only.
-   for(const state of [
-    {marketing:{canPrepare:true},selling:{canPrepare:false}},
-    {marketing:{canPrepare:false},selling:{canPrepare:true,canSell:true}},
-    {marketing:{canPrepare:true},selling:{canPrepare:true,canSell:false}},
-    {marketing:{canPrepare:false},selling:{canPrepare:false}},
-    {marketing:{canPrepare:'true'},selling:{canPrepare:true}}
-   ]) {
-    await page.evaluate(state=>renderOwnerModels(document,{businessId:'engineering-a',...state},'engineering-a'),state);
-    const views=Object.entries(state).filter(([,value])=>value.canPrepare===true);
-    assert.equal(await page.locator('#owner-operating-models .owner-model-card').count(),views.length?1:0);
-    if(views.length===2){await page.locator('[data-owner-model="selling"]').click();assert.match(await page.locator('#owner-operating-models .owner-model-card').innerText(),/Preparation only/);await page.locator('[data-owner-model="marketing"]').click();assert.match(await page.locator('#owner-operating-models .owner-model-card').innerText(),/£149 per month/);}
-    if(views.length===1&&views[0][0]==='selling')assert.match(await page.locator('#owner-operating-models').innerText(),state.selling.canSell===true?/Selling permission confirmed/:/could not be confirmed/);
+   // Isolated readiness responses exercise the authenticated rendered workspace, not a DOM-only call.
+   // All business data still comes from the real SQL/API; no permission or profile is persisted by this adapter.
+   const modelStates=[
+    ['marketing-only',{marketing:{canPrepare:true},selling:{canPrepare:false}}],
+    ['selling-preparation',{marketing:{canPrepare:false},selling:{canPrepare:true,canSell:false}}],
+    ['both',{marketing:{canPrepare:true},selling:{canPrepare:true,canSell:false}}],
+    ['unavailable',{marketing:{canPrepare:false},selling:{canPrepare:false}}],
+    ['missing',null],
+    ['malformed',{marketing:{canPrepare:'true'},selling:{canPrepare:1,canSell:true}}],
+    ['foreign',{businessId:'engineering-b',marketing:{canPrepare:true},selling:{canPrepare:true,canSell:true}}],
+    ['selling-confirmed',{marketing:{canPrepare:false},selling:{canPrepare:true,canSell:true}}]
+   ];
+   for(const [name,state] of modelStates) {
+    const endpoint=base+'/api/businesses/engineering-a';
+    await context.route(endpoint,async route=>{
+     const response=await route.fetch(),record=await response.json();
+     record.workspaceReadiness=state?{businessId:'engineering-a',...state}:null;
+     await route.fulfill({response,json:record});
+    });
+    await page.reload();await page.locator('#workspace-business-identity').filter({hasText:'Engineering Owner A'}).waitFor();
+    const cards=page.locator('#owner-operating-models .owner-model-card');assert.equal(await cards.count(),2);
+    const trusted=state&&(!state.businessId||state.businessId==='engineering-a');
+    for(const model of ['marketing','selling']){
+     const card=cards.filter({has:page.locator('#owner-model-'+model)}),available=!!trusted&&state[model]?.canPrepare===true;
+     assert.equal(await card.getAttribute('data-preparation-available'),String(available));
+     assert.equal(await card.locator('a').count(),available?1:0);
+     assert.match(await card.innerText(),model==='marketing'?/approved destination/:/Selling and payments need separate authorisation/);
+     if(!available)assert.match(await card.innerText(),/Review your business details/);
+    }
+    if(['unavailable','missing','malformed','foreign'].includes(name))assert.match(await page.locator('#workspace-next-action').innerText(),/Next action unavailable/);
+    if(name==='selling-preparation'||name==='both')assert.match(await cards.nth(1).innerText(),/Preparation only. Selling is not enabled/);
+    if(name==='selling-confirmed')assert.match(await cards.nth(1).innerText(),/Selling permission confirmed/);
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+    await page.locator('#owner-operating-models').screenshot({path:'/tmp/demeos-owner-models-'+name+'-'+viewport.width+'.png'});
+    await context.unroute(endpoint);
+   }
+   await page.reload();await page.locator('#workspace-business-identity').filter({hasText:'Engineering Owner A'}).waitFor();
+   // Both workflow actions reuse existing authenticated pages and keep the exact owned business context.
+   for(const [model,hash,section] of [['marketing','#create','marketing'],['selling','#products','products']]){
+    await page.locator('[data-owner-model="'+model+'"] a').click();
+    await page.locator('#owner-authenticated-workspace:not([hidden])').waitFor();
+    assert.equal(new URL(page.url()).hash,hash);
+    assert.equal(await page.evaluate(()=>localStorage.getItem('demeosActiveBusinessId')),'engineering-a');
+    assert.equal(await page.locator('[data-owner-section="'+section+'"]').getAttribute('aria-current'),'page');
+    await page.locator('[data-owner-section="overview"]').click();await page.locator('#workspace-business-identity').filter({hasText:'Engineering Owner A'}).waitFor();
    }
    const confirmed=await (await context.request.get(base+'/api/businesses/engineering-a')).json();assert.equal(confirmed.workspaceReadiness.selling.canSell,false);
-   await page.evaluate(readiness=>renderOwnerModels(document,readiness,'engineering-a'),confirmed.workspaceReadiness);
+   assert.equal((await context.request.get(base+'/api/customer/work')).status(),200);
    assert.equal(await page.locator('#owner-dashboard-summary .owner-metric').count(),3);
    await page.screenshot({fullPage:true,path:'/tmp/demeos-owner-overview-'+viewport.width+'.png'});
    await page.locator('[data-owner-section="business-profile"]').click();await page.locator('[data-owner-section="products"]').click();await page.locator('#business-products-list').filter({hasText:'Exact jacket'}).waitFor();
@@ -141,6 +173,9 @@ const server=http.createServer(async(req,res)=>{try{
    await page.locator('[data-owner-section="results"]').click();await page.locator('#owner-results-metrics .owner-metric').first().waitFor();assert.equal(await page.locator('#owner-results-metrics .owner-metric').count(),5);assert.match(await page.locator('#owner-results-metrics').innerText(),/Not recorded/);assert.doesNotMatch(await page.locator('body').innerText(),/Private Owner B|owner-a|owner-b/);
    await page.screenshot({fullPage:true,path:'/tmp/demeos-owner-results-'+viewport.width+'.png'});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'No horizontal overflow');
    await page.locator('#owner-sign-out').click();await page.locator('#owner-auth-signed-out:not([hidden])').waitFor();assert.doesNotMatch(await page.locator('body').innerText(),/Engineering Owner A|Exact jacket/);assert.deepEqual(errors,[]);
+   await context.clearCookies();await page.goto(base+'/business-workspace.html');await page.locator('#owner-auth-signed-out:not([hidden])').waitFor();
+   assert.equal(await page.locator('#owner-operating-models').isVisible(),false);assert.equal((await context.request.get(base+'/api/businesses/engineering-a')).status(),401);
+   await page.screenshot({fullPage:true,path:'/tmp/demeos-owner-models-unauthorised-'+viewport.width+'.png'});
    await context.close();console.log('Owner SQL, model permissions, product/media, factual draft, private submission, results and sign-out passed',viewport.width);
   }
   // New owner onboarding exercises the actual existing profile, ownership SQL and APIs.

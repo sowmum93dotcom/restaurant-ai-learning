@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const {getOwnerModelViews, getTrustedOwnerNextAction, loadOwnerNextAction} = require('../js/business-workspace');
+const {getOwnerModelViews, getOwnerModelPresentations, getTrustedOwnerNextAction, loadOwnerNextAction} = require('../js/business-workspace');
 const {workspaceReadiness} = require('../api/_lib/business-workspace-readiness');
 const {getOwnerActivityMetrics} = require('../js/business-results');
 const businessId = 'owned';
@@ -13,7 +13,7 @@ test('workflow views require exact server readiness and strict preparation boole
  assert.deepEqual(marketing.map(v=>v.id), ['marketing']); assert.match(marketing[0].status,/£149 per month/);
  const selling=getOwnerModelViews(ready({marketing:{canPrepare:false},selling:{canPrepare:true,canSell:true}}),businessId);
  assert.deepEqual(selling.map(v=>v.id), ['selling']); assert.equal(selling[0].destination,'marketing.html#products');
- assert.match(selling[0].description,/server checks/);
+ assert.match(selling[0].description,/separate authorisation/);
  const both=getOwnerModelViews(ready({marketing:{canPrepare:true},selling:{canPrepare:true,canSell:false}}),businessId);
  assert.deepEqual(both.map(v=>v.id), ['marketing','selling']); assert.match(both[1].status,/Selling is not enabled/);
  assert.match(getOwnerModelViews(ready({selling:{canPrepare:true}}),businessId)[0].status,/could not be confirmed/);
@@ -45,6 +45,7 @@ test('the next action follows confirmed preparation access and fails closed with
  const record={businessProfile:{businessId,products:[]},campaigns:[]};
  assert.equal(getTrustedOwnerNextAction({...record,workspaceReadiness:ready({selling:{canPrepare:true,canSell:false}})},businessId).destination,'marketing.html#products');
  assert.equal(getTrustedOwnerNextAction({...record,workspaceReadiness:ready({marketing:{canPrepare:false},selling:{canPrepare:false}})},businessId).title,'Next action unavailable');
+ assert.equal(getTrustedOwnerNextAction({...record,workspaceReadiness:null},businessId).title,'Next action unavailable');
 });
 
 for(const staleResponse of ['failure','success']) test(`an older ${staleResponse} cannot clear a newer same-business Overview`,async()=>{
@@ -56,4 +57,16 @@ for(const staleResponse of ['failure','success']) test(`an older ${staleResponse
  requests[1].resolve({ok:true,json:async()=>({businessProfile:{businessId,products:[]},campaigns:[]})});await latest;
  if(staleResponse==='failure')requests[0].reject(Error('Old request failed'));else requests[0].resolve({ok:true,json:async()=>({businessProfile:{businessId},campaigns:[{businessId,approvalStatus:'Unapproved'}]})});await old;
  assert.equal(card.children[0].textContent,'Add your first product or service');
+});
+
+test('both workflows stay explained without granting preparation on missing, foreign or malformed permissions',()=>{
+ for(const readiness of [null, {businessId:'foreign',marketing:{canPrepare:true},selling:{canPrepare:true}}, ready({marketing:{canPrepare:'true'},selling:{canPrepare:1}})]){
+  const presentations=getOwnerModelPresentations(readiness,businessId);
+  assert.deepEqual(presentations.map(model=>model.id),['marketing','selling']);
+  assert.ok(presentations.every(model=>model.available===false));
+  assert.equal(getOwnerModelViews(readiness,businessId).length,0);
+ }
+ const marketingOnly=getOwnerModelPresentations(ready({marketing:{canPrepare:true},selling:{canPrepare:false,canSell:true}}),businessId);
+ assert.equal(marketingOnly[0].available,true);assert.equal(marketingOnly[1].available,false);
+ assert.match(marketingOnly[1].status,/not authorised/);
 });
