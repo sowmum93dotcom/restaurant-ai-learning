@@ -14,6 +14,8 @@ The existing PUT profile contract saves category and model as owner facts only. 
 
 The same PUT route supports private submission of a complete, confirmed saved profile. Ownership is rechecked and SQL compares the reviewed snapshot atomically. Unchanged reviewed information stays retryable after transport/server failures, including a lost successful response; browser regression verifies the same submission timestamp after retry. A stale snapshot response requires saving and reviewing again. Both sequential and overlapping identical submissions retain the same timestamp; atomic SQL compares all saved facts and confirmation metadata while allowing only the server submission metadata to differ; stale or incomplete snapshots and unauthorized owners are rejected. Edits return submission status to private draft. Submission is recorded in the existing business profile informationStatus, without another store or category database. Business approval is not asserted. No administrative review or selling activation was built.
 
+Rendered phone, tablet and desktop review identified light gold headings on pale onboarding cards; scoped navy summary text improves readability while preserving gold accents and the existing layout.
+
 New preparation guidance uses the existing nine-language registry, selector and category labels. Business facts are not translated. Legacy profile input labels, continuation/fulfilment labels, authentication screens, surrounding Overview/Marketing/Results copy and server validation errors remain English and are explicitly not claimed as fully localized.
 
 ## Verification

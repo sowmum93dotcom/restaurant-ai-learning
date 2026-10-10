@@ -99,7 +99,7 @@
 .owner-workspace-body #owner-product-options .owner-combinations>summary{color:#14233c!important;background:transparent!important;opacity:1!important;}
 
 .onboarding-step {border:1px solid rgba(201,165,83,.3);border-radius:16px;padding:18px;min-width:0;background:rgba(9,27,48,.45)}
-.onboarding-step > summary {cursor:pointer;color:#e3c477;margin:0 0 18px;font-size:1.12rem}
+.owner-workspace-body .onboarding-step > summary {cursor:pointer;color:#14233c;margin:0 0 18px;font-size:1.12rem}
 .onboarding-step .profile-step-heading > span {display:none}
 .onboarding-step[open]>summary {margin-bottom:18px}
 .onboarding-step:not([open])>summary {margin:0}
