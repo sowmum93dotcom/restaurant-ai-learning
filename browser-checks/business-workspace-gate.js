@@ -161,6 +161,7 @@ const server=http.createServer(async(req,res)=>{try{
    const before=record.businessProfile;const body={action:'submit-business',ownerAccuracyConfirmed:true,reviewedProfile:before};
    assert.equal((await context.request.put(base+'/api/businesses/'+businessId,{data:{...body,reviewedProfile:{...before,name:'Wrong snapshot'}}})).status(),409);
    // Keep the unchanged reviewed profile retryable through server errors and lost success responses.
+   await page.locator('#business-accuracy-confirmation').check();
    const submitUrl=base+'/api/businesses/'+businessId;
    await page.route(submitUrl,route=>route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'Temporary test failure'})}),{times:1});
    await page.locator('#submit-business-btn').click();await page.locator('#business-onboarding-status').filter({hasText:'Could not submit'}).waitFor();assert.equal(await page.locator('#submit-business-btn').isEnabled(),true);
