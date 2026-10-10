@@ -106,7 +106,11 @@ const server=http.createServer(async(req,res)=>{try{
    assert.equal((await repository.getKnownBusiness(profile.businessId)).businessProfile.products[0].mediaGallery.assetIds.length,1);
    await page.unroute('**/products');await page.locator('#vendor-products-save').click();await page.waitForFunction(()=>document.getElementById('vendor-products-status').textContent==='Products saved.');
    assert.deepEqual((await repository.getKnownBusiness(profile.businessId)).businessProfile.products[0].mediaGallery.assetIds,expectedOrder);
-   await page.locator('.business-product-card-actions button').filter({hasText:'Duplicate'}).first().click();await page.locator('#vendor-products-confirm').check();await page.locator('#vendor-products-save').click();await page.waitForFunction(()=>document.getElementById('vendor-products-status').textContent==='Products saved.');
+   // Hold the real product response so navigation happens while the save is pending.
+   let releaseProductResponse;const productResponseHeld=new Promise(resolve=>releaseProductResponse=resolve);
+   await page.route('**/products',async route=>{if(route.request().method()!=='PUT')return route.continue();const response=await route.fetch();await productResponseHeld;return route.fulfill({response});});
+   await page.locator('.business-product-card-actions button').filter({hasText:'Duplicate'}).first().click();await page.locator('#vendor-products-confirm').check();await page.locator('#vendor-products-save').click();assert.equal(await page.locator('#vendor-products-status').textContent(),'Loading…');await page.goto(base+'/marketing.html#inventory');releaseProductResponse();
+   await page.waitForFunction(()=>document.getElementById('vendor-products-status').textContent==='Products saved.');await page.unroute('**/products');
    const catalog=await repository.getKnownBusiness(profile.businessId),duplicate=catalog.businessProfile.products.at(-1);assert.equal(duplicate.customerVisible,false);assert.notEqual(duplicate.productId,'offer-a');assert.equal(duplicate.mediaGallery,undefined);
    await page.goto(base+'/marketing.html#inventory');await page.locator('.vendor-stock-row').first().waitFor();
    const beforeBulk=await repository.getVendorInventory(profile.businessId),bulkRows=require('../api/_lib/vendor-inventory').rowsFor(catalog.businessProfile,beforeBulk.entries);
