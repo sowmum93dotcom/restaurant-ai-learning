@@ -1,17 +1,18 @@
 const test = require('node:test'), assert = require('node:assert/strict');
 const {resolve, canOpen} = require('../js/owner-workspace-model');
 function record(marketing, selling, intent = 'both') {return {businessProfile:{businessId:'owned',preparationModel:intent},workspaceReadiness:{businessId:'owned',marketing:{canPrepare:marketing},selling:{canPrepare:selling,canSell:false}}};}
-test('saved intent and remembered view are clamped to exact server preparation permissions',()=>{
-  for(const intent of ['marketing','selling','both']) for(const preference of ['marketing','selling','other']) {
-    const marketing=resolve(record(true,false,intent),'owned',preference);
-    assert.equal(marketing.model,'marketing');assert.deepEqual(marketing.allowed,['marketing']);
-    const selling=resolve(record(false,true,intent),'owned',preference);
-    assert.equal(selling.model,'selling');assert.deepEqual(selling.allowed,['selling']);
-    assert.equal(canOpen(selling,'create'),false);assert.equal(canOpen(selling,'results-view'),false);
-    assert.equal(canOpen(selling,'products'),true);
-  }
-  assert.equal(resolve(record(true,true,'selling'),'owned').model,'selling');
-  assert.equal(resolve(record(true,true,'selling'),'owned','marketing').model,'marketing');
+test('application routes never fall back into another authorised application',()=>{
+ for(const intent of ['marketing','selling','both']) {
+   const marketing=resolve(record(true,false,intent),'owned','marketing');
+   const selling=resolve(record(false,true,intent),'owned','selling');
+   assert.equal(marketing.model,'marketing');assert.equal(selling.model,'selling');
+   assert.equal(resolve(record(true,false,intent),'owned','selling').status,'denied');
+   assert.equal(resolve(record(false,true,intent),'owned','marketing').status,'denied');
+   assert.equal(canOpen(selling,'create'),false);assert.equal(canOpen(selling,'results-view'),false);
+   assert.equal(canOpen(selling,'products'),true);
+ }
+ assert.equal(resolve(record(true,true,'selling'),'owned').model,'marketing');
+ assert.equal(resolve(record(true,true,'selling'),'owned','selling').model,'selling');
 });
 test('invalidated detail responses cannot overwrite profiles, pending edits or campaigns',async()=>{
   const {hydrateKnownBusiness}=require('../js/script');

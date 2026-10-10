@@ -9,11 +9,11 @@ module.exports=async function(req,res){
  const businessId=typeof req.query.businessId==='string'?req.query.businessId.trim():'';
  if(!businessId)return res.status(400).json({error:'Select a business.'});
  try{
-  const repository=getRepository(),access=await authorizeBusinessOwnerRequest({req,businessId,repository,action:req.method==='GET'?DEMEOS_ACTIONS.VIEW_OWN_BUSINESS_RESULTS:DEMEOS_ACTIONS.MANAGE_BUSINESS_PROFILE});
+  const repository=getRepository(),access=await authorizeBusinessOwnerRequest({req,businessId,repository,application:'selling',action:req.method==='GET'?DEMEOS_ACTIONS.VIEW_OWN_BUSINESS_RESULTS:DEMEOS_ACTIONS.MANAGE_BUSINESS_PROFILE});
   if(!access.authenticated)return res.status(401).json({error:'Authentication required.'});
   if(!access.allowed)return res.status(403).json({error:'Business access unavailable.'});
   const record=await repository.getKnownBusiness(businessId);
-  if(!inventory.canManage(record,businessId))return res.status(403).json({error:'Save Selling as your business model before preparing stock.'});
+  if(!inventory.canManage(record,businessId))return res.status(403).json({error:'Selling application access is required.'});
   const profile=record.businessProfile,snapshot=inventory.catalogueRevision(profile),stock=await repository.getVendorInventory(businessId);
   if(req.method==='GET')return res.status(200).json({businessId,revision:stock.revision,catalogueRevision:snapshot,rows:inventory.rowsFor(profile,stock.entries),needsVariantSetup:profile.products.some(p=>p.presentation?.options?.length&&!p.presentation?.variants?.length&&p.presentation?.kind!=="service"),history:stock.history,sellingEnabled:false});
   if(!Number.isInteger(req.body?.revision)||req.body.revision<0||req.body.catalogueRevision!==snapshot||req.body.revision!==stock.revision)return res.status(409).json({error:'Stock or products changed. Reload before saving.'});

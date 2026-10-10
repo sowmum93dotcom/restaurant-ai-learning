@@ -19,11 +19,13 @@ module.exports = async function handler(req, res) {
     const access = await authorizeBusinessOwnerRequest({ req, businessId, action: DEMEOS_ACTIONS.MANAGE_BUSINESS_MEDIA, repository });
     if (!access.authenticated) return res.status(401).json({ error: "Authentication required." });
     if (!access.allowed) return res.status(403).json({ error: "Forbidden." });
+    const accessRecord = await repository.getKnownBusiness(businessId);
+    const grants = require('../../../_lib/business-application-access').applicationAccess(accessRecord, businessId);
     if (req.method === "GET") {
       let assets = await repository.getBusinessMediaAssets(businessId, 100);
       const record = await repository.getKnownBusiness(businessId);
       const profile = record?.businessProfile;
-      if (profile?.businessId === businessId && ["selling", "both"].includes(profile.preparationModel)) {
+      if (profile?.businessId === businessId && profile.applicationAccess?.selling === true) {
         // Recent uploads stay bounded, but saved galleries must survive catalogue reopening.
         const galleries = (Array.isArray(profile.products) ? profile.products : []).slice(0, 100)
           .filter(product => product?.businessId === businessId && Array.isArray(product.mediaGallery?.assetIds));
@@ -33,9 +35,10 @@ module.exports = async function handler(req, res) {
         }));
         assets = Array.from(new Map([...assets, ...saved.flat()].map(asset => [asset.assetId, asset])).values());
       }
-      return res.status(200).json({ assets });
+      return res.status(200).json({ assets: grants.marketing ? assets : assets.filter(asset => asset.purpose !== 'marketing') });
     }
     const supplied = req.body && req.body.asset;
+    if (supplied?.purpose === 'marketing' && !grants.marketing) return res.status(403).json({error:'Marketing application access required.'});
     const asset = normalizeMediaAsset({
       ...supplied, assetId: "media-" + randomUUID(), businessId, state: "pending-upload",
       createdAt: new Date().toISOString()

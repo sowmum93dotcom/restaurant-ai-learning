@@ -21,7 +21,7 @@ const checkout=require('../api/_lib/customer-checkout').createHandler({authentic
 const generatorModule={exports:{}};
 vm.runInNewContext(fs.readFileSync(path.join(root,'api/generate.js'),'utf8').replace('export default async function handler','module.exports = async function handler'),{module:generatorModule,require:createRequire(path.join(root,'api/generate.js')),console,process:{env:{}},fetch(){throw Error('No external provider may be called');}});
 const asset={businessId:'engineering-a',assetId:'engineering-image',relatedEntityId:'offer-a',purpose:'product',kind:'image',state:'ready',deliveryUrl:'https://example.org/exact.jpg'};
-const profile={businessId:'engineering-a',name:'Engineering Owner A',type:'Fashion',location:'London',brandVoice:'Clear',targetCustomer:'Local customers',goal:'Share saved products',profileVersion:4,preparationModel:'selling',offeringCategoryId:'fashion.apparel',productsServices:'Owner products',customerContinuation:{routes:['website'],website:'https://example.org/shop'},fulfilment:{methods:['shipping']},operationalAvailability:{status:'available'},products:[{businessId:'engineering-a',productId:'offer-a',name:'Exact jacket',description:'Saved jacket description',price:'£89',priceMode:'fixed',availability:'available',continuationRoute:'website',customerVisible:true,fulfilment:{methods:['collection']},presentation:{version:1,categoryId:'fashion.apparel',pricing:{mode:'fixed',currency:'GBP',amount:89},options:[{key:'size',values:[{value:'M',label:'Medium'}]}],variants:[{variantId:'exact-medium',selection:{size:'M'},availability:'limited',pricing:{mode:'fixed',currency:'GBP',amount:91},future:'retained'}],future:'retained'}}]};
+const profile={applicationAccess:{marketing:false,selling:true},businessId:'engineering-a',name:'Engineering Owner A',type:'Fashion',location:'London',brandVoice:'Clear',targetCustomer:'Local customers',goal:'Share saved products',profileVersion:4,preparationModel:'selling',offeringCategoryId:'fashion.apparel',productsServices:'Owner products',customerContinuation:{routes:['website'],website:'https://example.org/shop'},fulfilment:{methods:['shipping']},operationalAvailability:{status:'available'},products:[{businessId:'engineering-a',productId:'offer-a',name:'Exact jacket',description:'Saved jacket description',price:'£89',priceMode:'fixed',availability:'available',continuationRoute:'website',customerVisible:true,fulfilment:{methods:['collection']},presentation:{version:1,categoryId:'fashion.apparel',pricing:{mode:'fixed',currency:'GBP',amount:89},options:[{key:'size',values:[{value:'M',label:'Medium'}]}],variants:[{variantId:'exact-medium',selection:{size:'M'},availability:'limited',pricing:{mode:'fixed',currency:'GBP',amount:91},future:'retained'}],future:'retained'}}]};
 const inventory=require('../api/businesses/[businessId]/inventory'),products=require('../api/businesses/[businessId]/products'),ordersHandler=require('../api/businesses/[businessId]/orders');
 const orderFoundation=require('../api/_lib/vendor-orders').createVendorOrders(database,{authorizePurchase:()=>true}); // isolated test authority only
 const server=http.createServer(async(req,res)=>{try{
@@ -38,7 +38,7 @@ const server=http.createServer(async(req,res)=>{try{
  if(url.pathname==='/api/generate')return await generatorModule.exports(req,res);
  if(url.pathname==='/api/customer/work')return await publicWork(req,res);
  if(url.pathname.startsWith('/api/'))return res.status(404).json({error:'Not configured'});
- const file=path.resolve(root,'.'+decodeURIComponent(url.pathname==='/'?'/business-workspace.html':url.pathname));if(!file.startsWith(root+path.sep)||!fs.existsSync(file)){res.statusCode=404;return res.end();}
+ const file=path.resolve(root,'.'+decodeURIComponent(({'/marketing-business':'/business-workspace.html','/selling-vendor':'/business-workspace.html','/marketing-business/manage':'/marketing.html','/selling-vendor/manage':'/marketing.html','/marketing-business/results':'/business-results.html'}[url.pathname] || (url.pathname==='/'?'/business-workspace.html':url.pathname))));if(!file.startsWith(root+path.sep)||!fs.existsSync(file)){res.statusCode=404;return res.end();}
  res.setHeader('Content-Type',({'.html':'text/html','.js':'application/javascript','.css':'text/css'})[path.extname(file)]||'application/octet-stream');fs.createReadStream(file).pipe(res);
 }catch(error){console.error(error);if(!res.writableEnded){res.statusCode=500;res.end('{}');}}});
 (async()=>{
@@ -56,25 +56,25 @@ const server=http.createServer(async(req,res)=>{try{
    await context.route('https://clerk.test/npm/@clerk/clerk-js@6/dist/clerk.browser.js',r=>r.fulfill({contentType:'text/javascript',body:"window.Clerk={user:{id:'owner-a'},session:null,async load(){},addListener(fn){this.listener=fn;},async signOut(){this.user=null;this.listener({user:null});}};"}));
    await context.route('https://example.org/**',r=>r.fulfill({contentType:'image/webp',body:fs.readFileSync(path.join(root,'images/controlled-test/mens-fashion.webp'))}));
    const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(String(e)));page.on('dialog',dialog=>dialog.accept());
-   await page.goto(base+'/marketing.html#inventory');await page.locator('.vendor-stock-row').first().waitFor().catch(async e=>{console.log(await page.evaluate(()=>({model:document.body.dataset.ownerModel,view:document.body.dataset.ownerView,status:document.getElementById('vendor-stock-status').textContent,text:document.body.innerText.slice(-2500)})),errors);await page.screenshot({path:'/tmp/vendor-failed.png',fullPage:true});throw e;});
+   await page.goto(base+'/selling-vendor/manage#inventory');await page.locator('.vendor-stock-row').first().waitFor().catch(async e=>{console.log(await page.evaluate(()=>({model:document.body.dataset.ownerModel,view:document.body.dataset.ownerView,status:document.getElementById('vendor-stock-status').textContent,text:document.body.innerText.slice(-2500)})),errors);await page.screenshot({path:'/tmp/vendor-failed.png',fullPage:true});throw e;});
    await database.query('DELETE FROM demeos_vendor_order_requests');await database.query('DELETE FROM demeos_vendor_order_events');await database.query('DELETE FROM demeos_vendor_orders');
-   await page.goto(base+'/marketing.html#orders');await page.locator('#vendor-orders-list').filter({hasText:'No orders yet. Live ordering is not active.'}).waitFor();
+   await page.goto(base+'/selling-vendor/manage#orders');await page.locator('#vendor-orders-list').filter({hasText:'No orders yet. Live ordering is not active.'}).waitFor();
    const orderCopy=require('../js/vendor-inventory-copy').copy;
    for(const code of Object.keys(orderCopy)){await page.locator('#owner-preparation-language').selectOption(code);assert.equal(await page.locator('#vendor-orders-list').innerText(),orderCopy[code].ordersEmpty);assert.equal(await page.locator('#vendor-orders-heading').innerText(),orderCopy[code].orders);assert.equal(await page.locator('#vendor-orders-list').getAttribute('dir'),code==='ar'?'rtl':'ltr');assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));}
    await page.locator('#owner-preparation-language').selectOption('en');await page.screenshot({path:'/tmp/demeos-owner-vendor-orders-empty-'+viewport.width+'.png',fullPage:true});
    assert.equal((await context.request.get(base+'/api/businesses/engineering-b/orders')).status(),403);assert.equal((await context.request.post(base+'/api/businesses/engineering-a/orders',{data:{quantity:1}})).status(),405);
-   await page.goto(base+'/marketing.html#inventory');await page.locator('.vendor-stock-row').first().waitFor();
+   await page.goto(base+'/selling-vendor/manage#inventory');await page.locator('.vendor-stock-row').first().waitFor();
    const count=String(10+viewport.width);await page.locator('.vendor-stock-row input[type=number]').first().fill(count);
    await page.locator('#vendor-stock-reason').fill('Isolated browser count');await page.locator('#vendor-stock-save').click();await page.locator('#vendor-stock-review button').first().click();
    await page.waitForFunction(()=>document.getElementById('vendor-stock-status').textContent==='Stock saved.');
    await page.reload();await page.locator('.vendor-stock-row').first().waitFor();assert.equal(await page.locator('.vendor-stock-row input[type=number]').first().inputValue(),count);
    const savedOrderProfile=(await repository.getKnownBusiness(profile.businessId)).businessProfile,orderInventory=require('../api/_lib/vendor-inventory');
    const reservedOrder=await orderFoundation.reserve('isolated-customer','browser-order-'+viewport.width,{businessId:profile.businessId,productId:'offer-a',variantId:'exact-medium',selection:{size:'M'},quantity:1,catalogueRevision:orderInventory.catalogueRevision(savedOrderProfile),stockIdentity:orderInventory.stockIdentity(savedOrderProfile.products[0],savedOrderProfile.products[0].presentation.variants[0])});
-   await page.goto(base+'/marketing.html#orders');await page.locator('.vendor-order-row').waitFor();assert.match(await page.locator('.vendor-order-row').innerText(),/Exact jacket/);assert.doesNotMatch(await page.locator('#vendor-orders-list').innerText(),/isolated-customer/);
+   await page.goto(base+'/selling-vendor/manage#orders');await page.locator('.vendor-order-row').waitFor();assert.match(await page.locator('.vendor-order-row').innerText(),/Exact jacket/);assert.doesNotMatch(await page.locator('#vendor-orders-list').innerText(),/isolated-customer/);
    await page.screenshot({path:'/tmp/demeos-owner-vendor-orders-'+viewport.width+'.png',fullPage:true});
    await orderFoundation.release(reservedOrder.id,'cancelled','isolated-customer');
    const refreshedStock=page.waitForResponse(response=>response.url().endsWith('/inventory')&&response.request().method()==='GET');
-   await page.goto(base+'/marketing.html#inventory');await refreshedStock;await page.waitForFunction(()=>document.getElementById('vendor-stock-status').textContent==='');await page.locator('.vendor-stock-row').first().waitFor();
+   await page.goto(base+'/selling-vendor/manage#inventory');await refreshedStock;await page.waitForFunction(()=>document.getElementById('vendor-stock-status').textContent==='');await page.locator('.vendor-stock-row').first().waitFor();
    await page.locator('.vendor-stock-row input[type=number]').first().fill(String(Number(count)+1));
    await page.locator('#vendor-stock-reason').fill('Failure recovery');
    await page.route('**/inventory',route=>route.request().method()==='PUT'?route.fulfill({status:503,json:{error:'Controlled save failure. Your edits are retained.'}}):route.continue());
@@ -87,7 +87,7 @@ const server=http.createServer(async(req,res)=>{try{
    await page.screenshot({path:'/tmp/demeos-owner-vendor-stock-'+viewport.width+'.png',fullPage:true});
    await page.locator('#vendor-stock-search').fill('nothing matches');assert.match(await page.locator('#vendor-stock-list').textContent(),/No matching/);await page.locator('#vendor-stock-search').fill('');
    await page.locator('#owner-preparation-language').selectOption('ja');assert.equal(await page.locator('#vendor-stock-heading').textContent(),'在庫');await page.locator('#owner-preparation-language').selectOption('en');
-   await page.goto(base+'/marketing.html#products');await page.locator('#vendor-products-save:not([disabled])').waitFor();
+   await page.goto(base+'/selling-vendor/manage#products');await page.locator('#vendor-products-save:not([disabled])').waitFor();
    await page.locator('.business-product-card-actions button').filter({hasText:'Edit'}).first().click();assert.equal(await page.locator('#business-product-id').inputValue(),'offer-a');
    await page.locator('#vendor-product-editor > summary').click();await page.locator('#vendor-product-editor > summary').click();assert.equal(await page.locator('#business-product-id').inputValue(),'');
    assert.equal((await page.locator('#business-media-list').textContent()).includes('Business marketing media'),false);
@@ -150,10 +150,10 @@ const server=http.createServer(async(req,res)=>{try{
    // Hold the real product response so navigation happens while the save is pending.
    let releaseProductResponse;const productResponseHeld=new Promise(resolve=>releaseProductResponse=resolve);
    await page.route('**/products',async route=>{if(route.request().method()!=='PUT')return route.continue();const response=await route.fetch();await productResponseHeld;return route.fulfill({response});});
-   await page.locator('.business-product-card-actions button').filter({hasText:'Duplicate'}).first().click();await page.locator('#vendor-products-confirm').check();await page.locator('#vendor-products-save').click();assert.equal(await page.locator('#vendor-products-status').textContent(),'Loading…');await page.goto(base+'/marketing.html#inventory');releaseProductResponse();
+   await page.locator('.business-product-card-actions button').filter({hasText:'Duplicate'}).first().click();await page.locator('#vendor-products-confirm').check();await page.locator('#vendor-products-save').click();assert.equal(await page.locator('#vendor-products-status').textContent(),'Loading…');await page.goto(base+'/selling-vendor/manage#inventory');releaseProductResponse();
    await page.waitForFunction(()=>document.getElementById('vendor-products-status').textContent==='Products saved.');await page.unroute('**/products');
    const catalog=await repository.getKnownBusiness(profile.businessId),duplicate=catalog.businessProfile.products.at(-1);assert.equal(duplicate.customerVisible,false);assert.notEqual(duplicate.productId,'offer-a');assert.equal(duplicate.mediaGallery,undefined);
-   await page.goto(base+'/marketing.html#inventory');await page.locator('.vendor-stock-row').first().waitFor();
+   await page.goto(base+'/selling-vendor/manage#inventory');await page.locator('.vendor-stock-row').first().waitFor();
    const beforeBulk=await repository.getVendorInventory(profile.businessId),bulkRows=require('../api/_lib/vendor-inventory').rowsFor(catalog.businessProfile,beforeBulk.entries);
    const csv=[['productId','variantId','onHand','lowStock','sku'],...bulkRows.map((row,index)=>[row.productId,row.variantId,Number(count)+index+2,4,'bulk-'+viewport.width+'-'+index])].map(row=>row.map(require('../js/vendor-inventory').csvCell).join(',')).join('\r\n');
    await page.locator('#vendor-stock-import').setInputFiles({name:'stock.csv',mimeType:'text/csv',buffer:Buffer.from(csv)});await page.waitForFunction(()=>document.getElementById('vendor-stock-status').textContent.includes('Unsaved'));
@@ -162,10 +162,10 @@ const server=http.createServer(async(req,res)=>{try{
    await page.locator('#vendor-stock-review button').first().click();await page.waitForFunction(()=>document.getElementById('vendor-stock-status').textContent==='Stock saved.');
    const afterBulk=await repository.getVendorInventory(profile.businessId);assert.equal(afterBulk.revision,beforeBulk.revision+1);assert.equal(afterBulk.history[0].changes.length,2);
    for(const [index,row] of bulkRows.entries())assert.equal(afterBulk.entries[JSON.stringify([row.productId,row.variantId])].onHand,Number(count)+index+2);
-   await page.goto(base+'/marketing.html#products');await page.locator('#vendor-products-save:not([disabled])').waitFor();
+   await page.goto(base+'/selling-vendor/manage#products');await page.locator('#vendor-products-save:not([disabled])').waitFor();
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
    await page.screenshot({path:'/tmp/demeos-owner-vendor-catalogue-'+viewport.width+'.png',fullPage:true});
-   await page.goto(base+'/marketing.html#orders');await page.locator('.vendor-order-row').waitFor();await page.evaluate(()=>window.Clerk.signOut());await page.locator('#owner-auth-signed-out:not([hidden])').waitFor();await page.waitForFunction(()=>document.getElementById('vendor-orders-list').textContent==='');await context.clearCookies();assert.equal((await context.request.get(base+'/api/businesses/engineering-a/orders')).status(),401);
+   await page.goto(base+'/selling-vendor/manage#orders');await page.locator('.vendor-order-row').waitFor();await page.evaluate(()=>window.Clerk.signOut());await page.locator('#owner-auth-signed-out:not([hidden])').waitFor();await page.waitForFunction(()=>document.getElementById('vendor-orders-list').textContent==='');await context.clearCookies();assert.equal((await context.request.get(base+'/api/businesses/engineering-a/orders')).status(),401);
    assert.deepEqual(errors,[]);await context.close();
    // Restore exact catalogue for the next device without clearing stock history.
    await repository.saveBusiness(profile);

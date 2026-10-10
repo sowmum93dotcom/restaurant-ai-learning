@@ -240,7 +240,7 @@ module.exports = async function handler(req, res) {
           });
         } catch (error) { return res.status(409).json({ error: error.message }); }
         const previousInformationStatus = existingBusiness?.businessProfile?.informationStatus || existingBusiness?.informationStatus || {};
-        await repository.saveBusiness({
+        const updatedProfile = {
           ...existingBusiness?.businessProfile,
           ...profile,
           businessId,
@@ -252,7 +252,9 @@ module.exports = async function handler(req, res) {
             ...(previousInformationStatus.reviewState ? {reviewState:"draft", submittedAt:null} : {}),
             ownerConfirmedAt: ownerAccuracyConfirmed ? new Date().toISOString() : previousInformationStatus.ownerConfirmedAt
           }
-        });
+        };
+        const saved = await repository.saveOwnedBusinessProfile(access.actorContext.trustedIdentityId, businessId, existingBusiness.businessProfile, updatedProfile);
+        if (!saved) return res.status(409).json({error:'Your business information changed. Reload before saving.'});
         return res.status(204).end();
       }
 
@@ -287,6 +289,15 @@ module.exports = async function handler(req, res) {
     }
     const record = await repository.getKnownBusiness(businessId);
     if (!record) return res.status(404).json({ error: "Business not found." });
+    const grants = require('../_lib/business-application-access').applicationAccess(record, businessId);
+    const application = req.query.application;
+    if (application !== undefined && (!['marketing', 'selling'].includes(application) || !grants[application]))
+      return res.status(403).json({error:'Application access is not authorised.',reason:'application-access-required'});
+    // Marketing operations and evidence are private to the Marketing application.
+    if (!grants.marketing || application === 'selling') {
+      record.campaigns = []; record.customerParticipationResults = [];
+      record.customerFeedbackResults = []; record.recommendationDecisions = [];
+    }
     const applicationReview = await repository.getBusinessApplicationOwnerStatus?.(businessId, record.businessProfile);
     return res.status(200).json({ ...record, applicationReview, workspaceReadiness: workspaceReadiness({...record,applicationReview}, businessId) });
   } catch (error) {

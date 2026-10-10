@@ -4,15 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DEMEOS Business Owner Workspace</title>
-  <link rel="stylesheet" href="css/style.css" />
-  <link rel="stylesheet" href="css/business-owner-signin-3d.css" />
-  <link rel="stylesheet" href="css/demeos-business-premium.css" />
-  <link rel="stylesheet" href="css/business-workspace-completion.css" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/business-owner-signin-3d.css" />
+  <link rel="stylesheet" href="/css/demeos-business-premium.css" />
+  <link rel="stylesheet" href="/css/business-workspace-completion.css" />
 </head>
 <body data-owner-access="loading" data-owner-model="none" class="owner-workspace-body">
   <header class="workspace-header owner-workspace-header">
     <a class="demeos-brand" href="business-workspace.html" aria-label="DEMEOS Business Owner Workspace home">
-      <img src="images/demeos-logo.png" alt="DEMEOS logo" class="demeos-logo" />
+      <img src="/images/demeos-logo.png" alt="DEMEOS logo" class="demeos-logo" />
     </a>
     <div class="workspace-identity">
       <h1 class="restaurant-name">Business workspace</h1>
@@ -93,7 +93,7 @@
 
 
 
-        <section id="owner-selling-dependencies" data-owner-selling hidden><h3>Not available yet</h3><dl class="owner-dependency-list"><div><dt>Stock quantities</dt><dd><a href="marketing.html#inventory">Manage product stock</a></dd></div><div><dt>Orders and fulfilment</dt><dd>Order management is not available</dd></div><div><dt>Sales and settlement</dt><dd>Sales reporting is not available</dd></div></dl></section>
+        <section id="owner-selling-dependencies" data-owner-selling hidden><p data-vendor-copy="applicationSellingPrivate">Preparation only. Selling is not enabled.</p><a class="owner-summary-link" href="marketing.html#inventory">Review stock</a> · <a class="owner-summary-link" href="marketing.html#orders">View private orders</a></section>
         <section data-owner-marketing class="owner-dashboard-results" aria-labelledby="owner-dashboard-results-heading">
           <div class="owner-section-heading"><h3 id="owner-dashboard-results-heading">Your marketing at a glance</h3><a href="business-results.html">Review results</a></div>
           <div id="owner-dashboard-summary" class="owner-metrics" aria-live="polite"><p>Confirming your recorded activity…</p></div>
@@ -103,9 +103,10 @@
     </main>
   </div>
   <footer><a class="owner-public-destination" href="customer.html">Customer Experience</a><p>&copy; 2026 DEMEOS — One System. Real Value. Shared Future.</p></footer>
-  <script src="js/demeos-understanding.js"></script>
-  <script src="js/business-results.js"></script>
-  <script src="js/owner-workspace-model.js"></script>
-  <script src="js/business-workspace.js"></script>
+  <script src="/js/demeos-understanding.js"></script>
+  <script src="/js/business-results.js"></script>
+  <script src="/js/vendor-inventory-copy.js"></script>
+  <script src="/js/owner-workspace-model.js"></script>
+  <script src="/js/business-workspace.js"></script>
 </body>
 </html>

@@ -207,3 +207,27 @@ body[data-owner-view=product-options] .business-product-form>div:has(#business-p
 body[data-owner-view=product-options] .business-product-form>div:has(#business-product-route),
 body[data-owner-view=product-options] .business-product-form>div:has(#business-product-visibility),
 body[data-owner-view=product-options] .business-product-form>div:has(#business-product-fulfilment-mode){display:none!important;}
+
+/* Distinct application navigation stays compact at every screen width. */
+.owner-application-entries{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;}
+.owner-application-entries a{color:#ead18b!important;text-decoration:underline;min-height:44px;display:flex;align-items:center;}
+.owner-workspace-body[data-owner-application=entry] .owner-current-work,
+.owner-workspace-body[data-owner-application=entry] .owner-dashboard-results,
+.owner-workspace-body[data-owner-application=entry] #owner-selling-dependencies{display:none!important;}
+.owner-workspace-body[data-owner-access=denied] .owner-current-work,
+.owner-workspace-body[data-owner-access=denied] .owner-dashboard-results{display:none!important;}
+.owner-workspace-body[data-owner-model=selling] .business-products-manager [data-prepare-product]{display:none!important;}
+@media(max-width:1024px){
+ .owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-navigation{display:flex!important;flex-direction:row!important;overflow-x:auto!important;overflow-y:hidden!important;gap:4px!important;}
+ .owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-navigation a{flex:0 0 auto;min-height:44px!important;padding:8px 10px!important;white-space:nowrap!important;font-size:13px!important;}
+}
+.owner-workspace-body[data-owner-view=media] .business-product-form,
+.owner-workspace-body[data-owner-view=media] #vendor-catalogue-tools{display:none!important;}
+
+.owner-workspace-body[data-owner-model=selling] [data-owner-marketing],
+.owner-workspace-body[data-owner-model=marketing] [data-owner-selling]{display:none!important;}
+.owner-workspace-body[data-owner-application]:not([data-owner-application=entry]):not([data-owner-access=ready]) .owner-workspace-navigation,
+.owner-workspace-body[data-owner-application]:not([data-owner-application=entry]):not([data-owner-access=ready]) .owner-workspace-main>:not(#owner-operating-models){display:none!important;}
+
+.owner-workspace-body[data-owner-view=media] .business-products-manager,
+.owner-workspace-body[data-owner-view=media] #business-profile-offering{display:none!important;}

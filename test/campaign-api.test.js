@@ -205,7 +205,7 @@ test("spoofed approval identity and actorScope cannot bypass authorization", asy
     campaign: completeCampaign({ approvalStatus: "Approved" }), allowed: false
   });
   assert.equal(result.response.statusCode, 403);
-  assert.deepEqual(Object.keys(result.authorizationCalls[0]).sort(), ["action", "businessId", "repository", "req"]);
+  assert.deepEqual(Object.keys(result.authorizationCalls[0]).sort(), ["action", "application", "businessId", "repository", "req"]);
   assert.equal(Object.hasOwn(result.authorizationCalls[0], "trustedIdentityId"), false);
   assert.equal(Object.hasOwn(result.authorizationCalls[0], "actorScope"), false);
   assert.deepEqual(result.approvalCalls, []);
@@ -376,7 +376,7 @@ test("spoofed identity and actor scope claims are not passed as trusted authoriz
   assert.equal(result.response.statusCode, 403);
   assert.equal(result.authorizationCalls.length, 1);
   assert.equal(result.authorizationCalls[0].req, result.request);
-  assert.deepEqual(Object.keys(result.authorizationCalls[0]).sort(), ["action", "businessId", "repository", "req"]);
+  assert.deepEqual(Object.keys(result.authorizationCalls[0]).sort(), ["action", "application", "businessId", "repository", "req"]);
   assert.equal(Object.hasOwn(result.authorizationCalls[0], "trustedIdentityId"), false);
   assert.equal(Object.hasOwn(result.authorizationCalls[0], "actorScope"), false);
   assert.deepEqual(result.savedCampaigns, []);

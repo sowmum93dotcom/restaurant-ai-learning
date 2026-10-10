@@ -33,7 +33,7 @@ function documentWithReload(counter) {
   };
 }
 
-test("a fresh Clerk sign-in reveals the workspace without an unconditional reload", function () {
+test("a fresh Clerk sign-in reveals the workspace without an unconditional reload", async function () {
   const counter = { count: 0 };
   const authElements = elements();
   const clerk = {
@@ -43,7 +43,10 @@ test("a fresh Clerk sign-in reveals the workspace without an unconditional reloa
     signOut: function () {}
   };
   bindOwnerClerkSession(clerk, documentWithReload(counter), storage(), authElements);
-  clerk.listener({ user: { id: "owner" } });
+  clerk.user = {id:"owner"};
+  clerk.listener({ user: clerk.user });
+  assert.equal(authElements.signedIn.hidden,true);
+  await new Promise(resolve => setImmediate(resolve));
   assert.equal(authElements.signedIn.hidden, false);
   assert.equal(counter.count, 0, "authorization refresh is coordinated by the owner business security boundary");
 });

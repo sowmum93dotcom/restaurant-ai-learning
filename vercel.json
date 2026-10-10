@@ -47,6 +47,26 @@
     {
       "source": "/api/admin/business-applications/:businessId",
       "destination": "/api/businesses?resource=admin-applications&businessId=:businessId"
+    },
+    {
+      "source": "/marketing-business",
+      "destination": "/business-workspace.html"
+    },
+    {
+      "source": "/marketing-business/manage",
+      "destination": "/marketing.html"
+    },
+    {
+      "source": "/marketing-business/results",
+      "destination": "/business-results.html"
+    },
+    {
+      "source": "/selling-vendor",
+      "destination": "/business-workspace.html"
+    },
+    {
+      "source": "/selling-vendor/manage",
+      "destination": "/marketing.html"
     }
   ]
 }

@@ -10,16 +10,18 @@ const root=path.resolve(__dirname,'..'),client=new PGlite(),database=createDatab
 persistence.getRepository=()=>repository;
 auth.resolveTrustedIdentityFromRequest=async req=>{const id=req.headers.cookie?.match(/engineering-owner=(owner-[a-z0-9-]+)/)?.[1];return id?{trustedIdentityId:id}:null;};
 const list=require('../api/businesses'),business=require('../api/businesses/[businessId]'),campaign=require('../api/businesses/[businessId]/campaigns/[campaignId]'),media=require('../api/businesses/[businessId]/media/index'),publicWork=require('../api/customer/work');
+const inventory=require('../api/businesses/[businessId]/inventory'),products=require('../api/businesses/[businessId]/products'),ordersHandler=require('../api/businesses/[businessId]/orders');
 const checkout=require('../api/_lib/customer-checkout').createHandler({authenticate:async req=>{const identity=await auth.resolveTrustedIdentityFromRequest(req);return identity?{trustedCustomerIdentityId:identity.trustedIdentityId}:null;},repository:()=>repository});
 const generatorModule={exports:{}};
 vm.runInNewContext(fs.readFileSync(path.join(root,'api/generate.js'),'utf8').replace('export default async function handler','module.exports = async function handler'),{module:generatorModule,require:createRequire(path.join(root,'api/generate.js')),console,process:{env:{}},fetch(){throw Error('No external provider may be called');}});
 const asset={businessId:'engineering-a',assetId:'engineering-image',relatedEntityId:'offer-a',purpose:'product',kind:'image',state:'ready',deliveryUrl:'https://example.org/exact.jpg'};
-const profile={businessId:'engineering-a',name:'Engineering Owner A',type:'Fashion',location:'London',brandVoice:'Clear',targetCustomer:'Local customers',goal:'Share saved products',profileVersion:4,preparationModel:'both',offeringCategoryId:'fashion.apparel',productsServices:'Owner products',customerContinuation:{routes:['website'],website:'https://example.org/shop'},fulfilment:{methods:['shipping']},operationalAvailability:{status:'available'},products:[{businessId:'engineering-a',productId:'offer-a',name:'Exact jacket',description:'Saved jacket description',price:'£89',priceMode:'fixed',availability:'available',continuationRoute:'website',customerVisible:true,fulfilment:{methods:['collection']},presentation:{version:1,categoryId:'fashion.apparel',pricing:{mode:'fixed',currency:'GBP',amount:89},options:[{key:'size',values:[{value:'M',label:'Medium'}]}],variants:[{variantId:'exact-medium',selection:{size:'M'},availability:'limited',pricing:{mode:'fixed',currency:'GBP',amount:91},future:'retained'}],future:'retained'}}]};
+const profile={applicationAccess:{marketing:true,selling:true},businessId:'engineering-a',name:'Engineering Owner A',type:'Fashion',location:'London',brandVoice:'Clear',targetCustomer:'Local customers',goal:'Share saved products',profileVersion:4,preparationModel:'both',offeringCategoryId:'fashion.apparel',productsServices:'Owner products',customerContinuation:{routes:['website'],website:'https://example.org/shop'},fulfilment:{methods:['shipping']},operationalAvailability:{status:'available'},products:[{businessId:'engineering-a',productId:'offer-a',name:'Exact jacket',description:'Saved jacket description',price:'£89',priceMode:'fixed',availability:'available',continuationRoute:'website',customerVisible:true,fulfilment:{methods:['collection']},presentation:{version:1,categoryId:'fashion.apparel',pricing:{mode:'fixed',currency:'GBP',amount:89},options:[{key:'size',values:[{value:'M',label:'Medium'}]}],variants:[{variantId:'exact-medium',selection:{size:'M'},availability:'limited',pricing:{mode:'fixed',currency:'GBP',amount:91},future:'retained'}],future:'retained'}}]};
 const server=http.createServer(async(req,res)=>{try{
  const url=new URL(req.url,'http://localhost');req.query=Object.fromEntries(url.searchParams);let raw='';for await(const chunk of req){raw+=chunk;if(raw.length>25000){res.writeHead(413);res.end();return;}}req.body=raw?JSON.parse(raw):{};
  res.status=code=>{res.statusCode=code;return res;};res.json=value=>{res.setHeader('Content-Type','application/json');res.end(JSON.stringify(value));return res;};
  if(url.pathname==='/api/public-config')return res.json({clerkPublishableKey:'pk_test_'+Buffer.from('clerk.test$').toString('base64')});
  if(url.pathname==='/api/businesses')return await list(req,res);
+ const vendor=url.pathname.match(/^\/api\/businesses\/([^/]+)\/(inventory|products|orders)$/);if(vendor){req.query.businessId=vendor[1];return await ({inventory,products,orders:ordersHandler}[vendor[2]])(req,res);}
  let match=url.pathname.match(/^\/api\/businesses\/([^/]+)(?:\/campaigns\/([^/]+))?$/);
  if(match){req.query.businessId=decodeURIComponent(match[1]);if(match[2]){req.query.campaignId=decodeURIComponent(match[2]);return await campaign(req,res);}return await business(req,res);}
  match=url.pathname.match(/^\/api\/businesses\/([^/]+)\/media$/);if(match){req.query.businessId=match[1];return await media(req,res);}
@@ -27,7 +29,7 @@ const server=http.createServer(async(req,res)=>{try{
  if(url.pathname==='/api/generate')return await generatorModule.exports(req,res);
  if(url.pathname==='/api/customer/work')return await publicWork(req,res);
  if(url.pathname.startsWith('/api/'))return res.status(404).json({error:'Not configured'});
- const file=path.resolve(root,'.'+decodeURIComponent(url.pathname==='/'?'/business-workspace.html':url.pathname));if(!file.startsWith(root+path.sep)||!fs.existsSync(file)){res.statusCode=404;return res.end();}
+ const file=path.resolve(root,'.'+decodeURIComponent(({'/marketing-business':'/business-workspace.html','/selling-vendor':'/business-workspace.html','/marketing-business/manage':'/marketing.html','/selling-vendor/manage':'/marketing.html','/marketing-business/results':'/business-results.html'}[url.pathname] || (url.pathname==='/'?'/business-workspace.html':url.pathname))));if(!file.startsWith(root+path.sep)||!fs.existsSync(file)){res.statusCode=404;return res.end();}
  res.setHeader('Content-Type',({'.html':'text/html','.js':'application/javascript','.css':'text/css'})[path.extname(file)]||'application/octet-stream');fs.createReadStream(file).pipe(res);
 }catch(error){console.error(error);if(!res.writableEnded){res.statusCode=500;res.end('{}');}}});
 (async()=>{
@@ -37,7 +39,7 @@ const server=http.createServer(async(req,res)=>{try{
  try{
   for(const viewport of [{width:390,height:844},{width:820,height:1180},{width:1440,height:1000}]){
    await repository.saveBusiness(profile);
-   const context=await browser.newContext({viewport,reducedMotion:'reduce'});await context.addCookies([{name:'engineering-owner',value:'owner-a',url:base}]);
+   const context=await browser.newContext({viewport,reducedMotion:'reduce'});context.setDefaultTimeout(15000);await context.addCookies([{name:'engineering-owner',value:'owner-a',url:base}]);
    await context.route('https://clerk.test/npm/@clerk/ui@1/dist/ui.browser.js',r=>r.fulfill({contentType:'text/javascript',body:'window.__internal_ClerkUICtor={};'}));
    await context.route('https://clerk.test/npm/@clerk/clerk-js@6/dist/clerk.browser.js',r=>r.fulfill({contentType:'text/javascript',body:"window.Clerk={user:sessionStorage.getItem('signed-out')?null:{id:'owner-a'},session:null,async load(){},addListener(fn){this.listener=fn;},openSignIn(){},async signOut(){sessionStorage.setItem('signed-out','1');this.user=null;this.listener({user:null});}};"}));
    await context.route('https://example.org/**',r=>r.request().url().endsWith('.mp4')?r.fulfill({contentType:'video/mp4',body:fs.readFileSync(path.join(root,'images/controlled-test/garden-wildlife.mp4'))}):r.fulfill({contentType:'image/webp',body:fs.readFileSync(path.join(root,'images/controlled-test/mens-fashion.webp'))}));
@@ -49,7 +51,7 @@ const server=http.createServer(async(req,res)=>{try{
    await page.screenshot({path:'/tmp/demeos-owner-before-first-screen-'+viewport.width+'.png'});
    await page.screenshot({fullPage:true,path:'/tmp/demeos-owner-before-overview-'+viewport.width+'.png'});
    for(const [file] of baselineFiles)await context.unroute(base+'/'+file);
-   await page.reload();await page.locator('#workspace-business-identity').filter({hasText:'Engineering Owner A'}).waitFor();
+   await page.goto(base+'/marketing-business');await page.locator('#workspace-business-identity').filter({hasText:'Engineering Owner A'}).waitFor();
    const after={navigation:await page.locator('.owner-workspace-navigation').boundingBox(),identity:await page.locator('#workspace-business-identity').boundingBox(),nextAction:await page.locator('#workspace-next-action a').boundingBox(),activity:await page.locator('#current-work-heading').boundingBox()};
    if(viewport.width<=980)assert.ok(after.navigation.height<=64,'Five areas use one compact navigation row: '+JSON.stringify(after.navigation));
    assert.ok(after.identity.y+after.identity.height<viewport.height,'Business identity and accurate approval status fit the first screen');
@@ -67,97 +69,72 @@ const server=http.createServer(async(req,res)=>{try{
    assert.equal(await page.locator('footer .owner-public-destination').getAttribute('href'),'customer.html');
    await page.screenshot({path:'/tmp/demeos-owner-after-first-screen-'+viewport.width+'.png'});
    fs.writeFileSync('/tmp/demeos-owner-layout-'+viewport.width+'.json',JSON.stringify({baseline:designBaseline,viewport,before,after},null,2));
-   assert.equal(await page.locator('.owner-workspace-navigation [data-owner-section]').count(),5);
+   assert.equal(await page.locator('.owner-workspace-navigation [data-owner-section]').count(),6);
    assert.equal((await context.request.get(base+'/api/businesses/engineering-b')).status(),403);
    assert.equal((await context.request.post(base+'/api/generate',{data:{businessId:'engineering-b',preparationMode:'business-facts',productId:'offer-a'}})).status(),403);
    assert.equal((await context.request.get(base+'/api/businesses/engineering-b/media')).status(),403);
    assert.equal((await context.request.post(base+'/api/businesses/engineering-a/media',{data:{asset:{kind:'image',purpose:'product',relatedEntityId:'foreign',contentType:'image/png',sizeBytes:100}}})).status(),409);
-   const endpoint=base+'/api/businesses/engineering-a';
-   const modelStates=[
-    ['marketing-only',{marketing:{canPrepare:true},selling:{canPrepare:false}},'marketing','ready'],
-    ['selling-preparation',{marketing:{canPrepare:false},selling:{canPrepare:true,canSell:false}},'selling','ready'],
-    ['dual',{marketing:{canPrepare:true},selling:{canPrepare:true,canSell:false}},'marketing','ready'],
-    ['pending',{marketing:{},selling:{},onboarding:{status:'submitted'}},null,'pending'],
-    ['denied',{marketing:{canPrepare:false},selling:{canPrepare:false}},null,'denied'],
-    ['missing-readiness',null,null,'unavailable'],
-    ['malformed',{marketing:{canPrepare:'true'},selling:{canPrepare:1}},null,'unavailable'],
-    ['foreign',{businessId:'engineering-b',marketing:{canPrepare:true},selling:{canPrepare:true}},null,'unavailable'],
-    ['failed',503,null,'unavailable'],['forbidden',403,null,'forbidden']
-   ];
-   for(const [name,ready,model,status] of modelStates){
-    await page.evaluate(()=>sessionStorage.removeItem('demeosOwnerView:engineering-a'));
-    await context.route(endpoint,async route=>{
-      if(typeof ready==='number')return route.fulfill({status:ready,json:{error:'Isolated readiness read failure'}});
-      const response=await route.fetch(),record=await response.json(); record.workspaceReadiness=ready?{businessId:'engineering-a',...ready}:null;
-      await route.fulfill({response,json:record});
-    });
-    await page.goto(base+'/business-workspace.html');await page.locator('body[data-owner-access="'+status+'"]').waitFor();
-    assert.equal(await page.locator('body').getAttribute('data-owner-model'),model||'none');
-    if(viewport.width<=980)assert.ok((await page.locator('.owner-workspace-sidebar').boundingBox()).height<=80,'Compact navigation must not absorb spare workspace height');
-    assert.equal(await page.locator('.owner-model-switch').count(),name==='dual'?1:0);
-    if(model==='marketing'){
-      assert.equal(await page.locator('[data-owner-section="marketing"]').count(),1);
-      assert.equal(await page.locator('[data-owner-section="product-options"]').count(),0);
-      assert.equal(await page.locator('#owner-selling-dependencies').isVisible(),false);
-      await page.locator('[data-owner-section="products"]').click();await page.locator('#products:not([hidden])').waitFor();
-      assert.equal(await page.locator('#business-products-list').filter({hasText:'Exact jacket'}).count(),1);
-      await page.goto(base+'/marketing.html#product-options');await page.locator('body[data-owner-access="ready"]').waitFor();
-      // Product options are shared factual catalogue fields, never a stock or selling operation.
-      assert.equal(await page.locator('[data-owner-section="product-options"]').count(),0);
-      assert.equal(await page.locator('[data-owner-section="products"]').getAttribute('aria-current'),'page');
-      assert.equal((await context.request.post(base+'/api/businesses/engineering-a/orders',{data:{}})).status(),404);
-      assert.equal((await context.request.post(base+'/api/businesses/engineering-a/inventory',{data:{}})).status(),404);
-    }
-    if(model){
-      const payment=await context.request.post(base+'/api/customer/checkout?demeos-test=1',{headers:{'x-demeos-test-mode':'controlled-preview',origin:base},data:{draft:{businessId:'engineering-a',selling:true},details:{}}});
-      assert.equal(payment.status(),403);assert.equal((await payment.json()).reason,'customer-only');
-      assert.deepEqual((await (await context.request.get(base+'/api/customer/work')).json()).work,[]);
-    }
-    if(model==='selling'){
-      assert.equal(await page.locator('[data-owner-section="marketing"]').count(),0);
-      assert.equal(await page.locator('[data-owner-section="results"]').count(),0);
-      assert.equal(await page.locator('[data-owner-section="orders"]').count(),1);
-      assert.equal(await page.locator('#owner-selling-dependencies').isVisible(),true);
-      await page.locator('[data-owner-section="products"]').click();await page.locator('#products:not([hidden])').waitFor();assert.equal(await page.locator('#vendor-catalogue-tools [data-vendor-copy="productOptions"]').count(),1);
-      await page.locator('#vendor-catalogue-tools [data-vendor-copy="productOptions"]').click();await page.locator('#products:not([hidden])').waitFor();
-      await page.locator('#business-products-list button').filter({hasText:'Edit'}).first().click();
-      assert.equal(await page.locator('.owner-variant legend').first().innerText(),'Medium');
-      assert.equal(await page.getByRole('button',{name:'Prepare marketing',exact:true}).isVisible(),false);
-      assert.equal(await page.locator('.business-media-manager').isVisible(),false);
-      assert.equal(await page.locator('#business-product-description').isVisible(),false);
-      const guidanceContrast=await page.locator('#owner-options-guidance').evaluate(node=>{
-        const rgb=getComputedStyle(node).color.match(/[\d.]+/g).slice(0,3).map(Number).map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4;});
-        return 1.05/(.2126*rgb[0]+.7152*rgb[1]+.0722*rgb[2]+.05);
-      });assert.ok(guidanceContrast>=4.5,'Options guidance needs readable contrast on its white card');
-      await page.screenshot({fullPage:true,path:'/tmp/demeos-owner-selling-options-'+viewport.width+'.png'});
-      await page.goto(base+'/marketing.html#create');await page.locator('body[data-owner-model=selling]').waitFor();
-      assert.equal(await page.locator('#create').isVisible(),false);assert.equal(new URL(page.url()).hash,'#business-profile');
-      await page.goto(base+'/business-results.html');await page.locator('body[data-owner-model=selling]').waitFor();
-      assert.equal(await page.locator('#owner-results-metrics').isVisible(),false);assert.equal(await page.locator('#owner-results-unavailable').isVisible(),true);
-    }
-    if(name==='dual'){
-      await page.goto(base+'/business-workspace.html');await page.locator('.owner-model-switch').waitFor();
-      await page.locator('.owner-model-switch [data-owner-model=selling]').click();await page.locator('body[data-owner-model=selling]').waitFor();
-      assert.equal(await page.locator('[data-owner-section="marketing"]').count(),0);
-      await page.locator('[data-owner-section="products"]').click();await page.locator('body[data-owner-model=selling]').waitFor();
-      assert.equal(await page.evaluate(()=>localStorage.getItem('demeosActiveBusinessId')),'engineering-a');
-      await page.locator('.owner-model-switch [data-owner-model=marketing]').click();await page.locator('body[data-owner-model=marketing]').waitFor();
-      assert.equal(await page.locator('[data-owner-section="marketing"]').count(),1);
-      await page.evaluate(()=>Object.defineProperty(window,'sessionStorage',{configurable:true,value:{getItem:()=> 'marketing',setItem(){throw Error('Storage full');}}}));
-      await page.locator('.owner-model-switch [data-owner-model=selling]').click();await page.locator('body[data-owner-model=selling]').waitFor();
-      await page.evaluate(()=>window.loadOwnerNextAction(document,localStorage,fetch.bind(window)));
-      assert.equal(await page.locator('body').getAttribute('data-owner-model'),'selling');
-      await page.locator('.owner-model-switch [data-owner-model=marketing]').click();await page.locator('body[data-owner-model=marketing]').waitFor();
-      await page.evaluate(()=>Object.defineProperty(window,'sessionStorage',{configurable:true,get(){throw Error('Storage blocked');}}));
-      await page.locator('.owner-model-switch [data-owner-model=selling]').click();await page.locator('body[data-owner-model=selling]').waitFor();
-      await page.locator('.owner-model-switch [data-owner-model=marketing]').click();await page.locator('body[data-owner-model=marketing]').waitFor();
-    }
-    if(!model){assert.equal(await page.locator('.owner-workspace-navigation a').count(),2);await page.goto(base+'/marketing.html#create');await page.locator('body[data-owner-access="'+status+'"]').waitFor();assert.equal(await page.locator('#create').isVisible(),false);}
-    await page.goto(base+'/business-workspace.html');await page.locator('body[data-owner-access="'+status+'"]').waitFor();
-    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
-    await page.screenshot({fullPage:true,path:'/tmp/demeos-owner-workspace-'+name+'-'+viewport.width+'.png'});
-    await context.unroute(endpoint);
+   // Application authority comes from saved server records, never the browser model.
+   for(const [name,grants,application] of [
+     ['marketing-only',{marketing:true,selling:false},'marketing'],
+     ['selling-only',{marketing:false,selling:true},'selling'],
+     ['dual',{marketing:true,selling:true},'marketing']]) {
+     await repository.saveBusiness({...profile,applicationAccess:grants});
+     await page.goto(base+'/business-workspace.html');
+     if(name==='dual') {
+       await page.locator('.owner-application-entries a').first().waitFor();
+       assert.equal(await page.locator('.owner-application-entries a').count(),2);
+       await page.locator('.owner-application-entries a[href="/marketing-business"]').click();
+     }
+     await page.waitForURL(base+(application==='selling'?'/selling-vendor':'/marketing-business'));
+     await page.locator('body[data-owner-access=ready]').waitFor();
+     assert.equal(await page.locator('body').getAttribute('data-owner-model'),application);
+     assert.equal(await page.locator('.owner-model-switch').count(),0);
+     assert.equal(await page.locator('[data-owner-section=marketing]').count(),application==='marketing'?1:0);
+     assert.equal(await page.locator('[data-owner-section=inventory]').count(),application==='selling'?1:0);
+     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+     await page.screenshot({fullPage:true,path:'/tmp/demeos-owner-application-'+application+'-'+name+'-'+viewport.width+'.png'});
+     await page.locator('[data-owner-section=media]').click();
+     await page.locator('#products:not([hidden])').waitFor();
+     assert.equal(new URL(page.url()).pathname,application==='selling'?'/selling-vendor/manage':'/marketing-business/manage');
+     assert.equal(new URL(page.url()).hash,'#media');
+     assert.equal(await page.locator('.business-media-manager').isVisible(),true);
+     assert.equal(await page.locator('.business-product-form').isVisible(),false);
+     const applicationCopy=require('../js/vendor-inventory-copy').copy;
+     for(const [code,copy] of Object.entries(applicationCopy)) {
+       await page.locator('#owner-preparation-language').selectOption(code);
+       assert.equal(await page.locator('h1').innerText(),copy[application==='selling'?'sellingApplication':'marketingApplication']);
+       assert.equal(await page.locator('[data-owner-section=media]').innerText(),copy.applicationMedia);
+       assert.equal(await page.locator('[data-owner-section=media]').getAttribute('dir'),code==='ar'?'rtl':'ltr');
+       assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+     }
+     await page.locator('#owner-preparation-language').selectOption('en');
+     await page.locator('[data-owner-section=overview]').click();await page.locator('body[data-owner-access=ready]').waitFor();
+     const prohibited=application==='marketing'?'selling':'marketing';
+     if(name!=='dual') {
+       assert.equal((await context.request.get(base+'/api/businesses/engineering-a?application='+prohibited)).status(),403);
+       if(application==='marketing')for(const endpoint of ['inventory','orders','products'])assert.equal((await context.request.get(base+'/api/businesses/engineering-a/'+endpoint)).status(),403);
+       else {
+         assert.equal((await context.request.post(base+'/api/generate',{data:{businessId:'engineering-a',preparationMode:'business-facts',productId:'offer-a'}})).status(),403);
+         assert.deepEqual((await (await context.request.get(base+'/api/businesses/engineering-a')).json()).campaigns,[]);
+       }
+       await page.goto(base+(prohibited==='selling'?'/selling-vendor':'/marketing-business'));
+       await page.locator('body[data-owner-access=denied]').waitFor();
+       assert.equal(await page.locator('.owner-current-work').isVisible(),false);
+     } else {
+       await page.locator('.owner-application-entries a[href="/selling-vendor"]').click();
+       await page.waitForURL(base+'/selling-vendor');await page.locator('body[data-owner-model=selling]').waitFor();
+       await page.screenshot({fullPage:true,path:'/tmp/demeos-owner-application-selling-dual-'+viewport.width+'.png'});
+       await page.locator('[data-owner-section=products]').click();await page.locator('#products:not([hidden])').waitFor();
+       assert.equal(new URL(page.url()).pathname,'/selling-vendor/manage');
+       assert.equal(await page.evaluate(()=>localStorage.getItem('demeosActiveBusinessId')),'engineering-a');
+       await page.reload();await page.locator('body[data-owner-model=selling]').waitFor();
+     }
    }
+   await repository.saveBusiness({...profile,applicationAccess:{marketing:false,selling:false},preparationModel:'both'});
+   await page.goto(base+'/business-workspace.html');await page.locator('body[data-owner-access=denied]').waitFor();
+   assert.equal(await page.locator('.owner-application-entries a').count(),0);
+   await repository.saveBusiness(profile);
    // A failed owner list is a service error, not a new-business invitation or cache deletion.
    await page.evaluate(()=>{localStorage.setItem('demeosPendingBusinessProfileSync','["engineering-a"]');});
    const cacheBefore=await page.evaluate(()=>localStorage.getItem('demeosBusinessProfiles'));
@@ -168,15 +145,15 @@ const server=http.createServer(async(req,res)=>{try{
    assert.equal(await page.evaluate(()=>localStorage.getItem('demeosPendingBusinessProfileSync')),'["engineering-a"]');
    await page.screenshot({fullPage:true,path:'/tmp/demeos-owner-workspace-list-failed-'+viewport.width+'.png'});
    await context.unroute(base+'/api/businesses');await page.evaluate(()=>localStorage.removeItem('demeosPendingBusinessProfileSync'));
-   // The saved onboarding intent selects only a permitted workspace; browser facts cannot grant access.
-   await repository.saveBusiness({...profile,preparationModel:'selling'});
+   // Cached owner intent and forged browser grants cannot replace saved server authority.
+   await repository.saveBusiness({...profile,preparationModel:'selling',applicationAccess:{marketing:false,selling:true}});
    await page.evaluate(()=>sessionStorage.removeItem('demeosOwnerView:engineering-a'));
    await page.goto(base+'/business-workspace.html');await page.locator('body[data-owner-model=selling]').waitFor();
-   await page.evaluate(()=>{localStorage.setItem('demeosBusinessProfiles',JSON.stringify([{businessId:'engineering-a',preparationModel:'marketing'}]));});
+   await page.evaluate(()=>{localStorage.setItem('demeosBusinessProfiles',JSON.stringify([{businessId:'engineering-a',preparationModel:'marketing',applicationAccess:{marketing:true,selling:false}}]));});
    await page.reload();await page.locator('body[data-owner-model=selling]').waitFor();
    await repository.saveBusiness(profile);
    await page.evaluate(()=>sessionStorage.removeItem('demeosOwnerView:engineering-a'));
-   await page.goto(base+'/business-workspace.html');await page.locator('body[data-owner-model=marketing]').waitFor();
+   await page.goto(base+'/marketing-business');await page.locator('body[data-owner-model=marketing]').waitFor();
    const confirmed=await (await context.request.get(base+'/api/businesses/engineering-a')).json();assert.equal(confirmed.workspaceReadiness.selling.canSell,false);
    assert.equal((await context.request.get(base+'/api/customer/work')).status(),200);
    assert.equal(await page.locator('#owner-dashboard-summary .owner-metric').count(),3);

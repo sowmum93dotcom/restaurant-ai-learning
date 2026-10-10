@@ -4,7 +4,7 @@ const {PGlite}=require('@electric-sql/pglite');
 const {createDatabase}=require('../api/_lib/database');
 const persistence=require('../api/_lib/persistence'),auth=require('../api/_lib/demeos-authentication');
 const stock=require('../api/_lib/vendor-inventory'),{copy,keys}=require('../js/vendor-inventory-copy'),{parseCsv,csvCell}=require('../js/vendor-inventory');
-const profile={businessId:'vendor',name:'Vendor',type:'Shop',location:'London',brandVoice:'Clear',targetCustomer:'Customers',goal:'Sell',preparationModel:'selling',profileVersion:3,offeringCategoryId:'fashion.apparel',productsServices:'Clothing',customerContinuation:{routes:['website'],website:'https://example.com'},fulfilment:{methods:['shipping']},operationalAvailability:{status:'available'},products:[{businessId:'vendor',productId:'shirt',name:'Shirt',description:'Cotton shirt',price:'25 GBP',priceMode:'fixed',continuationRoute:'website',availability:'available',presentation:{version:1,categoryId:'fashion.apparel',kind:'product',pricing:{mode:'fixed',amount:25,currency:'GBP'},options:[{key:'size',values:[{value:'M',label:'Medium'},{value:'L',label:'Large'}]}],variants:[{variantId:'medium',selection:{size:'M'},availability:'available',pricing:{mode:'fixed',amount:25,currency:'GBP'}},{variantId:'large',selection:{size:'L'},availability:'available',pricing:{mode:'fixed',amount:25,currency:'GBP'}}]}}]};
+const profile={applicationAccess:{marketing:true,selling:true},businessId:'vendor',name:'Vendor',type:'Shop',location:'London',brandVoice:'Clear',targetCustomer:'Customers',goal:'Sell',preparationModel:'selling',profileVersion:3,offeringCategoryId:'fashion.apparel',productsServices:'Clothing',customerContinuation:{routes:['website'],website:'https://example.com'},fulfilment:{methods:['shipping']},operationalAvailability:{status:'available'},products:[{businessId:'vendor',productId:'shirt',name:'Shirt',description:'Cotton shirt',price:'25 GBP',priceMode:'fixed',continuationRoute:'website',availability:'available',presentation:{version:1,categoryId:'fashion.apparel',kind:'product',pricing:{mode:'fixed',amount:25,currency:'GBP'},options:[{key:'size',values:[{value:'M',label:'Medium'},{value:'L',label:'Large'}]}],variants:[{variantId:'medium',selection:{size:'M'},availability:'available',pricing:{mode:'fixed',amount:25,currency:'GBP'}},{variantId:'large',selection:{size:'L'},availability:'available',pricing:{mode:'fixed',amount:25,currency:'GBP'}}]}}]};
 const change=(variantId='medium',onHand=10,sku=variantId)=>({productId:'shirt',variantId,onHand,lowStock:3,sku,reason:'Initial count'});
 test('exact variants stay isolated; no guessed option combinations or service unit stock',()=>{
  const update=stock.applyChanges(profile,{},[change()]);const rows=stock.rowsFor(profile,update.entries);assert.equal(rows[0].available,10);assert.equal(rows[1].onHand,null);
@@ -42,7 +42,7 @@ test('real SQL atomically records stock, history, ownership and revisions',async
   const inventory=await repository.getVendorInventory('vendor');assert.equal(inventory.history.length,1);assert.equal(inventory.entries[stock.key('shirt','medium')].onHand,10);
   const next=stock.applyChanges(profile,inventory.entries,[change('medium',3)]);assert.equal((await repository.saveVendorInventory('owner','vendor',profile,1,next.entries,next.audit)).revision,2);
   const competing=await Promise.all([repository.saveVendorInventory('owner','vendor',profile,2,next.entries,next.audit),repository.saveVendorInventory('owner','vendor',profile,2,next.entries,next.audit)]);assert.equal(competing.filter(Boolean).length,1);
-  await repository.saveBusiness({...profile,preparationModel:'marketing'});
+  await repository.saveBusiness({...profile,preparationModel:'marketing',applicationAccess:{marketing:true,selling:false}});
   assert.equal(await repository.saveVendorInventory('owner','vendor',profile,2,next.entries,next.audit),null);
   assert.equal((await repository.getVendorInventory('vendor')).history.length,3);
  }finally{await dbClient.close();}
@@ -72,6 +72,6 @@ test('owner APIs deny unauthenticated, foreign and marketing access; product sav
   productWithGallery[0].mediaGallery={assetIds:['matching'],mainAssetId:'matching'};
   assert.equal((await call(products,'owner','PUT',{catalogueRevision:fresh.data.catalogueRevision,products:productWithGallery,accuracyConfirmed:true})).code,200);
   assert.deepEqual((await repository.getKnownBusiness('vendor')).businessProfile.products[0].mediaGallery,{assetIds:['matching'],mainAssetId:'matching'});
-  await repository.saveBusiness({...profile,preparationModel:'marketing'});assert.equal((await call(inventory,'owner')).code,403);
+  await repository.saveBusiness({...profile,preparationModel:'marketing',applicationAccess:{marketing:true,selling:false}});assert.equal((await call(inventory,'owner')).code,403);
  }finally{persistence.getRepository=priorRepo;auth.resolveTrustedIdentityFromRequest=priorAuth;for(const module of modules)delete require.cache[require.resolve(module)];await dbClient.close();}
 });

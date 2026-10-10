@@ -20,6 +20,7 @@ async function handleLifecycleChange(req, res, repository, businessId, campaignI
   }
 
   const access = await authorizeBusinessOwnerRequest({
+      application: "marketing",
     req,
     businessId,
     action: action === "reactivate" ? DEMEOS_ACTIONS.APPROVE_OWN_MARKETING : DEMEOS_ACTIONS.CREATE_MARKETING,
@@ -96,6 +97,7 @@ module.exports = async function handler(req, res) {
     const campaign = req.body && req.body.campaign;
     const isApprovalRequest = campaign && campaign.approvalStatus === "Approved";
     const access = await authorizeBusinessOwnerRequest({
+      application: "marketing",
       req,
       businessId,
       action: isApprovalRequest
@@ -174,6 +176,7 @@ module.exports = async function handler(req, res) {
       }
       if (!approvedCampaign) {
         const createAccess = await authorizeBusinessOwnerRequest({
+      application: "marketing",
           req, businessId, action: DEMEOS_ACTIONS.CREATE_MARKETING, repository
         });
         if (!createAccess.authenticated) return res.status(401).json({ error: "Authentication required." });

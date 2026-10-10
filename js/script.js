@@ -525,7 +525,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     const ownerModel = globalThis.window?.DEMEOSOwnerWorkspace;
     if (ownerModel?.getState(document).status === 'loading') return;
     if (ownerModel && !ownerModel.canOpen(ownerModel.getState(document), viewId)) viewId = "business-profile";
-    const panelView = viewId === "product-options" ? "products" : viewId;
+    const panelView = ["product-options", "media"].includes(viewId) ? "products" : viewId;
     if (document.body?.dataset) document.body.dataset.ownerView = viewId;
     const productForm = document.querySelector?.(".business-product-form");
     if (productForm) productForm.hidden = viewId === "product-options" && !byId("business-product-id")?.value;
@@ -544,7 +544,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     });
     if (window.location.hash !== "#" + viewId && window.history && typeof window.history.replaceState === "function") window.history.replaceState(null, "", "#" + viewId);
     const area = byId("owner-area-heading");
-    const section = viewId === "orders" ? vendorText("orders", "Orders") : viewId === "inventory" ? "Stock" : viewId === "product-options" ? "Options and Availability" : viewId === "products" ? (globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model === "selling" ? "Product Catalogue" : "Products and Services") : viewId === "business-profile" ? "My Business" : "Marketing";
+    const section = viewId === "media" ? vendorText("applicationMedia", "Images and Videos") : viewId === "orders" ? vendorText("orders", "Orders") : viewId === "inventory" ? "Stock" : viewId === "product-options" ? "Options and Availability" : viewId === "products" ? (globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model === "selling" ? "Product Catalogue" : "Products and Services") : viewId === "business-profile" ? "My Business" : "Marketing";
     if (area) area.textContent = section;
     const productsHeading = byId("products-heading");
     if (productsHeading && panelView === "products") productsHeading.textContent = section;
@@ -584,14 +584,14 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       showWorkspaceView(view);
     });
     const requestedView = window.location.hash.slice(1);
-    if ((requestedView === "product-options" || (document.getElementById(requestedView) &&
+    if ((["product-options", "media"].includes(requestedView) || (document.getElementById(requestedView) &&
         document.getElementById(requestedView).hasAttribute("data-workspace-panel")))) {
       showWorkspaceView(requestedView);
     }
     window.addEventListener("hashchange", function () {
       const hashView = window.location.hash.slice(1);
       const panel = document.getElementById(hashView);
-      if (hashView === "product-options" || (panel && panel.hasAttribute("data-workspace-panel"))) showWorkspaceView(hashView);
+      if (["product-options", "media"].includes(hashView) || (panel && panel.hasAttribute("data-workspace-panel"))) showWorkspaceView(hashView);
     });
   }
 

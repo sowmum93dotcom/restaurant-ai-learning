@@ -7,7 +7,7 @@ function stockIdentity(product,variant={variantId:''}){
  const selection=Object.entries(variant.selection||{}).sort(([a],[b])=>a.localeCompare(b));
  return createHash('sha256').update(JSON.stringify([product.productId,variant.variantId||'',product.presentation?.categoryId||'',product.presentation?.kind||'product',selection])).digest('hex');
 }
-function canManage(record,businessId){return ['selling','both'].includes(record?.businessProfile?.preparationModel)&&workspaceReadiness(record,businessId)?.selling?.canPrepare===true;}
+function canManage(record,businessId){return workspaceReadiness(record,businessId)?.selling?.canPrepare===true;}
 function units(value){return Number.isSafeInteger(value)&&value>=0&&value<=1000000000;}
 function rowsFor(profile,entries={}){
  return (profile?.products||[]).flatMap(product=>{
