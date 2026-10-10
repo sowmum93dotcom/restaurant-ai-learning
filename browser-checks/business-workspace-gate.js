@@ -6,12 +6,12 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 const {createDatabase}=require('../api/_lib/database'),persistence=require('../api/_lib/persistence'),auth=require('../api/_lib/demeos-authentication');
 const root=path.resolve(__dirname,'..'),client=new PGlite(),database=createDatabase(client),repository=persistence.createPersistenceRepository(database);
 persistence.getRepository=()=>repository;
-auth.resolveTrustedIdentityFromRequest=async req=>req.headers.cookie?.includes('engineering-owner=owner-a')?{trustedIdentityId:'owner-a'}:null;
+auth.resolveTrustedIdentityFromRequest=async req=>{const id=req.headers.cookie?.match(/engineering-owner=(owner-[a-z0-9-]+)/)?.[1];return id?{trustedIdentityId:id}:null;};
 const list=require('../api/businesses'),business=require('../api/businesses/[businessId]'),campaign=require('../api/businesses/[businessId]/campaigns/[campaignId]'),media=require('../api/businesses/[businessId]/media/index'),publicWork=require('../api/customer/work');
 const generatorModule={exports:{}};
 vm.runInNewContext(fs.readFileSync(path.join(root,'api/generate.js'),'utf8').replace('export default async function handler','module.exports = async function handler'),{module:generatorModule,require:createRequire(path.join(root,'api/generate.js')),console,process:{env:{}},fetch(){throw Error('No external provider may be called');}});
 const asset={businessId:'engineering-a',assetId:'engineering-image',relatedEntityId:'offer-a',purpose:'product',kind:'image',state:'ready',deliveryUrl:'https://example.org/exact.jpg'};
-const profile={businessId:'engineering-a',name:'Engineering Owner A',type:'Fashion',location:'London',brandVoice:'Clear',targetCustomer:'Local customers',goal:'Share saved products',profileVersion:4,productsServices:'Owner products',customerContinuation:{routes:['website'],website:'https://example.org/shop'},fulfilment:{methods:['shipping']},operationalAvailability:{status:'available'},products:[{businessId:'engineering-a',productId:'offer-a',name:'Exact jacket',description:'Saved jacket description',price:'£89',priceMode:'fixed',availability:'available',continuationRoute:'website',customerVisible:true,fulfilment:{methods:['collection']},presentation:{version:1,categoryId:'fashion.apparel',pricing:{mode:'fixed',currency:'GBP',amount:89},options:[{key:'size',values:[{value:'M',label:'Medium'}]}],variants:[{variantId:'exact-medium',selection:{size:'M'},availability:'limited',pricing:{mode:'fixed',currency:'GBP',amount:91},future:'retained'}],future:'retained'}}]};
+const profile={businessId:'engineering-a',name:'Engineering Owner A',type:'Fashion',location:'London',brandVoice:'Clear',targetCustomer:'Local customers',goal:'Share saved products',profileVersion:4,preparationModel:'both',offeringCategoryId:'fashion.apparel',productsServices:'Owner products',customerContinuation:{routes:['website'],website:'https://example.org/shop'},fulfilment:{methods:['shipping']},operationalAvailability:{status:'available'},products:[{businessId:'engineering-a',productId:'offer-a',name:'Exact jacket',description:'Saved jacket description',price:'£89',priceMode:'fixed',availability:'available',continuationRoute:'website',customerVisible:true,fulfilment:{methods:['collection']},presentation:{version:1,categoryId:'fashion.apparel',pricing:{mode:'fixed',currency:'GBP',amount:89},options:[{key:'size',values:[{value:'M',label:'Medium'}]}],variants:[{variantId:'exact-medium',selection:{size:'M'},availability:'limited',pricing:{mode:'fixed',currency:'GBP',amount:91},future:'retained'}],future:'retained'}}]};
 const server=http.createServer(async(req,res)=>{try{
  const url=new URL(req.url,'http://localhost');req.query=Object.fromEntries(url.searchParams);let raw='';for await(const chunk of req){raw+=chunk;if(raw.length>25000){res.writeHead(413);res.end();return;}}req.body=raw?JSON.parse(raw):{};
  res.status=code=>{res.statusCode=code;return res;};res.json=value=>{res.setHeader('Content-Type','application/json');res.end(JSON.stringify(value));return res;};
@@ -63,8 +63,14 @@ const server=http.createServer(async(req,res)=>{try{
    await page.evaluate(readiness=>renderOwnerModels(document,readiness,'engineering-a'),confirmed.workspaceReadiness);
    assert.equal(await page.locator('#owner-dashboard-summary .owner-metric').count(),3);
    await page.screenshot({fullPage:true,path:'/tmp/demeos-owner-overview-'+viewport.width+'.png'});
-   await page.locator('[data-owner-section="business-profile"]').click();await page.locator('.business-profile-progress a[href="#products"]').click();await page.locator('#business-products-list').filter({hasText:'Exact jacket'}).waitFor();
+   await page.locator('[data-owner-section="business-profile"]').click();await page.locator('[data-owner-section="products"]').click();await page.locator('#business-products-list').filter({hasText:'Exact jacket'}).waitFor();
    assert.equal(new URL(page.url()).hash,'#products');assert.equal(await page.locator('[data-owner-section="products"]').getAttribute('aria-current'),'page');assert.equal(await page.locator('#business-product-id').count(),1);
+   // Removing an offer by click must invalidate the saved onboarding review.
+   assert.equal(await page.locator('#submit-business-btn').isEnabled(),true);
+   await page.locator('#business-products-list').getByRole('button',{name:'Remove',exact:true}).click();
+   await page.locator('[data-owner-section="business-profile"]').click();assert.equal(await page.locator('#submit-business-btn').isEnabled(),false);
+   assert.match(await page.locator('#business-onboarding-status').innerText(),/Save your changes/);assert.equal((await repository.getKnownBusiness('engineering-a')).businessProfile.products.length,1);
+   await page.reload();await page.locator('#submit-business-btn:enabled').waitFor();await page.locator('[data-owner-section="products"]').click();await page.locator('#business-products-list').filter({hasText:'Exact jacket'}).waitFor();
    // Fields come only from the authoritative contract; no owner mapping or selling setup.
    const categories=await page.evaluate(()=>Object.entries(DEMEOSCustomerItemContract.categories).map(([id,category])=>[id,category.fields]));
    for(const [id,fields] of categories){
@@ -136,6 +142,50 @@ const server=http.createServer(async(req,res)=>{try{
    await page.screenshot({fullPage:true,path:'/tmp/demeos-owner-results-'+viewport.width+'.png'});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'No horizontal overflow');
    await page.locator('#owner-sign-out').click();await page.locator('#owner-auth-signed-out:not([hidden])').waitFor();assert.doesNotMatch(await page.locator('body').innerText(),/Engineering Owner A|Exact jacket/);assert.deepEqual(errors,[]);
    await context.close();console.log('Owner SQL, model permissions, product/media, factual draft, private submission, results and sign-out passed',viewport.width);
+  }
+  // New owner onboarding exercises the actual existing profile, ownership SQL and APIs.
+  for(const width of [390,820,1440]){
+   const owner='owner-new-'+width,context=await browser.newContext({viewport:{width,height:1000},reducedMotion:'reduce'});
+   await context.addCookies([{name:'engineering-owner',value:owner,url:base}]);
+   await context.route('https://clerk.test/npm/@clerk/ui@1/dist/ui.browser.js',r=>r.fulfill({contentType:'text/javascript',body:'window.__internal_ClerkUICtor=function(){};'}));
+   await context.route('https://clerk.test/npm/@clerk/clerk-js@6/dist/clerk.browser.js',r=>r.fulfill({contentType:'text/javascript',body:'window.Clerk={user:{id:'+JSON.stringify(owner)+'},session:null,async load(){},addListener(fn){this.listener=fn},openSignIn(){throw Error("Duplicate sign in")},async signOut(){this.user=null;this.listener({user:null})}};'}));
+   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(String(e)));page.on('dialog',d=>d.accept());
+   await page.goto(base+'/business-workspace.html');await page.getByRole('link',{name:'Start business setup',exact:true}).click();
+   await page.locator('#owner-authenticated-workspace:not([hidden])').waitFor();await page.locator('#business-offering-category option').last().waitFor({state:'attached'});
+   assert.equal(await page.locator('#submit-business-btn').isEnabled(),false);
+   assert.equal((await context.request.put(base+'/api/businesses/not-created',{data:{action:'submit-business',ownerAccuracyConfirmed:true}})).status(),403);
+   await page.locator('#business-name').fill('Isolated onboarding '+width);await page.locator('#business-type').fill('Clothing');await page.locator('#business-location').fill('London');await page.locator('#business-products-services').fill('Owner supplied clothing');await page.locator('#business-offering-category').selectOption('fashion.apparel');
+   await page.locator('#onboarding-preparation summary').click();await page.locator('#business-preparation-model').selectOption('both');await page.locator('#business-route-website').check();await page.locator('#business-website').fill('https://example.org/shop');await page.locator('#business-fulfilment-shipping').check();
+   await page.locator('#onboarding-marketing summary').click();await page.locator('#business-brand-voice').fill('Clear');await page.locator('#business-target-customer').fill('Local customers');await page.locator('#business-goal').fill('Share genuine offers');
+   await page.locator('#onboarding-review summary').click();await page.locator('#business-accuracy-confirmation').check();
+   const created=page.waitForResponse(r=>r.request().method()==='PUT'&&/api\/businesses\//.test(r.url()));await page.locator('#save-business-profile-btn').click();assert.equal((await created).status(),204);
+   await page.locator('#submit-business-btn:enabled').waitFor();const businessId=await page.evaluate(()=>localStorage.getItem('demeosActiveBusinessId'));
+   let record=await repository.getKnownBusiness(businessId);assert.equal(record.businessProfile.offeringCategoryId,'fashion.apparel');assert.equal(record.businessProfile.preparationModel,'both');assert.equal(record.businessProfile.products.length,0);
+   assert.equal((await context.request.get(base+'/api/businesses/engineering-a')).status(),403);
+   assert.equal((await context.request.put(base+'/api/businesses/engineering-a',{data:{businessProfile:profile,ownerAccuracyConfirmed:true}})).status(),403);
+   assert.equal((await context.request.put(base+'/api/businesses/engineering-a',{data:{action:'submit-business',ownerAccuracyConfirmed:true,reviewedProfile:profile}})).status(),403);
+   const before=record.businessProfile;const body={action:'submit-business',ownerAccuracyConfirmed:true,reviewedProfile:before};
+   assert.equal((await context.request.put(base+'/api/businesses/'+businessId,{data:{...body,reviewedProfile:{...before,name:'Wrong snapshot'}}})).status(),409);
+   // Keep the unchanged reviewed profile retryable through server errors and lost success responses.
+   await page.locator('#business-accuracy-confirmation').check();
+   const submitUrl=base+'/api/businesses/'+businessId;
+   await page.route(submitUrl,route=>route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'Temporary test failure'})}),{times:1});
+   await page.locator('#submit-business-btn').click();await page.locator('#business-onboarding-status').filter({hasText:'Could not submit'}).waitFor();assert.equal(await page.locator('#submit-business-btn').isEnabled(),true);
+   assert.equal((await repository.getKnownBusiness(businessId)).businessProfile.informationStatus.reviewState,undefined);
+   await page.route(submitUrl,async route=>{assert.equal((await route.fetch()).status(),200);await route.abort('failed');},{times:1});
+   await page.locator('#submit-business-btn').click();await page.waitForFunction(()=>!document.getElementById('submit-business-btn').disabled&&document.getElementById('business-onboarding-status').textContent.includes('Could not submit'));
+   const ambiguousStamp=(await repository.getKnownBusiness(businessId)).businessProfile.informationStatus.submittedAt;assert.ok(ambiguousStamp);
+   await page.locator('#business-accuracy-confirmation').check();const submitted=page.waitForResponse(r=>r.request().postDataJSON()?.action==='submit-business');await page.locator('#submit-business-btn').click();assert.equal((await submitted).status(),200);await page.locator('#business-onboarding-status').filter({hasText:'Submitted privately'}).waitFor();
+   record=await repository.getKnownBusiness(businessId);assert.equal(record.businessProfile.informationStatus.reviewState,'submitted');const stamp=record.businessProfile.informationStatus.submittedAt;assert.equal(stamp,ambiguousStamp);assert.equal((await context.request.put(base+'/api/businesses/'+businessId,{data:body})).status(),200);
+   assert.equal((await context.request.put(base+'/api/businesses/'+businessId,{data:{...body,reviewedProfile:record.businessProfile}})).status(),200);assert.equal((await repository.getKnownBusiness(businessId)).businessProfile.informationStatus.submittedAt,stamp);
+   const readiness=(await (await context.request.get(base+'/api/businesses/'+businessId)).json()).workspaceReadiness;assert.equal(readiness.selling.canSell,false);assert.equal(readiness.onboarding.approved,false);assert.equal(readiness.publication.draftsPublic,false);
+   assert.deepEqual((await (await context.request.get(base+'/api/customer/work')).json()).work,[]);
+   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({fullPage:true,path:'/tmp/demeos-owner-onboarding-'+width+'.png'});
+   for(const code of ['en','es','fr','ar','pt','zh','hi','de','ja']){await page.locator('#owner-preparation-language').selectOption(code);assert.equal(await page.locator('[data-onboarding-copy="title"]').getAttribute('lang'),code);assert.equal(await page.locator('#business-offering-category').inputValue(),'fashion.apparel');assert.equal(await page.locator('#business-name').inputValue(),'Isolated onboarding '+width);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));}
+   await page.locator('#owner-preparation-language').selectOption('en');await page.getByRole('link',{name:'Return to Overview',exact:true}).click();await page.locator('#workspace-business-identity').filter({hasText:'Submitted privately'}).waitFor();
+   await page.locator('[data-owner-section="business-profile"]').click();await page.locator('#business-onboarding-status').filter({hasText:'Submitted privately'}).waitFor();assert.equal(await page.locator('#business-offering-category').inputValue(),'fashion.apparel');assert.equal(await page.locator('#submit-business-btn').isEnabled(),false);
+   await page.locator('#business-name').fill('Revised isolated onboarding');assert.equal(await page.locator('#submit-business-btn').isEnabled(),false);await page.locator('#business-accuracy-confirmation').check();const edited=page.waitForResponse(r=>r.request().method()==='PUT'&&r.url().endsWith(businessId));await page.locator('#save-business-profile-btn').click();assert.equal((await edited).status(),204);await page.locator('#submit-business-btn:enabled').waitFor();assert.equal((await repository.getKnownBusiness(businessId)).businessProfile.informationStatus.reviewState,'draft');
+   assert.deepEqual(errors,[]);await context.close();console.log('Actual isolated new-owner onboarding, snapshot review, submission, navigation and nine languages passed',width);
   }
  }finally{await browser.close();await new Promise(resolve=>server.close(resolve));await client.close();}
 })().catch(e=>{console.error(e);process.exit(1);});

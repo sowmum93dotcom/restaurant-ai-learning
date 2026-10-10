@@ -45,6 +45,12 @@ function getValidatedProfile(req) {
     })
   ) return null;
 
+  if (profile.offeringCategoryId !== undefined && (typeof profile.offeringCategoryId !== "string" ||
+      (profile.offeringCategoryId !== "" && !Object.hasOwn(customerItemContract.categories, profile.offeringCategoryId)))) return null;
+  if (profile.preparationModel !== undefined && !["marketing", "selling", "both"].includes(profile.preparationModel)) return null;
+  // Owner-entered facts never supply authority or server review state.
+  const supported = ["businessId", "profileVersion", "name", "type", "location", "brandVoice", "targetCustomer", "goal", "productsServices", "customerContinuation", "fulfilment", "operationalAvailability", "products", "offeringCategoryId", "preparationModel"];
+  const facts = Object.fromEntries(supported.filter(key => Object.hasOwn(profile, key)).map(key => [key, profile[key]]));
   const enhancedProfile = Number(profile.profileVersion) >= 2;
   const continuation = profile.customerContinuation;
   const fulfilment = profile.fulfilment;
@@ -109,7 +115,7 @@ function getValidatedProfile(req) {
       !ALLOWED_AVAILABILITY_STATES.has(operational.status))) return null;
 
   if (!enhancedProfile) return {
-    ...profile,
+    ...facts,
     name: cleanString(profile.name, 200),
     type: cleanString(profile.type, 200),
     location: cleanString(profile.location, 300),
@@ -119,7 +125,7 @@ function getValidatedProfile(req) {
   };
 
   return {
-    ...profile,
+    ...facts,
     name: cleanString(profile.name, 200),
     type: cleanString(profile.type, 200),
     location: cleanString(profile.location, 300),
@@ -176,6 +182,32 @@ module.exports = async function handler(req, res) {
       return res.status(401).json({ error: "Authentication required." });
     }
 
+    if (req.method === "PUT" && req.body?.action === "submit-business") {
+      if (!access.allowed) return res.status(403).json({ error: "Forbidden." });
+      const record = await repository.getKnownBusiness(businessId);
+      const saved = record?.businessProfile;
+      const validation = saved && getValidatedProfile({body:{businessProfile:saved},query:{businessId}});
+      if (!validation || Number(saved.profileVersion) < 3 || !saved.informationStatus?.ownerConfirmedAt ||
+          !saved.preparationModel || saved.offeringCategoryId === undefined || req.body.ownerAccuracyConfirmed !== true) {
+        return res.status(409).json({error:"Save and review your complete business information before submitting."});
+      }
+      const reviewedFacts = value => {
+        if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+        const status = {...value.informationStatus};
+        delete status.reviewState; delete status.submittedAt;
+        return {...value, informationStatus:status};
+      };
+      // A retry of the same reviewed facts is idempotent, including after an ambiguous response.
+      if (!require("node:util").isDeepStrictEqual(reviewedFacts(req.body.reviewedProfile), reviewedFacts(saved))) {
+        return res.status(409).json({error:"Your information changed. Review the saved business again."});
+      }
+      // Compare the reviewed snapshot atomically; concurrent edits must be reviewed again.
+      const result = await repository.submitBusinessForReview(access.actorContext?.trustedIdentityId ||
+        (await resolveTrustedIdentityFromRequest(req))?.trustedIdentityId, businessId, saved);
+      if (!result) return res.status(409).json({error:"Your information changed. Review the saved business again."});
+      return res.status(200).json({businessId, informationStatus:result.informationStatus});
+    }
+    if (req.method === "PUT" && req.body?.action !== undefined) return res.status(400).json({error:"Unsupported business action."});
     if (req.method === "PUT") {
       const ownerAccuracyConfirmed = Boolean(req.body && req.body.ownerAccuracyConfirmed === true);
       const profile = getValidatedProfile(req);
@@ -207,9 +239,9 @@ module.exports = async function handler(req, res) {
             return preserveProduct(previous, product);
           });
         } catch (error) { return res.status(409).json({ error: error.message }); }
-        const previousInformationStatus = existingBusiness && existingBusiness.informationStatus && typeof existingBusiness.informationStatus === "object"
-          ? existingBusiness.informationStatus : {};
+        const previousInformationStatus = existingBusiness?.businessProfile?.informationStatus || existingBusiness?.informationStatus || {};
         await repository.saveBusiness({
+          ...existingBusiness?.businessProfile,
           ...profile,
           businessId,
           products: (profile.products || []).map(function (product) { return { ...product, businessId }; }),
@@ -217,6 +249,7 @@ module.exports = async function handler(req, res) {
             ...previousInformationStatus,
             source: "business-owner",
             status: "business-provided",
+            ...(previousInformationStatus.reviewState ? {reviewState:"draft", submittedAt:null} : {}),
             ownerConfirmedAt: ownerAccuracyConfirmed ? new Date().toISOString() : previousInformationStatus.ownerConfirmedAt
           }
         });

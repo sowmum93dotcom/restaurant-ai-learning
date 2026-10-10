@@ -290,7 +290,7 @@
           <div class="view-heading"><h2 id="products-heading">Products and Services</h2><p>Keep your offers and their images accurate. Changes are saved with your business information.</p></div>
 
           <section class="content-card"><div class="business-profile-grid">              <section id="business-profile-offering" class="profile-step profile-long-field"><div class="profile-step-heading"><span>Your offers</span><div><h4>Products &amp; services</h4><p>Describe what the business genuinely provides.</p></div></div></section>
-              <div class="profile-long-field"><label for="business-products-services">What does your business provide?</label><textarea id="business-products-services" name="business-products-services" rows="5" placeholder="Example: Birthday cakes, celebration cakes and cupcakes made to order."></textarea><p>Describe only products and services your business genuinely provides. DEMEOS will not invent products, availability or prices.</p></div>
+              <p class="profile-long-field">Your general business activity is recorded in <a href="marketing.html#business-profile">My Business</a>. Add individual offers below when ready.</p>
               <div class="profile-long-field business-products-manager">
                 <div class="profile-step-heading"><div><h4>Your products and services</h4><p>Add genuine products or services. A product image is optional and is always tied to this business.</p></div></div>
                 <div class="business-products-manager-summary" aria-live="polite">
@@ -336,16 +336,20 @@
         <section id="business-profile" class="workspace-view" data-workspace-panel hidden aria-labelledby="business-profile-heading">
           <div class="view-heading"><h2 id="business-profile-heading">My Business</h2><p>Keep your business information accurate so DEMEOS can use it correctly.</p></div>
           <section class="business-profile-section content-card">
-            <h3>Your business information</h3><p class="business-profile-intro">Add accurate information and keep it current. Customers only see information that is safe to use for their need.</p>
+            <h3 data-onboarding-copy="title">Set up your business</h3><p class="business-profile-intro" data-onboarding-copy="intro">Save accurate information, review it and submit privately. Approval is a separate step.</p><p id="business-onboarding-status" role="status" aria-live="polite"></p>
             <nav class="business-profile-progress" aria-label="Business Profile steps">
-              <a href="#business-profile-identity">1. Business</a><a href="#products">2. Products &amp; services</a><a href="#business-profile-continuation">3. Customer route</a><a href="#business-profile-operations">4. Fulfilment</a><a href="#business-profile-marketing">5. Marketing context</a><a href="#business-profile-confirmation">6. Review &amp; save</a>
+              <a href="#business-profile-identity">1. Business</a><a href="#business-profile-continuation">2. Preparation</a><a href="#business-profile-marketing">3. Customers</a><a href="#business-profile-confirmation">4. Review</a>
             </nav>
             <div class="business-selector" aria-label="Business selection"><div class="business-selector-field"><label for="business-selector">Business</label><select id="business-selector"></select></div><button id="add-business-btn" class="demeos-secondary-button" type="button">Add Business</button></div>
             <div class="profile-fields">
+              <details id="onboarding-business" class="onboarding-step profile-long-field" open><summary data-onboarding-copy="business">1. Your business</summary><div class="profile-fields">
               <section id="business-profile-identity" class="profile-step profile-long-field"><div class="profile-step-heading"><span>Step 1</span><div><h4>Your business</h4><p>Start with the identity customers need to recognise the business.</p></div></div></section>
               <div><label for="business-name">Business Name</label><input type="text" id="business-name" name="business-name" placeholder="Enter your business name" /></div>
               <div><label for="business-type">Business Type</label><input type="text" id="business-type" name="business-type" placeholder="Example: Bakery, plumber, clothing shop" /></div>
               <div><label for="business-location">Business Location / Service Area</label><input type="text" id="business-location" name="business-location" placeholder="Example: Croydon, London" /></div>
+<div class="profile-long-field"><label for="business-products-services">What does your business provide?</label><textarea id="business-products-services" name="business-products-services" rows="5" placeholder="Example: Birthday cakes, celebration cakes and cupcakes made to order."></textarea><p>Describe only products and services your business genuinely provides. DEMEOS will not invent products, availability or prices.</p></div><div class="profile-long-field"><label for="business-offering-category" data-onboarding-copy="category">Which offering category fits?</label><select id="business-offering-category"></select><p data-onboarding-copy="categoryNote">Choose a supported offering category, or General. Individual products keep their own categories.</p></div>
+              </div></details><details id="onboarding-preparation" class="onboarding-step profile-long-field" open><summary data-onboarding-copy="preparation">2. Prepare your service</summary><div class="profile-fields">
+              <div class="profile-long-field"><label for="business-preparation-model" data-onboarding-copy="model">What would you like to prepare?</label><select id="business-preparation-model"><option value="" data-onboarding-copy="choose">Choose one</option><option value="marketing" data-onboarding-copy="marketing">Marketing</option><option value="selling" data-onboarding-copy="selling">Selling preparation</option><option value="both" data-onboarding-copy="both">Both</option></select><p data-onboarding-copy="marketingNote">Marketing costs £149 per month. Customers continue directly with your business through approved destinations.</p><p data-onboarding-copy="sellingNote">Selling preparation does not enable selling, payments or publication. Separate approval and server permissions are required.</p></div>
               <section id="business-profile-continuation" class="profile-step profile-long-field"><div class="profile-step-heading"><span>Step 3</span><div><h4>How customers continue</h4><p>Choose the direct routes your business actually supports.</p></div></div></section>
               <fieldset class="profile-choice-group profile-long-field">
                 <legend>How can customers continue with your business?</legend>
@@ -401,18 +405,21 @@
                 <textarea id="business-fulfilment-notes" rows="3" placeholder="Example: Collection from our Croydon shop. Local delivery is arranged directly with us."></textarea>
               </fieldset>
 
+              </div></details><details id="onboarding-marketing" class="onboarding-step profile-long-field" open><summary data-onboarding-copy="context">3. Who would you like to reach?</summary><div class="profile-fields">
               <section id="business-profile-marketing" class="profile-step profile-long-field"><div class="profile-step-heading"><span>Step 5</span><div><h4>Marketing context</h4><p>Help DEMEOS understand who you want to reach, how your business communicates and what marketing work matters now.</p></div></div></section><div class="profile-long-field brand-voice-field"><label for="business-brand-voice">Brand Voice</label><textarea id="business-brand-voice" name="business-brand-voice" rows="4" placeholder="Example: Friendly, modern and professional."></textarea><p>Describe how your business communicates so DEMEOS can keep the tone consistent.</p></div>
               <div class="profile-long-field target-customer-field"><label for="business-target-customer">Target Customer</label><textarea id="business-target-customer" name="business-target-customer" rows="4" placeholder="Example: Local families, professionals and weekend visitors."></textarea><p>Describe the customer groups you want DEMEOS to understand and reach.</p></div>
               <div><label for="business-goal">Primary Marketing Goal</label><input type="text" id="business-goal" name="business-goal" placeholder="Example: Increase local customers" /></div>
 
+              </div></details><details id="onboarding-review" class="onboarding-step profile-long-field" open><summary data-onboarding-copy="review">4. Review your information</summary><div id="business-onboarding-review"></div><div class="profile-fields">
               <section id="business-profile-confirmation" class="profile-step profile-long-field"><div class="profile-step-heading"><span>Step 6</span><div><h4>Review &amp; save</h4><p>Confirm the information is current before DEMEOS uses it.</p></div></div></section>
               <div class="profile-accuracy-confirmation profile-long-field">
                 <label><input type="checkbox" id="business-accuracy-confirmation" /> I confirm this information accurately describes what my business currently provides and how customers can continue with us.</label>
                 <p>DEMEOS stores this as business-provided information. It is not presented as independently verified unless DEMEOS has separately verified it.</p>
               </div>
+            </div></details>
             </div>
             <p id="business-profile-status" class="recommendations-status" role="status" aria-live="polite"></p>
-            <button id="save-business-profile-btn" class="demeos-primary-button" type="button">Save Business Profile</button>
+            <div class="onboarding-actions"><button id="save-business-profile-btn" class="demeos-primary-button" type="button">Save Business Profile</button><button id="submit-business-btn" class="demeos-secondary-button" type="button" disabled data-onboarding-copy="submit">Submit business for review</button><a href="business-workspace.html" class="text-button" data-onboarding-copy="workspace">Return to Overview</a></div><p data-onboarding-copy="privateNote">Submission stays private. Administrative review is not available yet. You can continue permitted preparation.</p>
           </section>
         </section>
       </div>
@@ -427,6 +434,7 @@
   <script src="js/demeos-item-presentation-copy.js"></script>
   <script src="js/business-product-preparation.js"></script>
   <script src="js/business-preparation-language.js"></script>
+  <script src="js/business-onboarding.js"></script>
   <script src="js/script.js"></script>
 </body>
 </html>

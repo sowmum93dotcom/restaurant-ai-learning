@@ -800,7 +800,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     state.profiles = result.profiles;
     customerParticipationResults = getCustomerParticipationResults(result.customerParticipationResults, requestedBusinessId);
     renderRecommendsUnderstanding(result.record, requestedBusinessId);
-    fillProfile(activeProfile()); renderSelector(); renderActiveMarketingWork(); renderCustomerParticipationResults(); renderCampaignHistory();
+    fillProfile(activeProfile()); globalThis.window?.DEMEOSBusinessOnboarding?.confirm(result.record.businessProfile); renderSelector(); renderActiveMarketingWork(); renderCustomerParticipationResults(); renderCampaignHistory();
     if (typeof renderOwnerModels === "function") renderOwnerModels(document, result.record.workspaceReadiness, requestedBusinessId);
   }
   async function persistBusiness(profile, options) {
@@ -1047,6 +1047,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       remove.addEventListener("click", function () {
         const removingEditedProduct = productFields.id.value === product.productId;
         draftProducts = draftProducts.filter(function (entry) { return entry.productId !== product.productId; });
+        globalThis.window?.DEMEOSBusinessOnboarding?.markDirty();
         if (removingEditedProduct) resetProductForm();
         renderBusinessProducts();
       });
@@ -1098,6 +1099,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     if (productFields.fulfilmentMode.value !== "specific") delete product.fulfilment;
     const existingIndex = draftProducts.findIndex(function (entry) { return entry.productId === productId; });
     if (existingIndex >= 0) draftProducts.splice(existingIndex, 1, product); else draftProducts.push(product);
+    globalThis.window?.DEMEOSBusinessOnboarding?.markDirty();
     resetProductForm(); renderBusinessProducts();
   }
   if (productAddBtn) productAddBtn.addEventListener("click", addDraftProduct);
@@ -1131,6 +1133,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     businessHoursNotes.value = operational.hoursNotes || "";
     availabilityNotes.value = operational.notes || "";
     accuracyConfirmation.checked = false;
+    globalThis.window?.DEMEOSBusinessOnboarding?.fill(profile);
     if (businessProfileStatus) {
       businessProfileStatus.textContent = profile && profile.informationStatus
         ? "Saved as business-provided information. Reconfirm accuracy when you make changes."
@@ -1162,6 +1165,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     localStorage.setItem("demeosBusinessProfiles", JSON.stringify(state.profiles));
     if (state.activeBusinessId) localStorage.setItem("demeosActiveBusinessId", state.activeBusinessId);
     else localStorage.removeItem("demeosActiveBusinessId");
+    addingBusiness = !state.activeBusinessId;
     renderSelector(); fillProfile(activeProfile()); renderActiveMarketingWork();
     renderCustomerParticipationResults(); renderCampaignHistory();
     if (state.activeBusinessId) { hydrateActiveBusiness(); loadBusinessMedia(); }
@@ -1409,6 +1413,11 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     if (!accuracyConfirmation.checked) {
       alert("Please confirm that the Business Profile information is accurate before saving."); return;
     }
+    if (globalThis.window?.DEMEOSBusinessOnboarding && byId("business-preparation-model")) {
+      profileFields.preparationModel = byId("business-preparation-model").value;
+      profileFields.offeringCategoryId = byId("business-offering-category").value;
+      if (!profileFields.preparationModel) { alert("Choose what you would like to prepare."); return; }
+    }
     profileFields.profileVersion = 4;
     profileFields.products = draftProducts.map(function (product) { return { ...product }; });
     profileFields.operationalAvailability = {
@@ -1448,9 +1457,10 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
         if (wasAddingBusiness) {
           clearRecommendations();
           clearBusinessSituation();
-          showWorkspaceView("recommends");
-          recommendationsStatus.textContent = "Your Business Profile is ready. DEMEOS can now review your business and recommend the first marketing action.";
-          if (typeof recommendationsBtn.focus === "function") recommendationsBtn.focus();
+          showWorkspaceView("business-profile");
+          recommendationsStatus.textContent = "Your information is saved privately. Review it in My Business before submission.";
+          if (byId("onboarding-review")) byId("onboarding-review").open = true;
+          byId("onboarding-review")?.scrollIntoView?.({behavior:"smooth",block:"start"});
         } else {
           alert("Business Profile saved successfully.");
         }

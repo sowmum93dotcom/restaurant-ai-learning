@@ -8,12 +8,12 @@ const html = fs.readFileSync(path.join(root, "marketing.html"), "utf8");
 const script = fs.readFileSync(path.join(root, "js", "script.js"), "utf8");
 const css = fs.readFileSync(path.join(root, "css", "style.css"), "utf8");
 
-test("Business Profile presents the owner journey in six simple progressive steps", function () {
+test("Business Profile presents the owner journey in four short preparation groups", function () {
   for (const heading of ["Your business", "Products &amp; services", "How customers continue", "Current operations", "Marketing context", "Review &amp; save"]) {
     assert.match(html, new RegExp(heading.replace("&", "&amp;").replace("&amp;amp;", "&amp;")));
   }
   assert.match(html, /business-profile-progress/);
-  assert.match(html, /Customers only see information that is safe to use for their need/);
+  assert.match(html, /Approval is a separate step/);
 });
 
 test("customer route details stay hidden until their route is selected", function () {
@@ -34,7 +34,7 @@ test("progressive layout includes a mobile treatment without changing trust sema
 
 test("Business Profile makes marketing understanding an explicit onboarding step", function () {
   assert.match(html, /id="business-profile-marketing"/);
-  assert.match(html, /5\. Marketing context/);
+  assert.match(html, /3\. Customers/);
   assert.match(html, /Help DEMEOS understand who you want to reach, how your business communicates and what marketing work matters now\./);
   assert.match(html, /id="business-brand-voice"/);
   assert.match(html, /id="business-target-customer"/);
@@ -43,8 +43,8 @@ test("Business Profile makes marketing understanding an explicit onboarding step
 });
 
 
-test("new business onboarding leads directly to the first DEMEOS marketing value moment", function () {
-  assert.match(script, /if \(wasAddingBusiness\) \{[\s\S]*?showWorkspaceView\("recommends"\)/);
-  assert.match(script, /Your Business Profile is ready\. DEMEOS can now review your business and recommend the first marketing action\./);
-  assert.match(script, /recommendationsBtn\.focus/);
+test("new business onboarding keeps the owner in private review before submission", function () {
+  assert.match(script, /if \(wasAddingBusiness\) \{[\s\S]*?showWorkspaceView\("business-profile"\)/);
+  assert.match(script, /Your information is saved privately\. Review it in My Business before submission\./);
+  assert.match(script, /onboarding-review/);
 });
