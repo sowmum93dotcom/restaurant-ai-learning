@@ -128,7 +128,7 @@ const server=http.createServer(async(req,res)=>{try{
    for(const id of expectedOrder)assert.ok(reopenedAssets.assets.some(asset=>asset.assetId===id));
    const foreign=await context.request.get(base+'/api/businesses/engineering-b/media');assert.equal(foreign.status(),403);
    await page.reload();await page.locator('#vendor-products-save:not([disabled])').waitFor();
-   for(const id of expectedOrder){await freshCard(id).getByRole('button',{name:'Remove from gallery',exact:true}).waitFor();assert.equal(await freshCard(id).locator('img').evaluate(image=>image.complete&&image.naturalWidth>0),true);}
+   for(const id of expectedOrder){await freshCard(id).getByRole('button',{name:'Remove from gallery',exact:true}).waitFor();await freshCard(id).locator('img').scrollIntoViewIfNeeded();await freshCard(id).locator('img').evaluate(image=>image.decode());assert.equal(await freshCard(id).locator('img').evaluate(image=>image.complete&&image.naturalWidth>0),true);}
    assert.deepEqual(await page.evaluate(()=>window.DEMEOSVendorProducts.read().products[0].mediaGallery.assetIds),expectedOrder);
    await freshCard(storedUploads[0].asset.assetId).getByRole('button',{name:'Main image',exact:true}).waitFor();
    assert.deepEqual(await page.locator('.business-media-item').filter({has:page.getByRole('button',{name:'Remove from gallery',exact:true})}).locator('img').evaluateAll(images=>images.map(image=>image.src)),expectedOrder.map(id=>'https://example.org/'+id+'.webp'));
