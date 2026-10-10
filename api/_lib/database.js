@@ -1,4 +1,6 @@
 const SCHEMA_STATEMENTS = [
+  // Private stock extension of the existing business catalogue; no second catalogue.
+
   `CREATE TABLE IF NOT EXISTS demeos_businesses (
     business_id TEXT PRIMARY KEY,
     profile JSONB NOT NULL,
@@ -20,6 +22,20 @@ const SCHEMA_STATEMENTS = [
     business_id TEXT NOT NULL REFERENCES demeos_businesses(business_id),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     PRIMARY KEY (trusted_identity_id, business_id)
+  )`,
+  `CREATE TABLE IF NOT EXISTS demeos_vendor_inventory (
+    business_id TEXT PRIMARY KEY REFERENCES demeos_businesses(business_id),
+    revision INTEGER NOT NULL DEFAULT 0 CHECK (revision >= 0),
+    entries JSONB NOT NULL DEFAULT '{}'::jsonb,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`,
+  `CREATE TABLE IF NOT EXISTS demeos_vendor_stock_history (
+    business_id TEXT NOT NULL REFERENCES demeos_businesses(business_id),
+    revision INTEGER NOT NULL,
+    trusted_identity_id TEXT NOT NULL,
+    changes JSONB NOT NULL,
+    recorded_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (business_id, revision)
   )`,
   `CREATE TABLE IF NOT EXISTS demeos_campaigns (
     campaign_id TEXT PRIMARY KEY,

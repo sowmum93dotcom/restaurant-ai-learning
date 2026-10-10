@@ -1,10 +1,10 @@
-const { getRepository }=require("../../../../_lib/persistence.js");
-const { authorizeBusinessOwnerRequest }=require("../../../../_lib/demeos-business-owner-authorization.js");
-const { DEMEOS_ACTIONS }=require("../../../../_lib/demeos-rules.js");
-const { transitionMediaAsset }=require("../../../../_lib/media-processing-lifecycle.js");
-const { completeVerifiedMediaUpload }=require("../../../../_lib/media-upload-completion.js");
-const { getConfiguredMediaStorageAdapter }=require("../../../../_lib/media-storage-driver.js");
-const { enqueueVerifiedMediaForProcessing }=require("../../../../_lib/media-processing-queue.js");
+const { getRepository }=require("../../../_lib/persistence.js");
+const { authorizeBusinessOwnerRequest }=require("../../../_lib/demeos-business-owner-authorization.js");
+const { DEMEOS_ACTIONS }=require("../../../_lib/demeos-rules.js");
+const { transitionMediaAsset }=require("../../../_lib/media-processing-lifecycle.js");
+const { completeVerifiedMediaUpload }=require("../../../_lib/media-upload-completion.js");
+const { getConfiguredMediaStorageAdapter }=require("../../../_lib/media-storage-driver.js");
+const { enqueueVerifiedMediaForProcessing }=require("../../../_lib/media-processing-queue.js");
 module.exports=async function handler(req,res){
  if(req.method!=="PATCH"){res.setHeader("Allow","PATCH");return res.status(405).json({error:"Method not allowed"});}
  const businessId=typeof req.query.businessId==="string"?req.query.businessId.trim():"";
@@ -23,7 +23,12 @@ module.exports=async function handler(req,res){
    const processing=await completeVerifiedMediaUpload({asset:current,businessId,assetId,
     uploadToken:req.body.uploadToken,storageKey:req.body.storageKey,storageAdapter:storage});
    if(!processing)return res.status(409).json({error:"The uploaded media could not be verified."});
-   if(processing.uploadCompletionReplay){\n    const processingStatus=processing.state==="ready"?"completed":"queued";\n    const asset={...processing};delete asset.uploadCompletionReplay;\n    return res.status(200).json({asset,processingStatus,replayed:true});\n   }\n   const handoff=await enqueueVerifiedMediaForProcessing(repository,processing);
+   if(processing.uploadCompletionReplay){
+    const processingStatus=processing.state==="ready"?"completed":"queued";
+    const asset={...processing};delete asset.uploadCompletionReplay;
+    return res.status(200).json({asset,processingStatus,replayed:true});
+   }
+   const handoff=await enqueueVerifiedMediaForProcessing(repository,processing);
    if(!handoff)return res.status(503).json({error:"Media processing could not be queued."});
    return res.status(202).json({asset:handoff.asset||processing,processingStatus:"queued"});
   }

@@ -24,6 +24,7 @@ function getOwnerNavigationSection(locationObject, workspaceView) {
   if (view === "business-profile") return "business-profile";
   if (view === "products") return "products";
   if (view === "product-options") return "product-options";
+  if (view === "inventory") return "inventory";
   return "marketing";
 }
 

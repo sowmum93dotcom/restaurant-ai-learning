@@ -185,7 +185,7 @@
 .owner-workspace-body:not([data-owner-access=ready]) .marketing-secondary-sidebar,
 .owner-workspace-body:not([data-owner-access=ready]) .marketing-capability-heading,
 .owner-workspace-body[data-owner-model=selling] .marketing-secondary-sidebar,
-.owner-workspace-body[data-owner-model=selling] [data-workspace-panel]:not(#products):not(#business-profile){display:none!important;}
+.owner-workspace-body[data-owner-model=selling] [data-workspace-panel]:not(#products):not(#business-profile):not(#inventory){display:none!important;}
 .owner-dependency-list{margin:8px 0 0;}
 .owner-dependency-list>div{display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px 16px;border-bottom:1px solid #40546e;padding:10px 0;}
 .owner-dependency-list dt{font-weight:600;color:#f4f6fa;}

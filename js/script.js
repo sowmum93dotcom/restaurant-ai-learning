@@ -544,7 +544,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     });
     if (window.location.hash !== "#" + viewId && window.history && typeof window.history.replaceState === "function") window.history.replaceState(null, "", "#" + viewId);
     const area = byId("owner-area-heading");
-    const section = viewId === "product-options" ? "Options and Availability" : viewId === "products" ? (window.DEMEOSOwnerWorkspace?.getState(document).model === "selling" ? "Product Catalogue" : "Products and Services") : viewId === "business-profile" ? "My Business" : "Marketing";
+    const section = viewId === "inventory" ? "Stock" : viewId === "product-options" ? "Options and Availability" : viewId === "products" ? (globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model === "selling" ? "Product Catalogue" : "Products and Services") : viewId === "business-profile" ? "My Business" : "Marketing";
     if (area) area.textContent = section;
     const productsHeading = byId("products-heading");
     if (productsHeading && panelView === "products") productsHeading.textContent = section;
@@ -892,6 +892,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   const businessMediaList = byId("business-media-list");
   const businessMediaEmpty = byId("business-media-empty");
   let businessMediaAssets = [];
+  const vendorText=(key,fallback)=>globalThis.window?.DEMEOSVendorCopy?.[byId("owner-preparation-language")?.value||"en"]?.[key]||fallback;
 
   const productFields = {
     id: byId("business-product-id"), name: byId("business-product-name"), price: byId("business-product-price"), priceMode: byId("business-product-price-mode"),
@@ -911,6 +912,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   const productsVisible = byId("business-products-visible");
   const productsImages = byId("business-products-images");
   let draftProducts = [];
+  let baselineProducts = [];
   const productPreparation = typeof window !== "undefined" ? window.DEMEOSBusinessProductPreparation : null;
   const productEditor = productPreparation?.createEditor(document);
 
@@ -930,7 +932,13 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     businessMediaList.querySelectorAll?.("video").forEach(video=>video.pause());
     businessMediaList.textContent = "";
     businessMediaEmpty.hidden = businessMediaAssets.length > 0;
-    businessMediaAssets.filter(asset=>asset.businessId===state.activeBusinessId).forEach(function (asset) {
+    const mediaToRender=businessMediaAssets.filter(asset=>asset.businessId===state.activeBusinessId);
+    if(globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model==="selling")mediaToRender.sort((a,b)=>{
+      if(a.relatedEntityId!==b.relatedEntityId)return String(a.relatedEntityId).localeCompare(String(b.relatedEntityId));
+      const order=draftProducts.find(p=>p.productId===a.relatedEntityId)?.mediaGallery?.assetIds||[],rank=asset=>order.includes(asset.assetId)?order.indexOf(asset.assetId):order.length;
+      return rank(a)-rank(b);
+    });
+    mediaToRender.forEach(function (asset) {
       const item = document.createElement("article"); item.className = "business-media-item";
       const title = document.createElement("strong"); title.textContent = asset.kind === "video" ? "Video" : "Image";
       const stateLabel = document.createElement("span"); stateLabel.textContent = asset.state === "ready" ? "Ready" : asset.state === "failed" ? "Could not process" : "Processing";
@@ -941,6 +949,28 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       if (offer && asset.state === "ready") {
         const use=document.createElement("button");use.type="button";use.className="text-button";use.textContent="Prepare marketing with this media";use.dataset.ownerMarketing="";
         use.addEventListener("click",()=>{if(globalThis.window?.DEMEOSOwnerWorkspace && !window.DEMEOSOwnerWorkspace.canOpen(window.DEMEOSOwnerWorkspace.getState(document),"create"))return;showWorkspaceView("create");byId("draft-product").value=offer.productId;renderDraftSources();byId("draft-media").value=asset.assetId;renderOfferReview();});item.append(use);
+      }
+      if(globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model==="selling"&&offer&&asset.state==="ready"){
+        const draft=draftProducts.find(p=>p.productId===offer.productId);
+        const gallery=draft?.mediaGallery||{assetIds:[],mainAssetId:""};
+        const selected=gallery.assetIds.includes(asset.assetId);
+        const choose=document.createElement("button");choose.type="button";choose.className="text-button";choose.textContent=selected?vendorText("removeGallery","Remove from gallery"):vendorText("addGallery","Add to gallery");
+        choose.addEventListener("click",()=>{
+          const current=draft.mediaGallery||{assetIds:[],mainAssetId:""},ids=current.assetIds.includes(asset.assetId)?current.assetIds.filter(id=>id!==asset.assetId):[...current.assetIds,asset.assetId];
+          if(ids.length>20){businessMediaStatus.textContent=vendorText("fileLimit","Choose up to 20 files.");return;}
+          draft.mediaGallery={assetIds:ids,mainAssetId:ids.includes(current.mainAssetId)?current.mainAssetId:""};window.DEMEOSBusinessOnboarding?.markDirty();renderBusinessMedia();
+        });item.append(choose);
+        if(selected){
+          const position=document.createElement("span");position.textContent=vendorText("position","Gallery position")+" "+(gallery.assetIds.indexOf(asset.assetId)+1);item.append(position);
+          if(asset.kind==="image"){
+            const main=document.createElement("button");main.type="button";main.className="text-button";main.textContent=gallery.mainAssetId===asset.assetId?vendorText("mainImage","Main image"):vendorText("setMain","Set as main image");main.disabled=gallery.mainAssetId===asset.assetId;
+            main.addEventListener("click",()=>{draft.mediaGallery={...gallery,mainAssetId:asset.assetId};window.DEMEOSBusinessOnboarding?.markDirty();renderBusinessMedia();});item.append(main);
+          }
+          for(const [label,offset] of [[vendorText("earlier","Move earlier"),-1],[vendorText("later","Move later"),1]]){
+            const move=document.createElement("button");move.type="button";move.className="text-button";move.textContent=label;const index=gallery.assetIds.indexOf(asset.assetId);move.disabled=index+offset<0||index+offset>=gallery.assetIds.length;
+            move.addEventListener("click",()=>{const ids=[...gallery.assetIds];[ids[index],ids[index+offset]]=[ids[index+offset],ids[index]];draft.mediaGallery={...gallery,assetIds:ids};window.DEMEOSBusinessOnboarding?.markDirty();renderBusinessMedia();});item.append(move);
+          }
+        }
       }
       businessMediaList.appendChild(item);
     });
@@ -956,7 +986,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     } catch (_error) { if (state.activeBusinessId !== requestedBusinessId) return; businessMediaAssets = []; }
     renderBusinessMedia();
   }
-  async function uploadBusinessMedia() {
+  async function uploadMarketingMedia() {
     const businessId = state.activeBusinessId;
     const file = businessMediaFile && businessMediaFile.files && businessMediaFile.files[0];
     if (!file || !state.activeBusinessId) { businessMediaStatus.textContent = "Choose an image or video first."; return; }
@@ -988,6 +1018,39 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       await loadBusinessMedia();
     } catch (error) { businessMediaStatus.textContent = error.message || "DEMEOS could not add this media."; }
     finally { businessMediaUploadBtn.disabled = false; }
+  }
+  async function uploadBusinessMedia() {
+    if(globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model!=="selling")return uploadMarketingMedia();
+    const businessId=state.activeBusinessId,files=Array.from(businessMediaFile?.files||[]),relatedProductId=byId("business-media-product")?.value;
+    const selling=globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model==="selling";
+    if(!businessId||!files.length){businessMediaStatus.textContent=vendorText("chooseFiles","Choose images or videos first.");return;}
+    if(files.length>20){businessMediaStatus.textContent=vendorText("fileLimit","Choose up to 20 files at a time.");return;}
+    if(selling&&!relatedProductId){businessMediaStatus.textContent=vendorText("chooseProduct","Choose the saved product these images belong to.");return;}
+    const relatedProduct=activeProfile()?.products?.find(p=>p.productId===relatedProductId);
+    if(relatedProductId&&!relatedProduct){businessMediaStatus.textContent=vendorText("saveProductFirst","Save and select the product first.");return;}
+    businessMediaUploadBtn.disabled=true;
+    const failed=[],failedFiles=[];
+    for(let index=0;index<files.length;index++){
+      if(state.activeBusinessId!==businessId)break;
+      const file=files[index],kind=file.type.startsWith("video/")?"video":file.type.startsWith("image/")?"image":"";
+      businessMediaStatus.textContent=`${vendorText("uploading","Uploading")} ${index+1}/${files.length}: ${file.name}`;
+      try{
+        if(!kind||file.size>(kind==="video"?250:15)*1024*1024)throw Error(vendorText("fileError","Check the file format and size."));
+        const register=await fetch(`/api/businesses/${encodeURIComponent(businessId)}/media`,{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({asset:{kind,purpose:relatedProductId?(relatedProduct?.presentation?.kind==="service"?"service":"product"):"marketing",...(relatedProductId?{relatedEntityId:relatedProductId}:{}),contentType:file.type,sizeBytes:file.size}})});
+        const registered=await register.json();
+        if(!register.ok||!registered.asset||!registered.uploadSession)throw Error(registered.error||"Secure media storage is unavailable.");
+        const upload=await fetch(registered.uploadSession.uploadUrl,{method:"PUT",headers:{"Content-Type":file.type},body:file});
+        if(!upload.ok)throw Error(vendorText("uploadError","Upload did not complete."));
+        const complete=await fetch(`/api/businesses/${encodeURIComponent(businessId)}/media/${encodeURIComponent(registered.asset.assetId)}`,{method:"PATCH",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"complete-upload",uploadToken:registered.uploadSession.uploadToken,storageKey:registered.uploadSession.storageKey})});
+        if(!complete.ok){const error=await complete.json();throw Error(error.error||"Media could not be processed.");}
+      }catch(error){failed.push(file.name+": "+vendorText("uploadError","Upload failed. Retry this file."));failedFiles.push(file);}
+    }
+    businessMediaUploadBtn.disabled=false;
+    if(state.activeBusinessId!==businessId)return;
+    if(!failed.length)businessMediaFile.value="";
+    else if(typeof DataTransfer!=="undefined"){const retryFiles=new DataTransfer();for(const file of failedFiles)retryFiles.items.add(file);businessMediaFile.files=retryFiles.files;}
+    businessMediaStatus.textContent=failed.length?failed.join("; "):vendorText("processed","Media received. Processing safely.");
+    await loadBusinessMedia();
   }
   if (businessMediaUploadBtn) businessMediaUploadBtn.addEventListener("click", uploadBusinessMedia);
 
@@ -1050,6 +1113,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       const actions = document.createElement("div"); actions.className = "business-product-card-actions";
       const edit = document.createElement("button"); edit.type = "button"; edit.className = "demeos-secondary-button"; edit.textContent = "Edit";
       edit.addEventListener("click", function () {
+        const vendorEditor=byId("vendor-product-editor");if(vendorEditor)vendorEditor.open=true;
         productFields.id.value = product.productId; productFields.name.value = product.name; productFields.price.value = product.price || "";
         productFields.priceMode.value = product.priceMode || (product.price ? "fixed" : "contact"); updateProductPriceControls();
         productFields.description.value = product.description; productFields.image.value = product.imageUrl || ""; updateProductImagePreview();
@@ -1068,6 +1132,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       });
       const remove = document.createElement("button"); remove.type = "button"; remove.className = "demeos-secondary-button"; remove.textContent = "Remove";
       remove.addEventListener("click", function () {
+        if(globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model==="selling"&&!window.confirm("Remove "+product.name+" from the saved catalogue?"))return;
         const removingEditedProduct = productFields.id.value === product.productId;
         draftProducts = draftProducts.filter(function (entry) { return entry.productId !== product.productId; });
         globalThis.window?.DEMEOSBusinessOnboarding?.markDirty();
@@ -1076,10 +1141,28 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       });
       const prepare=document.createElement("button");prepare.type="button";prepare.className="text-button";prepare.textContent="Prepare marketing";prepare.dataset.ownerMarketing="";
       prepare.addEventListener("click",()=>{if(globalThis.window?.DEMEOSOwnerWorkspace && !window.DEMEOSOwnerWorkspace.canOpen(window.DEMEOSOwnerWorkspace.getState(document),"create"))return;showWorkspaceView("create");renderDraftSources();byId("draft-product").value=product.productId;renderDraftSources();renderOfferReview();});
-      actions.append(edit, remove, prepare); body.append(name, description, meta, visibility, actions); card.appendChild(body); productsList.appendChild(card);
+      const duplicate=document.createElement("button");duplicate.type="button";duplicate.className="text-button";duplicate.textContent=vendorText("duplicate","Duplicate");duplicate.dataset.ownerSelling="";
+      duplicate.addEventListener("click",()=>{
+        if(globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model!=="selling")return;
+        if(draftProducts.length>=100){alert("Up to 100 products are supported.");return;}
+        const copy=JSON.parse(JSON.stringify(product));copy.productId="product-"+crypto.randomUUID();copy.name=product.name+" ("+vendorText("duplicate","Duplicate")+")";copy.customerVisible=false;copy.imageUrl="";copy.imageSource="";delete copy.mediaGallery;
+        // A duplicate starts without the original product's exact media or stock.
+        if(copy.presentation?.variants)copy.presentation.variants=copy.presentation.variants.map(v=>({...v,variantId:"variant-"+crypto.randomUUID()}));
+        draftProducts.push(copy);window.DEMEOSBusinessOnboarding?.markDirty();renderBusinessProducts();
+      });
+      actions.append(edit, remove, prepare, duplicate); body.append(name, description, meta, visibility, actions); card.appendChild(body); productsList.appendChild(card);
     });
     renderOfferReview();
   }
+  if(typeof window!=="undefined")window.DEMEOSVendorProducts={
+    read:()=>({businessId:state.activeBusinessId,products:JSON.parse(JSON.stringify(draftProducts)),baseline:JSON.parse(JSON.stringify(baselineProducts))}),
+    saved:(products,informationStatus)=>{
+      baselineProducts=JSON.parse(JSON.stringify(products));draftProducts=JSON.parse(JSON.stringify(products));
+      const profile=activeProfile();if(profile){profile.products=JSON.parse(JSON.stringify(products));if(informationStatus)profile.informationStatus=informationStatus;}
+      localStorage.setItem("demeosBusinessProfiles",JSON.stringify(state.profiles));
+      renderBusinessProducts();renderBusinessMedia();
+    }
+  };
   function resetProductForm() {
     productEditor?.load(null);
     productFields.id.value = ""; productFields.name.value = ""; productFields.price.value = "";
@@ -1136,6 +1219,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   function fillProfile(profile) {
     if (typeof renderDraftSources === "function") renderDraftSources();
     draftProducts = profile && Array.isArray(profile.products) ? profile.products.map(function (product) { return { ...product }; }) : [];
+    baselineProducts=JSON.parse(JSON.stringify(draftProducts));
     renderBusinessProducts();
     resetProductForm();
     Object.keys(fields).forEach(function (key) { fields[key].value = (profile && profile[key]) || ""; });
@@ -1597,7 +1681,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     const mediaSelect = byId("draft-media");if (!mediaSelect) return;mediaSelect.textContent = "";addOption(mediaSelect,"No media attached", "");
     businessMediaAssets.filter(a => a.businessId === state.activeBusinessId && a.relatedEntityId === select.value && ["product","service"].includes(a.purpose) && a.state === "ready").forEach((a,index) => addOption(mediaSelect,a.originalFilename || (a.kind === "video" ? "Video " : "Image ") + (index+1),a.assetId));
     const uploadSelect = byId("business-media-product");
-    if (uploadSelect) {const previous = uploadSelect.value;uploadSelect.textContent="";addOption(uploadSelect,"Business marketing media","");products.forEach(p=>addOption(uploadSelect,p.name,p.productId));if(products.some(p=>p.productId===previous))uploadSelect.value=previous;}
+    if (uploadSelect) {const previous = uploadSelect.value;uploadSelect.textContent="";addOption(uploadSelect,globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model==="selling"?"Choose a saved product":"Business marketing media","");products.forEach(p=>addOption(uploadSelect,p.name,p.productId));if(products.some(p=>p.productId===previous))uploadSelect.value=previous;}
     renderOfferReview();
   }
   function renderOfferReview() {
