@@ -190,7 +190,7 @@
 .owner-dependency-list>div{display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px 16px;border-bottom:1px solid #40546e;padding:10px 0;}
 .owner-dependency-list dt{font-weight:600;color:#f4f6fa;}
 .owner-dependency-list dd{margin:0;color:#c3cfdf;font-size:14px;}
-@media(max-width:600px){.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-navigation{grid-template-columns:repeat(var(--owner-nav-columns,5),minmax(0,1fr))!important;}.owner-model-switch{margin-left:0;}.owner-operating-models>span{flex:1 1 100%;}}
+@media(max-width:600px){.owner-workspace-body:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-navigation{grid-template-columns:var(--owner-nav-template,1fr .9fr 1.4fr 1fr .8fr)!important;}.owner-model-switch{margin-left:0;}.owner-operating-models>span{flex:1 1 100%;}}
 
 .owner-workspace-body:not([data-owner-model=marketing]) [data-owner-marketing]{display:none!important;}
 #owner-options-guidance{display:none;}

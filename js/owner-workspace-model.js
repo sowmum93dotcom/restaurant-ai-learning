@@ -84,6 +84,7 @@
       nav.replaceChildren();
       for (const [id, label, href] of links) { const a = doc.createElement('a'); a.dataset.ownerSection = id; a.textContent = label; a.href = href; nav.appendChild(a); }
       nav.style.setProperty('--owner-nav-columns', String(links.length));
+      nav.style.setProperty('--owner-nav-template', links.length === 5 ? '1fr .9fr 1.4fr 1fr .8fr' : 'repeat(' + links.length + ',minmax(0,1fr))');
       root.updateOwnerNavigation?.(doc, root.location);
     }
     const header = doc.querySelector('.restaurant-name');

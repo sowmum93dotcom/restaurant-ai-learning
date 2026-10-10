@@ -277,7 +277,7 @@ async function hydrateKnownBusiness(storage, businessId, fetchImpl) {
   }
   try {
     const response = await fetchImpl(`/api/businesses/${encodeURIComponent(businessId)}`);
-    if (!response.ok) return { hydrated: false, reason: "server-error" };
+    if (!response.ok) return { hydrated: false, reason: response.status === 403 ? "forbidden" : "server-error" };
     const serverRecord = await response.json();
     const currentProfiles = parseStoredJson(storage, "demeosBusinessProfiles", []);
     const currentCampaigns = parseStoredJson(storage, "demeosCampaignHistory", []);
@@ -802,13 +802,16 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     resultsArea.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
+  let hydrationGeneration = 0;
   async function hydrateActiveBusiness() {
+    const generation = ++hydrationGeneration;
     const requestedBusinessId = state.activeBusinessId;
     if (!requestedBusinessId || typeof window === "undefined" || typeof fetch !== "function") return;
     const result = await hydrateKnownBusiness(localStorage, requestedBusinessId, fetch);
+    if (generation !== hydrationGeneration || addingBusiness) return;
     if (!result.hydrated || state.activeBusinessId !== requestedBusinessId) {
       if (state.activeBusinessId === requestedBusinessId) { renderRecommendsUnderstanding(null, requestedBusinessId);
-        globalThis.window?.DEMEOSOwnerWorkspace?.apply(document, null, requestedBusinessId, "unavailable");
+        globalThis.window?.DEMEOSOwnerWorkspace?.apply(document, null, requestedBusinessId, result.reason === "forbidden" ? "forbidden" : "unavailable");
       }
       return;
     }
@@ -1175,11 +1178,14 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     if (!serverAuthorizationRequired) return;
     try {
       const response = await fetch("/api/businesses", { credentials: "same-origin" });
-      const payload = response.ok ? await response.json() : { businesses: [] };
+      if (!response.ok) throw Error("Business list unavailable");
+      const payload = await response.json();
+      if (!Array.isArray(payload.businesses)) throw Error("Business list invalid");
       state = applyAuthorizedBusinessProfiles(cachedBusinessState.profiles, payload.businesses,
         localStorage.getItem("demeosActiveBusinessId"));
     } catch (_error) {
-      state = { profiles: [], activeBusinessId: null };
+      globalThis.window?.DEMEOSOwnerWorkspace?.apply(document, null, state.activeBusinessId, "unavailable");
+      return;
     }
     localStorage.setItem("demeosBusinessProfiles", JSON.stringify(state.profiles));
     if (state.activeBusinessId) localStorage.setItem("demeosActiveBusinessId", state.activeBusinessId);
@@ -1366,6 +1372,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   }
   function switchBusiness(businessId) {
     if (!state.profiles.some(function (profile) { return profile.businessId === businessId; })) return;
+    ++hydrationGeneration;
     state.activeBusinessId = businessId; addingBusiness = false;
     globalThis.window?.DEMEOSOwnerWorkspace?.apply(document, null, businessId, "loading");
     localStorage.setItem("demeosActiveBusinessId", businessId);
@@ -1403,6 +1410,8 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   else hydrateActiveBusiness();
   businessSelector.addEventListener("change", function () { switchBusiness(businessSelector.value); });
   addBusinessBtn.addEventListener("click", function () {
+    ++hydrationGeneration;
+    state.activeBusinessId = null; localStorage.removeItem("demeosActiveBusinessId");
     globalThis.window?.DEMEOSOwnerWorkspace?.apply(document, null, null, "setup");
     addingBusiness = true; customerParticipationResults = []; selectedRecommendationDecision = null; businessSelector.value = ""; fillProfile(null); clearRecommendations(); clearBusinessSituation(); clearCampaignWorkspace(); renderActiveMarketingWork(); renderCustomerParticipationResults(); renderRecommendationDecisionResults(); renderRecommendsUnderstanding(null, null);
   });

@@ -57,8 +57,9 @@ const server=http.createServer(async(req,res)=>{try{
    assert.equal(await page.locator('.owner-overview-summary .demeos-primary-button').count(),1);
    assert.equal(await page.locator('h1').count(),1);assert.equal(await page.locator('#owner-overview-heading').innerText(),'Overview');
    assert.match(await page.locator('#workspace-business-identity').innerText(),/Private preparation. Business approval is not recorded/);
+   await page.screenshot({path:'/tmp/demeos-owner-after-first-screen-'+viewport.width+'.png'});
    for(const link of await page.locator('.owner-workspace-navigation a').all()){
-    const box=await link.boundingBox();assert.ok(box.height>=44&&box.height<=60,'Navigation has compact accessible touch targets');
+    const box=await link.boundingBox();assert.ok(box.height>=44&&box.height<=60,'Navigation has compact accessible touch targets: '+JSON.stringify({box,label:await link.innerText()}));
     await link.focus();const focused=await link.boundingBox();assert.ok(focused.x>=0&&focused.x+focused.width<=viewport.width,'Keyboard focus reveals each navigation destination: '+JSON.stringify({focused,viewport,label:await link.innerText()}));
    }
    assert.equal(await page.locator('footer .owner-public-destination').getAttribute('href'),'customer.html');
