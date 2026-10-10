@@ -23,12 +23,15 @@ function getOwnerNavigationSection(locationObject, workspaceView) {
     ? locationObject.hash.slice(1) : "");
   if (view === "business-profile") return "business-profile";
   if (view === "products") return "products";
+  if (view === "product-options") return "product-options";
   return "marketing";
 }
 
 function updateOwnerNavigation(documentObject, locationObject, workspaceView) {
-  const activeSection = getOwnerNavigationSection(locationObject, workspaceView);
-  documentObject.querySelectorAll(".owner-workspace-navigation [data-owner-section]").forEach(function (link) {
+  let activeSection = getOwnerNavigationSection(locationObject, workspaceView);
+  const links = documentObject.querySelectorAll(".owner-workspace-navigation [data-owner-section]");
+  if (activeSection === "product-options" && !Array.from(links).some(link => link.getAttribute("data-owner-section") === "product-options")) activeSection = "products";
+  links.forEach(function (link) {
     const active = link.getAttribute("data-owner-section") === activeSection;
     link.classList.toggle("is-active", active);
     if (active) link.setAttribute("aria-current", "page");
@@ -280,7 +283,7 @@ async function loadOwnerNextAction(documentObject, storage, fetchFunction) {
     const response = await fetchFunction(`/api/businesses/${encodeURIComponent(activeBusinessId)}`, {
       method: "GET", credentials: "same-origin"
     });
-    if (!response.ok) throw new Error("Business record unavailable");
+    if (!response.ok) { const error = new Error("Business record unavailable"); error.status = response.status; throw error; }
     const record = await response.json();
     // Discard responses for a business that is no longer selected.
     if (ownerOverviewLoads.get(documentObject) !== generation || storage.getItem("demeosActiveBusinessId") !== activeBusinessId) return unavailableOwnerNextAction;
@@ -290,19 +293,30 @@ async function loadOwnerNextAction(documentObject, storage, fetchFunction) {
     if (record.businessProfile?.businessId === activeBusinessId) {
       const serverStorage = {getItem(key) {return key === "demeosBusinessProfiles" ? JSON.stringify([record.businessProfile]) : key === "demeosActiveBusinessId" ? activeBusinessId : key === "demeosCampaignHistory" ? JSON.stringify(record.campaigns || []) : null;}};
       renderOwnerWorkspace(documentObject, serverStorage, record.workspaceReadiness?.onboarding?.status);
-      renderOwnerModels(documentObject, record.workspaceReadiness, activeBusinessId);
+      renderOwnerModels(documentObject, record.workspaceReadiness, activeBusinessId, record);
     }
-    renderOwnerNextAction(documentObject, nextAction);
-    return nextAction;
+    const model = typeof window !== "undefined" ? window.DEMEOSOwnerWorkspace?.getState(documentObject) : null;
+    const action = model?.model === "selling" ? {title: "Prepare your catalogue", explanation: "Review prices, product options and availability.", action: "Open catalogue", destination: "marketing.html#products"}
+      : model && model.status !== "ready" ? {title: window.DEMEOSOwnerWorkspace.messages[model.status][0], explanation: window.DEMEOSOwnerWorkspace.messages[model.status][1], action: "Review My Business", destination: "marketing.html#business-profile"} : nextAction;
+    if (model?.model === "selling") {
+      const work = documentObject.getElementById("workspace-current-work");
+      if (work) { work.replaceChildren(); const products = Array.isArray(record.businessProfile.products) ? record.businessProfile.products : [];
+        const heading = documentObject.getElementById("current-work-heading"); if (heading) heading.textContent = "Your catalogue";
+        if (!products.length) work.textContent = "No saved products yet.";
+        for (const product of products.slice(0,3)) { const row=documentObject.createElement("article"), title=documentObject.createElement("strong"), detail=documentObject.createElement("span"); title.textContent=product.name; detail.textContent=[product.price,product.availability].filter(Boolean).join(" · ");row.append(title,detail);work.appendChild(row); }
+      }
+    } else { const heading=documentObject.getElementById("current-work-heading"); if(heading)heading.textContent="Current work"; }
+    renderOwnerNextAction(documentObject, action);
+    return action;
   } catch (_error) {
     if (ownerOverviewLoads.get(documentObject) !== generation || storage.getItem("demeosActiveBusinessId") !== activeBusinessId) return unavailableOwnerNextAction;
     const identity = documentObject.getElementById("workspace-business-identity");
     const work = documentObject.getElementById("workspace-current-work");
     if (identity) identity.textContent = "Business information could not be confirmed.";
     if (work) work.textContent = "Current activity is unavailable. Open Marketing to retry.";
-    renderOwnerModels(documentObject, null, activeBusinessId);
+    renderOwnerModels(documentObject, null, activeBusinessId, null, _error.status === 403 ? "forbidden" : "unavailable");
     renderOwnerDashboardSummary(documentObject, null, activeBusinessId);
-    renderOwnerNextAction(documentObject, unavailableOwnerNextAction);
+    renderOwnerNextAction(documentObject, {title: _error.status === 403 ? "Business access unavailable" : "Workspace could not be loaded", explanation: "Try again or review your business details.", action: "Review My Business", destination: "marketing.html#business-profile"});
     return unavailableOwnerNextAction;
   }
 }
@@ -336,33 +350,9 @@ function getOwnerModelViews(readiness, businessId) {
   return getOwnerModelPresentations(readiness, businessId).filter(model => model.available);
 }
 
-function renderOwnerModels(documentObject, readiness, businessId) {
-  const container = documentObject.getElementById("owner-operating-models");
-  if (!container) return;
-  container.replaceChildren();
-  const introduction = documentObject.createElement("div"); introduction.className = "owner-model-introduction";
-  const heading = documentObject.createElement("h3"); heading.textContent = "Marketing and selling";
-  const explanation = documentObject.createElement("p");
-  explanation.textContent = "Preparation does not publish content or activate selling or payments.";
-  introduction.append(heading, explanation); container.appendChild(introduction);
-  getOwnerModelPresentations(readiness, businessId).forEach(view => {
-    const card = documentObject.createElement("article"); card.className = "owner-model-card";
-    card.dataset.ownerModel = view.id; card.dataset.preparationAvailable = String(view.available);
-    const title = documentObject.createElement("h4"); title.id = "owner-model-" + view.id; title.textContent = view.title;
-    card.setAttribute("aria-labelledby", title.id);
-    const status = documentObject.createElement("strong"); status.textContent = view.status;
-    const description = documentObject.createElement("p"); description.textContent = view.description;
-    card.append(title, status, description);
-    if (view.available) {
-      const action = documentObject.createElement("a"); action.className = "demeos-secondary-button owner-card-action";
-      action.textContent = view.action; action.href = view.destination; card.appendChild(action);
-    } else {
-      const next = documentObject.createElement("p"); next.className = "owner-model-next-step";
-      next.textContent = "Review your business details in My Business. Preparation will be available when DEMEOS confirms your permissions.";
-      card.appendChild(next);
-    }
-    container.appendChild(card);
-  });
+function renderOwnerModels(documentObject, readiness, businessId, record, failure) {
+  if (typeof window !== "undefined" && window.DEMEOSOwnerWorkspace)
+    return window.DEMEOSOwnerWorkspace.apply(documentObject, record || {businessProfile:{businessId}, workspaceReadiness:readiness}, businessId, failure);
 }
 
 function renderOwnerDashboardSummary(documentObject, record, businessId) {
@@ -392,11 +382,12 @@ function bindOwnerClerkSession(clerk, documentObject, storage, elements, fetchFu
     if (auth && auth.user) {
       showOwnerAuthenticationState(elements, "signed-in");
       const authenticatedUserId = auth.user.id;
-      syncAuthorizedOwnerBusinessContext(storage, fetchFunction).then(function () {
+      syncAuthorizedOwnerBusinessContext(storage, fetchFunction).then(function (context) {
         // An earlier request must not render after sign-out or an account switch.
         if (!clerk.user || clerk.user.id !== authenticatedUserId) return;
         if (typeof documentObject.dispatchEvent === "function") documentObject.dispatchEvent(new CustomEvent("owner-business-ready"));
-        if (typeof fetchFunction === "function") loadOwnerNextAction(documentObject, storage, fetchFunction);
+        if (context.failed) renderOwnerModels(documentObject, null, storage.getItem("demeosActiveBusinessId"), null, "unavailable");
+        else if (typeof fetchFunction === "function") loadOwnerNextAction(documentObject, storage, fetchFunction);
       });
       return;
     }
@@ -516,7 +507,7 @@ async function syncAuthorizedOwnerBusinessContext(storage, fetchFunction) {
       typeof fetchFunction !== "function") return { profiles: [], activeBusinessId: null };
   try {
     const response = await fetchFunction("/api/businesses", { credentials: "same-origin" });
-    if (!response.ok) return { profiles: [], activeBusinessId: null };
+    if (!response.ok) return { profiles: [], activeBusinessId: null, failed: true };
     const payload = await response.json();
     const cached = parseWorkspaceValue(storage, "demeosBusinessProfiles", []);
     const merged = mergeServerAuthorizedProfiles(
@@ -530,7 +521,7 @@ async function syncAuthorizedOwnerBusinessContext(storage, fetchFunction) {
     else if (typeof storage.removeItem === "function") storage.removeItem("demeosActiveBusinessId");
     return merged;
   } catch (_error) {
-    return { profiles: [], activeBusinessId: null };
+    return { profiles: [], activeBusinessId: null, failed: true };
   }
 }
 

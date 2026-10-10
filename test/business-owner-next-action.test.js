@@ -125,7 +125,7 @@ test("failed protected load stays unavailable and never infers from browser cach
     action: "Open Marketing",
     destination: "marketing.html"
   });
-  assert.equal(documentObject.container.children[0].textContent, "Next action unavailable");
+  assert.equal(documentObject.container.children[0].textContent, "Workspace could not be loaded");
 });
 
 test("owner security wrapper forwards fetch to the signed-in Next Action loader", function () {

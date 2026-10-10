@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="css/demeos-business-premium.css" />
   <link rel="stylesheet" href="css/business-workspace-completion.css" />
 </head>
-<body class="owner-workspace-body business-results-body">
+<body data-owner-access="loading" data-owner-model="none" class="owner-workspace-body business-results-body">
   <header class="workspace-header owner-workspace-header">
     <a class="demeos-brand" href="business-workspace.html" aria-label="DEMEOS Business Owner Workspace home">
       <img src="images/demeos-logo.png" alt="DEMEOS logo" class="demeos-logo" />
@@ -55,6 +55,8 @@
     </aside>
 
     <main class="owner-workspace-main business-results-main">
+      <section id="owner-operating-models" class="owner-operating-models" aria-label="Business workflow" aria-live="polite"></section>
+      <section id="owner-results-unavailable" hidden><h2>Results are not available</h2><p>Verified selling results are not connected yet.</p><a class="demeos-primary-button" href="business-workspace.html">Return to Overview</a></section>
       <section aria-labelledby="recorded-activity-heading"><h2 id="recorded-activity-heading">Results</h2><p>Available evidence is shown separately. Unavailable measurements are not zero results.</p><div id="owner-results-metrics" class="owner-metrics" aria-live="polite"><p>Waiting for your business results…</p></div></section>
       <section class="business-results-intro" aria-labelledby="business-results-heading">
         <p class="workspace-eyebrow">Recorded business information</p>
@@ -108,6 +110,7 @@
     </main>
   </div>
   <footer><a class="owner-public-destination" href="customer.html">Customer Experience</a><p>&copy; 2026 DEMEOS — One System. Real Value. Shared Future.</p></footer>
+  <script src="js/owner-workspace-model.js"></script>
   <script src="js/business-workspace.js"></script>
   <script src="js/demeos-understanding.js"></script>
   <script src="js/business-results.js"></script>
