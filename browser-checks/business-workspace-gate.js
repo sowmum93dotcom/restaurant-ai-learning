@@ -137,6 +137,11 @@ const server=http.createServer(async(req,res)=>{try{
       assert.equal(await page.evaluate(()=>localStorage.getItem('demeosActiveBusinessId')),'engineering-a');
       await page.locator('.owner-model-switch [data-owner-model=marketing]').click();await page.locator('body[data-owner-model=marketing]').waitFor();
       assert.equal(await page.locator('[data-owner-section="marketing"]').count(),1);
+      await page.evaluate(()=>Object.defineProperty(window,'sessionStorage',{configurable:true,value:{getItem:()=> 'marketing',setItem(){throw Error('Storage full');}}}));
+      await page.locator('.owner-model-switch [data-owner-model=selling]').click();await page.locator('body[data-owner-model=selling]').waitFor();
+      await page.evaluate(()=>window.loadOwnerNextAction(document,localStorage,fetch.bind(window)));
+      assert.equal(await page.locator('body').getAttribute('data-owner-model'),'selling');
+      await page.locator('.owner-model-switch [data-owner-model=marketing]').click();await page.locator('body[data-owner-model=marketing]').waitFor();
       await page.evaluate(()=>Object.defineProperty(window,'sessionStorage',{configurable:true,get(){throw Error('Storage blocked');}}));
       await page.locator('.owner-model-switch [data-owner-model=selling]').click();await page.locator('body[data-owner-model=selling]').waitFor();
       await page.locator('.owner-model-switch [data-owner-model=marketing]').click();await page.locator('body[data-owner-model=marketing]').waitFor();

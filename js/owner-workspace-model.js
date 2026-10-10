@@ -35,7 +35,7 @@
   function apply(doc, record, businessId, failure, requestedModel) {
     const previous = states.get(doc);
     let preference = previous?.businessId === businessId ? previous.state.model : null;
-    try { preference = root.sessionStorage?.getItem('demeosOwnerView:' + businessId) || preference; } catch (_) {}
+    try { if (!preference) preference = root.sessionStorage?.getItem('demeosOwnerView:' + businessId); } catch (_) {}
     const state = resolve(record, businessId, requestedModel || preference, failure);
     states.set(doc, {state, record, businessId});
     doc.body.dataset.ownerModel = state.model || 'none';
