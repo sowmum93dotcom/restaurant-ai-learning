@@ -11,7 +11,7 @@ module.exports=async function(req,res){
  const businessId=typeof req.query.businessId==='string'?req.query.businessId.trim():'';
  if(!businessId)return res.status(400).json({error:'Select a business.'});
  try{
-  const repository=getRepository(),access=await authorizeBusinessOwnerRequest({req,businessId,repository,action:req.method==='GET'?DEMEOS_ACTIONS.VIEW_OWN_BUSINESS_RESULTS:DEMEOS_ACTIONS.MANAGE_BUSINESS_PROFILE});
+  const repository=getRepository(),access=await authorizeBusinessOwnerRequest({req,businessId,repository,application:'selling',action:req.method==='GET'?DEMEOS_ACTIONS.VIEW_OWN_BUSINESS_RESULTS:DEMEOS_ACTIONS.MANAGE_BUSINESS_PROFILE});
   if(!access.authenticated)return res.status(401).json({error:'Authentication required.'});
   if(!access.allowed)return res.status(403).json({error:'Business access unavailable.'});
   const record=await repository.getKnownBusiness(businessId);

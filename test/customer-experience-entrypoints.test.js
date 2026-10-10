@@ -22,10 +22,10 @@ test("every Business Owner page exposes one secondary public Customer Experience
     const links = Array.from(navigation.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/g));
     const customerLinks = Array.from(read(file).matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/g)).filter((link) => /Customer Experience/.test(link[2]));
     assert.doesNotMatch(navigation, /Customer Experience/, "Public browsing is separate from the five owner areas");
-    assert.match(read(file), /<footer><a class="owner-public-destination" href="customer\.html">Customer Experience<\/a>/);
+    assert.match(read(file), /<footer><a class="owner-public-destination" href="\/customer\.html">Customer Experience<\/a>/);
     assert.equal(customerLinks.length, 1, `${file} should contain one Customer Experience link`);
     assert.match(customerLinks[0][1], /class="owner-public-destination"/);
-    assert.match(customerLinks[0][1], /href="customer\.html"/);
+    assert.match(customerLinks[0][1], /href="\/customer\.html"/);
     assert.doesNotMatch(customerLinks[0][1], /data-owner-section|aria-current|\?/);
     assert.doesNotMatch(customerLinks[0][0], /businessId|ownerId|clerk|campaignId|identity=|localStorage/i);
 
@@ -37,7 +37,7 @@ test("every Business Owner page exposes one secondary public Customer Experience
 
 test("Business Owner Overview keeps one privacy-safe public entry without duplicate dashboard cards", function () {
   const html = read("business-workspace.html");
-  assert.equal((html.match(/href="customer\.html"/g) || []).length, 1);
+  assert.equal((html.match(/href="\/customer\.html"/g) || []).length, 1);
   assert.doesNotMatch(html, /owner-customer-experience-card|owner-explore-grid|customer\.html\?/);
   assert.doesNotMatch(ownerNavigation(html), /businessId|ownerId|campaignId/);
 });

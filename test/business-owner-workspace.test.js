@@ -207,14 +207,16 @@ test("Clerk session changes alone control workspace visibility and sign-out", as
 
   bindOwnerClerkSession(clerk, documentObject, local, elements);
   assert.equal(elements.signedIn.hidden, true, "browser state cannot authenticate");
-  clerk.user = { publicMetadata: { businessId: "metadata-business" } };
+  clerk.user = { id:"verified-owner", publicMetadata: { businessId: "metadata-business" } };
   clerk.listener({ user: clerk.user });
-  assert.equal(elements.signedIn.hidden, false, "a Clerk user reveals the workspace");
+  assert.equal(elements.signedIn.hidden, true, "private workspace waits for owned context");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(elements.signedIn.hidden, false, "verified session and completed context reveal the shell");
   await elements.signOut.click();
   assert.equal(elements.signedIn.hidden, true, "sign-out immediately conceals the workspace");
 });
 
-test("restoring Clerk session keeps workspace private without showing another sign-in", function () {
+test("restoring Clerk session keeps workspace private without showing another sign-in", async function () {
   const elements = authenticationElements();
   elements.signIn = { addEventListener: function () {} };
   elements.signOut = { addEventListener: function () {} };
@@ -230,6 +232,7 @@ test("restoring Clerk session keeps workspace private without showing another si
   assert.equal(elements.signedIn.hidden, true);
   clerk.user = { id: "restored-owner" };
   clerk.listener({ user: clerk.user });
+  await new Promise(resolve => setImmediate(resolve));
   assert.equal(elements.signedIn.hidden, false);
   clerk.session = null;
   clerk.user = null;
@@ -242,7 +245,7 @@ test("owner sign-in uses configured Clerk dialog and retains callback handling",
   assert.match(html, /id="owner-sign-in"[^>]*>Sign in</);
   assert.match(script, /clerk\.openSignIn\(\)/);
   assert.match(script, /clerk\.handleRedirectCallback/);
-  assert.match(script, /signInFallbackRedirectUrl: "\/business-workspace\.html"/);
+  assert.match(script, /signInFallbackRedirectUrl: window\.location\.pathname \+ window\.location\.hash/);
 });
 
 test("Clerk browser SDK uses current v6 bundle with Clerk UI support", function () {

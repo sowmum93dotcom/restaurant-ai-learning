@@ -368,7 +368,7 @@ export default async function handler(req, res) {
 
   const repository = getRepository();
   const access = await authorizeBusinessOwnerRequest({ req, businessId: requestedBusinessId,
-    action: DEMEOS_ACTIONS.VIEW_OWN_BUSINESS_RESULTS, repository });
+    action: DEMEOS_ACTIONS.VIEW_OWN_BUSINESS_RESULTS, application: 'marketing', repository });
   if (!access.authenticated) return res.status(401).json({ error: "Authentication required." });
   if (!access.allowed) return res.status(403).json({ error: "Forbidden." });
 

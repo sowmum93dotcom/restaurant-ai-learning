@@ -22,7 +22,7 @@ test('browser and profile model choices cannot enable the existing server purcha
  const record={businessProfile:{businessId,sellerStatus:'verified',workspaceReadiness:{selling:{canSell:true}}}};
  const server=workspaceReadiness(record,businessId);
  const before=JSON.stringify(server); const views=getOwnerModelViews(server,businessId);
- assert.equal(views[1].destination,'marketing.html#products'); assert.equal(JSON.stringify(server),before);
+ assert.deepEqual(views,[]); assert.equal(JSON.stringify(server),before);
  assert.equal(server.selling.canSell,false);
 });
 test('a missing activity feed is unavailable, while a recorded empty feed is zero',()=>{

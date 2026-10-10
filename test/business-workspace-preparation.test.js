@@ -18,7 +18,7 @@ test('missing price and availability remain contact requests without inferred fa
 });
 test('owner profile choices cannot activate selling or infer a merchant permission',()=>{
  const readiness=workspaceReadiness({businessProfile:{...profile,selling:true,sellerStatus:'verified',workspaceReadiness:{selling:{canSell:true}}}},'owned');
- assert.equal(readiness.marketing.canPrepare,true);assert.equal(readiness.selling.canPrepare,true);assert.equal(readiness.selling.canSell,false);assert.equal(readiness.publication.draftsPublic,false);
+ assert.equal(readiness.marketing.canPrepare,false);assert.equal(readiness.selling.canPrepare,false);assert.equal(readiness.selling.canSell,false);assert.equal(readiness.publication.draftsPublic,false);
  assert.equal(workspaceReadiness({businessProfile:profile},'foreign'),null);
 });
 test('activity distinguishes unavailable product metrics and private stored interaction evidence',()=>{

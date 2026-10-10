@@ -38,7 +38,7 @@ test("Marketing uses the owner authentication presentation boundary", function (
   assert.match(html, /id="owner-authenticated-workspace"[^>]*hidden/);
   assert.match(html, /id="owner-sign-in"/);
   assert.match(html, /id="owner-sign-out"/);
-  assert.match(html, /<script src="js\/business-workspace\.js"><\/script>/);
+  assert.match(html, /<script src="\/js\/business-workspace\.js"><\/script>/);
 });
 
 test("Business Results shares the same owner shell, navigation and authentication boundary", function () {
@@ -49,7 +49,7 @@ test("Business Results shares the same owner shell, navigation and authenticatio
   assert.match(resultsHtml, /id="owner-auth-loading"/);
   assert.match(resultsHtml, /id="owner-auth-signed-out"[^>]*hidden/);
   assert.match(resultsHtml, /id="owner-authenticated-workspace"[^>]*hidden/);
-  assert.match(resultsHtml, /<script src="js\/business-workspace\.js"><\/script>/);
+  assert.match(resultsHtml, /<script src="\/js\/business-workspace\.js"><\/script>/);
 });
 
 test("Business Results preserves its functional result IDs", function () {
@@ -57,7 +57,7 @@ test("Business Results preserves its functional result IDs", function () {
   assert.match(resultsHtml, /id="business-results-status"/);
   assert.match(resultsHtml, /id="business-results-zero"/);
   assert.match(resultsHtml, /id="business-results-list"/);
-  assert.match(resultsHtml, /<script src="js\/business-results\.js"><\/script>/);
+  assert.match(resultsHtml, /<script src="\/js\/business-results\.js"><\/script>/);
 });
 
 test("owner surfaces expose no customer or admin controls", function () {

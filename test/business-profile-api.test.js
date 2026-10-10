@@ -80,7 +80,7 @@ async function invoke({
       knownBusinessReads.push(id);
       return knownBusiness && { ...knownBusiness, businessId: id };
     },
-    async saveBusiness(profile) { savedProfiles.push(profile); },
+    async saveOwnedBusinessProfile(identity, businessId, previous, profile) { savedProfiles.push(profile); return true; },
     async createBusinessForOwner(identity, profile) {
       createdBusinesses.push({ identity, profile });
       return createAllowed ? { trustedIdentityId: identity, businessId: profile.businessId } : null;
@@ -88,7 +88,7 @@ async function invoke({
   };
   authorization.authorizeBusinessOwnerRequest = async function (input) {
     authorizationCalls.push(input);
-    return { authenticated, allowed };
+    return { authenticated, allowed, actorContext:{trustedIdentityId:"owner-a"} };
   };
   authentication.resolveTrustedIdentityFromRequest = async function (request) {
     identityCalls.push(request);

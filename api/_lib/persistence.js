@@ -753,7 +753,7 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
       const result=await database.query(`WITH owned AS (
         SELECT b.business_id FROM demeos_businesses b
         WHERE b.business_id=$1 AND b.profile=$2::jsonb
-          AND b.profile->>'preparationModel' IN ('selling','both')
+          AND b.profile->'applicationAccess'->'selling' = 'true'::jsonb
           AND EXISTS(SELECT 1 FROM demeos_business_owners o WHERE o.business_id=b.business_id AND o.trusted_identity_id=$3)
         FOR UPDATE
       ), saved AS (
@@ -775,12 +775,20 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
     async saveSellingProducts(identity,businessId,previousProfile,profile) {
       await database.ensureSchema();
       const result=await database.query(`UPDATE demeos_businesses b SET profile=$4::jsonb,updated_at=NOW()
-        WHERE b.business_id=$1 AND b.profile=$2::jsonb AND b.profile->>'preparationModel' IN ('selling','both')
+        WHERE b.business_id=$1 AND b.profile=$2::jsonb AND b.profile->'applicationAccess'->'selling' = 'true'::jsonb
           AND EXISTS(SELECT 1 FROM demeos_business_owners o WHERE o.business_id=b.business_id AND o.trusted_identity_id=$3)
         RETURNING profile`,[businessId,JSON.stringify(previousProfile),identity,JSON.stringify(profile)]);
       return result.rows[0]?.profile||null;
     },
 
+    async saveOwnedBusinessProfile(identity, businessId, previousProfile, profile) {
+      await database.ensureSchema();
+      const result = await database.query(`UPDATE demeos_businesses b SET profile=$4::jsonb,updated_at=NOW()
+        WHERE b.business_id=$1 AND b.profile=$2::jsonb
+          AND EXISTS(SELECT 1 FROM demeos_business_owners o WHERE o.business_id=b.business_id AND o.trusted_identity_id=$3)
+        RETURNING business_id`, [businessId, JSON.stringify(previousProfile), identity, JSON.stringify(profile)]);
+      return result.rows.length === 1;
+    },
     async saveBusiness(profile) {
       await database.ensureSchema();
       await database.query(

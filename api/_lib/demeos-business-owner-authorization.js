@@ -39,7 +39,8 @@ async function authorizeBusinessOwnerRequest({
   businessId,
   action,
   repository,
-  authenticationOptions
+  authenticationOptions,
+  application
 } = {}) {
   if (!isNonEmptyString(businessId) || !isNonEmptyString(action)) {
     return deniedResult(action, businessId);
@@ -64,8 +65,16 @@ async function authorizeBusinessOwnerRequest({
     }
 
     const authorization = authorizeDemeosAction({ actorContext, action, businessId });
+    const marketingActions = ['create-marketing', 'approve-own-marketing', 'record-campaign-outcome', 'record-recommendation-decision'];
+    const requiredApplication = application || (marketingActions.includes(action) ? 'marketing' : null);
+    let applicationAllowed = true;
+    if (authorization.allowed && (requiredApplication || action === 'manage-business-media')) {
+      const record = await repository.getKnownBusiness(businessId);
+      const grants = require('./business-application-access').applicationAccess(record, businessId);
+      applicationAllowed = requiredApplication ? ['marketing', 'selling'].includes(requiredApplication) && grants[requiredApplication] : grants.marketing || grants.selling;
+    }
     return Object.freeze({
-      allowed: authorization.allowed === true,
+      allowed: authorization.allowed === true && applicationAllowed === true,
       authenticated: true,
       actorContext,
       authorization

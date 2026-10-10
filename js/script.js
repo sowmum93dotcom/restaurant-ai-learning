@@ -230,7 +230,7 @@ function enforceBusinessCampaignLimit(campaigns, businessId, maximumCampaigns, p
   return retained;
 }
 
-function mergeKnownBusinessPersistence(profiles, campaigns, businessId, serverRecord, preserveLocalProfile, decisions) {
+function mergeKnownBusinessPersistence(profiles, campaigns, businessId, serverRecord, preserveLocalProfile, decisions, application) {
   const serverProfile = serverRecord && serverRecord.businessProfile;
   if (!businessId || !serverProfile || serverProfile.businessId !== businessId) {
     throw new Error("The restored business did not match the requested business.");
@@ -242,12 +242,14 @@ function mergeKnownBusinessPersistence(profiles, campaigns, businessId, serverRe
   if (!preserveLocalProfile) {
     nextProfiles[profileIndex] = { ...profiles[profileIndex], ...serverProfile, businessId };
   }
-  const serverCampaigns = Array.isArray(serverRecord.campaigns) ? serverRecord.campaigns : [];
+  const serverCampaigns = application !== 'selling' && Array.isArray(serverRecord.campaigns) ? serverRecord.campaigns : [];
   const validServerCampaigns = serverCampaigns.filter(function (campaign) {
     return campaign && typeof campaign.id === "string" && campaign.businessId === businessId;
   });
   const serverById = new Map(validServerCampaigns.map(function (campaign) { return [campaign.id, campaign]; }));
-  const mergedCampaigns = campaigns.map(function (campaign) {
+  const mergedCampaigns = campaigns.filter(function (campaign) {
+    return application !== 'selling' || campaign?.businessId !== businessId;
+  }).map(function (campaign) {
     const restored = campaign && serverById.get(campaign.id);
     if (!restored) return campaign;
     serverById.delete(campaign.id);
@@ -276,7 +278,8 @@ async function hydrateKnownBusiness(storage, businessId, fetchImpl, acceptRespon
     return { hydrated: false, reason: "unknown-business" };
   }
   try {
-    const response = await fetchImpl(`/api/businesses/${encodeURIComponent(businessId)}`);
+    const application = typeof window !== "undefined" ? window.DEMEOSOwnerWorkspace?.routeApplication() : null;
+    const response = await fetchImpl(`/api/businesses/${encodeURIComponent(businessId)}${application ? "?application=" + application : ""}`);
     if (!response.ok) return { hydrated: false, reason: response.status === 403 ? "forbidden" : "server-error" };
     const serverRecord = await response.json();
     if (acceptResponse && !acceptResponse()) return {hydrated:false,reason:"stale-response"};
@@ -291,7 +294,7 @@ async function hydrateKnownBusiness(storage, businessId, fetchImpl, acceptRespon
       Array.isArray(currentCampaigns) ? currentCampaigns : [],
       businessId,
       serverRecord,
-      readPendingBusinessProfileSyncIds(storage).includes(businessId), currentDecisions
+      readPendingBusinessProfileSyncIds(storage).includes(businessId), currentDecisions, application
     );
     storage.setItem("demeosBusinessProfiles", JSON.stringify(merged.profiles));
     storage.setItem("demeosCampaignHistory", JSON.stringify(merged.campaigns));
@@ -525,7 +528,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     const ownerModel = globalThis.window?.DEMEOSOwnerWorkspace;
     if (ownerModel?.getState(document).status === 'loading') return;
     if (ownerModel && !ownerModel.canOpen(ownerModel.getState(document), viewId)) viewId = "business-profile";
-    const panelView = viewId === "product-options" ? "products" : viewId;
+    const panelView = ["product-options", "media"].includes(viewId) ? "products" : viewId;
     if (document.body?.dataset) document.body.dataset.ownerView = viewId;
     const productForm = document.querySelector?.(".business-product-form");
     if (productForm) productForm.hidden = viewId === "product-options" && !byId("business-product-id")?.value;
@@ -544,7 +547,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     });
     if (window.location.hash !== "#" + viewId && window.history && typeof window.history.replaceState === "function") window.history.replaceState(null, "", "#" + viewId);
     const area = byId("owner-area-heading");
-    const section = viewId === "orders" ? vendorText("orders", "Orders") : viewId === "inventory" ? "Stock" : viewId === "product-options" ? "Options and Availability" : viewId === "products" ? (globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model === "selling" ? "Product Catalogue" : "Products and Services") : viewId === "business-profile" ? "My Business" : "Marketing";
+    const section = viewId === "media" ? vendorText("applicationMedia", "Images and Videos") : viewId === "orders" ? vendorText("orders", "Orders") : viewId === "inventory" ? "Stock" : viewId === "product-options" ? "Options and Availability" : viewId === "products" ? (globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model === "selling" ? "Product Catalogue" : "Products and Services") : viewId === "business-profile" ? "My Business" : "Marketing";
     if (area) area.textContent = section;
     const productsHeading = byId("products-heading");
     if (productsHeading && panelView === "products") productsHeading.textContent = section;
@@ -584,14 +587,14 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       showWorkspaceView(view);
     });
     const requestedView = window.location.hash.slice(1);
-    if ((requestedView === "product-options" || (document.getElementById(requestedView) &&
+    if ((["product-options", "media"].includes(requestedView) || (document.getElementById(requestedView) &&
         document.getElementById(requestedView).hasAttribute("data-workspace-panel")))) {
       showWorkspaceView(requestedView);
     }
     window.addEventListener("hashchange", function () {
       const hashView = window.location.hash.slice(1);
       const panel = document.getElementById(hashView);
-      if (hashView === "product-options" || (panel && panel.hasAttribute("data-workspace-panel"))) showWorkspaceView(hashView);
+      if (["product-options", "media"].includes(hashView) || (panel && panel.hasAttribute("data-workspace-panel"))) showWorkspaceView(hashView);
     });
   }
 
@@ -980,7 +983,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     if (!state.activeBusinessId || !businessMediaList) return;
     const requestedBusinessId = state.activeBusinessId;
     try {
-      const response = await fetch(`/api/businesses/${encodeURIComponent(requestedBusinessId)}/media`, { credentials: "same-origin" });
+      const response = await fetch(`/api/businesses/${encodeURIComponent(requestedBusinessId)}/media${window.DEMEOSOwnerWorkspace?.routeApplication() ? "?application=" + window.DEMEOSOwnerWorkspace.routeApplication() : ""}`, { credentials: "same-origin" });
       const payload = response.ok ? await response.json() : { assets: [] };
       if (state.activeBusinessId !== requestedBusinessId) return;
       businessMediaAssets = Array.isArray(payload.assets) ? payload.assets : [];

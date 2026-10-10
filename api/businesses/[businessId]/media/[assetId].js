@@ -17,6 +17,8 @@ module.exports=async function handler(req,res){
   if(!access.allowed)return res.status(403).json({error:"Forbidden."});
   const current=await repository.getBusinessMediaAsset(businessId,assetId);
   if(!current)return res.status(404).json({error:"Media asset not found."});
+  if(current.purpose==='marketing'&&!require('../../../_lib/business-application-access').applicationAccess(await repository.getKnownBusiness(businessId),businessId).marketing)
+    return res.status(403).json({error:'Marketing application access required.'});
   if(req.body&&req.body.action==="complete-upload"){
    const storage=getConfiguredMediaStorageAdapter();
    if(!storage)return res.status(503).json({error:"Media storage is not configured."});

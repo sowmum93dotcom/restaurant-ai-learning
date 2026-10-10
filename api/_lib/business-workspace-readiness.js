@@ -3,12 +3,14 @@
 // gateway is installed in customer-checkout; owner data cannot grant selling.
 function workspaceReadiness(record, businessId) {
   if (!record?.businessProfile || record.businessProfile.businessId !== businessId) return null;
+  const access = require('./business-application-access').applicationAccess(record, businessId);
   return {
     businessId,
     onboarding: {status: record.applicationReview?.status || (record.businessProfile.informationStatus?.reviewState === 'submitted' ? 'submitted' : 'draft'),
       approved: false, canSubmit: true, reviewAvailable: record.applicationReview?.reviewAvailable === true},
-    marketing: {canPrepare: true, continuation: 'approved-business-destination'},
-    selling: {canPrepare: true, canSell: false, status: 'preparation-only', reason: 'merchant-and-purchase-authorization-required'},
+    applications: access,
+    marketing: {canPrepare: access.marketing, continuation: 'approved-business-destination'},
+    selling: {canPrepare: access.selling, canSell: false, status: 'preparation-only', reason: 'merchant-and-purchase-authorization-required'},
     publication: {draftsPublic: false, submissionAvailable: true}
   };
 }

@@ -49,7 +49,7 @@ function createVendorOrders(database,{authorizePurchase=(record,businessId)=>wor
   const run=()=>database.transaction(async tx=>{
    const old=await existing(tx,customer,requestKey,signature);if(old)return old;
    const business=(await tx.query('SELECT profile FROM demeos_businesses WHERE business_id=$1 FOR UPDATE',[request.businessId])).rows[0];
-   if(!business||business.profile.businessId!==request.businessId||!['selling','both'].includes(business.profile.preparationModel))fail('selling-not-authorised');
+   if(!business||business.profile.businessId!==request.businessId||business.profile.applicationAccess?.selling!==true)fail('selling-not-authorised');
    // Recheck both authority and customer role while catalogue and stock are locked.
    const owners=await tx.query('SELECT business_id FROM demeos_business_owners WHERE trusted_identity_id=$1',[customer]);
    if(owners.rows.length)fail('customer-only');
@@ -90,7 +90,7 @@ function createVendorOrders(database,{authorizePurchase=(record,businessId)=>wor
   });
  }
  async function expireDue(){await database.ensureSchema();const due=(await database.query("SELECT order_id FROM demeos_vendor_orders WHERE state='reserved' AND expires_at<=clock_timestamp() ORDER BY expires_at,order_id LIMIT 100")).rows;const results=[];for(const row of due){try{results.push(await release(row.order_id,'expired','reservation-expiry-worker'));}catch(error){if(error.reason!=='invalid-transition')throw error;}}return results;}
- async function listOwned(identity,businessId){await database.ensureSchema();return (await database.query("SELECT record FROM demeos_vendor_orders v WHERE business_id=$1 AND EXISTS(SELECT 1 FROM demeos_business_owners o JOIN demeos_businesses b USING(business_id) WHERE o.business_id=v.business_id AND o.trusted_identity_id=$2 AND b.profile->>'preparationModel' IN ('selling','both')) ORDER BY created_at DESC,order_id DESC LIMIT 50",[businessId,identity])).rows.map(({record})=>({id:record.id,state:record.state,createdAt:record.createdAt,expiresAt:record.expiresAt,line:record.line}));}
+ async function listOwned(identity,businessId){await database.ensureSchema();return (await database.query("SELECT record FROM demeos_vendor_orders v WHERE business_id=$1 AND EXISTS(SELECT 1 FROM demeos_business_owners o JOIN demeos_businesses b USING(business_id) WHERE o.business_id=v.business_id AND o.trusted_identity_id=$2 AND b.profile->'applicationAccess'->'selling' = 'true'::jsonb) ORDER BY created_at DESC,order_id DESC LIMIT 50",[businessId,identity])).rows.map(({record})=>({id:record.id,state:record.state,createdAt:record.createdAt,expiresAt:record.expiresAt,line:record.line}));}
  return Object.freeze({reserve,release,expireDue,listOwned});
 }
 module.exports={createVendorOrders,resolveLine,requestSignature};

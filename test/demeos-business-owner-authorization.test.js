@@ -13,6 +13,7 @@ const ownerAction = "create-marketing";
 function repositoryFor(mappings, calls = []) {
   return {
     calls,
+    async getKnownBusiness(businessId) {return {businessProfile:{businessId,applicationAccess:{marketing:true,selling:false}}};},
     async isBusinessOwnedByIdentity(identity, businessId) {
       calls.push([identity, businessId]);
       return mappings.some(([owner, business]) => owner === identity && business === businessId);
