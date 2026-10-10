@@ -133,7 +133,7 @@ function showOwnerAuthenticationState(elements, state) {
   elements.account.hidden = state !== "signed-in";
 }
 
-function renderOwnerWorkspace(documentObject, storage) {
+function renderOwnerWorkspace(documentObject, storage, applicationStatus) {
   // Browser business selection is presentation state only. Server-side ownership authorization is authoritative.
   const context = getOwnerWorkspaceContext(storage);
   const identity = documentObject.getElementById("workspace-business-identity");
@@ -162,7 +162,8 @@ function renderOwnerWorkspace(documentObject, storage) {
     detail.textContent = value;
     identity.appendChild(detail);
   });
-  const saved = documentObject.createElement("span"); saved.textContent = context.profile.informationStatus?.reviewState === "submitted" ? "Submitted privately. Administrative review is not available yet; approval is not granted." : "Private preparation. Business approval is not recorded."; identity.appendChild(saved);
+  const saved = documentObject.createElement("span"); saved.textContent = context.profile.informationStatus?.reviewState === "submitted" ? "Submitted privately. Awaiting administrative review; approval is not granted." : "Private preparation. Business approval is not recorded."; if (applicationStatus === "reviewed") saved.textContent = "Review completed. Business approval and activation are not granted.";
+  if (applicationStatus === "changes-requested") saved.textContent = "Changes requested. Edit, save and resubmit your information."; identity.appendChild(saved);
   if (!context.currentWork.length) {
     work.textContent = "No marketing work is stored for this business yet.";
     return;
@@ -288,7 +289,7 @@ async function loadOwnerNextAction(documentObject, storage, fetchFunction) {
     renderOwnerDashboardSummary(documentObject, record, activeBusinessId);
     if (record.businessProfile?.businessId === activeBusinessId) {
       const serverStorage = {getItem(key) {return key === "demeosBusinessProfiles" ? JSON.stringify([record.businessProfile]) : key === "demeosActiveBusinessId" ? activeBusinessId : key === "demeosCampaignHistory" ? JSON.stringify(record.campaigns || []) : null;}};
-      renderOwnerWorkspace(documentObject, serverStorage);
+      renderOwnerWorkspace(documentObject, serverStorage, record.workspaceReadiness?.onboarding?.status);
       renderOwnerModels(documentObject, record.workspaceReadiness, activeBusinessId);
     }
     renderOwnerNextAction(documentObject, nextAction);
@@ -657,10 +658,12 @@ if (typeof module !== "undefined" && module.exports) {
 }
 
 if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", function () {
+  if (document.getElementById("admin-application-review")) return;
   installOwnerBusinessSecurity(window, document, localStorage, localStorage);
 });
 
 if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", function () {
+  if (document.getElementById("admin-application-review")) return;
   updateOwnerNavigation(document, window.location);
   syncOwnerWorkspaceFromLocation(document, window.location);
   window.addEventListener("hashchange", function () {

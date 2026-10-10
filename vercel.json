@@ -39,6 +39,14 @@
     {
       "source": "/api/customer/checkout",
       "destination": "/api/public-config?resource=customer-checkout"
+    },
+    {
+      "source": "/api/admin/business-applications",
+      "destination": "/api/businesses?resource=admin-applications"
+    },
+    {
+      "source": "/api/admin/business-applications/:businessId",
+      "destination": "/api/businesses?resource=admin-applications&businessId=:businessId"
     }
   ]
 }

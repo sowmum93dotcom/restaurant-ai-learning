@@ -30,6 +30,8 @@ jobs:
           exit 1
       - name: Run owner workspace SQL, permission and draft gate
         run: node browser-checks/business-workspace-gate.js
+      - name: Run private administrative application review gate
+        run: node browser-checks/admin-business-review-gate.js
       - name: Run approved source SQL and customer continuation gate
         run: node browser-checks/customer-approved-source-gate.js
       - name: Run public homepage and information gate
@@ -68,3 +70,4 @@ jobs:
             /tmp/demeos-contact-*.png
             /tmp/demeos-account-*.png
             /tmp/demeos-owner-*.png
+            /tmp/demeos-admin-*.png

@@ -800,7 +800,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     state.profiles = result.profiles;
     customerParticipationResults = getCustomerParticipationResults(result.customerParticipationResults, requestedBusinessId);
     renderRecommendsUnderstanding(result.record, requestedBusinessId);
-    fillProfile(activeProfile()); globalThis.window?.DEMEOSBusinessOnboarding?.confirm(result.record.businessProfile); renderSelector(); renderActiveMarketingWork(); renderCustomerParticipationResults(); renderCampaignHistory();
+    fillProfile(activeProfile()); globalThis.window?.DEMEOSBusinessOnboarding?.confirm(result.record.businessProfile, result.record.workspaceReadiness); renderSelector(); renderActiveMarketingWork(); renderCustomerParticipationResults(); renderCampaignHistory();
     if (typeof renderOwnerModels === "function") renderOwnerModels(document, result.record.workspaceReadiness, requestedBusinessId);
   }
   async function persistBusiness(profile, options) {

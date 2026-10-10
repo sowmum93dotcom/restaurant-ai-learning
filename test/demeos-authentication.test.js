@@ -245,3 +245,10 @@ test("raw bearer token and unverified JWT payload are never identity evidence", 
   assert.notEqual(identity, bearerValue);
   assert.notEqual(identity, unverifiedUserId);
 });
+
+test('administrator scope comes only from verified provider metadata, never request claims',async()=>{
+ const forged={...request,body:{actorScope:'demeos-admin',role:'demeos-admin'},headers:{...request.headers,'x-actor-scope':'demeos-admin'}};
+ const ordinary=await resolve(forged,verifiedAs('ordinary-user'));assert.equal(ordinary.actorScope,undefined);
+ const admin=await resolve(request,verifiedAs('verified-admin',{sessionClaims:{metadata:{role:'demeos-admin'}}}));assert.equal(admin.actorScope,'demeos-admin');assert.equal(admin.trustedIdentityId,'verified-admin');
+ assert.equal((await resolve(request,verifiedAs('ordinary-user',{sessionClaims:{metadata:{role:'invented-admin'}}}))).actorScope,undefined);
+});
