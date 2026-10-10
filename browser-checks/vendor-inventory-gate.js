@@ -72,6 +72,8 @@ const server=http.createServer(async(req,res)=>{try{
    await page.locator('#vendor-stock-search').fill('nothing matches');assert.match(await page.locator('#vendor-stock-list').textContent(),/No matching/);await page.locator('#vendor-stock-search').fill('');
    await page.locator('#owner-preparation-language').selectOption('ja');assert.equal(await page.locator('#vendor-stock-heading').textContent(),'在庫');await page.locator('#owner-preparation-language').selectOption('en');
    await page.goto(base+'/marketing.html#products');await page.locator('#vendor-products-save:not([disabled])').waitFor();
+   await page.locator('.business-product-card-actions button').filter({hasText:'Edit'}).first().click();assert.equal(await page.locator('#business-product-id').inputValue(),'offer-a');
+   await page.locator('#vendor-product-editor > summary').click();await page.locator('#vendor-product-editor > summary').click();assert.equal(await page.locator('#business-product-id').inputValue(),'');
    let failedOnce=false;const uploadedNames=[];
    await context.route('https://controlled-upload.example/**',async route=>{
     const id=new URL(route.request().url()).pathname.slice(1),stored=uploads.get(id);assert.equal(stored.asset.businessId,profile.businessId);assert.equal(stored.asset.relatedEntityId,'offer-a');
@@ -93,6 +95,8 @@ const server=http.createServer(async(req,res)=>{try{
    const saved=await repository.getKnownBusiness(profile.businessId);assert.equal(saved.businessProfile.products[0].mediaGallery.assetIds.length,1);assert.ok(saved.businessProfile.products[0].mediaGallery.mainAssetId);
    await page.locator('#business-media-list button').filter({hasText:'Add to gallery'}).first().click();
    await page.locator('#business-media-list button').filter({hasText:'Move later'}).first().click();
+   for(const language of ['en','es','fr','ar','pt','zh','hi','de','ja']){await page.locator('#owner-preparation-language').selectOption(language);const expected=require('../js/vendor-inventory-copy').copy[language];assert.ok((await page.locator('#business-media-list').textContent()).includes(expected.removeGallery));assert.equal(await page.locator('.business-product-card-actions button[data-vendor-copy=duplicate]').first().textContent(),expected.duplicate);}
+   await page.locator('#owner-preparation-language').selectOption('en');
    const expectedOrder=await page.evaluate(()=>window.DEMEOSVendorProducts.read().products[0].mediaGallery.assetIds);
    await page.route('**/products',route=>route.request().method()==='PUT'?route.fulfill({status:503,json:{error:'Controlled save failure. Your edits are retained.'}}):route.continue());
    await page.locator('#vendor-products-confirm').check();await page.locator('#vendor-products-save').click();await page.waitForFunction(()=>document.getElementById('vendor-products-status').textContent.includes('retained'));

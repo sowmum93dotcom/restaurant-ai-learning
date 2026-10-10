@@ -1141,7 +1141,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       });
       const prepare=document.createElement("button");prepare.type="button";prepare.className="text-button";prepare.textContent="Prepare marketing";prepare.dataset.ownerMarketing="";
       prepare.addEventListener("click",()=>{if(globalThis.window?.DEMEOSOwnerWorkspace && !window.DEMEOSOwnerWorkspace.canOpen(window.DEMEOSOwnerWorkspace.getState(document),"create"))return;showWorkspaceView("create");renderDraftSources();byId("draft-product").value=product.productId;renderDraftSources();renderOfferReview();});
-      const duplicate=document.createElement("button");duplicate.type="button";duplicate.className="text-button";duplicate.textContent=vendorText("duplicate","Duplicate");duplicate.dataset.ownerSelling="";
+      const duplicate=document.createElement("button");duplicate.type="button";duplicate.className="text-button";duplicate.textContent=vendorText("duplicate","Duplicate");duplicate.dataset.ownerSelling="";duplicate.dataset.vendorCopy="duplicate";
       duplicate.addEventListener("click",()=>{
         if(globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model!=="selling")return;
         if(draftProducts.length>=100){alert("Up to 100 products are supported.");return;}
@@ -1155,6 +1155,8 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     renderOfferReview();
   }
   if(typeof window!=="undefined")window.DEMEOSVendorProducts={
+    refreshMedia:()=>renderBusinessMedia(),
+    beginAdd:()=>resetProductForm(),
     read:()=>({businessId:state.activeBusinessId,products:JSON.parse(JSON.stringify(draftProducts)),baseline:JSON.parse(JSON.stringify(baselineProducts))}),
     saved:(products,informationStatus)=>{
       baselineProducts=JSON.parse(JSON.stringify(products));draftProducts=JSON.parse(JSON.stringify(products));

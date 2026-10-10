@@ -38,7 +38,7 @@ function applyChanges(profile,entries,changes){
   if(!units(change.onHand)||!units(change.lowStock)||typeof change.sku!=='string'||change.sku.trim().length>80||typeof change.reason!=='string'||!change.reason.trim()||change.reason.trim().length>300)throw Error('Use whole quantities and add a short reason for the change.');
   if(change.onHand<previous.reserved)throw Error('Stock cannot be below the quantity reserved for orders.');
   next[id]={identity:current.identity,onHand:change.onHand,reserved:previous.reserved,lowStock:change.lowStock,sku:change.sku.trim()};
-  audit.push({productId:change.productId,variantId:change.variantId||'',before:previous.onHand,after:change.onHand,previousLowStock:previous.lowStock??null,lowStock:change.lowStock,previousSku:previous.sku||'',sku:change.sku.trim(),reason:change.reason.trim()});
+  audit.push({identity:current.identity,name:current.name,label:current.label,productId:change.productId,variantId:change.variantId||'',before:previous.onHand,after:change.onHand,previousLowStock:previous.lowStock??null,lowStock:change.lowStock,previousSku:previous.sku||'',sku:change.sku.trim(),reason:change.reason.trim()});
  }
  const skus=new Set();
  for(const [id,entry] of Object.entries(next))if(valid.has(id)&&entry.sku){const sku=entry.sku.toLowerCase();if(skus.has(sku))throw Error('Each stock code must be unique within your business.');skus.add(sku);}
