@@ -59,6 +59,15 @@ async function contextFor(browser,base,id,width){const context=await browser.new
   async function decide(decision,applications){await adminPage.locator('#admin-decision').selectOption(decision);for(const application of ['marketing','selling'])if(await adminPage.locator('#admin-scope-'+application).isEnabled())await adminPage.locator('#admin-scope-'+application).setChecked(applications.includes(application));await adminPage.locator('#admin-confirm').check();const posted=adminPage.waitForResponse(r=>r.request().method()==='POST');await adminPage.locator('#admin-record').click();assert.equal((await posted).status(),200);await adminPage.locator('#admin-status').filter({hasText:'Decision recorded'}).waitFor();}
   const applications=model==='both'?['marketing','selling']:[model];
   if(model==='selling'){await decide('rejected',['selling']);await page.goto(base+'/selling-vendor');await page.locator('body[data-owner-access=rejected]').waitFor();assert.match(await page.locator('#owner-operating-models').innerText(),/request rejected/);await decide('approved',['selling']);}
+  else if(model==='both'){
+   for(const decision of ['rejected','revoked']){
+    await decide(decision,['selling']);
+    await page.goto(base+'/business-workspace.html');await page.locator('body[data-owner-access=denied]').waitFor();assert.match(await page.locator('#owner-operating-models').innerText(),/Application access pending/);
+    await page.goto(base+'/marketing-business');await page.locator('body[data-owner-access=denied]').waitFor();
+    await page.goto(base+'/selling-vendor');await page.locator('body[data-owner-access='+decision+']').waitFor();
+   }
+   await decide('approved',applications);
+  }
   else await decide('approved',applications);
   await page.goto(base+'/business-workspace.html');if(model==='both'){await page.locator('.owner-application-entries a').first().waitFor();assert.equal(await page.locator('.owner-application-entries a').count(),2);await page.locator('.owner-application-entries a[href="/selling-vendor"]').click();}
   const app=model==='marketing'?'marketing':'selling';await page.waitForURL(base+'/'+app+(app==='selling'?'-vendor':'-business'));await page.locator('body[data-owner-access=ready]').waitFor();assert.equal(await page.locator('body').getAttribute('data-owner-model'),app);assert.match(await page.locator('#workspace-business-identity').innerText(),/access approved/);

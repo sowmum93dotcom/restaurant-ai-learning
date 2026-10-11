@@ -85,6 +85,25 @@ test('scoped administrator approval and revocation update existing grants atomic
  }finally{await client.close();}
 });
 
+test('partial rejection or revocation preserves the other requested application pending status',()=>{
+ const {ownerStatus}=require('../api/_lib/business-application-contract');
+ const {workspaceReadiness}=require('../api/_lib/business-workspace-readiness');
+ const {resolve}=require('../js/owner-workspace-model');
+ for(const decision of ['rejected','revoked'])for(const application of ['marketing','selling']){
+  const other=application==='marketing'?'selling':'marketing';
+  const saved={...profile,applicationAccess:{[application]:false},applicationDecisions:{[application]:{status:decision}}};
+  const status=ownerStatus(saved,null);assert.equal(status.status,'submitted');assert.equal(status.approved,false);
+  assert.equal(status.applications[application].status,decision);assert.equal(status.applications[other].status,'submitted');
+  const record={businessProfile:saved,applicationReview:status};record.workspaceReadiness=workspaceReadiness(record,saved.businessId);
+  assert.equal(resolve(record,saved.businessId).status,'denied');
+  assert.equal(resolve(record,saved.businessId,application).status,decision);
+  assert.equal(resolve(record,saved.businessId,other).status,'denied');
+  assert.equal(record.workspaceReadiness.marketing.canPrepare,false);assert.equal(record.workspaceReadiness.selling.canPrepare,false);
+ }
+ const allRejected={...profile,applicationDecisions:{marketing:{status:'rejected'},selling:{status:'rejected'}}};
+ assert.equal(ownerStatus(allRejected,null).status,'rejected');
+});
+
 test('review schema upgrade preserves historical snapshots and repeated initialization',async()=>{
  const client=new PGlite();try{
   await client.query('CREATE TABLE demeos_businesses (business_id TEXT PRIMARY KEY,profile JSONB NOT NULL,created_at TIMESTAMPTZ DEFAULT NOW(),updated_at TIMESTAMPTZ DEFAULT NOW())');

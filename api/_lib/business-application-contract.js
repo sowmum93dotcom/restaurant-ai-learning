@@ -9,6 +9,7 @@ function ownerStatus(profile,review){
  const approved=Object.values(applications).some(application=>application.status==='approved');
  const intent=profile?.preparationModel==='both'?['marketing','selling']:[profile?.preparationModel||'marketing'];
  const states=intent.map(application=>applications[application]?.status);
- return {status:approved?'approved':states.includes('revoked')?'revoked':states.includes('rejected')?'rejected':isSubmitted(profile)?review?.decision||'submitted':'draft',approved,applications,reviewAvailable:true,decidedAt:isSubmitted(profile)?review?.decided_at||null:null};
+ const pending=states.some(status=>['submitted','reviewed','changes-requested'].includes(status));
+ return {status:approved?'approved':pending?review?.decision||'submitted':states.includes('revoked')?'revoked':states.includes('rejected')?'rejected':'draft',approved,applications,reviewAvailable:true,decidedAt:isSubmitted(profile)?review?.decided_at||null:null};
 }
 module.exports={revision,completeness,isSubmitted,ownerStatus};

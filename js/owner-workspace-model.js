@@ -33,7 +33,7 @@
     const allowed = ['marketing', 'selling'].filter(model => ready[model]?.canPrepare === true);
     if (!allowed.length) {
       const denied = ['marketing', 'selling'].every(model => ready[model]?.canPrepare === false);
-      const lifecycle=ready.onboarding?.status;
+      const lifecycle=(preference&&ready.onboarding?.applicationStatuses?.[preference]?.status)||ready.onboarding?.status;
       return {status: ['rejected','revoked'].includes(lifecycle) ? lifecycle : denied ? 'denied' : ['submitted', 'changes-requested', 'reviewed'].includes(ready.onboarding?.status) ? 'pending' : 'unavailable', model: null, allowed};
     }
     if (preference && !allowed.includes(preference)) return {status:['rejected','revoked'].includes(ready.onboarding?.applicationStatuses?.[preference]?.status)?ready.onboarding.applicationStatuses[preference].status:'denied', model:null, allowed, businessId};
