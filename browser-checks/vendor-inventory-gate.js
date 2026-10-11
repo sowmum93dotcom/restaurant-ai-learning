@@ -57,6 +57,17 @@ const server=http.createServer(async(req,res)=>{try{
    await context.route('https://example.org/**',r=>r.fulfill({contentType:'image/webp',body:fs.readFileSync(path.join(root,'images/controlled-test/mens-fashion.webp'))}));
    const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(String(e)));page.on('dialog',dialog=>dialog.accept());
    await page.goto(base+'/selling-vendor/manage#inventory');await page.locator('.vendor-stock-row').first().waitFor().catch(async e=>{console.log(await page.evaluate(()=>({model:document.body.dataset.ownerModel,view:document.body.dataset.ownerView,status:document.getElementById('vendor-stock-status').textContent,text:document.body.innerText.slice(-2500)})),errors);await page.screenshot({path:'/tmp/vendor-failed.png',fullPage:true});throw e;});
+   const restoredCopy=require('../js/vendor-inventory-copy').copy;
+   for(const code of Object.keys(restoredCopy)){
+    await page.locator('#owner-preparation-language').selectOption(code);
+    await page.reload();await page.locator('.vendor-stock-row').first().waitFor();
+    assert.equal(await page.locator('#owner-preparation-language').inputValue(),code);
+    assert.equal(await page.locator('#business-product-name').getAttribute('placeholder'),restoredCopy[code].namePlaceholder);
+    assert.equal(await page.locator('#business-product-price-mode option[value=fixed]').textContent(),restoredCopy[code].priceFixed);
+    assert.equal(await page.locator('#vendor-stock-heading').textContent(),restoredCopy[code].stock);
+    assert.equal(await page.locator('.vendor-stock-row label > span').first().textContent(),restoredCopy[code].onHand);
+   }
+   await page.locator('#owner-preparation-language').selectOption('en');
    await database.query('DELETE FROM demeos_vendor_order_requests');await database.query('DELETE FROM demeos_vendor_order_events');await database.query('DELETE FROM demeos_vendor_orders');
    await page.goto(base+'/selling-vendor/manage#orders');await page.locator('#vendor-orders-list').filter({hasText:'No orders yet. Live ordering is not active.'}).waitFor();
    const orderCopy=require('../js/vendor-inventory-copy').copy;

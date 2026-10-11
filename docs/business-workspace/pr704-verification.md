@@ -49,3 +49,11 @@ Release decision: keep PR704 draft and unmerged while production storage accepta
 Latest completion screenshots: `pr704-evidence/demeos-owner-vendor-catalogue-{390,820,1440}.webp` and `pr704-evidence/demeos-owner-vendor-editor-{390,820,1440}.webp`. These show controlled isolated products, not live vendor inventory. A separate CLI production-readiness run stopped on an environment certificate trust error; it is not recorded as passed. The cloud-browser public Selling entry inspection did succeed.
 
 CI correction: the first completion browser workflow found that removing the pricing selector’s explicit accessible name broke the existing exact-label owner gate. Restored the explicit name, and synchronise it with translated captions in Selling. The acceptance gate remains intact. Final CI must pass for the corrected head.
+
+## Final review repair, 11 October 2026
+
+GitHub independently reviewed completion head 0fe2d93f5b568d4e6fe24b87208cdf75c425c0d9 after the draft was marked ready. Review 5481620947 confirmed one P2 issue: a saved non-English language could be restored after the vendor module captured English, leaving editor help, placeholders and stock rows in English on reload. This supersedes the earlier statement that independent review was unavailable. No rejected local external review was rerun.
+
+Vendor activation now reads the selected language through the existing translation function, and DOMContentLoaded synchronises it after language restoration. The real Selling SQL/API/browser gate reloads all nine saved languages at 390, 820 and 1440 pixels and checks the selector, product placeholder, pricing option, stock heading and stock row labels. The gate passed. The full Node suite again passed 1,471 tests with zero failures. The owner SQL/API/browser gate and isolated new-owner onboarding also passed at all three widths. Exact-head GitHub CI is checked after upload.
+
+No backend, storage, authentication, application-grant, payment or live-ordering architecture was changed. Release remains blocked by authenticated vendor and actual production storage acceptance; physical Safari/iPhone playback is unperformed. The completed GitHub review is COMMENTED, not an approval. PR704 must remain unmerged until mandatory acceptance and required approvals are satisfied.
