@@ -925,7 +925,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     preview.src = asset.deliveryUrl;
     if (asset.kind === "video") {preview.controls=true;preview.preload="metadata";preview.playsInline=true;}
     else {preview.alt=asset.originalFilename || "Matching business image";preview.loading="lazy";}
-    preview.addEventListener("error",()=>{const notice=document.createElement("p");notice.textContent="This browser cannot preview this media. Your original is retained.";container.append(notice);},{once:true});
+    preview.addEventListener("error",()=>{const notice=document.createElement("p");if(globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model==="selling")notice.dataset.vendorCopy="mediaFallback";notice.textContent=globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model==="selling"?vendorText("mediaFallback","This browser cannot preview this media. Your original is retained."):"This browser cannot preview this media. Your original is retained.";container.append(notice);},{once:true});
     container.appendChild(preview);
   }
 
@@ -1206,22 +1206,22 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   }
   function addDraftProduct() {
     const name = productFields.name.value.trim(), description = productFields.description.value.trim(), imageUrl = productFields.image.value.trim();
-    if (!name || !description) { alert("Please add a product/service name and description."); return; }
-    if (!safeProductImageUrl(imageUrl)) { alert("Product image links must use http or https."); return; }
+    if (!name || !description) { alert(globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model === "selling" ? vendorText("requiredProduct", "Please add a product/service name and description.") : "Please add a product/service name and description."); return; }
+    if (!safeProductImageUrl(imageUrl)) { alert(globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model === "selling" ? vendorText("invalidImage", "Product image links must use http or https.") : "Product image links must use http or https."); return; }
     const selectedRoutes = selectedValues(continuationRouteIds);
     const route = productFields.route.value || selectedRoutes.find(function (candidate) {
       return ["website", "booking", "phone", "whatsapp", "email", "visit", "quote"].includes(candidate);
     }) || "";
     if (!route) { alert(globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model === "selling" ? vendorText("routePrerequisite", "Open My Business and save a customer contact method before adding products.") : "Select a customer continuation route before adding this product."); return; }
-    if (!selectedRoutes.includes(route)) { alert("Select that customer route in the Business Profile before assigning it to a product."); return; }
+    if (!selectedRoutes.includes(route)) { alert(globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model === "selling" ? vendorText("routeSelection", "Select that customer route in the Business Profile before assigning it to a product.") : "Select that customer route in the Business Profile before assigning it to a product."); return; }
     const productId = productFields.id.value || ("product-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8));
     let priceMode = productFields.priceMode.value;
     let price = productFields.price.value.trim();
     let presentation;
     try {presentation=productEditor?.read();} catch(error) {alert(error.message);return;}
-    if (priceMode !== "contact" && !price) { alert("Add the business-provided price information for this product."); return; }
+    if (priceMode !== "contact" && !price) { alert(globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model === "selling" ? vendorText("requiredPrice", "Add the business-provided price information for this product.") : "Add the business-provided price information for this product."); return; }
     const productFulfilment = selectedProductFulfilment();
-    if (productFields.fulfilmentMode.value === "specific" && !productFulfilment.length) { alert("Choose at least one fulfilment method for this product."); return; }
+    if (productFields.fulfilmentMode.value === "specific" && !productFulfilment.length) { alert(globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model === "selling" ? vendorText("requiredFulfilment", "Choose at least one fulfilment method for this product.") : "Choose at least one fulfilment method for this product."); return; }
     const existingProduct = draftProducts.find(function (entry) { return entry.productId === productId; });
     if (presentation) {
       if (JSON.stringify(presentation.pricing)!==JSON.stringify(existingProduct?.presentation?.pricing)) {

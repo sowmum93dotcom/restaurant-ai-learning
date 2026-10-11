@@ -196,7 +196,22 @@ const server=http.createServer(async(req,res)=>{try{
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
    await page.screenshot({path:'/tmp/demeos-owner-vendor-catalogue-'+viewport.width+'.png',fullPage:true});
    await page.locator('.business-product-card-actions button').filter({hasText:'Edit'}).first().click();
-   for(const code of ['en','es','fr','ar','pt','zh','hi','de','ja']){await page.locator('#owner-preparation-language').selectOption(code);assert.equal(await page.locator('label[for=business-product-name]').textContent(),require('../js/vendor-inventory-copy').copy[code].productName);assert.equal(await page.locator('#business-product-id').inputValue(),'offer-a');}
+   for(const code of ['en','es','fr','ar','pt','zh','hi','de','ja']){await page.locator('#owner-preparation-language').selectOption(code);assert.equal(await page.locator('label[for=business-product-name]').textContent(),require('../js/vendor-inventory-copy').copy[code].productName);assert.equal(await page.locator('#business-product-id').inputValue(),'offer-a');
+    const copy=require('../js/vendor-inventory-copy').copy[code];
+    assert.equal(await page.locator('#business-product-name').getAttribute('placeholder'),copy.namePlaceholder);
+    assert.equal(await page.locator('#business-product-fulfilment-options legend').textContent(),copy.fulfilmentMethods);
+    assert.equal((await page.locator('#business-product-fulfilment-options label').first().textContent()).trim(),copy.collection);
+    assert.equal(await page.locator('#business-product-name').inputValue(),'Exact jacket');
+    assert.equal(await page.locator('#business-product-description').inputValue(),'Saved jacket description');
+    const original=await page.evaluate(()=>window.DEMEOSVendorProducts.read().products[0]);
+    assert.equal(await page.locator('.owner-price-controls label').first().locator('span').textContent(),copy.pricing);
+    assert.equal(await page.locator('.owner-variant [data-vendor-copy=available]').first().textContent(),copy.available);
+    assert.deepEqual(await page.evaluate(()=>window.DEMEOSVendorProducts.read().products[0]),original);
+    await page.evaluate(()=>{window.__savedAlert=window.alert;window.alert=text=>window.__validationAlert=text;});
+    await page.locator('#business-product-name').fill('');await page.locator('#business-product-add-btn').click();
+    assert.equal(await page.evaluate(()=>window.__validationAlert),copy.requiredProduct);
+    await page.locator('#business-product-name').fill('Exact jacket');await page.evaluate(()=>window.alert=window.__savedAlert);
+   }
    await page.locator('#owner-preparation-language').selectOption('en');
    await page.screenshot({path:'/tmp/demeos-owner-vendor-editor-'+viewport.width+'.png',fullPage:true});
 

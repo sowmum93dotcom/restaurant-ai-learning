@@ -3,6 +3,7 @@
  'use strict';
  const contract=typeof module==='object'&&module.exports?require('./customer-item-contract'):root.DEMEOSCustomerItemContract;
  const clone=x=>JSON.parse(JSON.stringify(x));
+ const vendorMessage=(key,fallback)=>root.DEMEOSOwnerWorkspace?.getState(root.document).model==='selling' ? root.DEMEOSVendorCopy?.[root.document.getElementById('owner-preparation-language')?.value||'en']?.[key]||fallback : fallback;
  // Only retained server data supplies unknown extensions. Incoming supported fields
  // have already passed the existing contract; omissions must not erase options.
  function preserveProduct(previous,incoming){
@@ -13,7 +14,7 @@
   if(!previous?.presentation)return next;
   if(!incoming.presentation){next.presentation=clone(previous.presentation);return next;}
   const old=previous.presentation,value=incoming.presentation;
-  if(old.categoryId!==value.categoryId&&(old.options?.length||old.variants?.length))throw Error('Keep the category for an offer with recorded options.');
+  if(old.categoryId!==value.categoryId&&(old.options?.length||old.variants?.length))throw Error(vendorMessage('keepCategory','Keep the category for an offer with recorded options.'));
   next.presentation={...old,...value,pricing:{...old.pricing,...value.pricing},
    options:value.options.map(option=>{const prior=old.options?.find(o=>o.key===option.key);return {...prior,...option,values:option.values.map(choice=>({...prior?.values?.find(v=>v.value===choice.value),...choice}))};}),
    variants:value.variants.map(variant=>{const prior=old.variants?.find(v=>v.variantId===variant.variantId);return {...prior,...variant,pricing:{...prior?.pricing,...variant.pricing}};})};
@@ -31,9 +32,11 @@
   const category=document.getElementById('owner-product-category'),panel=document.getElementById('owner-product-options');
   if(!category||!panel)return null;
   let current=null;
+  const uiKeys={'Pricing':'pricing','Currency':'currency','Amount':'amount','Minimum':'minimum','Maximum':'maximum','No listed price':'noPrice','Contact for price':'priceContact','Fixed price':'priceFixed','From price':'priceFrom','Price range':'priceRange','Choose an option':'choice','Label':'label','New combination':'newCombination','Availability':'available','Available':'availability_available','Limited availability':'availability_limited','Unavailable':'availability_unavailable','Contact to confirm':'availability_contact'};
   const el=(tag,text)=>{const n=document.createElement(tag);if(text)n.textContent=text;return n;};
-  const input=(label,value,type='text')=>{const wrap=el('label',label),field=el('input');field.type=type;field.value=value??'';field.maxLength=120;if(type==='number'){field.min='0';field.step='any';}wrap.append(field);return {wrap,field};};
-  const optionSelect=(label,values,chosen)=>{const wrap=el('label',label),field=el('select');field.setAttribute('aria-label',label);for(const [value,text] of values){const o=el('option',text);o.value=value;field.append(o);}field.value=chosen;wrap.append(field);return {wrap,field};};
+  const ui=(tag,text)=>{const n=el(tag,text);if(uiKeys[text])n.dataset.vendorCopy=uiKeys[text];return n;};
+  const input=(label,value,type='text')=>{const wrap=el('label'),caption=ui('span',label),field=el('input');wrap.append(caption);field.type=type;field.value=value??'';field.maxLength=120;if(type==='number'){field.min='0';field.step='any';}wrap.append(field);return {wrap,field};};
+  const optionSelect=(label,values,chosen,interfaceOptions=true)=>{const wrap=el('label'),caption=ui('span',label),field=el('select');wrap.append(caption);for(const [value,text] of values){const o=interfaceOptions||value===''?ui('option',text):el('option',text);o.value=value;field.append(o);}field.value=chosen;wrap.append(field);return {wrap,field};};
   const empty=el('option','General product or service');empty.value='';empty.dataset.ownerCopy='generalCategory';category.append(empty);
   const copyNode=(tag,key,text)=>{const node=el(tag,text);node.dataset.ownerCopy=key;return node;};
   for(const id of Object.keys(contract.categories)){const o=el('option',categoryNames[id]);o.value=id;o.dataset.ownerCategory=id;category.append(o);}
@@ -41,7 +44,7 @@
   function readOptions(){return choices.map(row=>{const values=row.fields.map(entry=>({...entry.choice,label:entry.field.value.trim()}));
    for(const label of row.add.value.split('\n').map(s=>s.trim()).filter(Boolean))values.push({value:label,label});
    return values.length?{...row.option,key:row.key,values}:null;}).filter(Boolean);}
-  function refreshVariantChoices(){const options=readOptions();for(const row of variants)for(const choice of row.selection){const option=options.find(o=>o.key===choice.key),selected=choice.field.value;choice.field.textContent='';const empty=el('option','Choose an option');empty.value='';choice.field.append(empty);for(const value of option?.values||[]){const node=el('option',value.label);node.value=value.value;choice.field.append(node);}choice.field.value=option?.values.some(v=>v.value===selected)?selected:'';choice.field.disabled=!option;choice.field.parentElement.hidden=!option;}}
+  function refreshVariantChoices(){const options=readOptions();for(const row of variants)for(const choice of row.selection){const option=options.find(o=>o.key===choice.key),selected=choice.field.value;choice.field.textContent='';const empty=ui('option','Choose an option');empty.value='';choice.field.append(empty);for(const value of option?.values||[]){const node=el('option',value.label);node.value=value.value;choice.field.append(node);}choice.field.value=option?.values.some(v=>v.value===selected)?selected:'';choice.field.disabled=!option;choice.field.parentElement.hidden=!option;}document.dispatchEvent(new CustomEvent('demeos-vendor-editor-copy'));}
   function priceControls(price){
    const p=price||{mode:'quote'},box=el('div');box.className='owner-price-controls';
    const mode=optionSelect('Pricing',[['quote','Contact for price'],['none','No listed price'],['fixed','Fixed price'],['from','From price'],['range','Price range']],p.mode);
@@ -61,19 +64,20 @@
    for(const key of cat.fields){
     const option=current?.options?.find(o=>o.key===key),box=el('fieldset'),legend=el('legend',key==='packSize'?'Pack size':key[0].toUpperCase()+key.slice(1));legend.dataset.ownerField=key;box.append(legend);
     const fields=(option?.values||[]).map(choice=>{const entry=input('Label',choice.label);entry.field.dataset.optionValue=choice.value;entry.field.addEventListener('input',refreshVariantChoices);box.append(entry.wrap);return {choice,field:entry.field};});
-    const add=input('Available choices (one per line)','');add.wrap.dataset.ownerChoiceLabel='true';const textarea=el('textarea');textarea.rows=2;textarea.maxLength=12000;textarea.addEventListener('input',refreshVariantChoices);add.field.replaceWith(textarea);box.append(add.wrap);panel.append(box);choices.push({key,option,fields,add:textarea});
+    const add=input('Available choices (one per line)','');add.wrap.firstChild.dataset.ownerChoiceLabel='true';const textarea=el('textarea');textarea.rows=2;textarea.maxLength=12000;textarea.addEventListener('input',refreshVariantChoices);add.field.replaceWith(textarea);box.append(add.wrap);panel.append(box);choices.push({key,option,fields,add:textarea});
    }
    const combinations=el('details');combinations.className='owner-combinations';combinations.open=Boolean(current?.variants?.length);combinations.append(copyNode('summary','specificOptions','Specific options and prices (optional)'),copyNode('p','combinationsGuidance','Use this only when a particular combination has its own price or availability. Saved combinations are kept exactly; DEMEOS does not create combinations for you.'));const list=el('div');combinations.append(list);if(cat.fields.length)panel.append(combinations);
-   function addVariant(variant,isNew){const box=el('fieldset');box.className='owner-variant';box.append(el('legend',isNew?'New combination':Object.entries(variant.selection).map(([key,value])=>current?.options?.find(o=>o.key===key)?.values.find(v=>v.value===value)?.label||value).join(' · ')));
-    const selection=[];for(const key of cat.fields.filter(key=>isNew||!Object.hasOwn(variant.selection,key))){const option=readOptions().find(o=>o.key===key),field=optionSelect(key[0].toUpperCase()+key.slice(1)+' choice',[['','Choose an option'],...(option?.values||[]).map(v=>[v.value,v.label])],variant.selection[key]||'');field.wrap.hidden=!option;field.field.disabled=!option;box.append(field.wrap);selection.push({key,field:field.field});}
+   function addVariant(variant,isNew){const box=el('fieldset');box.className='owner-variant';box.append(isNew?ui('legend','New combination'):el('legend',Object.entries(variant.selection).map(([key,value])=>current?.options?.find(o=>o.key===key)?.values.find(v=>v.value===value)?.label||value).join(' · ')));
+    const selection=[];for(const key of cat.fields.filter(key=>isNew||!Object.hasOwn(variant.selection,key))){const option=readOptions().find(o=>o.key===key),field=optionSelect(key[0].toUpperCase()+key.slice(1)+' choice',[['','Choose an option'],...(option?.values||[]).map(v=>[v.value,v.label])],variant.selection[key]||'',false);field.wrap.firstChild.dataset.ownerField=key;field.wrap.hidden=!option;field.field.disabled=!option;box.append(field.wrap);selection.push({key,field:field.field});}
     const status=optionSelect('Availability',[['available','Available'],['limited','Limited availability'],['unavailable','Unavailable'],['contact','Contact to confirm']],variant.availability),price=priceControls(variant.pricing||current?.pricing);box.append(status.wrap,price.box);list.append(box);variants.push({variant,status:status.field,price,selection});
    }
    for(const variant of current?.variants||[])addVariant(variant,false);
    if(cat.fields.length){const add=copyNode('button','addCombination','Add a specific combination'),message=el('p');add.type='button';add.className='text-button';message.setAttribute('role','status');combinations.append(add,message);
-    add.addEventListener('click',()=>{const options=readOptions();if(!options.length||variants.length>=500){message.textContent='Add choices above first. Up to 500 combinations are supported.';return;}
-     addVariant({variantId:'variant-'+(root.crypto?.randomUUID?.()||Date.now()+'-'+variants.length),selection:Object.fromEntries(options.map(o=>[o.key,''])),availability:'contact',pricing:basePrice.read()},true);message.textContent='Choose a unique combination, then confirm its price and availability.';});
+    add.addEventListener('click',()=>{const options=readOptions();if(!options.length||variants.length>=500){message.dataset.vendorCopy='choicesFirst';message.textContent=vendorMessage("choicesFirst","Add choices above first. Up to 500 combinations are supported.");return;}
+     addVariant({variantId:'variant-'+(root.crypto?.randomUUID?.()||Date.now()+'-'+variants.length),selection:Object.fromEntries(options.map(o=>[o.key,''])),availability:'contact',pricing:basePrice.read()},true);message.dataset.vendorCopy='uniqueCombination';message.textContent=vendorMessage("uniqueCombination","Choose a unique combination, then confirm its price and availability.");root.DEMEOSBusinessPreparationLanguage?.apply(document.getElementById('owner-preparation-language')?.value);document.dispatchEvent(new CustomEvent('demeos-vendor-editor-copy'));});
    }
    root.DEMEOSBusinessPreparationLanguage?.apply(document.getElementById('owner-preparation-language')?.value);
+   document.dispatchEvent(new CustomEvent('demeos-vendor-editor-copy'));
   }
   function load(product){current=product?.presentation?clone(product.presentation):null;empty.disabled=Boolean(current);category.value=current?.categoryId||'';category.disabled=Boolean(current?.options?.length||current?.variants?.length);render();}
   category.addEventListener('change',()=>{const pricing=basePrice?.read();current=category.value&&pricing?{...(current||{}),categoryId:category.value,pricing,options:[],variants:[]}:null;render();});
@@ -81,7 +85,7 @@
    if(!category.value)return undefined;
    const options=readOptions();
    const candidate={...(current||{}),categoryId:category.value,pricing:basePrice.read(),options,variants:variants.map(row=>({...row.variant,...(row.selection.length?{selection:{...row.variant.selection,...Object.fromEntries(row.selection.filter(s=>options.some(o=>o.key===s.key)).map(s=>[s.key,s.field.value]))}}:{}),availability:row.status.value,pricing:row.price.read()}))};
-   if(!contract.normalize(candidate))throw Error('Check option labels, unique choices, currency and prices. Prices must be zero or more; the maximum must not be below the minimum.');
+   if(!contract.normalize(candidate))throw Error(vendorMessage("invalidOptions","Check option labels, unique choices, currency and prices. Prices must be zero or more; the maximum must not be below the minimum."));
    return {...candidate,kind:contract.categories[category.value].kind,version:1};
   }};
  }

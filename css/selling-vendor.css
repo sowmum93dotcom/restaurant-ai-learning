@@ -59,3 +59,7 @@ body.owner-workspace-body[data-owner-model=selling] .business-media-upload :is(s
 body.owner-workspace-body[data-owner-model=selling] .business-media-upload p{margin:0!important;line-height:1.5!important}
 body.owner-workspace-body[data-owner-model=selling] .business-media-item{display:flex!important;flex-direction:column!important;gap:8px!important}
 body.owner-workspace-body[data-owner-model=selling] .business-media-item button{align-self:flex-start!important}
+/* Keep the primary editor fields as usable as the existing category controls. */
+body.owner-workspace-body[data-owner-model=selling] .business-product-form > div > :is(input:not([type=hidden]),textarea,select){width:100%;max-width:100%;box-sizing:border-box;min-height:44px;padding:10px 12px;border:1px solid #b8c7d7;border-radius:8px;background:#fff;color:#142b45;font:inherit;font-size:16px}
+body.owner-workspace-body[data-owner-model=selling] .business-product-form > div > label{display:block;margin-bottom:7px;font-weight:600}
+body.owner-workspace-body[data-owner-model=selling] .business-product-form :is(input,textarea,select):focus-visible{outline:3px solid #b99a56;outline-offset:2px}

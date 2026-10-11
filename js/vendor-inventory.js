@@ -17,6 +17,7 @@
  const node=(tag,text)=>{const n=doc.createElement(tag);if(text!==undefined)n.textContent=text;return n;};
  const input=(label,value,type='text')=>{const wrap=node('label'),span=node('span',label),field=node('input');field.type=type;field.value=value??'';if(type==='number'){field.min='0';field.step='1';field.max='1000000000';}wrap.append(span,field);return {wrap,field};};
  function translate(){language=el('owner-preparation-language')?.value||'en';doc.querySelectorAll('[data-vendor-copy]').forEach(n=>{n.textContent=t(n.dataset.vendorCopy);n.lang=language;n.dir=language==='ar'?'rtl':'ltr';});if(stock)render();compactCatalogue();if(root.DEMEOSOwnerWorkspace?.getState(doc).model==='selling')root.DEMEOSVendorProducts?.refreshMedia();}
+ doc.addEventListener('demeos-vendor-editor-copy',()=>{if(root.DEMEOSOwnerWorkspace?.getState(doc).model==='selling')translate();});
  function status(message){el('vendor-stock-status').textContent=message;}
  function active(){const current=root.DEMEOSOwnerWorkspace?.getState(doc);return context&&current?.model==='selling'&&current.businessId===context&&current.status==='ready';}
  function url(resource){return '/api/businesses/'+encodeURIComponent(context)+'/'+resource;}
@@ -105,6 +106,21 @@
   for(const [id,key] of Object.entries(labels)){const label=doc.querySelector('label[for="'+id+'"]');if(label){label.textContent=t(key);label.lang=language;label.dir=language==='ar'?'rtl':'ltr';}}
   const optionCopy={'business-product-price-mode':{contact:'priceContact',fixed:'priceFixed',from:'priceFrom',range:'priceRange'},'business-product-availability':{contact:'availability_contact',available:'availability_available',limited:'availability_limited',unavailable:'availability_unavailable'},'business-product-visibility':{visible:'visibleProduct',hidden:'hiddenProduct'},'business-product-fulfilment-mode':{business:'businessFulfilment',specific:'specificFulfilment'}};
   for(const [id,options] of Object.entries(optionCopy))for(const [value,key] of Object.entries(options)){const option=el(id)?.querySelector('option[value="'+value+'"]');if(option)option.textContent=t(key);}
+  // Translate interface text only: never change input values or owner records.
+  const textNodes={
+   'label[for=owner-preparation-language]':'language', '#products > .view-heading > p':'offersHelp', '.business-products-manager > .profile-step-heading h4':'productsLabel',
+   '.business-products-manager > .profile-step-heading p':'productsHelp', '#business-products-total + span':'productsLabel',
+   '#business-products-visible + span':'discoveryLabel', '#business-products-images + span':'imagesLabel', '#owner-options-guidance':'optionsHelp',
+   '#business-product-price + p':'priceHelp', 'label[for="business-product-image"]':'imageLabel', '#business-product-image + p':'imageHelp',
+   '#business-product-image-preview strong':'imagePreview', '#business-product-image-preview p':'imagePreviewHelp',
+   '#business-product-visibility + p':'visibilityHelp', '#business-product-fulfilment-mode + p':'fulfilmentHelp',
+   '#business-product-fulfilment-options legend':'fulfilmentMethods', '#business-media-product + p':'mediaRelationshipHelp',
+   '#business-media-file + p':'mediaLimits', '#business-media-empty':'mediaEmpty'
+  };
+  for(const [selector,key] of Object.entries(textNodes)){const target=doc.querySelector(selector);if(target){target.textContent=t(key);target.lang=language;target.dir=language==='ar'?'rtl':'ltr';}}
+  for(const [id,key] of Object.entries({'business-product-name':'namePlaceholder','business-product-price':'pricePlaceholder','business-product-description':'descriptionPlaceholder'}))el(id).placeholder=t(key);
+  const methods={'collection':'collection','delivery':'delivery','shipping':'shipping','premises':'premises','customer-location':'customerLocation','appointment':'appointment','digital':'digital'};
+  for(const [value,key] of Object.entries(methods)){const field=doc.querySelector('#business-product-fulfilment-options input[value="'+value+'"]');if(field){let label=field.parentElement.querySelector('[data-vendor-fulfilment-label]');if(!label){for(const child of [...field.parentElement.childNodes])if(child.nodeType===3)child.remove();label=node('span');label.dataset.vendorFulfilmentLabel='';field.after(label);}label.textContent=' '+t(key);label.lang=language;label.dir=language==='ar'?'rtl':'ltr';}}
   el('business-media-upload-btn').textContent=t('uploadMedia');
   const mediaOption=el('business-media-product')?.querySelector('option[value=""]');if(mediaOption&&selling)mediaOption.textContent=t('chooseProduct');
   const save=el('products-review-save');if(save)save.hidden=selling;
