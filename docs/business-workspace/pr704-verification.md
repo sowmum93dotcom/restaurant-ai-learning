@@ -47,3 +47,5 @@ Independent review remains unresolved for this completion pass. The earlier GitH
 Release decision: keep PR704 draft and unmerged while production storage acceptance and independent review remain unresolved. Record physical Safari/iPhone playback as an unperformed test. Payment processing and live customer ordering remain disabled; no payment or order activation code was changed.
 
 Latest completion screenshots: `pr704-evidence/demeos-owner-vendor-catalogue-{390,820,1440}.webp` and `pr704-evidence/demeos-owner-vendor-editor-{390,820,1440}.webp`. These show controlled isolated products, not live vendor inventory. A separate CLI production-readiness run stopped on an environment certificate trust error; it is not recorded as passed. The cloud-browser public Selling entry inspection did succeed.
+
+CI correction: the first completion browser workflow found that removing the pricing selector’s explicit accessible name broke the existing exact-label owner gate. Restored the explicit name, and synchronise it with translated captions in Selling. The acceptance gate remains intact. Final CI must pass for the corrected head.

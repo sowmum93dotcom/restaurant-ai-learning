@@ -121,6 +121,7 @@
   for(const [id,key] of Object.entries({'business-product-name':'namePlaceholder','business-product-price':'pricePlaceholder','business-product-description':'descriptionPlaceholder'}))el(id).placeholder=t(key);
   const methods={'collection':'collection','delivery':'delivery','shipping':'shipping','premises':'premises','customer-location':'customerLocation','appointment':'appointment','digital':'digital'};
   for(const [value,key] of Object.entries(methods)){const field=doc.querySelector('#business-product-fulfilment-options input[value="'+value+'"]');if(field){let label=field.parentElement.querySelector('[data-vendor-fulfilment-label]');if(!label){for(const child of [...field.parentElement.childNodes])if(child.nodeType===3)child.remove();label=node('span');label.dataset.vendorFulfilmentLabel='';field.after(label);}label.textContent=' '+t(key);label.lang=language;label.dir=language==='ar'?'rtl':'ltr';}}
+  doc.querySelectorAll('#owner-product-options label > span').forEach(caption=>{const field=caption.parentElement.querySelector('input,select,textarea');if(field)field.setAttribute('aria-label',caption.textContent);});
   el('business-media-upload-btn').textContent=t('uploadMedia');
   const mediaOption=el('business-media-product')?.querySelector('option[value=""]');if(mediaOption&&selling)mediaOption.textContent=t('chooseProduct');
   const save=el('products-review-save');if(save)save.hidden=selling;

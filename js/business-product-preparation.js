@@ -36,7 +36,7 @@
   const el=(tag,text)=>{const n=document.createElement(tag);if(text)n.textContent=text;return n;};
   const ui=(tag,text)=>{const n=el(tag,text);if(uiKeys[text])n.dataset.vendorCopy=uiKeys[text];return n;};
   const input=(label,value,type='text')=>{const wrap=el('label'),caption=ui('span',label),field=el('input');wrap.append(caption);field.type=type;field.value=value??'';field.maxLength=120;if(type==='number'){field.min='0';field.step='any';}wrap.append(field);return {wrap,field};};
-  const optionSelect=(label,values,chosen,interfaceOptions=true)=>{const wrap=el('label'),caption=ui('span',label),field=el('select');wrap.append(caption);for(const [value,text] of values){const o=interfaceOptions||value===''?ui('option',text):el('option',text);o.value=value;field.append(o);}field.value=chosen;wrap.append(field);return {wrap,field};};
+  const optionSelect=(label,values,chosen,interfaceOptions=true)=>{const wrap=el('label'),caption=ui('span',label),field=el('select');field.setAttribute('aria-label',label);wrap.append(caption);for(const [value,text] of values){const o=interfaceOptions||value===''?ui('option',text):el('option',text);o.value=value;field.append(o);}field.value=chosen;wrap.append(field);return {wrap,field};};
   const empty=el('option','General product or service');empty.value='';empty.dataset.ownerCopy='generalCategory';category.append(empty);
   const copyNode=(tag,key,text)=>{const node=el(tag,text);node.dataset.ownerCopy=key;return node;};
   for(const id of Object.keys(contract.categories)){const o=el('option',categoryNames[id]);o.value=id;o.dataset.ownerCategory=id;category.append(o);}
