@@ -14,17 +14,23 @@
  let saved=null,dirty=true,busy=false,initialized=false,failure=false,applicationStatus=null;
  const doc=root.document,byId=id=>doc?.getElementById(id);
  function language(){return root.DEMEOSLanguageRegistry?.resolve(byId('owner-preparation-language')?.value||'en')||{code:'en',direction:'ltr'};}
- function text(key){return copy[language().code]?.[keys.indexOf(key)]||copy.en[keys.indexOf(key)];}
+ function text(key){return (['approved','rejected','revoked'].includes(key)?root.DEMEOSVendorCopy?.[language().code]?.[key]:null)||copy[language().code]?.[keys.indexOf(key)]||copy.en[keys.indexOf(key)];}
  function localize(){const lang=language();doc?.querySelectorAll('[data-onboarding-copy]').forEach(node=>{node.textContent=text(node.dataset.onboardingCopy);node.lang=lang.code;node.dir=lang.direction;});
   const cat=byId('business-offering-category');if(cat){const labels=root.DEMEOSItemPresentationCopy?.[lang.code]?.categories||{};for(const option of cat.options)option.textContent=option.value?labels[option.value]||option.value:text('general');}
   render();}
- function render(){const status=byId('business-onboarding-status'),button=byId('submit-business-btn');if(!status||!button)return;
-  const submitted=saved?.informationStatus?.reviewState==='submitted';status.textContent=text(failure?'failed':dirty?'saveFirst':submitted?(['reviewed','changes-requested'].includes(applicationStatus)?applicationStatus:'submitted'):'draft');status.lang=language().code;status.dir=language().direction;
+ function render(){
+  const selectedModel=byId('business-preparation-model')?.value;
+  const marketing=byId('onboarding-marketing');if(marketing)marketing.hidden=selectedModel==='selling';
+  doc?.querySelectorAll('.business-profile-progress a[href="#business-profile-marketing"]').forEach(node=>node.hidden=selectedModel==='selling');
+  doc?.querySelectorAll('[data-onboarding-copy="marketingNote"]').forEach(node=>node.hidden=selectedModel==='selling');
+  doc?.querySelectorAll('[data-onboarding-copy="sellingNote"]').forEach(node=>node.hidden=selectedModel==='marketing');
+  const status=byId('business-onboarding-status'),button=byId('submit-business-btn');if(!status||!button)return;
+  const submitted=saved?.informationStatus?.reviewState==='submitted';status.textContent=text(failure?'failed':dirty?'saveFirst':['approved','rejected','revoked'].includes(applicationStatus)?applicationStatus:submitted?(['reviewed','changes-requested','approved','rejected','revoked'].includes(applicationStatus)?applicationStatus:'submitted'):'draft');status.lang=language().code;status.dir=language().direction;
   button.disabled=busy||dirty||!saved||submitted;
   const container=byId('business-onboarding-review');container.replaceChildren();
   if(!saved||dirty)return;
   const list=doc.createElement('dl');const category=byId('business-offering-category');const model=byId('business-preparation-model');
-  for(const [label,value] of [[text('business'),[saved.name,saved.type,saved.location,saved.productsServices].filter(Boolean).join(' · ')],[text('category'),category?.selectedOptions[0]?.textContent],[text('model'),model?.selectedOptions[0]?.textContent],[text('marketing'),[saved.brandVoice,saved.targetCustomer,saved.goal].filter(Boolean).join(' · ')],[text('preparation'),[...(saved.customerContinuation?.routes||[]),...Object.entries(saved.customerContinuation||{}).filter(([key,value])=>key!=='routes'&&typeof value==='string'&&value).map(([,value])=>value),...(saved.fulfilment?.methods||[]),saved.fulfilment?.notes,saved.operationalAvailability?.status,saved.operationalAvailability?.hoursNotes,saved.operationalAvailability?.notes].filter(Boolean).join(' · ')]]){const dt=doc.createElement('dt'),dd=doc.createElement('dd');dt.textContent=label;dd.textContent=value||'';list.append(dt,dd);}container.append(list);
+  for(const [label,value] of [[text('business'),[saved.name,saved.type,saved.location,saved.productsServices].filter(Boolean).join(' · ')],[text('category'),category?.selectedOptions[0]?.textContent],[text('model'),model?.selectedOptions[0]?.textContent],[text('marketing'),[saved.brandVoice,saved.targetCustomer,saved.goal].filter(Boolean).join(' · ')],[text('preparation'),[...(saved.customerContinuation?.routes||[]),...Object.entries(saved.customerContinuation||{}).filter(([key,value])=>key!=='routes'&&typeof value==='string'&&value).map(([,value])=>value),...(saved.fulfilment?.methods||[]),saved.fulfilment?.notes,saved.operationalAvailability?.status,saved.operationalAvailability?.hoursNotes,saved.operationalAvailability?.notes].filter(Boolean).join(' · ')]].filter(([label])=>saved.preparationModel!=='selling'||label!==text('marketing'))){const dt=doc.createElement('dt'),dd=doc.createElement('dd');dt.textContent=label;dd.textContent=value||'';list.append(dt,dd);}container.append(list);
  }
  function setup(){if(initialized||!byId('business-offering-category'))return;initialized=true;const cat=byId('business-offering-category');for(const id of ['',...Object.keys(root.DEMEOSCustomerItemContract.categories)]){const option=doc.createElement('option');option.value=id;cat.append(option);}
   for(const group of ['business-profile','products']){byId(group)?.addEventListener('input',event=>{if(event.target.id==='business-accuracy-confirmation'||event.target.id==='owner-preparation-language')return;dirty=true;render();});byId(group)?.addEventListener('change',event=>{if(event.target.id==='business-accuracy-confirmation')return;dirty=true;render();});}
@@ -38,7 +44,7 @@
   const snapshot=saved;busy=true;failure=false;render();try{const response=await root.fetch('/api/businesses/'+encodeURIComponent(snapshot.businessId),{method:'PUT',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'submit-business',ownerAccuracyConfirmed:true,reviewedProfile:snapshot})});
    if(!response.ok){if(response.status===409&&saved===snapshot)dirty=true;throw Error('Submission unavailable');}const result=await response.json();if(saved!==snapshot||root.localStorage.getItem('demeosActiveBusinessId')!==snapshot.businessId)return;saved={...snapshot,informationStatus:result.informationStatus};
   }catch(_){if(saved===snapshot){failure=true;byId('business-onboarding-status').textContent=text('failed');}}finally{busy=false;render();}}
- root.DEMEOSBusinessOnboarding={fill,confirm,localize,markDirty,copy,keys};
+ root.DEMEOSBusinessOnboarding={fill,confirm,localize,markDirty,updateStatus(readiness){if(readiness?.businessId===saved?.businessId){applicationStatus=readiness.onboarding?.status;render();}},copy,keys};
  if(typeof module==='object'&&module.exports)module.exports={copy,keys};
  if(doc)doc.addEventListener('DOMContentLoaded',setup);
 }(typeof window==='object'?window:{}));

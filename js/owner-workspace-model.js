@@ -33,9 +33,10 @@
     const allowed = ['marketing', 'selling'].filter(model => ready[model]?.canPrepare === true);
     if (!allowed.length) {
       const denied = ['marketing', 'selling'].every(model => ready[model]?.canPrepare === false);
-      return {status: denied ? 'denied' : ['submitted', 'changes-requested', 'reviewed'].includes(ready.onboarding?.status) ? 'pending' : 'unavailable', model: null, allowed};
+      const lifecycle=ready.onboarding?.status;
+      return {status: ['rejected','revoked'].includes(lifecycle) ? lifecycle : denied ? 'denied' : ['submitted', 'changes-requested', 'reviewed'].includes(ready.onboarding?.status) ? 'pending' : 'unavailable', model: null, allowed};
     }
-    if (preference && !allowed.includes(preference)) return {status:'denied', model:null, allowed, businessId};
+    if (preference && !allowed.includes(preference)) return {status:['rejected','revoked'].includes(ready.onboarding?.applicationStatuses?.[preference]?.status)?ready.onboarding.applicationStatuses[preference].status:'denied', model:null, allowed, businessId};
     const intent = null;
     const model = allowed.includes(preference) ? preference : allowed.includes(intent) ? intent : allowed[0];
     return {status: 'ready', model, allowed, businessId};
@@ -52,6 +53,8 @@
     setup: ['Set up your business', 'Save your business details to continue.'],
     pending: ['Preparation access pending', 'Your submission is private. Check My Business for its review status.'],
     denied: ['Application access pending', 'Your business details remain private. Application access requires DEMEOS authorisation.'],
+    rejected: ['Application request rejected', 'Review your business information before resubmitting.'],
+    revoked: ['Application access revoked', 'Contact DEMEOS for review.'],
     forbidden: ['Business access unavailable', 'This account cannot access the selected business.'],
     unavailable: ['Workspace could not be loaded', 'Try again. Your saved information has not changed.']
   };
@@ -100,11 +103,13 @@
       title.textContent = state.model === 'marketing' ? 'Marketing Business Application' : state.model === 'selling' ? 'Selling Vendor Application' : messages[state.status][0];
       title.className = application && state.status === 'ready' ? 'owner-visually-hidden' : '';
       if (state.model) title.textContent = copy(state.model === 'selling' ? 'sellingApplication' : 'marketingApplication', title.textContent);
+      else if(['rejected','revoked'].includes(state.status))title.textContent=copy(state.status,title.textContent);
       else if (state.status === 'denied') title.textContent = copy('applicationPending', title.textContent);
       container.appendChild(title);
       const status = doc.createElement('span');
       status.textContent = state.model === 'marketing' ? 'Private marketing preparation' : state.model === 'selling' ? 'Preparation only. Selling is not enabled.' : messages[state.status][1];
       if(state.model) status.textContent = copy(state.model === 'selling' ? 'applicationSellingPrivate' : 'applicationMarketingPrivate', status.textContent);
+      else if(['rejected','revoked'].includes(state.status))status.textContent=copy(state.status+'Detail',status.textContent);
       else if(state.status === 'denied') status.textContent = copy('applicationPendingDetail', status.textContent);
       container.appendChild(status);
       if (state.allowed.length > 1 || (!application && state.allowed.length)) {
@@ -180,5 +185,26 @@
   }
   const api = {routeApplication, destination, resolve, canOpen, apply, getState, messages};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
-  else {root.DEMEOSOwnerWorkspace = api;identifyApplication(root.document);}
+  else {root.DEMEOSOwnerWorkspace = api;identifyApplication(root.document);
+    // Revalidate server authority on return to the app; never rely on browser grants.
+    let checking=false;
+    async function revalidate(){
+      const doc=root.document,current=states.get(doc);
+      if(checking||doc.hidden||!current?.businessId||doc.getElementById('owner-authenticated-workspace')?.hidden)return;
+      checking=true;try{
+        const response=await root.fetch('/api/businesses/'+encodeURIComponent(current.businessId),{credentials:'same-origin',cache:'no-store'});
+        if(states.get(doc)!==current)return;
+        if(!response.ok){if([401,403].includes(response.status))apply(doc,null,current.businessId,'forbidden');return;}
+        const record=await response.json();if(states.get(doc)!==current)return;
+        root.DEMEOSBusinessOnboarding?.updateStatus(record.workspaceReadiness);
+        const statusNode=doc.querySelector('#workspace-business-identity [data-vendor-copy]');
+        const lifecycle=record.workspaceReadiness?.onboarding?.status;
+        if(statusNode&&['approved','rejected','revoked'].includes(lifecycle)){statusNode.dataset.vendorCopy=lifecycle;statusNode.textContent=copy(lifecycle,lifecycle);}
+        const next=resolve(record,current.businessId,routeApplication());
+        if(next.status!==current.state.status||next.model!==current.state.model||JSON.stringify(next.allowed)!==JSON.stringify(current.state.allowed))apply(doc,record,current.businessId);
+      }catch(_){}finally{checking=false;}
+    }
+    root.addEventListener('focus',revalidate);root.document.addEventListener('visibilitychange',revalidate);
+    root.setInterval(revalidate,30000);
+  }
 })(typeof window !== 'undefined' ? window : globalThis);

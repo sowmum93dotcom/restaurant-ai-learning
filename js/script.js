@@ -280,7 +280,10 @@ async function hydrateKnownBusiness(storage, businessId, fetchImpl, acceptRespon
   try {
     const application = typeof window !== "undefined" ? window.DEMEOSOwnerWorkspace?.routeApplication() : null;
     const response = await fetchImpl(`/api/businesses/${encodeURIComponent(businessId)}${application ? "?application=" + application : ""}`);
-    if (!response.ok) return { hydrated: false, reason: response.status === 403 ? "forbidden" : "server-error" };
+    if (!response.ok) {
+      if(response.status===403){try{const denial=await response.json();if(denial.reason==='application-access-required')return {hydrated:false,reason:['rejected','revoked'].includes(denial.applicationStatus)?denial.applicationStatus:'denied'};}catch(_){} }
+      return { hydrated: false, reason: response.status === 403 ? "forbidden" : "server-error" };
+    }
     const serverRecord = await response.json();
     if (acceptResponse && !acceptResponse()) return {hydrated:false,reason:"stale-response"};
     const currentProfiles = parseStoredJson(storage, "demeosBusinessProfiles", []);
@@ -815,7 +818,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     if (generation !== hydrationGeneration || addingBusiness) return;
     if (!result.hydrated || state.activeBusinessId !== requestedBusinessId) {
       if (state.activeBusinessId === requestedBusinessId) { renderRecommendsUnderstanding(null, requestedBusinessId);
-        globalThis.window?.DEMEOSOwnerWorkspace?.apply(document, null, requestedBusinessId, result.reason === "forbidden" ? "forbidden" : "unavailable");
+        globalThis.window?.DEMEOSOwnerWorkspace?.apply(document, null, requestedBusinessId, ["forbidden","denied","rejected","revoked"].includes(result.reason) ? result.reason : "unavailable");
       }
       return;
     }
@@ -1549,7 +1552,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   saveBusinessProfileBtn.addEventListener("click", async function () {
     const profileFields = {};
     Object.keys(fields).forEach(function (key) { profileFields[key] = fields[key].value.trim(); });
-    if (Object.keys(profileFields).some(function (key) { return !profileFields[key]; })) {
+    if (Object.keys(profileFields).some(function (key) { return !profileFields[key] && !(byId("business-preparation-model")?.value === "selling" && ["brandVoice","targetCustomer","goal"].includes(key)); })) {
       alert("Please complete the business details, products/services and marketing profile before saving."); return;
     }
     const routes = selectedValues(continuationRouteIds);

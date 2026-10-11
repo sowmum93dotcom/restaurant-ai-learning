@@ -35,7 +35,7 @@ function cleanString(value, maxLength) {
 
 function getValidatedProfile(req) {
   const profile = req.body && req.body.businessProfile;
-  const requiredFields = ["name", "type", "location", "brandVoice", "targetCustomer", "goal"];
+  const requiredFields = profile?.preparationModel === "selling" ? ["name", "type", "location"] : ["name", "type", "location", "brandVoice", "targetCustomer", "goal"];
   if (
     !profile ||
     typeof profile !== "object" ||
@@ -292,7 +292,7 @@ module.exports = async function handler(req, res) {
     const grants = require('../_lib/business-application-access').applicationAccess(record, businessId);
     const application = req.query.application;
     if (application !== undefined && (!['marketing', 'selling'].includes(application) || !grants[application]))
-      return res.status(403).json({error:'Application access is not authorised.',reason:'application-access-required'});
+      return res.status(403).json({error:'Application access is not authorised.',reason:'application-access-required',applicationStatus:record.businessProfile.applicationDecisions?.[application]?.status||'pending'});
     // Marketing operations and evidence are private to the Marketing application.
     if (!grants.marketing || application === 'selling') {
       record.campaigns = []; record.customerParticipationResults = [];

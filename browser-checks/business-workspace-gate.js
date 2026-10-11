@@ -60,7 +60,7 @@ const server=http.createServer(async(req,res)=>{try{
    if(viewport.width===390){assert.ok(before.nextAction.y>viewport.height,'The earlier design buried the next action');assert.ok(after.navigation.height<before.navigation.height/2,'Navigation no longer dominates mobile');}
    assert.equal(await page.locator('.owner-overview-summary .demeos-primary-button').count(),1);
    assert.equal(await page.locator('h1').count(),1);assert.equal(await page.locator('#owner-overview-heading').innerText(),'Overview');
-   assert.match(await page.locator('#workspace-business-identity').innerText(),/Private preparation. Business approval is not recorded/);
+   assert.match(await page.locator('#workspace-business-identity').innerText(),/Application access approved/);
    await page.screenshot({path:'/tmp/demeos-owner-after-first-screen-'+viewport.width+'.png'});
    for(const link of await page.locator('.owner-workspace-navigation a').all()){
     const box=await link.boundingBox();assert.ok(box.height>=44&&box.height<=60,'Navigation has compact accessible touch targets: '+JSON.stringify({box,label:await link.innerText()}));
@@ -119,7 +119,7 @@ const server=http.createServer(async(req,res)=>{try{
      if(application==='selling')for(const [code,copy] of Object.entries(applicationCopy)){
        await page.locator('#owner-preparation-language').selectOption(code);
        assert.equal(await page.locator('.owner-identity-card .owner-summary-link').textContent(),copy.reviewBusiness);
-       assert.equal(await page.locator('#workspace-business-identity [data-vendor-copy]').textContent(),copy.privatePreparation);
+       assert.equal(await page.locator('#workspace-business-identity [data-vendor-copy]').textContent(),copy.approved);
        assert.equal(await page.locator('[data-vendor-copy=language]').textContent(),copy.language);
        const statuses=await page.locator('#workspace-current-work [data-vendor-copy]').evaluateAll(nodes=>nodes.map(n=>({key:n.dataset.vendorCopy,text:n.textContent})));
        for(const status of statuses)assert.equal(status.text,copy[status.key]);

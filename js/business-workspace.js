@@ -169,8 +169,9 @@ function renderOwnerWorkspace(documentObject, storage, applicationStatus) {
     identity.appendChild(detail);
   });
   const saved = documentObject.createElement("span"); saved.textContent = context.profile.informationStatus?.reviewState === "submitted" ? "Submitted privately. Awaiting administrative review; approval is not granted." : "Private preparation. Business approval is not recorded."; if (applicationStatus === "reviewed") saved.textContent = "Review completed. Business approval and activation are not granted.";
+  if (['approved','rejected','revoked'].includes(applicationStatus)) {saved.dataset.vendorCopy=applicationStatus; saved.textContent=typeof window!=="undefined" ? window.DEMEOSVendorCopy?.[localStorage.getItem('demeos-customer-language')||'en']?.[applicationStatus]||applicationStatus : applicationStatus;}
   if (applicationStatus === "changes-requested") saved.textContent = "Changes requested. Edit, save and resubmit your information."; if (typeof window !== "undefined" && window.DEMEOSOwnerWorkspace?.routeApplication() === "selling") {
-    saved.dataset.vendorCopy = applicationStatus === "changes-requested" ? "changesPreparation" : applicationStatus === "reviewed" ? "reviewedPreparation" : context.profile.informationStatus?.reviewState === "submitted" ? "submittedPreparation" : "privatePreparation";
+    saved.dataset.vendorCopy = ['approved','rejected','revoked'].includes(applicationStatus) ? applicationStatus : applicationStatus === "changes-requested" ? "changesPreparation" : applicationStatus === "reviewed" ? "reviewedPreparation" : context.profile.informationStatus?.reviewState === "submitted" ? "submittedPreparation" : "privatePreparation";
     let code="en";try {code=window.localStorage.getItem("demeos-customer-language") || "en";}catch(_){}
     saved.textContent=window.DEMEOSVendorCopy?.[code]?.[saved.dataset.vendorCopy] || saved.textContent;
   } identity.appendChild(saved);
@@ -293,7 +294,7 @@ async function loadOwnerNextAction(documentObject, storage, fetchFunction) {
     });
     if (!response.ok) {
       const error = new Error("Business record unavailable"); error.status = response.status;
-      if (response.status === 403) { try { error.applicationDenied = (await response.json()).reason === 'application-access-required'; } catch (_) {} }
+      if (response.status === 403) { try { const denial=await response.json();error.applicationDenied=denial.reason==='application-access-required';error.applicationStatus=['rejected','revoked'].includes(denial.applicationStatus)?denial.applicationStatus:'denied'; } catch (_) {} }
       throw error;
     }
     const record = await response.json();
@@ -325,10 +326,10 @@ async function loadOwnerNextAction(documentObject, storage, fetchFunction) {
     const identity = documentObject.getElementById("workspace-business-identity");
     const work = documentObject.getElementById("workspace-current-work");
     if (identity) identity.textContent = "Business information could not be confirmed.";
-    if (work) work.textContent = "Current activity is unavailable. Open Marketing to retry.";
-    renderOwnerModels(documentObject, null, activeBusinessId, null, _error.applicationDenied ? "denied" : _error.status === 403 ? "forbidden" : "unavailable");
+    if (work) work.textContent = "Application activity is unavailable. Review your business applications.";
+    renderOwnerModels(documentObject, null, activeBusinessId, null, _error.applicationDenied ? _error.applicationStatus : _error.status === 403 ? "forbidden" : "unavailable");
     renderOwnerDashboardSummary(documentObject, null, activeBusinessId);
-    renderOwnerNextAction(documentObject, _error.applicationDenied ? {title:"Application access pending",explanation:"Application access requires DEMEOS authorisation.",action:"Business applications",destination:"/business-workspace.html"} : {title: _error.status === 403 ? "Business access unavailable" : "Workspace could not be loaded", explanation: "Try again or review your business details.", action: "Review My Business", destination: "marketing.html#business-profile"});
+    renderOwnerNextAction(documentObject, _error.applicationDenied ? {title:window.DEMEOSOwnerWorkspace.messages[_error.applicationStatus][0],explanation:window.DEMEOSOwnerWorkspace.messages[_error.applicationStatus][1],action:"Business applications",destination:"/business-workspace.html"} : {title: _error.status === 403 ? "Business access unavailable" : "Workspace could not be loaded", explanation: "Try again or review your business details.", action: "Review My Business", destination: "marketing.html#business-profile"});
     return unavailableOwnerNextAction;
   }
 }

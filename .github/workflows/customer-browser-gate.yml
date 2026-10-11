@@ -36,6 +36,8 @@ jobs:
         run: node browser-checks/vendor-inventory-gate.js
       - name: Run private administrative application review gate
         run: node browser-checks/admin-business-review-gate.js
+      - name: Run business approval and separate application journey
+        run: node browser-checks/business-approval-journey-gate.js
       - name: Run approved source SQL and customer continuation gate
         run: node browser-checks/customer-approved-source-gate.js
       - name: Run public homepage and information gate
@@ -76,3 +78,4 @@ jobs:
             /tmp/demeos-owner-*.png
             /tmp/demeos-owner-layout-*.json
             /tmp/demeos-admin-*.png
+            /tmp/demeos-approval-*.png
