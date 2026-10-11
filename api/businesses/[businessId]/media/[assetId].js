@@ -12,7 +12,9 @@ module.exports=async function handler(req,res){
  if(!businessId||!assetId)return res.status(400).json({error:"A businessId and assetId are required."});
  try{
   const repository=getRepository();
-  const access=await authorizeBusinessOwnerRequest({req,businessId,action:DEMEOS_ACTIONS.MANAGE_BUSINESS_MEDIA,repository});
+  const application=req.query.application;
+  if(application!==undefined&&!['marketing','selling'].includes(application))return res.status(403).json({error:'Application access required.'});
+  const access=await authorizeBusinessOwnerRequest({req,businessId,action:DEMEOS_ACTIONS.MANAGE_BUSINESS_MEDIA,repository,application});
   if(!access.authenticated)return res.status(401).json({error:"Authentication required."});
   if(!access.allowed)return res.status(403).json({error:"Forbidden."});
   const current=await repository.getBusinessMediaAsset(businessId,assetId);

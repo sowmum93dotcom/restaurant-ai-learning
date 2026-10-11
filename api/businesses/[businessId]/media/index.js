@@ -16,7 +16,7 @@ module.exports = async function handler(req, res) {
   if (!businessId) return res.status(400).json({ error: "A businessId is required." });
   try {
     const repository = getRepository();
-    const access = await authorizeBusinessOwnerRequest({ req, businessId, action: DEMEOS_ACTIONS.MANAGE_BUSINESS_MEDIA, repository });
+    const access = await authorizeBusinessOwnerRequest({ req, businessId, action: DEMEOS_ACTIONS.MANAGE_BUSINESS_MEDIA, repository, application: req.query.application });
     if (!access.authenticated) return res.status(401).json({ error: "Authentication required." });
     if (!access.allowed) return res.status(403).json({ error: "Forbidden." });
     const accessRecord = await repository.getKnownBusiness(businessId);

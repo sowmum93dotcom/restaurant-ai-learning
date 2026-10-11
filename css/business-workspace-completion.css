@@ -231,3 +231,21 @@ body[data-owner-view=product-options] .business-product-form>div:has(#business-p
 
 .owner-workspace-body[data-owner-view=media] .business-products-manager,
 .owner-workspace-body[data-owner-view=media] #business-profile-offering{display:none!important;}
+
+
+/* Selling-specific operational surface. Shared identity and backend remain unchanged. */
+.owner-workspace-body .selling-operations {margin-block:1.25rem 2rem;padding:clamp(18px,3vw,30px);border-radius:20px;background:#0d223a;color:#f4f6fa;border:1px solid rgba(205,174,91,.35);}
+.owner-workspace-body .selling-operations-heading {display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:20px;}
+.owner-workspace-body .selling-operations-heading h3 {color:#f6e0a3;font-size:clamp(1.35rem,2.4vw,1.85rem);margin:4px 0 8px;}
+.owner-workspace-body .selling-operations-heading p {margin:0;line-height:1.5;color:#dce6f4;}
+.owner-workspace-body .selling-operation-grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;}
+.owner-workspace-body .selling-operation-card {display:flex;flex-direction:column;gap:10px;padding:20px;min-width:0;border:1px solid #b9c7d6;border-radius:14px;background:#f8fafc;color:#172940;text-decoration:none;min-height:185px;box-sizing:border-box;}
+.owner-workspace-body .selling-operation-card strong {font-size:1.12rem;color:#10253e;}
+.owner-workspace-body .selling-operation-card>span:not(.selling-operation-symbol):not(.selling-operation-action) {color:#40556b;line-height:1.5;}
+.owner-workspace-body .selling-operation-symbol {font-size:1.7rem;color:#8b691d;}
+.owner-workspace-body .selling-operation-action {margin-top:auto;color:#75520b;font-weight:700;}
+.owner-workspace-body .selling-operation-card:hover {border-color:#ad8837;box-shadow:0 5px 18px rgba(0,0,0,.13);}
+.owner-workspace-body .selling-operation-card:focus-visible {outline:3px solid #d7ad4f;outline-offset:3px;}
+.owner-workspace-body .selling-operations-note {color:#dce6f4;font-size:.85rem;line-height:1.5;margin:18px 0 0;}
+@media(max-width:850px){.owner-workspace-body .selling-operation-grid{grid-template-columns:1fr 1fr;}}
+@media(max-width:560px){.owner-workspace-body .selling-operation-grid{grid-template-columns:1fr;}.owner-workspace-body .selling-operation-card{min-height:0;}.owner-workspace-body .selling-operations-heading>.demeos-primary-button{width:100%;text-align:center;}}

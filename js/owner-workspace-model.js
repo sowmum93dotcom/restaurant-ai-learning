@@ -85,6 +85,9 @@
     }
     states.set(doc, {state, record, businessId});
     doc.body.dataset.ownerModel = state.model || 'none';
+    // The legacy Marketing visual theme must not override the Selling application theme.
+    const marketingTheme=doc.querySelector('link[href="/css/demeos-business-premium.css"]');
+    if(marketingTheme)marketingTheme.disabled=state.model==='selling';
     doc.body.dataset.ownerAccess = state.status;
     doc.querySelectorAll('[data-owner-marketing]').forEach(node => { node.hidden = state.model !== 'marketing'; });
     doc.querySelectorAll('[data-owner-selling]').forEach(node => { node.hidden = state.model !== 'selling'; });
@@ -147,8 +150,16 @@
     if (header) header.textContent = application === 'marketing' ? 'Marketing Business Application' : application === 'selling' ? 'Selling Vendor Application' : 'Business applications';
     if (header && application) header.textContent = copy(application === 'selling' ? 'sellingApplication' : 'marketingApplication',header.textContent);
     doc.title = header?.textContent + ' | DEMEOS';
+    if(state.model==='selling'){
+      const review=doc.querySelector('.owner-identity-card .owner-summary-link');if(review)review.dataset.vendorCopy='reviewBusiness';
+      doc.querySelectorAll('[data-vendor-copy]').forEach(node=>{node.textContent=copy(node.dataset.vendorCopy,node.textContent);node.lang=language();node.dir=language()==='ar'?'rtl':'ltr';});
+      const overview=doc.getElementById('owner-overview-heading');if(overview)overview.textContent=copy('applicationOverview','Overview');
+      const next=doc.querySelector('.owner-next-action');if(next)next.hidden=true;
+      const heading=doc.getElementById('current-work-heading');if(heading)heading.textContent=copy('applicationCatalogue','Product catalogue');
+    }
     const select = doc.getElementById('owner-preparation-language');
-    if (select && !select.dataset.applicationBound) { select.dataset.applicationBound='true';select.addEventListener('change',()=>{const current=states.get(doc);if(current)apply(doc,current.record,current.businessId);}); }
+    if(select)select.value=language();
+    if (select && !select.dataset.applicationBound) { select.dataset.applicationBound='true';select.addEventListener('change',()=>{try{root.localStorage.setItem('demeos-customer-language',select.value);}catch(_){}const current=states.get(doc);if(current)apply(doc,current.record,current.businessId);}); }
     const businessCaption=doc.querySelector('.cuisine-type');if(businessCaption)businessCaption.textContent=state.status==='ready'?record.businessProfile.name:'';
     const guide = doc.querySelector('.owner-preparation-guide');
     if (guide) { guide.hidden = false; const text=guide.querySelector('[data-owner-copy=guide]'); if(text)text.hidden=state.model !== 'marketing'; }
@@ -156,7 +167,7 @@
     if (secondary) secondary.hidden = state.model !== 'marketing' || !marketingViews.has(root.location?.hash?.slice(1) || 'overview');
     const subtitle=doc.querySelector('.marketing-capability-heading>p');if(subtitle)subtitle.hidden=state.model!=='marketing';
     const productsTitle = doc.getElementById('products-heading');
-    if (productsTitle) productsTitle.textContent = state.model === 'selling' ? (root.location?.hash === '#product-options' ? 'Options and Availability' : 'Product Catalogue') : 'Products and Services';
+    if (productsTitle) productsTitle.textContent = state.model === 'selling' ? (root.location?.hash === '#product-options' ? copy('applicationOptions','Options and Availability') : copy('applicationCatalogue','Product Catalogue')) : 'Products and Services';
     // No selling results contract exists: keep marketing evidence out of that workspace.
     const resultsMain = doc.querySelector('.business-results-main');
     if (resultsMain) {

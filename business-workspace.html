@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="/css/business-owner-signin-3d.css" />
   <link rel="stylesheet" href="/css/demeos-business-premium.css" />
   <link rel="stylesheet" href="/css/business-workspace-completion.css" />
+  <link rel="stylesheet" href="/css/selling-vendor.css" />
 </head>
 <body data-owner-access="loading" data-owner-model="none" class="owner-workspace-body">
   <header class="workspace-header owner-workspace-header">
@@ -61,6 +62,7 @@
         <div class="owner-overview-heading">
           <div>
             <h2 id="owner-overview-heading">Overview</h2>
+            <label data-owner-selling hidden><span data-vendor-copy="language">Language</span> <select id="owner-preparation-language"><option value="en">English</option><option value="es">Español</option><option value="fr">Français</option><option value="ar">العربية</option><option value="pt">Português</option><option value="zh">中文</option><option value="hi">हिन्दी</option><option value="de">Deutsch</option><option value="ja">日本語</option></select></label>
           </div>
         </div>
 
@@ -93,7 +95,14 @@
 
 
 
-        <section id="owner-selling-dependencies" data-owner-selling hidden><p data-vendor-copy="applicationSellingPrivate">Preparation only. Selling is not enabled.</p><a class="owner-summary-link" href="marketing.html#inventory">Review stock</a> · <a class="owner-summary-link" href="marketing.html#orders">View private orders</a></section>
+        <section class="selling-operations" data-owner-selling hidden aria-labelledby="selling-operations-heading">
+          <div class="selling-operations-heading"><h3 id="selling-operations-heading" data-vendor-copy="applicationCatalogue">Product catalogue</h3><a class="demeos-primary-button" href="/selling-vendor/manage#products" data-vendor-copy="applicationCatalogue">Product catalogue</a></div>
+          <div class="selling-operation-grid">
+            <a class="selling-operation-card" href="/selling-vendor/manage#media" data-vendor-copy="applicationMedia">Images and Videos</a>
+            <a class="selling-operation-card" href="/selling-vendor/manage#inventory" data-vendor-copy="applicationStock">Stock and History</a>
+            <a class="selling-operation-card" href="/selling-vendor/manage#orders" data-vendor-copy="applicationOrders">Private Orders</a>
+          </div>
+        </section>
         <section data-owner-marketing class="owner-dashboard-results" aria-labelledby="owner-dashboard-results-heading">
           <div class="owner-section-heading"><h3 id="owner-dashboard-results-heading">Your marketing at a glance</h3><a href="business-results.html">Review results</a></div>
           <div id="owner-dashboard-summary" class="owner-metrics" aria-live="polite"><p>Confirming your recorded activity…</p></div>

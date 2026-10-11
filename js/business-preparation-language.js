@@ -25,7 +25,7 @@
  ja:['一般の商品・サービス','該当するカテゴリがなければ、一般の商品・サービスを選んで説明してください。追加の選択肢は必須ではありません。','関連する項目が自動的に表示されます。実際の情報だけを入力してください。保存済みの選択肢がある商品はカテゴリを保持します。','選択肢は任意です。実際に提供するものだけを追加し、他の項目は空欄にできます。','個別の選択肢と価格（任意）','組み合わせごとに価格や提供状況が異なる場合のみ使用します。保存済みの組み合わせは保持され、DEMEOS が自動作成することはありません。','個別の組み合わせを追加','提供する選択肢（1行に1つ）']};
  Object.keys(copy).forEach(code=>copy[code].push(...stages[code],...productGuidance[code]));
  function apply(value){const language=root.DEMEOSLanguageRegistry.resolve(value);root.document.querySelectorAll('[data-owner-copy]').forEach(node=>{const index=keys.indexOf(node.dataset.ownerCopy);if(index>=0){node.textContent=copy[language.code][index];node.lang=language.code;node.dir=language.direction;}});
-  root.document.querySelectorAll('[data-owner-choice-label]').forEach(node=>{node.firstChild.textContent=copy[language.code][keys.indexOf('choiceLabel')];node.lang=language.code;node.dir=language.direction;});
+  root.document.querySelectorAll('[data-owner-choice-label]').forEach(node=>{node.textContent=copy[language.code][keys.indexOf('choiceLabel')];node.lang=language.code;node.dir=language.direction;});
   const existing=root.DEMEOSItemPresentationCopy?.[language.code];if(existing)root.document.querySelectorAll('[data-owner-field],[data-owner-category]').forEach(node=>{const text=node.dataset.ownerField?existing.fields[node.dataset.ownerField]:existing.categories[node.dataset.ownerCategory];if(text){node.textContent=text;node.lang=language.code;node.dir=language.direction;}});
   return language.code;}
  function start(){const select=root.document.getElementById('owner-preparation-language');if(!select)return;
