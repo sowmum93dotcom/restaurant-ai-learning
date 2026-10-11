@@ -1025,8 +1025,16 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     } catch (error) { businessMediaStatus.textContent = error.message || "DEMEOS could not add this media."; }
     finally { businessMediaUploadBtn.disabled = false; }
   }
-  let sellingMediaRetries = [];
-  businessMediaFile?.addEventListener("change", () => { sellingMediaRetries = []; });
+  let sellingMediaRetries = [], sellingMediaGeneration = 0, sellingMediaBatch = null;
+  businessMediaFile?.addEventListener("change", () => { ++sellingMediaGeneration; sellingMediaRetries = []; });
+  document.addEventListener("owner-model-ready", () => {
+    const batch = sellingMediaBatch || sellingMediaRetries[0];
+    if (!batch) return;
+    const current = window.DEMEOSOwnerWorkspace?.getState(document);
+    if (current?.model !== "selling" || current.businessId !== batch.businessId || current.status !== "ready") {
+      ++sellingMediaGeneration; sellingMediaRetries = []; businessMediaFile.value = "";
+    }
+  });
   async function uploadBusinessMedia() {
     if(globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model!=="selling")return uploadMarketingMedia();
     const businessId=state.activeBusinessId,files=Array.from(businessMediaFile?.files||[]),relatedProductId=byId("business-media-product")?.value;
@@ -1040,33 +1048,38 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       businessMediaStatus.textContent=vendorText("chooseProduct","Choose the saved product these images belong to.");return;
     }
     const attempts=sellingMediaRetries.length?sellingMediaRetries:files.map(file=>({file,businessId,productId:relatedProductId,purpose:relatedProduct?.presentation?.kind==="service"?"service":"product",registered:null,uploaded:false}));
-    businessMediaUploadBtn.disabled=true;
+    const batchGeneration=sellingMediaGeneration;
+    const batchCurrent=()=>batchGeneration===sellingMediaGeneration&&state.activeBusinessId===businessId;
+    sellingMediaBatch={businessId};businessMediaUploadBtn.disabled=true;
     const failed=[],failedFiles=[],retryAttempts=[];
     for(let index=0;index<attempts.length;index++){
-      if(state.activeBusinessId!==businessId)break;
+      if(!batchCurrent())break;
       const attempt=attempts[index],file=attempt.file,kind=file.type.startsWith("video/")?"video":file.type.startsWith("image/")?"image":"";
       businessMediaStatus.textContent=`${vendorText("uploading","Uploading")} ${index+1}/${files.length}: ${file.name}`;
       try{
         if(!kind||file.size>(kind==="video"?250:15)*1024*1024)throw Error(vendorText("fileError","Check the file format and size."));
         if(!attempt.registered){
-          const register=await fetch(`/api/businesses/${encodeURIComponent(attempt.businessId)}/media`,{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({asset:{kind,purpose:attempt.purpose,relatedEntityId:attempt.productId,contentType:file.type,sizeBytes:file.size}})});
+          const register=await fetch(`/api/businesses/${encodeURIComponent(attempt.businessId)}/media?application=selling`,{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({asset:{kind,purpose:attempt.purpose,relatedEntityId:attempt.productId,contentType:file.type,sizeBytes:file.size}})});
           const registered=await register.json();
+          if(!batchCurrent())break;
           if(!register.ok||!registered.asset||!registered.uploadSession)throw Error(registered.error||"Secure media storage is unavailable.");
           attempt.registered=registered;
         }
         const registered=attempt.registered;
         if(!attempt.uploaded){
           const upload=await fetch(registered.uploadSession.uploadUrl,{method:"PUT",headers:{"Content-Type":file.type},body:file});
+          if(!batchCurrent())break;
           if(!upload.ok)throw Error(vendorText("uploadError","Upload did not complete."));
           attempt.uploaded=true;
         }
-        const complete=await fetch(`/api/businesses/${encodeURIComponent(attempt.businessId)}/media/${encodeURIComponent(registered.asset.assetId)}`,{method:"PATCH",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"complete-upload",uploadToken:registered.uploadSession.uploadToken,storageKey:registered.uploadSession.storageKey})});
+        const complete=await fetch(`/api/businesses/${encodeURIComponent(attempt.businessId)}/media/${encodeURIComponent(registered.asset.assetId)}?application=selling`,{method:"PATCH",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"complete-upload",uploadToken:registered.uploadSession.uploadToken,storageKey:registered.uploadSession.storageKey})});
+        if(!batchCurrent())break;
         if(!complete.ok){const error=await complete.json();throw Error(error.error||"Media could not be processed.");}
       }catch(error){failed.push(file.name+": "+vendorText("uploadError","Upload failed. Retry this file."));failedFiles.push(file);retryAttempts.push(attempt);}
     }
+    sellingMediaBatch=null;businessMediaUploadBtn.disabled=false;
+    if(!batchCurrent())return;
     sellingMediaRetries=retryAttempts;
-    businessMediaUploadBtn.disabled=false;
-    if(state.activeBusinessId!==businessId)return;
     if(!failed.length)businessMediaFile.value="";
     else if(typeof DataTransfer!=="undefined"){const retryFiles=new DataTransfer();for(const file of failedFiles)retryFiles.items.add(file);businessMediaFile.files=retryFiles.files;}
     businessMediaStatus.textContent=failed.length?failed.join("; "):vendorText("processed","Media received. Processing safely.");

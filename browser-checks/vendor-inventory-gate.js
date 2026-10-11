@@ -43,6 +43,7 @@ const server=http.createServer(async(req,res)=>{try{
 }catch(error){console.error(error);if(!res.writableEnded){res.statusCode=500;res.end('{}');}}});
 (async()=>{
  await database.ensureSchema();await repository.createBusinessForOwner('owner-a',profile);
+ await repository.createBusinessForOwner('owner-a',{...profile,businessId:'engineering-c',products:[],name:'Other authorised business'});
  await repository.createBusinessForOwner('owner-b',{...profile,businessId:'engineering-b',products:[],name:'Other business'});
  await repository.saveBusinessMediaAsset(profile.businessId,asset);
  await repository.saveBusinessMediaAsset(profile.businessId,{...asset,assetId:'engineering-image-two'});
@@ -113,9 +114,10 @@ const server=http.createServer(async(req,res)=>{try{
    assert.equal(await page.locator('#business-product-add-btn').textContent(),'Add to catalogue');
    await page.locator('#vendor-product-editor > summary').click();
    let failedOnce=false;const uploadedNames=[],completionCalls=new Map();let registrations=0;
-   page.on('request',request=>{if(request.method()==='POST'&&request.url().endsWith('/media'))registrations++;});
+   page.on('request',request=>{if(request.method()==='POST'&&new URL(request.url()).pathname.endsWith('/media')){assert.equal(new URL(request.url()).searchParams.get('application'),'selling');registrations++;}});
    await page.route('**/media/*',async route=>{
     if(route.request().method()!=='PATCH')return route.continue();
+    assert.equal(new URL(route.request().url()).searchParams.get('application'),'selling');
     const id=new URL(route.request().url()).pathname.split('/').at(-1),attempt=(completionCalls.get(id)||0)+1;completionCalls.set(id,attempt);
     const response=await route.fetch();
     if(uploads.get(id)?.bytes==='completion-file'&&attempt===1)return route.fulfill({status:503,json:{error:'Controlled lost completion response'}});
@@ -127,6 +129,18 @@ const server=http.createServer(async(req,res)=>{try{
     if(text==='retry-file'&&!failedOnce){failedOnce=true;return route.fulfill({status:500});}
     stored.uploaded=true;return route.fulfill({status:200});
    });
+   // Revoke Selling while the already-open editor retains its old model.
+   const beforeRevocation=(await repository.getKnownBusiness(profile.businessId)).businessProfile;
+   await page.locator('#business-media-product').selectOption('offer-a');
+   await page.locator('#business-media-file').setInputFiles({name:'revoked.png',mimeType:'image/png',buffer:Buffer.from('revoked-file')});
+   await repository.saveBusiness({...beforeRevocation,applicationAccess:{marketing:true,selling:false}});
+   const deniedRegistration=page.waitForResponse(r=>r.request().method()==='POST'&&new URL(r.url()).pathname.endsWith('/media'));
+   await page.locator('#business-media-upload-btn').click();assert.equal((await deniedRegistration).status(),403);
+   await page.waitForFunction(()=>document.getElementById('business-media-upload-btn').disabled===false);
+   assert.equal((await context.request.patch(base+'/api/businesses/engineering-a/media/engineering-image?application=selling',{data:{action:'complete-upload'}})).status(),403);
+   assert.equal((await context.request.patch(base+'/api/businesses/engineering-a/media/engineering-image?application=unknown',{data:{action:'complete-upload'}})).status(),403);
+   assert.equal((await context.request.post(base+'/api/businesses/engineering-a/media?application=selling',{data:{asset:{kind:'image',purpose:'product',relatedEntityId:'offer-a',contentType:'image/png',sizeBytes:10}}})).status(),403);
+   await repository.saveBusiness(beforeRevocation);registrations=0;
    await page.locator('#business-media-product').selectOption('offer-a');
    await page.locator('#business-media-file').setInputFiles([{name:'success.png',mimeType:'image/png',buffer:Buffer.from('success-file')},{name:'retry.png',mimeType:'image/png',buffer:Buffer.from('retry-file')},{name:'completion.png',mimeType:'image/png',buffer:Buffer.from('completion-file')}]);
    await page.locator('#business-media-upload-btn').click();await page.waitForFunction(()=>document.getElementById('business-media-upload-btn').disabled===false);
@@ -138,6 +152,28 @@ const server=http.createServer(async(req,res)=>{try{
    const completionAsset=[...uploads.values()].find(x=>x.bytes==='completion-file'&&completionCalls.has(x.asset.assetId));assert.equal(completionCalls.get(completionAsset.asset.assetId),2);
    await page.unroute('**/media/*');
    assert.equal(await page.locator('#business-media-file').evaluate(input=>input.files.length),0);
+   // Cancel an in-flight batch on business change, including switch-away-and-back.
+   let releaseSwitch,startedSwitch;
+   const switchStarted=new Promise(resolve=>startedSwitch=resolve),switchRelease=new Promise(resolve=>releaseSwitch=resolve);
+   await context.route('https://controlled-upload.example/**',async route=>{
+    if(route.request().postDataBuffer()?.toString()!=='switch-file')return route.fallback();
+    const stored=uploads.get(new URL(route.request().url()).pathname.slice(1));stored.uploaded=true;
+    startedSwitch();await switchRelease;await route.fulfill({status:200});
+   });
+   await page.locator('#business-media-product').selectOption('offer-a');
+   await page.locator('#business-media-file').setInputFiles([{name:'switch.png',mimeType:'image/png',buffer:Buffer.from('switch-file')},{name:'unattempted.png',mimeType:'image/png',buffer:Buffer.from('unattempted-file')}]);
+   const beforeSwitchRegistrations=registrations;
+   await page.locator('#business-media-upload-btn').click();await switchStarted;
+   await page.locator('#business-selector').selectOption('engineering-c',{force:true});
+   await page.waitForFunction(()=>window.DEMEOSOwnerWorkspace.getState(document).businessId==='engineering-c'&&window.DEMEOSOwnerWorkspace.getState(document).status==='ready');
+   assert.equal(await page.locator('#business-media-file').evaluate(input=>input.files.length),0);
+   await page.locator('#business-selector').selectOption('engineering-a',{force:true});
+   await page.locator('#vendor-products-save:not([disabled])').waitFor();
+   releaseSwitch();await page.waitForFunction(()=>document.getElementById('business-media-upload-btn').disabled===false);
+   assert.equal(registrations,beforeSwitchRegistrations+1);
+   assert.equal(await page.locator('#business-media-file').evaluate(input=>input.files.length),0);
+   await page.locator('#business-media-upload-btn').click();assert.equal(registrations,beforeSwitchRegistrations+1);
+   await context.unroute('https://controlled-upload.example/**');
    const storedUploads=[...uploads.values()].filter(x=>x.uploaded&&completionCalls.has(x.asset.assetId));for(const stored of storedUploads){const savedAsset=await repository.getBusinessMediaAsset(profile.businessId,stored.asset.assetId);assert.equal(savedAsset.state,'processing');}
    // Advance fresh uploads through the real SQL queue/lifecycle using an isolated processor result.
    const {processNextMediaJob}=require('../api/_lib/media-processing-queue');
