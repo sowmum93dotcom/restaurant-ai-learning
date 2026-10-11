@@ -63,3 +63,5 @@ body.owner-workspace-body[data-owner-model=selling] .business-media-item button{
 body.owner-workspace-body[data-owner-model=selling] .business-product-form > div > :is(input:not([type=hidden]),textarea,select){width:100%;max-width:100%;box-sizing:border-box;min-height:44px;padding:10px 12px;border:1px solid #b8c7d7;border-radius:8px;background:#fff;color:#142b45;font:inherit;font-size:16px}
 body.owner-workspace-body[data-owner-model=selling] .business-product-form > div > label{display:block;margin-bottom:7px;font-weight:600}
 body.owner-workspace-body[data-owner-model=selling] .business-product-form :is(input,textarea,select):focus-visible{outline:3px solid #b99a56;outline-offset:2px}
+/* Empty approved catalogues use readable text on the existing white dashboard card. */
+body.owner-workspace-body[data-owner-model=selling] .owner-current-work #workspace-current-work{color:#334b66!important}

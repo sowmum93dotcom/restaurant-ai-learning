@@ -192,9 +192,18 @@
       const doc=root.document,current=states.get(doc);
       if(checking||doc.hidden||!current?.businessId||doc.getElementById('owner-authenticated-workspace')?.hidden)return;
       checking=true;try{
-        const response=await root.fetch('/api/businesses/'+encodeURIComponent(current.businessId),{credentials:'same-origin',cache:'no-store'});
+        const application=routeApplication();
+        const response=await root.fetch('/api/businesses/'+encodeURIComponent(current.businessId)+(application?'?application='+application:''),{credentials:'same-origin',cache:'no-store'});
         if(states.get(doc)!==current)return;
-        if(!response.ok){if([401,403].includes(response.status))apply(doc,null,current.businessId,'forbidden');return;}
+        if(!response.ok){
+          if([401,403].includes(response.status)){
+            let failure='forbidden';if(response.status===403){const denial=await response.json();if(denial.reason==='application-access-required')failure=['rejected','revoked'].includes(denial.applicationStatus)?denial.applicationStatus:'denied';}
+            root.DEMEOSBusinessOnboarding?.updateStatus({businessId:current.businessId,onboarding:{status:failure}});
+            const statusNode=doc.querySelector('#workspace-business-identity [data-vendor-copy]');if(statusNode&&['rejected','revoked'].includes(failure)){statusNode.dataset.vendorCopy=failure;statusNode.textContent=copy(failure,failure);}
+            apply(doc,null,current.businessId,failure);
+          }
+          return;
+        }
         const record=await response.json();if(states.get(doc)!==current)return;
         root.DEMEOSBusinessOnboarding?.updateStatus(record.workspaceReadiness);
         const statusNode=doc.querySelector('#workspace-business-identity [data-vendor-copy]');
