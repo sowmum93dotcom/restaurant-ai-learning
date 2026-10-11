@@ -169,7 +169,11 @@ function renderOwnerWorkspace(documentObject, storage, applicationStatus) {
     identity.appendChild(detail);
   });
   const saved = documentObject.createElement("span"); saved.textContent = context.profile.informationStatus?.reviewState === "submitted" ? "Submitted privately. Awaiting administrative review; approval is not granted." : "Private preparation. Business approval is not recorded."; if (applicationStatus === "reviewed") saved.textContent = "Review completed. Business approval and activation are not granted.";
-  if (applicationStatus === "changes-requested") saved.textContent = "Changes requested. Edit, save and resubmit your information."; identity.appendChild(saved);
+  if (applicationStatus === "changes-requested") saved.textContent = "Changes requested. Edit, save and resubmit your information."; if (typeof window !== "undefined" && window.DEMEOSOwnerWorkspace?.routeApplication() === "selling") {
+    saved.dataset.vendorCopy = applicationStatus === "changes-requested" ? "changesPreparation" : applicationStatus === "reviewed" ? "reviewedPreparation" : context.profile.informationStatus?.reviewState === "submitted" ? "submittedPreparation" : "privatePreparation";
+    let code="en";try {code=window.localStorage.getItem("demeos-customer-language") || "en";}catch(_){}
+    saved.textContent=window.DEMEOSVendorCopy?.[code]?.[saved.dataset.vendorCopy] || saved.textContent;
+  } identity.appendChild(saved);
   if (!context.currentWork.length) {
     work.textContent = "No marketing work is stored for this business yet.";
     return;
@@ -311,7 +315,7 @@ async function loadOwnerNextAction(documentObject, storage, fetchFunction) {
       if (work) { work.replaceChildren(); const products = Array.isArray(record.businessProfile.products) ? record.businessProfile.products : [];
         const heading = documentObject.getElementById("current-work-heading"); if (heading) heading.textContent = window.DEMEOSVendorCopy?.[localStorage.getItem("demeos-customer-language") || "en"]?.applicationCatalogue || "Product catalogue";
         if (!products.length) {work.dataset.vendorCopy="catalogueEmpty";work.textContent=window.DEMEOSVendorCopy?.[localStorage.getItem("demeos-customer-language") || "en"]?.catalogueEmpty || "No saved products yet.";} else delete work.dataset.vendorCopy;
-        for (const product of products.slice(0,6)) { const row=documentObject.createElement("article"), title=documentObject.createElement("strong"), detail=documentObject.createElement("span"); title.textContent=product.name; detail.textContent=[product.price,product.availability].filter(Boolean).join(" · ");row.append(title,detail);work.appendChild(row); }
+        for (const product of products.slice(0,6)) { const row=documentObject.createElement("article"), title=documentObject.createElement("strong"), detail=documentObject.createElement("span"); title.textContent=product.name; if(product.price)detail.append(product.price);if(product.availability){if(product.price)detail.append(" · ");const availability=documentObject.createElement("span");availability.dataset.vendorCopy="availability_"+product.availability;let code="en";try{code=window.localStorage.getItem("demeos-customer-language")||"en";}catch(_){}availability.textContent=window.DEMEOSVendorCopy?.[code]?.[availability.dataset.vendorCopy]||product.availability;detail.append(availability);}row.append(title,detail);work.appendChild(row); }
       }
     } else { const heading=documentObject.getElementById("current-work-heading"); if(heading)heading.textContent="Current work"; }
     renderOwnerNextAction(documentObject, action);

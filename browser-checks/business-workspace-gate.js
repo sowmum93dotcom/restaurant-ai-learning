@@ -116,6 +116,15 @@ const server=http.createServer(async(req,res)=>{try{
      }
      await page.locator('#owner-preparation-language').selectOption('en');
      await page.locator('[data-owner-section=overview]').click();await page.locator('body[data-owner-access=ready]').waitFor();
+     if(application==='selling')for(const [code,copy] of Object.entries(applicationCopy)){
+       await page.locator('#owner-preparation-language').selectOption(code);
+       assert.equal(await page.locator('.owner-identity-card .owner-summary-link').textContent(),copy.reviewBusiness);
+       assert.equal(await page.locator('#workspace-business-identity [data-vendor-copy]').textContent(),copy.privatePreparation);
+       assert.equal(await page.locator('[data-vendor-copy=language]').textContent(),copy.language);
+       const statuses=await page.locator('#workspace-current-work [data-vendor-copy]').evaluateAll(nodes=>nodes.map(n=>({key:n.dataset.vendorCopy,text:n.textContent})));
+       for(const status of statuses)assert.equal(status.text,copy[status.key]);
+     }
+     if(application==='selling')await page.locator('#owner-preparation-language').selectOption('en');
      const prohibited=application==='marketing'?'selling':'marketing';
      if(name!=='dual') {
        assert.equal((await context.request.get(base+'/api/businesses/engineering-a?application='+prohibited)).status(),403);

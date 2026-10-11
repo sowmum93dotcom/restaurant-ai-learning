@@ -151,6 +151,7 @@
     if (header && application) header.textContent = copy(application === 'selling' ? 'sellingApplication' : 'marketingApplication',header.textContent);
     doc.title = header?.textContent + ' | DEMEOS';
     if(state.model==='selling'){
+      const review=doc.querySelector('.owner-identity-card .owner-summary-link');if(review)review.dataset.vendorCopy='reviewBusiness';
       doc.querySelectorAll('[data-vendor-copy]').forEach(node=>{node.textContent=copy(node.dataset.vendorCopy,node.textContent);node.lang=language();node.dir=language()==='ar'?'rtl':'ltr';});
       const overview=doc.getElementById('owner-overview-heading');if(overview)overview.textContent=copy('applicationOverview','Overview');
       const next=doc.querySelector('.owner-next-action');if(next)next.hidden=true;
