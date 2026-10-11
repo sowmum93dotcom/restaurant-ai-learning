@@ -309,9 +309,9 @@ async function loadOwnerNextAction(documentObject, storage, fetchFunction) {
     if (model?.model === "selling") {
       const work = documentObject.getElementById("workspace-current-work");
       if (work) { work.replaceChildren(); const products = Array.isArray(record.businessProfile.products) ? record.businessProfile.products : [];
-        const heading = documentObject.getElementById("current-work-heading"); if (heading) heading.textContent = "Your catalogue";
-        if (!products.length) work.textContent = "No saved products yet.";
-        for (const product of products.slice(0,3)) { const row=documentObject.createElement("article"), title=documentObject.createElement("strong"), detail=documentObject.createElement("span"); title.textContent=product.name; detail.textContent=[product.price,product.availability].filter(Boolean).join(" · ");row.append(title,detail);work.appendChild(row); }
+        const heading = documentObject.getElementById("current-work-heading"); if (heading) heading.textContent = window.DEMEOSVendorCopy?.[localStorage.getItem("demeos-customer-language") || "en"]?.applicationCatalogue || "Product catalogue";
+        if (!products.length) {work.dataset.vendorCopy="catalogueEmpty";work.textContent=window.DEMEOSVendorCopy?.[localStorage.getItem("demeos-customer-language") || "en"]?.catalogueEmpty || "No saved products yet.";} else delete work.dataset.vendorCopy;
+        for (const product of products.slice(0,6)) { const row=documentObject.createElement("article"), title=documentObject.createElement("strong"), detail=documentObject.createElement("span"); title.textContent=product.name; detail.textContent=[product.price,product.availability].filter(Boolean).join(" · ");row.append(title,detail);work.appendChild(row); }
       }
     } else { const heading=documentObject.getElementById("current-work-heading"); if(heading)heading.textContent="Current work"; }
     renderOwnerNextAction(documentObject, action);

@@ -9,7 +9,7 @@ const contract = fs.readFileSync(path.join(__dirname, "..", "api", "_lib", "cust
 const publicWork = fs.readFileSync(path.join(__dirname, "..", "api", "_lib", "customer-public-work-contract.js"), "utf8");
 
 test("Business Product Manager supports editing without duplicating a product", function () {
-  assert.match(client, /edit\.textContent = "Edit"/);
+  assert.match(client, /edit\.textContent = selling \? vendorText\("edit", "Edit"\) : "Edit"/);
   assert.match(client, /findIndex\(function \(entry\) \{ return entry\.productId === productId; \}\)/);
   assert.match(client, /draftProducts\.splice\(existingIndex, 1, product\)/);
   assert.match(client, /Update product \/ service/);

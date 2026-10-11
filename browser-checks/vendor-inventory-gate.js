@@ -89,8 +89,18 @@ const server=http.createServer(async(req,res)=>{try{
    await page.locator('#owner-preparation-language').selectOption('ja');assert.equal(await page.locator('#vendor-stock-heading').textContent(),'在庫');await page.locator('#owner-preparation-language').selectOption('en');
    await page.goto(base+'/selling-vendor/manage#products');await page.locator('#vendor-products-save:not([disabled])').waitFor();
    await page.locator('.business-product-card-actions button').filter({hasText:'Edit'}).first().click();assert.equal(await page.locator('#business-product-id').inputValue(),'offer-a');
+   const exactBefore=await page.evaluate(()=>window.DEMEOSVendorProducts.read().products[0]);
+   await page.locator('#business-product-name').fill('Exact jacket updated');await page.locator('#business-product-add-btn').click();
+   const exactAfter=await page.evaluate(()=>window.DEMEOSVendorProducts.read().products[0]);assert.equal(exactAfter.productId,exactBefore.productId);assert.deepEqual(exactAfter.presentation.variants,exactBefore.presentation.variants);
+   await page.locator('.business-product-card-actions button').filter({hasText:'Edit'}).first().click();await page.locator('#business-product-name').fill('Exact jacket');await page.locator('#business-product-add-btn').click();
    await page.locator('#vendor-product-editor > summary').click();await page.locator('#vendor-product-editor > summary').click();assert.equal(await page.locator('#business-product-id').inputValue(),'');
    assert.equal((await page.locator('#business-media-list').textContent()).includes('Business marketing media'),false);
+   if(await page.locator('#vendor-product-editor').evaluate(editor=>editor.open))await page.locator('#vendor-product-editor > summary').click();
+   assert.equal(await page.locator('#vendor-product-editor').getAttribute('open'), null);
+   await page.locator('#vendor-product-editor > summary').click();
+   assert.equal(await page.locator('.business-product-form').isVisible(),true);
+   assert.equal(await page.locator('#business-product-add-btn').textContent(),'Add to catalogue');
+   await page.locator('#vendor-product-editor > summary').click();
    let failedOnce=false;const uploadedNames=[],completionCalls=new Map();let registrations=0;
    page.on('request',request=>{if(request.method()==='POST'&&request.url().endsWith('/media'))registrations++;});
    await page.route('**/media/*',async route=>{
@@ -126,9 +136,16 @@ const server=http.createServer(async(req,res)=>{try{
    await freshCard(storedUploads[0].asset.assetId).getByRole('button',{name:'Add to gallery',exact:true}).click();await freshCard(storedUploads[0].asset.assetId).getByRole('button',{name:'Set as main image',exact:true}).click();
    await page.locator('#vendor-products-confirm').check();await page.locator('#vendor-products-save').click();await page.waitForFunction(()=>document.getElementById('vendor-products-status').textContent==='Products saved.');
    const saved=await repository.getKnownBusiness(profile.businessId);assert.equal(saved.businessProfile.products[0].mediaGallery.assetIds.length,1);assert.ok(saved.businessProfile.products[0].mediaGallery.mainAssetId);
+   await page.locator('.business-product-card > img[src="https://example.org/'+storedUploads[0].asset.assetId+'.webp"]').waitFor();
+   await page.locator('#vendor-catalogue-search').fill('missing product');
+   assert.equal(await page.locator('.business-product-card:visible').count(),0);
+   await page.locator('#owner-preparation-language').selectOption('ja');
+   assert.equal(await page.locator('.business-product-card:visible').count(),0);
+   await page.locator('#owner-preparation-language').selectOption('en');
+   await page.locator('#vendor-catalogue-search').fill('');
    await freshCard(storedUploads[1].asset.assetId).getByRole('button',{name:'Add to gallery',exact:true}).click();
    await freshCard(storedUploads[0].asset.assetId).getByRole('button',{name:'Move later',exact:true}).click();
-   for(const language of ['en','es','fr','ar','pt','zh','hi','de','ja']){await page.locator('#owner-preparation-language').selectOption(language);const expected=require('../js/vendor-inventory-copy').copy[language];assert.ok((await page.locator('#business-media-list').textContent()).includes(expected.removeGallery));assert.equal(await page.locator('#business-media-product option[value=""]').textContent(),expected.chooseProduct);await page.evaluate(()=>{window.__originalConfirm=window.confirm;window.confirm=message=>{window.__removePrompt=message;return false;};});await page.locator('.business-product-card-actions button').filter({hasText:'Remove'}).first().click();assert.equal(await page.evaluate(()=>window.__removePrompt),expected.removeProduct.replace('{name}','Exact jacket'));await page.evaluate(()=>window.confirm=window.__originalConfirm);assert.equal(await page.locator('.business-product-card-actions button[data-vendor-copy=duplicate]').first().textContent(),expected.duplicate);}
+   for(const language of ['en','es','fr','ar','pt','zh','hi','de','ja']){await page.locator('#owner-preparation-language').selectOption(language);const expected=require('../js/vendor-inventory-copy').copy[language];assert.ok((await page.locator('#business-media-list').textContent()).includes(expected.removeGallery));assert.equal(await page.locator('#business-media-product option[value=""]').textContent(),expected.chooseProduct);await page.evaluate(()=>{window.__originalConfirm=window.confirm;window.confirm=message=>{window.__removePrompt=message;return false;};});await page.locator('.business-product-card-actions button').filter({hasText:expected.remove}).first().click();assert.equal(await page.evaluate(()=>window.__removePrompt),expected.removeProduct.replace('{name}','Exact jacket'));await page.evaluate(()=>window.confirm=window.__originalConfirm);assert.equal(await page.locator('.business-product-card-actions button[data-vendor-copy=duplicate]').first().textContent(),expected.duplicate);}
    await page.locator('#owner-preparation-language').selectOption('en');
    const expectedOrder=await page.evaluate(()=>window.DEMEOSVendorProducts.read().products[0].mediaGallery.assetIds);
    await page.route('**/products',route=>route.request().method()==='PUT'?route.fulfill({status:503,json:{error:'Controlled save failure. Your edits are retained.'}}):route.continue());
@@ -147,6 +164,10 @@ const server=http.createServer(async(req,res)=>{try{
    assert.deepEqual(await page.evaluate(()=>window.DEMEOSVendorProducts.read().products[0].mediaGallery.assetIds),expectedOrder);
    await freshCard(storedUploads[0].asset.assetId).getByRole('button',{name:'Main image',exact:true}).waitFor();
    assert.deepEqual(await page.locator('.business-media-item').filter({has:page.getByRole('button',{name:'Remove from gallery',exact:true})}).locator('img').evaluateAll(images=>images.map(image=>image.src)),expectedOrder.map(id=>'https://example.org/'+id+'.webp'));
+   await page.locator('.business-product-card-actions button').filter({hasText:'Remove'}).first().click();
+   await page.locator('#owner-preparation-language').selectOption('ja');await page.locator('#owner-preparation-language').selectOption('en');
+   assert.equal(await page.locator('#business-media-list').getByRole('button',{name:'Add to gallery',exact:true}).count(),0);
+   await page.reload();await page.locator('#vendor-products-save:not([disabled])').waitFor();
    // Hold the real product response so navigation happens while the save is pending.
    let releaseProductResponse;const productResponseHeld=new Promise(resolve=>releaseProductResponse=resolve);
    await page.route('**/products',async route=>{if(route.request().method()!=='PUT')return route.continue();const response=await route.fetch();await productResponseHeld;return route.fulfill({response});});
@@ -164,7 +185,21 @@ const server=http.createServer(async(req,res)=>{try{
    for(const [index,row] of bulkRows.entries())assert.equal(afterBulk.entries[JSON.stringify([row.productId,row.variantId])].onHand,Number(count)+index+2);
    await page.goto(base+'/selling-vendor/manage#products');await page.locator('#vendor-products-save:not([disabled])').waitFor();
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+   // Additional exact records exist only in this isolated SQL database for visual acceptance.
+   const visualProfile=(await repository.getKnownBusiness(profile.businessId)).businessProfile;
+   const visualProducts=[['summer','Summer collection','summer-fashion.webp'],['active','Training collection','activewear.webp'],['blouse','Blouse collection','childrens-fashion.webp']].map(([id,name,file])=>({...profile.products[0],productId:'visual-'+id,name:'Controlled sample: '+name,customerVisible:false,imageUrl:'https://visual.example/'+file,description:'Isolated visual acceptance product. Never live vendor inventory.',presentation:{...profile.products[0].presentation,variants:profile.products[0].presentation.variants.map(v=>({...v,variantId:'visual-'+id+'-medium'}))}}));
+   await context.route('https://visual.example/**',route=>route.fulfill({contentType:'image/webp',body:fs.readFileSync(path.join(root,'images/controlled-test',new URL(route.request().url()).pathname.slice(1)))}));
+   await repository.saveBusiness({...visualProfile,products:[...visualProfile.products,...visualProducts]});
+   await page.reload();await page.locator('#vendor-products-save:not([disabled])').waitFor();
+   assert.equal(await page.locator('.business-product-card').count(),visualProfile.products.length+3);
+   await page.locator('.business-product-card > img').evaluateAll(images=>Promise.all(images.map(image=>image.decode())));
+   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
    await page.screenshot({path:'/tmp/demeos-owner-vendor-catalogue-'+viewport.width+'.png',fullPage:true});
+   await page.locator('.business-product-card-actions button').filter({hasText:'Edit'}).first().click();
+   for(const code of ['en','es','fr','ar','pt','zh','hi','de','ja']){await page.locator('#owner-preparation-language').selectOption(code);assert.equal(await page.locator('label[for=business-product-name]').textContent(),require('../js/vendor-inventory-copy').copy[code].productName);assert.equal(await page.locator('#business-product-id').inputValue(),'offer-a');}
+   await page.locator('#owner-preparation-language').selectOption('en');
+   await page.screenshot({path:'/tmp/demeos-owner-vendor-editor-'+viewport.width+'.png',fullPage:true});
+
    await page.goto(base+'/selling-vendor/manage#orders');await page.locator('.vendor-order-row').waitFor();await page.evaluate(()=>window.Clerk.signOut());await page.locator('#owner-auth-signed-out:not([hidden])').waitFor();await page.waitForFunction(()=>document.getElementById('vendor-orders-list').textContent==='');await context.clearCookies();assert.equal((await context.request.get(base+'/api/businesses/engineering-a/orders')).status(),401);
    assert.deepEqual(errors,[]);await context.close();
    // Restore exact catalogue for the next device without clearing stock history.
