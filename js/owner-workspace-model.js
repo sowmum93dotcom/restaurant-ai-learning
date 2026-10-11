@@ -198,6 +198,7 @@
         if(!response.ok){
           if([401,403].includes(response.status)){
             let failure='forbidden';if(response.status===403){const denial=await response.json();if(denial.reason==='application-access-required')failure=['rejected','revoked'].includes(denial.applicationStatus)?denial.applicationStatus:'denied';}
+            if(states.get(doc)!==current)return;
             root.DEMEOSBusinessOnboarding?.updateStatus({businessId:current.businessId,onboarding:{status:failure}});
             const statusNode=doc.querySelector('#workspace-business-identity [data-vendor-copy]');if(statusNode&&['rejected','revoked'].includes(failure)){statusNode.dataset.vendorCopy=failure;statusNode.textContent=copy(failure,failure);}
             apply(doc,null,current.businessId,failure);

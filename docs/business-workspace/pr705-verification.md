@@ -29,3 +29,9 @@ Selling onboarding hides Marketing-only questions and their step link, and both 
 All authenticated journeys use isolated identity-provider adapters, actual application APIs and disposable PostgreSQL, not real production accounts or records. Authenticated production owner/admin credentials were not available. No real business was automatically approved or populated. An authorised administrator must explicitly approve each actual business in the deployed Admin application. Physical Safari/iPhone video playback and live production storage acceptance are not claimed. Local browser codec fallback is accurately reported; GitHub Chrome retains existing media playback gates.
 
 Live customer ordering, payment activation and publication remain disabled. No Customer Experience feature or payment architecture changes are part of this repair. Production release uses the existing Vercel Git pipeline, with exact merge commit and READY state checked after merge.
+
+## Protected preview verification blocker
+
+Vercel preview build metadata is READY for the source commits. Ordinary access to the exact preview redirects this browser to the Vercel login screen. The secure Vercel sign-in request was declined. Automatic approval review rejected creating a shareable authentication-bypass link because it expands access beyond ordinary inspection; that rejection has not been bypassed. Final preview application acceptance therefore remains unresolved. Keep PR #705 unmerged and production on the PR #704 baseline until protected preview access is authorised and final verification is complete.
+
+Final permission-refresh regression coverage also delays a revoked response while the owner switches business, proving that the old denial cannot replace the new business context. Refresh requests remain scoped to the active Marketing or Selling application. Empty approved Selling catalogue text now has readable contrast on the existing white card.
