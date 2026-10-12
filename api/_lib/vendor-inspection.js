@@ -61,7 +61,7 @@ function createHandler({environment=()=>process.env,authenticate=resolveTrustedI
     if(!['dashboard','manage'].includes(req.query.page))return res.status(404).json({error:'Not found.'});
     // Reuse the existing Clerk sign-in boundary. No fixture is sent before sign-in.
     const destination=req.query.page==='manage'?'/selling-vendor/inspect/manage':'/selling-vendor/inspect';
-    const shell=fs.readFileSync(path.join(process.cwd(),'business-workspace.html'),'utf8').replace('</body>','<script>document.addEventListener("owner-business-ready",function(){window.location.replace('+JSON.stringify(destination)+'+window.location.hash);},{once:true});</script></body>');
+    const shell=fs.readFileSync(path.join(process.cwd(),'business-workspace.html'),'utf8').replace('<script src=', '<script>window.DEMEOSVendorInspectionEntry=true;</script><script src=').replace('</body>','<script>document.addEventListener("owner-business-ready",function(){window.location.replace('+JSON.stringify(destination)+'+window.location.hash);},{once:true});</script></body>');
     res.setHeader('Content-Type','text/html; charset=utf-8');return res.status(200).send(shell);
   }
   if(req.method==='POST'){

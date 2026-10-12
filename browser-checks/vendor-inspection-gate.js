@@ -11,6 +11,12 @@ const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,'h
  const file=path.resolve(root,'.'+url.pathname);if(!file.startsWith(root+path.sep)||!fs.existsSync(file)){res.statusCode=404;return res.end();}res.setHeader('Content-Type',({'.js':'application/javascript','.css':'text/css','.svg':'image/svg+xml','.webp':'image/webp','.mp4':'video/mp4','.webm':'video/webm'})[path.extname(file)]||'application/octet-stream');fs.createReadStream(file).pipe(res);
  }catch(e){console.error(e);res.statusCode=500;res.end('{}');}});
 (async()=>{let browser;try{await new Promise(r=>server.listen(0,'127.0.0.1',r));const base='http://127.0.0.1:'+server.address().port;browser=await chromium.launch({headless:true,...(process.env.DEMEOS_BROWSER_CHANNEL?{channel:process.env.DEMEOS_BROWSER_CHANNEL}:{})});
+ const signedOut=await browser.newContext();
+ await signedOut.route('https://clerk.test/**',route=>route.fulfill({contentType:'text/javascript',body:route.request().url().includes('/ui@')?'window.__internal_ClerkUICtor=function(){};':'window.Clerk={user:null,session:null,async load(){},addListener(){},openSignIn(){}};'}));
+ const entry=await signedOut.newPage();await entry.goto(base+'/selling-vendor/inspect');await entry.locator('#owner-auth-signed-out').waitFor();
+ assert.equal(await entry.locator('.demeos-brand').getAttribute('href'),'/selling-vendor/inspect');
+ await entry.locator('.demeos-brand').click();assert.equal(new URL(entry.url()).pathname,'/selling-vendor/inspect');
+ assert.equal(await entry.getByText('Development sample shop',{exact:true}).count(),0);await signedOut.close();
  for(const width of [390,820,1440]){const context=await browser.newContext({viewport:{width,height:1000}});await context.addCookies([{name:'inspection-test',value:'owner',url:base}]);
  await context.route('https://clerk.test/**',route=>route.fulfill({contentType:'text/javascript',body:route.request().url().includes('/ui@')?'window.__internal_ClerkUICtor=function(){};':'window.Clerk={user:{id:"local-inspection-owner"},session:null,async load(){},addListener(){},openSignIn(){},async signOut(){}};'}));
  await context.route('https://127.0.0.1:*/images/**',route=>route.fulfill({body:fs.readFileSync(path.join(root,new URL(route.request().url()).pathname)),contentType:route.request().url().endsWith('webm')?'video/webm':route.request().url().endsWith('mp4')?'video/mp4':route.request().url().endsWith('webp')?'image/webp':'image/svg+xml'}));
