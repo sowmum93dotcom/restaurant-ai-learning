@@ -10,6 +10,9 @@ const BRANCH = 'business-approval-application-access-705';
 function enabled(env = process.env) {
   return env.VERCEL_ENV === 'preview' && env.VERCEL_GIT_COMMIT_REF === BRANCH;
 }
+function inspectionLinks(html) {
+  return html.replace(/href="\/?business-workspace\.html"/g, 'href="/selling-vendor/inspect"');
+}
 function fixture(origin) {
   const profile = {businessId: BUSINESS, name: 'Development sample shop', type: 'Clothing', location: 'Sample location', profileVersion: 4, preparationModel: 'selling', offeringCategoryId: 'fashion.apparel', productsServices: 'Controlled interface inspection data', customerContinuation: {routes:['website'],website:'https://example.org'}, fulfilment:{methods:['shipping']}, operationalAvailability:{status:'available'}, informationStatus:{source:'controlled-development-inspection',status:'business-provided',reviewState:'draft'}, products:[{businessId:BUSINESS,productId:'test-inspection-jacket',name:'Sample jacket — test product',description:'Controlled sample for product editor inspection. Not offered for sale.',price:'£89',priceMode:'fixed',availability:'available',continuationRoute:'website',customerVisible:false,presentation:{version:1,categoryId:'fashion.apparel',pricing:{mode:'fixed',currency:'GBP',amount:89},options:[{key:'size',values:[{value:'M',label:'Medium'},{value:'L',label:'Large'}]}],variants:[{variantId:'test-medium',selection:{size:'M'},availability:'available'},{variantId:'test-large',selection:{size:'L'},availability:'available'}]},mediaGallery:{assetIds:['test-image-one','test-image-two','test-video'],mainAssetId:'test-image-one'}}]};
   const assets = [['test-image-one','image','controlled-test/mens-fashion.webp'],['test-image-two','image','controlled-test/summer-fashion.webp'],['test-video','video','controlled-test/garden-wildlife.webm']].map(([assetId,kind,file])=>({assetId,kind,businessId:BUSINESS,relatedEntityId:'test-inspection-jacket',purpose:'product',state:'ready',originalFilename:'Controlled sample '+kind,deliveryUrl:origin+'/images/'+file}));
@@ -61,7 +64,7 @@ function createHandler({environment=()=>process.env,authenticate=resolveTrustedI
     if(!['dashboard','manage'].includes(req.query.page))return res.status(404).json({error:'Not found.'});
     // Reuse the existing Clerk sign-in boundary. No fixture is sent before sign-in.
     const destination=req.query.page==='manage'?'/selling-vendor/inspect/manage':'/selling-vendor/inspect';
-    const shell=fs.readFileSync(path.join(process.cwd(),'business-workspace.html'),'utf8').replace('<script src=', '<script>window.DEMEOSVendorInspectionEntry=true;</script><script src=').replace('</body>','<script>document.addEventListener("owner-business-ready",function(){window.location.replace('+JSON.stringify(destination)+'+window.location.hash);},{once:true});</script></body>');
+    const shell=inspectionLinks(fs.readFileSync(path.join(process.cwd(),'business-workspace.html'),'utf8')).replace('<script src=', '<script>window.DEMEOSVendorInspectionEntry=true;</script><script src=').replace('</body>','<script>document.addEventListener("owner-business-ready",function(){window.location.replace('+JSON.stringify(destination)+'+window.location.hash);},{once:true});</script></body>');
     res.setHeader('Content-Type','text/html; charset=utf-8');return res.status(200).send(shell);
   }
   if(req.method==='POST'){
@@ -76,7 +79,7 @@ function createHandler({environment=()=>process.env,authenticate=resolveTrustedI
   const bootstrap={identityId:identity.trustedIdentityId,clerkOrigin:'https://'+clerkHost,state:fixture('https://'+host)};
   const script='<script>window.DEMEOS_VENDOR_INSPECTION='+JSON.stringify(bootstrap).replace(/</g,'\\u003c')+';</script><script src="/js/vendor-inspection.js"></script>';
   let html=fs.readFileSync(path.join(process.cwd(),req.query.page==='manage'?'marketing.html':'business-workspace.html'),'utf8');
-  html=html.replace('<script src=',script+'<script src=');
+  html=inspectionLinks(html).replace('<script src=',script+'<script src=');
   res.setHeader('Content-Type','text/html; charset=utf-8');return res.status(200).send(html);
  };
 }

@@ -10,7 +10,7 @@ test('inspection fails closed in Production, missing environment and other Previ
 });
 test('Preview inspection requires a real verified identity and same-origin mutation',async()=>{
  const environment=()=>({VERCEL_ENV:'preview',VERCEL_GIT_COMMIT_REF:branch});
- let handler=inspection.createHandler({environment,authenticate:async()=>null}),res=response();await handler({method:'GET',query:{page:'dashboard'},headers:{}},res);assert.equal(res.code,200);assert.ok(!res.body.includes('Development sample shop'));assert.ok(!res.body.includes('DEMEOS_VENDOR_INSPECTION'));assert.match(res.body,/window.DEMEOSVendorInspectionEntry=true/);
+ let handler=inspection.createHandler({environment,authenticate:async()=>null}),res=response();await handler({method:'GET',query:{page:'dashboard'},headers:{}},res);assert.equal(res.code,200);assert.ok(!res.body.includes('Development sample shop'));assert.ok(!res.body.includes('DEMEOS_VENDOR_INSPECTION'));assert.match(res.body,/window.DEMEOSVendorInspectionEntry=true/);assert.ok(!/href="\/?business-workspace\.html"/.test(res.body));assert.match(res.body,/href="\/selling-vendor\/inspect"/);
  res=response();await handler({method:'POST',headers:{},query:{}},res);assert.equal(res.code,401);
  handler=inspection.createHandler({environment,authenticate:async()=>({trustedIdentityId:'verified-owner'})});
  for(const origin of [undefined,'https://untrusted.example']){res=response();await handler({method:'POST',headers:{host:'preview.example',origin},body:{}},res);assert.equal(res.code,403);}
