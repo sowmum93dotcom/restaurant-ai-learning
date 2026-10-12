@@ -925,7 +925,9 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   function appendMediaPreview(container, asset) {
     if (!container || !asset || asset.businessId !== state.activeBusinessId || asset.state !== "ready" || !(/^https:\/\//i.test(asset.deliveryUrl || "") || window.DEMEOSVendorInspection?.isLocalMediaUrl(asset.deliveryUrl))) return;
     const preview = document.createElement(asset.kind === "video" ? "video" : "img");
-    preview.src = asset.deliveryUrl;
+    const inspectionSources=asset.kind === "video" ? window.DEMEOSVendorInspection?.videoSources?.(asset.deliveryUrl) : null;
+    if (inspectionSources?.length) {for(const item of inspectionSources){const source=document.createElement("source");source.src=item.src;source.type=item.type;preview.append(source);}}
+    else preview.src = asset.deliveryUrl;
     if (asset.kind === "video") {preview.controls=true;preview.preload="metadata";preview.playsInline=true;}
     else {preview.alt=asset.originalFilename || "Matching business image";preview.loading="lazy";}
     preview.addEventListener("error",()=>{const notice=document.createElement("p");if(globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model==="selling")notice.dataset.vendorCopy="mediaFallback";notice.textContent=globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model==="selling"?vendorText("mediaFallback","This browser cannot preview this media. Your original is retained."):"This browser cannot preview this media. Your original is retained.";container.append(notice);},{once:true});
