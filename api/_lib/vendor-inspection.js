@@ -2,7 +2,7 @@
 // Development UI sandbox. No repository, database, approval writer or payment service.
 const fs = require('node:fs');
 const path = require('node:path');
-const {resolveTrustedIdentityFromRequest} = require('./demeos-authentication');
+const {resolveTrustedIdentityFromRequest,getAllowedClerkPublishableKey} = require('./demeos-authentication');
 const stock = require('./vendor-inventory');
 const {validateProfile} = require('../businesses/[businessId]');
 const BUSINESS = 'test-vendor-inspection-705';
@@ -56,7 +56,14 @@ function createHandler({environment=()=>process.env,authenticate=resolveTrustedI
   if(!enabled(environment()))return res.status(404).json({error:'Not found.'});
   if(!['GET','POST'].includes(req.method))return res.status(405).json({error:'Method not allowed.'});
   const identity=await authenticate(req);
-  if(!identity)return res.status(401).json({error:'Sign in through /selling-vendor, then open Development inspection.'});
+  if(!identity){
+    if(req.method==='POST')return res.status(401).json({error:'Authentication required.'});
+    if(!['dashboard','manage'].includes(req.query.page))return res.status(404).json({error:'Not found.'});
+    // Reuse the existing Clerk sign-in boundary. No fixture is sent before sign-in.
+    const destination=req.query.page==='manage'?'/selling-vendor/inspect/manage':'/selling-vendor/inspect';
+    const shell=fs.readFileSync(path.join(process.cwd(),'business-workspace.html'),'utf8').replace('</body>','<script>document.addEventListener("owner-business-ready",function(){window.location.replace('+JSON.stringify(destination)+'+window.location.hash);},{once:true});</script></body>');
+    res.setHeader('Content-Type','text/html; charset=utf-8');return res.status(200).send(shell);
+  }
   if(req.method==='POST'){
     const host=req.headers['x-forwarded-host']||req.headers.host;
     try{if(new URL(req.headers.origin).host!==host)return res.status(403).json({error:'Same-origin inspection required.'});}catch(_){return res.status(403).json({error:'Same-origin inspection required.'});}
@@ -64,7 +71,9 @@ function createHandler({environment=()=>process.env,authenticate=resolveTrustedI
   }
   if(!['dashboard','manage'].includes(req.query.page))return res.status(404).json({error:'Not found.'});
   const host=req.headers['x-forwarded-host']||req.headers.host;
-  const bootstrap={identityId:identity.trustedIdentityId,state:fixture('https://'+host)};
+  const publishable=getAllowedClerkPublishableKey(environment());
+  const clerkHost=publishable ? Buffer.from(publishable.split('_')[2]||'','base64').toString('utf8').replace(/\$$/,'') : '';
+  const bootstrap={identityId:identity.trustedIdentityId,clerkOrigin:'https://'+clerkHost,state:fixture('https://'+host)};
   const script='<script>window.DEMEOS_VENDOR_INSPECTION='+JSON.stringify(bootstrap).replace(/</g,'\\u003c')+';</script><script src="/js/vendor-inspection.js"></script>';
   let html=fs.readFileSync(path.join(process.cwd(),req.query.page==='manage'?'marketing.html':'business-workspace.html'),'utf8');
   html=html.replace('<script src=',script+'<script src=');

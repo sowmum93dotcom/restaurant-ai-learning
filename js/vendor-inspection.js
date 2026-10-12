@@ -21,7 +21,7 @@
   root.fetch=async function(input,options={}){
     const url=new URL(typeof input==='string'?input:input.url,root.location.origin);
     const method=(options.method||input.method||'GET').toUpperCase();
-    if(url.origin!==root.location.origin)return method==='GET'?nativeFetch(input,options):response({error:'External writes are disabled in inspection.'},403);
+    if(url.origin!==root.location.origin)return method==='GET'||url.origin===bootstrap.clerkOrigin?nativeFetch(input,options):response({error:'External writes are disabled in inspection.'},403);
     if(url.pathname==='/api/public-config' && method==='GET')return nativeFetch(input,options);
     if(!url.pathname.startsWith('/api/'))return method==='GET'?nativeFetch(input,options):response({error:'Writes are disabled outside the inspection sandbox.'},403);
     let body={};try{body=typeof options.body==='string'?JSON.parse(options.body):{};}catch(_){return response({error:'Invalid inspection request.'},400);}
