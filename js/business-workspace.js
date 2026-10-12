@@ -16,7 +16,7 @@ function getOwnerNavigationSection(locationObject, workspaceView) {
   const pathname = locationObject && typeof locationObject.pathname === "string"
     ? locationObject.pathname : "";
   const page = pathname.split("/").pop() || "index.html";
-  if (page === "business-workspace.html" || ["marketing-business", "selling-vendor"].includes(page)) return "overview";
+  if (page === "business-workspace.html" || ["marketing-business", "selling-vendor"].includes(page) || pathname === "/selling-vendor/inspect") return "overview";
   if (page === "business-results.html" || page === "results") return "results";
 
   const view = workspaceView || (locationObject && typeof locationObject.hash === "string"

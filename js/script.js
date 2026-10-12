@@ -923,7 +923,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   const productEditor = productPreparation?.createEditor(document);
 
   function appendMediaPreview(container, asset) {
-    if (!container || !asset || asset.businessId !== state.activeBusinessId || asset.state !== "ready" || !/^https:\/\//i.test(asset.deliveryUrl || "")) return;
+    if (!container || !asset || asset.businessId !== state.activeBusinessId || asset.state !== "ready" || !(/^https:\/\//i.test(asset.deliveryUrl || "") || window.DEMEOSVendorInspection?.isLocalMediaUrl(asset.deliveryUrl))) return;
     const preview = document.createElement(asset.kind === "video" ? "video" : "img");
     preview.src = asset.deliveryUrl;
     if (asset.kind === "video") {preview.controls=true;preview.preload="metadata";preview.playsInline=true;}
@@ -1139,7 +1139,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       const card = document.createElement("article"); card.className = "business-product-card";
       const selling = globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model === "selling";
       const mainAsset = selling && product.mediaGallery?.mainAssetId && product.mediaGallery.assetIds?.includes(product.mediaGallery.mainAssetId)
-        ? businessMediaAssets.find(asset => asset.assetId === product.mediaGallery.mainAssetId && asset.businessId === state.activeBusinessId && asset.relatedEntityId === product.productId && asset.state === "ready" && asset.kind === "image" && /^https:\/\//i.test(asset.deliveryUrl || "")) : null;
+        ? businessMediaAssets.find(asset => asset.assetId === product.mediaGallery.mainAssetId && asset.businessId === state.activeBusinessId && asset.relatedEntityId === product.productId && asset.state === "ready" && asset.kind === "image" && (/^https:\/\//i.test(asset.deliveryUrl || "") || window.DEMEOSVendorInspection?.isLocalMediaUrl(asset.deliveryUrl))) : null;
       const imageUrl = mainAsset?.deliveryUrl || product.imageUrl;
       if (imageUrl) {
         const image = document.createElement("img"); image.src = imageUrl; image.alt = product.name; image.loading = "lazy";

@@ -21,7 +21,7 @@
     if (detail) detail.textContent = copy('applicationSignInDetail', 'Use your DEMEOS account to access this application.');
   }
   function destination(model, view) {
-    const base = model === 'selling' ? '/selling-vendor' : '/marketing-business';
+    const base = model === 'selling' ? (root.DEMEOSVendorInspection ? '/selling-vendor/inspect' : '/selling-vendor') : '/marketing-business';
     return view === 'dashboard' ? base : view === 'results' ? base + '/results' : base + '/manage#' + view;
   }
   function resolve(record, businessId, preference, failure) {
