@@ -53,6 +53,7 @@
     if(!url.pathname.startsWith('/api/'))return method==='GET'?nativeFetch(input,options):response({error:'Writes are disabled outside the inspection sandbox.'},403);
     const dispatch=async()=>{
     const generation=epoch;
+    let requestStage='inspection-state';
     if(!active)return response({error:'Inspection was deliberately exited.'},409);
     if(issue && !options[checkFlag]){
       // Retained sample reads are never real business authority or another account's records.
@@ -80,16 +81,19 @@
     if(!(url.pathname==='/api/businesses'||url.pathname===business||[business+'/products',business+'/inventory',business+'/media',business+'/orders'].includes(url.pathname)))return response({error:'This operation is disabled in inspection.'},403);
     const run=async()=>{
       const outgoing=structuredClone(state);for(const asset of outgoing.assets)if(localUrls.has(asset.deliveryUrl))asset.deliveryUrl='';
+      requestStage='session-token';
       const session=root.Clerk?.session;
       const token=session?.getToken?await boundedInspectionRequest(Promise.resolve().then(()=>session.getToken())):null;
       if(root.Clerk?.user && root.Clerk.user.id!==bootstrap.identityId){pause('account');return response({error:'Inspection account changed.'},403);}
       if(!active || generation!==epoch)return response({error:'Inspection session changed. Retry.'},409);
       if(session?.getToken && !token){pause('expired');return response({error:'Sign in to resume Development inspection.'},401);}
       const headers={'Content-Type':'application/json'};if(token)headers.Authorization='Bearer '+token;
+      requestStage='inspection-request';
       const result=await boundedInspectionRequest(nativeFetch('/api/businesses?resource=vendor-inspection' ,{method:'POST',credentials:'same-origin',headers,body:JSON.stringify({identityId:bootstrap.identityId,state:outgoing,pathname:url.pathname,method,body})}));
+      requestStage='inspection-response';
       const data=await boundedInspectionRequest(result.json());
       if(!active || generation!==epoch)return response({error:'Inspection session changed. Retry.'},409);
-      if(!result.ok){if(result.status===401)pause('expired');else if(data.reason==='inspection-account-changed')pause('account');else if(method==='GET')pause('unavailable',result.status>=500||result.status===429);return response(data,result.status);}
+      if(!result.ok){root.console?.warn('DEMEOS inspection request rejected',{stage:requestStage,status:result.status});if(result.status===401)pause('expired');else if(data.reason==='inspection-account-changed')pause('account');else if(method==='GET')pause('unavailable',result.status>=500||result.status===429);return response(data,result.status);}
       const urls=new Map(state.assets.filter(asset=>localUrls.has(asset.deliveryUrl)).map(asset=>[asset.assetId,asset.deliveryUrl]));
       if(data.state?.profile?.businessId!==bootstrap.state.profile.businessId||data.state.profile.applicationAccess||data.state.profile.applicationDecisions){pause('unavailable');return response({error:'Invalid inspection response.'},409);}
       state=data.state;for(const asset of state.assets)if(urls.has(asset.assetId))asset.deliveryUrl=urls.get(asset.assetId);
@@ -99,6 +103,8 @@
     };
     return run().catch(()=>{
       if(!active||generation!==epoch)return response({error:'Inspection session changed. Retry.'},409);
+      // Diagnose provider/transport failures without logging credentials, records or URLs.
+      root.console?.warn('DEMEOS inspection refresh failed',{stage:requestStage});
       pause('unavailable',true);return response({error:'Inspection could not be refreshed. Retry inspection.'},503);
     });
     };
