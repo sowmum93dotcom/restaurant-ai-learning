@@ -27,7 +27,7 @@
   const checkFlag=Symbol('inspection-revalidation');
   function boundedInspectionRequest(operation){
     if(typeof root.setTimeout!=='function')return operation;
-    let timer;const timeout=new Promise((_resolve,reject)=>{timer=root.setTimeout(()=>reject(new Error('Inspection request timed out')),15000);});
+    let timer;const timeout=new Promise((_resolve,reject)=>{timer=root.setTimeout(()=>{const error=new Error('Inspection request timed out');error.code='inspection-request-timeout';reject(error);},15000);});
     return Promise.race([operation,timeout]).finally(()=>root.clearTimeout(timer));
   }
 
@@ -83,10 +83,22 @@
       const outgoing=structuredClone(state);for(const asset of outgoing.assets)if(localUrls.has(asset.deliveryUrl))asset.deliveryUrl='';
       requestStage='session-token';
       const session=root.Clerk?.session;
-      const token=session?.getToken?await boundedInspectionRequest(Promise.resolve().then(()=>session.getToken())):null;
+      let token=null,verifyCookie=false;
+      if(session?.getToken){
+        try{token=await boundedInspectionRequest(Promise.resolve().then(()=>session.getToken()));}
+        catch(error){
+          if(error?.code==='inspection-request-timeout')throw error;
+          // This is a same-origin request. Clerk's server verifier can authenticate
+          // the session cookie even when the SDK token-refresh promise rejects.
+          // No client state grants access: missing/expired cookies still return 401,
+          // and the handler still checks origin and the exact authenticated account.
+          verifyCookie=true;
+          root.console?.warn('DEMEOS inspection token refresh unavailable; checking server session cookie');
+        }
+      }
       if(root.Clerk?.user && root.Clerk.user.id!==bootstrap.identityId){pause('account');return response({error:'Inspection account changed.'},403);}
       if(!active || generation!==epoch)return response({error:'Inspection session changed. Retry.'},409);
-      if(session?.getToken && !token){pause('expired');return response({error:'Sign in to resume Development inspection.'},401);}
+      if(session?.getToken && !token && !verifyCookie){pause('expired');return response({error:'Sign in to resume Development inspection.'},401);}
       const headers={'Content-Type':'application/json'};if(token)headers.Authorization='Bearer '+token;
       requestStage='inspection-request';
       const result=await boundedInspectionRequest(nativeFetch('/api/businesses?resource=vendor-inspection' ,{method:'POST',credentials:'same-origin',headers,body:JSON.stringify({identityId:bootstrap.identityId,state:outgoing,pathname:url.pathname,method,body})}));

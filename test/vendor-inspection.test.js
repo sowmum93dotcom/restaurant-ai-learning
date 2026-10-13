@@ -83,12 +83,27 @@ test('Selling test entry never reads obsolete shared dashboard templates',async(
 
 test('inspection failure diagnostics identify the stage without exposing authentication or sample records',async()=>{
  const vm=require('node:vm'),fs=require('node:fs');
- for(const failure of ['session-token','inspection-request','inspection-response']){
+ for(const failure of ['inspection-request','inspection-response']){
   const warnings=[],storage={getItem:()=>null,setItem(){},removeItem(){},key(){},length:0};
   const root={DEMEOS_VENDOR_INSPECTION:{identityId:'verified-owner',state:inspection.fixture('https://preview.example')},location:{pathname:'/selling-vendor/inspect',origin:'https://preview.example'},localStorage:storage,sessionStorage:storage,console:{warn:(...args)=>warnings.push(args)},Clerk:{user:{id:'verified-owner'},session:{getToken:async()=>{if(failure==='session-token')throw Error('private provider detail');return 'private-token';}}},fetch:async()=>{if(failure==='inspection-request')throw Error('private transport detail');return {json:async()=>{throw Error('private response detail');}};}};
   vm.runInNewContext(fs.readFileSync(require.resolve('../js/vendor-inspection'),'utf8'),{window:root,document:{addEventListener(){}},URL,Response,Blob,structuredClone,crypto:require('node:crypto').webcrypto});
   assert.equal((await root.fetch('/api/businesses/test-vendor-inspection-705')).status,503);
   assert.equal(warnings.length,1);assert.ok(warnings[0][0].endsWith(failure));
   assert.doesNotMatch(JSON.stringify(warnings),/private-token|private provider|private transport|private response|Sample jacket|verified-owner|https:/);
+ }
+});
+
+test('rejected SDK token refresh verifies the same-origin server cookie and still rejects expired or different accounts',async()=>{
+ const vm=require('node:vm'),fs=require('node:fs');
+ for(const serverStatus of [200,401,403]){
+  const warnings=[],calls=[],storage={getItem:()=>null,setItem(){},removeItem(){},key(){},length:0};
+  const root={DEMEOS_VENDOR_INSPECTION:{identityId:'verified-owner',state:inspection.fixture('https://preview.example')},location:{pathname:'/selling-vendor/inspect',origin:'https://preview.example'},localStorage:storage,sessionStorage:storage,console:{warn:(...args)=>warnings.push(args)},Clerk:{user:{id:'verified-owner'},session:{getToken:async()=>{throw Error('SDK refresh unavailable');}}},fetch:async(_url,options)=>{calls.push(options);const body=JSON.parse(options.body);return serverStatus===200?new Response(JSON.stringify({state:body.state,result:inspection.operate(body.state,body.pathname,body.method,body.body)})):new Response(JSON.stringify({reason:serverStatus===401?'inspection-authentication-required':'inspection-account-changed'}),{status:serverStatus});}};
+  vm.runInNewContext(fs.readFileSync(require.resolve('../js/vendor-inspection'),'utf8'),{window:root,document:{addEventListener(){}},URL,Response,Blob,structuredClone,crypto:require('node:crypto').webcrypto});
+  const result=await root.fetch('/api/businesses/test-vendor-inspection-705');assert.equal(result.status,serverStatus);
+  assert.equal(calls.length,1);assert.equal(calls[0].credentials,'same-origin');assert.equal(calls[0].headers.Authorization,undefined);
+  assert.equal(JSON.parse(calls[0].body).identityId,'verified-owner');
+  if(serverStatus===200){assert.equal((await result.json()).inspection,true);assert.equal(root.DEMEOSVendorInspection.isPaused(),false);}
+  else assert.equal(root.DEMEOSVendorInspection.authenticationRequired(),true);
+  assert.doesNotMatch(JSON.stringify(warnings),/SDK refresh unavailable|verified-owner|Sample jacket/);
  }
 });
