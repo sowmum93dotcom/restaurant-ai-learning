@@ -81,7 +81,7 @@
     const state = resolve(record, businessId, application || requestedModel || remembered, failure);
     // A verified Selling owner opening an old bookmark stays in the Selling application.
     // Model intent selects the interface only; it never grants operational permission.
-    if (!application && state.status !== 'ready' && record?.businessProfile?.businessId === businessId &&
+    if (!application && (!previous || previous.state.status === 'loading') && state.status !== 'ready' && record?.businessProfile?.businessId === businessId &&
         record?.workspaceReadiness?.businessId === businessId && record.businessProfile.preparationModel === 'selling') {
       root.location?.replace('/selling-vendor/onboarding#business-profile');
     }
