@@ -39,3 +39,14 @@ Selling-only authentication preparation, session restoration and token waits hav
 The approved navy-and-gold presentation now uses compact, evenly sized navigation cells, four columns on tablet and two on phone, with a 44-pixel minimum target. The inspection notice uses a smaller text area with adjacent Exit/Retry controls. Long translated labels wrap within their cells.
 
 The browser gate reproduces stalled config, SDK, Clerk loading, session restoration, token retrieval, missing tokens and a rejected document handoff, and verifies recovery without revealing sample or private business data. It also proves that a successful authenticated handoff reloads into the isolated Selling application with the original section hash. Existing gallery/video, variants, catalogue, stock/history, orders, nine-language and stale-response journeys remain required. Physical iPhone/iPad Safari acceptance and authenticated deployed acceptance remain release gates; CI WebKit is engine evidence, not physical-device evidence.
+
+
+## Transient refresh must not freeze the workspace
+
+The next owner screenshot showed the refresh-failure notice. `pause('unavailable')` previously set the complete authenticated workspace `inert`, so its navigation and all content stopped responding until an explicit retry or full page refresh. A timeout alone did not correct that interaction failure.
+
+Transient inspection failure now leaves navigation usable. Previously validated sample GET responses may be shown only for the same currently authenticated inspection account and exact sandbox paths. They are not real business authorization or other-business records. Save/mutation requests remain blocked until live server revalidation succeeds; missing cached views show their existing service-failure state. Account change or authentication expiry clears retained read responses and conceals/inactivates the private workspace.
+
+Retryable server/network failures schedule at most three recovery checks with 2/4/8-second backoff. Hidden/offline pages do not issue those checks; return-to-page and online events can revalidate through the existing controller. Explicit access denials do not schedule automatic retries. Recovery neither reloads the document nor changes its selected section. Retry/Exit remain available and the existing 15-second request deadline prevents the queue from hanging.
+
+Focused Node and rendered-browser regressions simulate the outage, navigate to Stock and History while it is active, retain the sample quantity and section, reject saves and foreign-business reads, then recover automatically without a document request. Account-change/expiry and existing catalogue, gallery/video, variants, stock/history, orders and nine-language journeys remain covered. Available deployed error logs did not identify the original refresh HTTP failure; the inert-workspace defect is directly reproduced and corrected, without asserting an unobserved provider cause.

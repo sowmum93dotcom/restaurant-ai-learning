@@ -48,3 +48,20 @@ test('browser sandbox isolates owner caches and never forwards unsupported live 
  let res=response();await handler(req,res);assert.equal(res.code,403);assert.equal(res.body.reason,'inspection-account-changed');
  res=response();req.body.identityId='owner-b';await handler(req,res);assert.equal(res.code,200);assert.equal(res.body.result.businesses[0].businessId,'test-vendor-inspection-705');
  });
+
+test('transient inspection failure retains same-account sample reads and recovers without freezing or permitting writes',async()=>{
+ const vm=require('node:vm'),fs=require('node:fs'),timers=new Set(),workspace={inert:false};let failure=false,calls=0;
+ const storage=()=>{const data=new Map();return {getItem:key=>data.get(key)||null,setItem:(key,value)=>data.set(key,String(value)),removeItem:key=>data.delete(key),key:index=>[...data.keys()][index],get length(){return data.size;}};};
+ const root={DEMEOS_VENDOR_INSPECTION:{identityId:'verified-owner',state:inspection.fixture('https://preview.example')},location:{pathname:'/selling-vendor/inspect/manage',origin:'https://preview.example'},localStorage:storage(),sessionStorage:storage(),Clerk:{user:{id:'verified-owner'},session:{getToken:async()=>'controlled-token'}},setTimeout(fn,ms){const timer={fn,ms};timers.add(timer);return timer;},clearTimeout:timer=>timers.delete(timer),fetch:async(_url,options)=>{calls++;if(failure)return new Response('{}',{status:503});const body=JSON.parse(options.body);return new Response(JSON.stringify({state:body.state,result:inspection.operate(body.state,body.pathname,body.method,body.body)}));}};
+ const doc={hidden:false,addEventListener(){},getElementById:id=>id==='owner-authenticated-workspace'?workspace:null};
+ vm.runInNewContext(fs.readFileSync(require.resolve('../js/vendor-inspection'),'utf8'),{window:root,document:doc,URL,Response,Blob,structuredClone,crypto:require('node:crypto').webcrypto});
+ const base='/api/businesses/test-vendor-inspection-705';
+ const original=await (await root.fetch(base+'/products')).json();failure=true;await root.DEMEOSVendorInspection.revalidate();
+ assert.equal(workspace.inert,false);assert.equal(root.DEMEOSVendorInspection.isPaused(),true);
+ const callsBefore=calls;assert.deepEqual(await (await root.fetch(base+'/products')).json(),original);
+ assert.equal((await root.fetch(base+'/inventory',{method:'PUT',body:'{}'})).status,503);assert.equal((await root.fetch('/api/businesses/another-business/products')).ok,false);assert.equal(calls,callsBefore);
+ failure=false;const retry=[...timers].find(timer=>timer.ms===2000);assert.ok(retry);timers.delete(retry);retry.fn();await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(root.DEMEOSVendorInspection.isPaused(),false);assert.equal(workspace.inert,false);assert.equal(timers.size,0);
+ failure=true;await root.DEMEOSVendorInspection.revalidate();root.Clerk.user={id:'another-account'};root.DEMEOSVendorInspection.sessionChanged({user:root.Clerk.user},root.Clerk.session);
+ assert.equal(workspace.inert,true);assert.equal(root.DEMEOSVendorInspection.authenticationRequired(),true);assert.equal((await root.fetch(base+'/products')).ok,false);assert.equal(timers.size,0);
+});

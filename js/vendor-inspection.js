@@ -22,7 +22,8 @@
     try{nativeSession.setItem(prefix+'sandbox',JSON.stringify(durable));}catch(_){}
   }};
   const response=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json'}});
-  let queue=Promise.resolve(),active=true,epoch=0,issue='',checking=false;
+  let queue=Promise.resolve(),active=true,epoch=0,issue='',checking=false,recoveryTimer=null,recoveryAttempts=0;
+  const cachedReads=new Map();
   const checkFlag=Symbol('inspection-revalidation');
   function boundedInspectionRequest(operation){
     if(typeof root.setTimeout!=='function')return operation;
@@ -32,11 +33,16 @@
 
   const ownsRecord=(record,id)=>active&&id===state.profile.businessId&&record?.inspection===true&&record.businessProfile?.businessId===id&&record.workspaceReadiness?.businessId===id&&record.workspaceReadiness?.onboarding?.approved===false;
   function authView(){if(!document.getElementById)return;const elements=root.getOwnerAuthenticationElements?.(document);if(elements&&root.showOwnerAuthenticationState)root.showOwnerAuthenticationState(elements,'signed-out');}
-  function pause(reason){if(issue!==reason)epoch++;issue=reason;const workspace=document.getElementById?.('owner-authenticated-workspace');if(workspace)workspace.inert=true;if(reason==='expired'||reason==='account')authView();if(document.createElement)mark();}
-  function resume(){issue='';const workspace=document.getElementById?.('owner-authenticated-workspace');if(workspace)workspace.inert=false;if(document.createElement)mark();const elements=root.getOwnerAuthenticationElements?.(document);if(elements)root.showOwnerAuthenticationState?.(elements,'signed-in');}
-  async function revalidate(){if(!active||checking)return;checking=true;try{const result=await root.fetch(business,{credentials:'same-origin',cache:'no-store',[checkFlag]:true});if(result.ok){const record=await result.json();if(ownsRecord(record,state.profile.businessId))resume();else pause('unavailable');}}catch(_){pause('unavailable');}finally{checking=false;}}
+  function cancelRecovery(){if(recoveryTimer!==null&&root.clearTimeout)root.clearTimeout(recoveryTimer);recoveryTimer=null;}
+  function scheduleRecovery(){
+    if(!active||issue!=='unavailable'||recoveryTimer!==null||recoveryAttempts>=3||typeof root.setTimeout!=='function')return;
+    recoveryTimer=root.setTimeout(()=>{recoveryTimer=null;if(!active||issue!=='unavailable')return;if(document.hidden||root.navigator?.onLine===false)return;recoveryAttempts++;revalidate();},2000*2**recoveryAttempts);
+  }
+  function pause(reason,retryable=false){if(issue!==reason)epoch++;issue=reason;const workspace=document.getElementById?.('owner-authenticated-workspace');if(workspace)workspace.inert=reason==='expired'||reason==='account';if(reason==='expired'||reason==='account'){cancelRecovery();cachedReads.clear();authView();}if(retryable)scheduleRecovery();if(document.createElement)mark();}
+  function resume(){cancelRecovery();recoveryAttempts=0;issue='';const workspace=document.getElementById?.('owner-authenticated-workspace');if(workspace)workspace.inert=false;if(document.createElement)mark();const elements=root.getOwnerAuthenticationElements?.(document);if(elements)root.showOwnerAuthenticationState?.(elements,'signed-in');}
+  async function revalidate(){if(!active||checking)return;checking=true;try{const result=await root.fetch(business,{credentials:'same-origin',cache:'no-store',[checkFlag]:true});if(result.ok){const record=await result.json();if(ownsRecord(record,state.profile.businessId))resume();else pause('unavailable');}}catch(_){pause('unavailable',true);}finally{checking=false;}}
   function sessionChanged(auth,session){const id=auth?.user?.id;if(id&&id!==bootstrap.identityId){pause('account');return;}if(!id&&!session){pause('expired');return;}if(id===bootstrap.identityId&&issue)revalidate();}
-  function exit(){if(!active)return;active=false;epoch++;save();const workspace=document.getElementById?.('owner-authenticated-workspace');if(workspace)workspace.inert=true;root.location.assign('/selling-vendor');}
+  function exit(){if(!active)return;active=false;cancelRecovery();cachedReads.clear();epoch++;save();const workspace=document.getElementById?.('owner-authenticated-workspace');if(workspace)workspace.inert=true;root.location.assign('/selling-vendor');}
 
   const business='/api/businesses/'+state.profile.businessId;
   root.fetch=async function(input,options={}){
@@ -48,7 +54,11 @@
     const dispatch=async()=>{
     const generation=epoch;
     if(!active)return response({error:'Inspection was deliberately exited.'},409);
-    if(issue && !options[checkFlag])return response({error:issue==='expired'?'Sign in to resume Development inspection.':'Inspection is temporarily unavailable.'},issue==='expired'?401:409);
+    if(issue && !options[checkFlag]){
+      // Retained sample reads are never real business authority or another account's records.
+      if(issue==='unavailable'&&method==='GET'&&root.Clerk?.user?.id===bootstrap.identityId&&root.Clerk?.session&&cachedReads.has(url.pathname))return response(structuredClone(cachedReads.get(url.pathname)));
+      return response({error:issue==='expired'?'Sign in to resume Development inspection.':'Inspection is temporarily unavailable.'},issue==='expired'?401:issue==='unavailable'?503:409);
+    }
 
     let body={};try{body=typeof options.body==='string'?JSON.parse(options.body):{};}catch(_){return response({error:'Invalid inspection request.'},400);}
     // Uploaded files remain in this browser. No Blob storage or database upload occurs.
@@ -79,16 +89,17 @@
       const result=await boundedInspectionRequest(nativeFetch('/api/businesses?resource=vendor-inspection' ,{method:'POST',credentials:'same-origin',headers,body:JSON.stringify({identityId:bootstrap.identityId,state:outgoing,pathname:url.pathname,method,body})}));
       const data=await boundedInspectionRequest(result.json());
       if(!active || generation!==epoch)return response({error:'Inspection session changed. Retry.'},409);
-      if(!result.ok){if(result.status===401)pause('expired');else if(data.reason==='inspection-account-changed')pause('account');else if(method==='GET')pause('unavailable');return response(data,result.status);}
+      if(!result.ok){if(result.status===401)pause('expired');else if(data.reason==='inspection-account-changed')pause('account');else if(method==='GET')pause('unavailable',result.status>=500||result.status===429);return response(data,result.status);}
       const urls=new Map(state.assets.filter(asset=>localUrls.has(asset.deliveryUrl)).map(asset=>[asset.assetId,asset.deliveryUrl]));
       if(data.state?.profile?.businessId!==bootstrap.state.profile.businessId||data.state.profile.applicationAccess||data.state.profile.applicationDecisions){pause('unavailable');return response({error:'Invalid inspection response.'},409);}
       state=data.state;for(const asset of state.assets)if(urls.has(asset.assetId))asset.deliveryUrl=urls.get(asset.assetId);
       if(url.pathname===business+'/media')data.result.assets=state.assets;
+      if(method==='GET')cachedReads.set(url.pathname,structuredClone(data.result));else cachedReads.clear();
       save();return response(data.result);
     };
     return run().catch(()=>{
       if(!active||generation!==epoch)return response({error:'Inspection session changed. Retry.'},409);
-      pause('unavailable');return response({error:'Inspection could not be refreshed. Retry inspection.'},503);
+      pause('unavailable',true);return response({error:'Inspection could not be refreshed. Retry inspection.'},503);
     });
     };
     const pending=queue.then(dispatch,dispatch);queue=pending.then(()=>{},()=>{});return pending;
@@ -110,5 +121,6 @@
     document.querySelectorAll('[href="/selling-vendor"],[href^="/selling-vendor/manage"]').forEach(link=>{link.href=link.getAttribute('href').replace('/selling-vendor','/selling-vendor/inspect');});
     const saveBusiness=document.getElementById('save-business-profile-btn'),submit=document.getElementById('submit-business-btn');if(saveBusiness)saveBusiness.disabled=true;if(submit)submit.disabled=true;
   }
+  root.addEventListener?.('online',()=>{if(issue==='unavailable'){recoveryAttempts=0;cancelRecovery();revalidate();}});
   document.addEventListener('DOMContentLoaded',mark);document.addEventListener('owner-model-ready',mark);document.addEventListener('change',event=>{if(event.target.id==='owner-preparation-language')mark();});
 })(window);

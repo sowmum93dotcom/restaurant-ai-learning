@@ -80,11 +80,28 @@ const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,'h
  assert.equal(await page.evaluate(()=>window.DEMEOSOwnerWorkspace.getState(document).model),'selling');
  await page.evaluate(()=>{window.DEMEOSOwnerWorkspace.apply(document,null,'test-vendor-inspection-705','forbidden');window.DEMEOSOwnerWorkspace.apply(document,{businessProfile:{businessId:'foreign'},workspaceReadiness:{businessId:'foreign',selling:{canPrepare:true}}},'foreign');window.Clerk.notify({user:null});window.Clerk.notify({user:{id:'local-inspection-owner'}});window.__delayInspectionToken=false;window.__releaseInspectionToken();});
  await page.locator('#owner-authenticated-workspace:not([hidden])').waitFor();assert.equal(await page.evaluate(()=>window.DEMEOSOwnerWorkspace.getState(document).businessId),'test-vendor-inspection-705');
- let failure=403;
- await context.route('**/api/businesses?resource=vendor-inspection',route=>{const body=route.request().postDataJSON();if(failure&&body.pathname==='/api/businesses/test-vendor-inspection-705'&&body.method==='GET')return route.fulfill({status:failure,json:{reason:failure===401?'inspection-authentication-required':'application-access-required',applicationStatus:'revoked'}});return route.continue();});
+ let failure=403,inspectionWrites=0;
+ await context.route('**/api/businesses?resource=vendor-inspection',route=>{const body=route.request().postDataJSON();if(body.method!=='GET')inspectionWrites++;if(failure&&body.pathname==='/api/businesses/test-vendor-inspection-705'&&body.method==='GET')return route.fulfill({status:failure,json:{reason:failure===401?'inspection-authentication-required':'application-access-required',applicationStatus:'revoked'}});return route.continue();});
  await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await page.getByText('Inspection could not be refreshed. Your sample changes are retained.',{exact:false}).waitFor();
  assert.equal(await page.evaluate(()=>window.DEMEOSOwnerWorkspace.getState(document).model),'selling');assert.ok(new URL(page.url()).pathname.includes('/inspect'));
  failure=0;await page.locator('#vendor-inspection-retry').click();await page.waitForFunction(()=>!window.DEMEOSVendorInspection.isPaused());
+ // A transient outage must not make the entire workspace inert or need a page refresh.
+ failure=503;await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+ await page.getByText('Inspection could not be refreshed. Your sample changes are retained.',{exact:false}).waitFor();
+ assert.equal(await page.locator('#owner-authenticated-workspace').evaluate(node=>node.inert),false);
+ const documentLoads=[];const recordDocument=request=>{if(request.isNavigationRequest()&&request.resourceType()==='document')documentLoads.push(request.url());};page.on('request',recordDocument);
+ await page.getByRole('navigation',{name:'Business Owner Workspace',exact:true}).getByRole('link',{name:'Stock and History',exact:true}).click();
+ await page.locator('.vendor-stock-row').first().waitFor();assert.equal(new URL(page.url()).hash,'#inventory');
+ assert.equal(await page.locator('.vendor-stock-row').first().locator('input[type=number]').first().inputValue(),'12');
+ const writesBefore=inspectionWrites;
+ assert.equal(await page.evaluate(async()=>{const response=await fetch('/api/businesses/test-vendor-inspection-705/inventory',{method:'PUT',body:'{}'});return response.status;}),503);
+ assert.equal(inspectionWrites,writesBefore);
+ assert.equal(await page.evaluate(async()=>(await fetch('/api/businesses/another-business/products')).ok),false);
+ failure=0;await page.clock.fastForward(2500);await page.waitForFunction(()=>!window.DEMEOSVendorInspection.isPaused());
+ assert.equal(documentLoads.length,0);assert.equal(new URL(page.url()).hash,'#inventory');assert.equal(await page.locator('#owner-authenticated-workspace').evaluate(node=>node.inert),false);
+ assert.equal(await page.locator('.vendor-stock-row').first().locator('input[type=number]').first().inputValue(),'12');page.off('request',recordDocument);
+ await page.getByRole('navigation',{name:'Business Owner Workspace',exact:true}).getByRole('link',{name:'Product Catalogue',exact:true}).click();await page.locator('.business-product-card').first().waitFor();
+
  failure=401;await page.clock.fastForward(31000);await page.locator('#owner-auth-signed-out:not([hidden])').waitFor();assert.match(await page.locator('#vendor-inspection-notice').innerText(),/session expired/);
  await page.evaluate(()=>window.showOwnerAuthenticationState(window.getOwnerAuthenticationElements(document),'signed-in'));assert.equal(await page.locator('#owner-authenticated-workspace').getAttribute('hidden'),'');
  assert.equal(await page.getByText('Business access unavailable',{exact:true}).count(),0);failure=0;await page.locator('#vendor-inspection-retry').click();await page.locator('#owner-authenticated-workspace:not([hidden])').waitFor();await context.unroute('**/api/businesses?resource=vendor-inspection');
