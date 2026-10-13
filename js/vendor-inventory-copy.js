@@ -71,5 +71,18 @@
  ja:['非公開注文を読み込むにはログインしてください。','この注文を表示する権限がありません。','販売者アプリの承認待ちです。','事業を管理','商品カタログを開く']
  };
  keys.push(...sellingStatusKeys);for(const [code,row] of Object.entries(sellingStatusCopy))sellingStatusKeys.forEach((key,i)=>copy[code][key]=row[i]);
+ const authRecoveryKeys=['authSlowTitle','authSlowDetail','authRetry'];
+ const authRecoveryCopy={
+ en:['Sign-in could not finish','Your session could not be verified. Retry to continue safely.','Retry sign-in'],
+ es:['No se pudo completar el acceso','No se pudo verificar tu sesión. Reintenta para continuar de forma segura.','Reintentar acceso'],
+ fr:['Connexion inachevée','Votre session n’a pas pu être vérifiée. Réessayez pour continuer en sécurité.','Réessayer la connexion'],
+ ar:['تعذر إكمال تسجيل الدخول','تعذر التحقق من جلستك. أعد المحاولة للمتابعة بأمان.','إعادة تسجيل الدخول'],
+ pt:['Não foi possível concluir o acesso','Não foi possível verificar a sessão. Tente novamente para continuar com segurança.','Tentar acesso novamente'],
+ zh:['无法完成登录','无法验证您的会话。请重试以安全继续。','重试登录'],
+ hi:['साइन इन पूरा नहीं हुआ','आपका सत्र सत्यापित नहीं हुआ। सुरक्षित रूप से जारी रखने के लिए फिर प्रयास करें।','साइन इन फिर करें'],
+ de:['Anmeldung nicht abgeschlossen','Ihre Sitzung konnte nicht geprüft werden. Versuchen Sie es erneut, um sicher fortzufahren.','Anmeldung wiederholen'],
+ ja:['ログインを完了できませんでした','セッションを確認できませんでした。安全に続行するには再試行してください。','ログインを再試行']
+ };
+ keys.push(...authRecoveryKeys);for(const [code,row] of Object.entries(authRecoveryCopy))authRecoveryKeys.forEach((key,i)=>copy[code][key]=row[i]);
  if(typeof module!=='undefined'&&module.exports)module.exports={keys,copy};root.DEMEOSVendorCopy=copy;
 })(typeof window==='undefined'?globalThis:window);

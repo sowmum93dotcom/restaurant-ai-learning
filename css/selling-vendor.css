@@ -126,7 +126,7 @@ body.owner-workspace-body[data-owner-model=selling]:has(#owner-authenticated-wor
 body.owner-workspace-body[data-owner-model=selling]:has(#owner-authenticated-workspace:not([hidden])) .business-product-visibility{font-size:.85rem;font-weight:600}
 body.owner-workspace-body[data-owner-model=selling]:has(#owner-authenticated-workspace:not([hidden])) #vendor-orders-status:not(:empty){padding:14px 16px;border-inline-start:3px solid #c4a055;background:#f6f8fb;border-radius:8px}
 body.owner-workspace-body[data-owner-model=selling]:has(#owner-authenticated-workspace:not([hidden])) .vendor-order-row{overflow-wrap:anywhere}
-@media(max-width:850px){body.owner-workspace-body[data-owner-model=selling]:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-navigation{flex-wrap:wrap!important;overflow-x:visible!important}body.owner-workspace-body[data-owner-model=selling]:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-navigation a{white-space:normal!important;flex:1 1 150px!important;overflow-wrap:anywhere}}
+
 @media(max-width:550px){body.owner-workspace-body[data-owner-model=selling]:has(#owner-authenticated-workspace:not([hidden])) .selling-operation-grid{grid-template-columns:1fr}body.owner-workspace-body[data-owner-model=selling]:has(#owner-authenticated-workspace:not([hidden])) .selling-operations-heading .demeos-primary-button{width:auto!important}}
 
 /* The selected application keeps its identity while its authority is unavailable. */
@@ -135,3 +135,15 @@ body.owner-workspace-body[data-owner-application=selling] .owner-workspace-heade
 body.owner-workspace-body[data-owner-application=selling][data-owner-model=none]{background:#edf1f5!important;color:#142b45!important}
 body.owner-workspace-body[data-owner-application=selling][data-owner-model=none] #owner-operating-models{background:#fff!important;color:#142b45!important;border:1px solid #d4dee8!important;border-inline-start:3px solid #c4a055!important;border-radius:12px!important;padding:18px!important}
 body.owner-workspace-body[data-owner-application=selling][data-owner-model=none] #owner-operating-models :is(strong,span){color:#142b45!important}
+
+/* Compact Selling navigation: fixed columns prevent stretched last-row controls. */
+body.owner-workspace-body[data-owner-model=selling]:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-navigation a{padding:10px 12px!important;min-height:44px!important;line-height:1.35!important;border-radius:8px!important;font-size:.85rem!important}
+@media(max-width:850px){body.owner-workspace-body[data-owner-model=selling]:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-navigation{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:4px!important;overflow:visible!important}body.owner-workspace-body[data-owner-model=selling]:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-navigation a{white-space:normal!important;overflow-wrap:anywhere!important}}
+@media(max-width:550px){body.owner-workspace-body[data-owner-model=selling]:has(#owner-authenticated-workspace:not([hidden])) .owner-workspace-navigation{grid-template-columns:repeat(2,minmax(0,1fr))!important}.owner-workspace-body[data-owner-application=selling] .owner-workspace-sidebar{padding:8px!important}}
+.vendor-inspection-notice{position:sticky;top:0;z-index:1000;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 18px;background:#102844;color:#fff;border-bottom:2px solid #c6a75e;font:12px/1.45 system-ui}
+.vendor-inspection-summary{min-width:0;max-width:85ch;overflow-wrap:anywhere}
+.vendor-inspection-warning{color:#f4e5bf;font-weight:600}
+.vendor-inspection-actions{display:flex;gap:8px;flex-shrink:0;align-items:center;flex-wrap:wrap}
+.vendor-inspection-actions button{min-height:44px;padding:8px 12px;background:#f4e5bf;color:#10253e;border:1px solid #c6a75e;border-radius:6px;cursor:pointer;font:600 12px/1.3 system-ui}
+.vendor-inspection-actions button:focus-visible{outline:3px solid #fff;outline-offset:2px}
+@media(max-width:550px){.vendor-inspection-notice{flex-wrap:wrap;padding:8px 12px;gap:6px}.vendor-inspection-actions{gap:6px}}

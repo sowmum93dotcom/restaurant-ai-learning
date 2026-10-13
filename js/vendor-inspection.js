@@ -24,6 +24,12 @@
   const response=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json'}});
   let queue=Promise.resolve(),active=true,epoch=0,issue='',checking=false;
   const checkFlag=Symbol('inspection-revalidation');
+  function boundedInspectionRequest(operation){
+    if(typeof root.setTimeout!=='function')return operation;
+    let timer;const timeout=new Promise((_resolve,reject)=>{timer=root.setTimeout(()=>reject(new Error('Inspection request timed out')),15000);});
+    return Promise.race([operation,timeout]).finally(()=>root.clearTimeout(timer));
+  }
+
   const ownsRecord=(record,id)=>active&&id===state.profile.businessId&&record?.inspection===true&&record.businessProfile?.businessId===id&&record.workspaceReadiness?.businessId===id&&record.workspaceReadiness?.onboarding?.approved===false;
   function authView(){if(!document.getElementById)return;const elements=root.getOwnerAuthenticationElements?.(document);if(elements&&root.showOwnerAuthenticationState)root.showOwnerAuthenticationState(elements,'signed-out');}
   function pause(reason){if(issue!==reason)epoch++;issue=reason;const workspace=document.getElementById?.('owner-authenticated-workspace');if(workspace)workspace.inert=true;if(reason==='expired'||reason==='account')authView();if(document.createElement)mark();}
@@ -65,13 +71,13 @@
     const run=async()=>{
       const outgoing=structuredClone(state);for(const asset of outgoing.assets)if(localUrls.has(asset.deliveryUrl))asset.deliveryUrl='';
       const session=root.Clerk?.session;
-      const token=session?.getToken?await session.getToken():null;
+      const token=session?.getToken?await boundedInspectionRequest(Promise.resolve().then(()=>session.getToken())):null;
       if(root.Clerk?.user && root.Clerk.user.id!==bootstrap.identityId){pause('account');return response({error:'Inspection account changed.'},403);}
       if(!active || generation!==epoch)return response({error:'Inspection session changed. Retry.'},409);
       if(session?.getToken && !token){pause('expired');return response({error:'Sign in to resume Development inspection.'},401);}
       const headers={'Content-Type':'application/json'};if(token)headers.Authorization='Bearer '+token;
-      const result=await nativeFetch('/api/businesses?resource=vendor-inspection' ,{method:'POST',credentials:'same-origin',headers,body:JSON.stringify({identityId:bootstrap.identityId,state:outgoing,pathname:url.pathname,method,body})});
-      const data=await result.json();
+      const result=await boundedInspectionRequest(nativeFetch('/api/businesses?resource=vendor-inspection' ,{method:'POST',credentials:'same-origin',headers,body:JSON.stringify({identityId:bootstrap.identityId,state:outgoing,pathname:url.pathname,method,body})}));
+      const data=await boundedInspectionRequest(result.json());
       if(!active || generation!==epoch)return response({error:'Inspection session changed. Retry.'},409);
       if(!result.ok){if(result.status===401)pause('expired');else if(data.reason==='inspection-account-changed')pause('account');else if(method==='GET')pause('unavailable');return response(data,result.status);}
       const urls=new Map(state.assets.filter(asset=>localUrls.has(asset.deliveryUrl)).map(asset=>[asset.assetId,asset.deliveryUrl]));
@@ -80,7 +86,10 @@
       if(url.pathname===business+'/media')data.result.assets=state.assets;
       save();return response(data.result);
     };
-    return run();
+    return run().catch(()=>{
+      if(!active||generation!==epoch)return response({error:'Inspection session changed. Retry.'},409);
+      pause('unavailable');return response({error:'Inspection could not be refreshed. Retry inspection.'},503);
+    });
     };
     const pending=queue.then(dispatch,dispatch);queue=pending.then(()=>{},()=>{});return pending;
   };
@@ -97,7 +106,7 @@
     de:['Die Sitzung ist abgelaufen. Melden Sie sich erneut an.','Das Konto wurde gewechselt. Öffnen Sie die Ansicht mit diesem Konto erneut.','Aktualisierung nicht möglich. Ihre Beispieländerungen bleiben erhalten.','Ansicht erneut öffnen','Erneut versuchen'],
     ja:['セッションが期限切れです。サインインして再開してください。','アカウントが変更されました。そのアカウントでプレビューを開き直してください。','更新できませんでした。サンプルの変更は保存されています。','プレビューを開き直す','再試行']
   };
-  function mark(){document.body.dataset.vendorInspection='true';const code=root.localStorage.getItem('demeos-customer-language')||'en';let banner=document.getElementById('vendor-inspection-notice');if(!banner){banner=document.createElement('aside');banner.id='vendor-inspection-notice';banner.setAttribute('role','note');banner.style.cssText='position:sticky;top:0;z-index:1000;background:#102844;color:#fff;padding:12px 18px;border-bottom:3px solid #c6a75e;font:14px/1.5 system-ui';document.body.prepend(banner);}banner.textContent=labels[code]||labels.en;const notice=notices[code]||notices.en;if(issue)banner.append(' '+notice[issue==='expired'?0:issue==='account'?1:2]);const exitLabel={en:'Exit inspection',es:'Salir de la inspección',fr:'Quitter l’inspection',ar:'إنهاء المعاينة',pt:'Sair da inspeção',zh:'退出预览',hi:'निरीक्षण से बाहर निकलें',de:'Inspektion verlassen',ja:'プレビューを終了'};const exitButton=document.createElement('button');exitButton.type='button';exitButton.id='vendor-inspection-exit';exitButton.textContent=exitLabel[code]||exitLabel.en;exitButton.style.cssText='margin-inline-start:12px;padding:8px 12px;background:#f4e5bf;color:#10253e;border:0;border-radius:6px;cursor:pointer';exitButton.addEventListener('click',exit);banner.append(exitButton);if(issue){const retry=document.createElement('button');retry.type='button';retry.id='vendor-inspection-retry';retry.textContent=notice[issue==='account'?3:4];retry.style.cssText=exitButton.style.cssText;retry.addEventListener('click',()=>issue==='account'?root.location.reload():revalidate());banner.append(retry);}banner.lang=code;banner.dir=code==='ar'?'rtl':'ltr';
+  function mark(){document.body.dataset.vendorInspection='true';const code=root.localStorage.getItem('demeos-customer-language')||'en';let banner=document.getElementById('vendor-inspection-notice');if(!banner){banner=document.createElement('aside');banner.id='vendor-inspection-notice';banner.setAttribute('role','note');banner.className='vendor-inspection-notice';document.body.prepend(banner);}banner.replaceChildren();const summary=document.createElement('span');summary.className='vendor-inspection-summary';summary.textContent=labels[code]||labels.en;banner.append(summary);const notice=notices[code]||notices.en;if(issue){const warning=document.createElement('span');warning.className='vendor-inspection-warning';warning.textContent=notice[issue==='expired'?0:issue==='account'?1:2];summary.append(' ',warning);}const controls=document.createElement('span');controls.className='vendor-inspection-actions';banner.append(controls);const exitLabel={en:'Exit inspection',es:'Salir de la inspección',fr:'Quitter l’inspection',ar:'إنهاء المعاينة',pt:'Sair da inspeção',zh:'退出预览',hi:'निरीक्षण से बाहर निकलें',de:'Inspektion verlassen',ja:'プレビューを終了'};const exitButton=document.createElement('button');exitButton.type='button';exitButton.id='vendor-inspection-exit';exitButton.textContent=exitLabel[code]||exitLabel.en;exitButton.addEventListener('click',exit);controls.append(exitButton);if(issue){const retry=document.createElement('button');retry.type='button';retry.id='vendor-inspection-retry';retry.textContent=notice[issue==='account'?3:4];retry.addEventListener('click',()=>issue==='account'?root.location.reload():revalidate());controls.append(retry);}banner.lang=code;banner.dir=code==='ar'?'rtl':'ltr';
     document.querySelectorAll('[href="/selling-vendor"],[href^="/selling-vendor/manage"]').forEach(link=>{link.href=link.getAttribute('href').replace('/selling-vendor','/selling-vendor/inspect');});
     const saveBusiness=document.getElementById('save-business-profile-btn'),submit=document.getElementById('submit-business-btn');if(saveBusiness)saveBusiness.disabled=true;if(submit)submit.disabled=true;
   }

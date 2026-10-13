@@ -19,6 +19,28 @@ const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,'h
  assert.equal(await entry.locator('.demeos-brand').getAttribute('href'),'/selling-vendor/inspect');
  await entry.locator('.demeos-brand').click();assert.equal(new URL(entry.url()).pathname,'/selling-vendor/inspect');
  assert.equal(await entry.getByText('Development sample shop',{exact:true}).count(),0);await signedOut.close();
+ // Reproduce a stalled initial sign-in at each asynchronous boundary.
+ for(const stalled of ['config','sdk','session','restore','token','missing-token','handoff','handoff-success'].filter(value=>!process.env.DEMEOS_AUTH_RECOVERY_CASE||value===process.env.DEMEOS_AUTH_RECOVERY_CASE)){
+  const blocked=await browser.newContext();
+  if(stalled==='config')await blocked.route('**/api/public-config',()=>new Promise(()=>{}));
+  await blocked.route('https://clerk.test/**',route=>{
+   if(stalled==='sdk')return new Promise(()=>{});
+   return route.fulfill({contentType:'text/javascript',body:route.request().url().includes('/ui@')?'window.__internal_ClerkUICtor=function(){};':`window.Clerk={user:${['token','missing-token','handoff','handoff-success'].includes(stalled)?'{id:"local-inspection-owner"}':'null'},session:${['restore','token','missing-token','handoff','handoff-success'].includes(stalled)?'{getToken(){return '+(stalled==='missing-token'?'Promise.resolve(null)':stalled==='handoff'?'Promise.resolve("controlled-token")':stalled==='handoff-success'?'(document.cookie="inspection-test=owner; path=/",Promise.resolve("controlled-token"))':'new Promise(resolve=>window.__releaseFrozenToken=resolve)')+';}}':'null'},load(){return ${stalled==='session'?'new Promise(()=>{})':'Promise.resolve()'};},addListener(){},openSignIn(){}};`});
+  });
+  const frozen=await blocked.newPage();await frozen.clock.install();await frozen.goto(base+'/selling-vendor/inspect/manage#products',{waitUntil:'domcontentloaded'});
+  if(stalled==='handoff-success'){await frozen.locator('body[data-owner-model=selling]').waitFor();assert.match(await frozen.locator('.owner-workspace-header .cuisine-type').innerText(),/Development sample shop/);assert.equal(new URL(frozen.url()).hash,'#products');await blocked.close();console.log('PASS authenticated inspection handoff reloads the document');continue;}
+  if(['restore','token'].includes(stalled))await frozen.waitForFunction(()=>Boolean(window.Clerk?.session));
+  if(stalled==='session')await frozen.waitForFunction(()=>Boolean(window.Clerk));
+  if(!['missing-token','handoff'].includes(stalled))await frozen.clock.fastForward(16000);
+  await frozen.locator('#owner-auth-error:not([hidden])').waitFor();await frozen.getByRole('button',{name:'Retry sign-in',exact:true}).waitFor();
+  assert.equal(await frozen.locator('#owner-authenticated-workspace').isVisible(),false);
+  assert.equal(await frozen.getByText('Development sample shop',{exact:true}).count(),0);
+  assert.equal(new URL(frozen.url()).pathname,'/selling-vendor/inspect/manage');assert.equal(new URL(frozen.url()).hash,'#products');
+  if(stalled==='token'){await frozen.evaluate(()=>window.__releaseFrozenToken('late-session-token'));await frozen.locator('#owner-auth-error:not([hidden])').waitFor();assert.equal(await frozen.locator('#owner-authenticated-workspace').isVisible(),false);}
+  if(stalled==='config'){await blocked.unroute('**/api/public-config');await frozen.getByRole('button',{name:'Retry sign-in',exact:true}).click();await frozen.locator('#owner-auth-signed-out:not([hidden])').waitFor();assert.equal(new URL(frozen.url()).hash,'#products');}
+  await blocked.close();console.log('PASS frozen authentication recovery: '+stalled);
+ }
+
  for(const width of [390,820,1440]){const context=await browser.newContext({viewport:{width,height:1000}});await context.addCookies([{name:'inspection-test',value:'owner',url:base}]);
  await context.route('https://clerk.test/**',route=>route.fulfill({contentType:'text/javascript',body:route.request().url().includes('/ui@')?'window.__internal_ClerkUICtor=function(){};':'window.Clerk={user:{id:"local-inspection-owner"},session:{async getToken(){if(window.__delayInspectionToken){window.__inspectionTokenStarted=true;await new Promise(resolve=>window.__releaseInspectionToken=resolve);}return "controlled-local-session-token";}},async load(){},listeners:[],addListener(fn){this.listeners.push(fn);},notify(auth){this.user=auth.user;this.listeners.forEach(fn=>fn(auth));},openSignIn(){},async signOut(){}};'}));
  await context.route('https://127.0.0.1:*/images/**',route=>route.fulfill({body:fs.readFileSync(path.join(root,new URL(route.request().url()).pathname)),contentType:route.request().url().endsWith('webm')?'video/webm':route.request().url().endsWith('mp4')?'video/mp4':route.request().url().endsWith('webp')?'image/webp':'image/svg+xml'}));
@@ -43,9 +65,18 @@ const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,'h
  await page.goto(base+'/selling-vendor/inspect/manage#business-profile');await page.locator('#business-name').waitFor();assert.equal(await page.locator('#onboarding-preparation').getAttribute('open'),null);await page.locator('#onboarding-preparation > summary').click();assert.equal(await page.locator('#business-preparation-model').isVisible(),true);await page.waitForFunction(()=>!document.getElementById('onboarding-business').open);await page.reload();await page.locator('#business-preparation-model').waitFor();assert.notEqual(await page.locator('#onboarding-preparation').getAttribute('open'),null);assert.equal(await page.locator('.profile-step-heading h4').filter({hasText:'How customers continue'}).evaluate(el=>getComputedStyle(el).color),'rgb(20, 43, 69)');await page.evaluate(()=>window.scrollY);await page.locator('.owner-workspace-header').scrollIntoViewIfNeeded();await page.screenshot({path:'/tmp/pr705-business-'+(process.env.DEMEOS_BROWSER_ENGINE||'chromium')+'-'+width+'.png',fullPage:true});
  await page.goto(base+'/selling-vendor/inspect/manage#products');await page.locator('.business-product-card').first().waitFor();
  await page.locator('.owner-workspace-header').scrollIntoViewIfNeeded();
+
+ // A never-resolving token must release the inspection queue and keep Retry/Exit usable.
+ await page.evaluate(()=>{window.__delayInspectionToken=true;window.__inspectionTokenStarted=false;window.dispatchEvent(new Event('focus'));});
+ await page.waitForFunction(()=>window.__inspectionTokenStarted);await page.clock.fastForward(16000);
+ await page.getByText('Inspection could not be refreshed. Your sample changes are retained.',{exact:false}).waitFor();
+ assert.equal(await page.evaluate(()=>window.DEMEOSOwnerWorkspace.getState(document).model),'selling');
+ assert.equal(await page.locator('#vendor-inspection-exit').isEnabled(),true);
+ await page.evaluate(()=>{window.__delayInspectionToken=false;window.__releaseInspectionToken();});
+ await page.locator('#vendor-inspection-retry').click();await page.waitForFunction(()=>!window.DEMEOSVendorInspection.isPaused());
  // Exercise the actual focus/timer revalidation that the original gate missed.
  await page.evaluate(()=>{window.__delayInspectionToken=true;window.__inspectionTokenStarted=false;});
- await page.clock.fastForward(31000);await page.waitForFunction(()=>window.__inspectionTokenStarted);
+ await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await page.waitForFunction(()=>window.__inspectionTokenStarted);
  assert.equal(await page.evaluate(()=>window.DEMEOSOwnerWorkspace.getState(document).model),'selling');
  await page.evaluate(()=>{window.DEMEOSOwnerWorkspace.apply(document,null,'test-vendor-inspection-705','forbidden');window.DEMEOSOwnerWorkspace.apply(document,{businessProfile:{businessId:'foreign'},workspaceReadiness:{businessId:'foreign',selling:{canPrepare:true}}},'foreign');window.Clerk.notify({user:null});window.Clerk.notify({user:{id:'local-inspection-owner'}});window.__delayInspectionToken=false;window.__releaseInspectionToken();});
  await page.locator('#owner-authenticated-workspace:not([hidden])').waitFor();assert.equal(await page.evaluate(()=>window.DEMEOSOwnerWorkspace.getState(document).businessId),'test-vendor-inspection-705');

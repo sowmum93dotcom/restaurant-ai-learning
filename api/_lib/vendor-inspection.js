@@ -64,7 +64,10 @@ function createHandler({environment=()=>process.env,authenticate=resolveTrustedI
     if(!['dashboard','manage'].includes(req.query.page))return res.status(404).json({error:'Not found.'});
     // Reuse the existing Clerk sign-in boundary. No fixture is sent before sign-in.
     const destination=req.query.page==='manage'?'/selling-vendor/inspect/manage':'/selling-vendor/inspect';
-    const shell=inspectionLinks(fs.readFileSync(path.join(process.cwd(),'business-workspace.html'),'utf8')).replace('<script src=', '<script>window.DEMEOSVendorInspectionEntry=true;</script><script src=').replace('</body>','<script>document.addEventListener("owner-business-ready",function(){window.location.replace('+JSON.stringify(destination)+'+window.location.hash);},{once:true});</script></body>');
+    // A token becoming ready does not prove the next HTML request will authenticate.
+    // Allow one automatic handoff; repeated unauthenticated shells recover explicitly.
+    const handoff='<script>(function(){var key="demeos:inspection-handoff:705:"+window.location.pathname;window.DEMEOSVendorInspectionEntryRetry=function(){try{sessionStorage.removeItem(key);}catch(_){}window.location.reload();};document.addEventListener("owner-business-ready",function(){try{var previous=Number(sessionStorage.getItem(key)||0);if(previous&&Date.now()-previous<30000){document.dispatchEvent(new CustomEvent("owner-inspection-entry-failed"));return;}sessionStorage.setItem(key,String(Date.now()));}catch(_){document.dispatchEvent(new CustomEvent("owner-inspection-entry-failed"));return;}if(window.location.pathname==='+JSON.stringify(destination)+'&&!window.location.search)window.location.reload();else window.location.replace('+JSON.stringify(destination)+'+window.location.hash);},{once:true});})();</script>';
+    const shell=inspectionLinks(fs.readFileSync(path.join(process.cwd(),'business-workspace.html'),'utf8')).replace('<script src=', '<script>window.DEMEOSVendorInspectionEntry=true;</script><script src=').replace('</body>',handoff+'</body>');
     res.setHeader('Content-Type','text/html; charset=utf-8');return res.status(200).send(shell);
   }
   if(req.method==='POST'){
