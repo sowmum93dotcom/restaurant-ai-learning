@@ -176,7 +176,7 @@
     }
     const select = doc.getElementById('owner-preparation-language');
     if(select)select.value=language();
-    if (select && !select.dataset.applicationBound) { select.dataset.applicationBound='true';select.addEventListener('change',()=>{try{root.localStorage.setItem('demeos-customer-language',select.value);}catch(_){}const current=states.get(doc);if(current)apply(doc,current.record,current.businessId);}); }
+    if (select && !select.dataset.applicationBound) { select.dataset.applicationBound='true';select.addEventListener('change',()=>{try{root.localStorage.setItem('demeos-customer-language',select.value);}catch(_){}const current=states.get(doc);if(current)apply(doc,current.record,current.businessId,application==='selling'&&doc.body.dataset.sellingEntry==='true'&&current.state.status!=='ready'?current.state.status:undefined);}); }
     const businessCaption=doc.querySelector('.cuisine-type');if(businessCaption)businessCaption.textContent=state.status==='ready'?record.businessProfile.name:'';
     const guide = doc.querySelector('.owner-preparation-guide');
     if (guide) { guide.hidden = false; const text=guide.querySelector('[data-owner-copy=guide]'); if(text)text.hidden=state.model !== 'marketing'; }

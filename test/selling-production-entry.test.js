@@ -30,3 +30,14 @@ test('verified Selling owner old bookmarks route to dedicated onboarding without
  const state=root.DEMEOSOwnerWorkspace.apply(doc,record,'owned');assert.equal(destination,'/selling-vendor/onboarding#business-profile');assert.equal(state.status,'denied');assert.equal(root.DEMEOSOwnerWorkspace.canOpen(state,'products'),false);
  destination=undefined;root.DEMEOSOwnerWorkspace.apply(doc,record,'foreign');assert.equal(destination,undefined);
 });
+
+test('all seven Selling sections and denied authority survive a language change',()=>{
+ const nav={children:[],replaceChildren(){this.children=[];},appendChild(n){this.children.push(n);},style:{setProperty(){}}};
+ let change;const select={value:'en',dataset:{},addEventListener(event,callback){if(event==='change')change=callback;}};
+ const doc={body:{dataset:{sellingEntry:'true'}},querySelector(selector){return selector==='.owner-workspace-navigation'?nav:null;},querySelectorAll(){return [];},getElementById(id){return id==='owner-preparation-language'?select:null;},createElement(){return {dataset:{},addEventListener(){}};},dispatchEvent(){},addEventListener(){}};
+ let language='en';const root={document:doc,location:{pathname:'/selling-vendor/manage',hash:'#products'},CustomEvent:class{},DEMEOSVendorCopy:require('../js/vendor-inventory-copy').copy,localStorage:{getItem(){return language;},setItem(_key,value){language=value;}},sessionStorage:{getItem(){}},addEventListener(){},setInterval(){}};
+ vm.runInNewContext(fs.readFileSync(require.resolve('../js/owner-workspace-model'),'utf8'),{window:root});
+ const api=root.DEMEOSOwnerWorkspace;api.apply(doc,{businessProfile:{businessId:'owned'},workspaceReadiness:null},'owned','denied');
+ assert.equal(nav.children.length,7);assert.deepEqual(nav.children.map(n=>n.dataset.ownerSection),['overview','business-profile','products','media','product-options','inventory','orders']);
+ select.value='fr';change();assert.equal(api.getState(doc).status,'denied');assert.equal(api.canOpen(api.getState(doc),'products'),false);assert.equal(nav.children.length,7);assert.equal(nav.children[2].textContent,root.DEMEOSVendorCopy.fr.applicationCatalogue);assert.equal(root.location.hash,'#products');
+});
