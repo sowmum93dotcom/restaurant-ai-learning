@@ -129,6 +129,8 @@ const server=http.createServer(async(req,res)=>{try{
     if(text==='retry-file'&&!failedOnce){failedOnce=true;return route.fulfill({status:500});}
     stored.uploaded=true;return route.fulfill({status:200});
    });
+   const openSection=async section=>{await page.locator('.owner-workspace-navigation [data-owner-section="'+section+'"]').click();await page.waitForFunction(section=>document.body.dataset.ownerView===section,section);};
+   await openSection('media');
    // Revoke Selling while the already-open editor retains its old model.
    const beforeRevocation=(await repository.getKnownBusiness(profile.businessId)).businessProfile;
    await page.locator('#business-media-product').selectOption('offer-a');
@@ -183,6 +185,7 @@ const server=http.createServer(async(req,res)=>{try{
    await freshCard(storedUploads[0].asset.assetId).getByRole('button',{name:'Add to gallery',exact:true}).click();await freshCard(storedUploads[0].asset.assetId).getByRole('button',{name:'Set as main image',exact:true}).click();
    await page.locator('#vendor-products-confirm').check();await page.locator('#vendor-products-save').click();await page.waitForFunction(()=>document.getElementById('vendor-products-status').textContent==='Products saved.');
    const saved=await repository.getKnownBusiness(profile.businessId);assert.equal(saved.businessProfile.products[0].mediaGallery.assetIds.length,1);assert.ok(saved.businessProfile.products[0].mediaGallery.mainAssetId);
+   await openSection('products');
    await page.locator('.business-product-card > img[src="https://example.org/'+storedUploads[0].asset.assetId+'.webp"]').waitFor();
    await page.locator('#vendor-catalogue-search').fill('missing product');
    assert.equal(await page.locator('.business-product-card:visible').count(),0);
@@ -190,8 +193,10 @@ const server=http.createServer(async(req,res)=>{try{
    assert.equal(await page.locator('.business-product-card:visible').count(),0);
    await page.locator('#owner-preparation-language').selectOption('en');
    await page.locator('#vendor-catalogue-search').fill('');
+   await openSection('media');
    await freshCard(storedUploads[1].asset.assetId).getByRole('button',{name:'Add to gallery',exact:true}).click();
    await freshCard(storedUploads[0].asset.assetId).getByRole('button',{name:'Move later',exact:true}).click();
+   await openSection('products');
    for(const language of ['en','es','fr','ar','pt','zh','hi','de','ja']){await page.locator('#owner-preparation-language').selectOption(language);const expected=require('../js/vendor-inventory-copy').copy[language];assert.ok((await page.locator('#business-media-list').textContent()).includes(expected.removeGallery));assert.equal(await page.locator('#business-media-product option[value=""]').textContent(),expected.chooseProduct);await page.evaluate(()=>{window.__originalConfirm=window.confirm;window.confirm=message=>{window.__removePrompt=message;return false;};});await page.locator('.business-product-card-actions button').filter({hasText:expected.remove}).first().click();assert.equal(await page.evaluate(()=>window.__removePrompt),expected.removeProduct.replace('{name}','Exact jacket'));await page.evaluate(()=>window.confirm=window.__originalConfirm);assert.equal(await page.locator('.business-product-card-actions button[data-vendor-copy=duplicate]').first().textContent(),expected.duplicate);}
    await page.locator('#owner-preparation-language').selectOption('en');
    const expectedOrder=await page.evaluate(()=>window.DEMEOSVendorProducts.read().products[0].mediaGallery.assetIds);
@@ -207,10 +212,12 @@ const server=http.createServer(async(req,res)=>{try{
    for(const id of expectedOrder)assert.ok(reopenedAssets.assets.some(asset=>asset.assetId===id));
    const foreign=await context.request.get(base+'/api/businesses/engineering-b/media');assert.equal(foreign.status(),403);
    await page.reload();await page.locator('#vendor-products-save:not([disabled])').waitFor();
+   await openSection('media');
    for(const id of expectedOrder){await freshCard(id).getByRole('button',{name:'Remove from gallery',exact:true}).waitFor();await freshCard(id).locator('img').scrollIntoViewIfNeeded();await freshCard(id).locator('img').evaluate(image=>image.decode());assert.equal(await freshCard(id).locator('img').evaluate(image=>image.complete&&image.naturalWidth>0),true);}
    assert.deepEqual(await page.evaluate(()=>window.DEMEOSVendorProducts.read().products[0].mediaGallery.assetIds),expectedOrder);
    await freshCard(storedUploads[0].asset.assetId).getByRole('button',{name:'Main image',exact:true}).waitFor();
    assert.deepEqual(await page.locator('.business-media-item').filter({has:page.getByRole('button',{name:'Remove from gallery',exact:true})}).locator('img').evaluateAll(images=>images.map(image=>image.src)),expectedOrder.map(id=>'https://example.org/'+id+'.webp'));
+   await openSection('products');
    await page.locator('.business-product-card-actions button').filter({hasText:'Remove'}).first().click();
    await page.locator('#owner-preparation-language').selectOption('ja');await page.locator('#owner-preparation-language').selectOption('en');
    assert.equal(await page.locator('#business-media-list').getByRole('button',{name:'Add to gallery',exact:true}).count(),0);
