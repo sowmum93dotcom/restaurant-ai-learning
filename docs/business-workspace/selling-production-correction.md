@@ -13,3 +13,11 @@ Regression coverage: exact Vercel route mappings, no inspection bootstrap, all s
 Release remains conditional on an authenticated real Preview session and successful deployed authorized/denied checks. No Production database, credentials, records, approvals or permissions were changed by this correction.
 
 The real-entry regression also reproduced a Private Orders restoration race: its hidden-workspace observer cleared the selected order context but did not reactivate it when authentication revealed the same verified workspace. The observer now reactivates on reveal, through its existing ready-state and business-ID checks. A focused regression verifies restored loading without a new permission-model event; stale-account/denial tests remain intact.
+
+## Selling-only build continuation
+
+The Preview inspection sign-in shell and authenticated dashboard/editor now read the dedicated Selling entry documents, not business-workspace.html or marketing.html. Vercel bundles only those dedicated templates for this handler. Links are rewritten into the same inspection route, and the initial permission presentation marker is removed from the controlled shell so authentication waits cannot expose the workspace early. Approved structure, navigation, CSS and existing controllers remain unchanged. A regression refuses any read of an obsolete shared template and verifies the dedicated editor still contains upload and stock controls.
+
+Validation: 1,491 Node tests pass. Controlled inspection browser scenarios pass at 390/820/1440, including eight authentication cases, local multiple-image/video uploads, catalogue editing, exact variants, stock/history, orders-empty state, all nine languages, outage recovery and deliberate exit. The existing isolated SQL/API/browser inventory journey passes all three widths too. No real business is needed for these tests, and no Production database, permission or payment writer is called by inspection.
+
+Browser-local uploads are not durable cloud-upload verification. The private Preview Blob resource and secure media settings still need explicit resource authorisation after automatic approval review rejected creation as persistent and potentially billable. Do not infer that this prerequisite has been fulfilled from local upload success or a READY deployment.

@@ -83,7 +83,7 @@
   ],
   "functions": {
     "api/businesses.js": {
-      "includeFiles": "{business-workspace.html,marketing.html}"
+      "includeFiles": "{selling-vendor.html,selling-vendor-manage.html}"
     }
   }
 }

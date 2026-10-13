@@ -65,3 +65,18 @@ test('transient inspection failure retains same-account sample reads and recover
  failure=true;await root.DEMEOSVendorInspection.revalidate();root.Clerk.user={id:'another-account'};root.DEMEOSVendorInspection.sessionChanged({user:root.Clerk.user},root.Clerk.session);
  assert.equal(workspace.inert,true);assert.equal(root.DEMEOSVendorInspection.authenticationRequired(),true);assert.equal((await root.fetch(base+'/products')).ok,false);assert.equal(timers.size,0);
 });
+
+test('Selling test entry never reads obsolete shared dashboard templates',async()=>{
+ const fs=require('node:fs'),original=fs.readFileSync,read=[];
+ fs.readFileSync=function(file,...args){read.push(String(file));assert.ok(!/(?:^|\/)(?:business-workspace|marketing)\.html$/.test(String(file)),'Obsolete Selling entry was read');return original.call(this,file,...args);};
+ try{
+  for(const authenticated of [false,true])for(const page of ['dashboard','manage']){
+   const handler=inspection.createHandler({environment:()=>({VERCEL_ENV:'preview',VERCEL_GIT_COMMIT_REF:branch}),authenticate:async()=>authenticated?{trustedIdentityId:'controlled-test-owner'}:null});
+   const res=response();await handler({method:'GET',headers:{host:'preview.example'},query:{page}},res);
+   assert.equal(res.code,200);assert.match(res.body,/Selling Vendor Application/);assert.doesNotMatch(res.body,/href="(?:\/?business-workspace\.html|marketing\.html)/);
+   if(authenticated&&page==='manage'){assert.match(res.body,/id="business-media-file"/);assert.match(res.body,/id="business-media-upload-btn"/);assert.match(res.body,/id="vendor-stock-save"/);}
+  }
+  assert.ok(read.some(file=>file.endsWith('/selling-vendor.html')));assert.ok(read.some(file=>file.endsWith('/selling-vendor-manage.html')));
+  assert.equal(require('../vercel.json').functions['api/businesses.js'].includeFiles,'{selling-vendor.html,selling-vendor-manage.html}');
+ }finally{fs.readFileSync=original;}
+});
