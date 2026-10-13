@@ -10,7 +10,7 @@ DEMEOS inspection caches use a session storage prefix for the verified Clerk use
 
 Validation performed locally:
 
-- 1,479 Node tests passed; four inspection security tests cover Production rejection, verified identity, same-origin requests, isolated storage and denial of real approval/customer operations.
+- 1,481 Node tests passed; inspection security tests cover Production rejection, verified identity, same-origin requests, isolated storage and denial of real approval/customer operations.
 - Inspection browser journeys passed at 390, 820 and 1440 pixels: nine languages, business identity, Add Product, edit/save/reload, automatic category fields, exact variants, multiple local images/video, sample video playback, main image selection saved from the gallery, catalogue search, accordion section persistence, stock changes/history after refresh and genuinely empty private orders. No live business API requests occurred.
 - Existing Selling inventory SQL/API/browser gate passed all three widths, including CSV, gallery and ownership protections.
 - Existing approval/application journey regression passed all models and widths, including scoped decisions and revocation. This is a regression check, not additional Marketing or Admin development.
@@ -19,4 +19,12 @@ Selling presentation corrections are scoped to the resolved Selling model: reada
 
 GitHub runs the complete existing Chrome browser gate and a separate WebKit inspection flow. WebKit verifies its engine and codecs on Linux; it is not a claim that a real iPhone or iPad Safari session has been tested. Local WebKit dependency installation was blocked by workspace system-package permissions, so that check runs in CI.
 
-Deployed authenticated acceptance, Safari device video playback, and final exact-head CI results remain required before merge. No Production release or real vendor launch is claimed from a READY Preview alone.
+The owner confirmed all Selling sections and video playback in Safari on the previous deployment, but reported an intermittent access switch. The correction still requires exact-head CI and authenticated deployed stability acceptance before merge. No Production release or real vendor launch is claimed from a READY Preview alone.
+
+## Inspection stability correction
+
+The shared owner workspace refreshed permissions on focus, visibility change and a 30-second timer. Its generic handler classified a delayed 401 as a business denial and replaced the inspection model with a forbidden state while the inspection banner remained visible. A deterministic reproduction confirmed that transition. Available deployment logs did not establish the underlying reason for that particular HTTP failure; this is not evidence of a Google sign-in defect.
+
+Inspection now owns its revalidation and fixed sample identity. Delayed real-business, loading or permission responses cannot replace an active ready inspection. A session expiry pauses the interface at the existing sign-in boundary; an account switch requires authenticated revalidation or deliberate reopening. Requests use the current Clerk session token and the server binds the sandbox to the verified identity. Stale responses after a session change or deliberate exit cannot commit sandbox state. Exit inspection opens the normal Selling route in a new document, restoring ordinary ownership and approval protections. The inspection sign-in shell does not load real owner business records.
+
+Regression browser checks cover every Selling section, refresh, delayed session tokens, late foreign records, transient missing auth state, focus/timer 401 and 403 responses, authentication recovery, account switching and deliberate exit. Normal unauthorised real-business access remains denied. These checks run at mobile, tablet and desktop widths in Chrome and WebKit CI. No real account permissions, approvals, database records or payment settings are changed.

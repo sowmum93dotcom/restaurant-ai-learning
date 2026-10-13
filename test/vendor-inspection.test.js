@@ -41,3 +41,10 @@ test('browser sandbox isolates owner caches and never forwards unsupported live 
  for(const url of ['/api/admin/business-applications','/api/customer/checkout','/api/businesses/real/products'])assert.equal((await root.fetch(url,{method:'POST',body:'{}'})).status,403);
  assert.equal(calls.length,1);assert.equal((await root.fetch('/api/businesses/test-vendor-inspection-705',{method:'PUT',body:'{}'})).status,403);
 });
+
+ test('inspection mutations bind the authenticated account and never accept another account context',async()=>{
+ const environment=()=>({VERCEL_ENV:'preview',VERCEL_GIT_COMMIT_REF:branch});const handler=inspection.createHandler({environment,authenticate:async()=>({trustedIdentityId:'owner-b'})});
+ const req={method:'POST',headers:{host:'preview.example',origin:'https://preview.example'},query:{},body:{identityId:'owner-a',state:inspection.fixture('https://preview.example'),pathname:'/api/businesses',method:'GET'}};
+ let res=response();await handler(req,res);assert.equal(res.code,403);assert.equal(res.body.reason,'inspection-account-changed');
+ res=response();req.body.identityId='owner-b';await handler(req,res);assert.equal(res.code,200);assert.equal(res.body.result.businesses[0].businessId,'test-vendor-inspection-705');
+ });

@@ -22,7 +22,16 @@
     try{nativeSession.setItem(prefix+'sandbox',JSON.stringify(durable));}catch(_){}
   }};
   const response=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json'}});
-  let queue=Promise.resolve();
+  let queue=Promise.resolve(),active=true,epoch=0,issue='',checking=false;
+  const checkFlag=Symbol('inspection-revalidation');
+  const ownsRecord=(record,id)=>active&&id===state.profile.businessId&&record?.inspection===true&&record.businessProfile?.businessId===id&&record.workspaceReadiness?.businessId===id&&record.workspaceReadiness?.onboarding?.approved===false;
+  function authView(){if(!document.getElementById)return;const elements=root.getOwnerAuthenticationElements?.(document);if(elements&&root.showOwnerAuthenticationState)root.showOwnerAuthenticationState(elements,'signed-out');}
+  function pause(reason){if(issue!==reason)epoch++;issue=reason;const workspace=document.getElementById?.('owner-authenticated-workspace');if(workspace)workspace.inert=true;if(reason==='expired'||reason==='account')authView();if(document.createElement)mark();}
+  function resume(){issue='';const workspace=document.getElementById?.('owner-authenticated-workspace');if(workspace)workspace.inert=false;if(document.createElement)mark();const elements=root.getOwnerAuthenticationElements?.(document);if(elements)root.showOwnerAuthenticationState?.(elements,'signed-in');}
+  async function revalidate(){if(!active||checking)return;checking=true;try{const result=await root.fetch(business,{credentials:'same-origin',cache:'no-store',[checkFlag]:true});if(result.ok){const record=await result.json();if(ownsRecord(record,state.profile.businessId))resume();else pause('unavailable');}}catch(_){pause('unavailable');}finally{checking=false;}}
+  function sessionChanged(auth,session){const id=auth?.user?.id;if(id&&id!==bootstrap.identityId){pause('account');return;}if(!id&&!session){pause('expired');return;}if(id===bootstrap.identityId&&issue)revalidate();}
+  function exit(){if(!active)return;active=false;epoch++;save();const workspace=document.getElementById?.('owner-authenticated-workspace');if(workspace)workspace.inert=true;root.location.assign('/selling-vendor');}
+
   const business='/api/businesses/'+state.profile.businessId;
   root.fetch=async function(input,options={}){
     const url=new URL(typeof input==='string'?input:input.url,root.location.origin);
@@ -31,6 +40,10 @@
     if(url.pathname==='/api/public-config' && method==='GET')return nativeFetch(input,options);
     if(!url.pathname.startsWith('/api/'))return method==='GET'?nativeFetch(input,options):response({error:'Writes are disabled outside the inspection sandbox.'},403);
     const dispatch=async()=>{
+    const generation=epoch;
+    if(!active)return response({error:'Inspection was deliberately exited.'},409);
+    if(issue && !options[checkFlag])return response({error:issue==='expired'?'Sign in to resume Development inspection.':'Inspection is temporarily unavailable.'},issue==='expired'?401:409);
+
     let body={};try{body=typeof options.body==='string'?JSON.parse(options.body):{};}catch(_){return response({error:'Invalid inspection request.'},400);}
     // Uploaded files remain in this browser. No Blob storage or database upload occurs.
     if(url.pathname.startsWith('/api/vendor-inspection-upload/') && method==='PUT'){
@@ -51,9 +64,18 @@
     if(!(url.pathname==='/api/businesses'||url.pathname===business||[business+'/products',business+'/inventory',business+'/media',business+'/orders'].includes(url.pathname)))return response({error:'This operation is disabled in inspection.'},403);
     const run=async()=>{
       const outgoing=structuredClone(state);for(const asset of outgoing.assets)if(localUrls.has(asset.deliveryUrl))asset.deliveryUrl='';
-      const result=await nativeFetch('/api/businesses?resource=vendor-inspection',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({state:outgoing,pathname:url.pathname,method,body})});
-      const data=await result.json();if(!result.ok)return response(data,result.status);
+      const session=root.Clerk?.session;
+      const token=session?.getToken?await session.getToken():null;
+      if(root.Clerk?.user && root.Clerk.user.id!==bootstrap.identityId){pause('account');return response({error:'Inspection account changed.'},403);}
+      if(!active || generation!==epoch)return response({error:'Inspection session changed. Retry.'},409);
+      if(session?.getToken && !token){pause('expired');return response({error:'Sign in to resume Development inspection.'},401);}
+      const headers={'Content-Type':'application/json'};if(token)headers.Authorization='Bearer '+token;
+      const result=await nativeFetch('/api/businesses?resource=vendor-inspection' ,{method:'POST',credentials:'same-origin',headers,body:JSON.stringify({identityId:bootstrap.identityId,state:outgoing,pathname:url.pathname,method,body})});
+      const data=await result.json();
+      if(!active || generation!==epoch)return response({error:'Inspection session changed. Retry.'},409);
+      if(!result.ok){if(result.status===401)pause('expired');else if(data.reason==='inspection-account-changed')pause('account');else if(method==='GET')pause('unavailable');return response(data,result.status);}
       const urls=new Map(state.assets.filter(asset=>localUrls.has(asset.deliveryUrl)).map(asset=>[asset.assetId,asset.deliveryUrl]));
+      if(data.state?.profile?.businessId!==bootstrap.state.profile.businessId||data.state.profile.applicationAccess||data.state.profile.applicationDecisions){pause('unavailable');return response({error:'Invalid inspection response.'},409);}
       state=data.state;for(const asset of state.assets)if(urls.has(asset.assetId))asset.deliveryUrl=urls.get(asset.assetId);
       if(url.pathname===business+'/media')data.result.assets=state.assets;
       save();return response(data.result);
@@ -62,9 +84,20 @@
     };
     const pending=queue.then(dispatch,dispatch);queue=pending.then(()=>{},()=>{});return pending;
   };
-  root.DEMEOSVendorInspection=Object.freeze({isLocalMediaUrl:url=>localUrls.has(url),videoSources:url=>url===bootstrap.state.assets.find(asset=>asset.assetId==='test-video')?.deliveryUrl?[{src:url.replace(/\.webm$/,'.mp4'),type:'video/mp4'},{src:url,type:'video/webm'}]:[]});
+  root.DEMEOSVendorInspection=Object.freeze({ownsRecord,revalidate,sessionChanged,exit,authenticationRequired:()=>issue==='expired'||issue==='account',isPaused:()=>Boolean(issue),isLocalMediaUrl:url=>localUrls.has(url),videoSources:url=>url===bootstrap.state.assets.find(asset=>asset.assetId==='test-video')?.deliveryUrl?[{src:url.replace(/\.webm$/,'.mp4'),type:'video/mp4'},{src:url,type:'video/webm'}]:[]});
   const labels={en:'Development inspection. Sample data only. Changes stay in this browser. No live sales or payments.',es:'Inspección de desarrollo — datos de muestra. Sin aprobación, publicación, pedidos ni pagos.',fr:'Inspection de développement — données de démonstration. Aucune approbation, publication, commande ou paiement.',ar:'معاينة التطوير — بيانات تجريبية. لا موافقات أو نشر أو طلبات أو مدفوعات.',pt:'Inspeção de desenvolvimento — dados de exemplo. Sem aprovação, publicação, pedidos ou pagamentos.',zh:'开发预览 — 测试数据。无业务批准、发布、订单或付款。',hi:'विकास निरीक्षण — नमूना डेटा। कोई स्वीकृति, प्रकाशन, ऑर्डर या भुगतान नहीं।',de:'Entwicklungsansicht — Beispieldaten. Keine Freigabe, Veröffentlichung, Bestellungen oder Zahlungen.',ja:'開発プレビュー — サンプルデータ。承認、公開、注文、支払いはありません。'};
-  function mark(){document.body.dataset.vendorInspection='true';const code=root.localStorage.getItem('demeos-customer-language')||'en';let banner=document.getElementById('vendor-inspection-notice');if(!banner){banner=document.createElement('aside');banner.id='vendor-inspection-notice';banner.setAttribute('role','note');banner.style.cssText='position:sticky;top:0;z-index:1000;background:#102844;color:#fff;padding:12px 18px;border-bottom:3px solid #c6a75e;font:14px/1.5 system-ui';document.body.prepend(banner);}banner.textContent=labels[code]||labels.en;banner.lang=code;banner.dir=code==='ar'?'rtl':'ltr';
+  const notices={
+    en:['Your inspection session expired. Sign in to resume.','The signed-in account changed. Reopen inspection with that account.','Inspection could not be refreshed. Your sample changes are retained.','Reopen inspection','Retry inspection'],
+    es:['Tu sesión de inspección caducó. Inicia sesión para continuar.','La cuenta ha cambiado. Abre la inspección con esa cuenta.','No se pudo actualizar la inspección. Tus cambios de muestra se conservan.','Reabrir inspección','Reintentar inspección'],
+    fr:['Votre session a expiré. Connectez-vous pour continuer.','Le compte connecté a changé. Rouvrez l’inspection avec ce compte.','Actualisation impossible. Vos modifications de démonstration sont conservées.','Rouvrir l’inspection','Réessayer'],
+    ar:['انتهت جلسة المعاينة. سجّل الدخول للمتابعة.','تغير الحساب المسجل. أعد فتح المعاينة بهذا الحساب.','تعذر تحديث المعاينة. تم الاحتفاظ بالتغييرات التجريبية.','إعادة فتح المعاينة','إعادة المحاولة'],
+    pt:['A sessão expirou. Entre para continuar.','A conta mudou. Reabra a inspeção com essa conta.','Não foi possível atualizar. As alterações de exemplo foram mantidas.','Reabrir inspeção','Tentar novamente'],
+    zh:['预览会话已过期。请登录以继续。','登录账户已更改。请使用该账户重新打开预览。','无法刷新预览。您的测试修改已保留。','重新打开预览','重试预览'],
+    hi:['निरीक्षण सत्र समाप्त हो गया। जारी रखने के लिए साइन इन करें।','साइन इन किया गया खाता बदल गया। उस खाते से निरीक्षण फिर खोलें।','निरीक्षण रीफ़्रेश नहीं हुआ। नमूना बदलाव सुरक्षित हैं।','निरीक्षण फिर खोलें','फिर प्रयास करें'],
+    de:['Die Sitzung ist abgelaufen. Melden Sie sich erneut an.','Das Konto wurde gewechselt. Öffnen Sie die Ansicht mit diesem Konto erneut.','Aktualisierung nicht möglich. Ihre Beispieländerungen bleiben erhalten.','Ansicht erneut öffnen','Erneut versuchen'],
+    ja:['セッションが期限切れです。サインインして再開してください。','アカウントが変更されました。そのアカウントでプレビューを開き直してください。','更新できませんでした。サンプルの変更は保存されています。','プレビューを開き直す','再試行']
+  };
+  function mark(){document.body.dataset.vendorInspection='true';const code=root.localStorage.getItem('demeos-customer-language')||'en';let banner=document.getElementById('vendor-inspection-notice');if(!banner){banner=document.createElement('aside');banner.id='vendor-inspection-notice';banner.setAttribute('role','note');banner.style.cssText='position:sticky;top:0;z-index:1000;background:#102844;color:#fff;padding:12px 18px;border-bottom:3px solid #c6a75e;font:14px/1.5 system-ui';document.body.prepend(banner);}banner.textContent=labels[code]||labels.en;const notice=notices[code]||notices.en;if(issue)banner.append(' '+notice[issue==='expired'?0:issue==='account'?1:2]);const exitLabel={en:'Exit inspection',es:'Salir de la inspección',fr:'Quitter l’inspection',ar:'إنهاء المعاينة',pt:'Sair da inspeção',zh:'退出预览',hi:'निरीक्षण से बाहर निकलें',de:'Inspektion verlassen',ja:'プレビューを終了'};const exitButton=document.createElement('button');exitButton.type='button';exitButton.id='vendor-inspection-exit';exitButton.textContent=exitLabel[code]||exitLabel.en;exitButton.style.cssText='margin-inline-start:12px;padding:8px 12px;background:#f4e5bf;color:#10253e;border:0;border-radius:6px;cursor:pointer';exitButton.addEventListener('click',exit);banner.append(exitButton);if(issue){const retry=document.createElement('button');retry.type='button';retry.id='vendor-inspection-retry';retry.textContent=notice[issue==='account'?3:4];retry.style.cssText=exitButton.style.cssText;retry.addEventListener('click',()=>issue==='account'?root.location.reload():revalidate());banner.append(retry);}banner.lang=code;banner.dir=code==='ar'?'rtl':'ltr';
     document.querySelectorAll('[href="/selling-vendor"],[href^="/selling-vendor/manage"]').forEach(link=>{link.href=link.getAttribute('href').replace('/selling-vendor','/selling-vendor/inspect');});
     const saveBusiness=document.getElementById('save-business-profile-btn'),submit=document.getElementById('submit-business-btn');if(saveBusiness)saveBusiness.disabled=true;if(submit)submit.disabled=true;
   }

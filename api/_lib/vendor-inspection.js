@@ -60,7 +60,7 @@ function createHandler({environment=()=>process.env,authenticate=resolveTrustedI
   if(!['GET','POST'].includes(req.method))return res.status(405).json({error:'Method not allowed.'});
   const identity=await authenticate(req);
   if(!identity){
-    if(req.method==='POST')return res.status(401).json({error:'Authentication required.'});
+    if(req.method==='POST')return res.status(401).json({error:'Authentication required.',reason:'inspection-authentication-required'});
     if(!['dashboard','manage'].includes(req.query.page))return res.status(404).json({error:'Not found.'});
     // Reuse the existing Clerk sign-in boundary. No fixture is sent before sign-in.
     const destination=req.query.page==='manage'?'/selling-vendor/inspect/manage':'/selling-vendor/inspect';
@@ -70,6 +70,7 @@ function createHandler({environment=()=>process.env,authenticate=resolveTrustedI
   if(req.method==='POST'){
     const host=req.headers['x-forwarded-host']||req.headers.host;
     try{if(new URL(req.headers.origin).host!==host)return res.status(403).json({error:'Same-origin inspection required.'});}catch(_){return res.status(403).json({error:'Same-origin inspection required.'});}
+    if(req.body?.identityId!==identity.trustedIdentityId)return res.status(403).json({error:'Inspection account changed.',reason:'inspection-account-changed'});
     try{const {state,pathname,method,body}=req.body||{};const result=operate(state,pathname,method,body);return res.status(200).json({state,result});}catch(error){return res.status(error.status||400).json({error:error.message});}
   }
   if(!['dashboard','manage'].includes(req.query.page))return res.status(404).json({error:'Not found.'});

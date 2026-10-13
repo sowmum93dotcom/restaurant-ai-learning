@@ -132,6 +132,7 @@ function getOwnerAuthenticationElements(documentObject) {
 }
 
 function showOwnerAuthenticationState(elements, state) {
+  if(typeof window!=='undefined' && window.DEMEOSVendorInspection?.authenticationRequired() && (state==='signed-in'||state==='loading'))state='signed-out';
   elements.loading.hidden = state !== "loading";
   elements.signedOut.hidden = state !== "signed-out";
   elements.signedIn.hidden = state !== "signed-in";
@@ -301,6 +302,7 @@ async function loadOwnerNextAction(documentObject, storage, fetchFunction) {
     // Discard responses for a business that is no longer selected.
     if (ownerOverviewLoads.get(documentObject) !== generation || storage.getItem("demeosActiveBusinessId") !== activeBusinessId) return unavailableOwnerNextAction;
     if (record.businessProfile?.businessId !== activeBusinessId) throw new Error("Business identity unavailable");
+    if(typeof window!=='undefined'&&window.DEMEOSVendorInspection&&!window.DEMEOSVendorInspection.ownsRecord(record,activeBusinessId))return unavailableOwnerNextAction;
     const nextAction = getTrustedOwnerNextAction(record, activeBusinessId);
     renderOwnerDashboardSummary(documentObject, record, activeBusinessId);
     if (record.businessProfile?.businessId === activeBusinessId) {
@@ -322,6 +324,7 @@ async function loadOwnerNextAction(documentObject, storage, fetchFunction) {
     renderOwnerNextAction(documentObject, action);
     return action;
   } catch (_error) {
+    if(typeof window!=='undefined'&&window.DEMEOSVendorInspection)return unavailableOwnerNextAction;
     if (ownerOverviewLoads.get(documentObject) !== generation || storage.getItem("demeosActiveBusinessId") !== activeBusinessId) return unavailableOwnerNextAction;
     const identity = documentObject.getElementById("workspace-business-identity");
     const work = documentObject.getElementById("workspace-current-work");
@@ -393,8 +396,17 @@ function renderOwnerDashboardSummary(documentObject, record, businessId) {
 function bindOwnerClerkSession(clerk, documentObject, storage, elements, fetchFunction) {
   let activeOwnerId = null;
   const update = function (auth) {
+    if(typeof window!=='undefined')window.DEMEOSVendorInspection?.sessionChanged(auth,clerk.session);
     if (auth && auth.user) {
       const authenticatedUserId = auth.user.id;
+      if(typeof window!=='undefined' && window.DEMEOSVendorInspectionEntry && !window.DEMEOSVendorInspection){
+        // A sign-in shell must not initialise real business access before inspection.
+        showOwnerAuthenticationState(elements,'loading');
+        Promise.resolve(clerk.session?.getToken?.()).then(()=>{
+          if(clerk.user?.id===authenticatedUserId)documentObject.dispatchEvent(new CustomEvent('owner-business-ready'));
+        }).catch(()=>showOwnerAuthenticationState(elements,'error'));
+        return;
+      }
       if (activeOwnerId !== authenticatedUserId) {
         showOwnerAuthenticationState(elements, "loading");
         ownerOverviewLoads.set(documentObject, (ownerOverviewLoads.get(documentObject) || 0) + 1);
@@ -624,6 +636,10 @@ function installOwnerBusinessSecurity(windowObject, documentObject, localStorage
         }
 
         if (authenticatedOnThisPage && currentIdentityId !== null && currentIdentityId !== identityId) {
+          if (windowObject.DEMEOSVendorInspection) {
+            windowObject.DEMEOSVendorInspection.sessionChanged(auth,clerk.session);
+            return;
+          }
           if (selector) {
             selector.textContent = "";
             selector.disabled = true;

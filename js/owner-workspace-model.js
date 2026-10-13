@@ -62,6 +62,9 @@
   function apply(doc, record, businessId, failure, requestedModel) {
     identifyApplication(doc);
     const previous = states.get(doc);
+    // Inspection records are a separate authority domain, never a real business grant.
+    if(root.DEMEOSVendorInspection && previous?.state.status==='ready' &&
+       (failure || !root.DEMEOSVendorInspection.ownsRecord(record,businessId))) return previous.state;
     const activeRoute = routeApplication();
     if (activeRoute) {
       doc.querySelectorAll('a[href]').forEach(link => {
@@ -190,6 +193,7 @@
     let checking=false;
     async function revalidate(){
       const doc=root.document,current=states.get(doc);
+      if(root.DEMEOSVendorInspection){if(!doc.hidden)await root.DEMEOSVendorInspection.revalidate();return;}
       if(checking||doc.hidden||!current?.businessId||doc.getElementById('owner-authenticated-workspace')?.hidden)return;
       checking=true;try{
         const application=routeApplication();
@@ -197,6 +201,7 @@
         if(states.get(doc)!==current)return;
         if(!response.ok){
           if([401,403].includes(response.status)){
+            if(response.status===401){root.showOwnerAuthenticationState?.(root.getOwnerAuthenticationElements(doc),'signed-out');return;}
             let failure='forbidden';if(response.status===403){const denial=await response.json();if(denial.reason==='application-access-required')failure=['rejected','revoked'].includes(denial.applicationStatus)?denial.applicationStatus:'denied';}
             if(states.get(doc)!==current)return;
             root.DEMEOSBusinessOnboarding?.updateStatus({businessId:current.businessId,onboarding:{status:failure}});
