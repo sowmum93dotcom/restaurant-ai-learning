@@ -93,7 +93,7 @@
       requestStage='inspection-response';
       const data=await boundedInspectionRequest(result.json());
       if(!active || generation!==epoch)return response({error:'Inspection session changed. Retry.'},409);
-      if(!result.ok){root.console?.warn('DEMEOS inspection request rejected',{stage:requestStage,status:result.status});if(result.status===401)pause('expired');else if(data.reason==='inspection-account-changed')pause('account');else if(method==='GET')pause('unavailable',result.status>=500||result.status===429);return response(data,result.status);}
+      if(!result.ok){root.console?.warn('DEMEOS inspection request rejected during '+requestStage+' (HTTP '+result.status+')');if(result.status===401)pause('expired');else if(data.reason==='inspection-account-changed')pause('account');else if(method==='GET')pause('unavailable',result.status>=500||result.status===429);return response(data,result.status);}
       const urls=new Map(state.assets.filter(asset=>localUrls.has(asset.deliveryUrl)).map(asset=>[asset.assetId,asset.deliveryUrl]));
       if(data.state?.profile?.businessId!==bootstrap.state.profile.businessId||data.state.profile.applicationAccess||data.state.profile.applicationDecisions){pause('unavailable');return response({error:'Invalid inspection response.'},409);}
       state=data.state;for(const asset of state.assets)if(urls.has(asset.assetId))asset.deliveryUrl=urls.get(asset.assetId);
@@ -104,7 +104,7 @@
     return run().catch(()=>{
       if(!active||generation!==epoch)return response({error:'Inspection session changed. Retry.'},409);
       // Diagnose provider/transport failures without logging credentials, records or URLs.
-      root.console?.warn('DEMEOS inspection refresh failed',{stage:requestStage});
+      root.console?.warn('DEMEOS inspection refresh failed during '+requestStage);
       pause('unavailable',true);return response({error:'Inspection could not be refreshed. Retry inspection.'},503);
     });
     };

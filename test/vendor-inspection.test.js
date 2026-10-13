@@ -88,7 +88,7 @@ test('inspection failure diagnostics identify the stage without exposing authent
   const root={DEMEOS_VENDOR_INSPECTION:{identityId:'verified-owner',state:inspection.fixture('https://preview.example')},location:{pathname:'/selling-vendor/inspect',origin:'https://preview.example'},localStorage:storage,sessionStorage:storage,console:{warn:(...args)=>warnings.push(args)},Clerk:{user:{id:'verified-owner'},session:{getToken:async()=>{if(failure==='session-token')throw Error('private provider detail');return 'private-token';}}},fetch:async()=>{if(failure==='inspection-request')throw Error('private transport detail');return {json:async()=>{throw Error('private response detail');}};}};
   vm.runInNewContext(fs.readFileSync(require.resolve('../js/vendor-inspection'),'utf8'),{window:root,document:{addEventListener(){}},URL,Response,Blob,structuredClone,crypto:require('node:crypto').webcrypto});
   assert.equal((await root.fetch('/api/businesses/test-vendor-inspection-705')).status,503);
-  assert.equal(warnings.length,1);assert.equal(warnings[0][1].stage,failure);
+  assert.equal(warnings.length,1);assert.ok(warnings[0][0].endsWith(failure));
   assert.doesNotMatch(JSON.stringify(warnings),/private-token|private provider|private transport|private response|Sample jacket|verified-owner|https:/);
  }
 });
