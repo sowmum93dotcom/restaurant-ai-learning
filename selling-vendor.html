@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Selling Vendor Application | DEMEOS</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/business-owner-signin-3d.css" />
+  
+  <link rel="stylesheet" href="/css/business-workspace-completion.css" />
+  <link rel="stylesheet" href="/css/selling-vendor.css" />
+</head>
+<body data-owner-access="loading" data-owner-model="selling" data-selling-entry="true" class="owner-workspace-body">
+  <header class="workspace-header owner-workspace-header">
+    <a class="demeos-brand" href="/selling-vendor" aria-label="DEMEOS Business Owner Workspace home">
+      <img src="/images/demeos-logo.png" alt="DEMEOS logo" class="demeos-logo" />
+    </a>
+    <div class="workspace-identity">
+      <h1 class="restaurant-name">Selling Vendor Application</h1>
+      <p id="workspace-header-business" class="cuisine-type" hidden>Your business workspace</p>
+    </div>
+    <div id="owner-account-control" class="owner-account-control" hidden>
+      <span>Signed in</span>
+      <button id="owner-sign-out" class="owner-account-button" type="button">Sign out</button>
+    </div>
+  </header>
+
+  <main id="owner-auth-loading" class="owner-auth-panel" aria-live="polite">
+    <p class="workspace-eyebrow">Business owner access</p>
+    <h2>Loading authentication&hellip;</h2>
+    <p>Checking your DEMEOS sign-in securely.</p>
+  </main>
+
+  <main id="owner-auth-signed-out" class="owner-auth-panel" hidden>
+    <p class="workspace-eyebrow">Business owner access</p>
+    <h2>Sign in to your workspace</h2>
+    <p>Use your DEMEOS account to access the Selling Vendor Application.</p>
+    <p id="owner-auth-guidance" aria-live="polite">Your sign-in must complete on this website before the workspace can open.</p>
+    <button id="owner-sign-in" class="demeos-primary-button" type="button">Sign in</button>
+  </main>
+
+  <main id="owner-auth-error" class="owner-auth-panel owner-auth-error" role="alert" hidden>
+    <p class="workspace-eyebrow">Business owner access</p>
+    <h2>Authentication is unavailable</h2>
+    <p>We could not load secure sign-in. Please refresh the page or try again later.</p>
+  </main>
+
+  <div id="owner-authenticated-workspace" class="owner-workspace-shell" hidden>
+    <aside class="owner-workspace-sidebar">
+      <nav class="owner-workspace-navigation" aria-label="Business Owner Workspace">
+        <a data-owner-section="overview" href="/selling-vendor">Overview</a>
+        <a data-owner-section="business-profile" href="/selling-vendor/manage#business-profile">My Business</a>
+        <a data-owner-section="products" href="/selling-vendor/manage#products">Product Catalogue</a>
+        <a data-owner-section="media" href="/selling-vendor/manage#media">Images and Videos</a>
+        <a data-owner-section="product-options" href="/selling-vendor/manage#product-options">Options and Variants</a>
+        <a data-owner-section="inventory" href="/selling-vendor/manage#inventory">Stock and History</a>
+        <a data-owner-section="orders" href="/selling-vendor/manage#orders">Private Orders</a>
+      </nav>
+    </aside>
+
+    <main class="owner-workspace-main">
+      <section id="owner-operating-models" class="owner-operating-models" aria-label="Business models" aria-live="polite"><p>Confirming your business permissions…</p></section>
+      <section aria-labelledby="owner-overview-heading">
+        <div class="owner-overview-heading">
+          <div>
+            <h2 id="owner-overview-heading">Overview</h2>
+            <label data-owner-selling hidden><span data-vendor-copy="language">Language</span> <select id="owner-preparation-language"><option value="en">English</option><option value="es">Español</option><option value="fr">Français</option><option value="ar">العربية</option><option value="pt">Português</option><option value="zh">中文</option><option value="hi">हिन्दी</option><option value="de">Deutsch</option><option value="ja">日本語</option></select></label>
+          </div>
+        </div>
+
+
+        <div class="owner-overview-summary">
+        <section class="owner-identity-card" aria-labelledby="selected-business-heading">
+          <h3 id="selected-business-heading" class="owner-visually-hidden">Your business</h3>
+          <div id="workspace-business-identity" class="owner-business-identity" aria-live="polite"></div>
+          <a class="owner-summary-link" href="/selling-vendor/manage#business-profile">Review business details</a>
+        </section>
+
+        <section class="owner-next-action" aria-labelledby="next-action-heading">
+          <h3 id="next-action-heading">What to do next</h3>
+          <div id="workspace-next-action" class="owner-next-action-content" aria-live="polite">
+            <strong>Next action unavailable</strong>
+            <p>DEMEOS could not confirm your current marketing state.</p>
+            <a class="demeos-primary-button owner-card-action" href="/selling-vendor/manage#products">Open Marketing</a>
+          </div>
+        </section>
+
+        </div>
+
+        <section class="owner-current-work" aria-labelledby="current-work-heading">
+          <div>
+            <h3 id="current-work-heading">Current work</h3>
+          </div>
+          <div id="workspace-current-work" class="owner-work-list" aria-live="polite"></div>
+          <a data-owner-marketing class="owner-summary-link" href="/selling-vendor/manage#campaigns">View all marketing drafts</a>
+        </section>
+
+
+
+        <section class="selling-operations" data-owner-selling hidden aria-labelledby="selling-operations-heading">
+          <div class="selling-operations-heading"><h3 id="selling-operations-heading" data-vendor-copy="sellingTools">Manage your business</h3><a class="demeos-primary-button" href="/selling-vendor/manage#products" data-vendor-copy="openCatalogue">Open catalogue</a></div>
+          <div class="selling-operation-grid">
+            <a class="selling-operation-card" href="/selling-vendor/manage#product-options" data-vendor-copy="applicationOptions">Options and Variants</a>
+            <a class="selling-operation-card" href="/selling-vendor/manage#media" data-vendor-copy="applicationMedia">Images and Videos</a>
+            <a class="selling-operation-card" href="/selling-vendor/manage#inventory" data-vendor-copy="applicationStock">Stock and History</a>
+            <a class="selling-operation-card" href="/selling-vendor/manage#orders" data-vendor-copy="applicationOrders">Private Orders</a>
+          </div>
+        </section>
+        <section data-owner-marketing class="owner-dashboard-results" aria-labelledby="owner-dashboard-results-heading">
+          <div class="owner-section-heading"><h3 id="owner-dashboard-results-heading">Your marketing at a glance</h3><a href="business-results.html">Review results</a></div>
+          <div id="owner-dashboard-summary" class="owner-metrics" aria-live="polite"><p>Confirming your recorded activity…</p></div>
+          <p>Interest shows customer attention. External enquiries and verified sales are shown separately when available.</p>
+        </section>
+      </section>
+    </main>
+  </div>
+  <footer><a class="owner-public-destination" href="/customer.html">Customer Experience</a><p>&copy; 2026 DEMEOS — One System. Real Value. Shared Future.</p></footer>
+  <script src="/js/demeos-understanding.js"></script>
+  <script src="/js/business-results.js"></script>
+  <script src="/js/vendor-inventory-copy.js"></script>
+  <script src="/js/owner-workspace-model.js"></script>
+  <script src="/js/business-workspace.js"></script>
+</body>
+</html>

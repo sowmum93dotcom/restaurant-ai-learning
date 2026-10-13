@@ -79,6 +79,12 @@
     const application = routeApplication();
     const remembered = record?.workspaceReadiness?.[preference]?.canPrepare === true ? preference : null;
     const state = resolve(record, businessId, application || requestedModel || remembered, failure);
+    // A verified Selling owner opening an old bookmark stays in the Selling application.
+    // Model intent selects the interface only; it never grants operational permission.
+    if (!application && state.status !== 'ready' && record?.businessProfile?.businessId === businessId &&
+        record?.workspaceReadiness?.businessId === businessId && record.businessProfile.preparationModel === 'selling') {
+      root.location?.replace('/selling-vendor/onboarding#business-profile');
+    }
     if (!application && state.status === 'ready') {
       const path = root.location?.pathname || '';
       if (path.endsWith('/marketing.html') || path.endsWith('/business-results.html') || state.allowed.length === 1) {
@@ -90,14 +96,15 @@
       }
     }
     states.set(doc, {state, record, businessId});
-    doc.body.dataset.ownerModel = state.model || 'none';
+    doc.body.dataset.ownerModel = state.model || (application === 'selling' && doc.body.dataset.sellingEntry === 'true' ? 'selling' : 'none');
     // The legacy Marketing visual theme must not override the Selling application theme.
     const marketingTheme=doc.querySelector('link[href="/css/demeos-business-premium.css"]');
-    if(marketingTheme)marketingTheme.disabled=state.model==='selling';
+    if(marketingTheme)marketingTheme.disabled=application==='selling'||state.model==='selling';
     doc.body.dataset.ownerAccess = state.status;
     doc.querySelectorAll('[data-owner-marketing]').forEach(node => { node.hidden = state.model !== 'marketing'; });
     doc.querySelectorAll('[data-owner-selling]').forEach(node => { node.hidden = state.model !== 'selling'; });
     doc.body.dataset.ownerApplication = application || 'entry';
+    doc.body.dataset.ownerOnboarding = String(root.location?.pathname === '/selling-vendor/onboarding');
     const activity = doc.querySelector('.owner-current-work'); if (activity) activity.hidden = state.status !== 'ready';
     const container = doc.getElementById('owner-operating-models');
     if (container) {
@@ -115,7 +122,7 @@
       else if(['rejected','revoked'].includes(state.status))status.textContent=copy(state.status+'Detail',status.textContent);
       else if(state.status === 'denied') status.textContent = copy('applicationPendingDetail', status.textContent);
       container.appendChild(status);
-      if (state.allowed.length > 1 || (!application && state.allowed.length)) {
+      if ((state.allowed.length > 1 && application !== 'selling') || (!application && state.allowed.length)) {
         const entries = doc.createElement('div'); entries.className = 'owner-application-entries';
         entries.setAttribute('aria-label', 'Business applications');
         for (const model of state.allowed) {
@@ -127,7 +134,8 @@
         }
         container.appendChild(entries);
       } else if (application && state.status !== 'ready') {
-        const link = doc.createElement('a'); link.href = '/business-workspace.html'; link.textContent = copy('applicationReturn', 'Return to business applications'); container.appendChild(link);
+        const link = doc.createElement('a'); link.href = application === 'selling' ? '/selling-vendor/onboarding#business-profile' : '/business-workspace.html'; link.textContent = application === 'selling' ? copy('applicationBusiness','My Business') : copy('applicationReturn', 'Return to business applications'); container.appendChild(link);
+        if(application === 'selling' && state.status === 'unavailable'){const retry=doc.createElement('button');retry.type='button';retry.textContent=copy('authRetry','Retry');retry.addEventListener('click',()=>root.location.reload());container.appendChild(retry);}
       } else if (state.status === 'unavailable') {
         const retry = doc.createElement('button'); retry.type = 'button'; retry.textContent = 'Try again';
         retry.addEventListener('click', () => root.location.reload()); container.appendChild(retry);
@@ -135,7 +143,7 @@
     }
     const nav = doc.querySelector('.owner-workspace-navigation');
     if (nav) {
-      const links = !application ? [['business-profile','My Business','marketing.html#business-profile']] : [ ['overview','Overview',destination(application,'dashboard')], ['business-profile','My Business',destination(application,'business-profile')] ];
+      const links = !application ? [['business-profile','My Business','marketing.html#business-profile']] : [ ['overview','Overview',destination(application,'dashboard')], ['business-profile','My Business',application==='selling'&&state.status!=='ready'?'/selling-vendor/onboarding#business-profile':destination(application,'business-profile')] ];
       if (application && state.status === 'ready') {
         links.push(['products',application === 'selling' ? 'Product Catalogue' : 'Products and Services',destination(application,'products')]);
         links.push(['media',application === 'selling' ? 'Images and Videos' : 'Product and Service Media',destination(application,'media')]);
@@ -186,7 +194,8 @@
       doc.dispatchEvent(new root.CustomEvent('owner-model-ready', {detail: state}));
     return state;
   }
-  const api = {routeApplication, destination, resolve, canOpen, apply, getState, messages};
+  function recordQuery(){const application=routeApplication();return application && root.location?.pathname !== '/selling-vendor/onboarding' ? '?application='+application : '';}
+  const api = {recordQuery, routeApplication, destination, resolve, canOpen, apply, getState, messages};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else {root.DEMEOSOwnerWorkspace = api;identifyApplication(root.document);
     // Revalidate server authority on return to the app; never rely on browser grants.
@@ -197,7 +206,7 @@
       if(checking||doc.hidden||!current?.businessId||doc.getElementById('owner-authenticated-workspace')?.hidden)return;
       checking=true;try{
         const application=routeApplication();
-        const response=await root.fetch('/api/businesses/'+encodeURIComponent(current.businessId)+(application?'?application='+application:''),{credentials:'same-origin',cache:'no-store'});
+        const response=await root.fetch('/api/businesses/'+encodeURIComponent(current.businessId)+recordQuery(),{credentials:'same-origin',cache:'no-store'});
         if(states.get(doc)!==current)return;
         if(!response.ok){
           if([401,403].includes(response.status)){

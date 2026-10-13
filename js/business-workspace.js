@@ -290,7 +290,7 @@ async function loadOwnerNextAction(documentObject, storage, fetchFunction) {
     return unavailableOwnerNextAction;
   }
   try {
-    const response = await fetchFunction(`/api/businesses/${encodeURIComponent(activeBusinessId)}${typeof window !== "undefined" && window.DEMEOSOwnerWorkspace?.routeApplication() ? "?application=" + window.DEMEOSOwnerWorkspace.routeApplication() : ""}`, {
+    const response = await fetchFunction(`/api/businesses/${encodeURIComponent(activeBusinessId)}${typeof window !== "undefined" && window.DEMEOSOwnerWorkspace?.routeApplication() ? window.DEMEOSOwnerWorkspace.recordQuery() : ""}`, {
       method: "GET", credentials: "same-origin"
     });
     if (!response.ok) {
@@ -332,7 +332,7 @@ async function loadOwnerNextAction(documentObject, storage, fetchFunction) {
     if (work) work.textContent = "Application activity is unavailable. Review your business applications.";
     renderOwnerModels(documentObject, null, activeBusinessId, null, _error.applicationDenied ? _error.applicationStatus : _error.status === 403 ? "forbidden" : "unavailable");
     renderOwnerDashboardSummary(documentObject, null, activeBusinessId);
-    renderOwnerNextAction(documentObject, _error.applicationDenied ? {title:window.DEMEOSOwnerWorkspace.messages[_error.applicationStatus][0],explanation:window.DEMEOSOwnerWorkspace.messages[_error.applicationStatus][1],action:"Business applications",destination:"/business-workspace.html"} : {title: _error.status === 403 ? "Business access unavailable" : "Workspace could not be loaded", explanation: "Try again or review your business details.", action: "Review My Business", destination: "marketing.html#business-profile"});
+    renderOwnerNextAction(documentObject, _error.applicationDenied ? {title:window.DEMEOSOwnerWorkspace.messages[_error.applicationStatus][0],explanation:window.DEMEOSOwnerWorkspace.messages[_error.applicationStatus][1],action:"Business applications",destination:window.DEMEOSOwnerWorkspace.routeApplication()==="selling"?"/selling-vendor/onboarding#business-profile":"/business-workspace.html"} : {title: _error.status === 403 ? "Business access unavailable" : "Workspace could not be loaded", explanation: "Try again or review your business details.", action: "Review My Business", destination: "marketing.html#business-profile"});
     return unavailableOwnerNextAction;
   }
 }

@@ -62,11 +62,11 @@
     },
     {
       "source": "/selling-vendor",
-      "destination": "/business-workspace.html"
+      "destination": "/selling-vendor.html"
     },
     {
       "source": "/selling-vendor/manage",
-      "destination": "/marketing.html"
+      "destination": "/selling-vendor-manage.html"
     },
     {
       "source": "/selling-vendor/inspect",
@@ -75,6 +75,10 @@
     {
       "source": "/selling-vendor/inspect/manage",
       "destination": "/api/businesses?resource=vendor-inspection&page=manage"
+    },
+    {
+      "source": "/selling-vendor/onboarding",
+      "destination": "/selling-vendor-manage.html"
     }
   ],
   "functions": {

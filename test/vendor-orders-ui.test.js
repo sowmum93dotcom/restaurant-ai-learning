@@ -7,10 +7,10 @@ function setup(){
  for(const id of ['vendor-orders-list','vendor-orders-status','vendor-orders-reload','owner-authenticated-workspace','owner-preparation-language'])elements.set(id,element());
  elements.get('owner-preparation-language').value='en';
  const doc={getElementById:id=>elements.get(id),createElement(){const n=element();nodes.push(n);return n;},querySelectorAll(){return [];},addEventListener(k,fn){events[k]=fn;}};
- let state={status:'ready',model:'selling',businessId:'owner-a'},answer=async()=>({ok:true,json:async()=>({businessId:state.businessId,orders:[]})}),lastRequest;
+ let visibilityChanged;let state={status:'ready',model:'selling',businessId:'owner-a'},answer=async()=>({ok:true,json:async()=>({businessId:state.businessId,orders:[]})}),lastRequest;
  const root={document:doc,location:{hash:''},DEMEOSVendorCopy:copy,DEMEOSOwnerWorkspace:{getState:()=>state},addEventListener(k,fn){buttons[k]=fn;},fetch(...args){lastRequest=args;return answer(...args);}};
- vm.runInNewContext(fs.readFileSync(require.resolve('../js/vendor-orders'),'utf8'),{window:root,MutationObserver:class{observe(){}},Intl});
- return {elements,root,events,setState:s=>state=s,setAnswer:a=>answer=a,lastRequest:()=>lastRequest,load:()=>elements.get('vendor-orders-reload').click()};
+ vm.runInNewContext(fs.readFileSync(require.resolve('../js/vendor-orders'),'utf8'),{window:root,MutationObserver:class{constructor(callback){visibilityChanged=callback;}observe(){}},Intl});
+ return {elements,root,events,visibilityChanged:()=>visibilityChanged(),setState:s=>state=s,setAnswer:a=>answer=a,lastRequest:()=>lastRequest,load:()=>elements.get('vendor-orders-reload').click()};
 }
 test('private orders distinguish authentication, permission, approval, service failure and empty success in all languages',async()=>{
  const ui=setup();
@@ -41,4 +41,13 @@ test('delayed order denial cannot overwrite newly selected business or navigate 
  ui.setAnswer(async()=>({ok:true,json:async()=>({businessId:'owner-b',orders:[]})}));await ui.load();
  finish({ok:false,status:403,json:async()=>({reason:'application-access-required',applicationStatus:'revoked'})});await pending;
  assert.equal(ui.elements.get('vendor-orders-status').textContent,'');assert.equal(ui.elements.get('vendor-orders-list').dataset.state,'empty');assert.equal(ui.lastRequest()[0],'/api/businesses/owner-b/orders');assert.equal(ui.root.location.hash,'');
+});
+
+test('orders resume after authenticated workspace restoration even without a changed permission model',async()=>{
+ const ui=setup();ui.root.location.hash='#orders';
+ ui.elements.get('owner-authenticated-workspace').hidden=true;ui.visibilityChanged();
+ ui.elements.get('owner-authenticated-workspace').hidden=false;ui.visibilityChanged();
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(ui.lastRequest()[0],'/api/businesses/owner-a/orders');
+ assert.equal(ui.elements.get('vendor-orders-list').dataset.state,'empty');
 });

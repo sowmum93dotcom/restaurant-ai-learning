@@ -279,7 +279,7 @@ async function hydrateKnownBusiness(storage, businessId, fetchImpl, acceptRespon
   }
   try {
     const application = typeof window !== "undefined" ? window.DEMEOSOwnerWorkspace?.routeApplication() : null;
-    const response = await fetchImpl(`/api/businesses/${encodeURIComponent(businessId)}${application ? "?application=" + application : ""}`);
+    const response = await fetchImpl(`/api/businesses/${encodeURIComponent(businessId)}${application ? window.DEMEOSOwnerWorkspace.recordQuery() : ""}`);
     if (!response.ok) {
       if(response.status===403){try{const denial=await response.json();if(denial.reason==='application-access-required')return {hydrated:false,reason:['rejected','revoked'].includes(denial.applicationStatus)?denial.applicationStatus:'denied'};}catch(_){} }
       return { hydrated: false, reason: response.status === 403 ? "forbidden" : "server-error" };

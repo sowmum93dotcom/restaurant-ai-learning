@@ -38,7 +38,7 @@ const server=http.createServer(async(req,res)=>{try{
  if(url.pathname==='/api/generate')return await generatorModule.exports(req,res);
  if(url.pathname==='/api/customer/work')return await publicWork(req,res);
  if(url.pathname.startsWith('/api/'))return res.status(404).json({error:'Not configured'});
- const file=path.resolve(root,'.'+decodeURIComponent(({'/marketing-business':'/business-workspace.html','/selling-vendor':'/business-workspace.html','/marketing-business/manage':'/marketing.html','/selling-vendor/manage':'/marketing.html','/marketing-business/results':'/business-results.html'}[url.pathname] || (url.pathname==='/'?'/business-workspace.html':url.pathname))));if(!file.startsWith(root+path.sep)||!fs.existsSync(file)){res.statusCode=404;return res.end();}
+ const file=path.resolve(root,'.'+decodeURIComponent(({'/marketing-business':'/business-workspace.html','/selling-vendor':'/selling-vendor.html','/marketing-business/manage':'/marketing.html','/selling-vendor/manage':'/selling-vendor-manage.html','/selling-vendor/onboarding':'/selling-vendor-manage.html','/marketing-business/results':'/business-results.html'}[url.pathname] || (url.pathname==='/'?'/business-workspace.html':url.pathname))));if(!file.startsWith(root+path.sep)||!fs.existsSync(file)){res.statusCode=404;return res.end();}
  res.setHeader('Content-Type',({'.html':'text/html','.js':'application/javascript','.css':'text/css'})[path.extname(file)]||'application/octet-stream');fs.createReadStream(file).pipe(res);
 }catch(error){console.error(error);if(!res.writableEnded){res.statusCode=500;res.end('{}');}}});
 (async()=>{
@@ -282,7 +282,33 @@ const server=http.createServer(async(req,res)=>{try{
    await page.locator('#owner-preparation-language').selectOption('en');
    await page.screenshot({path:'/tmp/demeos-owner-vendor-editor-'+viewport.width+'.png',fullPage:true});
 
-   await page.goto(base+'/selling-vendor/manage#orders');await page.locator('.vendor-order-row').waitFor();await page.evaluate(()=>window.Clerk.signOut());await page.locator('#owner-auth-signed-out:not([hidden])').waitFor();await page.waitForFunction(()=>document.getElementById('vendor-orders-list').textContent==='');await context.clearCookies();assert.equal((await context.request.get(base+'/api/businesses/engineering-a/orders')).status(),401);
+   // Production-route entry regression: real SQL records, no inspection fixture or legacy destination.
+   await page.goto(base+'/selling-vendor');await page.locator('body[data-owner-access=ready]').waitFor();
+   assert.equal(await page.locator('.restaurant-name').innerText(),'Selling Vendor Application');
+   assert.equal(await page.locator('#vendor-inspection-notice').count(),0);
+   assert.equal(await page.locator('.owner-workspace-navigation a').count(),7);
+   assert.equal(await page.locator('a[href*=business-workspace],a[href^="marketing.html"]').count(),0);
+   const routeBefore=page.url();
+   await page.evaluate(()=>{window.Clerk.session={async getToken(){return 'controlled-restoration-token';}};window.Clerk.listener({user:null});window.Clerk.listener({user:window.Clerk.user});});
+   await page.locator('body[data-owner-access=ready]').waitFor();await page.locator('#owner-authenticated-workspace:not([hidden])').waitFor();assert.equal(page.url(),routeBefore);
+   await page.route('**/api/businesses/'+profile.businessId+'?application=selling',route=>route.fulfill({status:503,json:{error:'Temporary test outage'}}));
+   const focusFailure=page.waitForResponse(response=>response.url().includes('/api/businesses/'+profile.businessId+'?application=selling')&&response.status()===503);
+   await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await focusFailure;assert.equal(page.url(),routeBefore);
+   assert.equal(await page.locator('body').getAttribute('data-owner-access'),'ready');
+   await page.unroute('**/api/businesses/'+profile.businessId+'?application=selling');await page.evaluate(()=>window.Clerk.session=null);
+   const approved=(await repository.getKnownBusiness(profile.businessId)).businessProfile;
+   await repository.saveBusiness({...approved,applicationAccess:{...approved.applicationAccess,selling:false}});
+   await page.reload();await page.locator('body[data-owner-access=denied]').waitFor();
+   assert.equal(await page.locator('.restaurant-name').innerText(),'Selling Vendor Application');
+   assert.equal(await page.locator('body').getAttribute('data-owner-model'),'selling');
+   assert.equal(await page.locator('a[href*=business-workspace]').count(),0);
+   assert.equal((await context.request.get(base+'/api/businesses/'+profile.businessId+'?application=selling')).status(),403);
+   await page.goto(base+'/selling-vendor/onboarding#business-profile');await page.locator('#business-profile').waitFor();if(!await page.locator('#business-name').isVisible())await page.locator('#onboarding-business > summary').click();await page.locator('#business-name').waitFor();
+   assert.equal(await page.locator('#business-name').inputValue(),approved.name);
+   assert.equal(await page.locator('body').getAttribute('data-owner-access'),'denied');
+   assert.equal(await page.locator('#products').isVisible(),false);
+   await repository.saveBusiness(approved);
+   await page.goto(base+'/selling-vendor/manage#orders');await page.locator('body[data-owner-access=ready]').waitFor();await page.waitForFunction(()=>['empty','ready'].includes(document.getElementById('vendor-orders-list').dataset.state));await page.evaluate(()=>window.Clerk.signOut());await page.locator('#owner-auth-signed-out:not([hidden])').waitFor();await page.waitForFunction(()=>document.getElementById('vendor-orders-list').textContent==='');await context.clearCookies();assert.equal((await context.request.get(base+'/api/businesses/engineering-a/orders')).status(),401);
    assert.deepEqual(errors,[]);await context.close();
    // Restore exact catalogue for the next device without clearing stock history.
    await repository.saveBusiness(profile);
