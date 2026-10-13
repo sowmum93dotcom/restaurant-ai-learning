@@ -67,6 +67,19 @@
     {
       "source": "/selling-vendor/manage",
       "destination": "/marketing.html"
+    },
+    {
+      "source": "/selling-vendor/inspect",
+      "destination": "/api/businesses?resource=vendor-inspection&page=dashboard"
+    },
+    {
+      "source": "/selling-vendor/inspect/manage",
+      "destination": "/api/businesses?resource=vendor-inspection&page=manage"
     }
-  ]
+  ],
+  "functions": {
+    "api/businesses.js": {
+      "includeFiles": "{business-workspace.html,marketing.html}"
+    }
+  }
 }

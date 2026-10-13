@@ -16,7 +16,7 @@ function getOwnerNavigationSection(locationObject, workspaceView) {
   const pathname = locationObject && typeof locationObject.pathname === "string"
     ? locationObject.pathname : "";
   const page = pathname.split("/").pop() || "index.html";
-  if (page === "business-workspace.html" || ["marketing-business", "selling-vendor"].includes(page)) return "overview";
+  if (page === "business-workspace.html" || ["marketing-business", "selling-vendor"].includes(page) || pathname === "/selling-vendor/inspect") return "overview";
   if (page === "business-results.html" || page === "results") return "results";
 
   const view = workspaceView || (locationObject && typeof locationObject.hash === "string"
@@ -132,6 +132,7 @@ function getOwnerAuthenticationElements(documentObject) {
 }
 
 function showOwnerAuthenticationState(elements, state) {
+  if(typeof window!=='undefined' && window.DEMEOSVendorInspection?.authenticationRequired() && (state==='signed-in'||state==='loading'))state='signed-out';
   elements.loading.hidden = state !== "loading";
   elements.signedOut.hidden = state !== "signed-out";
   elements.signedIn.hidden = state !== "signed-in";
@@ -169,8 +170,9 @@ function renderOwnerWorkspace(documentObject, storage, applicationStatus) {
     identity.appendChild(detail);
   });
   const saved = documentObject.createElement("span"); saved.textContent = context.profile.informationStatus?.reviewState === "submitted" ? "Submitted privately. Awaiting administrative review; approval is not granted." : "Private preparation. Business approval is not recorded."; if (applicationStatus === "reviewed") saved.textContent = "Review completed. Business approval and activation are not granted.";
+  if (['approved','rejected','revoked'].includes(applicationStatus)) {saved.dataset.vendorCopy=applicationStatus; saved.textContent=typeof window!=="undefined" ? window.DEMEOSVendorCopy?.[localStorage.getItem('demeos-customer-language')||'en']?.[applicationStatus]||applicationStatus : applicationStatus;}
   if (applicationStatus === "changes-requested") saved.textContent = "Changes requested. Edit, save and resubmit your information."; if (typeof window !== "undefined" && window.DEMEOSOwnerWorkspace?.routeApplication() === "selling") {
-    saved.dataset.vendorCopy = applicationStatus === "changes-requested" ? "changesPreparation" : applicationStatus === "reviewed" ? "reviewedPreparation" : context.profile.informationStatus?.reviewState === "submitted" ? "submittedPreparation" : "privatePreparation";
+    saved.dataset.vendorCopy = ['approved','rejected','revoked'].includes(applicationStatus) ? applicationStatus : applicationStatus === "changes-requested" ? "changesPreparation" : applicationStatus === "reviewed" ? "reviewedPreparation" : context.profile.informationStatus?.reviewState === "submitted" ? "submittedPreparation" : "privatePreparation";
     let code="en";try {code=window.localStorage.getItem("demeos-customer-language") || "en";}catch(_){}
     saved.textContent=window.DEMEOSVendorCopy?.[code]?.[saved.dataset.vendorCopy] || saved.textContent;
   } identity.appendChild(saved);
@@ -293,13 +295,14 @@ async function loadOwnerNextAction(documentObject, storage, fetchFunction) {
     });
     if (!response.ok) {
       const error = new Error("Business record unavailable"); error.status = response.status;
-      if (response.status === 403) { try { error.applicationDenied = (await response.json()).reason === 'application-access-required'; } catch (_) {} }
+      if (response.status === 403) { try { const denial=await response.json();error.applicationDenied=denial.reason==='application-access-required';error.applicationStatus=['rejected','revoked'].includes(denial.applicationStatus)?denial.applicationStatus:'denied'; } catch (_) {} }
       throw error;
     }
     const record = await response.json();
     // Discard responses for a business that is no longer selected.
     if (ownerOverviewLoads.get(documentObject) !== generation || storage.getItem("demeosActiveBusinessId") !== activeBusinessId) return unavailableOwnerNextAction;
     if (record.businessProfile?.businessId !== activeBusinessId) throw new Error("Business identity unavailable");
+    if(typeof window!=='undefined'&&window.DEMEOSVendorInspection&&!window.DEMEOSVendorInspection.ownsRecord(record,activeBusinessId))return unavailableOwnerNextAction;
     const nextAction = getTrustedOwnerNextAction(record, activeBusinessId);
     renderOwnerDashboardSummary(documentObject, record, activeBusinessId);
     if (record.businessProfile?.businessId === activeBusinessId) {
@@ -321,14 +324,15 @@ async function loadOwnerNextAction(documentObject, storage, fetchFunction) {
     renderOwnerNextAction(documentObject, action);
     return action;
   } catch (_error) {
+    if(typeof window!=='undefined'&&window.DEMEOSVendorInspection)return unavailableOwnerNextAction;
     if (ownerOverviewLoads.get(documentObject) !== generation || storage.getItem("demeosActiveBusinessId") !== activeBusinessId) return unavailableOwnerNextAction;
     const identity = documentObject.getElementById("workspace-business-identity");
     const work = documentObject.getElementById("workspace-current-work");
     if (identity) identity.textContent = "Business information could not be confirmed.";
-    if (work) work.textContent = "Current activity is unavailable. Open Marketing to retry.";
-    renderOwnerModels(documentObject, null, activeBusinessId, null, _error.applicationDenied ? "denied" : _error.status === 403 ? "forbidden" : "unavailable");
+    if (work) work.textContent = "Application activity is unavailable. Review your business applications.";
+    renderOwnerModels(documentObject, null, activeBusinessId, null, _error.applicationDenied ? _error.applicationStatus : _error.status === 403 ? "forbidden" : "unavailable");
     renderOwnerDashboardSummary(documentObject, null, activeBusinessId);
-    renderOwnerNextAction(documentObject, _error.applicationDenied ? {title:"Application access pending",explanation:"Application access requires DEMEOS authorisation.",action:"Business applications",destination:"/business-workspace.html"} : {title: _error.status === 403 ? "Business access unavailable" : "Workspace could not be loaded", explanation: "Try again or review your business details.", action: "Review My Business", destination: "marketing.html#business-profile"});
+    renderOwnerNextAction(documentObject, _error.applicationDenied ? {title:window.DEMEOSOwnerWorkspace.messages[_error.applicationStatus][0],explanation:window.DEMEOSOwnerWorkspace.messages[_error.applicationStatus][1],action:"Business applications",destination:"/business-workspace.html"} : {title: _error.status === 403 ? "Business access unavailable" : "Workspace could not be loaded", explanation: "Try again or review your business details.", action: "Review My Business", destination: "marketing.html#business-profile"});
     return unavailableOwnerNextAction;
   }
 }
@@ -389,25 +393,79 @@ function renderOwnerDashboardSummary(documentObject, record, businessId) {
   });
 }
 
+function isSellingOwnerRoute(windowObject) {
+  return /^\/selling-vendor(?:\/|$)/.test(windowObject?.location?.pathname || "");
+}
+
+function waitForSellingAuthentication(operation, windowObject) {
+  if (!isSellingOwnerRoute(windowObject)) return operation;
+  let timer;
+  const timeout = new Promise((_resolve, reject) => {
+    timer = (windowObject.setTimeout || setTimeout)(() => reject(new Error("Selling authentication timed out")), 15000);
+  });
+  return Promise.race([operation, timeout]).finally(() => (windowObject.clearTimeout || clearTimeout)(timer));
+}
+
+function showSellingAuthenticationFailure(windowObject, documentObject, elements) {
+  showOwnerAuthenticationState(elements, "error");
+  if (!isSellingOwnerRoute(windowObject)) return;
+  let language = "en";
+  try { language = windowObject.localStorage?.getItem("demeos-customer-language") || "en"; } catch (_) {}
+  const copy = windowObject.DEMEOSVendorCopy?.[language] || windowObject.DEMEOSVendorCopy?.en;
+  const heading = elements.error.querySelector?.("h2"), detail = elements.error.querySelector?.("h2+p");
+  if (heading) heading.textContent = copy?.authSlowTitle || "Sign-in could not finish";
+  if (detail) detail.textContent = copy?.authSlowDetail || "Your session could not be verified. Retry to continue safely.";
+  if (documentObject.getElementById("owner-auth-retry") || !elements.error.appendChild) return;
+  const retry = documentObject.createElement("button");
+  retry.id = "owner-auth-retry"; retry.type = "button"; retry.className = "demeos-primary-button";
+  retry.textContent = copy?.authRetry || "Retry sign-in";
+  retry.addEventListener("click", () => windowObject.DEMEOSVendorInspectionEntryRetry ? windowObject.DEMEOSVendorInspectionEntryRetry() : windowObject.location.reload());
+  elements.error.appendChild(retry);
+}
+
 function bindOwnerClerkSession(clerk, documentObject, storage, elements, fetchFunction) {
-  let activeOwnerId = null;
+  let activeOwnerId = null, sessionGeneration = 0, restoreTimer, pendingUserId = null, restoringSession = null;
+  const ownerWindow = typeof window !== "undefined" ? window : documentObject.defaultView;
   const update = function (auth) {
+    if (isSellingOwnerRoute(ownerWindow)) {
+      if (auth?.user?.id && pendingUserId === auth.user.id) return;
+      if (!auth?.user && clerk.session && restoringSession === clerk.session) return;
+    }
+    pendingUserId = null; restoringSession = null;
+    const generation = ++sessionGeneration;
+    if (restoreTimer) (ownerWindow?.clearTimeout || clearTimeout)(restoreTimer);
+    if(typeof window!=='undefined')window.DEMEOSVendorInspection?.sessionChanged(auth,clerk.session);
     if (auth && auth.user) {
       const authenticatedUserId = auth.user.id;
+      if(typeof window!=='undefined' && window.DEMEOSVendorInspectionEntry && !window.DEMEOSVendorInspection){
+        // A sign-in shell must not initialise real business access before inspection.
+        showOwnerAuthenticationState(elements,'loading');
+        pendingUserId = authenticatedUserId;
+        waitForSellingAuthentication(Promise.resolve().then(() => clerk.session?.getToken?.()), ownerWindow).then(token=>{
+          if(generation!==sessionGeneration || clerk.user?.id!==authenticatedUserId)return;
+          if(!token)throw new Error('Inspection session unavailable');
+          documentObject.dispatchEvent(new CustomEvent('owner-business-ready'));
+        }).catch(()=>{if(generation===sessionGeneration)showSellingAuthenticationFailure(ownerWindow,documentObject,elements);}).finally(()=>{if(generation===sessionGeneration)pendingUserId=null;});
+        return;
+      }
       if (activeOwnerId !== authenticatedUserId) {
         showOwnerAuthenticationState(elements, "loading");
         ownerOverviewLoads.set(documentObject, (ownerOverviewLoads.get(documentObject) || 0) + 1);
         renderOwnerModels(documentObject, null, null, null, "loading");
       }
       activeOwnerId = authenticatedUserId;
-      syncAuthorizedOwnerBusinessContext(storage, fetchFunction).then(async function (context) {
+      pendingUserId = authenticatedUserId;
+      waitForSellingAuthentication((async function () {
+        const context = await syncAuthorizedOwnerBusinessContext(storage, fetchFunction);
         // An earlier request must not render after sign-out or an account switch.
-        if (!clerk.user || clerk.user.id !== authenticatedUserId) return;
+        if (generation !== sessionGeneration || !clerk.user || clerk.user.id !== authenticatedUserId) return;
         if (typeof documentObject.dispatchEvent === "function") documentObject.dispatchEvent(new CustomEvent("owner-business-ready"));
         if (context.failed) renderOwnerModels(documentObject, null, storage.getItem("demeosActiveBusinessId"), null, "unavailable");
         else if (typeof fetchFunction === "function") await loadOwnerNextAction(documentObject, storage, fetchFunction);
-        if (clerk.user?.id === authenticatedUserId) showOwnerAuthenticationState(elements, "signed-in");
-      });
+        return authenticatedUserId;
+      })(), ownerWindow).then(identity => {
+        if (generation === sessionGeneration && clerk.user?.id === identity) showOwnerAuthenticationState(elements, "signed-in");
+      }).catch(() => { if (generation === sessionGeneration) showSellingAuthenticationFailure(ownerWindow, documentObject, elements); }).finally(() => { if (generation === sessionGeneration) pendingUserId = null; });
       return;
     }
     // A temporarily missing user while Clerk still has a session is not a sign-out.
@@ -416,6 +474,10 @@ function bindOwnerClerkSession(clerk, documentObject, storage, elements, fetchFu
     ownerOverviewLoads.set(documentObject, (ownerOverviewLoads.get(documentObject) || 0) + 1);
     renderOwnerModels(documentObject, null, null, null, "loading");
     showOwnerAuthenticationState(elements, clerk.session ? "loading" : "signed-out");
+    if (clerk.session && isSellingOwnerRoute(ownerWindow)) restoringSession = clerk.session;
+    if (clerk.session && isSellingOwnerRoute(ownerWindow)) restoreTimer = (ownerWindow.setTimeout || setTimeout)(() => {
+      if (generation === sessionGeneration) showSellingAuthenticationFailure(ownerWindow, documentObject, elements);
+    }, 15000);
   };
 
   // One sign-in entry point: Clerk presents the configured account methods in one dialog.
@@ -467,6 +529,7 @@ async function initialiseOwnerAuthentication(windowObject, documentObject, stora
   const elements = getOwnerAuthenticationElements(documentObject);
   showOwnerAuthenticationState(elements, "loading");
   try {
+    const prepare = async function () {
     const response = await fetchFunction("/api/public-config", { credentials: "same-origin" });
     if (!response.ok) throw new Error("Public authentication configuration unavailable");
     const config = await response.json();
@@ -485,9 +548,13 @@ async function initialiseOwnerAuthentication(windowObject, documentObject, stora
         signUpFallbackRedirectUrl: window.location.pathname + window.location.hash
       });
     }
+    return clerk;
+    };
+    const clerk = await waitForSellingAuthentication(prepare(), windowObject);
     bindOwnerClerkSession(clerk, documentObject, storage, elements, fetchFunction);
+    if (isSellingOwnerRoute(windowObject)) documentObject.addEventListener("owner-inspection-entry-failed", () => showSellingAuthenticationFailure(windowObject, documentObject, elements));
   } catch (error) {
-    showOwnerAuthenticationState(elements, "error");
+    showSellingAuthenticationFailure(windowObject, documentObject, elements);
   }
 }
 
@@ -623,6 +690,10 @@ function installOwnerBusinessSecurity(windowObject, documentObject, localStorage
         }
 
         if (authenticatedOnThisPage && currentIdentityId !== null && currentIdentityId !== identityId) {
+          if (windowObject.DEMEOSVendorInspection) {
+            windowObject.DEMEOSVendorInspection.sessionChanged(auth,clerk.session);
+            return;
+          }
           if (selector) {
             selector.textContent = "";
             selector.disabled = true;

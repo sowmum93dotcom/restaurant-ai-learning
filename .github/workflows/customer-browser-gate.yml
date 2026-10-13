@@ -21,7 +21,7 @@ jobs:
       - name: Install browser test dependency
         run: npm install --no-save playwright@1.55.0
       - name: Install browser
-        run: npx playwright install --with-deps chromium chrome
+        run: npx playwright install --with-deps chromium chrome webkit
       - name: Start static Customer Experience
         run: |
           npx --yes http-server . -p 4173 -c-1 > /tmp/demeos-http.log 2>&1 &
@@ -32,10 +32,18 @@ jobs:
         run: git fetch --no-tags --depth=1 origin 8c4ccbc93af01480f41e6444446b79a321a11ef9
       - name: Run owner workspace SQL, permission and draft gate
         run: node browser-checks/business-workspace-gate.js
+      - name: Run isolated Selling dashboard inspection gate
+        run: node browser-checks/vendor-inspection-gate.js
+      - name: Run isolated Selling inspection WebKit gate
+        env:
+          DEMEOS_BROWSER_ENGINE: webkit
+        run: node browser-checks/vendor-inspection-gate.js
       - name: Run selling vendor inventory SQL and rendered gate
         run: node browser-checks/vendor-inventory-gate.js
       - name: Run private administrative application review gate
         run: node browser-checks/admin-business-review-gate.js
+      - name: Run business approval and separate application journey
+        run: node browser-checks/business-approval-journey-gate.js
       - name: Run approved source SQL and customer continuation gate
         run: node browser-checks/customer-approved-source-gate.js
       - name: Run public homepage and information gate
@@ -73,6 +81,9 @@ jobs:
             /tmp/demeos-context-*.png
             /tmp/demeos-contact-*.png
             /tmp/demeos-account-*.png
+            /tmp/pr705-catalogue-*.png
+            /tmp/pr705-business-*.png
             /tmp/demeos-owner-*.png
             /tmp/demeos-owner-layout-*.json
             /tmp/demeos-admin-*.png
+            /tmp/demeos-approval-*.png

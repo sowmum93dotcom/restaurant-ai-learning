@@ -683,7 +683,7 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
     async listSubmittedBusinessApplications(cursor, limit=26) {
       await database.ensureSchema();
       return (await database.query(`SELECT business_id, profile FROM demeos_businesses
-        WHERE profile->'informationStatus'->>'reviewState' = 'submitted' AND business_id > $1
+        WHERE (profile->'informationStatus'->>'reviewState' = 'submitted' OR profile ? 'applicationDecisions' OR profile->'applicationAccess'->>'marketing'='true' OR profile->'applicationAccess'->>'selling'='true') AND business_id > $1
         ORDER BY business_id LIMIT $2`, [cursor, limit])).rows;
     },
     async getBusinessApplication(businessId) {
@@ -691,7 +691,7 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
       const row=(await database.query('SELECT profile FROM demeos_businesses WHERE business_id=$1',[businessId])).rows[0];
       if(!row)return null;
       const owners=(await database.query('SELECT trusted_identity_id FROM demeos_business_owners WHERE business_id=$1 ORDER BY trusted_identity_id',[businessId])).rows.map(row=>row.trusted_identity_id);
-      const reviews=(await database.query('SELECT application_revision, administrator_id, decision, notes, decided_at FROM demeos_business_application_reviews WHERE business_id=$1 ORDER BY decided_at DESC LIMIT 50',[businessId])).rows;
+      const reviews=(await database.query('SELECT application_revision, administrator_id, decision, applications, notes, decided_at FROM demeos_business_application_reviews WHERE business_id=$1 ORDER BY decided_at DESC LIMIT 50',[businessId])).rows;
       return {...row,owners,reviews};
     },
     async getBusinessApplicationOwnerStatus(businessId, profile) {
@@ -700,25 +700,48 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
       const review=(await database.query('SELECT decision, decided_at FROM demeos_business_application_reviews WHERE business_id=$1 AND application_revision=$2',[businessId,revision(profile)])).rows[0];
       return ownerStatus(profile,review);
     },
+    async recordBusinessApplicationAccess({businessId,profile,revision:expectedRevision,administratorId,decision,applications,notes}) {
+      await database.ensureSchema();
+      const {revision}=require('./business-application-contract');
+      return database.transaction(async connection=>{
+        const current=(await connection.query('SELECT profile FROM demeos_businesses WHERE business_id=$1 FOR UPDATE',[businessId])).rows[0]?.profile;
+        if(!current)return null;
+        if(revision(current)!==expectedRevision){
+          // A lost-response retry is safe only while the exact resulting revision is current.
+          return (await connection.query(`SELECT application_revision,administrator_id,decision,applications,notes,decided_at FROM demeos_business_application_reviews
+            WHERE business_id=$1 AND application_revision=$2 AND administrator_id=$3 AND decision=$4
+              AND applications=$5::jsonb AND notes=$6 AND resulting_revision=$7`,
+            [businessId,expectedRevision,administratorId,decision,JSON.stringify(applications),notes,revision(current)])).rows[0]||null;
+        }
+        if(revision(profile)!==expectedRevision)return null;
+        // Ownership is checked again under the business lock. Even an administrator cannot self-approve.
+        const owners=(await connection.query('SELECT trusted_identity_id FROM demeos_business_owners WHERE business_id=$1',[businessId])).rows;
+        if(!owners.length||owners.some(owner=>owner.trusted_identity_id===administratorId))return null;
+        const next={...current,applicationAccessRevision:(Number.isSafeInteger(current.applicationAccessRevision)?current.applicationAccessRevision:0)+1,applicationAccess:{...current.applicationAccess},applicationDecisions:{...current.applicationDecisions}};
+        const now=new Date().toISOString();
+        for(const application of applications){next.applicationAccess[application]=decision==='approved';next.applicationDecisions[application]={status:decision,decidedAt:now};}
+        const result=await connection.query(`INSERT INTO demeos_business_application_reviews
+          (business_id,application_revision,administrator_id,decision,applications,notes,reviewed_snapshot,resulting_revision)
+          VALUES ($1,$2,$3,$4,$5::jsonb,$6,$7::jsonb,$8)
+          RETURNING application_revision,administrator_id,decision,applications,notes,decided_at`,
+          [businessId,expectedRevision,administratorId,decision,JSON.stringify(applications),notes,JSON.stringify(current),revision(next)]);
+        await connection.query('UPDATE demeos_businesses SET profile=$2::jsonb,updated_at=NOW() WHERE business_id=$1',[businessId,JSON.stringify(next)]);
+        return result.rows[0];
+      });
+    },
     async recordBusinessApplicationReview({businessId,profile,revision,administratorId,decision,notes}) {
       await database.ensureSchema();
-      const result=await database.query(`WITH current_application AS (
-        SELECT profile FROM demeos_businesses WHERE business_id=$1 AND profile=$2::jsonb
-          AND profile->'informationStatus'->>'reviewState'='submitted' FOR UPDATE
-      ), inserted AS (
-        INSERT INTO demeos_business_application_reviews
-          (business_id, application_revision, administrator_id, decision, notes, reviewed_snapshot)
-        SELECT $1,$3,$4,$5,$6,profile FROM current_application
-        ON CONFLICT (business_id,application_revision) DO NOTHING
-        RETURNING application_revision,administrator_id,decision,notes,decided_at
-      ) SELECT * FROM inserted`,[businessId,JSON.stringify(profile),revision,administratorId,decision,notes]);
-      if(result.rows[0])return result.rows[0];
-      // A second statement sees a concurrently committed identical decision. No audit row is overwritten.
-      return (await database.query(`SELECT r.application_revision,r.administrator_id,r.decision,r.notes,r.decided_at
-        FROM demeos_business_application_reviews r JOIN demeos_businesses b USING (business_id)
-        WHERE r.business_id=$1 AND r.application_revision=$2 AND r.administrator_id=$3
-          AND r.decision=$4 AND r.notes=$5 AND b.profile=$6::jsonb`,
-        [businessId,revision,administratorId,decision,notes,JSON.stringify(profile)])).rows[0]||null;
+      return database.transaction(async connection=>{
+        const row=(await connection.query('SELECT profile FROM demeos_businesses WHERE business_id=$1 AND profile=$2::jsonb FOR UPDATE',[businessId,JSON.stringify(profile)])).rows[0];
+        if(!row||row.profile.informationStatus?.reviewState!=='submitted')return null;
+        const previous=(await connection.query(`SELECT application_revision,administrator_id,decision,notes,decided_at FROM demeos_business_application_reviews
+          WHERE business_id=$1 AND application_revision=$2 AND decision IN ('reviewed','changes-requested')`,[businessId,revision])).rows[0];
+        if(previous)return previous.administrator_id===administratorId&&previous.decision===decision&&previous.notes===notes?previous:null;
+        return (await connection.query(`INSERT INTO demeos_business_application_reviews
+          (business_id,application_revision,administrator_id,decision,notes,reviewed_snapshot)
+          VALUES ($1,$2,$3,$4,$5,$6::jsonb) RETURNING application_revision,administrator_id,decision,notes,decided_at`,
+          [businessId,revision,administratorId,decision,notes,JSON.stringify(profile)])).rows[0];
+      });
     },
 
     async submitBusinessForReview(trustedIdentityId, businessId, reviewedProfile) {

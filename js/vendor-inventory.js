@@ -91,11 +91,12 @@
   const routeWrap=el('business-product-route')?.parentElement;if(routeWrap)routeWrap.hidden=selling;
   const reviewSave=el('products-review-save');if(reviewSave)reviewSave.hidden=selling;
   if(!selling){if(mediaHeading?.dataset.vendorPrepared==='true'){mediaHeading.textContent=mediaHeading.dataset.originalText;if(paragraph)paragraph.textContent=paragraph.dataset.originalText;mediaHeading.dataset.vendorPrepared='false';}return;}
+  doc.querySelectorAll('.onboarding-step').forEach(group=>{if(group.dataset.vendorDisclosure)return;group.dataset.vendorDisclosure='true';group.addEventListener('toggle',()=>{if(root.DEMEOSOwnerWorkspace.getState(doc).model!=='selling')return;if(group.open){doc.querySelectorAll('.onboarding-step').forEach(other=>{if(other!==group)other.open=false;});}const selected=[...doc.querySelectorAll('.onboarding-step')].find(section=>section.open);try{root.sessionStorage.setItem('demeosVendorDisclosure:'+root.DEMEOSOwnerWorkspace.getState(doc).businessId,selected?.id||'none');}catch(_){} });});
   if(!editor){editor=node('details');editor.id='vendor-product-editor';editor.className='vendor-stock-tools';const heading=node('summary',t('editProduct'));heading.dataset.vendorCopy='editProduct';heading.addEventListener('click',()=>{if(!editor.open)root.DEMEOSVendorProducts?.beginAdd();});editor.append(heading);form.before(editor);editor.append(form);}
   editor.querySelector('summary').hidden=false;
   const tools=el('vendor-catalogue-tools');
   // Keep saved products ahead of the closed editor; the summary is the single Add action.
-  if(tools && tools.nextElementSibling!==editor){tools.after(editor);}
+  if(tools){const media=doc.querySelector('.business-media-manager'),home=doc.querySelector('.business-products-manager');if(root.location.hash==='#media'&&media){media.prepend(tools);}else if(home){if(tools.parentElement!==home)home.prepend(tools);if(tools.nextElementSibling!==editor)tools.after(editor);}}
   el('business-product-add-btn').textContent=el('business-product-id').value?t('updateProduct'):t('addToCatalogue');
   el('business-product-cancel-btn').textContent=t('cancel');
   if(el('business-products-empty'))el('business-products-empty').textContent=t('catalogueEmpty');
@@ -127,7 +128,7 @@
   const save=el('products-review-save');if(save)save.hidden=selling;
  }
  function activate(){translate();const state=root.DEMEOSOwnerWorkspace.getState(doc);if(state.status!=='ready'||state.model!=='selling'){reset();return;}if(context===state.businessId)return;reset();context=state.businessId;load();loadCatalogue();}
- doc.addEventListener('owner-model-ready',activate);root.addEventListener('hashchange',()=>{if(root.location.hash==='#inventory'&&!pending.size)load();});
+ doc.addEventListener('owner-model-ready',activate);root.addEventListener('hashchange',()=>{compactCatalogue();if(root.location.hash==='#inventory'&&!pending.size)load();});
  el('owner-preparation-language')?.addEventListener('change',translate);
  el('vendor-stock-search').addEventListener('input',()=>stock&&render());el('vendor-stock-filter').addEventListener('change',()=>stock&&render());
  el('vendor-stock-save').addEventListener('click',review);el('vendor-stock-reload').addEventListener('click',()=>{if(pending.size&&!root.confirm(t('changed')+' — '+t('reload')+'?'))return;el('vendor-stock-review').hidden=true;load(true);});

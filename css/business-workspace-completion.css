@@ -31,7 +31,10 @@
 #campaign-revision-controls label {color:#10253e;}
 /* Product preparation stays within the existing owner workspace. */
 .owner-preparation-guide,.owner-offer-review{padding:1rem;border:1px solid rgba(193,155,71,.35);border-radius:12px;margin-block:1rem;background:#f5f7fa;color:#14233c;}
-.owner-preparation-guide select{max-width:20rem;}
+.owner-preparation-guide{display:flex;flex-direction:column;align-items:flex-start;gap:.5rem;min-width:0;}
+.owner-preparation-guide label{position:static;display:block;line-height:1.5;margin:0;}
+.owner-preparation-guide select{display:block;width:min(100%,20rem);max-width:100%;min-height:44px;margin:0;}
+.owner-preparation-guide p{margin:0;max-width:100%;}
 .owner-preparation-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.6rem;padding:0;list-style-position:inside;color:#152642;}
 .owner-preparation-steps li{padding:.8rem;border-radius:10px;background:#eef1f5;overflow-wrap:anywhere;}
 .owner-preparation-steps [aria-current=step]{background:#14233c;color:#f4d68c;outline:2px solid #c29d4e;}

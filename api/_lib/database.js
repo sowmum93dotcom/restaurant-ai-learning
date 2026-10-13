@@ -17,6 +17,20 @@ const SCHEMA_STATEMENTS = [
     decided_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     PRIMARY KEY (business_id, application_revision)
   )`,
+  // Extend the existing review audit in place; historical decisions remain immutable.
+  `DO $migration$ BEGIN
+    PERFORM pg_advisory_xact_lock(705004);
+    ALTER TABLE demeos_business_application_reviews ADD COLUMN IF NOT EXISTS applications JSONB NOT NULL DEFAULT '[]'::jsonb;
+    ALTER TABLE demeos_business_application_reviews ADD COLUMN IF NOT EXISTS resulting_revision TEXT;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid='demeos_business_application_reviews'::regclass AND conname='demeos_business_application_reviews_decision_check' AND pg_get_constraintdef(oid) LIKE '%approved%') THEN
+      ALTER TABLE demeos_business_application_reviews DROP CONSTRAINT IF EXISTS demeos_business_application_reviews_decision_check;
+      ALTER TABLE demeos_business_application_reviews ADD CONSTRAINT demeos_business_application_reviews_decision_check CHECK (decision IN ('reviewed','changes-requested','approved','rejected','revoked'));
+    END IF;
+    IF EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid='demeos_business_application_reviews'::regclass AND contype='p' AND array_length(conkey,1)=2) THEN
+      ALTER TABLE demeos_business_application_reviews DROP CONSTRAINT demeos_business_application_reviews_pkey;
+      ALTER TABLE demeos_business_application_reviews ADD PRIMARY KEY (business_id,application_revision,decision);
+    END IF;
+  END $migration$`,
   `CREATE TABLE IF NOT EXISTS demeos_business_owners (
     trusted_identity_id TEXT NOT NULL,
     business_id TEXT NOT NULL REFERENCES demeos_businesses(business_id),
