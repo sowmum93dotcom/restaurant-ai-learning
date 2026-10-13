@@ -5,6 +5,7 @@ const path = require('node:path');
 const {resolveTrustedIdentityFromRequest,getAllowedClerkPublishableKey} = require('./demeos-authentication');
 const stock = require('./vendor-inventory');
 const {validateProfile} = require('../businesses/[businessId]');
+const cloudMedia = require('./vendor-inspection-media');
 const BUSINESS = 'test-vendor-inspection-705';
 const BRANCH = 'business-approval-application-access-705';
 function enabled(env = process.env) {
@@ -56,7 +57,7 @@ function operate(state, pathname, method, body) {
   }
   fail('This operation is unavailable in Development inspection.',403);
 }
-function createHandler({environment=()=>process.env,authenticate=resolveTrustedIdentityFromRequest}={}) {
+function createHandler({environment=()=>process.env,authenticate=resolveTrustedIdentityFromRequest,mediaFactory=cloudMedia.createCloudMedia}={}) {
  return async function handler(req,res) {
   res.setHeader('Cache-Control','private, no-store');res.setHeader('Vercel-CDN-Cache-Control','no-store');res.setHeader('X-Robots-Tag','noindex, nofollow');
   if(!enabled(environment()))return res.status(404).json({error:'Not found.'});
@@ -77,13 +78,24 @@ function createHandler({environment=()=>process.env,authenticate=resolveTrustedI
     const host=req.headers['x-forwarded-host']||req.headers.host;
     try{if(new URL(req.headers.origin).host!==host)return res.status(403).json({error:'Same-origin inspection required.'});}catch(_){return res.status(403).json({error:'Same-origin inspection required.'});}
     if(req.body?.identityId!==identity.trustedIdentityId)return res.status(403).json({error:'Inspection account changed.',reason:'inspection-account-changed'});
-    try{const {state,pathname,method,body}=req.body||{};const result=operate(state,pathname,method,body);return res.status(200).json({state,result});}catch(error){return res.status(error.status||400).json({error:error.message});}
+    try{
+      const {state,pathname,method,body}=req.body||{};
+      operate(state,'/api/businesses/'+BUSINESS,'GET',{});
+      const allowedMedia=cloudMedia.permitted(environment(),identity.trustedIdentityId);
+      if(!allowedMedia&&state.assets.some(asset=>typeof asset.assetId==='string'&&asset.assetId.startsWith('test-cloud-')))return res.status(403).json({error:'Private test media is unavailable for this account.'});
+      const media=allowedMedia?mediaFactory({env:environment()}):null;
+      if(allowedMedia&&!media)return res.status(503).json({error:'Private test media is unavailable. Retry inspection.'});
+      if(media)await media.hydrate(state,identity.trustedIdentityId);
+      const mediaResult=media?await media.operate(state,identity.trustedIdentityId,pathname,method,body):null;
+      const result=mediaResult||operate(state,pathname,method,body);
+      return res.status(200).json({state,result});
+    }catch(error){return res.status(error.status||400).json({error:error.message});}
   }
   if(!['dashboard','manage'].includes(req.query.page))return res.status(404).json({error:'Not found.'});
   const host=req.headers['x-forwarded-host']||req.headers.host;
   const publishable=getAllowedClerkPublishableKey(environment());
   const clerkHost=publishable ? Buffer.from(publishable.split('_')[2]||'','base64').toString('utf8').replace(/\$$/,'') : '';
-  const bootstrap={identityId:identity.trustedIdentityId,clerkOrigin:'https://'+clerkHost,state:fixture('https://'+host)};
+  const bootstrap={identityId:identity.trustedIdentityId,clerkOrigin:'https://'+clerkHost,cloudMedia:cloudMedia.permitted(environment(),identity.trustedIdentityId),state:fixture('https://'+host)};
   const script='<script>window.DEMEOS_VENDOR_INSPECTION='+JSON.stringify(bootstrap).replace(/</g,'\\u003c')+';</script><script src="/js/vendor-inspection.js"></script>';
   let html=fs.readFileSync(path.join(process.cwd(),req.query.page==='manage'?'selling-vendor-manage.html':'selling-vendor.html'),'utf8');
   html=inspectionLinks(html).replace('<script src=',script+'<script src=');

@@ -83,7 +83,8 @@
   ],
   "functions": {
     "api/businesses.js": {
-      "includeFiles": "{selling-vendor.html,selling-vendor-manage.html}"
+      "includeFiles": "{selling-vendor.html,selling-vendor-manage.html,node_modules/@ffprobe-installer/linux-x64/ffprobe}",
+      "maxDuration": 60
     }
   }
 }
