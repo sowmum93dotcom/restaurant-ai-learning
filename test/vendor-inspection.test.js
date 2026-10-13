@@ -107,3 +107,16 @@ test('rejected SDK token refresh verifies the same-origin server cookie and stil
   assert.doesNotMatch(JSON.stringify(warnings),/SDK refresh unavailable|verified-owner|Sample jacket/);
  }
 });
+
+test('cached Clerk session renews through URL-object fetch without freezing inspection or allowing unrelated writes',async()=>{
+ const vm=require('node:vm'),fs=require('node:fs'),storage={getItem:()=>null,setItem(){},removeItem(){},key(){},length:0},calls=[];let renew=false,root;
+ const clerkOrigin='https://clerk.test';
+ root={DEMEOS_VENDOR_INSPECTION:{identityId:'verified-owner',clerkOrigin,state:inspection.fixture('https://preview.example')},location:{pathname:'/selling-vendor/inspect',origin:'https://preview.example'},localStorage:storage,sessionStorage:storage,Clerk:{user:{id:'verified-owner'},session:{async getToken(){if(!renew)return 'cached-test-token';const result=await root.fetch(new URL(clerkOrigin+'/v1/client/sessions/test-session/tokens'),{method:'POST',credentials:'include'});if(!result.ok)throw Error('Renewal blocked');return (await result.json()).jwt;}}},fetch:async(input,options)=>{calls.push({input,options});if(String(input).startsWith(clerkOrigin))return new Response(JSON.stringify({jwt:'renewed-test-token'}));const body=JSON.parse(options.body);return new Response(JSON.stringify({state:body.state,result:inspection.operate(body.state,body.pathname,body.method,body.body)}));}};
+ vm.runInNewContext(fs.readFileSync(require.resolve('../js/vendor-inspection'),'utf8'),{window:root,document:{addEventListener(){}},URL,Request,Response,Blob,structuredClone,crypto:require('node:crypto').webcrypto});
+ const business='/api/businesses/test-vendor-inspection-705';assert.equal((await root.fetch(business)).status,200);
+ renew=true;assert.equal((await root.fetch(business)).status,200);
+ assert.equal(root.DEMEOSVendorInspection.isPaused(),false);assert.equal(calls.length,3);
+ assert.ok(calls[1].input instanceof URL);assert.equal(calls[1].options.credentials,'include');assert.equal(calls[2].options.headers.Authorization,'Bearer renewed-test-token');
+ assert.equal((await root.fetch(new URL('https://other.example/write'),{method:'POST'})).status,403);
+ assert.equal((await root.fetch(new Request('https://other.example/write',{method:'POST'}))).status,403);assert.equal(calls.length,3);
+});

@@ -46,8 +46,11 @@
 
   const business='/api/businesses/'+state.profile.businessId;
   root.fetch=async function(input,options={}){
-    const url=new URL(typeof input==='string'?input:input.url,root.location.origin);
-    const method=(options.method||input.method||'GET').toUpperCase();
+    // Native fetch accepts strings, URL objects and Requests. Clerk's renewal
+    // client passes a URL object; reading input.url misclassifies it as /undefined
+    // and blocks the trusted authentication POST after the cached token expires.
+    const url=new URL(typeof input?.url==='string'?input.url:String(input),root.location.origin);
+    const method=(options.method||input?.method||'GET').toUpperCase();
     if(url.origin!==root.location.origin)return method==='GET'||url.origin===bootstrap.clerkOrigin?nativeFetch(input,options):response({error:'External writes are disabled in inspection.'},403);
     if(url.pathname==='/api/public-config' && method==='GET')return nativeFetch(input,options);
     if(!url.pathname.startsWith('/api/'))return method==='GET'?nativeFetch(input,options):response({error:'Writes are disabled outside the inspection sandbox.'},403);
