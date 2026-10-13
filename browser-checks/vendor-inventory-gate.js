@@ -302,6 +302,8 @@ const server=http.createServer(async(req,res)=>{try{
    assert.equal(await page.locator('.restaurant-name').innerText(),'Selling Vendor Application');
    assert.equal(await page.locator('body').getAttribute('data-owner-model'),'selling');
    assert.equal(await page.locator('a[href*=business-workspace]').count(),0);
+   assert.equal(await page.locator('.owner-workspace-navigation a').count(),7);
+   for(const section of ['products','media','product-options','inventory','orders']){await page.goto(base+'/selling-vendor/manage#'+section);await page.locator('body[data-owner-access=denied]').waitFor();await page.locator('#selling-access-section-heading').waitFor();assert.equal(new URL(page.url()).hash,'#'+section);assert.equal(await page.locator('.owner-workspace-navigation a').count(),7);assert.equal(await page.locator('#'+(['media','product-options'].includes(section)?'products':section)).isVisible(),false);}
    assert.equal((await context.request.get(base+'/api/businesses/'+profile.businessId+'?application=selling')).status(),403);
    await page.goto(base+'/selling-vendor/onboarding#business-profile');await page.locator('#business-profile').waitFor();if(!await page.locator('#business-name').isVisible())await page.locator('#onboarding-business > summary').click();await page.locator('#business-name').waitFor();
    assert.equal(await page.locator('#business-name').inputValue(),approved.name);

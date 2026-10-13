@@ -530,7 +530,17 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   function showWorkspaceView(viewId) {
     const ownerModel = globalThis.window?.DEMEOSOwnerWorkspace;
     if (ownerModel?.getState(document).status === 'loading') return;
-    if (ownerModel && !ownerModel.canOpen(ownerModel.getState(document), viewId)) viewId = "business-profile";
+    if (ownerModel && !ownerModel.canOpen(ownerModel.getState(document), viewId)) {
+      if(document.body?.dataset.sellingEntry==='true'&&ownerModel.routeApplication()==='selling'){
+        document.body.dataset.ownerView=viewId;
+        document.querySelectorAll('[data-workspace-panel]').forEach(panel=>{panel.hidden=true;panel.classList.remove('is-active');panel.querySelectorAll('video').forEach(video=>video.pause());});
+        const heading=byId('selling-access-section-heading');
+        if(heading)heading.textContent=vendorText(({products:'applicationCatalogue',media:'applicationMedia','product-options':'applicationOptions',inventory:'applicationStock',orders:'applicationOrders',overview:'applicationOverview'})[viewId]||'applicationOverview','Overview');
+        if(typeof updateOwnerNavigation==='function')updateOwnerNavigation(document,window.location,viewId);
+        return;
+      }
+      viewId = "business-profile";
+    }
     const panelView = ["product-options", "media"].includes(viewId) ? "products" : viewId;
     if (document.body?.dataset) document.body.dataset.ownerView = viewId;
     const productForm = document.querySelector?.(".business-product-form");

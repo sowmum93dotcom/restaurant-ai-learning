@@ -109,6 +109,7 @@
     const container = doc.getElementById('owner-operating-models');
     if (container) {
       container.replaceChildren();
+      if(application==='selling'&&doc.body.dataset.sellingEntry==='true'&&state.status!=='ready'){const section=root.location?.hash?.slice(1)||'overview';const heading=doc.createElement('h2');heading.id='selling-access-section-heading';heading.textContent=copy(section==='products'?'applicationCatalogue':navigationKeys[section]||'applicationOverview','Overview');container.appendChild(heading);}
       const title = doc.createElement('strong');
       title.textContent = state.model === 'marketing' ? 'Marketing Business Application' : state.model === 'selling' ? 'Selling Vendor Application' : messages[state.status][0];
       title.className = application && state.status === 'ready' ? 'owner-visually-hidden' : '';
@@ -144,7 +145,7 @@
     const nav = doc.querySelector('.owner-workspace-navigation');
     if (nav) {
       const links = !application ? [['business-profile','My Business','marketing.html#business-profile']] : [ ['overview','Overview',destination(application,'dashboard')], ['business-profile','My Business',application==='selling'&&state.status!=='ready'?'/selling-vendor/onboarding#business-profile':destination(application,'business-profile')] ];
-      if (application && state.status === 'ready') {
+      if (application && (state.status === 'ready' || (application === 'selling' && doc.body.dataset.sellingEntry === 'true'))) {
         links.push(['products',application === 'selling' ? 'Product Catalogue' : 'Products and Services',destination(application,'products')]);
         links.push(['media',application === 'selling' ? 'Images and Videos' : 'Product and Service Media',destination(application,'media')]);
         if (application === 'marketing') links.push(['marketing','Marketing Preparation',destination(application,'overview')],['results','Marketing Results',destination(application,'results')]);

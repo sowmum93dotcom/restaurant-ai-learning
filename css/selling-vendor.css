@@ -151,3 +151,5 @@ body.owner-workspace-body[data-owner-model=selling]:has(#owner-authenticated-wor
 /* Owned business setup remains available without an operational Selling grant. */
 body.owner-workspace-body[data-selling-entry=true][data-owner-application=selling] #owner-authenticated-workspace .owner-workspace-navigation{display:grid!important}
 body.owner-workspace-body[data-owner-application=selling][data-selling-entry=true][data-owner-onboarding=true]:is([data-owner-access=setup],[data-owner-access=denied],[data-owner-access=pending],[data-owner-access=rejected],[data-owner-access=revoked]) #owner-authenticated-workspace .owner-workspace-main>.marketing-workspace-main{display:block!important}
+
+body.owner-workspace-body[data-selling-entry=true][data-owner-application=selling]:not([data-owner-access=ready]) #owner-authenticated-workspace .owner-workspace-main>.owner-preparation-guide{display:flex!important}
