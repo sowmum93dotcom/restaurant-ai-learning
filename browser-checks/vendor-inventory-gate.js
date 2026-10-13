@@ -74,6 +74,19 @@ const server=http.createServer(async(req,res)=>{try{
    const orderCopy=require('../js/vendor-inventory-copy').copy;
    for(const code of Object.keys(orderCopy)){await page.locator('#owner-preparation-language').selectOption(code);assert.equal(await page.locator('#vendor-orders-list').innerText(),orderCopy[code].ordersEmpty);assert.equal(await page.locator('#vendor-orders-heading').innerText(),orderCopy[code].orders);assert.equal(await page.locator('#vendor-orders-list').getAttribute('dir'),code==='ar'?'rtl':'ltr');assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));}
    await page.locator('#owner-preparation-language').selectOption('en');await page.screenshot({path:'/tmp/demeos-owner-vendor-orders-empty-'+viewport.width+'.png',fullPage:true});
+   // Denials and outages must never be displayed as an empty order book or navigate away.
+   let orderFailure=503,denial={};
+   await context.route('**/api/businesses/engineering-a/orders',route=>orderFailure?route.fulfill({status:orderFailure,json:denial}):route.continue());
+   for(const [status,body,key] of [[401,{},'ordersAuth'],[403,{},'ordersDenied'],[403,{reason:'application-access-required',applicationStatus:'submitted'},'ordersPending'],[503,{},'ordersError']]){
+    orderFailure=status;denial=body;await page.locator('#vendor-orders-reload').click();
+    await page.locator('#vendor-orders-status').filter({hasText:orderCopy.en[key]}).waitFor();
+    assert.equal(await page.locator('#vendor-orders-list').innerText(),'');
+    assert.equal(new URL(page.url()).pathname,'/selling-vendor/manage');assert.equal(new URL(page.url()).hash,'#orders');
+    assert.equal(await page.evaluate(()=>window.DEMEOSOwnerWorkspace.getState(document).model),'selling');
+   }
+   orderFailure=0;await page.locator('#vendor-orders-reload').click();await page.locator('#vendor-orders-list').filter({hasText:orderCopy.en.ordersEmpty}).waitFor();
+   await context.unroute('**/api/businesses/engineering-a/orders');
+
    assert.equal((await context.request.get(base+'/api/businesses/engineering-b/orders')).status(),403);assert.equal((await context.request.post(base+'/api/businesses/engineering-a/orders',{data:{quantity:1}})).status(),405);
    await page.goto(base+'/selling-vendor/manage#inventory');await page.locator('.vendor-stock-row').first().waitFor();
    const count=String(10+viewport.width);await page.locator('.vendor-stock-row input[type=number]').first().fill(count);
