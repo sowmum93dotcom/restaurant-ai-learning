@@ -58,7 +58,7 @@ function getValidatedProfile(req) {
   if (enhancedProfile && (
       !cleanString(profile.productsServices, 5000) ||
       !continuation || typeof continuation !== "object" || Array.isArray(continuation) ||
-      !Array.isArray(continuation.routes) || !continuation.routes.length ||
+      !Array.isArray(continuation.routes) || (!continuation.routes.length && profile.preparationModel !== "selling") ||
       continuation.routes.some(function (route) { return !ALLOWED_CONTINUATION_ROUTES.has(route); }) ||
       !fulfilment || typeof fulfilment !== "object" || Array.isArray(fulfilment) ||
       !Array.isArray(fulfilment.methods) || !fulfilment.methods.length ||
@@ -100,7 +100,7 @@ function getValidatedProfile(req) {
     const availability = cleanString(item.availability, 30) || "contact";
     if (!productId || productIds.has(productId) || !name || !description ||
         (imageUrl && !isSafeHttpUrl(imageUrl)) ||
-        (!continuationRoute || !ALLOWED_CONTINUATION_ROUTES.has(continuationRoute) || !continuation.routes.includes(continuationRoute)) ||
+        ((!continuationRoute && profile.preparationModel !== "selling") || (continuationRoute && (!ALLOWED_CONTINUATION_ROUTES.has(continuationRoute) || !continuation.routes.includes(continuationRoute)))) ||
         !ALLOWED_AVAILABILITY_STATES.has(availability)) return null;
     const presentation = item.presentation === undefined ? undefined : customerItemContract.normalize(item.presentation);
     if (item.presentation !== undefined && !presentation) return null;

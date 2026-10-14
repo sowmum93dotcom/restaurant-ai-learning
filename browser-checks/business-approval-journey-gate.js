@@ -81,7 +81,7 @@ async function contextFor(browser,base,id,width){const context=await browser.new
    await page.locator('#onboarding-review summary').click();await page.locator('#business-accuracy-confirmation').check();
    const edited=page.waitForResponse(r=>r.request().method()==='PUT'&&/api\/businesses\//.test(r.url()));await page.locator('#save-business-profile-btn').click();assert.equal((await edited).status(),204);
    const after=(await repository.getKnownBusiness(id)).businessProfile;assert.equal(after.preparationModel,before.preparationModel);
-   for(const key of ['brandVoice','targetCustomer','goal'])assert.equal(after[key],before[key]);
+   for(const key of ['brandVoice','targetCustomer','goal'])assert.equal(after[key],before[key]);assert.deepEqual(after.customerContinuation,before.customerContinuation);assert.equal(await page.locator('[id^=business-route-],#business-website,#business-booking-link').count(),0);
    await page.reload();await page.locator('body[data-owner-access=ready]').waitFor();assert.equal(await page.locator('#onboarding-marketing').count(),0);
    await adminPage.reload();await adminPage.locator('.application-card').filter({hasText:name}).getByRole('button').click();await adminPage.locator('#admin-detail:not([hidden])').waitFor();
   }

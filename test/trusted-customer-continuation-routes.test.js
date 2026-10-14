@@ -44,5 +44,5 @@ test("Business Profile makes visit address a route-specific control", function (
   const script = fs.readFileSync(path.join(__dirname, "..", "js", "script.js"), "utf8");
   assert.match(html, /Customer visit address/);
   assert.match(html, /separate from your general location or service area/);
-  assert.match(script, /visit: byId\("business-visit-address"\)\.parentElement/);
+  assert.match(script, /visit: byId\("business-visit-address"\)\?\.parentElement/);
 });

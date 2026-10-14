@@ -314,7 +314,7 @@
                   <div><label for="business-product-availability">Product availability</label><select id="business-product-availability"><option value="contact">Contact business to confirm</option><option value="available">Available</option><option value="limited">Limited availability</option><option value="unavailable">Not currently available</option></select></div>
                   <div><label for="business-product-visibility">Customer visibility</label><select id="business-product-visibility"><option value="visible">Visible when genuinely relevant</option><option value="hidden">Hidden from customers</option></select><p>Hidden products stay in your Business Profile but are not published to customers.</p></div>
                   <div><label for="business-product-fulfilment-mode">Fulfilment</label><select id="business-product-fulfilment-mode"><option value="business">Use business fulfilment</option><option value="specific">Choose for this product</option></select><p>Use a product-specific option only when this item is fulfilled differently from the business default.</p></div>
-                  <fieldset id="business-product-fulfilment-options" class="profile-choice-group profile-long-field" hidden><legend>Product fulfilment methods</legend><div class="profile-choice-grid"><label><input type="checkbox" value="collection" /> Collection</label><label><input type="checkbox" value="delivery" /> Business delivery</label><label><input type="checkbox" value="shipping" /> Shipping / post</label><label><input type="checkbox" value="premises" /> At our premises</label><label><input type="checkbox" value="customer-location" /> At customer location</label><label><input type="checkbox" value="appointment" /> Appointment / booked service</label><label><input type="checkbox" value="digital" /> Digital / remote delivery</label></div></fieldset>
+                  <fieldset id="business-product-fulfilment-options" class="profile-choice-group profile-long-field" hidden><legend>Product fulfilment methods</legend><div class="profile-choice-grid"><label><input type="checkbox" value="collection" /> <span data-selling-setup-copy="collection">Collection</span></label><label><input type="checkbox" value="delivery" /> <span data-selling-setup-copy="delivery">Business delivery</span></label><label><input type="checkbox" value="shipping" /> <span data-selling-setup-copy="shipping">Shipping / post</span></label><label><input type="checkbox" value="premises" /> <span data-selling-setup-copy="premises">At our premises</span></label><label><input type="checkbox" value="customer-location" /> <span data-selling-setup-copy="customer-location">At customer location</span></label><label><input type="checkbox" value="appointment" /> <span data-selling-setup-copy="appointment">Appointment / booked service</span></label><label><input type="checkbox" value="digital" /> <span data-selling-setup-copy="digital">Digital / remote delivery</span></label></div></fieldset>
                   <div class="profile-long-field business-product-form-actions"><button id="business-product-add-btn" class="demeos-secondary-button" type="button">Add product / service</button><button id="business-product-cancel-btn" class="text-button" type="button" hidden>Cancel edit</button></div>
                 </div>
                 <div id="vendor-catalogue-tools" data-owner-selling hidden><label><span data-vendor-copy="catalogueSearch">Find a product</span><input id="vendor-catalogue-search" type="search" /></label><label><input id="vendor-products-confirm" type="checkbox" /><span data-vendor-copy="accurate">These product details are accurate.</span></label><button id="vendor-products-save" type="button" class="demeos-primary-button" data-vendor-copy="saveProducts">Save products</button><a href="#product-options" class="owner-summary-link" data-vendor-copy="productOptions">Options</a><p id="vendor-products-status" role="status" aria-live="polite"></p></div>
@@ -371,65 +371,43 @@
 <div class="profile-long-field"><label for="business-products-services">What does your business provide?</label><textarea id="business-products-services" name="business-products-services" rows="5" placeholder="Example: Birthday cakes, celebration cakes and cupcakes made to order."></textarea><p>Describe only products and services your business genuinely provides. DEMEOS will not invent products, availability or prices.</p></div><div class="profile-long-field"><label for="business-offering-category" data-onboarding-copy="category">Which offering category fits?</label><select id="business-offering-category"></select><p data-onboarding-copy="categoryNote">Choose a supported offering category, or General. Individual products keep their own categories.</p></div>
               </div></details><details id="onboarding-preparation" class="onboarding-step profile-long-field" open><summary data-onboarding-copy="preparation">2. Prepare your service</summary><div class="profile-fields">
               <input type="hidden" id="business-preparation-model" value="selling" /><div class="profile-long-field"><strong data-onboarding-copy="selling">Selling preparation</strong><p data-onboarding-copy="sellingNote">Selling preparation does not enable selling, payments or publication. Separate approval and server permissions are required.</p></div>
-              <section id="business-profile-continuation" class="profile-step profile-long-field"><div class="profile-step-heading"><span>Step 3</span><div><h4>How customers continue</h4><p>Choose the direct routes your business actually supports.</p></div></div></section>
+              <section id="business-profile-continuation" class="profile-step profile-long-field"><div class="profile-step-heading"><span>Step 2</span><div><h4 data-selling-setup-copy="ordersTitle">Selling through DEMEOS</h4><p data-selling-setup-copy="ordersNote">Customer purchasing through DEMEOS requires separate activation. Live ordering and payments are not active.</p></div></div></section>
+              <section id="business-profile-operations" class="profile-step profile-long-field"><div class="profile-step-heading"><span>Step 4</span><div><h4 data-selling-setup-copy="operationsTitle">Fulfilment settings</h4><p data-selling-setup-copy="operationsNote">Set how you fulfil products. Product quantities and availability are managed in your catalogue and stock.</p></div></div></section>
               <fieldset class="profile-choice-group profile-long-field">
-                <legend>How can customers continue with your business?</legend>
-                <p>Select only routes your business currently supports. A website is optional.</p>
-                <div class="profile-choice-grid">
-                  <label><input type="checkbox" id="business-route-website" value="website" /> Website / online shop</label>
-                  <label><input type="checkbox" id="business-route-phone" value="phone" /> Call</label>
-                  <label><input type="checkbox" id="business-route-whatsapp" value="whatsapp" /> WhatsApp</label>
-                  <label><input type="checkbox" id="business-route-email" value="email" /> Email</label>
-                  <label><input type="checkbox" id="business-route-visit" value="visit" /> Visit business</label>
-                  <label><input type="checkbox" id="business-route-booking" value="booking" /> Booking / order link</label>
-                  <label><input type="checkbox" id="business-route-quote" value="quote" /> Request a quote / enquiry</label>
-                </div>
-                <div class="profile-route-details" aria-live="polite">
-                  <div data-route-detail="website" hidden><label for="business-website">Website / online shop link</label><input type="url" id="business-website" placeholder="https://www.example.co.uk" /></div>
-                  <div data-route-detail="phone" hidden><label for="business-phone">Business phone</label><input type="tel" id="business-phone" placeholder="Business contact number" /></div>
-                  <div data-route-detail="whatsapp" hidden><label for="business-whatsapp">WhatsApp number</label><input type="tel" id="business-whatsapp" placeholder="WhatsApp business number" /></div>
-                  <div data-route-detail="email" hidden><label for="business-email">Business email</label><input type="email" id="business-email" placeholder="hello@example.co.uk" /></div>
-                  <div data-route-detail="booking" hidden><label for="business-booking-link">Booking / order link</label><input type="url" id="business-booking-link" placeholder="https://..." /></div>
-                  <div data-route-detail="visit" hidden><label for="business-visit-address">Customer visit address</label><textarea id="business-visit-address" rows="3" maxlength="500" placeholder="Enter the physical address customers should visit"></textarea><p>This is separate from your general location or service area. Add it only if customers can genuinely visit this address.</p></div>
-                </div>
-              </fieldset>
-
-              <section id="business-profile-operations" class="profile-step profile-long-field"><div class="profile-step-heading"><span>Step 4</span><div><h4>Current operations</h4><p>Keep availability and fulfilment accurate so customers know what to expect.</p></div></div></section>
-              <fieldset class="profile-choice-group profile-long-field">
-                <legend>Current customer availability</legend>
-                <p>Tell DEMEOS what customers can rely on now. This is business-provided operational information, not a DEMEOS guarantee.</p>
-                <label for="business-availability-status">Current status</label>
+                <legend data-selling-setup-copy="availabilityTitle">Fulfilment availability</legend>
+                <p data-selling-setup-copy="availabilityNote">These settings describe your fulfilment capacity. They do not activate selling or override product stock.</p>
+                <label for="business-availability-status" data-selling-setup-copy="status">Fulfilment status</label>
                 <select id="business-availability-status">
-                  <option value="available">Available for new customer enquiries</option>
-                  <option value="limited">Limited availability — contact us first</option>
-                  <option value="unavailable">Not currently available for new enquiries</option>
-                  <option value="contact">Contact us to confirm availability</option>
+                  <option value="available" data-selling-setup-copy="available">Fulfilment available</option>
+                  <option value="limited" data-selling-setup-copy="limited">Limited fulfilment capacity</option>
+                  <option value="unavailable" data-selling-setup-copy="paused">Fulfilment paused</option>
+                  <option value="contact" data-selling-setup-copy="confirm">Fulfilment availability to confirm</option>
                 </select>
-                <label for="business-hours-notes">Opening / service hours</label>
-                <textarea id="business-hours-notes" rows="3" placeholder="Example: Monday–Friday 09:00–17:30; Saturday 10:00–16:00."></textarea>
-                <label for="business-availability-notes">Availability notes</label>
-                <textarea id="business-availability-notes" rows="3" placeholder="Example: Celebration cakes normally require advance notice. Contact us to confirm your date."></textarea>
+                <label for="business-hours-notes" data-selling-setup-copy="hours">Dispatch or collection hours</label>
+                <textarea id="business-hours-notes" rows="3" data-selling-setup-placeholder="hoursHint" placeholder="Enter your dispatch or collection schedule."></textarea>
+                <label for="business-availability-notes" data-selling-setup-copy="capacityNotes">Fulfilment capacity notes</label>
+                <textarea id="business-availability-notes" rows="3" data-selling-setup-placeholder="capacityHint" placeholder="Describe any current fulfilment limits."></textarea>
               </fieldset>
 
               <fieldset class="profile-choice-group profile-long-field">
-                <legend>How do customers receive your product or service?</legend>
+                <legend data-selling-setup-copy="methodsTitle">How do you fulfil your products?</legend>
                 <div class="profile-choice-grid">
-                  <label><input type="checkbox" id="business-fulfilment-collection" value="collection" /> Collection</label>
-                  <label><input type="checkbox" id="business-fulfilment-delivery" value="delivery" /> Business delivery</label>
-                  <label><input type="checkbox" id="business-fulfilment-shipping" value="shipping" /> Shipping / post</label>
-                  <label><input type="checkbox" id="business-fulfilment-premises" value="premises" /> At our premises</label>
-                  <label><input type="checkbox" id="business-fulfilment-customer-location" value="customer-location" /> At customer location</label>
-                  <label><input type="checkbox" id="business-fulfilment-appointment" value="appointment" /> Appointment / booked service</label>
-                  <label><input type="checkbox" id="business-fulfilment-digital" value="digital" /> Digital / remote delivery</label>
+                  <label><input type="checkbox" id="business-fulfilment-collection" value="collection" /> <span data-selling-setup-copy="collection">Collection</span></label>
+                  <label><input type="checkbox" id="business-fulfilment-delivery" value="delivery" /> <span data-selling-setup-copy="delivery">Business delivery</span></label>
+                  <label><input type="checkbox" id="business-fulfilment-shipping" value="shipping" /> <span data-selling-setup-copy="shipping">Shipping / post</span></label>
+                  <label><input type="checkbox" id="business-fulfilment-premises" value="premises" /> <span data-selling-setup-copy="premises">At our premises</span></label>
+                  <label><input type="checkbox" id="business-fulfilment-customer-location" value="customer-location" /> <span data-selling-setup-copy="customer-location">At customer location</span></label>
+                  <label><input type="checkbox" id="business-fulfilment-appointment" value="appointment" /> <span data-selling-setup-copy="appointment">Appointment / booked service</span></label>
+                  <label><input type="checkbox" id="business-fulfilment-digital" value="digital" /> <span data-selling-setup-copy="digital">Digital / remote delivery</span></label>
                 </div>
-                <label for="business-fulfilment-notes">Important fulfilment information</label>
-                <textarea id="business-fulfilment-notes" rows="3" placeholder="Example: Collection from our Croydon shop. Local delivery is arranged directly with us."></textarea>
+                <label for="business-fulfilment-notes" data-selling-setup-copy="instructions">Delivery and collection instructions</label>
+                <textarea id="business-fulfilment-notes" rows="3" data-selling-setup-placeholder="instructionsHint" placeholder="Describe your delivery, dispatch or collection arrangements."></textarea>
               </fieldset>
 
               </div></details><details id="onboarding-review" class="onboarding-step profile-long-field" open><summary data-onboarding-copy="review">3. Review your information</summary><div id="business-onboarding-review"></div><div class="profile-fields">
               <section id="business-profile-confirmation" class="profile-step profile-long-field"><div class="profile-step-heading"><span>Step 6</span><div><h4>Review &amp; save</h4><p>Confirm the information is current before DEMEOS uses it.</p></div></div></section>
               <div class="profile-accuracy-confirmation profile-long-field">
-                <label><input type="checkbox" id="business-accuracy-confirmation" /> I confirm this information accurately describes what my business currently provides and how customers can continue with us.</label>
+                <label><input type="checkbox" id="business-accuracy-confirmation" /> <span data-selling-setup-copy="accuracy">I confirm that these business and fulfilment details are accurate.</span></label>
                 <p>DEMEOS stores this as business-provided information. It is not presented as independently verified unless DEMEOS has separately verified it.</p>
               </div>
             </div></details>
@@ -453,6 +431,7 @@
   <script src="/js/business-product-preparation.js"></script>
   <script src="/js/business-preparation-language.js"></script>
   <script src="/js/business-onboarding.js"></script>
+  <script src="/js/selling-business-setup-copy.js"></script>
   <script src="/js/script.js"></script>
   <script src="/js/vendor-inventory.js"></script>
   <script src="/js/vendor-orders.js"></script>

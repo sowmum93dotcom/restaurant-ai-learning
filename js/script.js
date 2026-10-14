@@ -104,6 +104,11 @@ function migrateBusinessProfiles(storage) {
   return { profiles, activeBusinessId };
 }
 
+function preserveSellingContinuation(profile) {
+  // Keep an existing shared Marketing route intact; new vendors need no external route.
+  return profile?.customerContinuation ? JSON.parse(JSON.stringify(profile.customerContinuation)) : {routes: []};
+}
+
 function collectBusinessProfileFields(fields, profile, sellingApplication) {
   const values = {};
   for (const [key, field] of Object.entries(fields)) if (field) values[key] = field.value.trim();
@@ -385,7 +390,7 @@ if (typeof module !== "undefined" && module.exports) module.exports = {
   getActiveMarketingWork, getCustomerParticipationResults, getCampaignBusinessId, getCampaignContinuity, getCampaignContinuityLabel, getCampaignVersions, getVisibleCampaigns,
   hydrateKnownBusiness, mergeKnownBusinessPersistence, migrateBusinessProfiles, readPendingBusinessProfileSyncIds,
   removePendingBusinessProfileSync, updateBusinessProfile, parseFullCampaignSections, getCampaignWorkspace,
-  applyAuthorizedBusinessProfiles, collectBusinessProfileFields
+  applyAuthorizedBusinessProfiles, collectBusinessProfileFields, preserveSellingContinuation
 };
 
 if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", function () {
@@ -444,12 +449,12 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     email: byId("business-email"), bookingLink: byId("business-booking-link"), visitAddress: byId("business-visit-address")
   };
   const continuationDetailContainers = {
-    website: byId("business-website").parentElement,
-    phone: byId("business-phone").parentElement,
-    whatsapp: byId("business-whatsapp").parentElement,
-    email: byId("business-email").parentElement,
-    booking: byId("business-booking-link").parentElement,
-    visit: byId("business-visit-address").parentElement
+    website: byId("business-website")?.parentElement,
+    phone: byId("business-phone")?.parentElement,
+    whatsapp: byId("business-whatsapp")?.parentElement,
+    email: byId("business-email")?.parentElement,
+    booking: byId("business-booking-link")?.parentElement,
+    visit: byId("business-visit-address")?.parentElement
   };
   const fulfilmentNotes = byId("business-fulfilment-notes");
   const availabilityStatus = byId("business-availability-status");
@@ -904,6 +909,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     });
   }
   function getContinuationDetails() {
+    if (sellingApplication) return preserveSellingContinuation(activeProfile());
     return {
       website: continuationDetails.website.value.trim(),
       phone: continuationDetails.phone.value.trim(),
@@ -1247,12 +1253,12 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     const name = productFields.name.value.trim(), description = productFields.description.value.trim(), imageUrl = productFields.image.value.trim();
     if (!name || !description) { alert(globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model === "selling" ? vendorText("requiredProduct", "Please add a product/service name and description.") : "Please add a product/service name and description."); return; }
     if (!safeProductImageUrl(imageUrl)) { alert(globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model === "selling" ? vendorText("invalidImage", "Product image links must use http or https.") : "Product image links must use http or https."); return; }
-    const selectedRoutes = selectedValues(continuationRouteIds);
+    const selectedRoutes = sellingApplication ? preserveSellingContinuation(activeProfile()).routes : selectedValues(continuationRouteIds);
     const route = productFields.route.value || selectedRoutes.find(function (candidate) {
       return ["website", "booking", "phone", "whatsapp", "email", "visit", "quote"].includes(candidate);
     }) || "";
-    if (!route) { alert(globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model === "selling" ? vendorText("routePrerequisite", "Open My Business and save a customer contact method before adding products.") : "Select a customer continuation route before adding this product."); return; }
-    if (!selectedRoutes.includes(route)) { alert(globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model === "selling" ? vendorText("routeSelection", "Select that customer route in the Business Profile before assigning it to a product.") : "Select that customer route in the Business Profile before assigning it to a product."); return; }
+    if (!route && !sellingApplication) { alert(globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model === "selling" ? vendorText("routePrerequisite", "Open My Business and save a customer contact method before adding products.") : "Select a customer continuation route before adding this product."); return; }
+    if (route && !selectedRoutes.includes(route)) { alert(globalThis.window?.DEMEOSOwnerWorkspace?.getState(document).model === "selling" ? vendorText("routeSelection", "Select that customer route in the Business Profile before assigning it to a product.") : "Select that customer route in the Business Profile before assigning it to a product."); return; }
     const productId = productFields.id.value || ("product-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8));
     let priceMode = productFields.priceMode.value;
     let price = productFields.price.value.trim();
@@ -1297,12 +1303,12 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     Object.keys(fields).forEach(function (key) { if (fields[key]) fields[key].value = (profile && profile[key]) || ""; });
     const continuation = profile && profile.customerContinuation ? profile.customerContinuation : {};
     setSelectedValues(continuationRouteIds, continuation.routes);
-    continuationDetails.website.value = continuation.website || "";
-    continuationDetails.phone.value = continuation.phone || "";
-    continuationDetails.whatsapp.value = continuation.whatsapp || "";
-    continuationDetails.email.value = continuation.email || "";
-    continuationDetails.bookingLink.value = continuation.bookingLink || "";
-    continuationDetails.visitAddress.value = continuation.visitAddress || "";
+    if (continuationDetails.website) continuationDetails.website.value = continuation.website || "";
+    if (continuationDetails.phone) continuationDetails.phone.value = continuation.phone || "";
+    if (continuationDetails.whatsapp) continuationDetails.whatsapp.value = continuation.whatsapp || "";
+    if (continuationDetails.email) continuationDetails.email.value = continuation.email || "";
+    if (continuationDetails.bookingLink) continuationDetails.bookingLink.value = continuation.bookingLink || "";
+    if (continuationDetails.visitAddress) continuationDetails.visitAddress.value = continuation.visitAddress || "";
     updateContinuationDetailVisibility();
     const fulfilment = profile && profile.fulfilment ? profile.fulfilment : {};
     setSelectedValues(fulfilmentIds, fulfilment.methods);
@@ -1577,9 +1583,9 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     if (Object.keys(profileFields).some(function (key) { return !profileFields[key] && !((sellingApplication || byId("business-preparation-model")?.value === "selling") && ["brandVoice","targetCustomer","goal"].includes(key)); })) {
       alert(sellingApplication ? "Please complete the business details and products/services before saving." : "Please complete the business details, products/services and marketing profile before saving."); return;
     }
-    const routes = selectedValues(continuationRouteIds);
+    const routes = sellingApplication ? preserveSellingContinuation(activeProfile()).routes : selectedValues(continuationRouteIds);
     const fulfilmentMethods = selectedValues(fulfilmentIds);
-    if (!routes.length) {
+    if (!sellingApplication && !routes.length) {
       alert("Please select at least one way customers can continue with your business."); return;
     }
     if (!fulfilmentMethods.length) {
