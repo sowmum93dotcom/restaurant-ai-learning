@@ -77,7 +77,7 @@ test('Selling test entry never reads obsolete shared dashboard templates',async(
    if(authenticated&&page==='manage'){assert.match(res.body,/id="business-media-file"/);assert.match(res.body,/id="business-media-upload-btn"/);assert.match(res.body,/id="vendor-stock-save"/);}
   }
   assert.ok(read.some(file=>file.endsWith('/selling-vendor.html')));assert.ok(read.some(file=>file.endsWith('/selling-vendor-manage.html')));
-  assert.equal(require('../vercel.json').functions['api/businesses.js'].includeFiles,'{selling-vendor.html,selling-vendor-manage.html,node_modules/@ffprobe-installer/linux-x64/ffprobe}');
+  assert.equal(require('../vercel.json').functions['api/businesses.js'].includeFiles,'{selling-vendor.html,selling-vendor-manage.html,node_modules/@ffprobe-installer/linux-x64/ffprobe,node_modules/@ffprobe-installer/linux-x64/package.json}');
  }finally{fs.readFileSync=original;}
 });
 
