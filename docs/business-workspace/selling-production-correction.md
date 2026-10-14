@@ -39,3 +39,23 @@ The existing inspection uploader can now use the approved private Preview Blob s
 Completion verifies stored MIME and byte count, then probes actual original contents with Sharp or a restricted local ffprobe process. MP4/MOV duration must be at most 60 seconds; image/video dimensions are bounded. An HMAC receipt binds the verified metadata to the owner and sample product. Client-supplied object paths and derivatives are discarded. Private read links expire and are renewed from the derived path after refresh. Catalogue, stock and gallery references retain the existing isolated browser storage. Existing local test uploads are preserved.
 
 This is readiness of private inspection originals, not transcoding, normal processing-queue completion, publication or Production approval. Normal services and authorisation remain unchanged. Production integration, normal media processing and physical Safari release acceptance remain separate checks. No Production deployment is authorised by passing the controlled tests alone.
+
+## Authenticated private Preview upload verification — 14 October 2026
+
+The live controlled image upload reached Ready, but the repository sample MP4 returned HTTP 409. A diagnostic Preview at da9da40bf0b299d232568eee370ddfd028eed92f recorded `DEMEOS private inspection video probe failed: MODULE_NOT_FOUND`. Vercel's file trace includes the ffprobe wrapper but cannot resolve its dynamically selected platform package metadata. The existing includeFiles supplied only the executable. An isolated function-bundle regression reproduces the missing `@ffprobe-installer/linux-x64/package.json` error without access to the repository node_modules.
+
+Correction c2e6c358a67027176e989a9e015fa65811f8c1dc explicitly includes the platform package metadata alongside the executable. The isolated regression passes and probes the actual sample MP4 duration as three seconds. All 1,504 Node tests pass. No dashboard, section, route, business authority, database, payment or Production configuration was changed.
+
+Authenticated deployed checks on READY Preview dpl_BWfSK6EX1ESuvaZ1nMZXs8TQnW1u:
+
+- A controlled 640 by 480 PNG and the repository sample MP4 both uploaded to private Preview storage and reached Ready.
+- Both were added to the sample product gallery; Save products returned Products saved.
+- A document refresh retained both Ready assets and gallery positions four and five on the Images and Videos section. The image decoded at 640 by 480. The private video loaded with readyState four, duration three seconds and no media error, then played to completion with currentTime three and ended true.
+- An unsigned request to the uploaded image object returned HTTP 403.
+- All seven existing navigation entries remain present. Overview, My Business, Product Catalogue, Images and Videos, Options and Variants, Stock and History, and Private Orders were opened. Orders correctly displays no orders and live ordering inactive. No automatic switch to Business Applications was observed.
+
+Preview entry: https://restaurant-ai-learning-git-business-appro-e191e4-sowmum93dotcom.vercel.app/selling-vendor/inspect/manage#media
+
+These results verify controlled private originals and browser-session gallery persistence, not production processing, publication or real-business approval. Expired-link renewal remains covered by the existing server regression; a wall-clock expiry test was not performed in this session.
+
+Physical iPad/iPhone Safari upload, playback and refresh acceptance is still OPEN. This environment's WebKit gate could not start because required OS libraries were absent; dependency installation was unavailable. No Safari success is claimed. PR705 was already merged on 13 October before the owner's saved 9484939 continuation; no subsequent merge or Production deployment was performed in this session. Keep the continuation unreleased until physical Safari acceptance is recorded.
