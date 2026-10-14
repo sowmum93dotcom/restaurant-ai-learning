@@ -24,7 +24,14 @@ module.exports = async function handler(req, res) {
     res.setHeader('Cache-Control', 'private, no-store');
     return res.status(200).send(req.method === 'HEAD' ? '' : html);
   }
+  // The inspection handler chains res.status(...).send(...). Ensure that
+  // status() returns the rewriting facade, not the underlying response.
+  // Otherwise the original /inspect navigation escapes into Preview HTML.
   const proxy = Object.create(res);
+  proxy.status = function status(code) {
+    res.status(code);
+    return proxy;
+  };
   proxy.send = function send(body) {
     return res.send(rewriteDevelopmentHtml(body));
   };
