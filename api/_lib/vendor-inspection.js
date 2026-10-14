@@ -7,9 +7,9 @@ const stock = require('./vendor-inventory');
 const {validateProfile} = require('../businesses/[businessId]');
 const cloudMedia = require('./vendor-inspection-media');
 const BUSINESS = 'test-vendor-inspection-705';
-const BRANCH = 'business-approval-application-access-705';
+const ALLOWED_BRANCHES = new Set(['business-approval-application-access-705', 'fix/selling-vendor-permanent-workspace-access']);
 function enabled(env = process.env) {
-  return env.VERCEL_ENV === 'preview' && env.VERCEL_GIT_COMMIT_REF === BRANCH;
+  return env.VERCEL_ENV === 'preview' && ALLOWED_BRANCHES.has(env.VERCEL_GIT_COMMIT_REF);
 }
 function inspectionLinks(html) {
   return html.replace('data-owner-model="selling" data-selling-entry="true"','data-owner-model="none"')
