@@ -15,7 +15,14 @@ vm.runInNewContext(fs.readFileSync(path.join(root,'api/generate.js'),'utf8').rep
 const asset={businessId:'engineering-a',assetId:'engineering-image',relatedEntityId:'offer-a',purpose:'product',kind:'image',state:'ready',deliveryUrl:'https://example.org/exact.jpg'};
 const profile={applicationAccess:{marketing:true,selling:true},businessId:'engineering-a',name:'Engineering Owner A',type:'Fashion',location:'London',brandVoice:'Clear',targetCustomer:'Local customers',goal:'Share saved products',profileVersion:4,preparationModel:'both',offeringCategoryId:'fashion.apparel',productsServices:'Owner products',customerContinuation:{routes:['website'],website:'https://example.org/shop'},fulfilment:{methods:['shipping']},operationalAvailability:{status:'available'},products:[{businessId:'engineering-a',productId:'offer-a',name:'Exact jacket',description:'Saved jacket description',price:'£89',priceMode:'fixed',availability:'available',continuationRoute:'website',customerVisible:true,fulfilment:{methods:['collection']},presentation:{version:1,categoryId:'fashion.apparel',pricing:{mode:'fixed',currency:'GBP',amount:89},options:[{key:'size',values:[{value:'M',label:'Medium'}]}],variants:[{variantId:'exact-medium',selection:{size:'M'},availability:'limited',pricing:{mode:'fixed',currency:'GBP',amount:91},future:'retained'}],future:'retained'}}]};
 const server=http.createServer(async(req,res)=>{try{
- const url=new URL(req.url,'http://localhost');req.query=Object.fromEntries(url.searchParams);let raw='';for await(const chunk of req){raw+=chunk;if(raw.length>25000){res.writeHead(413);res.end();return;}}req.body=raw?JSON.parse(raw):{};
+ const url=new URL(req.url,'http://localhost');req.query=Object.fromEntries(url.searchParams);
+ // GET/HEAD document requests have no body. Do not wait for a request stream
+ // before sending the HTML: navigation must complete even on a reused socket.
+ req.body={};
+ if(!['GET','HEAD'].includes(req.method)){
+  let raw='';for await(const chunk of req){raw+=chunk;if(raw.length>25000){res.writeHead(413);res.end();return;}}
+  req.body=raw?JSON.parse(raw):{};
+ }
  res.status=code=>{res.statusCode=code;return res;};res.json=value=>{res.setHeader('Content-Type','application/json');res.end(JSON.stringify(value));return res;};
  if(url.pathname==='/api/public-config')return res.json({clerkPublishableKey:'pk_test_'+Buffer.from('clerk.test$').toString('base64')});
  const admin=url.pathname.match(/^\/api\/admin\/business-applications(?:\/([^/]+))?$/);if(admin){req.query.resource='admin-applications';if(admin[1])req.query.businessId=admin[1];return await list(req,res);}
@@ -83,6 +90,10 @@ async function contextFor(browser,base,id,width){const context=await browser.new
    const after=(await repository.getKnownBusiness(id)).businessProfile;assert.equal(after.preparationModel,before.preparationModel);
    for(const key of ['brandVoice','targetCustomer','goal'])assert.equal(after[key],before[key]);assert.deepEqual(after.customerContinuation,before.customerContinuation);assert.equal(await page.locator('[id^=business-route-],#business-website,#business-booking-link').count(),0);
    const pendingRequests=new Map();const failedRequests=[];const trackRequest=request=>pendingRequests.set(request,request.url());const finishRequest=request=>pendingRequests.delete(request);const failRequest=request=>{failedRequests.push({url:request.url(),failure:request.failure()?.errorText});finishRequest(request);};page.on('request',trackRequest);page.on('requestfinished',finishRequest);page.on('requestfailed',failRequest);try{await page.reload({waitUntil:'domcontentloaded',timeout:30000});}catch(error){console.error('Selling profile refresh diagnostics',JSON.stringify({model,width,url:page.url(),pending:[...pendingRequests.values()],failed:failedRequests,pageErrors:errors}));throw error;}finally{page.off('request',trackRequest);page.off('requestfinished',finishRequest);page.off('requestfailed',failRequest);}await page.locator('body[data-owner-access=ready]').waitFor();assert.equal(await page.locator('#onboarding-marketing').count(),0);
+   // Confirm that the refresh completed and the authorised, saved profile
+   // was restored from the repository, not merely left in form state.
+   assert.equal(await page.locator('#business-name').inputValue(),after.name);
+   assert.equal((await repository.getKnownBusiness(id)).businessProfile.name,after.name);
    await adminPage.reload();await adminPage.locator('.application-card').filter({hasText:name}).getByRole('button').click();await adminPage.locator('#admin-detail:not([hidden])').waitFor();
   }
   if(model==='marketing')assert.equal((await context.request.get(base+'/api/businesses/'+id+'/inventory')).status(),403);
