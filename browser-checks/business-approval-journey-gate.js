@@ -14,7 +14,14 @@ const generatorModule={exports:{}};
 vm.runInNewContext(fs.readFileSync(path.join(root,'api/generate.js'),'utf8').replace('export default async function handler','module.exports = async function handler'),{module:generatorModule,require:createRequire(path.join(root,'api/generate.js')),console,process:{env:{}},fetch(){throw Error('No external provider may be called');}});
 const asset={businessId:'engineering-a',assetId:'engineering-image',relatedEntityId:'offer-a',purpose:'product',kind:'image',state:'ready',deliveryUrl:'https://example.org/exact.jpg'};
 const profile={applicationAccess:{marketing:true,selling:true},businessId:'engineering-a',name:'Engineering Owner A',type:'Fashion',location:'London',brandVoice:'Clear',targetCustomer:'Local customers',goal:'Share saved products',profileVersion:4,preparationModel:'both',offeringCategoryId:'fashion.apparel',productsServices:'Owner products',customerContinuation:{routes:['website'],website:'https://example.org/shop'},fulfilment:{methods:['shipping']},operationalAvailability:{status:'available'},products:[{businessId:'engineering-a',productId:'offer-a',name:'Exact jacket',description:'Saved jacket description',price:'£89',priceMode:'fixed',availability:'available',continuationRoute:'website',customerVisible:true,fulfilment:{methods:['collection']},presentation:{version:1,categoryId:'fashion.apparel',pricing:{mode:'fixed',currency:'GBP',amount:89},options:[{key:'size',values:[{value:'M',label:'Medium'}]}],variants:[{variantId:'exact-medium',selection:{size:'M'},availability:'limited',pricing:{mode:'fixed',currency:'GBP',amount:91},future:'retained'}],future:'retained'}}]};
-const server=http.createServer(async(req,res)=>{try{
+const server=http.createServer(async(req,res)=>{
+ const started=Date.now(),documentRequest=req.method==='GET'&&req.url?.startsWith('/selling-vendor/manage');
+ if(documentRequest){
+  console.log('[selling-document] request received',JSON.stringify({url:req.url,method:req.method}));
+  res.on('finish',()=>console.log('[selling-document] response finished',JSON.stringify({status:res.statusCode,headersSent:res.headersSent,elapsedMs:Date.now()-started})));
+  res.on('close',()=>{if(!res.writableFinished)console.error('[selling-document] response closed before finish',JSON.stringify({headersSent:res.headersSent,elapsedMs:Date.now()-started}));});
+ }
+ try{
  const url=new URL(req.url,'http://localhost');req.query=Object.fromEntries(url.searchParams);
  // GET/HEAD document requests have no body. Do not wait for a request stream
  // before sending the HTML: navigation must complete even on a reused socket.
@@ -36,7 +43,13 @@ const server=http.createServer(async(req,res)=>{try{
  if(url.pathname==='/api/customer/work')return await publicWork(req,res);
  if(url.pathname.startsWith('/api/'))return res.status(404).json({error:'Not configured'});
  const file=path.resolve(root,'.'+decodeURIComponent(({'/marketing-business':'/business-workspace.html','/selling-vendor':'/selling-vendor.html','/marketing-business/manage':'/marketing.html','/selling-vendor/manage':'/selling-vendor-manage.html','/selling-vendor/onboarding':'/selling-vendor-manage.html','/marketing-business/results':'/business-results.html'}[url.pathname] || (url.pathname==='/'?'/business-workspace.html':url.pathname))));if(!file.startsWith(root+path.sep)||!fs.existsSync(file)){res.statusCode=404;return res.end();}
- res.setHeader('Content-Type',({'.html':'text/html','.js':'application/javascript','.css':'text/css'})[path.extname(file)]||'application/octet-stream');fs.createReadStream(file).pipe(res);
+ res.setHeader('Content-Type',({'.html':'text/html','.js':'application/javascript','.css':'text/css'})[path.extname(file)]||'application/octet-stream');
+ // Deterministic static fixture delivery: an unhandled read-stream failure
+ // must not leave a navigation response pending indefinitely.
+ const contents=await fs.promises.readFile(file);
+ res.setHeader('Content-Length',contents.length);
+ if(documentRequest)console.log('[selling-document] headers ready',JSON.stringify({bytes:contents.length,headersSent:res.headersSent}));
+ res.end(req.method==='HEAD'?undefined:contents);
 }catch(error){console.error(error);if(!res.writableEnded){res.statusCode=500;res.end('{}');}}});
 
 async function contextFor(browser,base,id,width){const context=await browser.newContext({viewport:{width,height:1100},reducedMotion:'reduce'});context.setDefaultTimeout(15000);await context.addCookies([{name:'engineering-owner',value:id,url:base}]);
