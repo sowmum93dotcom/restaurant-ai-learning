@@ -104,6 +104,16 @@ function migrateBusinessProfiles(storage) {
   return { profiles, activeBusinessId };
 }
 
+function collectBusinessProfileFields(fields, profile, sellingApplication) {
+  const values = {};
+  for (const [key, field] of Object.entries(fields)) if (field) values[key] = field.value.trim();
+  // Selling does not edit or erase the shared business's Marketing information.
+  if (sellingApplication) for (const key of ["brandVoice", "targetCustomer", "goal"]) {
+    if (profile && Object.hasOwn(profile, key)) values[key] = profile[key];
+  }
+  return values;
+}
+
 function updateBusinessProfile(profiles, profileFields, activeBusinessId, makeId) {
   const index = profiles.findIndex(function (profile) { return profile.businessId === activeBusinessId; });
   if (index < 0) {
@@ -375,7 +385,7 @@ if (typeof module !== "undefined" && module.exports) module.exports = {
   getActiveMarketingWork, getCustomerParticipationResults, getCampaignBusinessId, getCampaignContinuity, getCampaignContinuityLabel, getCampaignVersions, getVisibleCampaigns,
   hydrateKnownBusiness, mergeKnownBusinessPersistence, migrateBusinessProfiles, readPendingBusinessProfileSyncIds,
   removePendingBusinessProfileSync, updateBusinessProfile, parseFullCampaignSections, getCampaignWorkspace,
-  applyAuthorizedBusinessProfiles
+  applyAuthorizedBusinessProfiles, collectBusinessProfileFields
 };
 
 if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", function () {
@@ -413,6 +423,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
   const businessSelector = byId("business-selector");
   const addBusinessBtn = byId("add-business-btn");
   const saveBusinessProfileBtn = byId("save-business-profile-btn");
+  const sellingApplication = /^\/selling-vendor(?:\/|$)/.test(globalThis.window?.location?.pathname || "");
   const fields = {
     name: byId("business-name"), type: byId("business-type"), location: byId("business-location"),
     productsServices: byId("business-products-services"),
@@ -966,7 +977,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       const offer = activeProfile()?.products?.find(p=>p.productId===asset.relatedEntityId && p.businessId===state.activeBusinessId);
       const caption=document.createElement("p");caption.textContent=offer ? offer.name : "Business marketing media";item.append(caption);
       appendMediaPreview(item,asset);
-      if (offer && asset.state === "ready") {
+      if (!sellingApplication && offer && asset.state === "ready") {
         const use=document.createElement("button");use.type="button";use.className="text-button";use.textContent="Prepare marketing with this media";use.dataset.ownerMarketing="";
         use.addEventListener("click",()=>{if(globalThis.window?.DEMEOSOwnerWorkspace && !window.DEMEOSOwnerWorkspace.canOpen(window.DEMEOSOwnerWorkspace.getState(document),"create"))return;showWorkspaceView("create");byId("draft-product").value=offer.productId;renderDraftSources();byId("draft-media").value=asset.assetId;renderOfferReview();});item.append(use);
       }
@@ -1208,7 +1219,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       const query=byId("vendor-catalogue-search")?.value.trim().toLowerCase() || "";
       card.dataset.search=[product.name,product.description,product.price,product.availability].join(" ").toLowerCase();
       if(selling && query)card.hidden=!card.dataset.search.includes(query);
-      actions.append(edit, remove, prepare, duplicate); body.append(name, description, meta, visibility, actions); card.appendChild(body); productsList.appendChild(card);
+      actions.append(edit, remove); if (!sellingApplication) actions.append(prepare); actions.append(duplicate); body.append(name, description, meta, visibility, actions); card.appendChild(body); productsList.appendChild(card);
     });
     renderOfferReview();
   }
@@ -1283,7 +1294,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     baselineProducts=JSON.parse(JSON.stringify(draftProducts));
     renderBusinessProducts();
     resetProductForm();
-    Object.keys(fields).forEach(function (key) { fields[key].value = (profile && profile[key]) || ""; });
+    Object.keys(fields).forEach(function (key) { if (fields[key]) fields[key].value = (profile && profile[key]) || ""; });
     const continuation = profile && profile.customerContinuation ? profile.customerContinuation : {};
     setSelectedValues(continuationRouteIds, continuation.routes);
     continuationDetails.website.value = continuation.website || "";
@@ -1562,10 +1573,9 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     addingBusiness = true; customerParticipationResults = []; selectedRecommendationDecision = null; businessSelector.value = ""; fillProfile(null); clearRecommendations(); clearBusinessSituation(); clearCampaignWorkspace(); renderActiveMarketingWork(); renderCustomerParticipationResults(); renderRecommendationDecisionResults(); renderRecommendsUnderstanding(null, null);
   });
   saveBusinessProfileBtn.addEventListener("click", async function () {
-    const profileFields = {};
-    Object.keys(fields).forEach(function (key) { profileFields[key] = fields[key].value.trim(); });
-    if (Object.keys(profileFields).some(function (key) { return !profileFields[key] && !(byId("business-preparation-model")?.value === "selling" && ["brandVoice","targetCustomer","goal"].includes(key)); })) {
-      alert("Please complete the business details, products/services and marketing profile before saving."); return;
+    const profileFields = collectBusinessProfileFields(fields, activeProfile(), sellingApplication);
+    if (Object.keys(profileFields).some(function (key) { return !profileFields[key] && !((sellingApplication || byId("business-preparation-model")?.value === "selling") && ["brandVoice","targetCustomer","goal"].includes(key)); })) {
+      alert(sellingApplication ? "Please complete the business details and products/services before saving." : "Please complete the business details, products/services and marketing profile before saving."); return;
     }
     const routes = selectedValues(continuationRouteIds);
     const fulfilmentMethods = selectedValues(fulfilmentIds);

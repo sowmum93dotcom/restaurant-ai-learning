@@ -73,6 +73,18 @@ async function contextFor(browser,base,id,width){const context=await browser.new
   const app=model==='marketing'?'marketing':'selling';await page.waitForURL(base+'/'+app+(app==='selling'?'-vendor':'-business'));await page.locator('body[data-owner-access=ready]').waitFor();assert.equal(await page.locator('body').getAttribute('data-owner-model'),app);assert.match(await page.locator('#workspace-business-identity').innerText(),/access approved/);
   await page.screenshot({fullPage:true,path:'/tmp/demeos-approval-dashboard-'+model+'-'+width+'.png'});
   if(app==='selling'){for(const view of ['products','media','product-options','inventory','orders']){await page.goto(base+'/selling-vendor/manage#'+view);await page.locator('body[data-owner-access=ready]').waitFor();assert.equal(await page.locator('body').getAttribute('data-owner-model'),'selling');assert.equal(await page.locator('[data-owner-section="'+view+'"]').count(),1);}}
+  if(app==='selling'){
+   const before=(await repository.getKnownBusiness(id)).businessProfile;
+   await page.goto(base+'/selling-vendor/manage#business-profile');await page.locator('body[data-owner-access=ready]').waitFor();await page.locator('#business-name').waitFor();
+   assert.equal(await page.locator('select#business-preparation-model,#onboarding-marketing,#business-brand-voice,#business-target-customer,#business-goal').count(),0);
+   assert.equal(await page.locator('#business-preparation-model').inputValue(),model);
+   await page.locator('#onboarding-review summary').click();await page.locator('#business-accuracy-confirmation').check();
+   const edited=page.waitForResponse(r=>r.request().method()==='PUT'&&/api\/businesses\//.test(r.url()));await page.locator('#save-business-profile-btn').click();assert.equal((await edited).status(),204);
+   const after=(await repository.getKnownBusiness(id)).businessProfile;assert.equal(after.preparationModel,before.preparationModel);
+   for(const key of ['brandVoice','targetCustomer','goal'])assert.equal(after[key],before[key]);
+   await page.reload();await page.locator('body[data-owner-access=ready]').waitFor();assert.equal(await page.locator('#onboarding-marketing').count(),0);
+   await adminPage.reload();await adminPage.locator('.application-card').filter({hasText:name}).getByRole('button').click();await adminPage.locator('#admin-detail:not([hidden])').waitFor();
+  }
   if(model==='marketing')assert.equal((await context.request.get(base+'/api/businesses/'+id+'/inventory')).status(),403);
   if(model==='selling')assert.equal((await context.request.get(base+'/api/businesses/'+id+'?application=marketing')).status(),403);
   await decide('revoked',[app]);await page.evaluate(()=>dispatchEvent(new Event('focus')));await page.locator('body[data-owner-access=revoked]').waitFor();assert.equal((await context.request.get(base+'/api/businesses/'+id+'?application='+app)).status(),403);assert.equal((await context.request.get(base+'/api/businesses/'+id+'/inventory')).status(),403);
