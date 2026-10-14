@@ -39,7 +39,7 @@ async function contextFor(browser,base,id,width){const context=await browser.new
  await database.ensureSchema();await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base='http://127.0.0.1:'+server.address().port;
  browser=await chromium.launch({headless:true,...(process.env.DEMEOS_BROWSER_CHANNEL?{channel:process.env.DEMEOS_BROWSER_CHANNEL}:{})});
  for(const width of [390,820,1440])for(const model of ['marketing','selling','both']){
-  const context=await contextFor(browser,base,'owner-'+model+'-'+width,width),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(String(e)));page.on('dialog',d=>d.accept());
+  const context=await contextFor(browser,base,'owner-'+model+'-'+width,width),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(String(e)));page.on('dialog',d=>{void d.accept().catch(error=>{if(!/Not attached to an active page|Target page, context or browser has been closed/.test(String(error)))errors.push(String(error));});});
   await page.goto(base+'/business-workspace.html');await page.locator('body[data-owner-access=setup]').waitFor();await page.getByRole('link',{name:'Start business setup',exact:true}).click();
   await page.locator('#owner-authenticated-workspace:not([hidden])').waitFor();await page.locator('#business-offering-category option').last().waitFor({state:'attached'});
   const name='Isolated '+model+' '+width;
