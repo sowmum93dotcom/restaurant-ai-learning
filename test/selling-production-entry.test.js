@@ -1,6 +1,6 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
-test('Production Selling routes use approved dedicated entries without inspection bootstrap',async()=>{
+test('Canonical Selling routes use real authenticated pages in all environments',async()=>{
  const routes=require('../vercel.json').rewrites;
  for(const [route,file] of [['/selling-vendor','selling-vendor.html'],['/selling-vendor/manage','selling-vendor-manage.html'],['/selling-vendor/onboarding','selling-vendor-manage.html']]){
   assert.equal(routes.find(r=>r.source===route).destination,route==='/selling-vendor/onboarding'?'/'+file:'/api/vendor-development-workspace?page='+(route==='/selling-vendor'?'dashboard':'manage'));
@@ -50,4 +50,16 @@ test('all seven Selling sections and denied authority survive a language change'
  const api=root.DEMEOSOwnerWorkspace;api.apply(doc,{businessProfile:{businessId:'owned'},workspaceReadiness:null},'owned','denied');
  assert.equal(nav.children.length,7);assert.deepEqual(nav.children.map(n=>n.dataset.ownerSection),['overview','business-profile','products','media','product-options','inventory','orders']);
  select.value='fr';change();assert.equal(api.getState(doc).status,'denied');assert.equal(api.canOpen(api.getState(doc),'products'),false);assert.equal(nav.children.length,7);assert.equal(nav.children[2].textContent,root.DEMEOSVendorCopy.fr.applicationCatalogue);assert.equal(root.location.hash,'#products');
+});
+
+test('Preview canonical Selling routes never activate inspection fixtures',async()=>{
+ const handler=require('../api/vendor-development-workspace');
+ for(const page of ['dashboard','manage']){
+  let status,html;
+  const res={setHeader(){},status(code){status=code;return this;},send(body){html=body;return this;}};
+  await handler({method:'GET',query:{page}},res);
+  assert.equal(status,200);
+  assert.match(html,/Selling Vendor Application/);
+  assert.doesNotMatch(html,/DEMEOS_VENDOR_INSPECTION|vendor-development-workspace\\.js|Development sample shop/);
+ }
 });
