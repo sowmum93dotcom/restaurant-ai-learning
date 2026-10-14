@@ -536,6 +536,12 @@ async function initialiseOwnerAuthentication(windowObject, documentObject, stora
     if (!config || typeof config.clerkPublishableKey !== "string" || !config.clerkPublishableKey.trim()) {
       throw new Error("Invalid public authentication configuration");
     }
+    windowObject.DEMEOSVendorTestDashboardUrl=config.vendorTestDashboardUrl==='https://restaurant-ai-learning-git-business-appro-e191e4-sowmum93dotcom.vercel.app/selling-vendor/inspect'?config.vendorTestDashboardUrl:null;
+    if(windowObject.DEMEOSVendorTestDashboardUrl&&windowObject.location?.pathname?.startsWith('/selling-vendor')&&!windowObject.location.pathname.startsWith('/selling-vendor/inspect')){
+      const panel=documentObject.getElementById('owner-auth-signed-out');
+      let code='en';try{code=windowObject.DEMEOSLanguageRegistry?.resolve(windowObject.localStorage?.getItem('demeos-customer-language'))?.code||'en';}catch(_){}
+      if(panel&&!panel.querySelector('.selling-test-dashboard-entry')){const link=documentObject.createElement('a');link.className='demeos-primary-button selling-test-dashboard-entry';link.href=windowObject.DEMEOSVendorTestDashboardUrl;link.textContent=windowObject.DEMEOSVendorTestEntryCopy?.[code]?.[0]||'Open test dashboard';link.lang=code;link.dir=code==='ar'?'rtl':'ltr';panel.appendChild(link);}
+    }
     await loadClerkBrowserSdk(documentObject, config.clerkPublishableKey);
     const clerk = windowObject.Clerk;
     if (!clerk || typeof clerk.load !== "function" || !windowObject.__internal_ClerkUICtor) {

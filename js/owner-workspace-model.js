@@ -123,7 +123,13 @@
       else if(['rejected','revoked'].includes(state.status))status.textContent=copy(state.status+'Detail',status.textContent);
       else if(state.status === 'denied') status.textContent = copy('applicationPendingDetail', status.textContent);
       container.appendChild(status);
-      if(application==='selling'&&state.status!=='ready'){
+      const testEntry=application==='selling'&&state.status!=='ready'&&root.DEMEOSVendorTestDashboardUrl&&!root.DEMEOSVendorInspectionEntry;
+      if(testEntry){
+        const words=root.DEMEOSVendorTestEntryCopy?.[language()]||['Open test dashboard','Use the complete vendor tools with sample data. Real business approval, sales and payments are separate.'];
+        const link=doc.createElement('a');link.className='selling-test-dashboard-entry';link.textContent=words[0];link.href=root.DEMEOSVendorTestDashboardUrl;container.appendChild(link);
+        if(!['rejected','revoked','forbidden'].includes(state.status)){title.textContent=words[2]||'Vendor dashboard testing';status.textContent=words[1];}
+      }
+      if(application==='selling'&&state.status!=='ready'&&!testEntry){
         const next=doc.createElement('p');next.className='selling-access-next-step';
         const accessCopy=root.DEMEOSSellingAccessCopy;
         next.textContent=accessCopy?.[language()]||'Open My Business to complete and submit your Selling application. Product, image, video and stock tools become available after Selling access is approved.';

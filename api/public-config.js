@@ -180,7 +180,8 @@ async function publicConfig(req, res) {
 
   return res.status(200).json({
     clerkPublishableKey,
-    businessIdDiagnosticEnabled: process.env.DEMEOS_BUSINESS_ID_DIAGNOSTIC_ENABLED === "true"
+    businessIdDiagnosticEnabled: process.env.DEMEOS_BUSINESS_ID_DIAGNOSTIC_ENABLED === "true",
+    ...(require('./_lib/vendor-test-entry').vendorTestEntry()?{vendorTestDashboardUrl:require('./_lib/vendor-test-entry').vendorTestEntry()}: {})
   });
 }
 

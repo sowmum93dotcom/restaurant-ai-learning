@@ -115,7 +115,7 @@ body.owner-workspace-body[data-owner-model=selling][data-owner-view=products] .b
 body.owner-workspace-body[data-owner-model=selling] [data-onboarding-copy=sellingNote]{display:none!important}
 
 body.owner-workspace-body[data-owner-model=selling] #business-profile .profile-step{background:transparent!important;box-shadow:none!important;border:0!important}
-body.owner-workspace-body[data-vendor-inspection=true] #business-profile :is(#add-business-btn,.onboarding-actions,.profile-accuracy-confirmation,.business-profile-intro,#onboarding-review){display:none!important}
+body.owner-workspace-body[data-vendor-inspection=true] #business-profile :is(#add-business-btn,#submit-business-btn){display:none!important}
 
 /* Refine the approved Selling layout without changing other applications. */
 body.owner-workspace-body[data-owner-model=selling]:has(#owner-authenticated-workspace:not([hidden])) .owner-overview-heading>div{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;width:100%}

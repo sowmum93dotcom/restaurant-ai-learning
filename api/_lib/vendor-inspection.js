@@ -18,7 +18,7 @@ function inspectionLinks(html) {
     .replaceAll('href="/selling-vendor"','href="/selling-vendor/inspect"');
 }
 function fixture(origin) {
-  const profile = {businessId: BUSINESS, name: 'Development sample shop', type: 'Clothing', location: 'Sample location', profileVersion: 4, preparationModel: 'selling', offeringCategoryId: 'fashion.apparel', productsServices: 'Controlled interface inspection data', customerContinuation: {routes:['website'],website:'https://example.org'}, fulfilment:{methods:['shipping']}, operationalAvailability:{status:'available'}, informationStatus:{source:'controlled-development-inspection',status:'business-provided',reviewState:'draft'}, products:[{businessId:BUSINESS,productId:'test-inspection-jacket',name:'Sample jacket — test product',description:'Controlled sample for product editor inspection. Not offered for sale.',price:'£89',priceMode:'fixed',availability:'available',continuationRoute:'website',customerVisible:false,presentation:{version:1,categoryId:'fashion.apparel',pricing:{mode:'fixed',currency:'GBP',amount:89},options:[{key:'size',values:[{value:'M',label:'Medium'},{value:'L',label:'Large'}]}],variants:[{variantId:'test-medium',selection:{size:'M'},availability:'available'},{variantId:'test-large',selection:{size:'L'},availability:'available'}]},mediaGallery:{assetIds:['test-image-one','test-image-two','test-video'],mainAssetId:'test-image-one'}}]};
+  const profile = {businessId: BUSINESS, name: 'Development sample shop', type: 'Clothing', location: 'Sample location', profileVersion: 4, preparationModel: 'selling', offeringCategoryId: 'fashion.apparel', productsServices: 'Controlled interface inspection data', customerContinuation: {routes:[]}, fulfilment:{methods:['shipping']}, operationalAvailability:{status:'available'}, informationStatus:{source:'controlled-development-inspection',status:'business-provided',reviewState:'draft'}, products:[{businessId:BUSINESS,productId:'test-inspection-jacket',name:'Sample jacket — test product',description:'Controlled sample for product editor inspection. Not offered for sale.',price:'£89',priceMode:'fixed',availability:'available',continuationRoute:'',customerVisible:false,presentation:{version:1,categoryId:'fashion.apparel',pricing:{mode:'fixed',currency:'GBP',amount:89},options:[{key:'size',values:[{value:'M',label:'Medium'},{value:'L',label:'Large'}]}],variants:[{variantId:'test-medium',selection:{size:'M'},availability:'available'},{variantId:'test-large',selection:{size:'L'},availability:'available'}]},mediaGallery:{assetIds:['test-image-one','test-image-two','test-video'],mainAssetId:'test-image-one'}}]};
   const assets = [['test-image-one','image','vendor-inspection/sample-jacket-front.svg'],['test-image-two','image','vendor-inspection/sample-jacket-back.svg'],['test-video','video','vendor-inspection/sample-jacket.webm']].map(([assetId,kind,file])=>({assetId,kind,businessId:BUSINESS,relatedEntityId:'test-inspection-jacket',purpose:'product',state:'ready',originalFilename:assetId==='test-image-one'?'Test jacket — front view':assetId==='test-image-two'?'Test jacket — back view':'Test jacket — demonstration video',deliveryUrl:origin+'/images/'+file}));
   return {profile,assets,entries:{},revision:0,history:[]};
 }
@@ -33,6 +33,16 @@ function operate(state, pathname, method, body) {
   const inventory=()=>({businessId:BUSINESS,revision:state.revision,catalogueRevision:snapshot(),rows:stock.rowsFor(state.profile,state.entries),history:state.history,sellingEnabled:false});
   if(pathname==='/api/businesses' && method==='GET')return {businesses:[state.profile]};
   if(pathname==='/api/businesses/'+BUSINESS && method==='GET')return record(state);
+  if(pathname==='/api/businesses/'+BUSINESS && method==='PUT'){
+    if(!body?.businessProfile)fail('This operation is unavailable in Development inspection.',403);
+    if(body.ownerAccuracyConfirmed!==true)fail('Confirm the sample business details before saving.');
+    const supplied=body?.businessProfile;
+    if(!supplied||supplied.businessId!==BUSINESS||supplied.preparationModel!=='selling'||supplied.applicationAccess||supplied.applicationDecisions)fail('Check the sample business details.');
+    const validated=validateProfile({body:{businessProfile:{...supplied,products:state.profile.products}},query:{businessId:BUSINESS}});
+    if(!validated)fail('Check the sample business and fulfilment details.');
+    state.profile={...validated,products:state.profile.products,informationStatus:{source:'controlled-development-inspection',status:'business-provided',ownerConfirmedAt:new Date().toISOString(),reviewState:'draft',submittedAt:null}};
+    return {};
+  }
   const resource=pathname.replace('/api/businesses/'+BUSINESS+'/', '');
   if(resource==='orders' && method==='GET')return {businessId:BUSINESS,orders:[],sellingEnabled:false};
   if(resource==='media' && method==='GET')return {assets:state.assets};

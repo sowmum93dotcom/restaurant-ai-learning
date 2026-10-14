@@ -1,4 +1,15 @@
 (function(root){'use strict';
+ root.DEMEOSVendorTestEntryCopy={
+ en:['Open test dashboard','Use the vendor tools with sample data. Real business approval, sales and payments are separate.','Vendor dashboard testing'],
+ es:['Abrir panel de pruebas','Usa las herramientas con datos de muestra. La aprobación, las ventas y los pagos reales son independientes.','Pruebas del panel de vendedores'],
+ fr:['Ouvrir le tableau de test','Utilisez les outils avec des données de démonstration. Approbation, ventes et paiements réels sont distincts.','Test du tableau vendeur'],
+ pt:['Abrir painel de teste','Use as ferramentas com dados de exemplo. Aprovação, vendas e pagamentos reais são separados.','Teste do painel de vendedores'],
+ de:['Test-Dashboard öffnen','Nutzen Sie die Werkzeuge mit Beispieldaten. Echte Geschäftsgenehmigung, Verkäufe und Zahlungen sind getrennt.','Verkäufer-Dashboard testen'],
+ ar:['فتح لوحة الاختبار','استخدم أدوات البائع ببيانات تجريبية. موافقة النشاط والمبيعات والمدفوعات الفعلية منفصلة.','اختبار لوحة البائع'],
+ zh:['打开测试面板','使用示例数据测试卖家工具。真实商家审批、销售和支付是独立流程。','卖家面板测试'],
+ hi:['परीक्षण डैशबोर्ड खोलें','नमूना डेटा के साथ विक्रेता उपकरण उपयोग करें। वास्तविक व्यवसाय स्वीकृति, बिक्री और भुगतान अलग हैं।','विक्रेता डैशबोर्ड परीक्षण'],
+ ja:['テスト画面を開く','サンプルデータで販売者ツールを利用できます。実際の事業承認・販売・決済は別の手順です。','販売者画面のテスト']
+ };
  root.DEMEOSSellingAccessCopy={
  en:'Open My Business to check your Selling application and complete any required steps. Product, image, video and stock tools become available after Selling access is approved.',
  es:'Abre Mi negocio para revisar tu solicitud de venta y completar los pasos pendientes. Las herramientas de productos, imágenes, vídeos y existencias estarán disponibles tras la aprobación.',
