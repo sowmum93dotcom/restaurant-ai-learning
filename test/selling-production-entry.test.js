@@ -1,13 +1,23 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
-test('Production Selling routes use approved dedicated entries without inspection bootstrap',()=>{
+test('Production Selling routes use approved dedicated entries without inspection bootstrap',async()=>{
  const routes=require('../vercel.json').rewrites;
  for(const [route,file] of [['/selling-vendor','selling-vendor.html'],['/selling-vendor/manage','selling-vendor-manage.html'],['/selling-vendor/onboarding','selling-vendor-manage.html']]){
-  assert.equal(routes.find(r=>r.source===route).destination,'/'+file);
+  assert.equal(routes.find(r=>r.source===route).destination,route==='/selling-vendor/onboarding'?'/'+file:'/api/vendor-development-workspace?page='+(route==='/selling-vendor'?'dashboard':'manage'));
   const html=fs.readFileSync(require.resolve('../'+file),'utf8');
   assert.match(html,/Selling Vendor Application/);assert.match(html,/css\/selling-vendor.css/);
   assert.doesNotMatch(html,/src="\/js\/vendor-inspection.js"|DEMEOS_VENDOR_INSPECTION|href="(?:\/)?business-workspace.html"|href="marketing.html/);
   for(const section of ['overview','business-profile','products','media','product-options','inventory','orders'])assert.match(html,new RegExp('data-owner-section="'+section+'"'));
+ }
+ const handler=require('../api/vendor-development-workspace');
+ for(const page of ['dashboard','manage']){
+  const headers={};let statusCode,body;
+  const res={setHeader(k,v){headers[k]=v;},status(n){statusCode=n;return this;},send(v){body=v;return this;}};
+  await handler({method:'GET',query:{page}},res);
+  assert.equal(statusCode,200);
+  assert.match(headers['Content-Type'],/text\/html/);
+  assert.match(body,/Selling Vendor Application/);
+  assert.doesNotMatch(body,/DEMEOS_VENDOR_INSPECTION|vendor-development-workspace\.js/);
  }
  assert.equal(routes.find(r=>r.source==='/marketing-business').destination,'/business-workspace.html');
 });
