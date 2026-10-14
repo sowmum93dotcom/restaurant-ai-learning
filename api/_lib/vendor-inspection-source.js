@@ -18,7 +18,12 @@ async function inspectFile(filename,asset){
   const executable=require('@ffprobe-installer/ffprobe').path;
   const {stdout}=await execFile(executable,['-v','error','-protocol_whitelist','file,pipe','-format_whitelist','mov','-show_entries','format=format_name,duration:stream=codec_type,width,height','-of','json',filename],{timeout:8000,maxBuffer:65536,windowsHide:true});
   metadata=JSON.parse(stdout);
- }catch{invalid('Choose a valid MP4 or MOV video.');}
+ }catch(error){
+  // Diagnose the probe boundary without logging filenames, private URLs or credentials.
+  const code=['MODULE_NOT_FOUND','ENOENT','EACCES','ETIMEDOUT'].includes(error?.code)?error.code:'PROBE_FAILED';
+  console.warn('DEMEOS private inspection video probe failed: '+code);
+  invalid('Choose a valid MP4 or MOV video.');
+ }
  const video=metadata.streams?.find(stream=>stream.codec_type==='video'),durationSeconds=Number(metadata.format?.duration);
  if(!video||!Number.isFinite(durationSeconds)||durationSeconds<=0||durationSeconds>60||!video.width||!video.height||video.width*video.height>40000000)invalid('Choose a video no longer than 60 seconds and up to 40 million pixels.');
  return {width:video.width,height:video.height,durationSeconds};
