@@ -25,3 +25,9 @@ The native upload browser gate uses the real API handlers, queue, persistence an
 A separate empty private Production store, demeos-vendor-production-media (store_qh2GSnoj71vUBOkc), has been provisioned. It is not connected to any project yet. The existing private Preview store and its connection are unchanged. The branch-specific Preview native processing setting has been added.
 
 Release remains blocked until the Production-only private store connection is confirmed, the Production signing/configuration is complete, and the normal authenticated approved-vendor path is verified with live private storage, image/video playback, gallery save and refresh. Business submission and an independent authorised reviewer are required for the owner's real draft; code deployment and owner selection never grant application access. Live selling, payments and external AI remain disabled. No additional PR is created.
+
+## Deployed candidate evidence
+
+Candidate b6d2d83dc1dbab3ce761db728b62f1940dacf6b3 deployed successfully to Preview dpl_AowovQVkc8jENFkvkANfstdMEF2s. A codec-capable cloud Chrome browser opened the synthetic fixture containing the exact MP4 produced by the native processor. It loaded with readyState 4 and duration 1 second, played, and finished at currentTime 1 with ended true and no media error. This closes the converted-output codec check only; it does not close the live approved-business/private-storage acceptance gate or replace physical Safari verification of this new path.
+
+The private Production connection is prepared in Vercel for restaurant-ai-learning, Production only, with sensitive BLOB_READ_WRITE_TOKEN, BLOB_STORE_ID and BLOB_WEBHOOK_PUBLIC_KEY. The final Connect Project action has not been pressed. Browser security policy requires action-time confirmation because it creates persistent server read/write access to the private store. Preview and Development are unselected.
