@@ -49,7 +49,7 @@ const server=http.createServer(async(req,res)=>{try{
  await repository.saveBusinessMediaAsset(profile.businessId,{...asset,assetId:'engineering-image-two'});
  await repository.saveBusinessMediaAsset(profile.businessId,{...asset,assetId:'private-marketing-image',relatedEntityId:undefined,purpose:'marketing'});
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base='http://127.0.0.1:'+server.address().port;
- const browser=await chromium.launch({headless:true,...(process.env.DEMEOS_BROWSER_CHANNEL?{channel:process.env.DEMEOS_BROWSER_CHANNEL}:{})});
+ const browser=await chromium.launch({headless:true,...(process.env.DEMEOS_BROWSER_CHANNEL?{channel:process.env.DEMEOS_BROWSER_CHANNEL}:{}),...(process.env.DEMEOS_BROWSER_EXECUTABLE?{executablePath:process.env.DEMEOS_BROWSER_EXECUTABLE}:{})});
  try{
   for(const viewport of [{width:390,height:844},{width:820,height:1180},{width:1440,height:1000}]){
    const context=await browser.newContext({viewport});await context.addCookies([{name:'engineering-owner',value:'owner-a',url:base}]);

@@ -1,6 +1,6 @@
 const {processNextMediaJob,reconcileMediaProcessingQueue}=require("./media-processing-queue.js");
 const {createMediaProcessor}=require("./media-processor.js");
-function createMediaWorker({repository,drivers,createProcessingRead,createProcessingWrite,verifyProcessedOutput,maxAttempts=5,reconcileLimit=50}={}){
+function createMediaWorker({repository,drivers,createProcessingRead,createProcessingWrite,verifyProcessedOutput,maxAttempts=5,reconcileLimit=50,businessId}={}){
  const baseProcessor=createMediaProcessor(drivers||{});
  const processor=async(asset,context)=>{
   if(typeof createProcessingRead!=="function")return baseProcessor(asset,context);
@@ -31,9 +31,9 @@ function createMediaWorker({repository,drivers,createProcessingRead,createProces
  return async function runMediaWorker(){
   if(!repository)return{status:"not-configured"};
   const stale=typeof repository.recoverStaleMediaProcessingJobs==="function"
-   ?await repository.recoverStaleMediaProcessingJobs(maxAttempts,15,reconcileLimit):[];
-  const recovered=await reconcileMediaProcessingQueue(repository,{limit:reconcileLimit});
-  const processed=await processNextMediaJob(repository,processor,{maxAttempts});
+   ?await repository.recoverStaleMediaProcessingJobs(maxAttempts,15,reconcileLimit,businessId):[];
+  const recovered=businessId?[]:await reconcileMediaProcessingQueue(repository,{limit:reconcileLimit});
+  const processed=await processNextMediaJob(repository,processor,{maxAttempts,businessId});
   return{status:processed?processed.status:"idle",recovered:Array.isArray(recovered)?recovered.length:0,staleRecovered:Array.isArray(stale)?stale.length:0,processed:processed||null};
  };
 }

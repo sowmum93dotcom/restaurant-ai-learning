@@ -123,6 +123,12 @@
       else if(['rejected','revoked'].includes(state.status))status.textContent=copy(state.status+'Detail',status.textContent);
       else if(state.status === 'denied') status.textContent = copy('applicationPendingDetail', status.textContent);
       container.appendChild(status);
+      if(application==='selling'&&state.status!=='ready'){
+        const next=doc.createElement('p');next.className='selling-access-next-step';
+        const accessCopy=root.DEMEOSSellingAccessCopy;
+        next.textContent=accessCopy?.[language()]||'Open My Business to complete and submit your Selling application. Product, image, video and stock tools become available after Selling access is approved.';
+        container.appendChild(next);
+      }
       if ((state.allowed.length > 1 && application !== 'selling') || (!application && state.allowed.length)) {
         const entries = doc.createElement('div'); entries.className = 'owner-application-entries';
         entries.setAttribute('aria-label', 'Business applications');
@@ -156,6 +162,7 @@
         const a = doc.createElement('a'); a.dataset.ownerSection = id;
         a.textContent = copy(id === 'products' && application === 'selling' ? 'applicationCatalogue' : navigationKeys[id], label);
         a.href = href; a.lang = language(); a.dir = language() === 'ar' ? 'rtl' : 'ltr';
+        if(application==='selling'&&state.status!=='ready'&&!['overview','business-profile'].includes(id))a.setAttribute('aria-describedby','owner-operating-models');
         a.addEventListener('focus', () => a.scrollIntoView({block:'nearest', inline:'nearest'}));
         nav.appendChild(a);
       }

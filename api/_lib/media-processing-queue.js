@@ -11,9 +11,9 @@ async function reconcileMediaProcessingQueue(repository,{limit=50}={}){
  if(!repository||typeof repository.reconcileUnqueuedProcessingMedia!=="function")return [];
  return repository.reconcileUnqueuedProcessingMedia(limit);
 }
-async function processNextMediaJob(repository,processor,{maxAttempts=5}={}){
+async function processNextMediaJob(repository,processor,{maxAttempts=5,businessId}={}){
  if(!repository||typeof processor!=="function")return null;
- const job=await repository.claimNextMediaProcessingJob(maxAttempts); if(!job)return null;
+ const job=await repository.claimNextMediaProcessingJob(maxAttempts,businessId); if(!job)return null;
  try{
   const asset=await repository.getBusinessMediaAsset(job.business_id,job.asset_id);
   if(asset&&asset.state==="ready"){

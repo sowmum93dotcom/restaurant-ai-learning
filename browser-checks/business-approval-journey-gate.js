@@ -37,7 +37,7 @@ async function contextFor(browser,base,id,width){const context=await browser.new
  await context.route('https://clerk.test/npm/@clerk/clerk-js@6/dist/clerk.browser.js',r=>r.fulfill({contentType:'text/javascript',body:'window.Clerk={user:{id:'+JSON.stringify(id)+'},session:null,async load(){},addListener(fn){this.listener=fn},openSignIn(){},async signOut(){this.user=null;this.listener({user:null})}};'}));return context;}
 (async()=>{let browser;try{
  await database.ensureSchema();await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base='http://127.0.0.1:'+server.address().port;
- browser=await chromium.launch({headless:true,...(process.env.DEMEOS_BROWSER_CHANNEL?{channel:process.env.DEMEOS_BROWSER_CHANNEL}:{})});
+ browser=await chromium.launch({headless:true,...(process.env.DEMEOS_BROWSER_CHANNEL?{channel:process.env.DEMEOS_BROWSER_CHANNEL}:{}),...(process.env.DEMEOS_BROWSER_EXECUTABLE?{executablePath:process.env.DEMEOS_BROWSER_EXECUTABLE}:{})});
  for(const width of [390,820,1440])for(const model of ['marketing','selling','both']){
   const context=await contextFor(browser,base,'owner-'+model+'-'+width,width),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(String(e)));page.on('dialog',d=>d.accept());
   await page.goto(base+'/business-workspace.html');await page.locator('body[data-owner-access=setup]').waitFor();await page.getByRole('link',{name:'Start business setup',exact:true}).click();
@@ -51,8 +51,21 @@ async function contextFor(browser,base,id,width){const context=await browser.new
   const created=page.waitForResponse(r=>r.request().method()==='PUT'&&/api\/businesses\//.test(r.url()));await page.locator('#save-business-profile-btn').click();assert.equal((await created).status(),204);
   await page.locator('#submit-business-btn:enabled').waitFor();const id=await page.evaluate(()=>localStorage.getItem('demeosActiveBusinessId'));
   let saved=(await repository.getKnownBusiness(id)).businessProfile;assert.equal(saved.applicationAccess,undefined);assert.equal((await context.request.get(base+'/api/businesses/'+id+'?application=selling')).status(),403);
+  if(model==='selling'){
+   const setupUrl=page.url();
+   for(const view of ['products','media','product-options','inventory','orders']){
+    await page.goto(base+'/selling-vendor/manage#'+view);await page.locator('body[data-owner-access=denied]').waitFor();
+    assert.equal(await page.locator('#owner-operating-models>strong').isVisible(),true);
+    assert.match(await page.locator('.selling-access-next-step').innerText(),/Product, image, video and stock tools/);
+    assert.equal(await page.locator('#owner-operating-models>a').getAttribute('href'),'/selling-vendor/onboarding#business-profile');
+    assert.equal(await page.locator('#business-media-upload-btn').isVisible(),false);
+   }
+   await page.screenshot({fullPage:true,path:'/tmp/demeos-selling-pending-'+width+'.png'});
+   for(const code of ['en','es','fr','ar','pt','zh','hi','de','ja']){await page.locator('#owner-preparation-language').selectOption(code);assert.equal(await page.locator('.selling-access-next-step').isVisible(),true);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));}
+   await page.locator('#owner-preparation-language').selectOption('en');await page.goto(setupUrl);await page.locator('#submit-business-btn:enabled').waitFor();if(!await page.locator('#business-accuracy-confirmation').isVisible())await page.locator('#onboarding-review summary').click();
+  }
   await page.locator('#business-accuracy-confirmation').check();const submitted=page.waitForResponse(r=>r.request().postDataJSON()?.action==='submit-business');await page.locator('#submit-business-btn').click();assert.equal((await submitted).status(),200);await page.locator('#business-onboarding-status').filter({hasText:'Submitted privately'}).waitFor();
-  for(const code of ['en','es','fr','ar','pt','zh','hi','de','ja']){await page.locator('#owner-preparation-language').selectOption(code);const label=await page.locator('.owner-preparation-guide label').boundingBox(),select=await page.locator('#owner-preparation-language').boundingBox();assert.ok(label.y+label.height<=select.y,'Language label must not overlap selector');assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.equal(await page.locator('#onboarding-marketing').isVisible(),model!=='selling');}
+  for(const code of ['en','es','fr','ar','pt','zh','hi','de','ja']){await page.locator('#owner-preparation-language').selectOption(code);const label=await page.locator('.owner-preparation-guide label').boundingBox(),select=await page.locator('#owner-preparation-language').boundingBox();assert.ok(label.y+label.height<=select.y||select.y+select.height<=label.y||label.x+label.width<=select.x||select.x+select.width<=label.x,'Language label must not overlap selector');assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.equal(await page.locator('#onboarding-marketing').isVisible(),model!=='selling');}
   await page.locator('#owner-preparation-language').selectOption('en');await page.screenshot({fullPage:true,path:'/tmp/demeos-approval-onboarding-'+model+'-'+width+'.png'});
   assert.equal((await context.request.get(base+'/api/admin/business-applications')).status(),403);
   const adminContext=await contextFor(browser,base,'admin-test',width),adminPage=await adminContext.newPage();await adminPage.goto(base+'/admin.html');await adminPage.locator('.application-card').filter({hasText:name}).getByRole('button').click();await adminPage.locator('#admin-detail:not([hidden])').waitFor();

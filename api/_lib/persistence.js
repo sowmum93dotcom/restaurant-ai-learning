@@ -551,7 +551,7 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
         completed:Number(row.completed)||0,staleRunning:Number(row.stale_running)||0,delayedQueued:Number(row.delayed_queued)||0};
     },
 
-    async recoverStaleMediaProcessingJobs(maxAttempts = 5, leaseMinutes = 15, limit = 50) {
+    async recoverStaleMediaProcessingJobs(maxAttempts = 5, leaseMinutes = 15, limit = 50, businessId) {
       await database.ensureSchema();
       const safeMaxAttempts = Math.max(1, Math.min(10, Number(maxAttempts) || 5));
       const safeLeaseMinutes = Math.max(5, Math.min(60, Number(leaseMinutes) || 15));
@@ -559,7 +559,7 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
       const result = await database.query(
         `WITH stale AS (
            SELECT job_id FROM demeos_media_processing_jobs
-           WHERE status = 'running' AND claimed_at < NOW() - ($2::text || ' minutes')::interval
+           WHERE status = 'running' AND claimed_at < NOW() - ($2::text || ' minutes')::interval AND ($4::text IS NULL OR business_id = $4)
            ORDER BY claimed_at ASC, job_id ASC
            FOR UPDATE SKIP LOCKED LIMIT $3
          ), recovered AS (
@@ -581,7 +581,7 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
            RETURNING a.asset_id
          )
          SELECT r.* FROM recovered r LEFT JOIN failed_assets f ON f.asset_id = r.asset_id`,
-        [safeMaxAttempts, safeLeaseMinutes, safeLimit]);
+        [safeMaxAttempts, safeLeaseMinutes, safeLimit, isNonEmptyString(businessId) ? businessId : null]);
       return result.rows;
     },
 
@@ -606,13 +606,16 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
       return result.rows;
     },
 
-    async claimNextMediaProcessingJob(maxAttempts = 5) {
+    async claimNextMediaProcessingJob(maxAttempts = 5, businessId) {
       await database.ensureSchema();
       const safeMaxAttempts = Math.max(1, Math.min(10, Number(maxAttempts) || 5));
       const result = await database.query(
-        `WITH next_job AS (
+        `WITH locked_business AS (
+           SELECT business_id FROM demeos_businesses WHERE business_id = $2 FOR UPDATE SKIP LOCKED
+         ), next_job AS (
            SELECT job_id FROM demeos_media_processing_jobs
-           WHERE status = 'queued' AND available_at <= NOW() AND attempts < $1
+           WHERE status = 'queued' AND available_at <= NOW() AND attempts < $1 AND ($2::text IS NULL OR business_id IN (SELECT business_id FROM locked_business))
+             AND NOT EXISTS (SELECT 1 FROM demeos_media_processing_jobs running WHERE running.business_id = demeos_media_processing_jobs.business_id AND running.status = 'running')
            ORDER BY available_at ASC, job_id ASC
            FOR UPDATE SKIP LOCKED LIMIT 1
          )
@@ -620,7 +623,7 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
          SET status = 'running', attempts = attempts + 1, claimed_at = NOW(), updated_at = NOW()
          FROM next_job WHERE j.job_id = next_job.job_id
          RETURNING j.job_id, j.asset_id, j.business_id, j.status, j.attempts`,
-        [safeMaxAttempts]);
+        [safeMaxAttempts, isNonEmptyString(businessId) ? businessId : null]);
       return result.rows.length ? result.rows[0] : null;
     },
 

@@ -34,7 +34,7 @@ test('verified Selling owner old bookmarks route to dedicated onboarding without
 test('all seven Selling sections and denied authority survive a language change',()=>{
  const nav={children:[],replaceChildren(){this.children=[];},appendChild(n){this.children.push(n);},style:{setProperty(){}}};
  let change;const select={value:'en',dataset:{},addEventListener(event,callback){if(event==='change')change=callback;}};
- const doc={body:{dataset:{sellingEntry:'true'}},querySelector(selector){return selector==='.owner-workspace-navigation'?nav:null;},querySelectorAll(){return [];},getElementById(id){return id==='owner-preparation-language'?select:null;},createElement(){return {dataset:{},addEventListener(){}};},dispatchEvent(){},addEventListener(){}};
+ const doc={body:{dataset:{sellingEntry:'true'}},querySelector(selector){return selector==='.owner-workspace-navigation'?nav:null;},querySelectorAll(){return [];},getElementById(id){return id==='owner-preparation-language'?select:null;},createElement(){return {dataset:{},setAttribute(key,value){this[key]=value;},addEventListener(){}};},dispatchEvent(){},addEventListener(){}};
  let language='en';const root={document:doc,location:{pathname:'/selling-vendor/manage',hash:'#products'},CustomEvent:class{},DEMEOSVendorCopy:require('../js/vendor-inventory-copy').copy,localStorage:{getItem(){return language;},setItem(_key,value){language=value;}},sessionStorage:{getItem(){}},addEventListener(){},setInterval(){}};
  vm.runInNewContext(fs.readFileSync(require.resolve('../js/owner-workspace-model'),'utf8'),{window:root});
  const api=root.DEMEOSOwnerWorkspace;api.apply(doc,{businessProfile:{businessId:'owned'},workspaceReadiness:null},'owned','denied');

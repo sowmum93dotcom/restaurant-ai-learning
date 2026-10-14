@@ -34,6 +34,7 @@ module.exports=async function handler(req,res){
    }
    const handoff=await enqueueVerifiedMediaForProcessing(repository,processing);
    if(!handoff)return res.status(503).json({error:"Media processing could not be queued."});
+   require('../../../_lib/business-media-runtime').scheduleBusinessMediaProcessing(repository,businessId);
    return res.status(202).json({asset:handoff.asset||processing,processingStatus:"queued"});
   }
   const nextState=req.body&&req.body.state;

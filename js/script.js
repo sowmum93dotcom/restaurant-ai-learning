@@ -1013,7 +1013,9 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       businessMediaList.appendChild(item);
     });
   }
+  let businessMediaPollTimer=null,businessMediaPolls=0;
   async function loadBusinessMedia() {
+    if(businessMediaPollTimer){clearTimeout(businessMediaPollTimer);businessMediaPollTimer=null;}
     if (!state.activeBusinessId || !businessMediaList) return;
     const requestedBusinessId = state.activeBusinessId;
     try {
@@ -1023,6 +1025,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
       businessMediaAssets = Array.isArray(payload.assets) ? payload.assets : [];
     } catch (_error) { if (state.activeBusinessId !== requestedBusinessId) return; businessMediaAssets = []; }
     renderBusinessMedia();
+    if(businessMediaAssets.some(asset=>asset.state==='processing')&&businessMediaPolls++<100){businessMediaPollTimer=setTimeout(loadBusinessMedia,3000);}else{businessMediaPolls=0;if(businessMediaAssets.some(asset=>asset.state==='ready'&&asset.processedStorageKey))businessMediaPollTimer=setTimeout(loadBusinessMedia,10*60*1000);}
   }
   async function uploadMarketingMedia() {
     const businessId = state.activeBusinessId;
@@ -1115,6 +1118,7 @@ if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded
     if(!failed.length)businessMediaFile.value="";
     else if(typeof DataTransfer!=="undefined"){const retryFiles=new DataTransfer();for(const file of failedFiles)retryFiles.items.add(file);businessMediaFile.files=retryFiles.files;}
     businessMediaStatus.textContent=failed.length?failed.join("; "):vendorText("processed","Media received. Processing safely.");
+    businessMediaPolls=0;
     await loadBusinessMedia();
   }
   if (businessMediaUploadBtn) businessMediaUploadBtn.addEventListener("click", uploadBusinessMedia);

@@ -38,7 +38,9 @@ module.exports = async function handler(req, res) {
         }));
         assets = Array.from(new Map([...assets, ...saved.flat()].map(asset => [asset.assetId, asset])).values());
       }
-      return res.status(200).json({ assets: grants.marketing && application !== 'selling' ? assets : assets.filter(asset => asset.purpose !== 'marketing') });
+      const visible=grants.marketing && application !== 'selling' ? assets : assets.filter(asset => asset.purpose !== 'marketing');
+      if(visible.some(asset=>asset.state==='processing'))require('../../../_lib/business-media-runtime').scheduleBusinessMediaProcessing(repository,businessId);
+      return res.status(200).json({ assets: await require('../../../_lib/business-media-runtime').hydratePrivateBusinessMedia(visible,businessId) });
     }
     const supplied = req.body && req.body.asset;
     const asset = normalizeMediaAsset({
@@ -57,6 +59,7 @@ module.exports = async function handler(req, res) {
       }
     }
 
+    if(process.env.DEMEOS_MEDIA_PROCESSING_PROVIDER==='native'&&(!getConfiguredMediaStorageAdapter()||typeof process.env.DEMEOS_MEDIA_UPLOAD_SECRET!=='string'||process.env.DEMEOS_MEDIA_UPLOAD_SECRET.length<32))return res.status(503).json({error:'Private uploads are temporarily unavailable. Your saved products are unchanged.'});
     const saved = await repository.saveBusinessMediaAsset(businessId, asset);
     if (!saved) return res.status(409).json({ error: "Media asset could not be registered for this business." });
     const uploadSession = createMediaUploadSession(saved);

@@ -24,11 +24,13 @@ function createHttpMediaProcessingDrivers({baseUrl,token,fetchImpl=globalThis.fe
  };
 }
 function getConfiguredMediaProcessingDrivers(env=process.env,fetchImpl=globalThis.fetch){
- const provider=clean(env.DEMEOS_MEDIA_PROCESSING_PROVIDER)||"http";if(provider!=="http")return null;
+ const provider=clean(env.DEMEOS_MEDIA_PROCESSING_PROVIDER)||"http";
+ if(provider==='native')return env.DEMEOS_MEDIA_STORAGE_PROVIDER==='vercel-blob'?require('./native-media-processing').createNativeMediaProcessingDrivers({storage:require('./media-storage-driver').getConfiguredMediaStorageAdapter(env),fetchImpl}):null;
+ if(provider!=="http")return null;
  return createHttpMediaProcessingDrivers({baseUrl:env.DEMEOS_MEDIA_PROCESSING_URL,token:env.DEMEOS_MEDIA_PROCESSING_TOKEN,fetchImpl});
 }
 function getMediaProcessingConfiguration(env=process.env){
  const provider=clean(env.DEMEOS_MEDIA_PROCESSING_PROVIDER)||"http";
- return{provider,configured:provider==="http"&&Boolean(clean(env.DEMEOS_MEDIA_PROCESSING_URL)&&clean(env.DEMEOS_MEDIA_PROCESSING_TOKEN))};
+ return{provider,configured:provider==='native'?env.DEMEOS_MEDIA_STORAGE_PROVIDER==='vercel-blob'&&require('./media-storage-driver').getMediaStorageConfiguration(env).configured:provider==="http"&&Boolean(clean(env.DEMEOS_MEDIA_PROCESSING_URL)&&clean(env.DEMEOS_MEDIA_PROCESSING_TOKEN))};
 }
 module.exports={createHttpMediaProcessingDrivers,getConfiguredMediaProcessingDrivers,getMediaProcessingConfiguration};

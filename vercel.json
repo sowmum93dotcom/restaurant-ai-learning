@@ -85,6 +85,21 @@
     "api/businesses.js": {
       "includeFiles": "{selling-vendor.html,selling-vendor-manage.html,node_modules/@ffprobe-installer/linux-x64/ffprobe,node_modules/@ffprobe-installer/linux-x64/package.json}",
       "maxDuration": 60
+    },
+    "api/businesses/[businessId]/media/index.js": {
+      "includeFiles": "{node_modules/@ffprobe-installer/linux-x64/ffprobe,node_modules/@ffprobe-installer/linux-x64/package.json,node_modules/ffmpeg-static/ffmpeg}",
+      "maxDuration": 300,
+      "memory": 2048
+    },
+    "api/businesses/[businessId]/media/[assetId].js": {
+      "includeFiles": "{node_modules/@ffprobe-installer/linux-x64/ffprobe,node_modules/@ffprobe-installer/linux-x64/package.json,node_modules/ffmpeg-static/ffmpeg}",
+      "maxDuration": 300,
+      "memory": 2048
+    },
+    "api/media-worker.js": {
+      "includeFiles": "{node_modules/@ffprobe-installer/linux-x64/ffprobe,node_modules/@ffprobe-installer/linux-x64/package.json,node_modules/ffmpeg-static/ffmpeg}",
+      "maxDuration": 300,
+      "memory": 2048
     }
   }
 }
