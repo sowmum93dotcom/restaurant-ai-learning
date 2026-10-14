@@ -8,6 +8,11 @@ test('inspection fails closed in Production, missing environment and other Previ
   let authCalls=0;const handler=inspection.createHandler({environment:()=>env,authenticate:async()=>{authCalls++;throw Error('must not authenticate');}}),res=response();await handler({method:'GET',query:{page:'dashboard'},headers:{}},res);assert.equal(res.code,404);assert.equal(authCalls,0);assert.ok(!JSON.stringify(res.body).includes('sample'));
  }
 });
+test('repair Preview branch can use isolated inspection without enabling Production',()=>{
+ assert.equal(inspection.enabled({VERCEL_ENV:'preview',VERCEL_GIT_COMMIT_REF:'fix/selling-vendor-permanent-workspace-access'}),true);
+ assert.equal(inspection.enabled({VERCEL_ENV:'production',VERCEL_GIT_COMMIT_REF:'fix/selling-vendor-permanent-workspace-access'}),false);
+ assert.equal(inspection.enabled({VERCEL_ENV:'preview',VERCEL_GIT_COMMIT_REF:'unrelated-branch'}),false);
+});
 test('Preview inspection requires a real verified identity and same-origin mutation',async()=>{
  const environment=()=>({VERCEL_ENV:'preview',VERCEL_GIT_COMMIT_REF:branch});
  let handler=inspection.createHandler({environment,authenticate:async()=>null}),res=response();await handler({method:'GET',query:{page:'dashboard'},headers:{}},res);assert.equal(res.code,200);assert.ok(!res.body.includes('Development sample shop'));assert.ok(!res.body.includes('DEMEOS_VENDOR_INSPECTION'));assert.match(res.body,/window.DEMEOSVendorInspectionEntry=true/);assert.ok(!/href="\/?business-workspace\.html"/.test(res.body));assert.match(res.body,/href="\/selling-vendor\/inspect"/);
