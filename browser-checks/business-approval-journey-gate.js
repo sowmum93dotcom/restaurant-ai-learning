@@ -82,7 +82,7 @@ async function contextFor(browser,base,id,width){const context=await browser.new
    const edited=page.waitForResponse(r=>r.request().method()==='PUT'&&/api\/businesses\//.test(r.url()));await page.locator('#save-business-profile-btn').click();assert.equal((await edited).status(),204);
    const after=(await repository.getKnownBusiness(id)).businessProfile;assert.equal(after.preparationModel,before.preparationModel);
    for(const key of ['brandVoice','targetCustomer','goal'])assert.equal(after[key],before[key]);assert.deepEqual(after.customerContinuation,before.customerContinuation);assert.equal(await page.locator('[id^=business-route-],#business-website,#business-booking-link').count(),0);
-   await page.reload();await page.locator('body[data-owner-access=ready]').waitFor();assert.equal(await page.locator('#onboarding-marketing').count(),0);
+   await page.reload({waitUntil:'domcontentloaded',timeout:30000});await page.locator('body[data-owner-access=ready]').waitFor();assert.equal(await page.locator('#onboarding-marketing').count(),0);
    await adminPage.reload();await adminPage.locator('.application-card').filter({hasText:name}).getByRole('button').click();await adminPage.locator('#admin-detail:not([hidden])').waitFor();
   }
   if(model==='marketing')assert.equal((await context.request.get(base+'/api/businesses/'+id+'/inventory')).status(),403);
