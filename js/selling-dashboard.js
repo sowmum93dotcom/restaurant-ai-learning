@@ -310,7 +310,7 @@
         for(const control of $('catalogue-list').querySelectorAll('button'))control.disabled=false;}
     }
     function renderSubmission(article,product,business){
-      const state=product.submission?.state||'draft',status=doc.createElement('p');status.dataset.productState=product.productId;status.textContent=submissionCopy(state);article.append(status);
+      const state=product.submission?.state||'notSubmitted',status=doc.createElement('p');status.dataset.productState=product.productId;status.textContent=submissionCopy(state);article.append(status);
       const details=doc.createElement('details');details.dataset.submission=product.productId;details.open=openSubmissionId===product.productId;
       const summary=doc.createElement('summary');summary.textContent=submissionCopy('review');details.append(summary);
       details.addEventListener('toggle',()=>{if(details.open)openSubmissionId=product.productId;});

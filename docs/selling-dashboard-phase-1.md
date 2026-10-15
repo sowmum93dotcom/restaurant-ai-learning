@@ -122,6 +122,9 @@ attempt, individual rule outcomes and append-only lifecycle history. History
 includes actor/business/product identities, content version, timestamp, event
 and validation outcomes; no storage credentials or model prompts are stored.
 Only the existing authenticated server handler can initialize or change decisions.
+Existing products without a lifecycle display Not submitted until explicit review
+enrolls them; reading a legacy record does not fabricate a draft or change its
+existing publication flag.
 Ordinary business-profile saves retain server state and invalidate an edited
 working version; incoming approval fields never grant authority.
 

@@ -390,6 +390,7 @@ async function run(){
    assert.equal(await page.locator('#orders-list button').count(),0,'No unsupported vendor order transition');
    await page.reload();await page.locator('#orders-list summary').filter({hasText:genuineOrder.id}).waitFor();
    await page.screenshot({path:path.join(artifacts,'demeos-selling-orders-'+viewport.width+'.png'),fullPage:true});
+   await page.goto(base+'/selling-vendor/product-catalogue?businessId=vendor-b');await page.locator('[data-product-state=order-shirt]').filter({hasText:'Not submitted'}).waitFor();assert.equal((await repository.getKnownBusiness('vendor-b')).businessProfile.products[0].submission,undefined,'Reading a legacy product cannot invent a submission or change its visibility');
    await page.goto(base+'/selling-vendor/options-variants?businessId=vendor-b');await page.locator('.variant-item button').filter({hasText:'Edit',exact:true}).click();
    await page.locator('#variant-name').fill('Medium / Navy');await page.locator('#variant-price').fill('21.50');await page.locator('#variant-save').click();await page.locator('#variant-feedback').filter({hasText:'Variant saved.'}).waitFor();
    const structuredVariant=(await repository.getKnownBusiness('vendor-b')).businessProfile.products[0].presentation.variants[0];
