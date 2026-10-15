@@ -98,7 +98,7 @@
           const description=doc.createElement('p');description.textContent=product.description||'';
           const price=doc.createElement('p');price.textContent=product.price||'Contact for price';
           const edit=doc.createElement('button');edit.type='button';edit.textContent='Edit';
-          edit.addEventListener('click',()=>{ $('product-id').value=product.productId;$('product-name').value=product.name||'';$('product-description').value=product.description||'';$('product-price-mode').value=product.priceMode||'contact';$('product-price').value=product.price||'';$('product-form-title').textContent='Edit product';$('product-name').focus(); });
+          edit.addEventListener('click',()=>{ $('product-id').value=product.productId;$('product-name').value=product.name||'';$('product-description').value=product.description||'';$('product-price-mode').value=product.priceMode||'contact';$('product-price').value=product.price||'';syncProductPrice();$('product-form-title').textContent='Edit product';$('product-name').focus(); });
           const remove=doc.createElement('button');remove.type='button';remove.textContent='Delete';
           remove.addEventListener('click',()=>{if(win.confirm('Delete this product?'))mutateProduct('delete-product',{productId:product.productId});});
           item.append(title,description,price,edit,remove);catalogue.append(item);
@@ -156,9 +156,17 @@
       finally{booting=false;}
     }
     $('dashboard-language').addEventListener('change',()=>{language=$('dashboard-language').value==='tr'?'tr':'en';navigation();if(context?.business){const copy=sectionCopy()[currentSection()];$('content-heading').textContent=copy[1];$('content-message').textContent=copy[2];}});
-    function clearProductForm(){
-      $('product-form').reset();$('product-id').value='';$('product-form-title').textContent='Add product';
+    function syncProductPrice(){
+      const contact=$('product-price-mode').value==='contact';
+      $('product-price').disabled=contact;
+      $('product-price').required=!contact;
+      if(contact)$('product-price').value='';
     }
+    $('product-price-mode').addEventListener('change',syncProductPrice);
+    function clearProductForm(){
+      $('product-form').reset();$('product-id').value='';$('product-form-title').textContent='Add product';syncProductPrice();
+    }
+    syncProductPrice();
     let productMutationPending=false;
     async function mutateProduct(action,product){
       if(productMutationPending)return;
