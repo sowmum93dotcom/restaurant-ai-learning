@@ -142,6 +142,25 @@ async function run(){
    env={VERCEL_ENV:'preview',VERCEL_GIT_COMMIT_REF:'rebuild/selling-foundation-phase-1',DEMEOS_SELLING_DATA_ENVIRONMENT:'test',DEMEOS_SELLING_TEST_PREVIEW_BRANCH:'rebuild/selling-foundation-phase-1',POSTGRES_URL:'postgresql://owner:fixture@isolated.example/neondb',DEMEOS_SELLING_TEST_DATABASE_HOST:'isolated.example',DEMEOS_SELLING_TEST_AUTHORIZATIONS:'[{"businessId":"test-business-selling-a","ownerIdentityId":"owner-a"}]'};
    await page.goto(base+'/selling-vendor');await page.locator('#environment-label[data-environment=test]').waitFor();
    assert.equal(await page.locator('#business-select option').count(),1);assert.equal(await page.locator('#business-name').innerText(),'DEMEOS Test Vendor');
+   // Preview writes use the real dashboard and the explicitly isolated test business.
+   if(viewport.width===375){
+    await page.locator('nav [data-section=product-catalogue]').click();
+    await page.locator('#product-form:visible').waitFor();
+    await page.locator('#product-name').fill('Preview Coffee');
+    await page.locator('#product-description').fill('Test-only catalogue entry');
+    await page.locator('#product-price-mode').selectOption('fixed');
+    await page.locator('#product-price').fill('7');
+    await page.locator('#product-save').click();
+    await page.locator('#product-feedback').filter({hasText:'Product saved.'}).waitFor();
+    assert.equal((await repository.getKnownBusiness('test-business-selling-a')).businessProfile.products[0].name,'Preview Coffee','Preview product persisted in isolated test business');
+    assert.equal((await repository.getKnownBusiness('vendor-a')).businessProfile.products.length,0,'Preview did not write to live vendor');
+    await page.reload();
+    await page.locator('.catalogue-item h3').filter({hasText:'Preview Coffee'}).waitFor();
+    page.once('dialog',dialog=>dialog.accept());
+    await page.locator('.catalogue-item button').filter({hasText:'Delete'}).click();
+    await page.locator('#product-feedback').filter({hasText:'Product deleted.'}).waitFor();
+    assert.equal((await repository.getKnownBusiness('test-business-selling-a')).businessProfile.products.length,0,'Preview deletion persisted');
+   }
    for(const [section,copy] of Object.entries(sections)){
     const heading=section==='product-catalogue'?'Product Catalogue':copy[1];
     await page.locator('nav [data-section="'+section+'"]').click();await page.locator('#content-heading').filter({hasText:heading}).waitFor();
