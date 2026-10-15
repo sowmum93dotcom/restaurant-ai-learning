@@ -228,3 +228,22 @@ test('stock adjustments require ownership and retain a quantity audit trail',asy
  assert.equal(current.products[0].stockHistory[1].to,9);
  assert.equal(current.products[0].stockHistory[1].note,'Damaged units');
 });
+
+test('selected vendor business exposes saved availability and stock history, not selector summaries',async()=>{
+ const profile={businessId:'real-a',name:'Real Shop',type:'Shop',location:'London',preparationModel:'selling',
+   applicationAccess:{selling:true},products:[{productId:'coffee',name:'Coffee',description:'Beans',priceMode:'contact',price:'',
+     availability:'available',stockQuantity:9,stockHistory:[{from:12,to:9,note:'Damaged units',changedAt:'2026-10-15T00:00:00.000Z',changedBy:'owner-a'}]}]};
+ const repository={
+   getOwnedBusinessProfiles:async()=>[profile],
+   isBusinessOwnedByIdentity:async()=>true,
+   getKnownBusiness:async()=>({businessProfile:profile})
+ };
+ const res=response();
+ await createHandler({authenticate:async()=>({trustedIdentityId:'owner-a'}),repository:()=>repository,environment:()=>live})
+  ({method:'GET',query:{businessId:'real-a'}},res);
+ assert.equal(res.code,200);
+ assert.equal(res.body.business.products[0].availability,'available');
+ assert.equal(res.body.business.products[0].stockQuantity,9);
+ assert.equal(res.body.business.products[0].stockHistory[0].note,'Damaged units');
+ assert.equal(Object.hasOwn(res.body.businesses[0],'products'),false,'Business selector must not expose product data');
+});
