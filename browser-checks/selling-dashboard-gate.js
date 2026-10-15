@@ -41,7 +41,7 @@ async function run(){
    const context=await browser.newContext({viewport});context.setDefaultTimeout(10000);
    await context.addCookies([{name:'gate-owner',value:'owner-a',url:base}]);
    await context.route('https://clerk.test/npm/@clerk/ui@1/dist/ui.browser.js',r=>r.fulfill({contentType:'text/javascript',body:'window.__internal_ClerkUICtor={};'}));
-   await context.route('https://clerk.test/npm/@clerk/clerk-js@6/dist/clerk.browser.js',r=>r.fulfill({contentType:'text/javascript',body:`window.Clerk={user:{id:'owner-a'},session:{id:'session-a',async getToken(){return 'verified-token';}},async load(){},addListener(fn){this.listener=fn;},openSignIn(){},async signOut(){this.user=null;this.session=null;this.listener();}};`}));
+   await context.route('https://clerk.test/npm/@clerk/clerk-js@6/dist/clerk.browser.js',r=>r.fulfill({contentType:'text/javascript',body:`window.Clerk={user:{id:document.cookie.match(/gate-owner=(owner-[a-z]+)/)?.[1]||'owner-a'},session:{id:'session-a',async getToken(){return 'verified-token';}},async load(){},addListener(fn){this.listener=fn;},openSignIn(){},async signOut(){this.user=null;this.session=null;this.listener();}};`}));
    const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
    await page.goto(base+'/selling-vendor');await page.locator('#private-workspace:not([hidden])').waitFor();
    assert.equal(await page.locator('#business-select option').count(),3); // placeholder + two approved live businesses
@@ -71,6 +71,13 @@ async function run(){
    await page.locator('#private-workspace:not([hidden])').waitFor();delay=0;
    failure=true;await page.locator('nav [data-section=my-business]').click();await page.locator('#dashboard-status[data-state=error]').waitFor();failure=false;
    await page.locator('#retry').click();await page.locator('#private-workspace:not([hidden])').waitFor();
+   // A 401 must retry with a fresh Clerk token using the same context API.
+   await page.evaluate(()=>{window.tokenAttempts=[];window.Clerk.session.getToken=async options=>{window.tokenAttempts.push(options.skipCache);return 'verified-token';};});
+   let refused=false;
+   const expire=async route=>{if(!refused){refused=true;await route.fulfill({status:401,contentType:'application/json',body:'{}'});}else await route.continue();};
+   await page.route('**/api/businesses?resource=selling-dashboard*',expire);
+   await page.locator('nav [data-section=overview]').click();await page.locator('#private-workspace:not([hidden])').waitFor();
+   assert.deepEqual(await page.evaluate(()=>window.tokenAttempts),[false,true]);await page.unroute('**/api/businesses?resource=selling-dashboard*',expire);
    await context.addCookies([{name:'gate-owner',value:'owner-empty',url:base}]);await page.reload();await page.locator('#dashboard-status[data-state=empty]').waitFor();
    await context.addCookies([{name:'gate-owner',value:'owner-a',url:base}]);
    env={VERCEL_ENV:'preview',DEMEOS_SELLING_DATA_ENVIRONMENT:'test',DEMEOS_SELLING_TEST_BUSINESS_IDS:'["test-business-selling-a"]'};

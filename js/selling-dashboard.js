@@ -8,7 +8,7 @@
   const sections=Object.freeze({
     overview:['Overview','Welcome to your Selling workspace','Your identity and Selling access have been verified. Choose a section to see what comes next.'],
     'my-business':['My Business','Your saved business','These details come from your existing business record. Registration and approval continue through the existing business workflow.'],
-    'product-catalogue':['Product Catalogue','Catalogue tools are coming in Phase 2','Product creation and editing are not available in this dashboard yet. Existing product records remain saved.'],
+    'product-catalogue':['Product Catalogue','Catalogue tools are being prepared','Product creation and editing are not available in this dashboard yet. Existing product records remain saved.'],
     'images-videos':['Images & Videos','Media tools are not available yet','Image and video uploads will be connected to your business and products in a later phase.'],
     'options-variants':['Options & Variants','Variant tools are not available yet','Product options and exact variants will be managed here when catalogue tools are verified.'],
     'stock-history':['Stock & History','Stock tools are not available yet','Stock adjustments and their audit history will appear here in a later phase. No stock changes can be made here yet.'],

@@ -6,6 +6,7 @@ const {createPersistenceRepository}=require('../api/_lib/persistence');
 const {createHandler,dataEnvironment}=require('../api/_lib/selling-dashboard');
 const {resolveTrustedIdentityFromRequest}=require('../api/_lib/demeos-authentication');
 const {sections,sectionForPath}=require('../js/selling-dashboard');
+const {inspectCustomerPublication}=require('../api/_lib/customer-publication-rules');
 const live={VERCEL_ENV:'production'},preview={VERCEL_ENV:'preview',DEMEOS_SELLING_DATA_ENVIRONMENT:'test',DEMEOS_SELLING_TEST_BUSINESS_IDS:'["test-business-selling-a"]'};
 function response(){return {headers:{},setHeader(k,v){this.headers[k]=v;},status(code){this.code=code;return this;},json(body){this.body=body;return this;}};}
 test('test records require Preview, isolated data configuration and explicit business authorization',()=>{
@@ -25,6 +26,10 @@ test('all seven sections resolve on refresh and direct paths, retired routes do 
  assert.ok(rewrites.find(r=>r.source==='/selling-vendor'&&r.destination==='/selling-dashboard.html'));
  const sectionRoute=rewrites.find(r=>r.source.startsWith('/selling-vendor/:section'));
  for(const section of Object.keys(sections))assert.ok(sectionRoute.source.includes(section));
+});
+test('authorized test-business namespace cannot publish genuine customer products or work',()=>{
+ const row={business_id:'test-business-selling-a',campaign_id:'campaign-a',profile:{businessId:'test-business-selling-a',name:'Approved test shop',products:[]},campaign:{id:'campaign-a',businessId:'test-business-selling-a',campaignType:'social',approvalStatus:'Approved',campaignText:'Test product offer'}};
+ const result=inspectCustomerPublication(row);assert.equal(result.eligible,false);assert.ok(result.reasons.includes('controlled_content_not_genuine'));
 });
 test('real SQL ownership, application grants, test isolation, revocation and response contract',async t=>{
  const db=new PGlite(),repository=createPersistenceRepository(createDatabase(db));
