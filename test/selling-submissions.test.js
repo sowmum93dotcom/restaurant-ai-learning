@@ -52,7 +52,7 @@ test('product submission lifecycle persists through real SQL for live and isolat
   await disk.fetchImpl(registered.body.uploadSession.uploadUrl,{method:'PUT',headers:{'Content-Type':'image/png'},body:bytes});
   assert.equal((await call('complete-media',{productId:'coffee',assetId:asset.assetId,storageKey:registered.body.uploadSession.storageKey,uploadToken:registered.body.uploadSession.uploadToken})).code,200);
   assert.equal((await repository.getBusinessMediaAsset(businessId,asset.assetId)).state,'ready');
-  const second={...asset,assetId:'media-second-'+businessId},secondRegistration=await call('register-media',second);
+  const second={...asset,assetId:'media-Z-'+businessId},secondRegistration=await call('register-media',second);
   await disk.fetchImpl(secondRegistration.body.uploadSession.uploadUrl,{method:'PUT',headers:{'Content-Type':'image/png'},body:bytes});
   assert.equal((await call('complete-media',{productId:'coffee',assetId:second.assetId,storageKey:secondRegistration.body.uploadSession.storageKey,uploadToken:secondRegistration.body.uploadSession.uploadToken})).code,200);
   assert.equal((await call('set-main-media',{productId:'coffee',assetId:second.assetId})).code,200);assert.equal((await item()).mediaGallery.mainAssetId,second.assetId);

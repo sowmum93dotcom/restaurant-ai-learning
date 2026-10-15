@@ -56,7 +56,7 @@ function mediaEvidence(product,businessId,assets){
  });
  const linked=ids.every(id=>related.some(a=>a.assetId===id));
  const mainReady=related.some(a=>a.assetId===main&&a.kind==='image'&&ids.includes(a.assetId));
- return {passed:complete&&linked&&(!required||ids.length>0&&mainReady),assets:related.map(a=>({assetId:a.assetId,kind:a.kind,state:a.state,linked:ids.includes(a.assetId)})),fingerprint:hash(related.map(a=>({assetId:a.assetId,state:a.state,etag:a.etag,processedStorageKey:a.processedStorageKey,derivatives:a.derivatives})).sort((a,b)=>a.assetId.localeCompare(b.assetId)))};
+ return {passed:complete&&linked&&(!required||ids.length>0&&mainReady),assets:related.map(a=>({assetId:a.assetId,kind:a.kind,state:a.state,linked:ids.includes(a.assetId)})),fingerprint:hash(related.map(a=>({assetId:a.assetId,state:a.state,etag:a.etag,processedStorageKey:a.processedStorageKey,derivatives:a.derivatives})).sort((a,b)=>a.assetId<b.assetId?-1:a.assetId>b.assetId?1:0))};
 }
 function deterministic({profile,product,assets,stock,environment,identity}){
  const scope=dataEnvironment(profile.businessId,environment,identity);
