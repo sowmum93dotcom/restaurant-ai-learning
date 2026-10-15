@@ -97,11 +97,12 @@
           const title=doc.createElement('h3');title.textContent=product.name||'Unnamed product';
           const description=doc.createElement('p');description.textContent=product.description||'';
           const price=doc.createElement('p');price.textContent=product.price||'Contact for price';
+          const availability=doc.createElement('p');availability.textContent=product.availability==='available'?'Available':product.availability==='unavailable'?'Unavailable':'Ask about availability';
           const edit=doc.createElement('button');edit.type='button';edit.textContent='Edit';
-          edit.addEventListener('click',()=>{ $('product-id').value=product.productId;$('product-name').value=product.name||'';$('product-description').value=product.description||'';$('product-price-mode').value=product.priceMode||'contact';$('product-price').value=product.price||'';syncProductPrice();$('product-form-title').textContent='Edit product';$('product-name').focus(); });
+          edit.addEventListener('click',()=>{ $('product-id').value=product.productId;$('product-name').value=product.name||'';$('product-description').value=product.description||'';$('product-price-mode').value=product.priceMode||'contact';$('product-price').value=product.price||'';syncProductPrice();$('product-availability').value=product.availability||'contact';$('product-form-title').textContent='Edit product';$('product-name').focus(); });
           const remove=doc.createElement('button');remove.type='button';remove.textContent='Delete';
           remove.addEventListener('click',()=>{if(win.confirm('Delete this product?'))mutateProduct('delete-product',{productId:product.productId});});
-          item.append(title,description,price,edit,remove);catalogue.append(item);
+          item.append(title,description,price,availability,edit,remove);catalogue.append(item);
         }
       }
       $('business-facts').hidden=section!=='my-business'||!business;
@@ -203,7 +204,7 @@
       const productId=$('product-id').value||('product-'+win.crypto.randomUUID());
       $('product-id').value=productId; // Retry the same record if the network response is lost.
       mutateProduct('save-product',{productId,name:$('product-name').value,description:$('product-description').value,
-        priceMode:$('product-price-mode').value,price:$('product-price').value});
+        priceMode:$('product-price-mode').value,price:$('product-price').value,availability:$('product-availability').value});
     });
     $('product-cancel').addEventListener('click',clearProductForm);
     $('retry').addEventListener('click',()=>clerk?load():start());
