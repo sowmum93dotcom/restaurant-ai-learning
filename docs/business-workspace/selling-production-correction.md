@@ -1,3 +1,5 @@
+> Historical verification record. The Selling dashboard and inspection interface described below were retired by PR #707. These paths are no longer supported. Marketing, registration, stored business data and administrative approvals are retained.
+
 # Selling Production entry correction
 
 Baseline: PR705 merge 4519349ad92e6d60c6bad0e872c246084905d623.

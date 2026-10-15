@@ -46,22 +46,11 @@ test('open-tab revalidation stays application-scoped and discards delayed denial
  const vm=require('node:vm'),fs=require('node:fs');let focus,finishDenial,parsed,url;
  const parsing=new Promise(resolve=>parsed=resolve);
  const doc={hidden:false,body:{dataset:{}},querySelector(){return null;},querySelectorAll(){return [];},getElementById(id){return id==='owner-authenticated-workspace'?{hidden:false}:null;},addEventListener(){},dispatchEvent(){}};
- const root={document:doc,location:{pathname:'/selling-vendor/manage',hash:'#inventory'},localStorage:{getItem(){return null;}},sessionStorage:{getItem(){return null;}},CustomEvent:class{},addEventListener(event,fn){if(event==='focus')focus=fn;},setInterval(){},async fetch(path){url=path;return {ok:false,status:403,json(){parsed();return new Promise(resolve=>finishDenial=resolve);}};}};
+ const root={document:doc,location:{pathname:'/marketing-business/manage',hash:'#media'},localStorage:{getItem(){return null;}},sessionStorage:{getItem(){return null;}},CustomEvent:class{},addEventListener(event,fn){if(event==='focus')focus=fn;},setInterval(){},async fetch(path){url=path;return {ok:false,status:403,json(){parsed();return new Promise(resolve=>finishDenial=resolve);}};}};
  vm.runInNewContext(fs.readFileSync(require.resolve('../js/owner-workspace-model'),'utf8'),{window:root});
- const first=record(false,true),other=record(false,true);other.businessProfile.businessId='other';other.workspaceReadiness.businessId='other';
+ const first=record(true,false),other=record(true,false);other.businessProfile.businessId='other';other.workspaceReadiness.businessId='other';
  root.DEMEOSOwnerWorkspace.apply(doc,first,'owned');const pending=focus();await parsing;
- assert.equal(url,'/api/businesses/owned?application=selling');
+ assert.equal(url,'/api/businesses/owned?application=marketing');
  root.DEMEOSOwnerWorkspace.apply(doc,other,'other');finishDenial({reason:'application-access-required',applicationStatus:'revoked'});await pending;
  assert.equal(root.DEMEOSOwnerWorkspace.getState(doc).businessId,'other');assert.equal(root.DEMEOSOwnerWorkspace.getState(doc).status,'ready');
 });
-
- test('inspection delegates focus revalidation and rejects late real permission state',async()=>{
- const vm=require('node:vm'),fs=require('node:fs'),backend=require('../api/_lib/vendor-inspection');let focus,finish,calls=0;
- const doc={hidden:false,body:{dataset:{}},querySelector(){return null;},querySelectorAll(){return [];},getElementById(){return null;},addEventListener(){},dispatchEvent(){}};
- const fixture=backend.fixture('https://preview.example'),id=fixture.profile.businessId;
- const root={document:doc,location:{pathname:'/selling-vendor/inspect'},localStorage:{getItem(){return null;}},sessionStorage:{getItem(){return null;}},CustomEvent:class{},addEventListener(event,fn){if(event==='focus')focus=fn;},setInterval(){},fetch(){throw Error('Must not call real authority revalidation');},DEMEOSVendorInspection:{ownsRecord:r=>r?.inspection===true,revalidate(){calls++;return new Promise(resolve=>finish=resolve);}}};
- vm.runInNewContext(fs.readFileSync(require.resolve('../js/owner-workspace-model'),'utf8'),{window:root});root.DEMEOSOwnerWorkspace.apply(doc,backend.record(fixture),id);
- const waiting=focus();assert.equal(calls,1);assert.equal(root.DEMEOSOwnerWorkspace.getState(doc).status,'ready');
- root.DEMEOSOwnerWorkspace.apply(doc,null,id,'forbidden');root.DEMEOSOwnerWorkspace.apply(doc,record(true,true),'real-business');root.DEMEOSOwnerWorkspace.apply(doc,null,null,'loading');
- assert.equal(root.DEMEOSOwnerWorkspace.getState(doc).businessId,id);assert.equal(root.DEMEOSOwnerWorkspace.getState(doc).model,'selling');finish();await waiting;
- });

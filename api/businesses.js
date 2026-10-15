@@ -7,7 +7,6 @@ const {
 } = require("./_lib/demeos-rules.js");
 
 module.exports = async function handler(req, res) {
-  if(req.query?.resource==="vendor-inspection")return require("./_lib/vendor-inspection")(req,res);
   if(req.query?.resource==="admin-applications")return require("./_lib/business-application-review")(req,res);
   res.setHeader("Cache-Control", "private, no-store");
   res.setHeader("Vercel-CDN-Cache-Control", "no-store");
