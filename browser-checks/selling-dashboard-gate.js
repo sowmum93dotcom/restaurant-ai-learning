@@ -7,6 +7,22 @@ const {createDatabase}=require('../api/_lib/database'),{createPersistenceReposit
 const {createHandler}=require('../api/_lib/selling-dashboard');
 const {sections}=require('../js/selling-dashboard');
 const root=path.resolve(__dirname,'..'),artifacts=process.env.DEMEOS_BROWSER_ARTIFACT_DIR||'/tmp';
+async function verifyBusinessLayout(page,viewport){
+ const boxes=await page.evaluate(()=>{
+  const bar=document.querySelector('.business-bar'),group=bar.querySelector(':scope > div'),title=bar.querySelector('h2'),badge=bar.querySelector('.badge'),label=bar.querySelector('label'),select=bar.querySelector('select');
+  const rect=node=>{const r=node.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,bottom:r.bottom};};
+  return {bar:rect(bar),group:rect(group),title:rect(title),badge:rect(badge),label:rect(label),select:rect(select),fontSize:parseFloat(getComputedStyle(title).fontSize),overflow:document.documentElement.scrollWidth>innerWidth};
+ });
+ assert.equal(boxes.overflow,false,'Business information must not overflow the page');
+ assert.ok(boxes.title.width>=Math.min(250,viewport.width-40),'Business name has enough width for whole words');
+ if(viewport.width<=760){
+  assert.ok(Math.abs(boxes.group.width-boxes.bar.width)<=1,'Business identity uses the full mobile row');
+  assert.ok(boxes.badge.y>=boxes.group.bottom,'Status follows the business identity on its own row');
+  assert.ok(boxes.label.y>=boxes.badge.bottom,'Business selector follows the status on its own row');
+  assert.ok(Math.abs(boxes.select.width-boxes.bar.width)<=1,'Business selector uses the full mobile row');
+  assert.ok(boxes.title.height<=boxes.fontSize*3.5,'Business name must not wrap almost letter by letter');
+ }else assert.ok(boxes.label.x>boxes.group.x,'Desktop retains the side-by-side business selector');
+}
 async function run(){
  const client=new PGlite(),repository=createPersistenceRepository(createDatabase(client));
  const profile=(businessId,selling=true)=>({businessId,name:businessId==='vendor-a'?'North & Field':'Business '+businessId,type:'Independent shop',location:'London',applicationAccess:{selling,marketing:true},products:[],preparationModel:'selling'});
@@ -37,7 +53,7 @@ async function run(){
  let browser;
  try{
   browser=await chromium.launch({headless:true,...(process.env.DEMEOS_BROWSER_CHANNEL?{channel:process.env.DEMEOS_BROWSER_CHANNEL}:{})});
-  for(const viewport of [{width:390,height:844},{width:1440,height:1000}]){
+  for(const viewport of [{width:375,height:812},{width:390,height:844},{width:430,height:932},{width:1440,height:1000}]){
    const context=await browser.newContext({viewport});context.setDefaultTimeout(10000);
    await context.addCookies([{name:'gate-owner',value:'owner-a',url:base}]);
    await context.route('https://clerk.test/npm/@clerk/ui@1/dist/ui.browser.js',r=>r.fulfill({contentType:'text/javascript',body:'window.__internal_ClerkUICtor={};'}));
@@ -61,6 +77,7 @@ async function run(){
    await page.goBack();await page.locator('#private-workspace:not([hidden])').waitFor();
    await page.goto(base+'/selling-vendor/my-business?businessId=vendor-a');await page.locator('#business-facts:not([hidden])').waitFor();
    assert.match(await page.locator('#business-facts').innerText(),/vendor-a/);
+   await verifyBusinessLayout(page,viewport);
    await page.screenshot({path:path.join(artifacts,'demeos-selling-business-'+viewport.width+'.png'),fullPage:true});
    await page.locator('#business-select').selectOption('vendor-a-second');await page.locator('#business-name').filter({hasText:'Business vendor-a-second'}).waitFor();
    assert.doesNotMatch(await page.locator('#business-facts').innerText(),/North & Field/);
@@ -91,6 +108,7 @@ async function run(){
     assert.ok(page.url().includes('/selling-vendor'));
    }
    await page.locator('nav [data-section=overview]').click();await page.locator('#content-heading').filter({hasText:sections.overview[1]}).waitFor();
+   await verifyBusinessLayout(page,viewport);
    await page.screenshot({path:path.join(artifacts,'demeos-selling-test-'+viewport.width+'.png'),fullPage:true});
    const grants=env.DEMEOS_SELLING_TEST_AUTHORIZATIONS;env.DEMEOS_SELLING_TEST_AUTHORIZATIONS='[]';await page.reload();await page.locator('#dashboard-status[data-state=empty]').waitFor();env.DEMEOS_SELLING_TEST_AUTHORIZATIONS=grants;
    env={VERCEL_ENV:'production'};
