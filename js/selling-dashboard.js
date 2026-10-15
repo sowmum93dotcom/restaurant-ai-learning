@@ -183,7 +183,7 @@
         const selectedAfterSave=new URLSearchParams(win.location.search).get('businessId');
         if(!context?.business||context.business.businessId!==businessId||
           (selectedAfterSave&&selectedAfterSave!==businessId)||
-          $('dashboard-status').dataset.state!=='ready')
+          !$('dashboard-status').hidden||$('private-workspace').hidden)
           throw Error('Product saved, but the dashboard could not refresh. Reload before editing again.');
         clearProductForm();$('product-feedback').textContent=action==='delete-product'?'Product deleted.':'Product saved.';
       }catch(error){$('product-feedback').textContent=error.message||'Product change failed.';}
