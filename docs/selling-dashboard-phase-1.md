@@ -5,6 +5,19 @@ The clean dashboard lives at `/selling-vendor`. It uses `selling-dashboard.html`
 same entry point. The retired dashboard, manage pages, inspection APIs and
 development workspaces remain deleted.
 
+## DEMEOS visual identity
+
+The Selling entry uses the existing `/images/demeos-logo.png` image in its
+header and favicon. `/css/demeos-business-premium.css` supplies the existing
+Business Owner/Marketing `--bo-*` design tokens: ink `#020b18`, navy `#06172d`,
+blue `#0b2b52`, gold `#c99a2e` and light gold `#f0cf72`. Selling consumes those
+tokens for its background, navigation, controls, dividers and states. It uses the
+existing Segoe UI/Arial typography and navy gradient, with flat content sections
+rather than the unrelated green/white cards. The shared styles and logo are
+unchanged; no owner/Marketing wrapper classes are added to the Selling DOM.
+The browser gate verifies the actual logo loaded and the shared ink/gold colors
+at all eight widths, alongside the existing layout and authorization checks.
+
 ## Identity and data contract
 
 The browser loads the existing public Clerk configuration and restores the existing

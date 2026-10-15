@@ -47,7 +47,7 @@ async function run(){
   let file=url.pathname;
   if(file==='/selling-vendor'||/^\/selling-vendor\/(overview|my-business|product-catalogue|images-videos|options-variants|stock-history|private-orders)\/?$/.test(file))file='/selling-dashboard.html';
   const target=path.resolve(root,'.'+file);if(!target.startsWith(root+path.sep)||!fs.existsSync(target)||!fs.statSync(target).isFile()){res.statusCode=404;return res.end();}
-  res.setHeader('Content-Type',({'.html':'text/html','.js':'application/javascript','.css':'text/css'})[path.extname(target)]||'application/octet-stream');fs.createReadStream(target).pipe(res);
+  res.setHeader('Content-Type',({'.html':'text/html','.js':'application/javascript','.css':'text/css','.png':'image/png'})[path.extname(target)]||'application/octet-stream');fs.createReadStream(target).pipe(res);
  }catch(error){console.error(error);res.statusCode=500;res.end('{}');}});
  await new Promise(r=>server.listen(0,'127.0.0.1',r));
  const base='http://127.0.0.1:'+server.address().port;
@@ -60,6 +60,16 @@ async function run(){
    await context.route('https://clerk.test/npm/@clerk/ui@1/dist/ui.browser.js',r=>r.fulfill({contentType:'text/javascript',body:'window.__internal_ClerkUICtor={};'}));
    await context.route('https://clerk.test/npm/@clerk/clerk-js@6/dist/clerk.browser.js',r=>r.fulfill({contentType:'text/javascript',body:`window.Clerk={user:{id:document.cookie.match(/gate-owner=(owner-[a-z]+)/)?.[1]||'owner-a'},session:{id:'session-a',async getToken(){return 'verified-token';}},async load(){},addListener(fn){this.listener=fn;},openSignIn(options){window.signInRequest=options;},async signOut(){this.user=null;this.session=null;this.listener();}};`}));
    const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+   async function verifyDemeosIdentity(){
+    const brand=await page.evaluate(()=>{
+     const logo=document.querySelector('header .brand img');
+     return {source:logo.getAttribute('src'),loaded:logo.complete&&logo.naturalWidth>0,ink:getComputedStyle(document.documentElement).backgroundColor,accent:getComputedStyle(document.querySelector('nav [aria-current=page]')).color,shared:!!document.querySelector('link[href="/css/demeos-business-premium.css"]')};
+    });
+    assert.equal(brand.source,'/images/demeos-logo.png');assert.equal(brand.loaded,true,'Existing DEMEOS logo loads');
+    assert.equal(brand.shared,true,'Uses the existing DEMEOS business design tokens');
+    assert.equal(brand.ink,'rgb(2, 11, 24)','DEMEOS ink background');
+    assert.equal(brand.accent,'rgb(240, 207, 114)','DEMEOS gold active navigation');
+   }
    await page.goto(base+'/selling-vendor');await page.locator('#private-workspace:not([hidden])').waitFor();
    assert.equal(await page.locator('#business-select option').count(),3); // placeholder + two approved live businesses
    assert.equal(await page.locator('#business-name').innerText(),'Choose a business');
@@ -78,6 +88,7 @@ async function run(){
    await page.goBack();await page.locator('#private-workspace:not([hidden])').waitFor();
    await page.goto(base+'/selling-vendor/my-business?businessId=vendor-a');await page.locator('#business-facts:not([hidden])').waitFor();
    assert.match(await page.locator('#business-facts').innerText(),/vendor-a/);
+   await verifyDemeosIdentity();
    await verifyBusinessLayout(page,viewport);
    await page.screenshot({path:path.join(artifacts,'demeos-selling-business-'+viewport.width+'.png'),fullPage:true});
    await page.locator('#business-select').selectOption('vendor-a-second');await page.locator('#business-name').filter({hasText:'Business vendor-a-second'}).waitFor();
@@ -109,6 +120,7 @@ async function run(){
     assert.ok(page.url().includes('/selling-vendor'));
    }
    await page.locator('nav [data-section=overview]').click();await page.locator('#content-heading').filter({hasText:sections.overview[1]}).waitFor();
+   await verifyDemeosIdentity();
    await verifyBusinessLayout(page,viewport);
    await page.screenshot({path:path.join(artifacts,'demeos-selling-test-'+viewport.width+'.png'),fullPage:true});
    const grants=env.DEMEOS_SELLING_TEST_AUTHORIZATIONS;env.DEMEOS_SELLING_TEST_AUTHORIZATIONS='[]';await page.reload();await page.locator('#dashboard-status[data-state=empty]').waitFor();env.DEMEOS_SELLING_TEST_AUTHORIZATIONS=grants;
