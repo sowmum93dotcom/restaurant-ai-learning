@@ -42,7 +42,13 @@ async function run(){
   const url=new URL(req.url,'http://localhost');req.query=Object.fromEntries(url.searchParams);
   res.status=code=>{res.statusCode=code;return res;};res.json=body=>{res.setHeader('Content-Type','application/json');res.end(JSON.stringify(body));return res;};
   if(url.pathname==='/api/public-config')return res.json({clerkPublishableKey:'pk_test_'+Buffer.from('clerk.test$').toString('base64')});
-  if(url.pathname==='/api/businesses')return handler(req,res);
+  if(url.pathname==='/api/businesses'){
+   if(req.method==='POST'){
+    let raw='';for await(const chunk of req){raw+=chunk;if(raw.length>65536)return res.status(413).json({error:'Payload too large'});}
+    try{req.body=JSON.parse(raw);}catch{return res.status(400).json({error:'Invalid JSON'});}
+   }
+   return handler(req,res);
+  }
   if(url.pathname.startsWith('/api/'))return res.status(404).json({error:'Unknown API'});
   let file=url.pathname;
   if(file==='/selling-vendor'||/^\/selling-vendor\/(overview|my-business|product-catalogue|images-videos|options-variants|stock-history|private-orders)\/?$/.test(file))file='/selling-dashboard.html';
@@ -77,12 +83,15 @@ async function run(){
    assert.ok(page.url().includes('businessId=vendor-a'));
    for(const [section,copy] of Object.entries(sections)){
     await page.locator('nav [data-section="'+section+'"]').click();
-    await page.locator('#content-heading').filter({hasText:copy[1]}).waitFor();
+    await page.locator('#content-heading').filter({hasText:section==='product-catalogue'?'Product Catalogue':copy[1]}).waitFor();
     assert.equal(await page.locator('nav [aria-current=page]').getAttribute('data-section'),section);
     assert.equal(await page.locator('h1').innerText(),copy[0]);
-    assert.equal(await page.locator('#section-content button').count(),0,'No pretend tool actions');
+    if(section==='product-catalogue'){
+     assert.equal(await page.locator('#product-save').count(),1,'Catalogue has a real save action');
+     assert.equal(await page.locator('#product-form').count(),1,'Catalogue has an editable form');
+    }else assert.equal(await page.locator('#section-content button').count(),0,'No pretend tool actions');
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'No horizontal page overflow');
-    await page.reload();await page.locator('#content-heading').filter({hasText:copy[1]}).waitFor();
+    await page.reload();await page.locator('#content-heading').filter({hasText:section==='product-catalogue'?'Product Catalogue':copy[1]}).waitFor();
     await page.goto(base+'/selling-vendor/'+section+'?businessId=vendor-a');await page.locator('#content-heading').filter({hasText:copy[1]}).waitFor();
    }
    await page.goBack();await page.locator('#private-workspace:not([hidden])').waitFor();
