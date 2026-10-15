@@ -88,13 +88,14 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
           const clean=(value,max)=>typeof value==='string'?value.trim().slice(0,max):'';
           const name=clean(item.name,200),description=clean(item.description,1200);
           const price=clean(item.price,100),priceMode=clean(item.priceMode,20)||'contact';
-          if (!name || !description || !['contact','fixed','from','range'].includes(priceMode) ||
+          const availability=clean(item.availability,20)||'contact';
+          if (!name || !description || !['contact','fixed','from','range'].includes(priceMode) || !['contact','available','unavailable'].includes(availability) ||
               (priceMode==='contact'&&price) || (priceMode!=='contact'&&!price))
             return res.status(400).json({error:'Invalid product details.'});
           if (index<0 && products.length>=100) return res.status(409).json({error:'Product limit reached.'});
           const previous=index>=0?products[index]:{};
           const product={...previous,productId:id,businessId,name,description,price,priceMode,customerVisible:index>=0?previous.customerVisible===true:false,
-            availability:previous.availability||'contact'};
+            availability};
           if (index<0) products.push(product); else products[index]=product;
         }
         const updated={...original,products};
