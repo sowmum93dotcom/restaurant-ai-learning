@@ -163,17 +163,18 @@
       const businessId=context?.business?.businessId;
       if(!businessId)return;
       const button=$('product-save');button.disabled=true;
-      $('product-feedback').textContent='Saving…';
+      $('product-feedback').textContent=action==='delete-product'?'Deleting…':'Saving…';
       try{
         const url=new URL('/api/businesses',win.location.origin);
         url.searchParams.set('resource','selling-dashboard');url.searchParams.set('businessId',businessId);
-        const token=await clerk.session.getToken();
+        const token=await clerk.session?.getToken();
+        if(!token)throw Error('Sign in again before changing products.');
         const response=await win.fetch(url.pathname+url.search,{method:'POST',credentials:'same-origin',
           headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
           body:JSON.stringify({action,product})});
         const result=await response.json();
         if(!response.ok)throw Error(result.error||'Could not save product.');
-        clearProductForm();await load();$('product-feedback').textContent='Product saved.';
+        await load();clearProductForm();$('product-feedback').textContent=action==='delete-product'?'Product deleted.':'Product saved.';
       }catch(error){$('product-feedback').textContent=error.message||'Product change failed.';}
       finally{button.disabled=false;}
     }
