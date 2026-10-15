@@ -72,7 +72,7 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
         if (!businessId || !business) return res.status(403).json({error:'Select your business.'});
         const action=req.body?.action;
         const item=req.body?.product;
-        if (!['save-product','delete-product'].includes(action) || !item || typeof item!=='object')
+        if (!['save-product','delete-product'].includes(action) || !item || typeof item!=='object' || Array.isArray(item))
           return res.status(400).json({error:'Invalid product request.'});
         const id=typeof item.productId==='string'?item.productId.trim():'';
         if (!/^[a-zA-Z0-9_-]{1,120}$/.test(id)) return res.status(400).json({error:'Invalid product ID.'});
