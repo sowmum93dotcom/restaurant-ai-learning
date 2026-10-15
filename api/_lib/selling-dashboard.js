@@ -8,6 +8,7 @@ const {createAuthenticatedBusinessOwnerContext} = require('./demeos-actor-contex
 
 const {isolatedTestEnvironment,dataEnvironment}=require('./selling-access');
 const inventory=require('./vendor-inventory');
+const media=require('./selling-media');
 
 function businessSummary(profile, env, identityId) {
   const id = profile?.businessId;
@@ -16,10 +17,10 @@ function businessSummary(profile, env, identityId) {
   // Real Selling approval remains unchanged. The explicit Preview test grant
   // has its own authority and never changes the real applicationAccess field.
   if (environment === 'live' && !applicationAccess({businessProfile:profile}, id).selling) return null;
-  return environment ? {businessId:id, name:profile.name || 'Unnamed business', type:profile.type || '', location:profile.location || '', dataEnvironment:environment, catalogueRevision:catalogueRevision(profile), products:Array.isArray(profile.products)?profile.products.map(p=>({productId:p.productId,name:p.name,description:p.description,price:p.price,priceMode:p.priceMode,availability:p.availability||'contact',stockQuantity:Number.isSafeInteger(p.stockQuantity)?p.stockQuantity:null,stockHistory:Array.isArray(p.stockHistory)?p.stockHistory:[],variants:Array.isArray(p.variants)?p.variants.map(v=>({variantId:v.variantId,name:v.name,sku:v.sku||'',price:v.price||'',availability:v.availability||'contact'})):[]})):[]} : null;
+  return environment ? {businessId:id, name:profile.name || 'Unnamed business', type:profile.type || '', location:profile.location || '', dataEnvironment:environment, catalogueRevision:catalogueRevision(profile), products:Array.isArray(profile.products)?profile.products.map(p=>({productId:p.productId,name:p.name,description:p.description,price:p.price,priceMode:p.priceMode,availability:p.availability||'contact',mediaGallery:p.mediaGallery||{assetIds:[],mainAssetId:''},stockQuantity:Number.isSafeInteger(p.stockQuantity)?p.stockQuantity:null,stockHistory:Array.isArray(p.stockHistory)?p.stockHistory:[],variants:Array.isArray(p.variants)?p.variants.map(v=>({variantId:v.variantId,name:v.name,sku:v.sku||'',price:v.price||'',availability:v.availability||'contact'})):[]})):[]} : null;
 }
 
-function createHandler({authenticate=authentication.resolveTrustedIdentityFromRequest, repository=()=>persistence.getRepository(), environment=()=>process.env}={}) {
+function createHandler({authenticate=authentication.resolveTrustedIdentityFromRequest, repository=()=>persistence.getRepository(), environment=()=>process.env,mediaBackend=media.mediaBackend}={}) {
   return async function sellingDashboard(req, res) {
     res.setHeader('Cache-Control', 'private, no-store');
     res.setHeader('Vercel-CDN-Cache-Control', 'no-store');
@@ -31,6 +32,7 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
       const selected = req.query?.businessId;
       if (selected !== undefined && (typeof selected !== 'string' || !selected || selected.length > 200)) return res.status(400).json({error:'Choose a valid business.'});
       const env = environment();
+      const backend=mediaBackend(env);
       if (env.DEMEOS_SELLING_DATA_ENVIRONMENT === 'test' && !isolatedTestEnvironment(env)) return res.status(503).json({error:'The isolated Selling Preview is not configured.'});
       const store = repository();
       // SQL ownership relationship is authoritative, never a role/header/URL claim.
@@ -52,12 +54,13 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
         const profile=(await store.getKnownBusiness(businessId))?.businessProfile;
         const stock=typeof store.getVendorInventory==='function'?await store.getVendorInventory(businessId):{revision:0,entries:{},history:[]};
         business.inventory={...stock,rows:inventory.rowsFor(profile,inventory.entriesWithLegacyStock(profile,stock.entries))};
+        business.media=await media.listMedia(store,profile,backend);business.mediaCapabilities=media.capabilities(backend,env);
       }
       if (req.method === 'POST') {
         if (!businessId || !business) return res.status(403).json({error:'Select your business.'});
         const action=req.body?.action;
         const item=req.body?.product;
-        if (!['save-product','delete-product','adjust-stock','save-variant','delete-variant'].includes(action) || !item || typeof item!=='object' || Array.isArray(item))
+        if (!['save-product','delete-product','adjust-stock','save-variant','delete-variant','register-media','complete-media','remove-media'].includes(action) || !item || typeof item!=='object' || Array.isArray(item))
           return res.status(400).json({error:'Invalid product request.'});
         const id=typeof item.productId==='string'?item.productId.trim():'';
         if (!/^[a-zA-Z0-9_-]{1,120}$/.test(id)) return res.status(400).json({error:'Invalid product ID.'});
@@ -65,6 +68,10 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
         if (!original || !businessSummary(original,env,identity.trustedIdentityId))
           return res.status(403).json({error:'Business access unavailable.'});
         if(req.body.catalogueRevision!==catalogueRevision(original))return res.status(409).json({error:'Products changed. Reload before saving.'});
+        if(['register-media','complete-media','remove-media'].includes(action)){
+          const result=await media.mutateMedia({store,profile:original,identity:identity.trustedIdentityId,action,item,backend,env,saveProfile:(previous,next)=>store.saveSellingProducts(identity.trustedIdentityId,businessId,previous,next)});
+          const {status,...body}=result;return res.status(status).json(body);
+        }
         const products=Array.isArray(original.products)?original.products.slice():[];
         const index=products.findIndex(product=>product.productId===id);
         if(action==='delete-product'||action==='delete-variant'){
@@ -123,9 +130,7 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
           if (index<0) products.push(product); else products[index]=product;
         }
         const updated={...original,products};
-        const saved=business.dataEnvironment==='test'
-          ? await store.saveOwnedBusinessProfile(identity.trustedIdentityId,businessId,original,updated)
-          : await store.saveSellingProducts(identity.trustedIdentityId,businessId,original,updated);
+        const saved=await store.saveSellingProducts(identity.trustedIdentityId,businessId,original,updated);
         if (!saved) return res.status(409).json({error:'Business changed. Reload and retry.'});
         return res.status(200).json({ok:true});
       }

@@ -9,7 +9,7 @@
     overview:['Overview','Welcome to your Selling workspace','Your identity and Selling access have been verified. Choose a section to see what comes next.'],
     'my-business':['My Business','Your saved business','These details come from your existing business record. Registration and approval continue through the existing business workflow.'],
     'product-catalogue':['Product Catalogue','Catalogue tools are being prepared','Product creation and editing are not available in this dashboard yet. Existing product records remain saved.'],
-    'images-videos':['Images & Videos','Media tools are not available yet','Image and video uploads will be connected to your business and products in a later phase.'],
+    'images-videos':['Images & Videos','Product images and videos','Upload actual files, review processing status and remove media belonging to your products.'],
     'options-variants':['Options & Variants','Manage product variants','Add, edit and remove saved variants for your catalogue products.'],
     'stock-history':['Stock & History','Stock tools are not available yet','Stock adjustments and their audit history will appear here in a later phase. No stock changes can be made here yet.'],
     'private-orders':['Private Orders','Order tools are not available yet','Private orders will be shown here when the order workflow is connected and verified. This page has not loaded or changed any orders.']
@@ -104,6 +104,21 @@
           remove.addEventListener('click',()=>{if(win.confirm('Delete this product?'))mutateProduct('delete-product',{productId:product.productId});});
           item.append(title,description,price,availability,edit,remove);catalogue.append(item);
         }
+      }
+      $('media-tools').hidden=section!=='images-videos'||!business;
+      $('media-product').replaceChildren();$('media-list').replaceChildren();
+      if(section==='images-videos'&&business){
+        for(const product of business.products||[]){const option=doc.createElement('option');option.value=product.productId;option.textContent=product.name;$('media-product').append(option);}
+        $('media-configuration').textContent=business.mediaCapabilities.blocker;
+        for(const asset of business.media||[]){
+          const article=doc.createElement('article');article.className='catalogue-item';article.dataset.assetId=asset.assetId;
+          const title=doc.createElement('h3');title.textContent=(business.products.find(p=>p.productId===asset.productId)?.name||'Product')+' · '+asset.kind;
+          const state=doc.createElement('p');state.textContent=asset.state+(asset.linked?' · Linked to product':' · Not linked')+(asset.failureReason?' · '+asset.failureReason:'');article.append(title,state);
+          if(asset.state==='ready'&&asset.previewUrl){const preview=doc.createElement(asset.kind==='image'?'img':'video');preview.src=asset.previewUrl;preview.className='product-media-preview';if(asset.kind==='image')preview.alt=title.textContent;else{preview.controls=true;preview.preload='metadata';}article.append(preview);}
+          const remove=doc.createElement('button');remove.type='button';remove.textContent='Remove';remove.addEventListener('click',()=>{if(win.confirm('Remove this media from the product?'))changeMedia('remove-media',{productId:asset.productId,assetId:asset.assetId});});article.append(remove);$('media-list').append(article);
+        }
+        if(!business.media?.length){const empty=doc.createElement('p');empty.textContent='No product media saved.';$('media-list').append(empty);}
+        syncMediaForm();
       }
       $('variant-tools').hidden=section!=='options-variants'||!business;
       $('variant-product').replaceChildren();
@@ -229,9 +244,9 @@
     let productMutationPending=false;
     function mutationBusy(busy){
       productMutationPending=busy;
-      for(const control of doc.querySelectorAll('#catalogue-tools input,#catalogue-tools textarea,#catalogue-tools select,#catalogue-tools button,#catalogue-list button,#variant-tools input,#variant-tools select,#variant-tools button,#stock-tools input,#stock-tools select,#stock-tools button'))control.disabled=busy;
+      for(const control of doc.querySelectorAll('#catalogue-tools input,#catalogue-tools textarea,#catalogue-tools select,#catalogue-tools button,#catalogue-list button,#variant-tools input,#variant-tools select,#variant-tools button,#stock-tools input,#stock-tools select,#stock-tools button,#media-tools input,#media-tools select,#media-tools button'))control.disabled=busy;
       $('business-select').disabled=busy||context?.businesses.length===1;
-      if(!busy){syncProductPrice();$('variant-save').disabled=!$('variant-product').options.length;$('stock-save').disabled=!$('stock-product').options.length;}
+      if(!busy){syncProductPrice();syncMediaForm();$('variant-save').disabled=!$('variant-product').options.length;$('stock-save').disabled=!$('stock-product').options.length;}
     }
     async function mutateProduct(action,product){
       if(productMutationPending)return;
@@ -295,6 +310,51 @@
       finally{mutationBusy(false);$('variant-save').disabled=!$('variant-product').options.length;$('variant-cancel').disabled=false;
         for(const control of $('variant-list').querySelectorAll('button'))control.disabled=false;}
     }
+    let mediaAttempt=null;
+    function syncMediaForm(){
+      const kind=$('media-kind').value;
+      $('media-file').accept=kind==='image'?'image/jpeg,image/png,image/webp':'video/mp4,video/quicktime';
+      $('media-upload').textContent=kind==='image'?'Upload image':'Upload video';
+      $('media-upload').disabled=productMutationPending||!$('media-product').options.length||!context?.business?.mediaCapabilities?.[kind==='image'?'images':'videos'];
+    }
+    async function changeMedia(action,item,file){
+      if(productMutationPending||!context?.business)return;
+      const businessId=context.business.businessId,identity=clerk.user.id;
+      mutationBusy(true);$('media-feedback').textContent=file?'Uploading file…':'Removing media…';
+      async function post(nextAction,product){
+        const token=await bounded(clerk.session.getToken());if(!token)throw Error('Sign in again before changing media.');
+        const response=await win.fetch('/api/businesses?resource=selling-dashboard&businessId='+encodeURIComponent(businessId),{method:'POST',credentials:'same-origin',signal:win.AbortSignal.timeout(90000),headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({action:nextAction,product,catalogueRevision:context?.business?.catalogueRevision})});
+        const result=await response.json();if(!response.ok)throw Error(result.error||'Media change failed.');return result;
+      }
+      try{
+        if(file){
+          const registered=await post('register-media',item);
+          if(clerk.user?.id!==identity||context?.business?.businessId!==businessId)throw Error('Your account or business changed. Reload before uploading.');
+          const upload=registered.uploadSession;
+          // A failed PUT response can be ambiguous; server completion verifies the actual object.
+          try{await win.fetch(upload.uploadUrl,{method:'PUT',headers:{'Content-Type':file.type},body:file,signal:win.AbortSignal.timeout(90000)});}catch{}
+          $('media-feedback').textContent='Verifying and processing file…';
+          const result=await post('complete-media',{productId:item.productId,assetId:registered.assetId,storageKey:upload.storageKey,uploadToken:upload.uploadToken});
+          if(result.state){await load();$('media-feedback').textContent=result.message||'File stored; processing is not complete.';return;}
+          item.assetId=registered.assetId;
+        }else await post(action,item);
+        await load();
+        if(clerk.user?.id!==identity||context?.business?.businessId!==businessId||$('private-workspace').hidden)throw Error('Media changed, but the dashboard could not refresh. Reload before continuing.');
+        const asset=context.business.media.find(a=>a.assetId===item.assetId);
+        if(file?(!asset||asset.state!=='ready'||!asset.linked||!asset.previewUrl):Boolean(asset))throw Error('Could not verify the saved media change. Reload before continuing.');
+        if(file){$('media-file').value='';mediaAttempt=null;}
+        $('media-feedback').textContent=file?'File uploaded and linked to product.':'Media removed from product.';
+      }catch(error){$('media-feedback').textContent=error.message||'Media change failed.';}
+      finally{mutationBusy(false);}
+    }
+    $('media-kind').addEventListener('change',()=>{$('media-file').value='';mediaAttempt=null;syncMediaForm();});
+    $('media-file').addEventListener('change',()=>{mediaAttempt=null;$('media-feedback').textContent='';});
+    $('media-form').addEventListener('submit',event=>{
+      event.preventDefault();const file=$('media-file').files[0],kind=$('media-kind').value,productId=$('media-product').value;
+      if(!file||!productId)return;
+      if(!mediaAttempt||mediaAttempt.file!==file||mediaAttempt.productId!==productId)mediaAttempt={file,productId,assetId:'media-'+win.crypto.randomUUID()};
+      changeMedia('register-media',{productId,assetId:mediaAttempt.assetId,kind,contentType:file.type,sizeBytes:file.size},file);
+    });
     $('product-form').addEventListener('submit',event=>{
       event.preventDefault();
       const productId=$('product-id').value||('product-'+win.crypto.randomUUID());

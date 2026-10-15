@@ -145,7 +145,7 @@ test('isolated Preview vendor can save products only in its authorized test busi
    getOwnedBusinessProfiles:async id=>id==='owner-a'?[current]:[],
    isBusinessOwnedByIdentity:async(id,businessId)=>id==='owner-a'&&businessId===current.businessId,
    getKnownBusiness:async()=>({businessProfile:structuredClone(current)}),
-   saveOwnedBusinessProfile:async(id,businessId,previous,next)=>{
+   saveSellingProducts:async(id,businessId,previous,next)=>{
      assert.equal(id,'owner-a');assert.equal(businessId,current.businessId);
      assert.deepEqual(previous,current);
      current=structuredClone(next);writes++;return true;
@@ -245,9 +245,10 @@ test('selected vendor business exposes saved availability and stock history, not
 
 // Runs the same mutation contract against persisted live and Preview businesses.
 test('variant CRUD, retries, stale revisions, preservation and isolation use real SQL',async()=>{
- const client=new PGlite(),repository=createPersistenceRepository(createDatabase(client));
+ const client=new PGlite();let currentEnv=live;const repository=createPersistenceRepository(createDatabase(client),{environment:()=>currentEnv});
  try{
   for(const [businessId,env] of [['real-variants',live],['test-business-selling-a',preview]]){
+   currentEnv=env;
    const product={productId:'coffee',businessId,name:'Coffee',description:'Roasted beans',priceMode:'contact',price:'',mediaGallery:{assetIds:[],mainAssetId:''},stockQuantity:8,stockHistory:[{from:10,to:8,note:'Earlier count'}],presentation:{kind:'product',options:[],variants:[],extension:'keep'}};
    const profile={businessId,name:'Shop',applicationAccess:env===live?{selling:true}:undefined,products:[product]};
    await repository.createBusinessForOwner('owner-a',profile);

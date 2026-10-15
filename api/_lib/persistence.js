@@ -476,6 +476,13 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
       return result.rows.length ? result.rows[0].asset : null;
     },
 
+    async saveProcessedBusinessMediaAsset(businessId, asset) {
+      await database.ensureSchema();
+      const saved=await database.query(`UPDATE demeos_business_media_assets SET asset=$3::jsonb,updated_at=NOW()
+        WHERE business_id=$1 AND asset_id=$2 AND asset->>'state'='processing' RETURNING asset`,[businessId,asset.assetId,JSON.stringify(asset)]);
+      return saved.rows[0]?.asset||null;
+    },
+
     async getBusinessMediaAssetsByIds(businessId, assetIds) {
       if (!isNonEmptyString(businessId) || !Array.isArray(assetIds) || !assetIds.length) return [];
       const safeIds = Array.from(new Set(assetIds.filter(isNonEmptyString))).slice(0, 20);
@@ -606,13 +613,14 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
       return result.rows;
     },
 
-    async claimNextMediaProcessingJob(maxAttempts = 5) {
+    async claimNextMediaProcessingJob(maxAttempts = 5, businessId = null, assetId = null) {
       await database.ensureSchema();
       const safeMaxAttempts = Math.max(1, Math.min(10, Number(maxAttempts) || 5));
       const result = await database.query(
         `WITH next_job AS (
            SELECT job_id FROM demeos_media_processing_jobs
            WHERE status = 'queued' AND available_at <= NOW() AND attempts < $1
+             AND ($2::text IS NULL OR business_id=$2) AND ($3::text IS NULL OR asset_id=$3)
            ORDER BY available_at ASC, job_id ASC
            FOR UPDATE SKIP LOCKED LIMIT 1
          )
@@ -620,7 +628,7 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
          SET status = 'running', attempts = attempts + 1, claimed_at = NOW(), updated_at = NOW()
          FROM next_job WHERE j.job_id = next_job.job_id
          RETURNING j.job_id, j.asset_id, j.business_id, j.status, j.attempts`,
-        [safeMaxAttempts]);
+        [safeMaxAttempts,businessId,assetId]);
       return result.rows.length ? result.rows[0] : null;
     },
 
@@ -797,10 +805,21 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
     },
     async saveSellingProducts(identity,businessId,previousProfile,profile) {
       await database.ensureSchema();
-      const result=await database.query(`UPDATE demeos_businesses b SET profile=$4::jsonb,updated_at=NOW()
-        WHERE b.business_id=$1 AND b.profile=$2::jsonb AND b.profile->'applicationAccess'->'selling' = 'true'::jsonb
+      const test=require('./selling-access').dataEnvironment(businessId,environment(),identity)==='test';
+      const result=await database.query(`WITH saved AS (
+        UPDATE demeos_businesses b SET profile=$4::jsonb,updated_at=NOW()
+        WHERE b.business_id=$1 AND b.profile=$2::jsonb
+          AND ((b.business_id !~* '^test-' AND b.profile->'applicationAccess'->'selling'='true'::jsonb) OR $5::boolean)
           AND EXISTS(SELECT 1 FROM demeos_business_owners o WHERE o.business_id=b.business_id AND o.trusted_identity_id=$3)
-        RETURNING profile`,[businessId,JSON.stringify(previousProfile),identity,JSON.stringify(profile)]);
+        RETURNING profile
+      ), archived AS (
+        UPDATE demeos_business_media_assets a SET asset=jsonb_set(a.asset,'{state}','"archived"'::jsonb),updated_at=NOW()
+        WHERE a.business_id=$1 AND a.asset->>'purpose' IN ('product','service') AND a.asset->>'state'<>'archived'
+          AND EXISTS(SELECT 1 FROM saved)
+          AND EXISTS(SELECT 1 FROM jsonb_array_elements(COALESCE($2::jsonb->'products','[]'::jsonb)) p WHERE p->>'productId'=a.asset->>'relatedEntityId')
+          AND NOT EXISTS(SELECT 1 FROM jsonb_array_elements(COALESCE($4::jsonb->'products','[]'::jsonb)) p WHERE p->>'productId'=a.asset->>'relatedEntityId')
+        RETURNING asset_id
+      ) SELECT profile FROM saved`,[businessId,JSON.stringify(previousProfile),identity,JSON.stringify(profile),test]);
       return result.rows[0]?.profile||null;
     },
 

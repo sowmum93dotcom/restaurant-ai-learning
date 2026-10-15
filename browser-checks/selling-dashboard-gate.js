@@ -6,6 +6,7 @@ const assert=require('node:assert/strict'),http=require('node:http'),fs=require(
 const {createDatabase}=require('../api/_lib/database'),{createPersistenceRepository}=require('../api/_lib/persistence');
 const {createHandler}=require('../api/_lib/selling-dashboard');
 const {sections}=require('../js/selling-dashboard');
+const {diskStorage}=require('./support/private-object-store');
 const root=path.resolve(__dirname,'..'),artifacts=process.env.DEMEOS_BROWSER_ARTIFACT_DIR||'/tmp';
 async function verifyBusinessLayout(page,viewport){
  const boxes=await page.evaluate(()=>{
@@ -25,6 +26,8 @@ async function verifyBusinessLayout(page,viewport){
  assert.ok(boxes.title.height<=boxes.fontSize*3.5,'Business name stays readable at intermediate desktop widths too');
 }
 async function run(){
+ process.env.DEMEOS_MEDIA_UPLOAD_SECRET='browser-upload-secret-at-least-thirty-two-characters';
+ const disk=await diskStorage();
  const client=new PGlite(),repository=createPersistenceRepository(createDatabase(client),{environment:()=>env});
  const profile=(businessId,selling=true)=>({businessId,name:businessId==='vendor-a'?'North & Field':'Business '+businessId,type:'Independent shop',location:'London',applicationAccess:{selling,marketing:true},products:[],preparationModel:'selling'});
  await repository.createBusinessForOwner('owner-a',profile('vendor-a'));
@@ -33,7 +36,7 @@ async function run(){
  await repository.createBusinessForOwner('owner-a',{...profile('test-business-selling-a',false),name:'DEMEOS Test Vendor',applicationAccess:undefined});
  await repository.createBusinessForOwner('owner-b',profile('vendor-b'));
  let env={VERCEL_ENV:'production'},failure=false,delay=0;
- const handler=createHandler({repository:()=>repository,environment:()=>env,authenticate:async req=>{
+ const handler=createHandler({repository:()=>repository,environment:()=>({...env,DEMEOS_MEDIA_UPLOAD_SECRET:process.env.DEMEOS_MEDIA_UPLOAD_SECRET}),mediaBackend:()=>disk,authenticate:async req=>{
   if(delay)await new Promise(r=>setTimeout(r,delay));
   if(failure)throw Error('Simulated data boundary failure');
   const id=req.headers.cookie?.match(/gate-owner=(owner-[a-z]+)/)?.[1];return id?{trustedIdentityId:id}:null;
@@ -61,7 +64,8 @@ async function run(){
  try{
   browser=await chromium.launch({headless:true,...(process.env.DEMEOS_BROWSER_EXECUTABLE_PATH?{executablePath:process.env.DEMEOS_BROWSER_EXECUTABLE_PATH}:{}),...(process.env.DEMEOS_BROWSER_CHANNEL?{channel:process.env.DEMEOS_BROWSER_CHANNEL}:{})});
   for(const viewport of [{width:375,height:812},{width:390,height:844},{width:430,height:932},{width:761,height:1000},{width:820,height:1180},{width:1024,height:1366},{width:1280,height:1000},{width:1440,height:1000}]){
-   const context=await browser.newContext({viewport});context.setDefaultTimeout(10000);
+   const context=await browser.newContext({viewport});
+   await context.route('https://storage.gate/**',async route=>{const request=route.request();if(request.method()==='OPTIONS')return route.fulfill({status:204,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,PUT,OPTIONS','Access-Control-Allow-Headers':'content-type'}});const response=await disk.fetchImpl(request.url(),{method:request.method(),headers:{'Content-Type':request.headers()['content-type']},body:request.method()==='PUT'?request.postDataBuffer():undefined});await route.fulfill({status:response.status,contentType:response.headers.get('content-type')||'application/octet-stream',headers:{'Access-Control-Allow-Origin':'*'},body:Buffer.from(await response.arrayBuffer())});});context.setDefaultTimeout(10000);
    console.log('Browser gate: starting '+viewport.width+'px viewport');
    await context.addCookies([{name:'gate-owner',value:'owner-a',url:base}]);
    await context.route('https://clerk.test/npm/@clerk/ui@1/dist/ui.browser.js',r=>r.fulfill({contentType:'text/javascript',body:'window.__internal_ClerkUICtor={};'}));
@@ -92,6 +96,8 @@ async function run(){
      assert.equal(await page.locator('#product-form').count(),1,'Catalogue has an editable form');
     }else if(section==='stock-history'){
      assert.equal(await page.locator('#stock-form:visible').count(),1,'Stock has a real adjustment form');
+    }else if(section==='images-videos'){
+     assert.equal(await page.locator('#media-form:visible').count(),1,'Media has actual file controls');
     }else if(section==='options-variants'){
      assert.equal(await page.locator('#variant-form:visible').count(),1,'Variants has a real editor');
     }else assert.equal(await page.locator('#section-content button:visible').count(),0,'No pretend tool actions');
@@ -156,6 +162,16 @@ async function run(){
    await page.locator('#variant-feedback').filter({hasText:'Variant deleted.'}).waitFor();await page.reload();
    assert.equal((await repository.getKnownBusiness('vendor-a')).businessProfile.products[0].variants.length,0);
    assert.equal((await repository.getKnownBusiness('vendor-a')).businessProfile.products.length,1,'Variant deletion preserves parent product');
+   await page.goto(base+'/selling-vendor/images-videos?businessId=vendor-a');await page.locator('#media-form:visible').waitFor();
+   const imageBytes=await require('sharp')({create:{width:24,height:18,channels:3,background:'#06172d'}}).png().toBuffer();
+   await page.locator('#media-file').setInputFiles({name:'coffee.png',mimeType:'image/png',buffer:imageBytes});
+   await page.locator('#media-upload').click();await page.locator('#media-feedback').filter({hasText:'File uploaded and linked to product.'}).waitFor();
+   const linked=(await repository.getKnownBusiness('vendor-a')).businessProfile.products[0].mediaGallery.assetIds[0];
+   assert.equal((await repository.getBusinessMediaAsset('vendor-a',linked)).state,'ready');
+   await page.reload();await page.locator('#media-list img').waitFor();await page.waitForFunction(()=>document.querySelector('#media-list img')?.naturalWidth>0);
+   page.once('dialog',dialog=>dialog.accept());await page.locator('#media-list button').filter({hasText:'Remove',exact:true}).click();
+   await page.locator('#media-feedback').filter({hasText:'Media removed from product.'}).waitFor();await page.reload();
+   assert.equal((await repository.getBusinessMediaAsset('vendor-a',linked)).state,'archived');assert.equal(await page.locator('#media-list img').count(),0);
    await page.goto(base+'/selling-vendor/stock-history?businessId=vendor-a');
    await page.locator('#stock-form:visible').waitFor();
    const stockProductId=(await repository.getKnownBusiness('vendor-a')).businessProfile.products[0].productId;
@@ -238,6 +254,14 @@ async function run(){
     page.once('dialog',dialog=>dialog.accept());await page.locator('.variant-item button').filter({hasText:'Delete',exact:true}).click();
     await page.locator('#variant-feedback').filter({hasText:'Variant deleted.'}).waitFor();await page.reload();
     assert.equal((await repository.getKnownBusiness('test-business-selling-a')).businessProfile.products[0].variants.length,0);
+    await page.goto(base+'/selling-vendor/images-videos');await page.locator('#media-form:visible').waitFor();
+    await page.locator('#media-file').setInputFiles({name:'preview.png',mimeType:'image/png',buffer:await require('sharp')({create:{width:20,height:16,channels:3,background:'#c99a2e'}}).png().toBuffer()});
+    await page.locator('#media-upload').click();await page.locator('#media-feedback').filter({hasText:'File uploaded and linked to product.'}).waitFor();
+    const previewMediaId=(await repository.getKnownBusiness('test-business-selling-a')).businessProfile.products[0].mediaGallery.assetIds[0];
+    await page.reload();await page.waitForFunction(()=>document.querySelector('#media-list img')?.naturalWidth>0);
+    page.once('dialog',dialog=>dialog.accept());await page.locator('#media-list button').filter({hasText:'Remove',exact:true}).click();
+    await page.locator('#media-feedback').filter({hasText:'Media removed from product.'}).waitFor();
+    assert.equal((await repository.getBusinessMediaAsset('test-business-selling-a',previewMediaId)).state,'archived');
     await page.goto(base+'/selling-vendor/stock-history');await page.locator('#stock-form:visible').waitFor();
     await page.locator('#stock-quantity').fill('7');await page.locator('#stock-note').fill('Preview count');
     await page.locator('#stock-save').click();await page.locator('#stock-feedback').filter({hasText:'Stock adjustment saved.'}).waitFor();
@@ -276,6 +300,6 @@ async function run(){
    assert.deepEqual(errors,[]);await context.close();
    console.log('Selling dashboard SQL + rendered gate passed at '+viewport.width+'px');
   }
- }finally{await browser?.close();await new Promise(r=>server.close(r));await client.close();}
+ }finally{await browser?.close();await new Promise(r=>server.close(r));await client.close();await require('node:fs/promises').rm(disk.root,{recursive:true,force:true});}
 }
 run().catch(error=>{console.error(error);process.exitCode=1;});

@@ -134,3 +134,9 @@ dd { margin: 0; overflow-wrap: anywhere; }
 .catalogue-item{padding:16px 0;border-top:1px solid var(--bo-line)}.catalogue-item h3{margin:0 0 8px;font-size:18px}.catalogue-item p{margin:5px 0;overflow-wrap:break-word}
 
 #product-form{display:grid;gap:12px;max-width:620px;margin:16px 0 24px}#product-form label{display:grid;gap:6px}#product-form input:not([type=hidden]),#product-form textarea,#product-form select{width:100%;max-width:100%;min-height:42px;padding:10px}#product-form textarea{min-height:110px}#product-form button,.catalogue-item button{margin:6px 8px 6px 0;min-height:40px}#product-feedback{min-height:1.5em}
+
+#variant-form,#stock-form,#media-form{display:grid;gap:12px;max-width:620px;margin:16px 0 24px}
+:is(#variant-form,#stock-form,#media-form) label{display:grid;gap:6px;min-width:0}
+:is(#variant-form,#stock-form,#media-form) :is(input:not([type=hidden]),select){width:100%;min-width:0;max-width:100%;min-height:44px;padding:10px}
+.product-media-preview{display:block;width:min(100%,480px);height:auto;max-height:360px;object-fit:contain;background:var(--bo-ink);margin:12px 0}
+.variant-item{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 0}.variant-item span{overflow-wrap:anywhere}
