@@ -128,8 +128,11 @@ test('vendor product editor persists create edit and delete only for an owned ap
  assert.equal(current.products[0].customerVisible,false);
  assert.equal((await call('owner-a','save-product',{...item,name:'Tea'})).code,200);
  assert.equal(current.products.length,1);assert.equal(current.products[0].name,'Tea');
+ current.products[0].customerVisible=true;
+ assert.equal((await call('owner-a','save-product',{...item,name:'Tea Updated'})).code,200);
+ assert.equal(current.products[0].customerVisible,true,'Editing a published product must not silently unpublish it');
  assert.equal((await call('owner-a','delete-product',{productId:item.productId})).code,200);
- assert.equal(current.products.length,0);assert.equal(writes,3);
+ assert.equal(current.products.length,0);assert.equal(writes,4);
 });
 
 test('isolated Preview vendor can save products only in its authorized test business',async()=>{
