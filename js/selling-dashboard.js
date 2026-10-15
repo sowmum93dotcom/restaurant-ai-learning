@@ -14,6 +14,16 @@
     'stock-history':['Stock & History','Stock tools are not available yet','Stock adjustments and their audit history will appear here in a later phase. No stock changes can be made here yet.'],
     'private-orders':['Private Orders','Order tools are not available yet','Private orders will be shown here when the order workflow is connected and verified. This page has not loaded or changed any orders.']
   });
+  const turkish=Object.freeze({
+    overview:['Genel Bakış','Satış çalışma alanınıza hoş geldiniz','Kimliğiniz ve satış erişiminiz doğrulandı. Devam etmek için bir bölüm seçin.'],
+    'my-business':['İşletmem','Kayıtlı işletmeniz','Bu bilgiler mevcut DEMEOS işletme kaydınızdan alınır.'],
+    'product-catalogue':['Ürün Kataloğu','Katalog araçları hazırlanıyor','Ürün oluşturma ve düzenleme henüz kullanılamıyor. Mevcut ürünleriniz korunur.'],
+    'images-videos':['Görseller ve Videolar','Medya araçları henüz kullanılamıyor','Görsel ve video yükleme daha sonraki aşamada bağlanacak.'],
+    'options-variants':['Seçenekler ve Varyantlar','Varyant araçları henüz kullanılamıyor','Ürün seçenekleri ve varyantları burada yönetilecek.'],
+    'stock-history':['Stok ve Geçmiş','Stok araçları henüz kullanılamıyor','Stok değişiklikleri ve geçmişi daha sonraki aşamada burada görünecek.'],
+    'private-orders':['Özel Siparişler','Sipariş araçları henüz kullanılamıyor','Özel siparişler, sipariş sistemi bağlanıp doğrulandıktan sonra burada görünecek.']
+  });
+  const localizedSections=language=>language==='tr'?turkish:sections;
   function sectionForPath(path){
     if(['/selling-vendor','/selling-vendor/','/selling-dashboard.html'].includes(path))return 'overview';
     const match=path.match(/^\/selling-vendor\/([^/]+)\/?$/);
@@ -23,6 +33,9 @@
     const doc=win.document,$=id=>doc.getElementById(id);
     let clerk=null,sequence=0,controller=null,context=null,sessionKey=null,booting=false;
     const currentSection=()=>sectionForPath(win.location.pathname);
+    let language='en';
+    const sectionCopy=()=>localizedSections(language);
+    function translateNavigation(){for(const link of doc.querySelectorAll('nav [data-section]'))link.textContent=sectionCopy()[link.dataset.section][0];$('dashboard-language').value=language;doc.documentElement.lang=language;}
     function status(state,title,message){
       context=null;$('private-workspace').hidden=true;$('business-name').textContent='';$('business-details').textContent='';$('business-facts').replaceChildren();$('business-select').replaceChildren();
       $('dashboard-status').hidden=false;$('dashboard-status').dataset.state=state;
@@ -33,7 +46,7 @@
       $('choose-business').hidden=state!=='denied';
     }
     function navigation(){
-      const section=currentSection();$('section-heading').textContent=sections[section]?.[0]||'Page not found';
+      const section=currentSection();translateNavigation();$('section-heading').textContent=sectionCopy()[section]?.[0]||'Page not found';
       for(const link of doc.querySelectorAll('nav [data-section]')){
         if(link.dataset.section===section)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');
         const url=new URL(link.getAttribute('href'),win.location.origin),businessId=new URLSearchParams(win.location.search).get('businessId');
@@ -68,7 +81,7 @@
       $('business-details').textContent=business?[business.type,business.location].filter(Boolean).join(' · '):'Only businesses authorized for your account are listed.';
       $('environment-label').textContent=business?(business.dataEnvironment==='test'?'Test business · isolated data':'Selling access approved'):'';
       $('environment-label').dataset.environment=business?.dataEnvironment||'';
-      const section=currentSection(),copy=sections[section];
+      const section=currentSection(),copy=sectionCopy()[section];
       $('content-heading').textContent=business?copy[1]:'Select your business to continue';
       $('content-message').textContent=business?copy[2]:'Use the business selector above. Your choice is kept in the page URL for refresh and direct navigation.';
       $('business-facts').hidden=section!=='my-business'||!business;
@@ -122,6 +135,7 @@
       }catch{clerk=null;status('error','Sign-in is temporarily unavailable','We could not connect to DEMEOS authentication. Please try again.');}
       finally{booting=false;}
     }
+    $('dashboard-language').addEventListener('change',()=>{language=$('dashboard-language').value==='tr'?'tr':'en';navigation();if(context?.business){const copy=sectionCopy()[currentSection()];$('content-heading').textContent=copy[1];$('content-message').textContent=copy[2];}});
     $('retry').addEventListener('click',()=>clerk?load():start());
     $('choose-business').addEventListener('click',()=>{const url=new URL(win.location.href);url.searchParams.delete('businessId');win.history.pushState({},'',url);load();});
     $('sign-in').addEventListener('click',async()=>{try{await clerk?.openSignIn({forceRedirectUrl:'/selling-vendor',fallbackRedirectUrl:'/selling-vendor',signUpForceRedirectUrl:'/selling-vendor',signUpFallbackRedirectUrl:'/selling-vendor'});}catch{status('error','Sign-in is temporarily unavailable','Please try again.');}});
