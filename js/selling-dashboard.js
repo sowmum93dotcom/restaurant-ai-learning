@@ -105,6 +105,28 @@
           item.append(title,description,price,availability,edit,remove);catalogue.append(item);
         }
       }
+      $('stock-tools').hidden=section!=='stock-history'||!business;
+      $('stock-product').replaceChildren();
+      $('stock-list').replaceChildren();
+      if(section==='stock-history'&&business){
+        const products=Array.isArray(business.products)?business.products:[];
+        $('content-heading').textContent='Stock & History';
+        $('content-message').textContent=products.length?'Set stock quantities and review saved adjustments.':'Add products in Product Catalogue before managing stock.';
+        for(const product of products){
+          const option=doc.createElement('option');option.value=product.productId;option.textContent=product.name||product.productId;$('stock-product').append(option);
+          const article=doc.createElement('article');article.className='catalogue-item';
+          const title=doc.createElement('h3');title.textContent=product.name||'Unnamed product';
+          const count=doc.createElement('p');count.textContent='Quantity: '+(Number.isSafeInteger(product.stockQuantity)?product.stockQuantity:'Not set');
+          article.append(title,count);
+          for(const event of (Array.isArray(product.stockHistory)?product.stockHistory:[]).slice().reverse()){
+            const line=doc.createElement('p');
+            line.textContent=(event.changedAt||'')+' · '+(event.from===null?'Not set':event.from)+' → '+event.to+' · '+(event.note||'');
+            article.append(line);
+          }
+          $('stock-list').append(article);
+        }
+        $('stock-save').disabled=!products.length;
+      }
       $('business-facts').hidden=section!=='my-business'||!business;
       $('business-facts').replaceChildren();
       if(section==='my-business'&&business)for(const [label,value] of [['Business ID',business.businessId],['Business name',business.name],['Business type',business.type||'Not provided'],['Location',business.location||'Not provided'],['Selling access',business.dataEnvironment==='test'?'Test access authorized':'Approved']]){
@@ -205,6 +227,29 @@
       $('product-id').value=productId; // Retry the same record if the network response is lost.
       mutateProduct('save-product',{productId,name:$('product-name').value,description:$('product-description').value,
         priceMode:$('product-price-mode').value,price:$('product-price').value,availability:$('product-availability').value});
+    });
+    $('stock-form').addEventListener('submit',async event=>{
+      event.preventDefault();
+      if(productMutationPending||!context?.business)return;
+      const productId=$('stock-product').value,quantity=Number($('stock-quantity').value),note=$('stock-note').value.trim();
+      if(!productId||!Number.isSafeInteger(quantity)||quantity<0||quantity>1000000||!note)return;
+      const businessId=context.business.businessId;
+      productMutationPending=true;$('stock-save').disabled=true;$('stock-feedback').textContent='Saving stock…';
+      try{
+        const token=await clerk.session?.getToken();
+        if(!token)throw Error('Sign in again before changing stock.');
+        const url=new URL('/api/businesses',win.location.origin);
+        url.searchParams.set('resource','selling-dashboard');url.searchParams.set('businessId',businessId);
+        const response=await win.fetch(url.pathname+url.search,{method:'POST',credentials:'same-origin',
+          headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
+          body:JSON.stringify({action:'adjust-stock',product:{productId,quantity,note}})});
+        const result=await response.json();
+        if(!response.ok)throw Error(result.error||'Stock adjustment failed.');
+        await load();
+        if(context?.business?.businessId!==businessId||$('private-workspace').hidden)throw Error('Stock saved, but the dashboard could not refresh.');
+        $('stock-quantity').value='';$('stock-note').value='';$('stock-feedback').textContent='Stock adjustment saved.';
+      }catch(error){$('stock-feedback').textContent=error.message||'Stock adjustment failed.';}
+      finally{productMutationPending=false;$('stock-save').disabled=!$('stock-product').options.length;}
     });
     $('product-cancel').addEventListener('click',clearProductForm);
     $('retry').addEventListener('click',()=>clerk?load():start());
