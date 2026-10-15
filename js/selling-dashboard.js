@@ -10,7 +10,7 @@
     'my-business':['My Business','Your saved business','These details come from your existing business record. Registration and approval continue through the existing business workflow.'],
     'product-catalogue':['Product Catalogue','Catalogue tools are being prepared','Product creation and editing are not available in this dashboard yet. Existing product records remain saved.'],
     'images-videos':['Images & Videos','Media tools are not available yet','Image and video uploads will be connected to your business and products in a later phase.'],
-    'options-variants':['Options & Variants','Variant tools are not available yet','Product options and exact variants will be managed here when catalogue tools are verified.'],
+    'options-variants':['Options & Variants','Manage product variants','Add, edit and remove saved variants for your catalogue products.'],
     'stock-history':['Stock & History','Stock tools are not available yet','Stock adjustments and their audit history will appear here in a later phase. No stock changes can be made here yet.'],
     'private-orders':['Private Orders','Order tools are not available yet','Private orders will be shown here when the order workflow is connected and verified. This page has not loaded or changed any orders.']
   });
@@ -19,7 +19,7 @@
     'my-business':['İşletmem','Kayıtlı işletmeniz','Bu bilgiler mevcut DEMEOS işletme kaydınızdan alınır.'],
     'product-catalogue':['Ürün Kataloğu','Katalog araçları hazırlanıyor','Ürün oluşturma ve düzenleme henüz kullanılamıyor. Mevcut ürünleriniz korunur.'],
     'images-videos':['Görseller ve Videolar','Medya araçları henüz kullanılamıyor','Görsel ve video yükleme daha sonraki aşamada bağlanacak.'],
-    'options-variants':['Seçenekler ve Varyantlar','Varyant araçları henüz kullanılamıyor','Ürün seçenekleri ve varyantları burada yönetilecek.'],
+    'options-variants':['Seçenekler ve Varyantlar','Varyantları yönetin','Katalog ürünleriniz için kayıtlı varyantları ekleyin, düzenleyin veya silin.'],
     'stock-history':['Stok ve Geçmiş','Stok araçları henüz kullanılamıyor','Stok değişiklikleri ve geçmişi daha sonraki aşamada burada görünecek.'],
     'private-orders':['Özel Siparişler','Sipariş araçları henüz kullanılamıyor','Özel siparişler, sipariş sistemi bağlanıp doğrulandıktan sonra burada görünecek.']
   });
@@ -105,6 +105,33 @@
           item.append(title,description,price,availability,edit,remove);catalogue.append(item);
         }
       }
+      $('variant-tools').hidden=section!=='options-variants'||!business;
+      $('variant-product').replaceChildren();
+      $('variant-list').replaceChildren();
+      if(section==='options-variants'&&business){
+        const products=Array.isArray(business.products)?business.products:[];
+        $('content-heading').textContent=sectionCopy()['options-variants'][0];
+        $('content-message').textContent=products.length?sectionCopy()['options-variants'][2]:(language==='tr'?'Varyantları yönetmeden önce Ürün Kataloğuna ürün ekleyin.':'Add products in Product Catalogue before managing variants.');
+        for(const product of products){
+          const option=doc.createElement('option');option.value=product.productId;option.textContent=product.name||product.productId;$('variant-product').append(option);
+          const article=doc.createElement('article');article.className='catalogue-item';
+          const title=doc.createElement('h3');title.textContent=product.name||'Unnamed product';article.append(title);
+          const variants=Array.isArray(product.variants)?product.variants:[];
+          if(!variants.length){const empty=doc.createElement('p');empty.textContent=language==='tr'?'Kayıtlı varyant yok.':'No variants saved.';article.append(empty);}
+          for(const variant of variants){
+            const row=doc.createElement('div');row.className='variant-item';
+            const name=doc.createElement('strong');name.textContent=variant.name||'Unnamed variant';
+            const detail=doc.createElement('span');detail.textContent=[variant.sku?('SKU: '+variant.sku):'',variant.price?('Price: '+variant.price):'',variant.availability==='available'?'Available':variant.availability==='unavailable'?'Unavailable':'Ask about availability'].filter(Boolean).join(' · ');
+            const edit=doc.createElement('button');edit.type='button';edit.textContent='Edit';
+            edit.addEventListener('click',()=>{$('variant-product').value=product.productId;$('variant-id').value=variant.variantId;$('variant-name').value=variant.name||'';$('variant-sku').value=variant.sku||'';$('variant-price').value=variant.price||'';$('variant-availability').value=variant.availability||'contact';$('variant-form-title').textContent='Edit variant';$('variant-name').focus();});
+            const remove=doc.createElement('button');remove.type='button';remove.textContent='Delete';
+            remove.addEventListener('click',()=>{if(win.confirm('Delete this variant?'))mutateVariant('delete-variant',{productId:product.productId,variantId:variant.variantId});});
+            row.append(name,detail,edit,remove);article.append(row);
+          }
+          $('variant-list').append(article);
+        }
+        $('variant-save').disabled=!products.length;
+      }
       $('stock-tools').hidden=section!=='stock-history'||!business;
       $('stock-product').replaceChildren();
       $('stock-list').replaceChildren();
@@ -126,9 +153,8 @@
           $('stock-list').append(article);
         }
         $('stock-save').disabled=!products.length;
-        const selected=products.find(product=>product.productId===$('stock-product').value);
-        $('stock-quantity').value=Number.isSafeInteger(selected?.stockQuantity)?String(selected.stockQuantity):'';
-
+        const selectedProduct=products.find(product=>product.productId===$('stock-product').value);
+        $('stock-quantity').value=Number.isSafeInteger(selectedProduct?.stockQuantity)?String(selectedProduct.stockQuantity):'';
       }
       $('business-facts').hidden=section!=='my-business'||!business;
       $('business-facts').replaceChildren();
@@ -181,7 +207,7 @@
       }catch{clerk=null;status('error','Sign-in is temporarily unavailable','We could not connect to DEMEOS authentication. Please try again.');}
       finally{booting=false;}
     }
-    $('dashboard-language').addEventListener('change',()=>{language=$('dashboard-language').value==='tr'?'tr':'en';navigation();if(context?.business){const copy=sectionCopy()[currentSection()];$('content-heading').textContent=copy[1];$('content-message').textContent=copy[2];}});
+    $('dashboard-language').addEventListener('change',()=>{language=$('dashboard-language').value==='tr'?'tr':'en';navigation();if(context?.business)render(context);});
     function syncProductPrice(){
       const contact=$('product-price-mode').value==='contact';
       $('product-price').disabled=contact;
@@ -191,6 +217,11 @@
     $('product-price-mode').addEventListener('change',syncProductPrice);
     function clearProductForm(){
       $('product-form').reset();$('product-id').value='';$('product-form-title').textContent='Add product';syncProductPrice();
+    }
+    function clearVariantForm(){
+      const productId=$('variant-product').value;
+      $('variant-form').reset();$('variant-id').value='';$('variant-form-title').textContent='Add variant';
+      if(productId&&Array.from($('variant-product').options).some(option=>option.value===productId))$('variant-product').value=productId;
     }
     syncProductPrice();
     let productMutationPending=false;
@@ -224,6 +255,32 @@
       finally{productMutationPending=false;button.disabled=false;$('product-cancel').disabled=false;
         for(const control of $('catalogue-list').querySelectorAll('button'))control.disabled=false;}
     }
+    async function mutateVariant(action,product){
+      if(productMutationPending)return;
+      const businessId=context?.business?.businessId;
+      if(!businessId)return;
+      productMutationPending=true;
+      $('variant-save').disabled=true;$('variant-cancel').disabled=true;
+      for(const control of $('variant-list').querySelectorAll('button'))control.disabled=true;
+      $('variant-feedback').textContent=action==='delete-variant'?'Deleting variant…':'Saving variant…';
+      try{
+        const token=await clerk.session?.getToken();
+        if(!token)throw Error('Sign in again before changing variants.');
+        const url=new URL('/api/businesses',win.location.origin);
+        url.searchParams.set('resource','selling-dashboard');url.searchParams.set('businessId',businessId);
+        const response=await win.fetch(url.pathname+url.search,{method:'POST',credentials:'same-origin',
+          headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
+          body:JSON.stringify({action,product})});
+        const result=await response.json();
+        if(!response.ok)throw Error(result.error||'Variant change failed.');
+        await load();
+        if(context?.business?.businessId!==businessId||$('private-workspace').hidden||!$('dashboard-status').hidden||new URLSearchParams(win.location.search).get('businessId')!==businessId)
+          throw Error('Variant saved, but the dashboard could not refresh.');
+        clearVariantForm();$('variant-feedback').textContent=action==='delete-variant'?'Variant deleted.':'Variant saved.';
+      }catch(error){$('variant-feedback').textContent=error.message||'Variant change failed.';}
+      finally{productMutationPending=false;$('variant-save').disabled=!$('variant-product').options.length;$('variant-cancel').disabled=false;
+        for(const control of $('variant-list').querySelectorAll('button'))control.disabled=false;}
+    }
     $('product-form').addEventListener('submit',event=>{
       event.preventDefault();
       const productId=$('product-id').value||('product-'+win.crypto.randomUUID());
@@ -231,6 +288,15 @@
       mutateProduct('save-product',{productId,name:$('product-name').value,description:$('product-description').value,
         priceMode:$('product-price-mode').value,price:$('product-price').value,availability:$('product-availability').value});
     });
+    $('variant-form').addEventListener('submit',event=>{
+      event.preventDefault();
+      const productId=$('variant-product').value,variantId=$('variant-id').value||('variant-'+win.crypto.randomUUID());
+      if(!productId)return;
+      $('variant-id').value=variantId;
+      mutateVariant('save-variant',{productId,variantId,name:$('variant-name').value,sku:$('variant-sku').value,price:$('variant-price').value,availability:$('variant-availability').value});
+    });
+    $('variant-product').addEventListener('change',()=>{clearVariantForm();$('variant-feedback').textContent='';});
+    $('variant-cancel').addEventListener('click',()=>{clearVariantForm();$('variant-feedback').textContent='';});
     $('stock-product').addEventListener('change',()=>{
       const product=context?.business?.products?.find(item=>item.productId===$('stock-product').value);
       $('stock-quantity').value=Number.isSafeInteger(product?.stockQuantity)?String(product.stockQuantity):'';
@@ -262,10 +328,10 @@
     });
     $('product-cancel').addEventListener('click',clearProductForm);
     $('retry').addEventListener('click',()=>clerk?load():start());
-    $('choose-business').addEventListener('click',()=>{clearProductForm();$('product-feedback').textContent='';const url=new URL(win.location.href);url.searchParams.delete('businessId');win.history.pushState({},'',url);load();});
+    $('choose-business').addEventListener('click',()=>{clearProductForm();clearVariantForm();$('product-feedback').textContent='';$('variant-feedback').textContent='';const url=new URL(win.location.href);url.searchParams.delete('businessId');win.history.pushState({},'',url);load();});
     $('sign-in').addEventListener('click',async()=>{try{await clerk?.openSignIn({forceRedirectUrl:'/selling-vendor',fallbackRedirectUrl:'/selling-vendor',signUpForceRedirectUrl:'/selling-vendor',signUpFallbackRedirectUrl:'/selling-vendor'});}catch{status('error','Sign-in is temporarily unavailable','Please try again.');}});
-    $('sign-out').addEventListener('click',async()=>{clearProductForm();$('product-feedback').textContent='';++sequence;controller?.abort();status('loading','Signing out','Closing your private workspace…');try{await clerk.signOut();await load();}catch{status('error','Sign-out could not finish','Please retry or sign out through your account.');}});
-    $('business-select').addEventListener('change',()=>{clearProductForm();$('product-feedback').textContent='';const id=$('business-select').value;if(!context?.businesses.some(b=>b.businessId===id))return;const url=new URL(win.location.href);url.searchParams.set('businessId',id);win.history.pushState({},'',url);load();});
+    $('sign-out').addEventListener('click',async()=>{clearProductForm();clearVariantForm();$('product-feedback').textContent='';$('variant-feedback').textContent='';++sequence;controller?.abort();status('loading','Signing out','Closing your private workspace…');try{await clerk.signOut();await load();}catch{status('error','Sign-out could not finish','Please retry or sign out through your account.');}});
+    $('business-select').addEventListener('change',()=>{clearProductForm();clearVariantForm();$('product-feedback').textContent='';$('variant-feedback').textContent='';const id=$('business-select').value;if(!context?.businesses.some(b=>b.businessId===id))return;const url=new URL(win.location.href);url.searchParams.set('businessId',id);win.history.pushState({},'',url);load();});
     doc.querySelector('nav').addEventListener('click',event=>{
       const link=event.target.closest('a[data-section]');if(!link||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
       event.preventDefault();win.history.pushState({},'',link.getAttribute('href'));load();$('main').focus();
