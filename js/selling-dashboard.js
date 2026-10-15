@@ -86,6 +86,7 @@
       $('content-message').textContent=business?copy[2]:'Use the business selector above. Your choice is kept in the page URL for refresh and direct navigation.';
       const catalogue=$('catalogue-list');
       catalogue.replaceChildren();
+      $('catalogue-tools').hidden=section!=='product-catalogue'||!business;
       catalogue.hidden=section!=='product-catalogue'||!business;
       if(section==='product-catalogue'&&business){
         const products=Array.isArray(business.products)?business.products:[];
@@ -96,7 +97,11 @@
           const title=doc.createElement('h3');title.textContent=product.name||'Unnamed product';
           const description=doc.createElement('p');description.textContent=product.description||'';
           const price=doc.createElement('p');price.textContent=product.price||'Contact for price';
-          item.append(title,description,price);catalogue.append(item);
+          const edit=doc.createElement('button');edit.type='button';edit.textContent='Edit';
+          edit.addEventListener('click',()=>{ $('product-id').value=product.productId;$('product-name').value=product.name||'';$('product-description').value=product.description||'';$('product-price-mode').value=product.priceMode||'contact';$('product-price').value=product.price||'';$('product-form-title').textContent='Edit product';$('product-name').focus(); });
+          const remove=doc.createElement('button');remove.type='button';remove.textContent='Delete';
+          remove.addEventListener('click',()=>{if(win.confirm('Delete this product?'))mutateProduct('delete-product',{productId:product.productId});});
+          item.append(title,description,price,edit,remove);catalogue.append(item);
         }
       }
       $('business-facts').hidden=section!=='my-business'||!business;
@@ -151,6 +156,34 @@
       finally{booting=false;}
     }
     $('dashboard-language').addEventListener('change',()=>{language=$('dashboard-language').value==='tr'?'tr':'en';navigation();if(context?.business){const copy=sectionCopy()[currentSection()];$('content-heading').textContent=copy[1];$('content-message').textContent=copy[2];}});
+    function clearProductForm(){
+      $('product-form').reset();$('product-id').value='';$('product-form-title').textContent='Add product';
+    }
+    async function mutateProduct(action,product){
+      const businessId=context?.business?.businessId;
+      if(!businessId)return;
+      const button=$('product-save');button.disabled=true;
+      $('product-feedback').textContent='Saving…';
+      try{
+        const url=new URL('/api/businesses',win.location.origin);
+        url.searchParams.set('resource','selling-dashboard');url.searchParams.set('businessId',businessId);
+        const token=await clerk.session.getToken();
+        const response=await win.fetch(url.pathname+url.search,{method:'POST',credentials:'same-origin',
+          headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
+          body:JSON.stringify({action,product})});
+        const result=await response.json();
+        if(!response.ok)throw Error(result.error||'Could not save product.');
+        clearProductForm();await load();$('product-feedback').textContent='Product saved.';
+      }catch(error){$('product-feedback').textContent=error.message||'Product change failed.';}
+      finally{button.disabled=false;}
+    }
+    $('product-form').addEventListener('submit',event=>{
+      event.preventDefault();
+      const productId=$('product-id').value||('product-'+win.crypto.randomUUID());
+      mutateProduct('save-product',{productId,name:$('product-name').value,description:$('product-description').value,
+        priceMode:$('product-price-mode').value,price:$('product-price').value});
+    });
+    $('product-cancel').addEventListener('click',clearProductForm);
     $('retry').addEventListener('click',()=>clerk?load():start());
     $('choose-business').addEventListener('click',()=>{const url=new URL(win.location.href);url.searchParams.delete('businessId');win.history.pushState({},'',url);load();});
     $('sign-in').addEventListener('click',async()=>{try{await clerk?.openSignIn({forceRedirectUrl:'/selling-vendor',fallbackRedirectUrl:'/selling-vendor',signUpForceRedirectUrl:'/selling-vendor',signUpFallbackRedirectUrl:'/selling-vendor'});}catch{status('error','Sign-in is temporarily unavailable','Please try again.');}});
