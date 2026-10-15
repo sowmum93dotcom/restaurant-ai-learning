@@ -36,7 +36,7 @@ function businessSummary(profile, env, identityId) {
   // Real Selling approval remains unchanged. The explicit Preview test grant
   // has its own authority and never changes the real applicationAccess field.
   if (environment === 'live' && !applicationAccess({businessProfile:profile}, id).selling) return null;
-  return environment ? {businessId:id, name:profile.name || 'Unnamed business', type:profile.type || '', location:profile.location || '', dataEnvironment:environment} : null;
+  return environment ? {businessId:id, name:profile.name || 'Unnamed business', type:profile.type || '', location:profile.location || '', dataEnvironment:environment, products:Array.isArray(profile.products)?profile.products.map(p=>({productId:p.productId,name:p.name,description:p.description,price:p.price,priceMode:p.priceMode})):[]} : null;
 }
 
 function createHandler({authenticate=authentication.resolveTrustedIdentityFromRequest, repository=()=>persistence.getRepository(), environment=()=>process.env}={}) {
