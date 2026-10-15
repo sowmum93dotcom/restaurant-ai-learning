@@ -180,7 +180,11 @@
         const result=await response.json();
         if(!response.ok)throw Error(result.error||'Could not save product.');
         await load();
-        if(!context?.business)throw Error('Product saved, but the dashboard could not refresh. Reload before editing again.');
+        const selectedAfterSave=new URLSearchParams(win.location.search).get('businessId');
+        if(!context?.business||context.business.businessId!==businessId||
+          (selectedAfterSave&&selectedAfterSave!==businessId)||
+          $('dashboard-status').dataset.state!=='ready')
+          throw Error('Product saved, but the dashboard could not refresh. Reload before editing again.');
         clearProductForm();$('product-feedback').textContent=action==='delete-product'?'Product deleted.':'Product saved.';
       }catch(error){$('product-feedback').textContent=error.message||'Product change failed.';}
       finally{productMutationPending=false;button.disabled=false;$('product-cancel').disabled=false;
