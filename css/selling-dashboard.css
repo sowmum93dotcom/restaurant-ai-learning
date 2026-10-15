@@ -130,3 +130,5 @@ dd { margin: 0; overflow-wrap: anywhere; }
 .account label[for="dashboard-language"]{font-size:12px;white-space:nowrap;color:inherit}
 #dashboard-language{width:auto;min-width:105px;max-width:135px;min-height:40px}
 @media(max-width:760px){.account{gap:6px}.account label[for="dashboard-language"]{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}#dashboard-language{min-width:92px;max-width:105px;padding:7px}}
+
+.catalogue-item{padding:16px 0;border-top:1px solid var(--bo-line)}.catalogue-item h3{margin:0 0 8px;font-size:18px}.catalogue-item p{margin:5px 0;overflow-wrap:break-word}
