@@ -71,7 +71,7 @@ test('real SQL ownership, application grants, test isolation, revocation and res
   });
   await t.test('empty membership, unsupported methods, invalid selection and repository errors are explicit',async()=>{
    assert.deepEqual((await invoke({identity:'new-owner'})).body.businesses,[]);
-   assert.equal((await invoke({method:'POST'})).code,405);
+   assert.equal((await invoke({method:'PATCH'})).code,405);
    assert.equal((await invoke({businessId:['real-a']})).code,400);
    assert.equal((await invoke({repo:{getOwnedBusinessProfiles(){throw Error('private SQL details');}}})).code,503);
   });
