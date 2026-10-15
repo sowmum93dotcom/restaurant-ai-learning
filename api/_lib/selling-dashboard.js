@@ -9,6 +9,8 @@ const {createAuthenticatedBusinessOwnerContext} = require('./demeos-actor-contex
 const {isolatedTestEnvironment,dataEnvironment}=require('./selling-access');
 const inventory=require('./vendor-inventory');
 const media=require('./selling-media');
+const submissions=require('./selling-submissions');
+const categories=require('./marketing-agent-categories');
 
 function variantSummaries(product){
  const legacy=(product.variants||[]).map(v=>({variantId:v.variantId,name:v.name,sku:v.sku||'',price:v.price||'',availability:v.availability||'contact',inheritsPrice:!v.price}));
@@ -25,10 +27,10 @@ function businessSummary(profile, env, identityId) {
   if (environment === 'live' && !applicationAccess({businessProfile:profile}, id).selling) return null;
   if(!environment)return null;
   return {businessId:id,name:profile.name||'Unnamed business',type:profile.type||'',location:profile.location||'',dataEnvironment:environment,catalogueRevision:catalogueRevision(profile),
-    products:(Array.isArray(profile.products)?profile.products:[]).map(p=>({productId:p.productId,name:p.name,description:p.description,price:p.price,priceMode:p.priceMode,availability:p.availability||'contact',mediaGallery:p.mediaGallery||{assetIds:[],mainAssetId:''},stockQuantity:Number.isSafeInteger(p.stockQuantity)?p.stockQuantity:null,stockHistory:Array.isArray(p.stockHistory)?p.stockHistory:[],variants:variantSummaries(p)}))};
+    products:(Array.isArray(profile.products)?profile.products:[]).map(p=>({productId:p.productId,name:p.name,description:p.description,price:p.price,priceMode:p.priceMode,availability:p.availability||'contact',mediaGallery:p.mediaGallery||{assetIds:[],mainAssetId:''},stockQuantity:Number.isSafeInteger(p.stockQuantity)?p.stockQuantity:null,stockHistory:Array.isArray(p.stockHistory)?p.stockHistory:[],variants:variantSummaries(p),classification:p.classification||null,submission:p.submission||null}))};
 }
 
-function createHandler({authenticate=authentication.resolveTrustedIdentityFromRequest, repository=()=>persistence.getRepository(), environment=()=>process.env,mediaBackend=media.mediaBackend}={}) {
+function createHandler({authenticate=authentication.resolveTrustedIdentityFromRequest, repository=()=>persistence.getRepository(), environment=()=>process.env,mediaBackend=media.mediaBackend,resolveSubmissionEvidence}={}) {
   return async function sellingDashboard(req, res) {
     res.setHeader('Cache-Control', 'private, no-store');
     res.setHeader('Vercel-CDN-Cache-Control', 'no-store');
@@ -53,7 +55,7 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
         // Recheck ownership and the applicable server authority on every load.
         if (!await store.isBusinessOwnedByIdentity(identity.trustedIdentityId,businessId)) return res.status(403).json({error:'Selling access is unavailable for this business.'});
         const actorContext = createAuthenticatedBusinessOwnerContext({trustedIdentityId:identity.trustedIdentityId,businessId});
-        if (!authorizeDemeosAction({actorContext,businessId,action:req.method==='POST'?(['register-media','complete-media','remove-media'].includes(req.body?.action)?'manage-business-media':'manage-business-profile'):'view-own-business-results'}).allowed) return res.status(403).json({error:'Selling access is unavailable for this business.'});
+        if (!authorizeDemeosAction({actorContext,businessId,action:req.method==='POST'?(['register-media','complete-media','remove-media','set-main-media'].includes(req.body?.action)?'manage-business-media':'manage-business-profile'):'view-own-business-results'}).allowed) return res.status(403).json({error:'Selling access is unavailable for this business.'});
         const record = await store.getKnownBusiness(businessId);
         business = businessSummary(record?.businessProfile,env,identity.trustedIdentityId);
         if (!business || business.businessId !== businessId) return res.status(403).json({error:'Selling access is unavailable for this business.'});
@@ -82,7 +84,7 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
           return res.status(200).json({ok:true});
         }
         const item=req.body?.product;
-        if (!['save-product','delete-product','adjust-stock','save-variant','delete-variant','register-media','complete-media','remove-media'].includes(action) || !item || typeof item!=='object' || Array.isArray(item))
+        if (!['save-product','save-draft','delete-product','adjust-stock','save-variant','delete-variant','register-media','complete-media','remove-media','set-main-media','review-product','submit-product','publish-product','unpublish-product'].includes(action) || !item || typeof item!=='object' || Array.isArray(item))
           return res.status(400).json({error:'Invalid product request.'});
         const id=typeof item.productId==='string'?item.productId.trim():'';
         if (!/^[a-zA-Z0-9_-]{1,120}$/.test(id)) return res.status(400).json({error:'Invalid product ID.'});
@@ -90,8 +92,12 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
         if (!original || !businessSummary(original,env,identity.trustedIdentityId))
           return res.status(403).json({error:'Business access unavailable.'});
         if(req.body.catalogueRevision!==catalogueRevision(original))return res.status(409).json({error:'Products changed. Reload before saving.'});
-        if(['register-media','complete-media','remove-media'].includes(action)){
-          const result=await media.mutateMedia({store,profile:original,identity:identity.trustedIdentityId,action,item,backend,env,saveProfile:(previous,next)=>store.saveSellingProducts(identity.trustedIdentityId,businessId,previous,next)});
+        if(['review-product','submit-product','publish-product','unpublish-product'].includes(action)){
+          const result=await submissions.mutate({store,profile:original,productId:id,action,identity:identity.trustedIdentityId,environment:env,confirmed:req.body.confirmed,resolveEvidence:resolveSubmissionEvidence});
+          const {status,...body}=result;return res.status(status).json({...body,...(status>=400?{error:'Review the product and its current validation status before continuing.'}:{})});
+        }
+        if(['register-media','complete-media','remove-media','set-main-media'].includes(action)){
+          const result=await media.mutateMedia({store,profile:original,identity:identity.trustedIdentityId,action,item,backend,env,saveProfile:(previous,next)=>{next.products=next.products.map(p=>submissions.reconcile(previous.products.find(old=>old.productId===p.productId),p,businessId,identity.trustedIdentityId,action==='complete-media'?'media-processing-completed':action==='set-main-media'?'main-image-selected':'media-removed'));return store.saveSellingProducts(identity.trustedIdentityId,businessId,previous,next);}});
           const {status,...body}=result;return res.status(status).json(body);
         }
         const products=Array.isArray(original.products)?original.products.slice():[];
@@ -148,12 +154,17 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
           const name=clean(item.name,200),description=clean(item.description,1200);
           const price=clean(item.price,100),priceMode=clean(item.priceMode,20)||'contact';
           const availability=clean(item.availability,20)||'contact';
-          if (!name || !description || !['contact','fixed','from','range'].includes(priceMode) || !['contact','available','limited','unavailable'].includes(availability) ||
-              (priceMode==='contact'&&price) || (priceMode!=='contact'&&!price))
+          if ((action!=='save-draft'&&(!name || !description)) || !['contact','fixed','from','range'].includes(priceMode) || !['contact','available','limited','unavailable'].includes(availability) ||
+              (priceMode==='contact'&&price) || (action!=='save-draft'&&priceMode!=='contact'&&!price))
             return res.status(400).json({error:'Invalid product details.'});
           if (index<0 && products.length>=100) return res.status(409).json({error:'Product limit reached.'});
           if(index<0&&typeof store.getVendorInventory==='function'){const stock=await store.getVendorInventory(businessId);if(Object.keys(stock.entries).some(key=>JSON.parse(key)[0]===id))return res.status(409).json({error:'This product identity has stock history. Create the product with a new identity.'});}
           const previous=index>=0?products[index]:{};
+          let classification=previous.classification;
+          if(Object.hasOwn(item,'classification')){
+            classification=item.classification===null?undefined:submissions.categoryReference(item.classification);
+            if(item.classification!==null&&!classification)return res.status(400).json({error:'Choose a valid DEMEOS category.',code:'category-integrity'});
+          }
           let presentation=previous.presentation;
           if(presentation&&((previous.price||'')!==price||(previous.priceMode||'contact')!==priceMode)){
             const pricing={...presentation.pricing,mode:priceMode==='contact'?'quote':priceMode};
@@ -171,14 +182,17 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
           }
           const product={...previous,...(presentation?{presentation}:{}),productId:id,businessId,name,description,price,priceMode,...(index<0?{customerVisible:false}:{}),
             availability};
+          if(classification)product.classification=classification;else delete product.classification;
           if (index<0) products.push(product); else products[index]=product;
         }
-        const updated={...original,products};
+        const updated={...original,products:products.map(p=>submissions.reconcile(original.products.find(old=>old.productId===p.productId),p,businessId,identity.trustedIdentityId,action==='save-variant'||action==='delete-variant'?'variants-edited':'product-edited'))};
+        // Only this trusted authoring path initializes a new draft.
+        for(const p of updated.products)if(!original.products.some(old=>old.productId===p.productId)){p.submission=submissions.draft(p,businessId,identity.trustedIdentityId);p.customerVisible=false;}
         const saved=await store.saveSellingProducts(identity.trustedIdentityId,businessId,original,updated);
         if (!saved) return res.status(409).json({error:'Business changed. Reload and retry.'});
         return res.status(200).json({ok:true});
       }
-      return res.status(200).json({contractVersion:1, vendor:{identityId:identity.trustedIdentityId}, businesses, business, phase:1});
+      return res.status(200).json({contractVersion:1, vendor:{identityId:identity.trustedIdentityId}, businesses, business, categories:{datasetVersion:categories.DATASET_VERSION,sectors:categories.SECTORS,items:categories.CATEGORIES},phase:1});
     } catch {
       return res.status(503).json({error:'Your Selling dashboard could not load. Please retry.'});
     }

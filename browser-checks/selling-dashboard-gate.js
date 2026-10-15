@@ -35,7 +35,8 @@ async function run(){
  await repository.createBusinessForOwner('owner-a',profile('pending',false));
  await repository.createBusinessForOwner('owner-a',{...profile('test-business-selling-a',false),name:'DEMEOS Test Vendor',applicationAccess:undefined});
  await repository.createBusinessForOwner('owner-b',profile('vendor-b'));
- let env={VERCEL_ENV:'production'},failure=false,delay=0;
+ let env={VERCEL_ENV:'production'},failure=false,delay=0,submissionEvidence;
+ const reviewedFixtureEvidence=async request=>({...request,outcome:'passed',independentlyVerified:true,authorityDecisionId:'isolated-browser-authority-fixture',capabilityVersion:'fixture-v1',expiresAt:new Date(Date.now()+3600000).toISOString()});
  // A genuine reservation from the existing service in isolated SQL, not a fabricated order row.
  const orderInventory=require('../api/_lib/vendor-inventory');
  const orderProfile={...profile('vendor-b'),products:[{businessId:'vendor-b',productId:'order-shirt',name:'Reserved Shirt',availability:'available',presentation:{version:1,categoryId:'fashion.apparel',pricing:{mode:'fixed',currency:'GBP',amount:20},options:[{key:'size',values:[{value:'M',label:'Medium'}]}],variants:[{variantId:'medium',selection:{size:'M'},availability:'available'}]}}]};
@@ -46,7 +47,7 @@ async function run(){
  const orderSnapshot=(await repository.getKnownBusiness('vendor-b')).businessProfile;
  const genuineOrder=await orderService.reserve('order-customer','browser-order-000001',{businessId:'vendor-b',productId:'order-shirt',variantId:'medium',selection:{size:'M'},quantity:2,catalogueRevision:orderInventory.catalogueRevision(orderSnapshot),stockIdentity:orderInventory.stockIdentity(orderProfile.products[0],orderProfile.products[0].presentation.variants[0])});
 
- const handler=createHandler({repository:()=>repository,environment:()=>({...env,DEMEOS_MEDIA_UPLOAD_SECRET:process.env.DEMEOS_MEDIA_UPLOAD_SECRET}),mediaBackend:()=>disk,authenticate:async req=>{
+ const handler=createHandler({resolveSubmissionEvidence:request=>submissionEvidence?submissionEvidence(request):null,repository:()=>repository,environment:()=>({...env,DEMEOS_MEDIA_UPLOAD_SECRET:process.env.DEMEOS_MEDIA_UPLOAD_SECRET}),mediaBackend:()=>disk,authenticate:async req=>{
   if(delay)await new Promise(r=>setTimeout(r,delay));
   if(failure)throw Error('Simulated data boundary failure');
   const id=req.headers.cookie?.match(/gate-owner=(owner-[a-z]+)/)?.[1];return id?{trustedIdentityId:id}:null;
@@ -81,6 +82,49 @@ async function run(){
    await context.route('https://clerk.test/npm/@clerk/ui@1/dist/ui.browser.js',r=>r.fulfill({contentType:'text/javascript',body:'window.__internal_ClerkUICtor={};'}));
    await context.route('https://clerk.test/npm/@clerk/clerk-js@6/dist/clerk.browser.js',r=>r.fulfill({contentType:'text/javascript',body:`window.Clerk={user:{id:document.cookie.match(/gate-owner=(owner-[a-z]+)/)?.[1]||'owner-a'},session:{id:'session-a',async getToken(){return 'verified-token';}},async load(){},addListener(fn){this.listener=fn;},openSignIn(options){window.signInRequest=options;},async signOut(){this.user=null;this.session=null;this.listener();}};`}));
    const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+   async function submissionJourney(businessId){
+    const current=()=>repository.getKnownBusiness(businessId).then(r=>r.businessProfile.products[0]);
+    let product=await current();const id=product.productId;
+    // Real multiple-file main-image selection, then remove the additional file.
+    const originalMain=product.mediaGallery.mainAssetId;
+    await page.locator('#media-file').setInputFiles({name:'alternate.png',mimeType:'image/png',buffer:await require('sharp')({create:{width:18,height:14,channels:3,background:'#c99a2e'}}).png().toBuffer()});
+    await page.locator('#media-upload').click();await page.locator('#media-feedback').filter({hasText:'File uploaded and linked to product.'}).waitFor();
+    product=await current();const alternate=product.mediaGallery.assetIds.find(assetId=>assetId!==originalMain);
+    await page.locator('[data-main-asset="'+alternate+'"]').click();await page.locator('#media-feedback').filter({hasText:'Saved and verified.'}).waitFor();
+    await page.reload();await page.locator('[data-main-asset="'+alternate+'"]').waitFor();assert.equal((await current()).mediaGallery.mainAssetId,alternate);
+    page.once('dialog',dialog=>dialog.accept());await page.locator('#media-list article').filter({has:page.locator('[data-main-asset="'+alternate+'"]')}).getByRole('button',{name:'Remove',exact:true}).click();await page.locator('#media-feedback').filter({hasText:'Media removed from product.'}).waitFor();
+    await page.locator('[data-main-asset="'+originalMain+'"]').click();await page.locator('#media-feedback').filter({hasText:'Saved and verified.'}).waitFor();
+    assert.equal((await current()).mediaGallery.mainAssetId,originalMain);
+
+    await page.goto(base+'/selling-vendor/product-catalogue?businessId='+businessId);
+    await page.locator('.catalogue-item > button').filter({hasText:'Edit',exact:true}).click();
+    await page.locator('#product-category').selectOption('1');await page.locator('#product-save').click();await page.locator('#product-feedback').filter({hasText:'Product saved.'}).waitFor();
+    await page.locator('[data-submission="'+id+'"] > summary').click();
+    await page.locator('[data-review-product="'+id+'"]').click();await page.locator('#submission-feedback').filter({hasText:'Draft'}).waitFor();
+    await page.locator('[data-submission-confirm="'+id+'"]').check();await page.locator('[data-submit-product="'+id+'"]').click();
+    await page.locator('[data-product-state="'+id+'"]').filter({hasText:'Review required'}).waitFor();
+    product=await current();assert.equal(product.submission.state,'review-required');assert.equal(product.customerVisible,false);
+    assert.equal(product.submission.validation.rules.find(r=>r.id==='content-safety').status,'unavailable');
+    await page.reload();await page.locator('[data-product-state="'+id+'"]').filter({hasText:'Review required'}).waitFor();
+    if(viewport.width===375){await page.locator('#dashboard-language').selectOption('tr');await page.locator('[data-product-state="'+id+'"]').filter({hasText:'İnceleme gerekli'}).waitFor();assert.equal(await page.locator('[data-submission-copy=saveDraft]').innerText(),'Taslağı kaydet');await page.locator('#dashboard-language').selectOption('en');}
+    await page.locator('[data-submission="'+id+'"] > summary').click();
+    if(viewport.width===375||viewport.width===1440)await page.screenshot({path:path.join(artifacts,'demeos-selling-submission-held-'+businessId+'-'+viewport.width+'.png'),fullPage:true});
+    // Only the isolated server fixture can install exact-purpose receipts. No HTTP parameter does this.
+    submissionEvidence=reviewedFixtureEvidence;
+    await page.locator('[data-review-product="'+id+'"]').click();
+    await page.locator('#submission-feedback').filter({hasText:'Review required'}).waitFor();
+    await page.locator('[data-submission-confirm="'+id+'"]').check();await page.locator('[data-submit-product="'+id+'"]').click();
+    await page.locator('[data-product-state="'+id+'"]').filter({hasText:'Approved'}).waitFor();
+    await page.locator('[data-publish-product="'+id+'"]').click();await page.locator('[data-product-state="'+id+'"]').filter({hasText:'Published'}).waitFor();
+    const publication=(await current()).submission.publication;assert.equal(publication.version,(await current()).submission.version);assert.equal((await current()).customerVisible,false);
+    await page.reload();await page.locator('[data-product-state="'+id+'"]').filter({hasText:'Published'}).waitFor();
+    await page.locator('[data-submission="'+id+'"] > summary').click();
+    if(viewport.width===375||viewport.width===1440)await page.screenshot({path:path.join(artifacts,'demeos-selling-submission-'+businessId+'-'+viewport.width+'.png'),fullPage:true});
+    await page.locator('[data-unpublish-product="'+id+'"]').click();
+    await page.locator('[data-product-state="'+id+'"]').filter({hasText:'Approved'}).waitFor();assert.equal((await current()).submission.publication.state,'revoked');
+    submissionEvidence=null;
+    await page.goto(base+'/selling-vendor/images-videos?businessId='+businessId);await page.locator('#media-form:visible').waitFor();
+   }
    async function verifyDemeosIdentity(){
     const brand=await page.evaluate(()=>{
      const logo=document.querySelector('header .brand img');
@@ -124,6 +168,12 @@ async function run(){
    await page.reload();await page.locator('#business-name').filter({hasText:'North & Field Updated'}).waitFor();
    await page.locator('#business-edit-name').fill('North & Field');await page.locator('#business-accuracy').check();await page.locator('#business-save').click();await page.locator('#business-feedback').filter({hasText:'Business details saved.'}).waitFor();
    console.log('Browser gate: live catalogue CRUD '+viewport.width+'px');
+   if(viewport.width===375){
+    await page.goto(base+'/selling-vendor/product-catalogue?businessId=vendor-a');await page.locator('#product-save-draft').click();await page.locator('#product-feedback').filter({hasText:'Saved and verified.'}).waitFor();
+    let draft=(await repository.getKnownBusiness('vendor-a')).businessProfile.products[0];assert.equal(draft.name,'');assert.equal(draft.submission.state,'draft');assert.equal(draft.customerVisible,false);
+    await page.reload();await page.locator('[data-product-state="'+draft.productId+'"]').filter({hasText:'Draft'}).waitFor();
+    page.once('dialog',dialog=>dialog.accept());await page.locator('.catalogue-item > button').filter({hasText:'Delete',exact:true}).click();await page.locator('#product-feedback').filter({hasText:'Product deleted.'}).waitFor();
+   }
    // Exercise real product persistence through the shipped form and isolated SQL.
    await page.goto(base+'/selling-vendor/product-catalogue?businessId=vendor-a');
    await page.locator('#product-form:visible').waitFor();
@@ -198,6 +248,7 @@ async function run(){
    assert.equal((await repository.getBusinessMediaAsset('vendor-a',linked)).state,'ready');
    await page.reload();await page.locator('#media-list img').waitFor();await page.waitForFunction(()=>document.querySelector('#media-list img')?.naturalWidth>0);
    if([375,1440].includes(viewport.width))await page.screenshot({path:path.join(artifacts,'demeos-selling-media-'+viewport.width+'.png'),fullPage:true});
+   if([375,1440].includes(viewport.width))await submissionJourney('vendor-a');
    page.once('dialog',dialog=>dialog.accept());await page.locator('#media-list button').filter({hasText:'Remove',exact:true}).click();
    await page.locator('#media-feedback').filter({hasText:'Media removed from product.'}).waitFor();await page.reload();
    assert.equal((await repository.getBusinessMediaAsset('vendor-a',linked)).state,'archived');assert.equal(await page.locator('#media-list img').count(),0);
@@ -292,7 +343,8 @@ async function run(){
     await page.locator('#media-upload').click();await page.locator('#media-feedback').filter({hasText:'File uploaded and linked to product.'}).waitFor();
     const previewMediaId=(await repository.getKnownBusiness('test-business-selling-a')).businessProfile.products[0].mediaGallery.assetIds[0];
     await page.reload();await page.waitForFunction(()=>document.querySelector('#media-list img')?.naturalWidth>0);
-    page.once('dialog',dialog=>dialog.accept());await page.locator('#media-list button').filter({hasText:'Remove',exact:true}).click();
+    await submissionJourney('test-business-selling-a');
+   page.once('dialog',dialog=>dialog.accept());await page.locator('#media-list button').filter({hasText:'Remove',exact:true}).click();
     await page.locator('#media-feedback').filter({hasText:'Media removed from product.'}).waitFor();
     assert.equal((await repository.getBusinessMediaAsset('test-business-selling-a',previewMediaId)).state,'archived');
     await page.goto(base+'/selling-vendor/stock-history');await page.locator('#stock-form:visible').waitFor();

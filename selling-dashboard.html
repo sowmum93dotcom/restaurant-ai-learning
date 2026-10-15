@@ -6,6 +6,7 @@
   <link rel="icon" type="image/png" href="/images/demeos-logo.png">
   <link rel="stylesheet" href="/css/demeos-business-premium.css">
   <link rel="stylesheet" href="/css/selling-dashboard.css">
+  <script defer src="/js/selling-submission-copy.js"></script>
   <script defer src="/js/selling-dashboard.js"></script>
 </head>
 <body>
@@ -32,12 +33,15 @@
             <input id="product-id" type="hidden">
             <label>Product name<input id="product-name" required maxlength="200"></label>
             <label>Description<textarea id="product-description" required maxlength="1200"></textarea></label>
+            <label><span data-submission-copy="category">DEMEOS business category</span><select id="product-category"></select></label>
             <label>Price type<select id="product-price-mode"><option value="contact">Contact for price</option><option value="fixed">Fixed price</option><option value="from">From</option><option value="range">Range</option></select></label>
             <label>Price<input id="product-price" maxlength="100"></label>
             <label>Availability<select id="product-availability"><option value="contact">Ask about availability</option><option value="available">Available</option><option value="limited">Limited availability</option><option value="unavailable">Unavailable</option></select></label>
             <button type="submit" id="product-save">Save product</button>
+            <button type="button" id="product-save-draft" data-submission-copy="saveDraft">Save draft</button>
             <button type="button" id="product-cancel">Clear form</button>
           </form>
+          <p data-submission-copy="note">Saving does not publish. Required checks must pass before publication readiness.</p><p id="submission-feedback" role="status" aria-live="polite"></p>
           <p id="product-feedback" role="status" aria-live="polite"></p>
         </div><div id="catalogue-list" hidden aria-live="polite"></div>
         <div id="business-tools" hidden>

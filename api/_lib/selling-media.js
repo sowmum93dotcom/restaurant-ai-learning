@@ -26,7 +26,7 @@ async function listMedia(store,profile,backend){
   let previewUrl=null;
   const prefix=`businesses/${encodeURIComponent(profile.businessId)}/media/${encodeURIComponent(asset.assetId)}/processed/`;
   if(asset.state==='ready'&&asset.processedStorageKey?.startsWith(prefix))previewUrl=(await backend.adapter?.createDeliveryRead({storageKey:asset.processedStorageKey,expiresAt:new Date(Date.now()+10*60*1000).toISOString()}))?.deliveryUrl||null;
-  return {assetId:asset.assetId,productId:asset.relatedEntityId,kind:asset.kind,state:asset.state,previewUrl,failureReason:asset.failureReason||'',linked:(profile.products||[]).find(p=>p.productId===asset.relatedEntityId)?.mediaGallery?.assetIds?.includes(asset.assetId)||false};
+  return {assetId:asset.assetId,productId:asset.relatedEntityId,kind:asset.kind,state:asset.state,previewUrl,failureReason:asset.failureReason||'',main:(profile.products||[]).find(p=>p.productId===asset.relatedEntityId)?.mediaGallery?.mainAssetId===asset.assetId,linked:(profile.products||[]).find(p=>p.productId===asset.relatedEntityId)?.mediaGallery?.assetIds?.includes(asset.assetId)||false};
  }));
 }
 async function mutateMedia({store,profile,identity,action,item,backend,env,saveProfile}){
@@ -47,6 +47,7 @@ async function mutateMedia({store,profile,identity,action,item,backend,env,saveP
  }
  const asset=await store.getBusinessMediaAsset(profile.businessId,item.assetId);
  if(!asset||asset.relatedEntityId!==product.productId||!['product','service'].includes(asset.purpose))return {status:404,error:'Product media not found.'};
+ if(action==='set-main-media'&&(asset.state!=='ready'||asset.kind!=='image'||!product.mediaGallery?.assetIds?.includes(asset.assetId)))return {status:400,error:'Choose a ready image linked to this product.'};
  if(action==='complete-media'){
   const processing=await completeVerifiedMediaUpload({asset,businessId:profile.businessId,assetId:asset.assetId,uploadToken:item.uploadToken,storageKey:item.storageKey,storageAdapter:backend.adapter});
   if(!processing)return {status:409,error:'The uploaded file could not be verified.'};
@@ -71,6 +72,8 @@ async function mutateMedia({store,profile,identity,action,item,backend,env,saveP
  const ids=target.mediaGallery?.assetIds||[];
  if(action==='remove-media'){
   const kept=ids.filter(id=>id!==asset.assetId);target.mediaGallery={...target.mediaGallery,assetIds:kept,mainAssetId:target.mediaGallery?.mainAssetId===asset.assetId?'':target.mediaGallery?.mainAssetId||''};
+ }else if(action==='set-main-media'){
+  target.mediaGallery={...target.mediaGallery,mainAssetId:asset.assetId};
  }else{
   if(!ids.includes(asset.assetId)&&ids.length>=20)return {status:409,error:'A product supports up to 20 media files. Remove a file before linking another.'};
   target.mediaGallery={...target.mediaGallery,assetIds:Array.from(new Set([...ids,asset.assetId])),mainAssetId:target.mediaGallery?.mainAssetId||(asset.kind==='image'?asset.assetId:'')};

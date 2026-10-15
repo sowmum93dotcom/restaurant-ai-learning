@@ -35,6 +35,9 @@
     const currentSection=()=>sectionForPath(win.location.pathname);
     let language='en',renderedContextKey='';
     const sectionCopy=()=>localizedSections(language);
+    const submissionCopy=key=>(win.DEMEOSSellingSubmissionCopy?.[language]||win.DEMEOSSellingSubmissionCopy?.en||{})[key]||key;
+    let openSubmissionId='';
+    function translateSubmissions(){for(const node of doc.querySelectorAll('[data-submission-copy]'))node.textContent=submissionCopy(node.dataset.submissionCopy);}
     function translateNavigation(){for(const link of doc.querySelectorAll('nav [data-section]'))link.textContent=sectionCopy()[link.dataset.section][0];$('dashboard-language').value=language;doc.documentElement.lang=language;}
     function status(state,title,message){
       context=null;$('private-workspace').hidden=true;$('business-name').textContent='';$('business-details').textContent='';$('business-facts').replaceChildren();$('business-select').replaceChildren();
@@ -82,7 +85,11 @@
       $('business-details').textContent=business?[business.type,business.location].filter(Boolean).join(' · '):'Only businesses authorized for your account are listed.';
       $('environment-label').textContent=business?(business.dataEnvironment==='test'?'Test business · isolated data':'Selling access approved'):'';
       $('environment-label').dataset.environment=business?.dataEnvironment||'';
-      const section=currentSection(),copy=sectionCopy()[section];
+      const section=currentSection(),copy=sectionCopy()[section];translateSubmissions();
+      const selectedCategory=$('product-category').value;$('product-category').replaceChildren();
+      const blank=doc.createElement('option');blank.value='';blank.textContent=submissionCopy('chooseCategory');$('product-category').append(blank);
+      for(const c of data.categories?.items||[]){const option=doc.createElement('option');option.value=c.categoryId;option.textContent=c.categoryId+' · '+c.categoryName;$('product-category').append(option);}
+      $('product-category').value=selectedCategory;
       $('content-heading').textContent=business?copy[1]:'Select your business to continue';
       $('content-message').textContent=business?copy[2]:'Use the business selector above. Your choice is kept in the page URL for refresh and direct navigation.';
       const catalogue=$('catalogue-list');
@@ -95,15 +102,15 @@
         $('content-message').textContent=products.length?(language==='tr'?'Kayıtlı ürünleriniz':'Your saved DEMEOS products'):(language==='tr'?'Henüz kayıtlı ürün yok.':'No products saved yet.');
         for(const product of products){
           const item=doc.createElement('article');item.className='catalogue-item';
-          const title=doc.createElement('h3');title.textContent=product.name||'Unnamed product';
+          const title=doc.createElement('h3');title.textContent=product.name||submissionCopy('untitled');
           const description=doc.createElement('p');description.textContent=product.description||'';
           const price=doc.createElement('p');price.textContent=product.price||'Contact for price';
           const availability=doc.createElement('p');availability.textContent=product.availability==='available'?'Available':product.availability==='unavailable'?'Unavailable':product.availability==='limited'?'Limited availability':'Ask about availability';
           const edit=doc.createElement('button');edit.type='button';edit.textContent='Edit';
-          edit.addEventListener('click',()=>{ $('product-id').value=product.productId;$('product-name').value=product.name||'';$('product-description').value=product.description||'';$('product-price-mode').value=product.priceMode||'contact';$('product-price').value=product.price||'';syncProductPrice();$('product-availability').value=product.availability||'contact';$('product-form-title').textContent='Edit product';$('product-name').focus(); });
+          edit.addEventListener('click',()=>{ $('product-id').value=product.productId;$('product-name').value=product.name||'';$('product-description').value=product.description||'';$('product-price-mode').value=product.priceMode||'contact';$('product-price').value=product.price||'';syncProductPrice();$('product-availability').value=product.availability||'contact';$('product-category').value=product.classification?.categoryId||'';$('product-form-title').textContent='Edit product';$('product-name').focus(); });
           const remove=doc.createElement('button');remove.type='button';remove.textContent='Delete';
           remove.addEventListener('click',()=>{if(win.confirm('Delete this product?'))mutateProduct('delete-product',{productId:product.productId});});
-          item.append(title,description,price,availability,edit,remove);catalogue.append(item);
+          item.append(title,description,price,availability,edit,remove);renderSubmission(item,product,business);catalogue.append(item);
         }
       }
       $('media-tools').hidden=section!=='images-videos'||!business;
@@ -116,7 +123,7 @@
           const title=doc.createElement('h3');title.textContent=(business.products.find(p=>p.productId===asset.productId)?.name||'Product')+' · '+asset.kind;
           const state=doc.createElement('p');state.textContent=asset.state+(asset.linked?' · Linked to product':' · Not linked')+(asset.failureReason?' · '+asset.failureReason:'');article.append(title,state);
           if(asset.state==='ready'&&asset.previewUrl){const preview=doc.createElement(asset.kind==='image'?'img':'video');preview.src=asset.previewUrl;preview.className='product-media-preview';if(asset.kind==='image')preview.alt=title.textContent;else{preview.controls=true;preview.preload='metadata';}article.append(preview);}
-          const remove=doc.createElement('button');remove.type='button';remove.textContent='Remove';remove.addEventListener('click',()=>{if(win.confirm('Remove this media from the product?'))changeMedia('remove-media',{productId:asset.productId,assetId:asset.assetId});});article.append(remove);$('media-list').append(article);
+          const remove=doc.createElement('button');remove.type='button';remove.textContent='Remove';remove.addEventListener('click',()=>{if(win.confirm('Remove this media from the product?'))changeMedia('remove-media',{productId:asset.productId,assetId:asset.assetId});});article.append(remove);if(asset.kind==='image'&&asset.state==='ready'&&asset.linked){const main=doc.createElement('button');main.type='button';main.dataset.mainAsset=asset.assetId;main.textContent=submissionCopy(asset.main?'mainImage':'setMain');main.disabled=asset.main;main.addEventListener('click',()=>changeMedia('set-main-media',{productId:asset.productId,assetId:asset.assetId}));article.append(main);}$('media-list').append(article);
         }
         if(!business.media?.length){const empty=doc.createElement('p');empty.textContent='No product media saved.';$('media-list').append(empty);}
         syncMediaForm();
@@ -131,7 +138,7 @@
         for(const product of products){
           const option=doc.createElement('option');option.value=product.productId;option.textContent=product.name||product.productId;$('variant-product').append(option);
           const article=doc.createElement('article');article.className='catalogue-item';
-          const title=doc.createElement('h3');title.textContent=product.name||'Unnamed product';article.append(title);
+          const title=doc.createElement('h3');title.textContent=product.name||submissionCopy('untitled');article.append(title);
           const variants=Array.isArray(product.variants)?product.variants:[];
           if(!variants.length){const empty=doc.createElement('p');empty.textContent=language==='tr'?'Kayıtlı varyant yok.':'No variants saved.';article.append(empty);}
           for(const variant of variants){
@@ -242,7 +249,7 @@
     function clearPrivateForms(){
       clearProductForm();clearVariantForm();
       for(const id of ['stock-form','media-form','business-form'])$(id).reset();
-      for(const id of ['product-feedback','variant-feedback','stock-feedback','media-feedback','business-feedback'])$(id).textContent='';
+      for(const id of ['submission-feedback','product-feedback','variant-feedback','stock-feedback','media-feedback','business-feedback'])$(id).textContent='';
       mediaAttempt=null;
     }
     function syncProductPrice(){
@@ -252,6 +259,7 @@
       if(contact)$('product-price').value='';
     }
     $('product-price-mode').addEventListener('change',syncProductPrice);
+    function productClassification(){const category=context?.categories?.items.find(c=>c.categoryId===$('product-category').value);return category?{categoryId:category.categoryId,sectorId:category.sectorId,datasetVersion:context.categories.datasetVersion}:null;}
     function clearProductForm(){
       $('product-form').reset();$('product-id').value='';$('product-form-title').textContent='Add product';syncProductPrice();
     }
@@ -264,9 +272,9 @@
     let productMutationPending=false;
     function mutationBusy(busy){
       productMutationPending=busy;
-      for(const control of doc.querySelectorAll('#catalogue-tools input,#catalogue-tools textarea,#catalogue-tools select,#catalogue-tools button,#catalogue-list button,#variant-tools input,#variant-tools select,#variant-tools button,#stock-tools input,#stock-tools select,#stock-tools button,#media-tools input,#media-tools select,#media-tools button,#business-tools input,#business-tools textarea,#business-tools button'))control.disabled=busy;
+      for(const control of doc.querySelectorAll('#catalogue-tools input,#catalogue-tools textarea,#catalogue-tools select,#catalogue-tools button,#catalogue-list button,#catalogue-list input,#variant-tools input,#variant-tools select,#variant-tools button,#stock-tools input,#stock-tools select,#stock-tools button,#media-tools input,#media-tools select,#media-tools button,#business-tools input,#business-tools textarea,#business-tools button'))control.disabled=busy;
       $('business-select').disabled=busy||context?.businesses.length===1;
-      if(!busy){syncProductPrice();syncMediaForm();$('variant-save').disabled=!$('variant-product').options.length;$('stock-save').disabled=!$('stock-product').options.length;}
+      if(!busy){for(const button of doc.querySelectorAll('[data-submit-product]')){const product=context?.business?.products.find(p=>p.productId===button.dataset.submitProduct);button.disabled=product?.submission?.state==='rejected'||product?.submission?.state==='validating'&&Date.now()-Date.parse(product.submission.attempt?.startedAt)<30000;}for(const button of doc.querySelectorAll('[data-main-asset]'))button.disabled=context?.business?.media.find(a=>a.assetId===button.dataset.mainAsset)?.main===true;syncProductPrice();syncMediaForm();$('variant-save').disabled=!$('variant-product').options.length;$('stock-save').disabled=!$('stock-product').options.length;}
     }
     async function mutateProduct(action,product){
       if(productMutationPending)return;
@@ -296,10 +304,46 @@
           throw Error('Product saved, but the dashboard could not refresh. Reload before editing again.');
         const confirmed=context.business.products.find(p=>p.productId===product.productId);
         if(action==='delete-product'?Boolean(confirmed):!confirmed||['name','description','priceMode','price','availability'].some(k=>product[k]!==undefined&&confirmed[k]!==product[k].trim()))throw Error('Could not verify the product change. Reload before editing again.');
-        clearProductForm();$('product-feedback').textContent=action==='delete-product'?'Product deleted.':'Product saved.';
+        clearProductForm();$('product-feedback').textContent=action==='delete-product'?'Product deleted.':action==='save-draft'?submissionCopy('saved'):'Product saved.';
       }catch(error){$('product-feedback').textContent=error.message||'Product change failed.';}
       finally{mutationBusy(false);button.disabled=false;$('product-cancel').disabled=false;
         for(const control of $('catalogue-list').querySelectorAll('button'))control.disabled=false;}
+    }
+    function renderSubmission(article,product,business){
+      const state=product.submission?.state||'draft',status=doc.createElement('p');status.dataset.productState=product.productId;status.textContent=submissionCopy(state);article.append(status);
+      const details=doc.createElement('details');details.dataset.submission=product.productId;details.open=openSubmissionId===product.productId;
+      const summary=doc.createElement('summary');summary.textContent=submissionCopy('review');details.append(summary);
+      details.addEventListener('toggle',()=>{if(details.open)openSubmissionId=product.productId;});
+      const category=doc.createElement('p');category.textContent=submissionCopy('category')+': '+(context.categories.items.find(c=>c.categoryId===product.classification?.categoryId)?.categoryName||submissionCopy('chooseCategory'));details.append(category);
+      if(product.submission?.publication?.state==='published'&&product.submission.publication.version!==product.submission.version){const prior=doc.createElement('p');prior.textContent=submissionCopy('previousPublication');details.append(prior);}
+      const mediaHeading=doc.createElement('h4');mediaHeading.textContent=submissionCopy('media');details.append(mediaHeading);
+      for(const asset of business.media.filter(a=>a.productId===product.productId)){
+        const media=doc.createElement('p');media.textContent=asset.assetId+' · '+submissionCopy(asset.state==='ready'?'passed':asset.state==='failed'?'failed':'validating');details.append(media);
+        if(asset.state==='ready'&&asset.previewUrl){const preview=doc.createElement(asset.kind==='image'?'img':'video');preview.src=asset.previewUrl;preview.alt=product.name;if(asset.kind==='video')preview.controls=true;preview.className='submission-preview';details.append(preview);}
+      }
+      const checksHeading=doc.createElement('h4');checksHeading.textContent=submissionCopy('checks');details.append(checksHeading);
+      for(const rule of product.submission?.validation?.rules||product.submission?.review?.rules||[]){const line=doc.createElement('p');line.dataset.validationRule=rule.id;line.textContent=submissionCopy(rule.id)+': '+submissionCopy(rule.status);details.append(line);}
+      const review=doc.createElement('button');review.type='button';review.dataset.reviewProduct=product.productId;review.textContent=submissionCopy('review');review.addEventListener('click',()=>changeSubmission('review-product',product.productId));details.append(review);
+      const label=doc.createElement('label'),confirm=doc.createElement('input');confirm.type='checkbox';confirm.dataset.submissionConfirm=product.productId;label.append(confirm,doc.createTextNode(submissionCopy('confirm')));details.append(label);
+      const submit=doc.createElement('button');submit.type='button';submit.dataset.submitProduct=product.productId;submit.textContent=submissionCopy('submit');submit.disabled=state==='validating'&&Date.now()-Date.parse(product.submission?.attempt?.startedAt)<30000||state==='rejected';submit.addEventListener('click',()=>changeSubmission('submit-product',product.productId,confirm.checked));details.append(submit);
+      if(state==='approved'){const publish=doc.createElement('button');publish.type='button';publish.dataset.publishProduct=product.productId;publish.textContent=submissionCopy('publish');publish.addEventListener('click',()=>changeSubmission('publish-product',product.productId));details.append(publish);}
+      if(product.submission?.publication?.state==='published'){const revoke=doc.createElement('button');revoke.type='button';revoke.dataset.unpublishProduct=product.productId;revoke.textContent=submissionCopy('unpublish');revoke.addEventListener('click',()=>changeSubmission('unpublish-product',product.productId));details.append(revoke);}
+      if(product.submission?.history?.length){const history=doc.createElement('details'),heading=doc.createElement('summary');heading.textContent=submissionCopy('history');history.append(heading);for(const event of product.submission.history){const row=doc.createElement('p');row.textContent=new Date(event.at).toLocaleString()+' · '+submissionCopy(event.state);history.append(row);}details.append(history);}
+      article.append(details);
+    }
+    async function changeSubmission(action,productId,confirmed=false){
+      if(productMutationPending||!context?.business)return;
+      const businessId=context.business.businessId,identity=clerk.user.id,catalogueRevision=context.business.catalogueRevision;
+      mutationBusy(true);$('submission-feedback').textContent=submissionCopy(action==='submit-product'?'validating':'saving');openSubmissionId=productId;
+      try{
+        const token=await bounded(clerk.session.getToken());if(!token)throw Error(submissionCopy('error'));
+        const response=await win.fetch('/api/businesses?resource=selling-dashboard&businessId='+encodeURIComponent(businessId),{method:'POST',credentials:'same-origin',signal:win.AbortSignal.timeout(30000),headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({action,product:{productId},confirmed,catalogueRevision})});
+        const result=await response.json();if(!response.ok)throw Error(submissionCopy(result.code&&win.DEMEOSSellingSubmissionCopy.en[result.code]?result.code:'error'));
+        await load();const saved=context?.business?.products.find(p=>p.productId===productId);
+        if(clerk.user?.id!==identity||context?.business?.businessId!==businessId||!saved||saved.submission?.state!==result.state||$('private-workspace').hidden)throw Error(submissionCopy('error'));
+        $('submission-feedback').textContent=submissionCopy(result.state);
+      }catch(error){$('submission-feedback').textContent=error.message||submissionCopy('error');}
+      finally{mutationBusy(false);}
     }
     async function mutateVariant(action,product){
       if(productMutationPending)return;
@@ -354,7 +398,7 @@
     async function changeMedia(action,item,file){
       if(productMutationPending||!context?.business)return;
       const businessId=context.business.businessId,identity=clerk.user.id;
-      mutationBusy(true);$('media-feedback').textContent=file?'Uploading file…':'Removing media…';
+      mutationBusy(true);$('media-feedback').textContent=file?'Uploading file…':action==='set-main-media'?submissionCopy('saving'):'Removing media…';
       async function post(nextAction,product){
         if(clerk.user?.id!==identity||context?.business?.businessId!==businessId)throw Error('Your account or business changed. Reload before continuing.');
         const token=await bounded(clerk.session.getToken());if(!token)throw Error('Sign in again before changing media.');
@@ -376,9 +420,9 @@
         await load();
         if(clerk.user?.id!==identity||context?.business?.businessId!==businessId||$('private-workspace').hidden)throw Error('Media changed, but the dashboard could not refresh. Reload before continuing.');
         const asset=context.business.media.find(a=>a.assetId===item.assetId);
-        if(file?(!asset||asset.state!=='ready'||!asset.linked||!asset.previewUrl):Boolean(asset))throw Error('Could not verify the saved media change. Reload before continuing.');
-        if(file){$('media-file').value='';mediaAttempt=null;}
-        $('media-feedback').textContent=file?'File uploaded and linked to product.':'Media removed from product.';
+        if(file?(!asset||asset.state!=='ready'||!asset.linked||!asset.previewUrl):action==='set-main-media'?!asset?.main:Boolean(asset))throw Error('Could not verify the saved media change. Reload before continuing.');
+        if(file){$('media-file').value='';mediaAttempt=null;}else if(action==='remove-media'&&mediaAttempt?.assetId===item.assetId)mediaAttempt=null;
+        $('media-feedback').textContent=file?'File uploaded and linked to product.':action==='set-main-media'?submissionCopy('saved'):'Media removed from product.';
       }catch(error){$('media-feedback').textContent=error.message||'Media change failed.';}
       finally{mutationBusy(false);}
     }
@@ -395,8 +439,9 @@
       const productId=$('product-id').value||('product-'+win.crypto.randomUUID());
       $('product-id').value=productId; // Retry the same record if the network response is lost.
       mutateProduct('save-product',{productId,name:$('product-name').value,description:$('product-description').value,
-        priceMode:$('product-price-mode').value,price:$('product-price').value,availability:$('product-availability').value});
+        priceMode:$('product-price-mode').value,price:$('product-price').value,availability:$('product-availability').value,classification:productClassification()});
     });
+    $('product-save-draft').addEventListener('click',()=>{const productId=$('product-id').value||('product-'+win.crypto.randomUUID());$('product-id').value=productId;mutateProduct('save-draft',{productId,name:$('product-name').value,description:$('product-description').value,priceMode:$('product-price-mode').value,price:$('product-price').value,availability:$('product-availability').value,classification:productClassification()});});
     $('variant-form').addEventListener('submit',event=>{
       event.preventDefault();
       const productId=$('variant-product').value,variantId=$('variant-id').value||('variant-'+win.crypto.randomUUID());

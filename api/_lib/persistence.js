@@ -377,6 +377,7 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
     },
 
     async createBusinessForOwner(trustedIdentityId, profile) {
+      if(Array.isArray(profile?.products))profile={...profile,products:profile.products.map(p=>{const next={...p};delete next.submission;return next;})};
       if (!isNonEmptyString(trustedIdentityId) || !profile || !isNonEmptyString(profile.businessId)) return null;
       await database.ensureSchema();
       const result = await database.query(
@@ -803,13 +804,15 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
       ) SELECT revision FROM logged`,[businessId,JSON.stringify(profile),identity,revision,JSON.stringify(entries),JSON.stringify(changes),require('./selling-access').dataEnvironment(businessId,environment(),identity)==='test']);
       return result.rows[0]||null;
     },
-    async saveSellingProducts(identity,businessId,previousProfile,profile) {
+    async saveSellingProducts(identity,businessId,previousProfile,profile,evidenceGuard) {
       await database.ensureSchema();
       const test=require('./selling-access').dataEnvironment(businessId,environment(),identity)==='test';
       const result=await database.query(`WITH saved AS (
         UPDATE demeos_businesses b SET profile=$4::jsonb,updated_at=NOW()
         WHERE b.business_id=$1 AND b.profile=$2::jsonb
           AND ((b.business_id !~* '^test-' AND b.profile->'applicationAccess'->'selling'='true'::jsonb) OR $5::boolean)
+          AND ($6::jsonb IS NULL OR (COALESCE((SELECT revision FROM demeos_vendor_inventory WHERE business_id=$1),0)=($6::jsonb->>'inventoryRevision')::integer
+            AND COALESCE((SELECT jsonb_agg(a.asset ORDER BY a.asset_id) FROM demeos_business_media_assets a WHERE a.business_id=$1),'[]'::jsonb)=$6::jsonb->'assets'))
           AND EXISTS(SELECT 1 FROM demeos_business_owners o WHERE o.business_id=b.business_id AND o.trusted_identity_id=$3)
         RETURNING profile
       ), archived AS (
@@ -819,12 +822,13 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
           AND EXISTS(SELECT 1 FROM jsonb_array_elements(COALESCE($2::jsonb->'products','[]'::jsonb)) p WHERE p->>'productId'=a.asset->>'relatedEntityId')
           AND NOT EXISTS(SELECT 1 FROM jsonb_array_elements(COALESCE($4::jsonb->'products','[]'::jsonb)) p WHERE p->>'productId'=a.asset->>'relatedEntityId')
         RETURNING asset_id
-      ) SELECT profile FROM saved`,[businessId,JSON.stringify(previousProfile),identity,JSON.stringify(profile),test]);
+      ) SELECT profile FROM saved`,[businessId,JSON.stringify(previousProfile),identity,JSON.stringify(profile),test,evidenceGuard?JSON.stringify({...evidenceGuard,assets:evidenceGuard.assets.slice().sort((a,b)=>a.assetId.localeCompare(b.assetId))}):null]);
       return result.rows[0]?.profile||null;
     },
 
     async saveOwnedBusinessProfile(identity, businessId, previousProfile, profile) {
       await database.ensureSchema();
+      profile={...profile,products:(profile.products||[]).map(product=>require('./selling-submissions').reconcile(previousProfile.products?.find(p=>p.productId===product.productId),product,businessId,identity))};
       const result = await database.query(`UPDATE demeos_businesses b SET profile=$4::jsonb,updated_at=NOW()
         WHERE b.business_id=$1 AND b.profile=$2::jsonb
           AND EXISTS(SELECT 1 FROM demeos_business_owners o WHERE o.business_id=b.business_id AND o.trusted_identity_id=$3)
