@@ -10,7 +10,7 @@ const { toPublicCustomerWorkItem, MAX_PUBLIC_CUSTOMER_MEDIA, MAX_SEARCH_CATALOGU
 
 function createPersistenceRepository(database, { getMediaStorageAdapter = getConfiguredMediaStorageAdapter,
   environment=()=>process.env, reportCatalogueDiagnostics = summary => console.warn("Customer catalogue readiness", summary) } = {}) {
-  const vendorOrders = require('./vendor-orders').createVendorOrders(database);
+  const vendorOrders = require('./vendor-orders').createVendorOrders(database,{environment});
   function isNonEmptyString(value) {
     return typeof value === "string" && value.trim().length > 0;
   }

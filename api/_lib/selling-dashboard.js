@@ -10,6 +10,12 @@ const {isolatedTestEnvironment,dataEnvironment}=require('./selling-access');
 const inventory=require('./vendor-inventory');
 const media=require('./selling-media');
 
+function variantSummaries(product){
+ const legacy=(product.variants||[]).map(v=>({variantId:v.variantId,name:v.name,sku:v.sku||'',price:v.price||'',availability:v.availability||'contact',inheritsPrice:!v.price}));
+ const structured=(product.presentation?.variants||[]).map(v=>({variantId:v.variantId,name:v.name||Object.entries(v.selection||{}).map(([key,value])=>product.presentation.options?.find(o=>o.key===key)?.values.find(x=>x.value===value)?.label||value).join(' / ')||v.variantId,sku:v.sku||'',price:v.pricing?.mode==='fixed'?String(v.pricing.amount):'',availability:v.availability||'contact',inheritsPrice:!v.pricing,structuredPrice:v.pricing?require('../../js/business-product-preparation').priceText(v.pricing):''}));
+ return [...legacy,...structured];
+}
+
 function businessSummary(profile, env, identityId) {
   const id = profile?.businessId;
   if (typeof id !== 'string' || !id) return null;
@@ -17,7 +23,9 @@ function businessSummary(profile, env, identityId) {
   // Real Selling approval remains unchanged. The explicit Preview test grant
   // has its own authority and never changes the real applicationAccess field.
   if (environment === 'live' && !applicationAccess({businessProfile:profile}, id).selling) return null;
-  return environment ? {businessId:id, name:profile.name || 'Unnamed business', type:profile.type || '', location:profile.location || '', dataEnvironment:environment, catalogueRevision:catalogueRevision(profile), products:Array.isArray(profile.products)?profile.products.map(p=>({productId:p.productId,name:p.name,description:p.description,price:p.price,priceMode:p.priceMode,availability:p.availability||'contact',mediaGallery:p.mediaGallery||{assetIds:[],mainAssetId:''},stockQuantity:Number.isSafeInteger(p.stockQuantity)?p.stockQuantity:null,stockHistory:Array.isArray(p.stockHistory)?p.stockHistory:[],variants:Array.isArray(p.variants)?p.variants.map(v=>({variantId:v.variantId,name:v.name,sku:v.sku||'',price:v.price||'',availability:v.availability||'contact'})):[]})):[]} : null;
+  if(!environment)return null;
+  return {businessId:id,name:profile.name||'Unnamed business',type:profile.type||'',location:profile.location||'',dataEnvironment:environment,catalogueRevision:catalogueRevision(profile),
+    products:(Array.isArray(profile.products)?profile.products:[]).map(p=>({productId:p.productId,name:p.name,description:p.description,price:p.price,priceMode:p.priceMode,availability:p.availability||'contact',mediaGallery:p.mediaGallery||{assetIds:[],mainAssetId:''},stockQuantity:Number.isSafeInteger(p.stockQuantity)?p.stockQuantity:null,stockHistory:Array.isArray(p.stockHistory)?p.stockHistory:[],variants:variantSummaries(p)}))};
 }
 
 function createHandler({authenticate=authentication.resolveTrustedIdentityFromRequest, repository=()=>persistence.getRepository(), environment=()=>process.env,mediaBackend=media.mediaBackend}={}) {
@@ -45,7 +53,7 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
         // Recheck ownership and the applicable server authority on every load.
         if (!await store.isBusinessOwnedByIdentity(identity.trustedIdentityId,businessId)) return res.status(403).json({error:'Selling access is unavailable for this business.'});
         const actorContext = createAuthenticatedBusinessOwnerContext({trustedIdentityId:identity.trustedIdentityId,businessId});
-        if (!authorizeDemeosAction({actorContext,businessId,action:'view-own-business-results'}).allowed) return res.status(403).json({error:'Selling access is unavailable for this business.'});
+        if (!authorizeDemeosAction({actorContext,businessId,action:req.method==='POST'?(['register-media','complete-media','remove-media'].includes(req.body?.action)?'manage-business-media':'manage-business-profile'):'view-own-business-results'}).allowed) return res.status(403).json({error:'Selling access is unavailable for this business.'});
         const record = await store.getKnownBusiness(businessId);
         business = businessSummary(record?.businessProfile,env,identity.trustedIdentityId);
         if (!business || business.businessId !== businessId) return res.status(403).json({error:'Selling access is unavailable for this business.'});
@@ -55,10 +63,24 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
         const stock=typeof store.getVendorInventory==='function'?await store.getVendorInventory(businessId):{revision:0,entries:{},history:[]};
         business.inventory={...stock,rows:inventory.rowsFor(profile,inventory.entriesWithLegacyStock(profile,stock.entries))};
         business.media=await media.listMedia(store,profile,backend);business.mediaCapabilities=media.capabilities(backend,env);
+        business.orders=typeof store.getVendorOrders==='function'?await store.getVendorOrders(identity.trustedIdentityId,businessId):[];
+        business.details={productsServices:profile.productsServices||'',customerContinuation:profile.customerContinuation||{},informationStatus:profile.informationStatus||{}};
+        business.summary={products:business.products.length,availableProducts:business.products.filter(p=>p.availability==='available').length,variants:(profile.products||[]).reduce((sum,p)=>sum+(p.variants?.length||0)+(p.presentation?.variants?.length||0),0),trackedStockRows:business.inventory.rows.filter(r=>r.onHand!==null).length,recentOrders:business.orders.length};
       }
       if (req.method === 'POST') {
         if (!businessId || !business) return res.status(403).json({error:'Select your business.'});
         const action=req.body?.action;
+        if(action==='save-business-details'){
+          const details=req.body.details,original=(await store.getKnownBusiness(businessId))?.businessProfile;
+          if(!details||typeof details!=='object'||Array.isArray(details)||Object.keys(details).some(k=>!['name','location','productsServices'].includes(k))||req.body.ownerAccuracyConfirmed!==true)return res.status(400).json({error:'Confirm the accuracy of the permitted business details.'});
+          if(req.body.catalogueRevision!==catalogueRevision(original))return res.status(409).json({error:'Business changed. Reload before saving.'});
+          if(['name','location'].some(k=>typeof details[k]!=='string'||!details[k].trim()||details[k].trim().length>200)||typeof details.productsServices!=='string'||details.productsServices.trim().length>2000)return res.status(400).json({error:'Enter a business name and location, and keep the description within 2000 characters.'});
+          const next={...original,name:details.name.trim(),location:details.location.trim(),productsServices:details.productsServices.trim()};
+          if(!require('../businesses/[businessId].js').validateProfile({body:{businessProfile:next},query:{businessId}}))return res.status(400).json({error:'Complete your existing registration profile before changing these details.'});
+          next.informationStatus={...original.informationStatus,source:'business-owner',status:'business-provided',...(original.informationStatus?.reviewState?{reviewState:'draft',submittedAt:null}:{}),ownerConfirmedAt:new Date().toISOString()};
+          if(!await store.saveSellingProducts(identity.trustedIdentityId,businessId,original,next))return res.status(409).json({error:'Business access or details changed. Reload before saving.'});
+          return res.status(200).json({ok:true});
+        }
         const item=req.body?.product;
         if (!['save-product','delete-product','adjust-stock','save-variant','delete-variant','register-media','complete-media','remove-media'].includes(action) || !item || typeof item!=='object' || Array.isArray(item))
           return res.status(400).json({error:'Invalid product request.'});
@@ -82,21 +104,28 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
           if (index<0) return res.status(404).json({error:'Product not found.'});
           const variantId=typeof item.variantId==='string'?item.variantId.trim():'';
           if (!/^[a-zA-Z0-9_-]{1,120}$/.test(variantId)) return res.status(400).json({error:'Invalid variant ID.'});
-          const variants=Array.isArray(products[index].variants)?products[index].variants.slice():[];
-          const variantIndex=variants.findIndex(variant=>variant.variantId===variantId);
-          if (action==='delete-variant') {
-            if (variantIndex<0) return res.status(404).json({error:'Variant not found.'});
+          const product=products[index],flat=Array.isArray(product.variants)?product.variants.slice():[],structured=Array.isArray(product.presentation?.variants)?product.presentation.variants.slice():[];
+          const flatIndex=flat.findIndex(v=>v.variantId===variantId),structuredIndex=structured.findIndex(v=>v.variantId===variantId);
+          if(flatIndex>=0&&structuredIndex>=0)return res.status(409).json({error:'Duplicate recorded variant identities need review in the existing product editor.'});
+          const variants=structuredIndex>=0?structured:flat,variantIndex=structuredIndex>=0?structuredIndex:flatIndex;
+          if(action==='delete-variant'){
+            if(variantIndex<0)return res.status(404).json({error:'Variant not found.'});
             variants.splice(variantIndex,1);
-          } else {
+          }else{
             const clean=(value,max)=>typeof value==='string'?value.trim().slice(0,max):'';
             const name=clean(item.name,160),sku=clean(item.sku,120),price=clean(item.price,100),availability=clean(item.availability,20)||'contact';
-            if (!name || (price&&!/^(?:0|[1-9]\d{0,8})(?:\.\d{1,2})?$/.test(price)) || !['contact','available','unavailable'].includes(availability)) return res.status(400).json({error:'Invalid variant details.'});
-            if (variantIndex<0 && variants.length>=100) return res.status(409).json({error:'Variant limit reached.'});
-            if(sku&&variants.some(v=>v.variantId!==variantId&&v.sku?.toLowerCase()===sku.toLowerCase()))return res.status(400).json({error:'Each variant SKU must be unique for this product.'});
-            const variant={...(variantIndex>=0?variants[variantIndex]:{}),variantId,name,sku,price,availability};
-            if (variantIndex<0) variants.push(variant); else variants[variantIndex]=variant;
+            if(!name||(price&&!/^(?:0|[1-9]\d{0,8})(?:\.\d{1,2})?$/.test(price))||!['contact','available','limited','unavailable'].includes(availability))return res.status(400).json({error:'Enter a variant name, a valid optional price and availability.'});
+            if(variantIndex<0&&flat.length>=100)return res.status(409).json({error:'Variant limit reached.'});
+            if(sku&&[...flat,...structured].some(v=>v.variantId!==variantId&&v.sku?.toLowerCase()===sku.toLowerCase()))return res.status(400).json({error:'Each variant SKU must be unique for this product.'});
+            if(variantIndex<0&&typeof store.getVendorInventory==='function'){const stock=await store.getVendorInventory(businessId);if(stock.entries[inventory.key(id,variantId)])return res.status(409).json({error:'This variant identity has stock history. Create a new variant identity.'});}
+            const variant={...(variantIndex>=0?variants[variantIndex]:{}),variantId,name,sku,availability};
+            if(structuredIndex>=0){
+              if(item.useBasePrice===true)delete variant.pricing;
+              else if(price){const currency=variant.pricing?.currency||product.presentation.pricing?.currency;const pricing={...variant.pricing,mode:'fixed',currency,amount:Number(price)};delete pricing.min;delete pricing.max;if(!require('../../js/customer-item-contract').pricing(pricing))return res.status(400).json({error:'The existing variant currency and price must be valid.'});variant.pricing=pricing;}
+            }else variant.price=item.useBasePrice===true?'':price;
+            if(variantIndex<0)variants.push(variant);else variants[variantIndex]=variant;
           }
-          products[index]={...products[index],variants};
+          products[index]=structuredIndex>=0?{...product,presentation:{...product.presentation,variants}}:{...product,variants};
         } else if (action==='adjust-stock') {
           if(index<0)return res.status(404).json({error:'Product not found.'});
           const stock=await store.getVendorInventory(businessId);
@@ -119,13 +148,28 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
           const name=clean(item.name,200),description=clean(item.description,1200);
           const price=clean(item.price,100),priceMode=clean(item.priceMode,20)||'contact';
           const availability=clean(item.availability,20)||'contact';
-          if (!name || !description || !['contact','fixed','from','range'].includes(priceMode) || !['contact','available','unavailable'].includes(availability) ||
+          if (!name || !description || !['contact','fixed','from','range'].includes(priceMode) || !['contact','available','limited','unavailable'].includes(availability) ||
               (priceMode==='contact'&&price) || (priceMode!=='contact'&&!price))
             return res.status(400).json({error:'Invalid product details.'});
           if (index<0 && products.length>=100) return res.status(409).json({error:'Product limit reached.'});
+          if(index<0&&typeof store.getVendorInventory==='function'){const stock=await store.getVendorInventory(businessId);if(Object.keys(stock.entries).some(key=>JSON.parse(key)[0]===id))return res.status(409).json({error:'This product identity has stock history. Create the product with a new identity.'});}
           const previous=index>=0?products[index]:{};
-          if(previous.presentation&&(previous.price!==price||previous.priceMode!==priceMode))return res.status(409).json({error:'Review the saved structured pricing in the existing business product editor before changing its price.'});
-          const product={...previous,productId:id,businessId,name,description,price,priceMode,...(index<0?{customerVisible:false}:{}),
+          let presentation=previous.presentation;
+          if(presentation&&((previous.price||'')!==price||(previous.priceMode||'contact')!==priceMode)){
+            const pricing={...presentation.pricing,mode:priceMode==='contact'?'quote':priceMode};
+            delete pricing.amount;delete pricing.min;delete pricing.max;
+            if(priceMode==='range'){
+              const range=price.match(/^(\d+(?:\.\d{1,2})?)\s*[-–]\s*(\d+(?:\.\d{1,2})?)$/);
+              if(!range)return res.status(400).json({error:'Enter a minimum and maximum price, such as 5–10.'});
+              pricing.min=Number(range[1]);pricing.max=Number(range[2]);
+            }else if(priceMode!=='contact'){
+              if(!/^(?:0|[1-9]\d{0,8})(?:\.\d{1,2})?$/.test(price))return res.status(400).json({error:'Enter a numeric product price in the saved currency.'});
+              pricing.amount=Number(price);
+            }
+            if(!require('../../js/customer-item-contract').pricing(pricing))return res.status(400).json({error:'Check the saved currency and product price range.'});
+            presentation={...presentation,pricing};
+          }
+          const product={...previous,...(presentation?{presentation}:{}),productId:id,businessId,name,description,price,priceMode,...(index<0?{customerVisible:false}:{}),
             availability};
           if (index<0) products.push(product); else products[index]=product;
         }

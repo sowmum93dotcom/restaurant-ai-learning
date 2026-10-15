@@ -1,181 +1,100 @@
-# Selling Vendor dashboard — Phase 1
+# DEMEOS Selling Vendor dashboard
 
-The clean dashboard lives at `/selling-vendor`. It uses `selling-dashboard.html`,
-`js/selling-dashboard.js` and `css/selling-dashboard.css`. Every section uses that
-same entry point. The retired dashboard, manage pages, inspection APIs and
-development workspaces remain deleted.
+The existing `/selling-vendor` entry, `selling-dashboard.html`, controller and
+navy/blue/gold design serve all seven sections. There is no second dashboard,
+test page, registration system or business database. Historical Phase 1 shell
+notes are superseded by the working-tool implementation below. CI results and
+the exact deployed revision are recorded in PR #708; code being present does
+not establish deployed Clerk acceptance.
 
-## DEMEOS visual identity
+## Identity, permissions and isolation
 
-The Selling entry uses the existing `/images/demeos-logo.png` image in its
-header and favicon. `/css/demeos-business-premium.css` supplies the existing
-Business Owner/Marketing `--bo-*` design tokens: ink `#020b18`, navy `#06172d`,
-blue `#0b2b52`, gold `#c99a2e` and light gold `#f0cf72`. Selling consumes those
-tokens for its background, navigation, controls, dividers and states. It uses the
-existing Segoe UI/Arial typography and navy gradient, with flat content sections
-rather than the unrelated green/white cards. The shared styles and logo are
-unchanged; no owner/Marketing wrapper classes are added to the Selling DOM.
-The browser gate verifies the actual logo loaded and the shared ink/gold colors
-at all eight widths, alongside the existing layout and authorization checks.
+Existing Clerk verification supplies the trusted identity. SQL ownership remains
+authoritative. Every request resolves the selected business, rechecks persisted
+ownership and checks the server's applicable Selling authority. Reads use the
+existing owner-view action; writes use the profile/media management action.
+Responses are private and not cached. Account/business changes clear private
+forms, and navigation revalidates access.
 
-## Identity and data contract
+Real businesses require their existing `applicationAccess.selling` grant.
+`api/_lib/selling-access.js` holds the same exact Preview test-owner/business
+policy used by the context handler and SQL write boundaries. Test grants require:
 
-The browser loads the existing public Clerk configuration and restores the existing
-Clerk session. Each context request sends the current session token, retries one
-401 with a fresh token, and clears private content before revalidation. Sign-out,
-account changes, page restoration, navigation and visibility restoration invalidate
-the previous context. Responses from an older request cannot restore it.
+- `VERCEL_ENV=preview` and `DEMEOS_SELLING_DATA_ENVIRONMENT=test`.
+- The exact configured Preview Git branch and pinned actual Postgres hostname.
+- An exact server-configured business/Clerk-owner pair and persisted ownership.
+- A reserved `test-business-` identity. Production rejects test identities.
 
-`GET /api/businesses?resource=selling-dashboard[&businessId=…]` uses the existing
-businesses function, authentication resolver, SQL business ownership relationships,
-actor authorization and the applicable server authority. Real businesses retain the
-server-maintained `applicationAccess.selling` grant. A
-model selection, test identity, administrator role or URL is never an access grant.
-Selected business ownership and server authorization are checked again before response.
-Multiple businesses require selection; no arbitrary first business is chosen.
+Browser parameters, roles and client flags never grant access. The configured
+PR #708 Neon branch remains `br-flat-snow-zatzl87u`, a child of the existing
+schema-only Preview branch. Its bindings apply only to
+`rebuild/selling-foundation-phase-1` in Preview. No destructive migration or
+Production database/environment change is part of this implementation.
 
-Contract version 1 returns `vendor.identityId`, authorized business summaries,
-the selected `business` (or null) and `phase: 1`. Both live and test summaries use
-`businessId`, `name`, `type`, `location` and `dataEnvironment`. The endpoint never
-returns products, campaign details, stock or private orders. No existing data is
-rewritten and no database schema migration is added.
+## Existing systems used by the seven tools
 
-## Test businesses
-
-Test businesses use the same persisted ownership, dashboard and context API. They
-have a separate **server-controlled Preview authorization**, independent of real
-Selling application approval. They must use the existing reserved `test-business-`
-namespace, which the existing customer-publication rules exclude from genuine
-customer work. All `test-` identities for business records are denied in Production.
-Test accounts never bypass Clerk verification, ownership or explicit server authorization.
-
-Before authorizing a live Preview test journey, bind this branch's existing
-Postgres adapter to an **isolated Preview database/branch using the same shared
-schema**. Do not seed or write test records through a Preview that points at live
-data. Then configure, scoped only to the Preview branch:
-
-- `DEMEOS_SELLING_DATA_ENVIRONMENT=test`
-- `DEMEOS_SELLING_TEST_PREVIEW_BRANCH` equal to the exact Preview Git branch.
-- `DEMEOS_SELLING_TEST_DATABASE_HOST` equal to the isolated pooled database host.
-- `DEMEOS_SELLING_TEST_AUTHORIZATIONS` as a JSON array of exact
-  `{ "businessId": "test-business-…", "ownerIdentityId": "<verified Clerk user ID>" }`
-  pairs. The identity must independently own the business in SQL.
-
-The handler checks the actual `POSTGRES_URL` used by the existing pool adapter
-against the pinned host before opening test records. Wrong-host or wrong-branch
-configuration fails closed before repository access. Browser query parameters,
-roles, profile approval flags and the retired business-ID-only allowlist cannot
-provide a test grant. Removing the server authorization revokes test access;
-changing real-business Selling approval does not control this independent path.
-
-The test environment hides real businesses. Missing or malformed test configuration
-denies test businesses. Production ignores test authorization even if those
-variables are accidentally copied there. Normal live businesses require the same
-Selling grant and ownership with no test configuration.
-
-For PR #708, Neon branch `br-flat-snow-zatzl87u` (`demeos-pr708-selling-preview`)
-is a dedicated child of the existing schema-only Preview branch, not Production.
-Its endpoint differs from Production. Before seeding, SQL verification found one
-inherited isolated test business, zero campaigns, zero orders and zero application
-reviews. The existing shared schema was retained. All Postgres environment bindings
-were overridden only for `rebuild/selling-foundation-phase-1` in Preview.
-
-The new `test-business-selling-708` record has a persisted owner relationship
-derived from the existing isolated test owner. It deliberately has no
-`applicationAccess` grant and no products. Its exact business/owner pair is held
-in server-only environment configuration, never shipped in client code.
-
-Sign-in initiated from the dashboard and its OAuth callback force the successful
-destination to `/selling-vendor`, overriding legacy application redirects. Direct
-navigation and refresh stay on the same dashboard. Marketing and real-business
-registration/approval code remain unchanged.
-
-## Existing DEMEOS system connections
-
-Inspection covers the existing route handlers, persistence repository, SQL schema,
-authentication/authorization modules and customer publication rules. The table
-separates the working Phase 1 connection from the existing components reserved for
-later tool integration. It does not mark those tools as implemented.
-
-| Dashboard section | Existing DEMEOS components and authoritative records | Phase 1 connection and remaining boundary |
+| Section | Real behavior and existing DEMEOS source | Boundary |
 | --- | --- | --- |
-| Overview | `api/businesses.js?resource=selling-dashboard` dispatches to `api/_lib/selling-dashboard.js`; `demeos-authentication.js` verifies Clerk; `getOwnedBusinessProfiles`, `isBusinessOwnedByIdentity` and `getKnownBusiness` in `api/_lib/persistence.js` resolve `demeos_business_owners` and `demeos_businesses.profile`. `demeos-actor-context.js` / `demeos-authorization.js` retain actor permissions. | Connected now: authenticated vendor, exact authorized business selection and live/test environment badge. No invented product, stock, revenue or order counts. Future summaries must derive from the same business-scoped sources below. |
-| My Business | The same `demeos_businesses.profile` and SQL owner relationship; existing owner registration uses `createBusinessForOwner`, with `api/businesses/[businessId].js` validating profile facts and `saveOwnedBusinessProfile` preserving ownership checks. `js/business-onboarding.js`, `business-application-contract.js`, `business-application-review.js`, `recordBusinessApplicationAccess` and `demeos_business_application_reviews` maintain submission, revision audit and application decisions. `business-application-access.js` and `business-workspace-readiness.js` expose real Selling/Marketing grants. `api/businesses/bootstrap-owner.js` remains its existing narrowly configured owner bootstrap, not a general test-registration path. | Connected now: read-only name, ID, type, location and authorized dashboard status from the existing record. Registration, editing, submission and real-business approval remain in their existing workflow. No replacement registration form or business model. |
-| Product Catalogue | `GET/PUT /api/businesses/:businessId/products` (`api/businesses/[businessId]/products.js`); products live in the existing business profile's `products` array, identified by `businessId` and `productId`. The handler reuses `validateProfile` from `[businessId].js`, `preserveProduct` from `js/business-product-preparation.js`, `catalogueRevision` from `vendor-inventory.js` and `saveSellingProducts` from the shared repository. Saves verify ownership, accuracy confirmation, profile version and optimistic catalogue revision. | Tool not connected yet. Reuse these contracts and this array; no second product table/catalogue. The current test business has no products and is not represented as catalogue-ready. |
-| Images & Videos | `GET/POST /api/businesses/:businessId/media` and `PATCH /api/businesses/:businessId/media/:assetId`; `demeos_business_media_assets` and `demeos_media_processing_jobs`; `media-asset-contract.js`, `media-upload-session.js`, `media-upload-completion.js`, `media-storage-driver.js` and the existing processing modules. Product media uses `asset.businessId`, `purpose` and `relatedEntityId === productId`; product galleries store exact `assetIds` and `mainAssetId`. Ready-state and same-business/product references are checked by the existing handlers. The configured adapter supports private Vercel Blob or HTTP object storage. | Upload/library tools not connected yet. Reuse the existing private storage lifecycle and product links; no replacement bucket, sample-media API or browser-claimed ready state. Private upload/processing/delivery credentials must stay server-side. |
-| Options & Variants | Existing `product.presentation.options` and `.variants` in the same profile products, including exact `variantId`, option selection, availability and pricing. `js/customer-item-contract.js`, `js/business-product-preparation.js`, the products handler and `api/_lib/vendor-inventory.js` validate/preserve these contracts. `stockIdentity` binds a recorded stock row to the exact product/variant selection. | Editor not connected yet. Save through the same product API. Do not infer combinations, introduce a parallel variant store or reassign recorded stock to a different option combination. |
-| Stock & History | `GET/PUT /api/businesses/:businessId/inventory`; `api/_lib/vendor-inventory.js` (`rowsFor`, `applyChanges`, `stockIdentity`, `catalogueRevision`); `getVendorInventory` / `saveVendorInventory`; existing `demeos_vendor_inventory` and `demeos_vendor_stock_history`. Rows are keyed by the exact product/variant pair. Revisions, reserved quantities, SKU rules, reasons, ownership and atomic audit writes are already protected. | Stock tools not connected yet. Reuse the existing ledger and history; no placeholder balances, separate test inventory or claimed stock-saving action. |
-| Private Orders | `GET /api/businesses/:businessId/orders` delegates to `getVendorOrders` / `vendorOrders.listOwned`; `api/_lib/vendor-orders.js` owns reservation, cancellation, expiry, idempotency, frozen line prices and stock reservation transactions. Existing tables are `demeos_vendor_orders`, `demeos_vendor_order_requests` and `demeos_vendor_order_events`, alongside the shared inventory/history tables. `api/_lib/customer-checkout.js` retains its independent customer/merchant/purchase authorization boundary. | Order tools not connected yet. The existing list API reports `liveOrderingActive: false`, and current readiness keeps `canSell: false`. No live purchase capability, mock orders or new order system is activated by dashboard access. |
+| Overview | Counts saved products, available products, simple/structured variants, tracked inventory rows and the latest private orders from the selected business context. | Counts reflect actual loaded records; recent orders are bounded to 50. No invented revenue or sales analytics. |
+| My Business | Displays saved identity/contact information and permits name, location and description edits. Existing profile validation, explicit owner accuracy confirmation, SQL ownership and profile-revision checks protect saves. Existing information-review state returns to draft where applicable. | Ownership, Selling/Marketing grants, type, registration and contact-route administration stay in the existing registration workflow. Ordinary edits cannot approve the business. |
+| Product Catalogue | Create/edit/delete uses the existing `demeos_businesses.profile.products` array and `saveSellingProducts` repository. IDs remain stable on retries. Profile revisions and SQL compare-and-swap reject stale writes. | Edits preserve publication flags, galleries, unknown extensions, variants and stock history. Structured price edits retain option/variant identities and override prices. Reserved items cannot be deleted. |
+| Options & Variants | Named variants use the existing branch's product-linked `variants` records. Existing `presentation.variants` are also displayed and edited without changing their exact option selection. SKU, optional price, base-price inheritance and availability persist through the same catalogue writer. | Invalid IDs/prices, duplicate SKU conflicts and stale writes are rejected. Recorded stock identities cannot be reused for replacement variants; reserved variants cannot be deleted. |
+| Stock & History | Uses existing `demeos_vendor_inventory` and `demeos_vendor_stock_history`, `vendor-inventory.js` row identities/validation and atomic `saveVendorInventory`. Product and exact variant rows have distinct balances. | Whole counts, reservations, catalogue/stock revisions and authenticated audit identity are protected. The view shows the latest 30 ledger events; older history stays in SQL. Earlier product-level audit records are retained, and an untracked legacy base count supplies its first ledger adjustment's starting balance. |
+| Images & Videos | Uses existing media assets/jobs, upload sessions, exact product relationships, private Vercel Blob storage and processing lifecycle. A real Sharp driver decodes JPEG/PNG/WebP and writes verified WebP master/thumbnail/customer/marketing outputs. Ready media links into the product's existing gallery. Private previews are freshly signed. | Video requires an actual configured transcoder; Sharp does not supply one. Removal archives the asset and unlinks it; it does not claim physical Blob erasure. Product deletion atomically archives its related media. Customer publication is independent. |
+| Private Orders | Reads the existing `demeos_vendor_orders` through the ownership-checked order repository. Order details show frozen product/variant, quantity, currency, amount, status and dates. Records survive product deletion. | The existing service supports reservation/customer cancellation/expiry, not vendor fulfillment transitions. Live purchasing/payment activation is unchanged and remains unavailable. Controlled test records cannot create real orders; an empty test-business order view is honest. |
 
-### Customer visibility is a separate permission boundary
+## Media configuration
 
-`api/_lib/customer-publication-rules.js` checks approved eligible campaign content,
-matching source identities and business-information provenance. It excludes the
-reserved `test-business-…` / controlled-content namespace even if a stored campaign
-claims approval. `api/_lib/customer-catalogue.js`, the public projection in
-`api/_lib/persistence.js`, `js/customer-item-contract.js` and
-`api/_lib/customer-checkout.js` retain their existing product visibility and
-purchase-readiness checks. Private owner records, draft preparation, private media
-paths and a dashboard authorization never constitute customer publication or
-merchant/purchase permission.
+The PR branch's Preview uses the existing private Blob store with
+`DEMEOS_MEDIA_STORAGE_PROVIDER=vercel-blob`, a branch-scoped
+`DEMEOS_MEDIA_UPLOAD_SECRET` and `DEMEOS_MEDIA_PROCESSING_PROVIDER=sharp`.
+No new storage provider or paid service is provisioned. Upload and processing
+paths include the exact business and asset IDs. Credentials remain server-side.
+The same code supports real and explicitly authorized test businesses.
 
-### One dashboard and one set of future tools
+Images are limited to 15 MB and 40 million decoded pixels. Claimed MIME type must
+match real decoded JPEG/PNG/WebP bytes; animated images and unsafe formats are
+rejected. Sharp strips metadata and bounds output dimensions. The existing worker
+verifies every stored output before accepting ready state. A processing completion
+cannot resurrect an archived asset. Upload metadata or a pasted URL is not a file.
+Video remains disabled on this Preview because no video inspection/transcoding
+service is configured. The UI states this explicitly.
 
-There is one HTML entry, one controller, one context contract and seven sections.
-Real businesses use their own SQL-owned records and real Selling approval. The
-explicit server-controlled test-owner/business grant works only on the configured
-isolated Preview branch/database and never in Production. Test records use the
-same business, product, media, stock and order contracts; identity, authority and
-data environment differ, not the dashboard or eventual tool implementation.
+## Contracts and correctness
 
-The existing product, media, inventory and order APIs are **not wired into this
-dashboard yet**. Several route and SQL write guards still require real Selling
-approval (`authorizeBusinessOwnerRequest`, `canManage`, `saveSellingProducts`,
-`saveVendorInventory`, and order transactions). A later tool-integration phase must
-apply the agreed authorization consistently through those existing routes and
-transaction guards, preserving real-business approval while enforcing exact test
-ownership and isolated data. Do not silently set a test profile's real approval
-flag, weaken Production rules, add test-only tools or imply that the current shell
-already provides those operations. No such API/write changes are part of this fix.
+`GET /api/businesses?resource=selling-dashboard&businessId=…` returns the current
+private business, catalogue revision, media capabilities/assets, inventory, genuine
+summary and recent orders. The selector contains only authorized business summaries.
+POST actions use the same route and ownership boundary. Catalogue/profile/media
+writes require the current catalogue revision; stock also requires its current
+inventory revision. Real and test businesses use the same actions and contracts.
+
+Writes disable conflicting controls. The client re-reads the authorized context
+and verifies saved values before displaying success. Stable product, variant and
+upload IDs protect ambiguous retries; stale snapshots produce actionable errors.
+The original customer-publication, merchant and purchase authorization rules remain
+separate. New products stay private; editing existing products does not silently
+publish or unpublish them.
 
 ## Verification
 
-- `npm test`: complete Node suite, including Marketing and shared API regressions.
-- `node --test test/selling-dashboard.test.js test/dashboard-retirement.test.js`:
-  actual PGlite ownership, live/test contracts, revocation, cross-owner rejection,
-  request spoofing, method handling, empty states and failure responses.
-- `node browser-checks/selling-dashboard-gate.js`: real shipped HTML/JS/CSS and
-  context handler with isolated PGlite SQL. The identity provider is adapted only
-  inside the browser harness, following the existing repository gates. Covers
-  seven-section navigation, direct entry, refresh, desktop/mobile overflow,
-  business switching, account switching, sign-out, test access, revocation and
-  loading/empty/error/denied states. Runs in the existing GitHub browser workflow;
-  screenshots are included in its review artifact.
+- `npm test` covers the existing regressions plus actual SQL CRUD, ownership,
+  revocation, isolated Preview grants, invalid data, conflicts, preserved fields,
+  inventory history/reservations, media processing and genuine order reads.
+- `test/selling-media.test.js` writes actual binary files through the private
+  object-store boundary and runs the shipped decoder, optimizer, worker, gallery
+  persistence, refresh and removal flow for real/Preview fixtures. Unsafe disguised
+  bytes and metadata-only completion cannot become ready uploads.
+- The shipped browser gate uses real HTML/JS/CSS, PGlite and binary file storage.
+  The only external adapters are the identity provider, test server and private
+  object-store boundary. No alternate test dashboard/API is shipped.
+- Browser checks cover catalogue and variant CRUD, availability, uploads and image
+  decoding, stock history, safe business edits, genuine reserved-order details,
+  refresh/direct routes, failures, ownership and test isolation. Supported widths:
+  375, 390, 430, 761, 820, 1024, 1280 and 1440 pixels.
+- Existing owner/Marketing, application approval and customer gates remain enabled.
 
-The local sandbox cannot launch Chromium (SIGTRAP). Rendered verification therefore
-runs in GitHub Actions. The Selling browser gate checks iPhone-sized widths 375,
-390 and 430, plus intermediate/desktop widths 761, 820, 1024, 1280 and 1440. It measures the business identity column,
-name height, stacked badge/selector and page overflow for live and test contexts;
-screenshots capture both. The mobile fix appends the specified single-column grid
-override. Above 760px the identity has a 260px flex basis and minimum width
-(clamped to its container), so the badge/selector wrap rather than squeezing the
-business name into a few letters. Wide desktop retains the side-by-side layout.
-The additional widths cover tablet and desktop-site viewports reported in the
-live screenshot; the test identity uses the displayed name DEMEOS Test Vendor.
-
-The isolated Preview database/test record is configured as described above. A
-passing isolated SQL/browser gate verifies the shipped UI and access rules with
-an identity-provider adapter; it does not independently establish a fresh live
-Clerk sign-in on Vercel. The user reported that the authorized test vendor can
-open the current dashboard. Independent live-browser confirmation must still be
-recorded before merge; do not replace it with the automated adapter result.
-
-## Phase 2 boundary
-
-The shell and private business context are the foundation for catalogue work.
-All remaining sections explain their unavailable tools. There are no fake upload,
-stock or order actions, invented counts, separate test pages or product mocks.
-Do not start catalogue work until Phase 1 verification, including the deployed
-authorized vendor journey and Preview data isolation, is complete. Phase 2 must
-reuse the existing business/product APIs and contracts and enforce the same data
-environment policy at every product/media/stock/order boundary before test writes.
+A passing fixture/browser gate does not substitute for an actual signed-in Clerk
+journey on the final Vercel Preview. Keep PR #708 draft and unmerged until deployed
+acceptance is established. Do not claim video transcoding, merchant activation,
+payments or unsupported vendor order-state changes are complete.

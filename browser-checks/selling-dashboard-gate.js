@@ -28,7 +28,7 @@ async function verifyBusinessLayout(page,viewport){
 async function run(){
  process.env.DEMEOS_MEDIA_UPLOAD_SECRET='browser-upload-secret-at-least-thirty-two-characters';
  const disk=await diskStorage();
- const client=new PGlite(),repository=createPersistenceRepository(createDatabase(client),{environment:()=>env});
+ const client=new PGlite(),database=createDatabase(client),repository=createPersistenceRepository(database,{environment:()=>env});
  const profile=(businessId,selling=true)=>({businessId,name:businessId==='vendor-a'?'North & Field':'Business '+businessId,type:'Independent shop',location:'London',applicationAccess:{selling,marketing:true},products:[],preparationModel:'selling'});
  await repository.createBusinessForOwner('owner-a',profile('vendor-a'));
  await repository.createBusinessForOwner('owner-a',profile('vendor-a-second'));
@@ -36,6 +36,16 @@ async function run(){
  await repository.createBusinessForOwner('owner-a',{...profile('test-business-selling-a',false),name:'DEMEOS Test Vendor',applicationAccess:undefined});
  await repository.createBusinessForOwner('owner-b',profile('vendor-b'));
  let env={VERCEL_ENV:'production'},failure=false,delay=0;
+ // A genuine reservation from the existing service in isolated SQL, not a fabricated order row.
+ const orderInventory=require('../api/_lib/vendor-inventory');
+ const orderProfile={...profile('vendor-b'),products:[{businessId:'vendor-b',productId:'order-shirt',name:'Reserved Shirt',availability:'available',presentation:{version:1,categoryId:'fashion.apparel',pricing:{mode:'fixed',currency:'GBP',amount:20},options:[{key:'size',values:[{value:'M',label:'Medium'}]}],variants:[{variantId:'medium',selection:{size:'M'},availability:'available'}]}}]};
+ await repository.saveBusiness(orderProfile);
+ const orderStock=orderInventory.applyChanges(orderProfile,{},[{productId:'order-shirt',variantId:'medium',onHand:5,lowStock:1,sku:'ORDER-M',reason:'Private order fixture'}]);
+ await repository.saveVendorInventory('owner-b','vendor-b',orderProfile,0,orderStock.entries,orderStock.audit);
+ const orderService=require('../api/_lib/vendor-orders').createVendorOrders(database,{authorizePurchase:()=>true});
+ const orderSnapshot=(await repository.getKnownBusiness('vendor-b')).businessProfile;
+ const genuineOrder=await orderService.reserve('order-customer','browser-order-000001',{businessId:'vendor-b',productId:'order-shirt',variantId:'medium',selection:{size:'M'},quantity:2,catalogueRevision:orderInventory.catalogueRevision(orderSnapshot),stockIdentity:orderInventory.stockIdentity(orderProfile.products[0],orderProfile.products[0].presentation.variants[0])});
+
  const handler=createHandler({repository:()=>repository,environment:()=>({...env,DEMEOS_MEDIA_UPLOAD_SECRET:process.env.DEMEOS_MEDIA_UPLOAD_SECRET}),mediaBackend:()=>disk,authenticate:async req=>{
   if(delay)await new Promise(r=>setTimeout(r,delay));
   if(failure)throw Error('Simulated data boundary failure');
@@ -96,6 +106,8 @@ async function run(){
      assert.equal(await page.locator('#product-form').count(),1,'Catalogue has an editable form');
     }else if(section==='stock-history'){
      assert.equal(await page.locator('#stock-form:visible').count(),1,'Stock has a real adjustment form');
+    }else if(section==='my-business'){
+     assert.equal(await page.locator('#business-form:visible').count(),1,'Business uses permitted editing controls');
     }else if(section==='images-videos'){
      assert.equal(await page.locator('#media-form:visible').count(),1,'Media has actual file controls');
     }else if(section==='options-variants'){
@@ -105,6 +117,12 @@ async function run(){
     await page.reload();await page.locator('#content-heading').filter({hasText:['product-catalogue','stock-history'].includes(section)?(section==='stock-history'?'Stock & History':'Product Catalogue'):copy[1]}).waitFor();
     await page.goto(base+'/selling-vendor/'+section+'?businessId=vendor-a');await page.locator('#content-heading').filter({hasText:['product-catalogue','stock-history'].includes(section)?(section==='stock-history'?'Stock & History':'Product Catalogue'):copy[1]}).waitFor();
    }
+   await page.goto(base+'/selling-vendor/my-business?businessId=vendor-a');await page.locator('#business-form:visible').waitFor();
+   await page.locator('#business-edit-name').fill('North & Field Updated');await page.locator('#business-edit-location').fill('Greenwich, London');await page.locator('#business-edit-description').fill('Independent coffee shop');await page.locator('#business-accuracy').check();
+   await page.locator('#business-save').click();await page.locator('#business-feedback').filter({hasText:'Business details saved.'}).waitFor();
+   assert.equal((await repository.getKnownBusiness('vendor-a')).businessProfile.name,'North & Field Updated');
+   await page.reload();await page.locator('#business-name').filter({hasText:'North & Field Updated'}).waitFor();
+   await page.locator('#business-edit-name').fill('North & Field');await page.locator('#business-accuracy').check();await page.locator('#business-save').click();await page.locator('#business-feedback').filter({hasText:'Business details saved.'}).waitFor();
    console.log('Browser gate: live catalogue CRUD '+viewport.width+'px');
    // Exercise real product persistence through the shipped form and isolated SQL.
    await page.goto(base+'/selling-vendor/product-catalogue?businessId=vendor-a');
@@ -162,6 +180,8 @@ async function run(){
    await page.locator('#variant-feedback').filter({hasText:'Variant deleted.'}).waitFor();await page.reload();
    assert.equal((await repository.getKnownBusiness('vendor-a')).businessProfile.products[0].variants.length,0);
    assert.equal((await repository.getKnownBusiness('vendor-a')).businessProfile.products.length,1,'Variant deletion preserves parent product');
+   await page.goto(base+'/selling-vendor/overview?businessId=vendor-a');await page.locator('[data-metric=products]').filter({hasText:'1'}).waitFor();
+   assert.equal(await page.locator('[data-metric=variants]').innerText(),'0');
    await page.goto(base+'/selling-vendor/images-videos?businessId=vendor-a');await page.locator('#media-form:visible').waitFor();
    const imageBytes=await require('sharp')({create:{width:24,height:18,channels:3,background:'#06172d'}}).png().toBuffer();
    await page.locator('#media-file').setInputFiles({name:'coffee.png',mimeType:'image/png',buffer:imageBytes});
@@ -231,6 +251,9 @@ async function run(){
    assert.equal(await page.locator('#business-select option').count(),1);assert.equal(await page.locator('#business-name').innerText(),'DEMEOS Test Vendor');
    // Preview writes use the real dashboard and the explicitly isolated test business.
    if(viewport.width===375){
+    await page.goto(base+'/selling-vendor/my-business');await page.locator('#business-form:visible').waitFor();
+    await page.locator('#business-edit-description').fill('Isolated test business facts');await page.locator('#business-accuracy').check();await page.locator('#business-save').click();await page.locator('#business-feedback').filter({hasText:'Business details saved.'}).waitFor();
+    assert.equal((await repository.getKnownBusiness('test-business-selling-a')).businessProfile.productsServices,'Isolated test business facts');assert.equal((await repository.getKnownBusiness('test-business-selling-a')).businessProfile.applicationAccess,undefined);
     await page.locator('nav [data-section=product-catalogue]').click();
     await page.locator('#product-form:visible').waitFor();
     await page.locator('#product-name').fill('Preview Coffee');
@@ -297,6 +320,27 @@ async function run(){
    await context.addCookies([{name:'gate-owner',value:'owner-b',url:base}]);await page.evaluate(()=>window.Clerk.listener());await page.locator('#dashboard-status[data-state=denied]').waitFor();
    assert.equal(await page.locator('#business-name').innerText(),'');
    await context.clearCookies();assert.equal((await context.request.get(base+'/api/businesses?resource=selling-dashboard')).status(),401);
+   await context.addCookies([{name:'gate-owner',value:'owner-b',url:base}]);
+   await page.goto(base+'/selling-vendor/private-orders?businessId=vendor-b');
+   await page.locator('#orders-list summary').filter({hasText:genuineOrder.id}).waitFor();
+   await page.locator('#orders-list summary').click();assert.match(await page.locator('#orders-list').innerText(),/Reserved Shirt/);
+   assert.match(await page.locator('#orders-list').innerText(),/4300|4000/);
+   assert.equal(await page.locator('#orders-list button').count(),0,'No unsupported vendor order transition');
+   await page.reload();await page.locator('#orders-list summary').filter({hasText:genuineOrder.id}).waitFor();
+   await page.screenshot({path:path.join(artifacts,'demeos-selling-orders-'+viewport.width+'.png'),fullPage:true});
+   await page.goto(base+'/selling-vendor/options-variants?businessId=vendor-b');await page.locator('.variant-item button').filter({hasText:'Edit',exact:true}).click();
+   await page.locator('#variant-name').fill('Medium / Navy');await page.locator('#variant-price').fill('21.50');await page.locator('#variant-save').click();await page.locator('#variant-feedback').filter({hasText:'Variant saved.'}).waitFor();
+   const structuredVariant=(await repository.getKnownBusiness('vendor-b')).businessProfile.products[0].presentation.variants[0];
+   assert.deepEqual(structuredVariant.selection,{size:'M'});assert.equal(structuredVariant.pricing.amount,21.5);
+   await page.reload();await page.locator('.variant-item strong').filter({hasText:'Medium / Navy'}).waitFor();
+   page.once('dialog',dialog=>dialog.accept());await page.locator('.variant-item button').filter({hasText:'Delete',exact:true}).click();await page.locator('#variant-feedback').filter({hasText:'reserved stock'}).waitFor();
+   await page.goto(base+'/selling-vendor/stock-history?businessId=vendor-b');await page.locator('#stock-form:visible').waitFor();
+   const heldStock=(await repository.getVendorInventory('vendor-b')).entries[orderInventory.key('order-shirt','medium')];
+   const nextQuantity=heldStock.onHand===5?4:5;
+   await page.locator('#stock-quantity').fill(String(nextQuantity));await page.locator('#stock-note').fill('Count with reservation retained');await page.locator('#stock-save').click();await page.locator('#stock-feedback').filter({hasText:'Stock adjustment saved.'}).waitFor();
+   assert.equal((await repository.getVendorInventory('vendor-b')).entries[orderInventory.key('order-shirt','medium')].reserved,2);
+   await page.reload();await page.locator('#stock-list').filter({hasText:'Quantity: '+nextQuantity}).waitFor();
+
    assert.deepEqual(errors,[]);await context.close();
    console.log('Selling dashboard SQL + rendered gate passed at '+viewport.width+'px');
   }
