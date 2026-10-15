@@ -68,6 +68,42 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
         business = businessSummary(record?.businessProfile,env,identity.trustedIdentityId);
         if (!business || business.businessId !== businessId) return res.status(403).json({error:'Selling access is unavailable for this business.'});
       }
+      if (req.method === 'POST') {
+        if (!businessId || !business) return res.status(403).json({error:'Select your business.'});
+        const action=req.body?.action;
+        const item=req.body?.product;
+        if (!['save-product','delete-product'].includes(action) || !item || typeof item!=='object')
+          return res.status(400).json({error:'Invalid product request.'});
+        const id=typeof item.productId==='string'?item.productId.trim():'';
+        if (!/^[a-zA-Z0-9_-]{1,120}$/.test(id)) return res.status(400).json({error:'Invalid product ID.'});
+        const original=(await store.getKnownBusiness(businessId))?.businessProfile;
+        if (!original || !businessSummary(original,env,identity.trustedIdentityId))
+          return res.status(403).json({error:'Business access unavailable.'});
+        const products=Array.isArray(original.products)?original.products.slice():[];
+        const index=products.findIndex(product=>product.productId===id);
+        if (action==='delete-product') {
+          if (index<0) return res.status(404).json({error:'Product not found.'});
+          products.splice(index,1);
+        } else {
+          const clean=(value,max)=>typeof value==='string'?value.trim().slice(0,max):'';
+          const name=clean(item.name,200),description=clean(item.description,1200);
+          const price=clean(item.price,100),priceMode=clean(item.priceMode,20)||'contact';
+          if (!name || !description || !['contact','fixed','from','range'].includes(priceMode) ||
+              (priceMode==='contact'&&price) || (priceMode!=='contact'&&!price))
+            return res.status(400).json({error:'Invalid product details.'});
+          if (index<0 && products.length>=100) return res.status(409).json({error:'Product limit reached.'});
+          const previous=index>=0?products[index]:{};
+          const product={...previous,productId:id,businessId,name,description,price,priceMode,customerVisible:false,
+            availability:previous.availability||'contact'};
+          if (index<0) products.push(product); else products[index]=product;
+        }
+        const updated={...original,products};
+        const saved=business.dataEnvironment==='test'
+          ? await store.saveOwnedBusinessProfile(identity.trustedIdentityId,businessId,original,updated)
+          : await store.saveSellingProducts(identity.trustedIdentityId,businessId,original,updated);
+        if (!saved) return res.status(409).json({error:'Business changed. Reload and retry.'});
+        return res.status(200).json({ok:true});
+      }
       return res.status(200).json({contractVersion:1, vendor:{identityId:identity.trustedIdentityId}, businesses, business, phase:1});
     } catch {
       return res.status(503).json({error:'Your Selling dashboard could not load. Please retry.'});
