@@ -143,8 +143,9 @@ async function run(){
    await page.goto(base+'/selling-vendor');await page.locator('#environment-label[data-environment=test]').waitFor();
    assert.equal(await page.locator('#business-select option').count(),1);assert.equal(await page.locator('#business-name').innerText(),'DEMEOS Test Vendor');
    for(const [section,copy] of Object.entries(sections)){
-    await page.locator('nav [data-section="'+section+'"]').click();await page.locator('#content-heading').filter({hasText:copy[1]}).waitFor();
-    await page.reload();await page.locator('#content-heading').filter({hasText:copy[1]}).waitFor();
+    const heading=section==='product-catalogue'?'Product Catalogue':copy[1];
+    await page.locator('nav [data-section="'+section+'"]').click();await page.locator('#content-heading').filter({hasText:heading}).waitFor();
+    await page.reload();await page.locator('#content-heading').filter({hasText:heading}).waitFor();
     assert.equal(await page.locator('nav [data-section]').count(),7);
     assert.doesNotMatch(await page.locator('main').innerText(),/Application access pending/);
     assert.ok(page.url().includes('/selling-vendor'));
