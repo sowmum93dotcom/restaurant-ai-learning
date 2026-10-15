@@ -44,7 +44,7 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
     res.setHeader('Cache-Control', 'private, no-store');
     res.setHeader('Vercel-CDN-Cache-Control', 'no-store');
     res.setHeader('Vary', 'Cookie, Authorization');
-    if (req.method !== 'GET') { res.setHeader('Allow','GET'); return res.status(405).json({error:'Method not allowed.'}); }
+    if (!['GET','POST'].includes(req.method)) { res.setHeader('Allow','GET, POST'); return res.status(405).json({error:'Method not allowed.'}); }
     try {
       const identity = await authenticate(req);
       if (!identity) return res.status(401).json({error:'Sign in to open your Selling dashboard.'});
