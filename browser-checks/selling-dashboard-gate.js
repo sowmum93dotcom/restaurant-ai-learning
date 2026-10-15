@@ -21,7 +21,8 @@ async function verifyBusinessLayout(page,viewport){
   assert.ok(boxes.label.y>=boxes.badge.bottom,'Business selector follows the status on its own row');
   assert.ok(Math.abs(boxes.select.width-boxes.bar.width)<=1,'Business selector uses the full mobile row');
   assert.ok(boxes.title.height<=boxes.fontSize*3.5,'Business name must not wrap almost letter by letter');
- }else assert.ok(boxes.label.x>boxes.group.x,'Desktop retains the side-by-side business selector');
+ }else if(viewport.width>=1440) assert.ok(boxes.label.x>boxes.group.x,'Wide desktop retains the side-by-side business selector');
+ assert.ok(boxes.title.height<=boxes.fontSize*3.5,'Business name stays readable at intermediate desktop widths too');
 }
 async function run(){
  const client=new PGlite(),repository=createPersistenceRepository(createDatabase(client));
@@ -29,7 +30,7 @@ async function run(){
  await repository.createBusinessForOwner('owner-a',profile('vendor-a'));
  await repository.createBusinessForOwner('owner-a',profile('vendor-a-second'));
  await repository.createBusinessForOwner('owner-a',profile('pending',false));
- await repository.createBusinessForOwner('owner-a',{...profile('test-business-selling-a',false),applicationAccess:undefined});
+ await repository.createBusinessForOwner('owner-a',{...profile('test-business-selling-a',false),name:'DEMEOS Test Vendor',applicationAccess:undefined});
  await repository.createBusinessForOwner('owner-b',profile('vendor-b'));
  let env={VERCEL_ENV:'production'},failure=false,delay=0;
  const handler=createHandler({repository:()=>repository,environment:()=>env,authenticate:async req=>{
@@ -53,7 +54,7 @@ async function run(){
  let browser;
  try{
   browser=await chromium.launch({headless:true,...(process.env.DEMEOS_BROWSER_CHANNEL?{channel:process.env.DEMEOS_BROWSER_CHANNEL}:{})});
-  for(const viewport of [{width:375,height:812},{width:390,height:844},{width:430,height:932},{width:1440,height:1000}]){
+  for(const viewport of [{width:375,height:812},{width:390,height:844},{width:430,height:932},{width:761,height:1000},{width:820,height:1180},{width:1024,height:1366},{width:1280,height:1000},{width:1440,height:1000}]){
    const context=await browser.newContext({viewport});context.setDefaultTimeout(10000);
    await context.addCookies([{name:'gate-owner',value:'owner-a',url:base}]);
    await context.route('https://clerk.test/npm/@clerk/ui@1/dist/ui.browser.js',r=>r.fulfill({contentType:'text/javascript',body:'window.__internal_ClerkUICtor={};'}));
@@ -99,7 +100,7 @@ async function run(){
    await context.addCookies([{name:'gate-owner',value:'owner-a',url:base}]);
    env={VERCEL_ENV:'preview',VERCEL_GIT_COMMIT_REF:'rebuild/selling-foundation-phase-1',DEMEOS_SELLING_DATA_ENVIRONMENT:'test',DEMEOS_SELLING_TEST_PREVIEW_BRANCH:'rebuild/selling-foundation-phase-1',POSTGRES_URL:'postgresql://owner:fixture@isolated.example/neondb',DEMEOS_SELLING_TEST_DATABASE_HOST:'isolated.example',DEMEOS_SELLING_TEST_AUTHORIZATIONS:'[{"businessId":"test-business-selling-a","ownerIdentityId":"owner-a"}]'};
    await page.goto(base+'/selling-vendor');await page.locator('#environment-label[data-environment=test]').waitFor();
-   assert.equal(await page.locator('#business-select option').count(),1);assert.match(await page.locator('#business-name').innerText(),/test-business-selling-a/);
+   assert.equal(await page.locator('#business-select option').count(),1);assert.equal(await page.locator('#business-name').innerText(),'DEMEOS Test Vendor');
    for(const [section,copy] of Object.entries(sections)){
     await page.locator('nav [data-section="'+section+'"]').click();await page.locator('#content-heading').filter({hasText:copy[1]}).waitFor();
     await page.reload();await page.locator('#content-heading').filter({hasText:copy[1]}).waitFor();

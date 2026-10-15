@@ -141,10 +141,14 @@ already provides those operations. No such API/write changes are part of this fi
 
 The local sandbox cannot launch Chromium (SIGTRAP). Rendered verification therefore
 runs in GitHub Actions. The Selling browser gate checks iPhone-sized widths 375,
-390 and 430, plus desktop width 1440. It measures the business identity column,
+390 and 430, plus intermediate/desktop widths 761, 820, 1024, 1280 and 1440. It measures the business identity column,
 name height, stacked badge/selector and page overflow for live and test contexts;
 screenshots capture both. The mobile fix appends the specified single-column grid
-override without changing the desktop layout.
+override. Above 760px the identity has a 260px flex basis and minimum width
+(clamped to its container), so the badge/selector wrap rather than squeezing the
+business name into a few letters. Wide desktop retains the side-by-side layout.
+The additional widths cover tablet and desktop-site viewports reported in the
+live screenshot; the test identity uses the displayed name DEMEOS Test Vendor.
 
 The isolated Preview database/test record is configured as described above. A
 passing isolated SQL/browser gate verifies the shipped UI and access rules with
