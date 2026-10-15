@@ -157,3 +157,30 @@ test('isolated Preview vendor can save products only in its authorized test busi
  assert.equal(await call(live,'owner-a'),403);
  assert.equal(writes,1);
 });
+
+test('product writes reject malformed requests, limits and concurrent edits',async()=>{
+ const original={businessId:'real-a',name:'Real Shop',type:'Shop',location:'London',preparationModel:'selling',applicationAccess:{selling:true},products:[]};
+ let current=structuredClone(original),calls=0;
+ const repository={
+   getOwnedBusinessProfiles:async()=>[current],
+   isBusinessOwnedByIdentity:async()=>true,
+   getKnownBusiness:async()=>({businessProfile:structuredClone(current)}),
+   saveSellingProducts:async()=>{calls++;return null;}
+ };
+ async function invoke(action,product){
+   const res=response();
+   await createHandler({authenticate:async()=>({trustedIdentityId:'owner-a'}),repository:()=>repository,environment:()=>live})
+    ({method:'POST',query:{businessId:'real-a'},body:{action,product}},res);
+   return res.code;
+ }
+ const valid={productId:'product-a',name:'Coffee',description:'Fresh coffee',priceMode:'fixed',price:'5'};
+ assert.equal(await invoke('save-product',[]),400);
+ assert.equal(await invoke('save-product',{...valid,productId:'bad/id'}),400);
+ assert.equal(await invoke('save-product',{...valid,priceMode:'contact'}),400);
+ assert.equal(await invoke('save-product',valid),409,'conflicting writes must not silently overwrite records');
+ assert.equal(calls,1);
+ current={...current,products:Array.from({length:100},(_,i)=>({...valid,productId:'item-'+i}))};
+ assert.equal(await invoke('save-product',valid),409,'catalogue must enforce the maximum product count');
+ assert.equal(calls,1);
+ assert.equal(await invoke('delete-product',{productId:'missing'}),404);
+});
