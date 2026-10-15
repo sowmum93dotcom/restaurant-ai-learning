@@ -159,10 +159,15 @@
     function clearProductForm(){
       $('product-form').reset();$('product-id').value='';$('product-form-title').textContent='Add product';
     }
+    let productMutationPending=false;
     async function mutateProduct(action,product){
+      if(productMutationPending)return;
       const businessId=context?.business?.businessId;
       if(!businessId)return;
+      productMutationPending=true;
       const button=$('product-save');button.disabled=true;
+      $('product-cancel').disabled=true;
+      for(const control of $('catalogue-list').querySelectorAll('button'))control.disabled=true;
       $('product-feedback').textContent=action==='delete-product'?'Deleting…':'Saving…';
       try{
         const url=new URL('/api/businesses',win.location.origin);
@@ -178,7 +183,8 @@
         if(!context?.business)throw Error('Product saved, but the dashboard could not refresh. Reload before editing again.');
         clearProductForm();$('product-feedback').textContent=action==='delete-product'?'Product deleted.':'Product saved.';
       }catch(error){$('product-feedback').textContent=error.message||'Product change failed.';}
-      finally{button.disabled=false;}
+      finally{productMutationPending=false;button.disabled=false;$('product-cancel').disabled=false;
+        for(const control of $('catalogue-list').querySelectorAll('button'))control.disabled=false;}
     }
     $('product-form').addEventListener('submit',event=>{
       event.preventDefault();
