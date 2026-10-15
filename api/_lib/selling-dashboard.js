@@ -36,7 +36,7 @@ function businessSummary(profile, env, identityId) {
   // Real Selling approval remains unchanged. The explicit Preview test grant
   // has its own authority and never changes the real applicationAccess field.
   if (environment === 'live' && !applicationAccess({businessProfile:profile}, id).selling) return null;
-  return environment ? {businessId:id, name:profile.name || 'Unnamed business', type:profile.type || '', location:profile.location || '', dataEnvironment:environment, products:Array.isArray(profile.products)?profile.products.map(p=>({productId:p.productId,name:p.name,description:p.description,price:p.price,priceMode:p.priceMode,availability:p.availability||'contact',stockQuantity:Number.isSafeInteger(p.stockQuantity)?p.stockQuantity:null,stockHistory:Array.isArray(p.stockHistory)?p.stockHistory:[]})):[]} : null;
+  return environment ? {businessId:id, name:profile.name || 'Unnamed business', type:profile.type || '', location:profile.location || '', dataEnvironment:environment, products:Array.isArray(profile.products)?profile.products.map(p=>({productId:p.productId,name:p.name,description:p.description,price:p.price,priceMode:p.priceMode,availability:p.availability||'contact',stockQuantity:Number.isSafeInteger(p.stockQuantity)?p.stockQuantity:null,stockHistory:Array.isArray(p.stockHistory)?p.stockHistory:[],variants:Array.isArray(p.variants)?p.variants.map(v=>({variantId:v.variantId,name:v.name,sku:v.sku||'',price:v.price||'',availability:v.availability||'contact'})):[]})):[]} : null;
 }
 
 function createHandler({authenticate=authentication.resolveTrustedIdentityFromRequest, repository=()=>persistence.getRepository(), environment=()=>process.env}={}) {
@@ -72,7 +72,7 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
         if (!businessId || !business) return res.status(403).json({error:'Select your business.'});
         const action=req.body?.action;
         const item=req.body?.product;
-        if (!['save-product','delete-product','adjust-stock'].includes(action) || !item || typeof item!=='object' || Array.isArray(item))
+        if (!['save-product','delete-product','adjust-stock','save-variant','delete-variant'].includes(action) || !item || typeof item!=='object' || Array.isArray(item))
           return res.status(400).json({error:'Invalid product request.'});
         const id=typeof item.productId==='string'?item.productId.trim():'';
         if (!/^[a-zA-Z0-9_-]{1,120}$/.test(id)) return res.status(400).json({error:'Invalid product ID.'});
@@ -81,7 +81,25 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
           return res.status(403).json({error:'Business access unavailable.'});
         const products=Array.isArray(original.products)?original.products.slice():[];
         const index=products.findIndex(product=>product.productId===id);
-        if (action==='adjust-stock') {
+        if (action==='save-variant' || action==='delete-variant') {
+          if (index<0) return res.status(404).json({error:'Product not found.'});
+          const variantId=typeof item.variantId==='string'?item.variantId.trim():'';
+          if (!/^[a-zA-Z0-9_-]{1,120}$/.test(variantId)) return res.status(400).json({error:'Invalid variant ID.'});
+          const variants=Array.isArray(products[index].variants)?products[index].variants.slice():[];
+          const variantIndex=variants.findIndex(variant=>variant.variantId===variantId);
+          if (action==='delete-variant') {
+            if (variantIndex<0) return res.status(404).json({error:'Variant not found.'});
+            variants.splice(variantIndex,1);
+          } else {
+            const clean=(value,max)=>typeof value==='string'?value.trim().slice(0,max):'';
+            const name=clean(item.name,160),sku=clean(item.sku,120),price=clean(item.price,100),availability=clean(item.availability,20)||'contact';
+            if (!name || !['contact','available','unavailable'].includes(availability)) return res.status(400).json({error:'Invalid variant details.'});
+            if (variantIndex<0 && variants.length>=100) return res.status(409).json({error:'Variant limit reached.'});
+            const variant={variantId,name,sku,price,availability};
+            if (variantIndex<0) variants.push(variant); else variants[variantIndex]=variant;
+          }
+          products[index]={...products[index],variants};
+        } else if (action==='adjust-stock') {
           if (index<0) return res.status(404).json({error:'Product not found.'});
           const quantity=item.quantity;
           const note=typeof item.note==='string'?item.note.trim():'';
