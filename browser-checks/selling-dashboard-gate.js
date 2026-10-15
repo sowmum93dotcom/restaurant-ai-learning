@@ -13,7 +13,7 @@ async function run(){
  await repository.createBusinessForOwner('owner-a',profile('vendor-a'));
  await repository.createBusinessForOwner('owner-a',profile('vendor-a-second'));
  await repository.createBusinessForOwner('owner-a',profile('pending',false));
- await repository.createBusinessForOwner('owner-a',profile('test-business-selling-a'));
+ await repository.createBusinessForOwner('owner-a',{...profile('test-business-selling-a',false),applicationAccess:undefined});
  await repository.createBusinessForOwner('owner-b',profile('vendor-b'));
  let env={VERCEL_ENV:'production'},failure=false,delay=0;
  const handler=createHandler({repository:()=>repository,environment:()=>env,authenticate:async req=>{
@@ -41,7 +41,7 @@ async function run(){
    const context=await browser.newContext({viewport});context.setDefaultTimeout(10000);
    await context.addCookies([{name:'gate-owner',value:'owner-a',url:base}]);
    await context.route('https://clerk.test/npm/@clerk/ui@1/dist/ui.browser.js',r=>r.fulfill({contentType:'text/javascript',body:'window.__internal_ClerkUICtor={};'}));
-   await context.route('https://clerk.test/npm/@clerk/clerk-js@6/dist/clerk.browser.js',r=>r.fulfill({contentType:'text/javascript',body:`window.Clerk={user:{id:document.cookie.match(/gate-owner=(owner-[a-z]+)/)?.[1]||'owner-a'},session:{id:'session-a',async getToken(){return 'verified-token';}},async load(){},addListener(fn){this.listener=fn;},openSignIn(){},async signOut(){this.user=null;this.session=null;this.listener();}};`}));
+   await context.route('https://clerk.test/npm/@clerk/clerk-js@6/dist/clerk.browser.js',r=>r.fulfill({contentType:'text/javascript',body:`window.Clerk={user:{id:document.cookie.match(/gate-owner=(owner-[a-z]+)/)?.[1]||'owner-a'},session:{id:'session-a',async getToken(){return 'verified-token';}},async load(){},addListener(fn){this.listener=fn;},openSignIn(options){window.signInRequest=options;},async signOut(){this.user=null;this.session=null;this.listener();}};`}));
    const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
    await page.goto(base+'/selling-vendor');await page.locator('#private-workspace:not([hidden])').waitFor();
    assert.equal(await page.locator('#business-select option').count(),3); // placeholder + two approved live businesses
@@ -80,15 +80,25 @@ async function run(){
    assert.deepEqual(await page.evaluate(()=>window.tokenAttempts),[false,true]);await page.unroute('**/api/businesses?resource=selling-dashboard*',expire);
    await context.addCookies([{name:'gate-owner',value:'owner-empty',url:base}]);await page.reload();await page.locator('#dashboard-status[data-state=empty]').waitFor();
    await context.addCookies([{name:'gate-owner',value:'owner-a',url:base}]);
-   env={VERCEL_ENV:'preview',DEMEOS_SELLING_DATA_ENVIRONMENT:'test',DEMEOS_SELLING_TEST_BUSINESS_IDS:'["test-business-selling-a"]'};
+   env={VERCEL_ENV:'preview',VERCEL_GIT_COMMIT_REF:'rebuild/selling-foundation-phase-1',DEMEOS_SELLING_DATA_ENVIRONMENT:'test',DEMEOS_SELLING_TEST_PREVIEW_BRANCH:'rebuild/selling-foundation-phase-1',POSTGRES_URL:'postgresql://owner:fixture@isolated.example/neondb',DEMEOS_SELLING_TEST_DATABASE_HOST:'isolated.example',DEMEOS_SELLING_TEST_AUTHORIZATIONS:'[{"businessId":"test-business-selling-a","ownerIdentityId":"owner-a"}]'};
    await page.goto(base+'/selling-vendor');await page.locator('#environment-label[data-environment=test]').waitFor();
    assert.equal(await page.locator('#business-select option').count(),1);assert.match(await page.locator('#business-name').innerText(),/test-business-selling-a/);
+   for(const [section,copy] of Object.entries(sections)){
+    await page.locator('nav [data-section="'+section+'"]').click();await page.locator('#content-heading').filter({hasText:copy[1]}).waitFor();
+    await page.reload();await page.locator('#content-heading').filter({hasText:copy[1]}).waitFor();
+    assert.equal(await page.locator('nav [data-section]').count(),7);
+    assert.doesNotMatch(await page.locator('main').innerText(),/Application access pending/);
+    assert.ok(page.url().includes('/selling-vendor'));
+   }
+   await page.locator('nav [data-section=overview]').click();await page.locator('#content-heading').filter({hasText:sections.overview[1]}).waitFor();
    await page.screenshot({path:path.join(artifacts,'demeos-selling-test-'+viewport.width+'.png'),fullPage:true});
-   await repository.saveBusiness(profile('test-business-selling-a',false));await page.reload();await page.locator('#dashboard-status[data-state=empty]').waitFor();await repository.saveBusiness(profile('test-business-selling-a'));
+   const grants=env.DEMEOS_SELLING_TEST_AUTHORIZATIONS;env.DEMEOS_SELLING_TEST_AUTHORIZATIONS='[]';await page.reload();await page.locator('#dashboard-status[data-state=empty]').waitFor();env.DEMEOS_SELLING_TEST_AUTHORIZATIONS=grants;
    env={VERCEL_ENV:'production'};
    await page.goto(base+'/selling-vendor?businessId=test-business-selling-a');await page.locator('#dashboard-status[data-state=denied]').waitFor();
    await page.goto(base+'/selling-vendor?businessId=vendor-a');await page.locator('#private-workspace:not([hidden])').waitFor();
    await page.locator('#sign-out').click();await page.locator('#dashboard-status[data-state=signed-out]').waitFor();assert.equal(await page.locator('#private-workspace').isVisible(),false);
+   await page.locator('#sign-in').click();assert.equal(await page.evaluate(()=>window.signInRequest.forceRedirectUrl),'/selling-vendor');
+   assert.equal(await page.evaluate(()=>window.signInRequest.fallbackRedirectUrl),'/selling-vendor');
    await page.evaluate(()=>{window.Clerk.user={id:'owner-b'};window.Clerk.session={id:'session-b',async getToken(){return 'verified-token';}};});
    await context.addCookies([{name:'gate-owner',value:'owner-b',url:base}]);await page.evaluate(()=>window.Clerk.listener());await page.locator('#dashboard-status[data-state=denied]').waitFor();
    assert.equal(await page.locator('#business-name').innerText(),'');

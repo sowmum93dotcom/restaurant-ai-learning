@@ -56,7 +56,7 @@
       if(data.business&&(selected&&selected!==data.business.businessId||!data.businesses.some(b=>b.businessId===data.business.businessId)))throw Error('Invalid business');
       const ids=new Set();
       for(const business of data.businesses){if(!business?.businessId||ids.has(business.businessId)||!['live','test'].includes(business.dataEnvironment))throw Error('Invalid business list');ids.add(business.businessId);}
-      if(!data.businesses.length){status('empty','No approved Selling business yet','This account has no business with Selling access in this data environment. Complete registration or wait for administrator approval.');return;}
+      if(!data.businesses.length){status('empty','No authorized Selling business yet','This account has no business with Selling access in this environment. Contact the business administrator to confirm access.');return;}
       context=data;$('dashboard-status').hidden=true;$('private-workspace').hidden=false;
       $('business-select').replaceChildren();
       if(!data.business){const placeholder=doc.createElement('option');placeholder.value='';placeholder.textContent='Choose your business';$('business-select').append(placeholder);}
@@ -73,7 +73,7 @@
       $('content-message').textContent=business?copy[2]:'Use the business selector above. Your choice is kept in the page URL for refresh and direct navigation.';
       $('business-facts').hidden=section!=='my-business'||!business;
       $('business-facts').replaceChildren();
-      if(section==='my-business'&&business)for(const [label,value] of [['Business ID',business.businessId],['Business name',business.name],['Business type',business.type||'Not provided'],['Location',business.location||'Not provided'],['Selling access','Approved']]){
+      if(section==='my-business'&&business)for(const [label,value] of [['Business ID',business.businessId],['Business name',business.name],['Business type',business.type||'Not provided'],['Location',business.location||'Not provided'],['Selling access',business.dataEnvironment==='test'?'Test access authorized':'Approved']]){
         const term=doc.createElement('dt'),detail=doc.createElement('dd');term.textContent=label;detail.textContent=value;$('business-facts').append(term,detail);
       }
     }
@@ -82,7 +82,7 @@
       if(!navigation()){status('error','Page not found','Choose a dashboard section from the navigation.');return;}
       $('sign-in').hidden=Boolean(clerk?.user);$('sign-out').hidden=!clerk?.user;
       $('vendor-identity').textContent=clerk?.user?(clerk.user.fullName||clerk.user.primaryEmailAddress?.emailAddress||'Business account'):'';
-      if(!clerk?.user){status(clerk?.session?'loading':'signed-out',clerk?.session?'Restoring your session':'Sign in to your Selling dashboard',clerk?.session?'Checking your current account…':'Use your existing DEMEOS business account. Access is checked against your saved business ownership and Selling approval.');return;}
+      if(!clerk?.user){status(clerk?.session?'loading':'signed-out',clerk?.session?'Restoring your session':'Sign in to your Selling dashboard',clerk?.session?'Checking your current account…':'Use your existing DEMEOS business account. Access is checked against your saved business ownership and server-authorized Selling access.');return;}
       const identity=clerk.user.id;
       status('loading','Loading your business','Checking your saved ownership and Selling access…');
       const url=new URL('/api/businesses',win.location.origin);url.searchParams.set('resource','selling-dashboard');
@@ -113,7 +113,7 @@
         if(!win.__internal_ClerkUICtor)await script('https://'+domain+'/npm/@clerk/ui@1/dist/ui.browser.js');
         if(!win.Clerk)await script('https://'+domain+'/npm/@clerk/clerk-js@6/dist/clerk.browser.js',key);
         const candidate=win.Clerk;await bounded(candidate.load({ui:{ClerkUI:win.__internal_ClerkUICtor}}));clerk=candidate;
-        if(new URLSearchParams(win.location.search).get('clerk_oauth_callback')==='1')await bounded(clerk.handleRedirectCallback({signInFallbackRedirectUrl:win.location.pathname,signUpFallbackRedirectUrl:win.location.pathname}));
+        if(new URLSearchParams(win.location.search).get('clerk_oauth_callback')==='1')await bounded(clerk.handleRedirectCallback({signInForceRedirectUrl:'/selling-vendor',signUpForceRedirectUrl:'/selling-vendor',signInFallbackRedirectUrl:'/selling-vendor',signUpFallbackRedirectUrl:'/selling-vendor'}));
         clerk.addListener(()=>{
           const key=(clerk.user?.id||'')+':'+(clerk.session?.id||'');
           if(key!==sessionKey){sessionKey=key;load();}
@@ -124,7 +124,7 @@
     }
     $('retry').addEventListener('click',()=>clerk?load():start());
     $('choose-business').addEventListener('click',()=>{const url=new URL(win.location.href);url.searchParams.delete('businessId');win.history.pushState({},'',url);load();});
-    $('sign-in').addEventListener('click',async()=>{try{await clerk?.openSignIn({fallbackRedirectUrl:win.location.href});}catch{status('error','Sign-in is temporarily unavailable','Please try again.');}});
+    $('sign-in').addEventListener('click',async()=>{try{await clerk?.openSignIn({forceRedirectUrl:'/selling-vendor',fallbackRedirectUrl:'/selling-vendor',signUpForceRedirectUrl:'/selling-vendor',signUpFallbackRedirectUrl:'/selling-vendor'});}catch{status('error','Sign-in is temporarily unavailable','Please try again.');}});
     $('sign-out').addEventListener('click',async()=>{++sequence;controller?.abort();status('loading','Signing out','Closing your private workspace…');try{await clerk.signOut();await load();}catch{status('error','Sign-out could not finish','Please retry or sign out through your account.');}});
     $('business-select').addEventListener('change',()=>{const id=$('business-select').value;if(!context?.businesses.some(b=>b.businessId===id))return;const url=new URL(win.location.href);url.searchParams.set('businessId',id);win.history.pushState({},'',url);load();});
     doc.querySelector('nav').addEventListener('click',event=>{

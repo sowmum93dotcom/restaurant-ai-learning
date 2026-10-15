@@ -3,19 +3,21 @@ const test=require('node:test'),assert=require('node:assert/strict');
 const {PGlite}=require('@electric-sql/pglite');
 const {createDatabase}=require('../api/_lib/database');
 const {createPersistenceRepository}=require('../api/_lib/persistence');
-const {createHandler,dataEnvironment}=require('../api/_lib/selling-dashboard');
+const {createHandler,dataEnvironment,isolatedTestEnvironment}=require('../api/_lib/selling-dashboard');
 const {resolveTrustedIdentityFromRequest}=require('../api/_lib/demeos-authentication');
 const {sections,sectionForPath}=require('../js/selling-dashboard');
 const {inspectCustomerPublication}=require('../api/_lib/customer-publication-rules');
-const live={VERCEL_ENV:'production'},preview={VERCEL_ENV:'preview',DEMEOS_SELLING_DATA_ENVIRONMENT:'test',DEMEOS_SELLING_TEST_BUSINESS_IDS:'["test-business-selling-a"]'};
+const live={VERCEL_ENV:'production'},preview={VERCEL_ENV:'preview',VERCEL_GIT_COMMIT_REF:'rebuild/selling-foundation-phase-1',DEMEOS_SELLING_DATA_ENVIRONMENT:'test',DEMEOS_SELLING_TEST_PREVIEW_BRANCH:'rebuild/selling-foundation-phase-1',POSTGRES_URL:'postgresql://owner:fixture@isolated.example/neondb',DEMEOS_SELLING_TEST_DATABASE_HOST:'isolated.example',DEMEOS_SELLING_TEST_AUTHORIZATIONS:'[{"businessId":"test-business-selling-a","ownerIdentityId":"owner-a"}]'};
 function response(){return {headers:{},setHeader(k,v){this.headers[k]=v;},status(code){this.code=code;return this;},json(body){this.body=body;return this;}};}
 test('test records require Preview, isolated data configuration and explicit business authorization',()=>{
  assert.equal(dataEnvironment('real-a',live),'live');
  assert.equal(dataEnvironment('real-a',preview),null);
- assert.equal(dataEnvironment('test-business-selling-a',preview),'test');
- for(const env of [live,{...preview,VERCEL_ENV:'production'},{...preview,VERCEL_ENV:'development'},{...preview,DEMEOS_SELLING_TEST_BUSINESS_IDS:'{}'},{...preview,DEMEOS_SELLING_TEST_BUSINESS_IDS:'broken'},{...preview,DEMEOS_SELLING_DATA_ENVIRONMENT:'live'}])assert.equal(dataEnvironment('test-business-selling-a',env),null);
- assert.equal(dataEnvironment('test-business-other',preview),null);
- assert.equal(dataEnvironment('test-vendor-old',{...preview,DEMEOS_SELLING_TEST_BUSINESS_IDS:'["test-vendor-old"]'}),null);
+ assert.equal(dataEnvironment('test-business-selling-a',preview,'owner-a'),'test');
+ for(const env of [live,{...preview,VERCEL_ENV:'production'},{...preview,VERCEL_ENV:'development'},{...preview,DEMEOS_SELLING_TEST_AUTHORIZATIONS:'{}'},{...preview,DEMEOS_SELLING_TEST_AUTHORIZATIONS:'broken'},{...preview,DEMEOS_SELLING_DATA_ENVIRONMENT:'live'}])assert.equal(dataEnvironment('test-business-selling-a',env,'owner-a'),null);
+ assert.equal(dataEnvironment('test-business-other',preview,'owner-a'),null);
+ assert.equal(dataEnvironment('test-business-selling-a',preview,'owner-b'),null);
+ for(const env of [{...preview,POSTGRES_URL:'postgresql://owner:fixture@production.example/neondb'},{...preview,VERCEL_GIT_COMMIT_REF:'another-preview'},{...preview,DEMEOS_SELLING_TEST_DATABASE_HOST:''},{...preview,POSTGRES_URL:''}])assert.equal(isolatedTestEnvironment(env),false);
+ assert.equal(dataEnvironment('test-vendor-old',{...preview,DEMEOS_SELLING_TEST_AUTHORIZATIONS:'[{"businessId":"test-vendor-old","ownerIdentityId":"owner-a"}]'},'owner-a'),null);
 });
 test('all seven sections resolve on refresh and direct paths, retired routes do not',()=>{
  assert.equal(Object.keys(sections).length,7);
@@ -37,13 +39,13 @@ test('real SQL ownership, application grants, test isolation, revocation and res
  try{
   await repository.createBusinessForOwner('owner-a',profile('real-a'));
   await repository.createBusinessForOwner('owner-a',profile('real-a-second'));
-  await repository.createBusinessForOwner('owner-a',profile('test-business-selling-a'));
+  await repository.createBusinessForOwner('owner-a',{...profile('test-business-selling-a',false),applicationAccess:undefined});
   await repository.createBusinessForOwner('owner-a',profile('test-business-not-allowlisted'));
   await repository.createBusinessForOwner('owner-a',profile('pending',false));
   await repository.createBusinessForOwner('owner-b',profile('real-b'));
   async function invoke({identity='owner-a',businessId,env=live,method='GET',repo=repository}={}){
    const handler=createHandler({authenticate:async()=>identity?{trustedIdentityId:identity}:null,repository:()=>repo,environment:()=>env});
-   const res=response();await handler({method,query:{businessId},headers:{'x-user-id':'owner-b'},body:{businessId:'real-b',applicationAccess:{selling:true}}},res);return res;
+   const res=response();await handler({method,query:{businessId,test:'1',role:'business-owner',ownerIdentityId:'owner-a'},headers:{'x-user-id':'owner-a','x-demeos-role':'demeos-admin','x-demeos-test':'true'},body:{businessId:'real-b',applicationAccess:{selling:true},test:true}},res);return res;
   }
   await t.test('authorized real owner sees only approved owned live summaries, no products or orders',async()=>{
    const res=await invoke();assert.equal(res.code,200);assert.deepEqual(res.body.businesses.map(b=>b.businessId),['real-a','real-a-second']);assert.equal(res.body.business,null);
@@ -55,11 +57,17 @@ test('real SQL ownership, application grants, test isolation, revocation and res
    assert.equal((await invoke({identity:null,businessId:'real-a'})).code,401);
    for(const businessId of ['real-b','pending','missing','test-business-selling-a']){const res=await invoke({businessId});assert.equal(res.code,403);assert.equal(res.body.business,undefined);}
   });
-  await t.test('explicit test business uses same SQL ownership, grants and contract in isolated Preview',async()=>{
+  await t.test('explicit test owner enters without real Selling approval using the same SQL ownership and contract',async()=>{
    const res=await invoke({env:preview});assert.equal(res.code,200);assert.equal(res.body.business.businessId,'test-business-selling-a');assert.equal(res.body.business.dataEnvironment,'test');
    assert.equal((await invoke({env:preview,identity:'owner-b',businessId:'test-business-selling-a'})).code,403);
    assert.equal((await invoke({env:preview,businessId:'test-business-not-allowlisted'})).code,403);
    assert.deepEqual(Object.keys(res.body.business).sort(),Object.keys((await invoke({businessId:'real-a'})).body.business).sort());
+   assert.equal((await repository.getKnownBusiness('test-business-selling-a')).businessProfile.applicationAccess,undefined);
+   const spoofed={...preview,DEMEOS_SELLING_TEST_AUTHORIZATIONS:'[{"businessId":"test-business-selling-a","ownerIdentityId":"unowned-identity"}]'};
+   assert.equal((await invoke({env:spoofed,identity:'unowned-identity',businessId:'test-business-selling-a'})).code,403);
+   await repository.assignBusinessOwner('owner-b','test-business-selling-a');
+   assert.equal((await invoke({env:preview,identity:'owner-b',businessId:'test-business-selling-a'})).code,403,'Even a persisted co-owner needs an explicit test authorization');
+   assert.equal((await invoke({env:{...preview,DEMEOS_SELLING_TEST_AUTHORIZATIONS:'[]'},businessId:'test-business-selling-a'})).code,403);
   });
   await t.test('empty membership, unsupported methods, invalid selection and repository errors are explicit',async()=>{
    assert.deepEqual((await invoke({identity:'new-owner'})).body.businesses,[]);
@@ -77,6 +85,13 @@ test('real SQL ownership, application grants, test isolation, revocation and res
    assert.equal((await invoke({businessId:'race',repo})).code,403);
   });
  }finally{await db.close();}
+});
+test('test configuration fails closed before touching SQL when Preview isolation is not established',async()=>{
+ for(const env of [{...preview,VERCEL_ENV:'production'},{...preview,POSTGRES_URL:'postgresql://owner:fixture@shared.example/neondb'},{...preview,VERCEL_GIT_COMMIT_REF:'unapproved-branch'}]){
+  let opened=false;const res=response();
+  await createHandler({authenticate:async()=>({trustedIdentityId:'owner-a'}),environment:()=>env,repository:()=>{opened=true;throw Error('Must not open shared records');}})({method:'GET',query:{businessId:'test-business-selling-a'}},res);
+  assert.equal(res.code,503);assert.equal(opened,false);
+ }
 });
 test('dashboard authentication consumes the existing verified Clerk request boundary',async()=>{
  const before={...process.env};process.env.CLERK_SECRET_KEY='sk_test_fixture';process.env.CLERK_PUBLISHABLE_KEY='pk_test_fixture';process.env.VERCEL_ENV='preview';
