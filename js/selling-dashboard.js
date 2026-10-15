@@ -84,6 +84,21 @@
       const section=currentSection(),copy=sectionCopy()[section];
       $('content-heading').textContent=business?copy[1]:'Select your business to continue';
       $('content-message').textContent=business?copy[2]:'Use the business selector above. Your choice is kept in the page URL for refresh and direct navigation.';
+      const catalogue=$('catalogue-list');
+      catalogue.replaceChildren();
+      catalogue.hidden=section!=='product-catalogue'||!business;
+      if(section==='product-catalogue'&&business){
+        const products=Array.isArray(business.products)?business.products:[];
+        $('content-heading').textContent=language==='tr'?'Ürün Kataloğu':'Product Catalogue';
+        $('content-message').textContent=products.length?(language==='tr'?'Kayıtlı ürünleriniz':'Your saved DEMEOS products'):(language==='tr'?'Henüz kayıtlı ürün yok.':'No products saved yet.');
+        for(const product of products){
+          const item=doc.createElement('article');item.className='catalogue-item';
+          const title=doc.createElement('h3');title.textContent=product.name||'Unnamed product';
+          const description=doc.createElement('p');description.textContent=product.description||'';
+          const price=doc.createElement('p');price.textContent=product.price||'Contact for price';
+          item.append(title,description,price);catalogue.append(item);
+        }
+      }
       $('business-facts').hidden=section!=='my-business'||!business;
       $('business-facts').replaceChildren();
       if(section==='my-business'&&business)for(const [label,value] of [['Business ID',business.businessId],['Business name',business.name],['Business type',business.type||'Not provided'],['Location',business.location||'Not provided'],['Selling access',business.dataEnvironment==='test'?'Test access authorized':'Approved']]){
