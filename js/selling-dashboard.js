@@ -246,7 +246,7 @@
         const result=await response.json();
         if(!response.ok)throw Error(result.error||'Stock adjustment failed.');
         await load();
-        if(context?.business?.businessId!==businessId||$('private-workspace').hidden)throw Error('Stock saved, but the dashboard could not refresh.');
+        if(context?.business?.businessId!==businessId||$('private-workspace').hidden||!$('dashboard-status').hidden||new URLSearchParams(win.location.search).get('businessId')!==businessId)throw Error('Stock saved, but the dashboard could not refresh.');
         $('stock-quantity').value='';$('stock-note').value='';$('stock-feedback').textContent='Stock adjustment saved.';
       }catch(error){$('stock-feedback').textContent=error.message||'Stock adjustment failed.';}
       finally{productMutationPending=false;$('stock-save').disabled=!$('stock-product').options.length;}
