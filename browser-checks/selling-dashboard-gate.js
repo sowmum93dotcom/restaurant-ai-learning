@@ -62,6 +62,7 @@ async function run(){
   browser=await chromium.launch({headless:true,...(process.env.DEMEOS_BROWSER_CHANNEL?{channel:process.env.DEMEOS_BROWSER_CHANNEL}:{})});
   for(const viewport of [{width:375,height:812},{width:390,height:844},{width:430,height:932},{width:761,height:1000},{width:820,height:1180},{width:1024,height:1366},{width:1280,height:1000},{width:1440,height:1000}]){
    const context=await browser.newContext({viewport});context.setDefaultTimeout(10000);
+   console.log('Browser gate: starting '+viewport.width+'px viewport');
    await context.addCookies([{name:'gate-owner',value:'owner-a',url:base}]);
    await context.route('https://clerk.test/npm/@clerk/ui@1/dist/ui.browser.js',r=>r.fulfill({contentType:'text/javascript',body:'window.__internal_ClerkUICtor={};'}));
    await context.route('https://clerk.test/npm/@clerk/clerk-js@6/dist/clerk.browser.js',r=>r.fulfill({contentType:'text/javascript',body:`window.Clerk={user:{id:document.cookie.match(/gate-owner=(owner-[a-z]+)/)?.[1]||'owner-a'},session:{id:'session-a',async getToken(){return 'verified-token';}},async load(){},addListener(fn){this.listener=fn;},openSignIn(options){window.signInRequest=options;},async signOut(){this.user=null;this.session=null;this.listener();}};`}));
@@ -94,6 +95,7 @@ async function run(){
     await page.reload();await page.locator('#content-heading').filter({hasText:section==='product-catalogue'?'Product Catalogue':copy[1]}).waitFor();
     await page.goto(base+'/selling-vendor/'+section+'?businessId=vendor-a');await page.locator('#content-heading').filter({hasText:section==='product-catalogue'?'Product Catalogue':copy[1]}).waitFor();
    }
+   console.log('Browser gate: live catalogue CRUD '+viewport.width+'px');
    // Exercise real product persistence through the shipped form and isolated SQL.
    await page.goto(base+'/selling-vendor/product-catalogue?businessId=vendor-a');
    await page.locator('#product-form:visible').waitFor();
@@ -139,6 +141,7 @@ async function run(){
    assert.deepEqual(await page.evaluate(()=>window.tokenAttempts),[false,true]);await page.unroute('**/api/businesses?resource=selling-dashboard*',expire);
    await context.addCookies([{name:'gate-owner',value:'owner-empty',url:base}]);await page.reload();await page.locator('#dashboard-status[data-state=empty]').waitFor();
    await context.addCookies([{name:'gate-owner',value:'owner-a',url:base}]);
+   console.log('Browser gate: Preview authorization '+viewport.width+'px');
    env={VERCEL_ENV:'preview',VERCEL_GIT_COMMIT_REF:'rebuild/selling-foundation-phase-1',DEMEOS_SELLING_DATA_ENVIRONMENT:'test',DEMEOS_SELLING_TEST_PREVIEW_BRANCH:'rebuild/selling-foundation-phase-1',POSTGRES_URL:'postgresql://owner:fixture@isolated.example/neondb',DEMEOS_SELLING_TEST_DATABASE_HOST:'isolated.example',DEMEOS_SELLING_TEST_AUTHORIZATIONS:'[{"businessId":"test-business-selling-a","ownerIdentityId":"owner-a"}]'};
    await page.goto(base+'/selling-vendor');await page.locator('#environment-label[data-environment=test]').waitFor();
    assert.equal(await page.locator('#business-select option').count(),1);assert.equal(await page.locator('#business-name').innerText(),'DEMEOS Test Vendor');
