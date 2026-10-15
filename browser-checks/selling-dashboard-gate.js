@@ -84,7 +84,7 @@ async function run(){
    assert.ok(page.url().includes('businessId=vendor-a'));
    for(const [section,copy] of Object.entries(sections)){
     await page.locator('nav [data-section="'+section+'"]').click();
-    await page.locator('#content-heading').filter({hasText:section==='product-catalogue'?'Product Catalogue':copy[1]}).waitFor();
+    await page.locator('#content-heading').filter({hasText:['product-catalogue','stock-history'].includes(section)?(section==='stock-history'?'Stock & History':'Product Catalogue'):copy[1]}).waitFor();
     assert.equal(await page.locator('nav [aria-current=page]').getAttribute('data-section'),section);
     assert.equal(await page.locator('h1').innerText(),copy[0]);
     if(section==='product-catalogue'){
@@ -94,8 +94,8 @@ async function run(){
      assert.equal(await page.locator('#stock-form:visible').count(),1,'Stock has a real adjustment form');
     }else assert.equal(await page.locator('#section-content button:visible').count(),0,'No pretend tool actions');
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'No horizontal page overflow');
-    await page.reload();await page.locator('#content-heading').filter({hasText:section==='product-catalogue'?'Product Catalogue':copy[1]}).waitFor();
-    await page.goto(base+'/selling-vendor/'+section+'?businessId=vendor-a');await page.locator('#content-heading').filter({hasText:section==='product-catalogue'?'Product Catalogue':copy[1]}).waitFor();
+    await page.reload();await page.locator('#content-heading').filter({hasText:['product-catalogue','stock-history'].includes(section)?(section==='stock-history'?'Stock & History':'Product Catalogue'):copy[1]}).waitFor();
+    await page.goto(base+'/selling-vendor/'+section+'?businessId=vendor-a');await page.locator('#content-heading').filter({hasText:['product-catalogue','stock-history'].includes(section)?(section==='stock-history'?'Stock & History':'Product Catalogue'):copy[1]}).waitFor();
    }
    console.log('Browser gate: live catalogue CRUD '+viewport.width+'px');
    // Exercise real product persistence through the shipped form and isolated SQL.
@@ -206,7 +206,7 @@ async function run(){
     assert.equal((await repository.getKnownBusiness('test-business-selling-a')).businessProfile.products.length,0,'Preview deletion persisted');
    }
    for(const [section,copy] of Object.entries(sections)){
-    const heading=section==='product-catalogue'?'Product Catalogue':copy[1];
+    const heading=['product-catalogue','stock-history'].includes(section)?(section==='stock-history'?'Stock & History':'Product Catalogue'):copy[1];
     await page.locator('nav [data-section="'+section+'"]').click();await page.locator('#content-heading').filter({hasText:heading}).waitFor();
     await page.reload();await page.locator('#content-heading').filter({hasText:heading}).waitFor();
     assert.equal(await page.locator('nav [data-section]').count(),7);
