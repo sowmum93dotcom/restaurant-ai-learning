@@ -126,6 +126,9 @@
           $('stock-list').append(article);
         }
         $('stock-save').disabled=!products.length;
+        const selected=products.find(product=>product.productId===$('stock-product').value);
+        $('stock-quantity').value=Number.isSafeInteger(selected?.stockQuantity)?String(selected.stockQuantity):'';
+
       }
       $('business-facts').hidden=section!=='my-business'||!business;
       $('business-facts').replaceChildren();
@@ -227,6 +230,12 @@
       $('product-id').value=productId; // Retry the same record if the network response is lost.
       mutateProduct('save-product',{productId,name:$('product-name').value,description:$('product-description').value,
         priceMode:$('product-price-mode').value,price:$('product-price').value,availability:$('product-availability').value});
+    });
+    $('stock-product').addEventListener('change',()=>{
+      const product=context?.business?.products?.find(item=>item.productId===$('stock-product').value);
+      $('stock-quantity').value=Number.isSafeInteger(product?.stockQuantity)?String(product.stockQuantity):'';
+      $('stock-note').value='';
+      $('stock-feedback').textContent='';
     });
     $('stock-form').addEventListener('submit',async event=>{
       event.preventDefault();
