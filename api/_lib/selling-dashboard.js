@@ -72,7 +72,7 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
         if (!businessId || !business) return res.status(403).json({error:'Select your business.'});
         const action=req.body?.action;
         const item=req.body?.product;
-        if (!['save-product','delete-product'].includes(action) || !item || typeof item!=='object' || Array.isArray(item))
+        if (!['save-product','delete-product','adjust-stock'].includes(action) || !item || typeof item!=='object' || Array.isArray(item))
           return res.status(400).json({error:'Invalid product request.'});
         const id=typeof item.productId==='string'?item.productId.trim():'';
         if (!/^[a-zA-Z0-9_-]{1,120}$/.test(id)) return res.status(400).json({error:'Invalid product ID.'});
@@ -81,7 +81,18 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
           return res.status(403).json({error:'Business access unavailable.'});
         const products=Array.isArray(original.products)?original.products.slice():[];
         const index=products.findIndex(product=>product.productId===id);
-        if (action==='delete-product') {
+        if (action==='adjust-stock') {
+          if (index<0) return res.status(404).json({error:'Product not found.'});
+          const quantity=item.quantity;
+          const note=typeof item.note==='string'?item.note.trim():'';
+          if (!Number.isSafeInteger(quantity)||quantity<0||quantity>1000000||note.length<1||note.length>200)
+            return res.status(400).json({error:'Enter a valid stock quantity and reason.'});
+          const previous=products[index],oldQuantity=Number.isSafeInteger(previous.stockQuantity)?previous.stockQuantity:null;
+          if (oldQuantity===quantity) return res.status(400).json({error:'Stock quantity has not changed.'});
+          const history=Array.isArray(previous.stockHistory)?previous.stockHistory.slice(-99):[];
+          history.push({from:oldQuantity,to:quantity,note,changedAt:new Date().toISOString(),changedBy:identity.trustedIdentityId});
+          products[index]={...previous,stockQuantity:quantity,stockHistory:history};
+        } else if (action==='delete-product') {
           if (index<0) return res.status(404).json({error:'Product not found.'});
           products.splice(index,1);
         } else {
