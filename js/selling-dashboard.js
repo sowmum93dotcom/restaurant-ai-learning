@@ -174,7 +174,9 @@
           body:JSON.stringify({action,product})});
         const result=await response.json();
         if(!response.ok)throw Error(result.error||'Could not save product.');
-        await load();clearProductForm();$('product-feedback').textContent=action==='delete-product'?'Product deleted.':'Product saved.';
+        await load();
+        if(!context?.business)throw Error('Product saved, but the dashboard could not refresh. Reload before editing again.');
+        clearProductForm();$('product-feedback').textContent=action==='delete-product'?'Product deleted.':'Product saved.';
       }catch(error){$('product-feedback').textContent=error.message||'Product change failed.';}
       finally{button.disabled=false;}
     }
