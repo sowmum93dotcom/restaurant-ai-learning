@@ -25,7 +25,7 @@ async function verifyBusinessLayout(page,viewport){
  assert.ok(boxes.title.height<=boxes.fontSize*3.5,'Business name stays readable at intermediate desktop widths too');
 }
 async function run(){
- const client=new PGlite(),repository=createPersistenceRepository(createDatabase(client));
+ const client=new PGlite(),repository=createPersistenceRepository(createDatabase(client),{environment:()=>env});
  const profile=(businessId,selling=true)=>({businessId,name:businessId==='vendor-a'?'North & Field':'Business '+businessId,type:'Independent shop',location:'London',applicationAccess:{selling,marketing:true},products:[],preparationModel:'selling'});
  await repository.createBusinessForOwner('owner-a',profile('vendor-a'));
  await repository.createBusinessForOwner('owner-a',profile('vendor-a-second'));
@@ -59,7 +59,7 @@ async function run(){
  const base='http://127.0.0.1:'+server.address().port;
  let browser;
  try{
-  browser=await chromium.launch({headless:true,...(process.env.DEMEOS_BROWSER_CHANNEL?{channel:process.env.DEMEOS_BROWSER_CHANNEL}:{})});
+  browser=await chromium.launch({headless:true,...(process.env.DEMEOS_BROWSER_EXECUTABLE_PATH?{executablePath:process.env.DEMEOS_BROWSER_EXECUTABLE_PATH}:{}),...(process.env.DEMEOS_BROWSER_CHANNEL?{channel:process.env.DEMEOS_BROWSER_CHANNEL}:{})});
   for(const viewport of [{width:375,height:812},{width:390,height:844},{width:430,height:932},{width:761,height:1000},{width:820,height:1180},{width:1024,height:1366},{width:1280,height:1000},{width:1440,height:1000}]){
    const context=await browser.newContext({viewport});context.setDefaultTimeout(10000);
    console.log('Browser gate: starting '+viewport.width+'px viewport');
@@ -158,25 +158,27 @@ async function run(){
    assert.equal((await repository.getKnownBusiness('vendor-a')).businessProfile.products.length,1,'Variant deletion preserves parent product');
    await page.goto(base+'/selling-vendor/stock-history?businessId=vendor-a');
    await page.locator('#stock-form:visible').waitFor();
+   const stockProductId=(await repository.getKnownBusiness('vendor-a')).businessProfile.products[0].productId;
+   const stockHistoryBefore=(await repository.getVendorInventory('vendor-a')).history.length;
    await page.locator('#stock-quantity').fill('12');
    await page.locator('#stock-note').fill('Initial stock count');
    await page.locator('#stock-save').click();
    await page.locator('#stock-feedback').filter({hasText:'Stock adjustment saved.'}).waitFor();
-   let stockProduct=(await repository.getKnownBusiness('vendor-a')).businessProfile.products[0];
-   assert.equal(stockProduct.stockQuantity,12,'Stock quantity persisted in SQL');
-   assert.equal(stockProduct.stockHistory.length,1,'Stock adjustment audit record persisted');
-   assert.equal(stockProduct.stockHistory[0].note,'Initial stock count');
+   let stockProduct=await repository.getVendorInventory('vendor-a');
+   assert.equal(stockProduct.entries[JSON.stringify([stockProductId,''])].onHand,12,'Stock quantity persisted in SQL');
+   assert.equal(stockProduct.history.length,stockHistoryBefore+1,'Stock adjustment audit record persisted');
+   assert.equal(stockProduct.history[0].changes[0].reason,'Initial stock count');
    await page.reload();
    await page.locator('#stock-list').filter({hasText:'Quantity: 12'}).waitFor();
    await page.locator('#stock-quantity').fill('9');
    await page.locator('#stock-note').fill('Damaged units');
    await page.locator('#stock-save').click();
    await page.locator('#stock-feedback').filter({hasText:'Stock adjustment saved.'}).waitFor();
-   stockProduct=(await repository.getKnownBusiness('vendor-a')).businessProfile.products[0];
-   assert.equal(stockProduct.stockQuantity,9,'Second stock adjustment persisted');
-   assert.equal(stockProduct.stockHistory.length,2,'Stock audit trail retained');
-   assert.equal(stockProduct.stockHistory[1].from,12,'Stock audit records previous quantity');
-   assert.equal(stockProduct.stockHistory[1].to,9,'Stock audit records new quantity');
+   stockProduct=await repository.getVendorInventory('vendor-a');
+   assert.equal(stockProduct.entries[JSON.stringify([stockProductId,''])].onHand,9,'Second stock adjustment persisted');
+   assert.equal(stockProduct.history.length,stockHistoryBefore+2,'Stock audit trail retained');
+   assert.equal(stockProduct.history[0].changes[0].before,12,'Stock audit records previous quantity');
+   assert.equal(stockProduct.history[0].changes[0].after,9,'Stock audit records new quantity');
    await page.goto(base+'/selling-vendor/product-catalogue?businessId=vendor-a');
    await page.locator('.catalogue-item button').filter({hasText:'Delete'}).waitFor();
    page.once('dialog',dialog=>dialog.accept());
@@ -236,6 +238,12 @@ async function run(){
     page.once('dialog',dialog=>dialog.accept());await page.locator('.variant-item button').filter({hasText:'Delete',exact:true}).click();
     await page.locator('#variant-feedback').filter({hasText:'Variant deleted.'}).waitFor();await page.reload();
     assert.equal((await repository.getKnownBusiness('test-business-selling-a')).businessProfile.products[0].variants.length,0);
+    await page.goto(base+'/selling-vendor/stock-history');await page.locator('#stock-form:visible').waitFor();
+    await page.locator('#stock-quantity').fill('7');await page.locator('#stock-note').fill('Preview count');
+    await page.locator('#stock-save').click();await page.locator('#stock-feedback').filter({hasText:'Stock adjustment saved.'}).waitFor();
+    assert.equal(Object.values((await repository.getVendorInventory('test-business-selling-a')).entries)[0].onHand,7);
+    await page.reload();await page.locator('#stock-list').filter({hasText:'Quantity: 7'}).waitFor();
+    assert.equal((await repository.getVendorInventory('test-business-selling-a')).history[0].changes[0].reason,'Preview count');
     await page.goto(base+'/selling-vendor/product-catalogue');await page.locator('.catalogue-item').waitFor();
     page.once('dialog',dialog=>dialog.accept());
     await page.locator('.catalogue-item button').filter({hasText:'Delete'}).click();

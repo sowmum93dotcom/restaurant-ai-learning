@@ -9,7 +9,7 @@ const {
 const { toPublicCustomerWorkItem, MAX_PUBLIC_CUSTOMER_MEDIA, MAX_SEARCH_CATALOGUE_RECORDS } = require("./customer-public-work-contract.js");
 
 function createPersistenceRepository(database, { getMediaStorageAdapter = getConfiguredMediaStorageAdapter,
-  reportCatalogueDiagnostics = summary => console.warn("Customer catalogue readiness", summary) } = {}) {
+  environment=()=>process.env, reportCatalogueDiagnostics = summary => console.warn("Customer catalogue readiness", summary) } = {}) {
   const vendorOrders = require('./vendor-orders').createVendorOrders(database);
   function isNonEmptyString(value) {
     return typeof value === "string" && value.trim().length > 0;
@@ -766,7 +766,7 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
     async getVendorInventory(businessId) {
       await database.ensureSchema();
       const result=await database.query('SELECT revision, entries FROM demeos_vendor_inventory WHERE business_id=$1',[businessId]);
-      const history=await database.query('SELECT revision, changes, recorded_at FROM demeos_vendor_stock_history WHERE business_id=$1 ORDER BY revision DESC LIMIT 30',[businessId]);
+      const history=await database.query('SELECT revision, changes, recorded_at, trusted_identity_id FROM demeos_vendor_stock_history WHERE business_id=$1 ORDER BY revision DESC LIMIT 30',[businessId]);
       return {...(result.rows[0]||{revision:0,entries:{}}),history:history.rows};
     },
     async saveVendorInventory(identity,businessId,profile,revision,entries,changes) {
@@ -776,7 +776,7 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
       const result=await database.query(`WITH owned AS (
         SELECT b.business_id FROM demeos_businesses b
         WHERE b.business_id=$1 AND b.profile=$2::jsonb
-          AND b.profile->'applicationAccess'->'selling' = 'true'::jsonb
+          AND ((b.business_id !~* '^test-' AND b.profile->'applicationAccess'->'selling' = 'true'::jsonb) OR $7::boolean)
           AND EXISTS(SELECT 1 FROM demeos_business_owners o WHERE o.business_id=b.business_id AND o.trusted_identity_id=$3)
         FOR UPDATE
       ), saved AS (
@@ -792,7 +792,7 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
       ), changed AS (SELECT revision FROM saved UNION ALL SELECT revision FROM updated), logged AS (
         INSERT INTO demeos_vendor_stock_history(business_id,revision,trusted_identity_id,changes)
         SELECT $1,revision,$3,$6::jsonb FROM changed RETURNING revision
-      ) SELECT revision FROM logged`,[businessId,JSON.stringify(profile),identity,revision,JSON.stringify(entries),JSON.stringify(changes)]);
+      ) SELECT revision FROM logged`,[businessId,JSON.stringify(profile),identity,revision,JSON.stringify(entries),JSON.stringify(changes),require('./selling-access').dataEnvironment(businessId,environment(),identity)==='test']);
       return result.rows[0]||null;
     },
     async saveSellingProducts(identity,businessId,previousProfile,profile) {

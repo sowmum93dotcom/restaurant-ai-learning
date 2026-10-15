@@ -6,29 +6,8 @@ const {applicationAccess} = require('./business-application-access');
 const {authorizeDemeosAction} = require('./demeos-authorization');
 const {createAuthenticatedBusinessOwnerContext} = require('./demeos-actor-context');
 
-// These server-only settings authorize exact Clerk identity/business pairs.
-// They never replace Clerk verification or the persisted SQL owner relationship.
-function isolatedTestEnvironment(env) {
-  if (env.VERCEL_ENV !== 'preview' || env.DEMEOS_SELLING_DATA_ENVIRONMENT !== 'test' ||
-      !env.DEMEOS_SELLING_TEST_PREVIEW_BRANCH || env.VERCEL_GIT_COMMIT_REF !== env.DEMEOS_SELLING_TEST_PREVIEW_BRANCH ||
-      !env.DEMEOS_SELLING_TEST_DATABASE_HOST) return false;
-  try {
-    // @vercel/postgres createPool uses POSTGRES_URL. An environment label alone
-    // cannot enable test grants while the adapter still points at shared data.
-    const url = new URL(env.POSTGRES_URL);
-    return ['postgres:', 'postgresql:'].includes(url.protocol) && url.hostname === env.DEMEOS_SELLING_TEST_DATABASE_HOST;
-  } catch { return false; }
-}
-
-function dataEnvironment(businessId, env, identityId) {
-  const test = /^test-/i.test(businessId);
-  if (!test) return env.DEMEOS_SELLING_DATA_ENVIRONMENT === 'test' ? null : 'live';
-  if (!/^test-business-/i.test(businessId) || !isolatedTestEnvironment(env) || !identityId) return null;
-  try {
-    const grants = JSON.parse(env.DEMEOS_SELLING_TEST_AUTHORIZATIONS || '[]');
-    return Array.isArray(grants) && grants.some(grant=>grant?.businessId === businessId && grant.ownerIdentityId === identityId) ? 'test' : null;
-  } catch { return null; }
-}
+const {isolatedTestEnvironment,dataEnvironment}=require('./selling-access');
+const inventory=require('./vendor-inventory');
 
 function businessSummary(profile, env, identityId) {
   const id = profile?.businessId;
@@ -69,6 +48,11 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
         business = businessSummary(record?.businessProfile,env,identity.trustedIdentityId);
         if (!business || business.businessId !== businessId) return res.status(403).json({error:'Selling access is unavailable for this business.'});
       }
+      if(business){
+        const profile=(await store.getKnownBusiness(businessId))?.businessProfile;
+        const stock=typeof store.getVendorInventory==='function'?await store.getVendorInventory(businessId):{revision:0,entries:{},history:[]};
+        business.inventory={...stock,rows:inventory.rowsFor(profile,inventory.entriesWithLegacyStock(profile,stock.entries))};
+      }
       if (req.method === 'POST') {
         if (!businessId || !business) return res.status(403).json({error:'Select your business.'});
         const action=req.body?.action;
@@ -83,6 +67,10 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
         if(req.body.catalogueRevision!==catalogueRevision(original))return res.status(409).json({error:'Products changed. Reload before saving.'});
         const products=Array.isArray(original.products)?original.products.slice():[];
         const index=products.findIndex(product=>product.productId===id);
+        if(action==='delete-product'||action==='delete-variant'){
+          const stock=await store.getVendorInventory(businessId);
+          if(Object.entries(stock.entries).some(([key,row])=>{const [productId,variantId]=JSON.parse(key);return productId===id&&(action==='delete-product'||variantId===item.variantId)&&row.reserved>0;}))return res.status(409).json({error:'This item has reserved stock for an order and cannot be deleted.'});
+        }
         if (action==='save-variant' || action==='delete-variant') {
           if (index<0) return res.status(404).json({error:'Product not found.'});
           const variantId=typeof item.variantId==='string'?item.variantId.trim():'';
@@ -103,16 +91,19 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
           }
           products[index]={...products[index],variants};
         } else if (action==='adjust-stock') {
-          if (index<0) return res.status(404).json({error:'Product not found.'});
-          const quantity=item.quantity;
-          const note=typeof item.note==='string'?item.note.trim():'';
-          if (!Number.isSafeInteger(quantity)||quantity<0||quantity>1000000||note.length<1||note.length>200)
-            return res.status(400).json({error:'Enter a valid stock quantity and reason.'});
-          const previous=products[index],oldQuantity=Number.isSafeInteger(previous.stockQuantity)?previous.stockQuantity:null;
-          if (oldQuantity===quantity) return res.status(400).json({error:'Stock quantity has not changed.'});
-          const history=Array.isArray(previous.stockHistory)?previous.stockHistory.slice():[];
-          history.push({from:oldQuantity,to:quantity,note,changedAt:new Date().toISOString(),changedBy:identity.trustedIdentityId});
-          products[index]={...previous,stockQuantity:quantity,stockHistory:history};
+          if(index<0)return res.status(404).json({error:'Product not found.'});
+          const stock=await store.getVendorInventory(businessId);
+          if(req.body.inventoryRevision!==stock.revision)return res.status(409).json({error:'Stock changed. Reload before saving.'});
+          const entries=inventory.entriesWithLegacyStock(original,stock.entries);
+          const variantId=typeof item.variantId==='string'?item.variantId:'';
+          const row=inventory.rowsFor(original,entries).find(r=>r.productId===id&&r.variantId===variantId);
+          if(!row)return res.status(400).json({error:'Choose a current stock row.'});
+          if(row.onHand===item.quantity)return res.status(400).json({error:'Stock quantity has not changed.'});
+          let update;try{update=inventory.applyChanges(original,entries,[{productId:id,variantId,onHand:item.quantity,lowStock:row.lowStock,sku:row.sku,reason:item.note}]);}
+          catch(error){return res.status(400).json({error:error.message});}
+          const saved=await store.saveVendorInventory(identity.trustedIdentityId,businessId,original,stock.revision,update.entries,update.audit);
+          if(!saved)return res.status(409).json({error:'Stock or products changed. Reload before saving.'});
+          return res.status(200).json({ok:true,revision:saved.revision});
         } else if (action==='delete-product') {
           if (index<0) return res.status(404).json({error:'Product not found.'});
           products.splice(index,1);
@@ -126,6 +117,7 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
             return res.status(400).json({error:'Invalid product details.'});
           if (index<0 && products.length>=100) return res.status(409).json({error:'Product limit reached.'});
           const previous=index>=0?products[index]:{};
+          if(previous.presentation&&(previous.price!==price||previous.priceMode!==priceMode))return res.status(409).json({error:'Review the saved structured pricing in the existing business product editor before changing its price.'});
           const product={...previous,productId:id,businessId,name,description,price,priceMode,...(index<0?{customerVisible:false}:{}),
             availability};
           if (index<0) products.push(product); else products[index]=product;

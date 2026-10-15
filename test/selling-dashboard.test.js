@@ -109,6 +109,7 @@ test('vendor product editor persists create edit and delete only for an owned ap
  const profile={businessId:'real-a',name:'Real Shop',type:'Shop',location:'London',preparationModel:'selling',applicationAccess:{selling:true},products:[]};
  let current=structuredClone(profile),writes=0;
  const repository={
+   getVendorInventory:async()=>({revision:0,entries:{},history:[]}),
    getOwnedBusinessProfiles:async identity=>identity==='owner-a'?[current]:[],
    isBusinessOwnedByIdentity:async(identity,id)=>identity==='owner-a'&&id==='real-a',
    getKnownBusiness:async id=>id==='real-a'?{businessProfile:structuredClone(current)}:null,
@@ -140,6 +141,7 @@ test('isolated Preview vendor can save products only in its authorized test busi
  let current={businessId:'test-business-selling-a',name:'Test Shop',type:'Shop',location:'London',preparationModel:'selling',products:[]};
  let writes=0;
  const repository={
+   getVendorInventory:async()=>({revision:0,entries:{},history:[]}),
    getOwnedBusinessProfiles:async id=>id==='owner-a'?[current]:[],
    isBusinessOwnedByIdentity:async(id,businessId)=>id==='owner-a'&&businessId===current.businessId,
    getKnownBusiness:async()=>({businessProfile:structuredClone(current)}),
@@ -166,6 +168,7 @@ test('product writes reject malformed requests, limits and concurrent edits',asy
  const original={businessId:'real-a',name:'Real Shop',type:'Shop',location:'London',preparationModel:'selling',applicationAccess:{selling:true},products:[]};
  let current=structuredClone(original),calls=0;
  const repository={
+   getVendorInventory:async()=>({revision:0,entries:{},history:[]}),
    getOwnedBusinessProfiles:async()=>[current],
    isBusinessOwnedByIdentity:async()=>true,
    getKnownBusiness:async()=>({businessProfile:structuredClone(current)}),
@@ -189,45 +192,35 @@ test('product writes reject malformed requests, limits and concurrent edits',asy
  assert.equal(await invoke('delete-product',{productId:'missing'}),404);
 });
 
-test('stock adjustments require ownership and retain a quantity audit trail',async()=>{
- let current={businessId:'real-a',name:'Real Shop',type:'Shop',location:'London',preparationModel:'selling',
-   applicationAccess:{selling:true},products:[{productId:'item-a',name:'Coffee',description:'Beans',priceMode:'contact',price:'',availability:'available'}]};
- const repository={
-   getOwnedBusinessProfiles:async id=>id==='owner-a'?[current]:[],
-   isBusinessOwnedByIdentity:async(id,businessId)=>id==='owner-a'&&businessId==='real-a',
-   getKnownBusiness:async id=>id==='real-a'?{businessProfile:structuredClone(current)}:null,
-   saveSellingProducts:async(id,businessId,previous,next)=>{
-     assert.equal(id,'owner-a');assert.equal(businessId,'real-a');
-     assert.deepEqual(previous,current);
-     current=structuredClone(next);return true;
+test('stock ledger adjustments are atomic, audited, persistent and isolated for live and Preview owners',async()=>{
+ const client=new PGlite();let env=live;
+ const repository=createPersistenceRepository(createDatabase(client),{environment:()=>env});
+ try{
+  for(const [businessId,environment] of [['stock-live',live],['test-business-selling-a',preview]]){
+   env=environment;
+   const profile={businessId,name:'Stock Shop',applicationAccess:env===live?{selling:true}:undefined,products:[{businessId,productId:'coffee',name:'Coffee',stockQuantity:10,stockHistory:[{from:12,to:10,note:'Earlier count'}]}]};
+   await repository.createBusinessForOwner('owner-a',profile);
+   async function adjust(product,identity='owner-a',revision){
+    const current=(await repository.getKnownBusiness(businessId)).businessProfile,stock=await repository.getVendorInventory(businessId),res=response();
+    await createHandler({authenticate:async()=>({trustedIdentityId:identity}),repository:()=>repository,environment:()=>env})
+     ({method:'POST',query:{businessId},body:{action:'adjust-stock',product,catalogueRevision:catalogueRevision(current),inventoryRevision:revision??stock.revision}},res);return res;
    }
- };
- async function adjust(identity,product){
-   const res=response();
-   await createHandler({authenticate:async()=>({trustedIdentityId:identity}),repository:()=>repository,environment:()=>live})
-    ({method:'POST',query:{businessId:'real-a'},body:{action:'adjust-stock',product,catalogueRevision:catalogueRevision(current)}},res);
-   return res;
- }
- const change={productId:'item-a',quantity:12,note:'Initial count'};
- assert.equal((await adjust('owner-b',change)).code,403);
- assert.equal((await adjust('owner-a',{...change,quantity:-1})).code,400);
- assert.equal((await adjust('owner-a',{...change,quantity:1.5})).code,400);
- assert.equal((await adjust('owner-a',{...change,note:''})).code,400);
- assert.equal((await adjust('owner-a',{...change,productId:'missing'})).code,404);
- assert.equal((await adjust('owner-a',change)).code,200);
- assert.equal(current.products[0].stockQuantity,12);
- assert.equal(current.products[0].stockHistory.length,1);
- assert.equal(current.products[0].stockHistory[0].from,null);
- assert.equal(current.products[0].stockHistory[0].to,12);
- assert.equal(current.products[0].stockHistory[0].changedBy,'owner-a');
- assert.ok(!Number.isNaN(Date.parse(current.products[0].stockHistory[0].changedAt)));
- assert.equal((await adjust('owner-a',change)).code,400,'No-op changes must be rejected');
- assert.equal((await adjust('owner-a',{...change,quantity:9,note:'Damaged units'})).code,200);
- assert.equal(current.products[0].stockQuantity,9);
- assert.equal(current.products[0].stockHistory.length,2);
- assert.equal(current.products[0].stockHistory[1].from,12);
- assert.equal(current.products[0].stockHistory[1].to,9);
- assert.equal(current.products[0].stockHistory[1].note,'Damaged units');
+   const change={productId:'coffee',quantity:12,note:'Delivery'};
+   for(const quantity of [-1,1.5,1000000001])assert.equal((await adjust({...change,quantity})).code,400);
+   assert.equal((await adjust({...change,note:''})).code,400);assert.equal((await adjust(change,'owner-b')).code,403);
+   assert.equal((await adjust(change)).code,200);
+   let stock=await repository.getVendorInventory(businessId);const key=JSON.stringify(['coffee','']);
+   assert.equal(stock.entries[key].onHand,12);assert.equal(stock.history[0].changes[0].before,10);
+   assert.equal(stock.history[0].trusted_identity_id,'owner-a');assert.equal(stock.history[0].changes[0].reason,'Delivery');
+   assert.equal((await adjust({...change,quantity:9,note:'Damaged'},'owner-a',0)).code,409);
+   assert.equal((await adjust({...change,quantity:9,note:'Damaged'})).code,200);
+   stock=await repository.getVendorInventory(businessId);assert.equal(stock.entries[key].onHand,9);assert.equal(stock.history.length,2);
+   assert.equal(stock.history[0].changes[0].before,12);assert.equal(stock.history[0].changes[0].after,9);
+   assert.equal((await repository.getKnownBusiness(businessId)).businessProfile.products[0].stockHistory.length,1,'Earlier audit records retained');
+   assert.equal((await adjust({...change,quantity:9})).code,400);
+   if(env===preview){env=live;assert.equal((await adjust({...change,quantity:5})).code,403);assert.equal(await repository.saveVendorInventory('owner-a',businessId,(await repository.getKnownBusiness(businessId)).businessProfile,stock.revision,stock.entries,[]),null,'Production repository rejects Preview test grants');}
+  }
+ }finally{await client.close();}
 });
 
 test('selected vendor business exposes saved availability and stock history, not selector summaries',async()=>{
@@ -235,6 +228,7 @@ test('selected vendor business exposes saved availability and stock history, not
    applicationAccess:{selling:true},products:[{productId:'coffee',name:'Coffee',description:'Beans',priceMode:'contact',price:'',
      availability:'available',stockQuantity:9,stockHistory:[{from:12,to:9,note:'Damaged units',changedAt:'2026-10-15T00:00:00.000Z',changedBy:'owner-a'}]}]};
  const repository={
+   getVendorInventory:async()=>({revision:0,entries:{},history:[]}),
    getOwnedBusinessProfiles:async()=>[profile],
    isBusinessOwnedByIdentity:async()=>true,
    getKnownBusiness:async()=>({businessProfile:profile})

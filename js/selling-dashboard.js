@@ -139,22 +139,24 @@
         const products=Array.isArray(business.products)?business.products:[];
         $('content-heading').textContent='Stock & History';
         $('content-message').textContent=products.length?'Set stock quantities and review saved adjustments.':'Add products in Product Catalogue before managing stock.';
-        for(const product of products){
-          const option=doc.createElement('option');option.value=product.productId;option.textContent=product.name||product.productId;$('stock-product').append(option);
+        const rows=business.inventory?.rows||[];
+        for(const row of rows){
+          const option=doc.createElement('option');option.value=JSON.stringify([row.productId,row.variantId]);option.textContent=[row.name,row.label].filter(Boolean).join(' · ');$('stock-product').append(option);
           const article=doc.createElement('article');article.className='catalogue-item';
-          const title=doc.createElement('h3');title.textContent=product.name||'Unnamed product';
-          const count=doc.createElement('p');count.textContent='Quantity: '+(Number.isSafeInteger(product.stockQuantity)?product.stockQuantity:'Not set');
-          article.append(title,count);
-          for(const event of (Array.isArray(product.stockHistory)?product.stockHistory:[]).slice().reverse()){
-            const line=doc.createElement('p');
-            line.textContent=(event.changedAt||'')+' · '+(event.from===null?'Not set':event.from)+' → '+event.to+' · '+(event.note||'');
-            article.append(line);
+          const title=doc.createElement('h3');title.textContent=option.textContent;
+          const count=doc.createElement('p');count.textContent='Quantity: '+(row.onHand??'Not set')+' · Reserved: '+row.reserved;article.append(title,count);
+          for(const batch of business.inventory.history||[])for(const event of batch.changes||[]){
+            if(event.productId!==row.productId||(event.variantId||'')!==row.variantId)continue;
+            const line=doc.createElement('p');line.textContent=new Date(batch.recorded_at).toLocaleString()+' · '+(event.before??'Not set')+' → '+event.after+' · '+event.reason+' · '+batch.trusted_identity_id;article.append(line);
+          }
+          for(const event of (products.find(p=>p.productId===row.productId)?.stockHistory||[]).slice().reverse()){
+            const line=doc.createElement('p');line.textContent='Earlier record · '+event.changedAt+' · '+(event.from??'Not set')+' → '+event.to+' · '+event.note;article.append(line);
           }
           $('stock-list').append(article);
         }
-        $('stock-save').disabled=!products.length;
-        const selectedProduct=products.find(product=>product.productId===$('stock-product').value);
-        $('stock-quantity').value=Number.isSafeInteger(selectedProduct?.stockQuantity)?String(selectedProduct.stockQuantity):'';
+        $('stock-save').disabled=!rows.length;
+        const row=rows.find(r=>JSON.stringify([r.productId,r.variantId])===$('stock-product').value);
+        $('stock-quantity').value=row?.onHand===null||!row?'':String(row.onHand);
       }
       $('business-facts').hidden=section!=='my-business'||!business;
       $('business-facts').replaceChildren();
@@ -310,17 +312,17 @@
     $('variant-product').addEventListener('change',()=>{clearVariantForm();$('variant-feedback').textContent='';});
     $('variant-cancel').addEventListener('click',()=>{clearVariantForm();$('variant-feedback').textContent='';});
     $('stock-product').addEventListener('change',()=>{
-      const product=context?.business?.products?.find(item=>item.productId===$('stock-product').value);
-      $('stock-quantity').value=Number.isSafeInteger(product?.stockQuantity)?String(product.stockQuantity):'';
+      const row=context?.business?.inventory?.rows.find(r=>JSON.stringify([r.productId,r.variantId])===$('stock-product').value);
+      $('stock-quantity').value=Number.isSafeInteger(row?.onHand)?String(row.onHand):'';
       $('stock-note').value='';
       $('stock-feedback').textContent='';
     });
     $('stock-form').addEventListener('submit',async event=>{
       event.preventDefault();
       if(productMutationPending||!context?.business)return;
-      const productId=$('stock-product').value,quantity=Number($('stock-quantity').value),note=$('stock-note').value.trim();
+      const [productId,variantId]=JSON.parse($('stock-product').value||'[null,null]'),quantity=Number($('stock-quantity').value),note=$('stock-note').value.trim();
       if(!productId||!Number.isSafeInteger(quantity)||quantity<0||quantity>1000000||!note)return;
-      const businessId=context.business.businessId,catalogueRevision=context.business.catalogueRevision;
+      const businessId=context.business.businessId,catalogueRevision=context.business.catalogueRevision,inventoryRevision=context.business.inventory.revision;
       mutationBusy(true);$('stock-save').disabled=true;$('stock-feedback').textContent='Saving stock…';
       try{
         const token=await clerk.session?.getToken();
@@ -329,11 +331,12 @@
         url.searchParams.set('resource','selling-dashboard');url.searchParams.set('businessId',businessId);
         const response=await win.fetch(url.pathname+url.search,{method:'POST',credentials:'same-origin',
           headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
-          body:JSON.stringify({action:'adjust-stock',product:{productId,quantity,note},catalogueRevision})});
+          body:JSON.stringify({action:'adjust-stock',product:{productId,variantId,quantity,note},catalogueRevision,inventoryRevision})});
         const result=await response.json();
         if(!response.ok)throw Error(result.error||'Stock adjustment failed.');
         await load();
         if(context?.business?.businessId!==businessId||$('private-workspace').hidden||!$('dashboard-status').hidden||(new URLSearchParams(win.location.search).get('businessId')&&new URLSearchParams(win.location.search).get('businessId')!==businessId))throw Error('Stock saved, but the dashboard could not refresh.');
+        if(!context.business.inventory.rows.some(r=>r.productId===productId&&r.variantId===variantId&&r.onHand===quantity))throw Error('Could not verify saved stock. Reload before editing again.');
         $('stock-quantity').value='';$('stock-note').value='';$('stock-feedback').textContent='Stock adjustment saved.';
       }catch(error){$('stock-feedback').textContent=error.message||'Stock adjustment failed.';}
       finally{mutationBusy(false);$('stock-save').disabled=!$('stock-product').options.length;}
