@@ -94,6 +94,27 @@ async function run(){
     await page.reload();await page.locator('#content-heading').filter({hasText:section==='product-catalogue'?'Product Catalogue':copy[1]}).waitFor();
     await page.goto(base+'/selling-vendor/'+section+'?businessId=vendor-a');await page.locator('#content-heading').filter({hasText:section==='product-catalogue'?'Product Catalogue':copy[1]}).waitFor();
    }
+   // Exercise real product persistence through the shipped form and isolated SQL.
+   await page.goto(base+'/selling-vendor/product-catalogue?businessId=vendor-a');
+   await page.locator('#product-form:visible').waitFor();
+   await page.locator('#product-name').fill('Gate Coffee');
+   await page.locator('#product-description').fill('Freshly roasted beans');
+   await page.locator('#product-price-mode').selectOption('fixed');
+   await page.locator('#product-price').fill('5');
+   await page.locator('#product-save').click();
+   await page.locator('#product-feedback').filter({hasText:'Product saved.'}).waitFor();
+   assert.equal((await repository.getKnownBusiness('vendor-a')).businessProfile.products.length,1,'Product is persisted in SQL');
+   await page.reload();
+   await page.locator('.catalogue-item h3').filter({hasText:'Gate Coffee'}).waitFor();
+   await page.locator('.catalogue-item button').filter({hasText:'Edit'}).click();
+   await page.locator('#product-name').fill('Gate Coffee Updated');
+   await page.locator('#product-save').click();
+   await page.locator('#product-feedback').filter({hasText:'Product saved.'}).waitFor();
+   assert.equal((await repository.getKnownBusiness('vendor-a')).businessProfile.products[0].name,'Gate Coffee Updated');
+   page.once('dialog',dialog=>dialog.accept());
+   await page.locator('.catalogue-item button').filter({hasText:'Delete'}).click();
+   await page.locator('#product-feedback').filter({hasText:'Product deleted.'}).waitFor();
+   assert.equal((await repository.getKnownBusiness('vendor-a')).businessProfile.products.length,0,'Product deletion persisted in SQL');
    await page.goBack();await page.locator('#private-workspace:not([hidden])').waitFor();
    await page.goto(base+'/selling-vendor/my-business?businessId=vendor-a');await page.locator('#business-facts:not([hidden])').waitFor();
    assert.match(await page.locator('#business-facts').innerText(),/vendor-a/);
