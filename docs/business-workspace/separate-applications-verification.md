@@ -1,3 +1,5 @@
+> Historical verification record. The Selling dashboard and inspection interface described below were retired by PR #707. These paths are no longer supported. Marketing, registration, stored business data and administrative approvals are retained.
+
 # Separate business applications
 
 ## Verified starting point

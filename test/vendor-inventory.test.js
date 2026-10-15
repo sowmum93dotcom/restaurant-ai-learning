@@ -3,7 +3,7 @@ const test=require('node:test'),assert=require('node:assert/strict');
 const {PGlite}=require('@electric-sql/pglite');
 const {createDatabase}=require('../api/_lib/database');
 const persistence=require('../api/_lib/persistence'),auth=require('../api/_lib/demeos-authentication');
-const stock=require('../api/_lib/vendor-inventory'),{copy,keys}=require('../js/vendor-inventory-copy'),{parseCsv,csvCell}=require('../js/vendor-inventory');
+const stock=require('../api/_lib/vendor-inventory');
 const profile={applicationAccess:{marketing:true,selling:true},businessId:'vendor',name:'Vendor',type:'Shop',location:'London',brandVoice:'Clear',targetCustomer:'Customers',goal:'Sell',preparationModel:'selling',profileVersion:3,offeringCategoryId:'fashion.apparel',productsServices:'Clothing',customerContinuation:{routes:['website'],website:'https://example.com'},fulfilment:{methods:['shipping']},operationalAvailability:{status:'available'},products:[{businessId:'vendor',productId:'shirt',name:'Shirt',description:'Cotton shirt',price:'25 GBP',priceMode:'fixed',continuationRoute:'website',availability:'available',presentation:{version:1,categoryId:'fashion.apparel',kind:'product',pricing:{mode:'fixed',amount:25,currency:'GBP'},options:[{key:'size',values:[{value:'M',label:'Medium'},{value:'L',label:'Large'}]}],variants:[{variantId:'medium',selection:{size:'M'},availability:'available',pricing:{mode:'fixed',amount:25,currency:'GBP'}},{variantId:'large',selection:{size:'L'},availability:'available',pricing:{mode:'fixed',amount:25,currency:'GBP'}}]}}]};
 const change=(variantId='medium',onHand=10,sku=variantId)=>({productId:'shirt',variantId,onHand,lowStock:3,sku,reason:'Initial count'});
 test('exact variants stay isolated; no guessed option combinations or service unit stock',()=>{
@@ -28,10 +28,6 @@ test('quantities, unique codes, reserved units and batch size are protected',()=
  assert.throws(()=>stock.applyChanges(profile,{},[{...change(),reason:''}]));
  assert.throws(()=>stock.applyChanges(profile,{},Array(101).fill(change())));
 });
-test('CSV quoting round trips and guards spreadsheet formula injection',()=>{
- const rows=[['productId','variantId','onHand','lowStock','sku'],['a,"b','medium',4,2,'=BAD()']];const text=rows.map(r=>r.map(csvCell).join(',')).join('\r\n');assert.deepEqual(parseCsv(text),[['productId','variantId','onHand','lowStock','sku'],['a,"b','medium','4','2',"'=BAD()"]]);assert.throws(()=>parseCsv('"open'));
-});
-test('all nine languages cover every inventory label',()=>{assert.equal(Object.keys(copy).length,9);for(const language of Object.values(copy))for(const key of keys)assert.equal(typeof language[key],'string',key);});
 test('real SQL atomically records stock, history, ownership and revisions',async()=>{
  const dbClient=new PGlite(),database=createDatabase(dbClient),repository=persistence.createPersistenceRepository(database);
  try{await repository.createBusinessForOwner('owner',profile);

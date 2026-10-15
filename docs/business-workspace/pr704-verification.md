@@ -1,3 +1,5 @@
+> Historical verification record. The Selling dashboard and inspection interface described below were retired by PR #707. These paths are no longer supported. Marketing, registration, stored business data and administrative approvals are retained.
+
 # PR 704 Selling Vendor professional experience
 
 Baseline main: cffe77c0021001cdbcd5c2305fc4ef6fb5741c64 (PR 703). The existing PR 704 branch was inspected before changes. Production Vercel was READY at that baseline.

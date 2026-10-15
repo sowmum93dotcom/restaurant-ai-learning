@@ -63,7 +63,6 @@
   ],
   "functions": {
     "api/businesses.js": {
-      "includeFiles": "{node_modules/@ffprobe-installer/linux-x64/ffprobe,node_modules/@ffprobe-installer/linux-x64/package.json}",
       "maxDuration": 60
     }
   }

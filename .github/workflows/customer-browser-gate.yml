@@ -73,8 +73,6 @@ jobs:
             /tmp/demeos-context-*.png
             /tmp/demeos-contact-*.png
             /tmp/demeos-account-*.png
-            /tmp/pr705-catalogue-*.png
-            /tmp/pr705-business-*.png
             /tmp/demeos-owner-*.png
             /tmp/demeos-owner-layout-*.json
             /tmp/demeos-admin-*.png

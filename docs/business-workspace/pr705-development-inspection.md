@@ -1,3 +1,5 @@
+> Historical verification record. The Selling dashboard and inspection interface described below were retired by PR #707. These paths are no longer supported. Marketing, registration, stored business data and administrative approvals are retained.
+
 # Selling Vendor Development inspection
 
 PR #705 adds `/selling-vendor/inspect` and `/selling-vendor/inspect/manage` for owner inspection of the existing Selling application. The PR #704 dashboard and editor remain the rendered interface.
