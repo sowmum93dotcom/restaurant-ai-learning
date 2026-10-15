@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow"><title>Selling Vendor | DEMEOS</title>
+  <link rel="stylesheet" href="/css/selling-dashboard.css">
+  <script defer src="/js/selling-dashboard.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header><a class="brand" href="/selling-vendor">DEMEOS<span>Selling Vendor</span></a><div class="account"><span id="vendor-identity"></span><button id="sign-in" hidden>Sign in</button><button id="sign-out" hidden>Sign out</button></div></header>
+  <div class="dashboard">
+    <aside><p class="eyebrow">Your workspace</p><nav aria-label="Selling dashboard">
+      <a href="/selling-vendor" data-section="overview">Overview</a>
+      <a href="/selling-vendor/my-business" data-section="my-business">My Business</a>
+      <a href="/selling-vendor/product-catalogue" data-section="product-catalogue">Product Catalogue</a>
+      <a href="/selling-vendor/images-videos" data-section="images-videos">Images &amp; Videos</a>
+      <a href="/selling-vendor/options-variants" data-section="options-variants">Options &amp; Variants</a>
+      <a href="/selling-vendor/stock-history" data-section="stock-history">Stock &amp; History</a>
+      <a href="/selling-vendor/private-orders" data-section="private-orders">Private Orders</a>
+    </nav><p class="aside-note">One business workspace.<br>Private to your account.</p></aside>
+    <main id="main" tabindex="-1">
+      <p class="eyebrow">DEMEOS Selling</p><h1 id="section-heading">Overview</h1>
+      <section id="dashboard-status" class="card" role="status" aria-live="polite" aria-busy="true"><h2 id="status-heading">Opening your workspace</h2><p id="status-message">Checking your session and business access…</p><button id="retry" hidden>Try again</button><button id="choose-business" hidden>Choose an authorized business</button><a id="registration" href="/marketing.html#business-profile" hidden>Business registration and approval</a></section>
+      <div id="private-workspace" hidden>
+        <section class="business-bar" aria-label="Current business"><div><p class="eyebrow">Current business</p><h2 id="business-name"></h2><p id="business-details"></p></div><span id="environment-label" class="badge"></span><label>Switch business<select id="business-select"></select></label></section>
+        <section class="card" id="section-content" aria-labelledby="content-heading"><h2 id="content-heading"></h2><p id="content-message"></p><dl id="business-facts" hidden></dl></section>
+        <p class="phase-note">Phase 1 · Your dashboard foundation is ready. Catalogue editing, uploads, stock changes and order actions will be added after foundation verification.</p>
+      </div>
+      <noscript><p class="card">Enable JavaScript to sign in and open your private Selling dashboard.</p></noscript>
+    </main>
+  </div>
+</body>
+</html>

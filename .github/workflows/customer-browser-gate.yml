@@ -32,6 +32,8 @@ jobs:
         run: git fetch --no-tags --depth=1 origin 8c4ccbc93af01480f41e6444446b79a321a11ef9
       - name: Run owner workspace SQL, permission and draft gate
         run: node browser-checks/business-workspace-gate.js
+      - name: Run Selling foundation SQL, access and rendered dashboard gate
+        run: node browser-checks/selling-dashboard-gate.js
       - name: Run private administrative application review gate
         run: node browser-checks/admin-business-review-gate.js
       - name: Run business approval and separate application journey
@@ -74,6 +76,7 @@ jobs:
             /tmp/demeos-contact-*.png
             /tmp/demeos-account-*.png
             /tmp/demeos-owner-*.png
+            /tmp/demeos-selling-*.png
             /tmp/demeos-owner-layout-*.json
             /tmp/demeos-admin-*.png
             /tmp/demeos-approval-*.png
