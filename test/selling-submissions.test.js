@@ -77,6 +77,14 @@ test('product submission lifecycle persists through real SQL for live and isolat
   assert.equal((await call('publish-product')).code,200);p=await item();assert.equal(p.submission.state,'published');assert.equal(p.customerVisible,false,'Readiness does not enable the legacy customer flag');
   const eligibility=async()=>{const profile=await saved();return lifecycle.publicationEligible({profile,product:profile.products[0],environment:env,identity:owner,assets:await repository.getBusinessMediaAssets(businessId,1000),stock:await repository.getVendorInventory(businessId)});};
   assert.equal(await eligibility(),!preview,'Preview publication is never production eligible');
+  if(!preview){
+   const profile=await saved(),assets=await repository.getBusinessMediaAssets(businessId,1000),stock=await repository.getVendorInventory(businessId);
+   const inspect=product=>lifecycle.publicationEligible({profile,product,environment:env,identity:owner,assets,stock});
+   for(const change of [p=>{p.validation.version++;},p=>{p.validation.businessId='another-business';},p=>{p.validation.rules[0].id='unknown-rule';},p=>{delete p.validation.rules.find(r=>r.id==='content-safety').expiresAt;}]){
+    const corrupted=structuredClone(await item());change(corrupted.submission.publication);assert.equal(inspect(corrupted),false,'Readiness requires the exact authoritative decision and every mandatory rule');
+   }
+  }
+
   const publication=structuredClone(p.submission.publication),count=p.submission.history.length;
   await call('publish-product');assert.equal((await item()).submission.history.length,count);
   const reload=await call(undefined,undefined,{method:'GET'});assert.equal(reload.body.business.products[0].submission.state,'published');

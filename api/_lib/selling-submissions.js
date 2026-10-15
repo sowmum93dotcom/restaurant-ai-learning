@@ -95,12 +95,18 @@ async function inputs(store,profile,product,environment,identity){
 }
 function replace(profile,product){return {...profile,products:profile.products.map(p=>p.productId===product.productId?product:p)};}
 function publicationEligible({profile,product,environment,identity,assets,stock}){
+ if(!profile||!product||!environment||!Array.isArray(assets)||!stock)return false;
  const s=product.submission,p=s?.publication;
  if(!p||p.state!=='published'||p.ruleset!==RULESET||p.environment!=='live'||p.deploymentEnvironment!=='production'||environment.VERCEL_ENV!=='production'||dataEnvironment(profile.businessId,environment,identity)!=='live'||profile.applicationAccess?.selling!==true)return false;
+ const validation=p.validation;
+ if(!validation||validation.state!=='approved'||validation.purpose!=='selling-product-validation'||validation.ruleset!==RULESET||validation.businessId!==profile.businessId||validation.productId!==product.productId||p.snapshot?.productId!==product.productId||validation.version!==p.version||validation.contentHash!==p.contentHash||validation.mediaFingerprint!==p.mediaFingerprint||validation.environment!==p.environment)return false;
+ const expected=['business-eligibility','required-data','category-integrity','pricing','media-integrity','stock-availability',...MANDATORY];
+ if(!Array.isArray(validation.rules)||!Array.isArray(validation.media)||validation.rules.length!==expected.length||expected.some(id=>!validation.rules.some(r=>r.id===id&&r.status==='passed')))return false;
+ for(const id of MANDATORY){const rule=validation.rules.find(r=>r.id===id);if(rule.code==='not-applicable'){if(id!=='media-consistency'||p.snapshot.presentation?.kind!=='service'||validation.media?.length!==0)return false;}else if(!rule.authorityDecisionId||!rule.capabilityVersion||!(Date.parse(rule.expiresAt)>Date.now()))return false;}
  const saved={...p.snapshot,submission:{version:p.version}};
  const approvedAssets=new Set((p.validation?.media||[]).map(a=>a.assetId));
  const checks=deterministic({profile,product:saved,environment,identity,assets:assets.filter(a=>approvedAssets.has(a.assetId)),stock});
- return contentHash(saved)===p.contentHash&&checks.rules.every(r=>r.status==='passed')&&p.mediaFingerprint===checks.media.fingerprint&&p.validation?.rules?.length===9&&p.validation.rules.every(r=>r.status==='passed'&&(!r.expiresAt||Date.parse(r.expiresAt)>Date.now()));
+ return contentHash(saved)===p.contentHash&&checks.rules.every(r=>r.status==='passed')&&p.mediaFingerprint===checks.media.fingerprint;
 }
 async function mutate({store,profile,productId,action,identity,environment,confirmed,resolveEvidence}){
  const index=profile.products.findIndex(p=>p.productId===productId);
