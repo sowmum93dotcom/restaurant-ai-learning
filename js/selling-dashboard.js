@@ -163,7 +163,7 @@
           const count=doc.createElement('p');count.textContent='Quantity: '+(row.onHand??'Not set')+' · Reserved: '+row.reserved;article.append(title,count);
           for(const batch of business.inventory.history||[])for(const event of batch.changes||[]){
             if(event.productId!==row.productId||(event.variantId||'')!==row.variantId)continue;
-            const line=doc.createElement('p');line.textContent=new Date(batch.recorded_at).toLocaleString()+' · '+(event.before??'Not set')+' → '+event.after+' · '+event.reason+' · '+batch.trusted_identity_id;article.append(line);
+            const line=doc.createElement('p');line.textContent=new Date(batch.recorded_at).toLocaleString()+' · '+(event.event?('Order '+event.event+' · Reserved '+event.beforeReserved+' → '+event.afterReserved):(event.before??'Not set')+' → '+event.after+' · '+event.reason)+' · '+batch.trusted_identity_id;article.append(line);
           }
           for(const event of (products.find(p=>p.productId===row.productId)?.stockHistory||[]).slice().reverse()){
             const line=doc.createElement('p');line.textContent='Earlier record · '+event.changedAt+' · '+(event.from??'Not set')+' → '+event.to+' · '+event.note;article.append(line);
@@ -272,7 +272,7 @@
       if(productMutationPending)return;
       const businessId=context?.business?.businessId;
       if(!businessId)return;
-      const catalogueRevision=context.business.catalogueRevision;
+      const catalogueRevision=context.business.catalogueRevision,identity=clerk.user.id;
       mutationBusy(true);
       const button=$('product-save');button.disabled=true;
       $('product-cancel').disabled=true;
@@ -281,9 +281,9 @@
       try{
         const url=new URL('/api/businesses',win.location.origin);
         url.searchParams.set('resource','selling-dashboard');url.searchParams.set('businessId',businessId);
-        const token=await clerk.session?.getToken();
+        const token=await bounded(clerk.session?.getToken()||Promise.resolve(null));
         if(!token)throw Error('Sign in again before changing products.');
-        const response=await win.fetch(url.pathname+url.search,{method:'POST',credentials:'same-origin',
+        const response=await win.fetch(url.pathname+url.search,{method:'POST',credentials:'same-origin',signal:win.AbortSignal.timeout(30000),
           headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
           body:JSON.stringify({action,product,catalogueRevision})});
         const result=await response.json();
@@ -291,7 +291,7 @@
         await load();
         const selectedAfterSave=new URLSearchParams(win.location.search).get('businessId');
         if(!context?.business||context.business.businessId!==businessId||
-          (selectedAfterSave&&selectedAfterSave!==businessId)||
+          (selectedAfterSave&&selectedAfterSave!==businessId)||clerk.user?.id!==identity||
           !$('dashboard-status').hidden||$('private-workspace').hidden)
           throw Error('Product saved, but the dashboard could not refresh. Reload before editing again.');
         const confirmed=context.business.products.find(p=>p.productId===product.productId);
@@ -305,23 +305,23 @@
       if(productMutationPending)return;
       const businessId=context?.business?.businessId;
       if(!businessId)return;
-      const catalogueRevision=context.business.catalogueRevision;
+      const catalogueRevision=context.business.catalogueRevision,identity=clerk.user.id;
       mutationBusy(true);
       $('variant-save').disabled=true;$('variant-cancel').disabled=true;
       for(const control of $('variant-list').querySelectorAll('button'))control.disabled=true;
       $('variant-feedback').textContent=action==='delete-variant'?'Deleting variant…':'Saving variant…';
       try{
-        const token=await clerk.session?.getToken();
+        const token=await bounded(clerk.session?.getToken()||Promise.resolve(null));
         if(!token)throw Error('Sign in again before changing variants.');
         const url=new URL('/api/businesses',win.location.origin);
         url.searchParams.set('resource','selling-dashboard');url.searchParams.set('businessId',businessId);
-        const response=await win.fetch(url.pathname+url.search,{method:'POST',credentials:'same-origin',
+        const response=await win.fetch(url.pathname+url.search,{method:'POST',credentials:'same-origin',signal:win.AbortSignal.timeout(30000),
           headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
           body:JSON.stringify({action,product,catalogueRevision})});
         const result=await response.json();
         if(!response.ok)throw Error(result.error||'Variant change failed.');
         await load();
-        if(context?.business?.businessId!==businessId||$('private-workspace').hidden||!$('dashboard-status').hidden||(new URLSearchParams(win.location.search).get('businessId')&&new URLSearchParams(win.location.search).get('businessId')!==businessId))
+        if(clerk.user?.id!==identity||context?.business?.businessId!==businessId||$('private-workspace').hidden||!$('dashboard-status').hidden||(new URLSearchParams(win.location.search).get('businessId')&&new URLSearchParams(win.location.search).get('businessId')!==businessId))
           throw Error('Variant saved, but the dashboard could not refresh.');
         const confirmed=context.business.products.find(p=>p.productId===product.productId)?.variants.find(v=>v.variantId===product.variantId);
         if(action==='delete-variant'?Boolean(confirmed):!confirmed||['name','sku','price','availability'].some(k=>k==='price'&&product.price&&confirmed.price?Number(confirmed.price)!==Number(product.price):confirmed[k]!==product[k].trim()))throw Error('Could not verify the variant change. Reload before editing again.');
@@ -419,20 +419,20 @@
       if(productMutationPending||!context?.business)return;
       const [productId,variantId]=JSON.parse($('stock-product').value||'[null,null]'),quantity=Number($('stock-quantity').value),note=$('stock-note').value.trim();
       if(!productId||!Number.isSafeInteger(quantity)||quantity<0||quantity>1000000||!note)return;
-      const businessId=context.business.businessId,catalogueRevision=context.business.catalogueRevision,inventoryRevision=context.business.inventory.revision;
+      const businessId=context.business.businessId,catalogueRevision=context.business.catalogueRevision,inventoryRevision=context.business.inventory.revision,identity=clerk.user.id;
       mutationBusy(true);$('stock-save').disabled=true;$('stock-feedback').textContent='Saving stock…';
       try{
-        const token=await clerk.session?.getToken();
+        const token=await bounded(clerk.session?.getToken()||Promise.resolve(null));
         if(!token)throw Error('Sign in again before changing stock.');
         const url=new URL('/api/businesses',win.location.origin);
         url.searchParams.set('resource','selling-dashboard');url.searchParams.set('businessId',businessId);
-        const response=await win.fetch(url.pathname+url.search,{method:'POST',credentials:'same-origin',
+        const response=await win.fetch(url.pathname+url.search,{method:'POST',credentials:'same-origin',signal:win.AbortSignal.timeout(30000),
           headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
           body:JSON.stringify({action:'adjust-stock',product:{productId,variantId,quantity,note},catalogueRevision,inventoryRevision})});
         const result=await response.json();
         if(!response.ok)throw Error(result.error||'Stock adjustment failed.');
         await load();
-        if(context?.business?.businessId!==businessId||$('private-workspace').hidden||!$('dashboard-status').hidden||(new URLSearchParams(win.location.search).get('businessId')&&new URLSearchParams(win.location.search).get('businessId')!==businessId))throw Error('Stock saved, but the dashboard could not refresh.');
+        if(clerk.user?.id!==identity||context?.business?.businessId!==businessId||$('private-workspace').hidden||!$('dashboard-status').hidden||(new URLSearchParams(win.location.search).get('businessId')&&new URLSearchParams(win.location.search).get('businessId')!==businessId))throw Error('Stock saved, but the dashboard could not refresh.');
         if(!context.business.inventory.rows.some(r=>r.productId===productId&&r.variantId===variantId&&r.onHand===quantity))throw Error('Could not verify saved stock. Reload before editing again.');
         $('stock-quantity').value='';$('stock-note').value='';$('stock-feedback').textContent='Stock adjustment saved.';
       }catch(error){$('stock-feedback').textContent=error.message||'Stock adjustment failed.';}

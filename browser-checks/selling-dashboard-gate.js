@@ -132,6 +132,13 @@ async function run(){
    await page.locator('#product-price-mode').selectOption('fixed');
    await page.locator('#product-price').fill('5');
    await page.locator('#product-availability').selectOption('available');
+   if(viewport.width===375){
+    const failSave=async route=>{if(route.request().method()==='POST')await route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'Temporary persistence failure'})});else await route.continue();};
+    await page.route('**/api/businesses?resource=selling-dashboard*',failSave);
+    await page.locator('#product-save').click();await page.locator('#product-feedback').filter({hasText:'Temporary persistence failure'}).waitFor();
+    assert.equal((await repository.getKnownBusiness('vendor-a')).businessProfile.products.length,0,'Failed write has no false persisted product');
+    await page.unroute('**/api/businesses?resource=selling-dashboard*',failSave);
+   }
    await page.locator('#product-save').click();
    await page.locator('#product-feedback').filter({hasText:'Product saved.'}).waitFor();
    assert.equal((await repository.getKnownBusiness('vendor-a')).businessProfile.products.length,1,'Product is persisted in SQL');
@@ -176,6 +183,7 @@ async function run(){
    savedVariant=(await repository.getKnownBusiness('vendor-a')).businessProfile.products[0].variants[0];
    assert.equal(savedVariant.variantId,savedVariantId);assert.equal(savedVariant.name,'Medium / Black');
    await page.reload();await page.locator('.variant-item strong').filter({hasText:'Medium / Black'}).waitFor();
+   if([375,1440].includes(viewport.width))await page.screenshot({path:path.join(artifacts,'demeos-selling-variants-'+viewport.width+'.png'),fullPage:true});
    page.once('dialog',dialog=>dialog.accept());await page.locator('.variant-item button').filter({hasText:'Delete',exact:true}).click();
    await page.locator('#variant-feedback').filter({hasText:'Variant deleted.'}).waitFor();await page.reload();
    assert.equal((await repository.getKnownBusiness('vendor-a')).businessProfile.products[0].variants.length,0);
@@ -189,6 +197,7 @@ async function run(){
    const linked=(await repository.getKnownBusiness('vendor-a')).businessProfile.products[0].mediaGallery.assetIds[0];
    assert.equal((await repository.getBusinessMediaAsset('vendor-a',linked)).state,'ready');
    await page.reload();await page.locator('#media-list img').waitFor();await page.waitForFunction(()=>document.querySelector('#media-list img')?.naturalWidth>0);
+   if([375,1440].includes(viewport.width))await page.screenshot({path:path.join(artifacts,'demeos-selling-media-'+viewport.width+'.png'),fullPage:true});
    page.once('dialog',dialog=>dialog.accept());await page.locator('#media-list button').filter({hasText:'Remove',exact:true}).click();
    await page.locator('#media-feedback').filter({hasText:'Media removed from product.'}).waitFor();await page.reload();
    assert.equal((await repository.getBusinessMediaAsset('vendor-a',linked)).state,'archived');assert.equal(await page.locator('#media-list img').count(),0);
@@ -215,6 +224,7 @@ async function run(){
    assert.equal(stockProduct.history.length,stockHistoryBefore+2,'Stock audit trail retained');
    assert.equal(stockProduct.history[0].changes[0].before,12,'Stock audit records previous quantity');
    assert.equal(stockProduct.history[0].changes[0].after,9,'Stock audit records new quantity');
+   if([375,1440].includes(viewport.width))await page.screenshot({path:path.join(artifacts,'demeos-selling-stock-'+viewport.width+'.png'),fullPage:true});
    await page.goto(base+'/selling-vendor/product-catalogue?businessId=vendor-a');
    await page.locator('.catalogue-item button').filter({hasText:'Delete'}).waitFor();
    page.once('dialog',dialog=>dialog.accept());
@@ -340,6 +350,7 @@ async function run(){
    await page.locator('#stock-quantity').fill(String(nextQuantity));await page.locator('#stock-note').fill('Count with reservation retained');await page.locator('#stock-save').click();await page.locator('#stock-feedback').filter({hasText:'Stock adjustment saved.'}).waitFor();
    assert.equal((await repository.getVendorInventory('vendor-b')).entries[orderInventory.key('order-shirt','medium')].reserved,2);
    await page.reload();await page.locator('#stock-list').filter({hasText:'Quantity: '+nextQuantity}).waitFor();
+   assert.doesNotMatch(await page.locator('#stock-list').innerText(),/undefined|NaN/,'Reservation audit entries render real quantities');
 
    assert.deepEqual(errors,[]);await context.close();
    console.log('Selling dashboard SQL + rendered gate passed at '+viewport.width+'px');
