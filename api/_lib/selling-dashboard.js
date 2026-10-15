@@ -93,7 +93,7 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
             return res.status(400).json({error:'Invalid product details.'});
           if (index<0 && products.length>=100) return res.status(409).json({error:'Product limit reached.'});
           const previous=index>=0?products[index]:{};
-          const product={...previous,productId:id,businessId,name,description,price,priceMode,customerVisible:false,
+          const product={...previous,productId:id,businessId,name,description,price,priceMode,customerVisible:index>=0?previous.customerVisible===true:false,
             availability:previous.availability||'contact'};
           if (index<0) products.push(product); else products[index]=product;
         }
