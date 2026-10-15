@@ -187,3 +187,44 @@ test('product writes reject malformed requests, limits and concurrent edits',asy
  assert.equal(calls,1);
  assert.equal(await invoke('delete-product',{productId:'missing'}),404);
 });
+
+test('stock adjustments require ownership and retain a quantity audit trail',async()=>{
+ let current={businessId:'real-a',name:'Real Shop',type:'Shop',location:'London',preparationModel:'selling',
+   applicationAccess:{selling:true},products:[{productId:'item-a',name:'Coffee',description:'Beans',priceMode:'contact',price:'',availability:'available'}]};
+ const repository={
+   getOwnedBusinessProfiles:async id=>id==='owner-a'?[current]:[],
+   isBusinessOwnedByIdentity:async(id,businessId)=>id==='owner-a'&&businessId==='real-a',
+   getKnownBusiness:async id=>id==='real-a'?{businessProfile:structuredClone(current)}:null,
+   saveSellingProducts:async(id,businessId,previous,next)=>{
+     assert.equal(id,'owner-a');assert.equal(businessId,'real-a');
+     assert.deepEqual(previous,current);
+     current=structuredClone(next);return true;
+   }
+ };
+ async function adjust(identity,product){
+   const res=response();
+   await createHandler({authenticate:async()=>({trustedIdentityId:identity}),repository:()=>repository,environment:()=>live})
+    ({method:'POST',query:{businessId:'real-a'},body:{action:'adjust-stock',product}},res);
+   return res;
+ }
+ const change={productId:'item-a',quantity:12,note:'Initial count'};
+ assert.equal((await adjust('owner-b',change)).code,403);
+ assert.equal((await adjust('owner-a',{...change,quantity:-1})).code,400);
+ assert.equal((await adjust('owner-a',{...change,quantity:1.5})).code,400);
+ assert.equal((await adjust('owner-a',{...change,note:''})).code,400);
+ assert.equal((await adjust('owner-a',{...change,productId:'missing'})).code,404);
+ assert.equal((await adjust('owner-a',change)).code,200);
+ assert.equal(current.products[0].stockQuantity,12);
+ assert.equal(current.products[0].stockHistory.length,1);
+ assert.equal(current.products[0].stockHistory[0].from,null);
+ assert.equal(current.products[0].stockHistory[0].to,12);
+ assert.equal(current.products[0].stockHistory[0].changedBy,'owner-a');
+ assert.ok(!Number.isNaN(Date.parse(current.products[0].stockHistory[0].changedAt)));
+ assert.equal((await adjust('owner-a',change)).code,400,'No-op changes must be rejected');
+ assert.equal((await adjust('owner-a',{...change,quantity:9,note:'Damaged units'})).code,200);
+ assert.equal(current.products[0].stockQuantity,9);
+ assert.equal(current.products[0].stockHistory.length,2);
+ assert.equal(current.products[0].stockHistory[1].from,12);
+ assert.equal(current.products[0].stockHistory[1].to,9);
+ assert.equal(current.products[0].stockHistory[1].note,'Damaged units');
+});
