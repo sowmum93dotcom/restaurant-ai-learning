@@ -131,3 +131,29 @@ test('vendor product editor persists create edit and delete only for an owned ap
  assert.equal((await call('owner-a','delete-product',{productId:item.productId})).code,200);
  assert.equal(current.products.length,0);assert.equal(writes,3);
 });
+
+test('isolated Preview vendor can save products only in its authorized test business',async()=>{
+ let current={businessId:'test-business-selling-a',name:'Test Shop',type:'Shop',location:'London',preparationModel:'selling',products:[]};
+ let writes=0;
+ const repository={
+   getOwnedBusinessProfiles:async id=>id==='owner-a'?[current]:[],
+   isBusinessOwnedByIdentity:async(id,businessId)=>id==='owner-a'&&businessId===current.businessId,
+   getKnownBusiness:async()=>({businessProfile:structuredClone(current)}),
+   saveOwnedBusinessProfile:async(id,businessId,previous,next)=>{
+     assert.equal(id,'owner-a');assert.equal(businessId,current.businessId);
+     assert.deepEqual(previous,current);
+     current=structuredClone(next);writes++;return true;
+   }
+ };
+ async function call(env,identity){
+   const handler=createHandler({authenticate:async()=>({trustedIdentityId:identity}),repository:()=>repository,environment:()=>env});
+   const res=response();
+   await handler({method:'POST',query:{businessId:'test-business-selling-a'},body:{action:'save-product',product:{productId:'product-a',name:'Coffee',description:'Coffee beans',priceMode:'contact',price:''}}},res);
+   return res.code;
+ }
+ assert.equal(await call(preview,'owner-a'),200);
+ assert.equal(writes,1);assert.equal(current.products.length,1);
+ assert.equal(await call(preview,'owner-b'),403);
+ assert.equal(await call(live,'owner-a'),403);
+ assert.equal(writes,1);
+});
