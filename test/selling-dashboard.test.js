@@ -103,3 +103,31 @@ test('dashboard authentication consumes the existing verified Clerk request boun
   verified=true;const allowed=response();await handler(req,allowed);assert.equal(allowed.code,200);assert.equal(allowed.body.vendor.identityId,'verified-owner');
  }finally{for(const key of ['CLERK_SECRET_KEY','CLERK_PUBLISHABLE_KEY','VERCEL_ENV']){if(before[key]===undefined)delete process.env[key];else process.env[key]=before[key];}}
 });
+
+test('vendor product editor persists create edit and delete only for an owned approved business',async()=>{
+ const profile={businessId:'real-a',name:'Real Shop',type:'Shop',location:'London',preparationModel:'selling',applicationAccess:{selling:true},products:[]};
+ let current=structuredClone(profile),writes=0;
+ const repository={
+   getOwnedBusinessProfiles:async identity=>identity==='owner-a'?[current]:[],
+   isBusinessOwnedByIdentity:async(identity,id)=>identity==='owner-a'&&id==='real-a',
+   getKnownBusiness:async id=>id==='real-a'?{businessProfile:structuredClone(current)}:null,
+   saveSellingProducts:async(identity,id,previous,next)=>{
+     assert.equal(identity,'owner-a');assert.equal(id,'real-a');
+     if(JSON.stringify(previous)!==JSON.stringify(current))return null;
+     current=structuredClone(next);writes++;return current;
+   }
+ };
+ async function call(identity,action,product){
+   const handler=createHandler({authenticate:async()=>identity?{trustedIdentityId:identity}:null,repository:()=>repository,environment:()=>live});
+   const res=response();await handler({method:'POST',query:{businessId:'real-a'},body:{action,product}},res);return res;
+ }
+ const item={productId:'product-one',name:'Coffee',description:'Fresh coffee',priceMode:'fixed',price:'5'};
+ assert.equal((await call('owner-b','save-product',item)).code,403);
+ assert.equal((await call('owner-a','save-product',{...item,name:''})).code,400);
+ assert.equal((await call('owner-a','save-product',item)).code,200);
+ assert.equal(current.products[0].customerVisible,false);
+ assert.equal((await call('owner-a','save-product',{...item,name:'Tea'})).code,200);
+ assert.equal(current.products.length,1);assert.equal(current.products[0].name,'Tea');
+ assert.equal((await call('owner-a','delete-product',{productId:item.productId})).code,200);
+ assert.equal(current.products.length,0);assert.equal(writes,3);
+});
