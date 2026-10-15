@@ -92,6 +92,8 @@ async function run(){
      assert.equal(await page.locator('#product-form').count(),1,'Catalogue has an editable form');
     }else if(section==='stock-history'){
      assert.equal(await page.locator('#stock-form:visible').count(),1,'Stock has a real adjustment form');
+    }else if(section==='options-variants'){
+     assert.equal(await page.locator('#variant-form:visible').count(),1,'Variants has a real editor');
     }else assert.equal(await page.locator('#section-content button:visible').count(),0,'No pretend tool actions');
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'No horizontal page overflow');
     await page.reload();await page.locator('#content-heading').filter({hasText:['product-catalogue','stock-history'].includes(section)?(section==='stock-history'?'Stock & History':'Product Catalogue'):copy[1]}).waitFor();
@@ -124,6 +126,7 @@ async function run(){
    await page.locator('.catalogue-item button').filter({hasText:'Delete'}).click();
    await page.locator('#product-feedback').filter({hasText:'Product deleted.'}).waitFor();
    assert.equal((await repository.getKnownBusiness('vendor-a')).businessProfile.products.length,0,'Product deletion persisted in SQL');
+   await page.reload();assert.equal(await page.locator('.catalogue-item').count(),0,'Deletion survives reload');
    // Real stock adjustment and audit history, including persistence across reload.
    await page.goto(base+'/selling-vendor/product-catalogue?businessId=vendor-a');
    await page.locator('#product-form:visible').waitFor();
@@ -131,6 +134,28 @@ async function run(){
    await page.locator('#product-description').fill('Stock audit fixture');
    await page.locator('#product-save').click();
    await page.locator('#product-feedback').filter({hasText:'Product saved.'}).waitFor();
+   await page.goto(base+'/selling-vendor/options-variants?businessId=vendor-a');
+   await page.locator('#variant-form:visible').waitFor();
+   await page.locator('#variant-name').fill('Small / Black');
+   await page.locator('#variant-sku').fill('COFFEE-S');
+   await page.locator('#variant-price').fill('4.50');
+   await page.locator('#variant-availability').selectOption('available');
+   await page.locator('#variant-save').click();
+   await page.locator('#variant-feedback').filter({hasText:'Variant saved.'}).waitFor();
+   let savedVariant=(await repository.getKnownBusiness('vendor-a')).businessProfile.products[0].variants[0];
+   const savedVariantId=savedVariant.variantId;
+   assert.equal(savedVariant.name,'Small / Black');assert.equal(savedVariant.price,'4.50');
+   await page.reload();await page.locator('.variant-item strong').filter({hasText:'Small / Black'}).waitFor();
+   await page.locator('.variant-item button').filter({hasText:'Edit',exact:true}).click();
+   await page.locator('#variant-name').fill('Medium / Black');await page.locator('#variant-price').fill('5.50');
+   await page.locator('#variant-save').click();await page.locator('#variant-feedback').filter({hasText:'Variant saved.'}).waitFor();
+   savedVariant=(await repository.getKnownBusiness('vendor-a')).businessProfile.products[0].variants[0];
+   assert.equal(savedVariant.variantId,savedVariantId);assert.equal(savedVariant.name,'Medium / Black');
+   await page.reload();await page.locator('.variant-item strong').filter({hasText:'Medium / Black'}).waitFor();
+   page.once('dialog',dialog=>dialog.accept());await page.locator('.variant-item button').filter({hasText:'Delete',exact:true}).click();
+   await page.locator('#variant-feedback').filter({hasText:'Variant deleted.'}).waitFor();await page.reload();
+   assert.equal((await repository.getKnownBusiness('vendor-a')).businessProfile.products[0].variants.length,0);
+   assert.equal((await repository.getKnownBusiness('vendor-a')).businessProfile.products.length,1,'Variant deletion preserves parent product');
    await page.goto(base+'/selling-vendor/stock-history?businessId=vendor-a');
    await page.locator('#stock-form:visible').waitFor();
    await page.locator('#stock-quantity').fill('12');
@@ -200,6 +225,18 @@ async function run(){
     assert.equal((await repository.getKnownBusiness('vendor-a')).businessProfile.products.length,0,'Preview did not write to live vendor');
     await page.reload();
     await page.locator('.catalogue-item h3').filter({hasText:'Preview Coffee'}).waitFor();
+    await page.goto(base+'/selling-vendor/options-variants');await page.locator('#variant-form:visible').waitFor();
+    await page.locator('#variant-name').fill('Preview Large');await page.locator('#variant-sku').fill('PRE-L');
+    await page.locator('#variant-save').click();await page.locator('#variant-feedback').filter({hasText:'Variant saved.'}).waitFor();
+    assert.equal((await repository.getKnownBusiness('test-business-selling-a')).businessProfile.products[0].variants[0].name,'Preview Large');
+    await page.reload();await page.locator('.variant-item strong').filter({hasText:'Preview Large'}).waitFor();
+    await page.locator('.variant-item button').filter({hasText:'Edit',exact:true}).click();await page.locator('#variant-name').fill('Preview Medium');
+    await page.locator('#variant-save').click();await page.locator('#variant-feedback').filter({hasText:'Variant saved.'}).waitFor();
+    await page.reload();await page.locator('.variant-item strong').filter({hasText:'Preview Medium'}).waitFor();
+    page.once('dialog',dialog=>dialog.accept());await page.locator('.variant-item button').filter({hasText:'Delete',exact:true}).click();
+    await page.locator('#variant-feedback').filter({hasText:'Variant deleted.'}).waitFor();await page.reload();
+    assert.equal((await repository.getKnownBusiness('test-business-selling-a')).businessProfile.products[0].variants.length,0);
+    await page.goto(base+'/selling-vendor/product-catalogue');await page.locator('.catalogue-item').waitFor();
     page.once('dialog',dialog=>dialog.accept());
     await page.locator('.catalogue-item button').filter({hasText:'Delete'}).click();
     await page.locator('#product-feedback').filter({hasText:'Product deleted.'}).waitFor();

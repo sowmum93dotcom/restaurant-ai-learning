@@ -1,5 +1,6 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict');
+const {catalogueRevision}=require('../api/_lib/vendor-inventory');
 const {PGlite}=require('@electric-sql/pglite');
 const {createDatabase}=require('../api/_lib/database');
 const {createPersistenceRepository}=require('../api/_lib/persistence');
@@ -119,7 +120,7 @@ test('vendor product editor persists create edit and delete only for an owned ap
  };
  async function call(identity,action,product){
    const handler=createHandler({authenticate:async()=>identity?{trustedIdentityId:identity}:null,repository:()=>repository,environment:()=>live});
-   const res=response();await handler({method:'POST',query:{businessId:'real-a'},body:{action,product}},res);return res;
+   const res=response();await handler({method:'POST',query:{businessId:'real-a'},body:{action,product,catalogueRevision:catalogueRevision(current)}},res);return res;
  }
  const item={productId:'product-one',name:'Coffee',description:'Fresh coffee',priceMode:'fixed',price:'5'};
  assert.equal((await call('owner-b','save-product',item)).code,403);
@@ -151,7 +152,7 @@ test('isolated Preview vendor can save products only in its authorized test busi
  async function call(env,identity){
    const handler=createHandler({authenticate:async()=>({trustedIdentityId:identity}),repository:()=>repository,environment:()=>env});
    const res=response();
-   await handler({method:'POST',query:{businessId:'test-business-selling-a'},body:{action:'save-product',product:{productId:'product-a',name:'Coffee',description:'Coffee beans',priceMode:'contact',price:''}}},res);
+   await handler({method:'POST',query:{businessId:'test-business-selling-a'},body:{catalogueRevision:catalogueRevision(current),action:'save-product',product:{productId:'product-a',name:'Coffee',description:'Coffee beans',priceMode:'contact',price:''}}},res);
    return res.code;
  }
  assert.equal(await call(preview,'owner-a'),200);
@@ -173,7 +174,7 @@ test('product writes reject malformed requests, limits and concurrent edits',asy
  async function invoke(action,product){
    const res=response();
    await createHandler({authenticate:async()=>({trustedIdentityId:'owner-a'}),repository:()=>repository,environment:()=>live})
-    ({method:'POST',query:{businessId:'real-a'},body:{action,product}},res);
+    ({method:'POST',query:{businessId:'real-a'},body:{action,product,catalogueRevision:catalogueRevision(current)}},res);
    return res.code;
  }
  const valid={productId:'product-a',name:'Coffee',description:'Fresh coffee',priceMode:'fixed',price:'5'};
@@ -204,7 +205,7 @@ test('stock adjustments require ownership and retain a quantity audit trail',asy
  async function adjust(identity,product){
    const res=response();
    await createHandler({authenticate:async()=>({trustedIdentityId:identity}),repository:()=>repository,environment:()=>live})
-    ({method:'POST',query:{businessId:'real-a'},body:{action:'adjust-stock',product}},res);
+    ({method:'POST',query:{businessId:'real-a'},body:{action:'adjust-stock',product,catalogueRevision:catalogueRevision(current)}},res);
    return res;
  }
  const change={productId:'item-a',quantity:12,note:'Initial count'};
@@ -246,4 +247,43 @@ test('selected vendor business exposes saved availability and stock history, not
  assert.equal(res.body.business.products[0].stockQuantity,9);
  assert.equal(res.body.business.products[0].stockHistory[0].note,'Damaged units');
  assert.equal(Object.hasOwn(res.body.businesses[0],'products'),false,'Business selector must not expose product data');
+});
+
+// Runs the same mutation contract against persisted live and Preview businesses.
+test('variant CRUD, retries, stale revisions, preservation and isolation use real SQL',async()=>{
+ const client=new PGlite(),repository=createPersistenceRepository(createDatabase(client));
+ try{
+  for(const [businessId,env] of [['real-variants',live],['test-business-selling-a',preview]]){
+   const product={productId:'coffee',businessId,name:'Coffee',description:'Roasted beans',priceMode:'contact',price:'',mediaGallery:{assetIds:[],mainAssetId:''},stockQuantity:8,stockHistory:[{from:10,to:8,note:'Earlier count'}],presentation:{kind:'product',options:[],variants:[],extension:'keep'}};
+   const profile={businessId,name:'Shop',applicationAccess:env===live?{selling:true}:undefined,products:[product]};
+   await repository.createBusinessForOwner('owner-a',profile);
+   async function call(action,item,identity='owner-a',revision){
+    const current=(await repository.getKnownBusiness(businessId)).businessProfile;
+    const res=response();await createHandler({authenticate:async()=>identity?{trustedIdentityId:identity}:null,repository:()=>repository,environment:()=>env})
+     ({method:'POST',query:{businessId},body:{action,product:item,catalogueRevision:revision??catalogueRevision(current)}},res);return res;
+   }
+   const variant={productId:'coffee',variantId:'small-black',name:'Small / Black',sku:'SM-B',price:'4.50',availability:'available'};
+   for(const invalid of [{...variant,variantId:'bad/id'},{...variant,productId:'missing'},{...variant,name:''},{...variant,price:'free'},{...variant,price:'-1'}])assert.ok([400,404].includes((await call('save-variant',invalid)).code));
+   assert.equal((await call('save-variant',variant,'owner-b')).code,403);
+   assert.equal((await call('save-variant',variant,null)).code,401);
+   const stale=catalogueRevision((await repository.getKnownBusiness(businessId)).businessProfile);
+   assert.equal((await call('save-variant',variant)).code,200);
+   assert.equal((await call('save-variant',variant)).code,200,'Retry uses stable ID');
+   let saved=(await repository.getKnownBusiness(businessId)).businessProfile.products[0];
+   assert.equal(saved.variants.length,1);assert.equal(saved.variants[0].name,variant.name);
+   assert.deepEqual(saved.presentation,product.presentation);assert.deepEqual(saved.mediaGallery,product.mediaGallery);
+   assert.equal((await call('save-variant',{...variant,name:'Large'},'owner-a',stale)).code,409);
+   assert.equal((await call('save-variant',{...variant,variantId:'duplicate',sku:'sm-b'})).code,400);
+   assert.equal((await call('save-variant',{...variant,name:'Medium / Black',price:'5.00'})).code,200);
+   saved=(await repository.getKnownBusiness(businessId)).businessProfile.products[0];assert.equal(saved.variants[0].name,'Medium / Black');
+   assert.equal((await call('save-product',{productId:'coffee',name:'Fresh Coffee',description:'Fresh beans',priceMode:'contact',price:'',availability:'available'})).code,200);
+   saved=(await repository.getKnownBusiness(businessId)).businessProfile.products[0];
+   assert.equal(saved.variants[0].name,'Medium / Black');assert.equal(saved.stockQuantity,8);assert.equal(saved.stockHistory.length,1);
+   assert.equal(Object.hasOwn(saved,'customerVisible'),false,'Unspecified publication flag remains unspecified');
+   assert.equal((await call('delete-variant',variant)).code,200);
+   saved=(await repository.getKnownBusiness(businessId)).businessProfile.products[0];assert.equal(saved.variants.length,0);assert.equal(saved.productId,'coffee');
+   assert.equal((await call('delete-variant',variant)).code,404);
+   if(env===preview){const res=response();await createHandler({authenticate:async()=>({trustedIdentityId:'owner-a'}),repository:()=>repository,environment:()=>live})({method:'POST',query:{businessId},body:{action:'save-variant',product:variant}},res);assert.equal(res.code,403);}
+  }
+ }finally{await client.close();}
 });

@@ -1,6 +1,7 @@
 'use strict';
 const authentication = require('./demeos-authentication');
 const persistence = require('./persistence');
+const {catalogueRevision}=require('./vendor-inventory');
 const {applicationAccess} = require('./business-application-access');
 const {authorizeDemeosAction} = require('./demeos-authorization');
 const {createAuthenticatedBusinessOwnerContext} = require('./demeos-actor-context');
@@ -36,7 +37,7 @@ function businessSummary(profile, env, identityId) {
   // Real Selling approval remains unchanged. The explicit Preview test grant
   // has its own authority and never changes the real applicationAccess field.
   if (environment === 'live' && !applicationAccess({businessProfile:profile}, id).selling) return null;
-  return environment ? {businessId:id, name:profile.name || 'Unnamed business', type:profile.type || '', location:profile.location || '', dataEnvironment:environment, products:Array.isArray(profile.products)?profile.products.map(p=>({productId:p.productId,name:p.name,description:p.description,price:p.price,priceMode:p.priceMode,availability:p.availability||'contact',stockQuantity:Number.isSafeInteger(p.stockQuantity)?p.stockQuantity:null,stockHistory:Array.isArray(p.stockHistory)?p.stockHistory:[],variants:Array.isArray(p.variants)?p.variants.map(v=>({variantId:v.variantId,name:v.name,sku:v.sku||'',price:v.price||'',availability:v.availability||'contact'})):[]})):[]} : null;
+  return environment ? {businessId:id, name:profile.name || 'Unnamed business', type:profile.type || '', location:profile.location || '', dataEnvironment:environment, catalogueRevision:catalogueRevision(profile), products:Array.isArray(profile.products)?profile.products.map(p=>({productId:p.productId,name:p.name,description:p.description,price:p.price,priceMode:p.priceMode,availability:p.availability||'contact',stockQuantity:Number.isSafeInteger(p.stockQuantity)?p.stockQuantity:null,stockHistory:Array.isArray(p.stockHistory)?p.stockHistory:[],variants:Array.isArray(p.variants)?p.variants.map(v=>({variantId:v.variantId,name:v.name,sku:v.sku||'',price:v.price||'',availability:v.availability||'contact'})):[]})):[]} : null;
 }
 
 function createHandler({authenticate=authentication.resolveTrustedIdentityFromRequest, repository=()=>persistence.getRepository(), environment=()=>process.env}={}) {
@@ -55,7 +56,7 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
       const store = repository();
       // SQL ownership relationship is authoritative, never a role/header/URL claim.
       const owned = await store.getOwnedBusinessProfiles(identity.trustedIdentityId);
-      const businesses = owned.map(profile=>businessSummary(profile,env,identity.trustedIdentityId)).filter(Boolean).map(({products,...summary})=>summary);
+      const businesses = owned.map(profile=>businessSummary(profile,env,identity.trustedIdentityId)).filter(Boolean).map(({products,catalogueRevision,...summary})=>summary);
       if (selected && !businesses.some(b=>b.businessId===selected)) return res.status(403).json({error:'Selling access is unavailable for this business.'});
       const businessId = selected || (businesses.length === 1 ? businesses[0].businessId : null);
       let business = null;
@@ -79,6 +80,7 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
         const original=(await store.getKnownBusiness(businessId))?.businessProfile;
         if (!original || !businessSummary(original,env,identity.trustedIdentityId))
           return res.status(403).json({error:'Business access unavailable.'});
+        if(req.body.catalogueRevision!==catalogueRevision(original))return res.status(409).json({error:'Products changed. Reload before saving.'});
         const products=Array.isArray(original.products)?original.products.slice():[];
         const index=products.findIndex(product=>product.productId===id);
         if (action==='save-variant' || action==='delete-variant') {
@@ -93,9 +95,10 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
           } else {
             const clean=(value,max)=>typeof value==='string'?value.trim().slice(0,max):'';
             const name=clean(item.name,160),sku=clean(item.sku,120),price=clean(item.price,100),availability=clean(item.availability,20)||'contact';
-            if (!name || !['contact','available','unavailable'].includes(availability)) return res.status(400).json({error:'Invalid variant details.'});
+            if (!name || (price&&!/^(?:0|[1-9]\d{0,8})(?:\.\d{1,2})?$/.test(price)) || !['contact','available','unavailable'].includes(availability)) return res.status(400).json({error:'Invalid variant details.'});
             if (variantIndex<0 && variants.length>=100) return res.status(409).json({error:'Variant limit reached.'});
-            const variant={variantId,name,sku,price,availability};
+            if(sku&&variants.some(v=>v.variantId!==variantId&&v.sku?.toLowerCase()===sku.toLowerCase()))return res.status(400).json({error:'Each variant SKU must be unique for this product.'});
+            const variant={...(variantIndex>=0?variants[variantIndex]:{}),variantId,name,sku,price,availability};
             if (variantIndex<0) variants.push(variant); else variants[variantIndex]=variant;
           }
           products[index]={...products[index],variants};
@@ -107,7 +110,7 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
             return res.status(400).json({error:'Enter a valid stock quantity and reason.'});
           const previous=products[index],oldQuantity=Number.isSafeInteger(previous.stockQuantity)?previous.stockQuantity:null;
           if (oldQuantity===quantity) return res.status(400).json({error:'Stock quantity has not changed.'});
-          const history=Array.isArray(previous.stockHistory)?previous.stockHistory.slice(-99):[];
+          const history=Array.isArray(previous.stockHistory)?previous.stockHistory.slice():[];
           history.push({from:oldQuantity,to:quantity,note,changedAt:new Date().toISOString(),changedBy:identity.trustedIdentityId});
           products[index]={...previous,stockQuantity:quantity,stockHistory:history};
         } else if (action==='delete-product') {
@@ -123,7 +126,7 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
             return res.status(400).json({error:'Invalid product details.'});
           if (index<0 && products.length>=100) return res.status(409).json({error:'Product limit reached.'});
           const previous=index>=0?products[index]:{};
-          const product={...previous,productId:id,businessId,name,description,price,priceMode,customerVisible:index>=0?previous.customerVisible===true:false,
+          const product={...previous,productId:id,businessId,name,description,price,priceMode,...(index<0?{customerVisible:false}:{}),
             availability};
           if (index<0) products.push(product); else products[index]=product;
         }

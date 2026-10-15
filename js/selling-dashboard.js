@@ -110,7 +110,7 @@
       $('variant-list').replaceChildren();
       if(section==='options-variants'&&business){
         const products=Array.isArray(business.products)?business.products:[];
-        $('content-heading').textContent=sectionCopy()['options-variants'][0];
+        $('content-heading').textContent=sectionCopy()['options-variants'][1];
         $('content-message').textContent=products.length?sectionCopy()['options-variants'][2]:(language==='tr'?'Varyantları yönetmeden önce Ürün Kataloğuna ürün ekleyin.':'Add products in Product Catalogue before managing variants.');
         for(const product of products){
           const option=doc.createElement('option');option.value=product.productId;option.textContent=product.name||product.productId;$('variant-product').append(option);
@@ -201,7 +201,7 @@
         if(new URLSearchParams(win.location.search).get('clerk_oauth_callback')==='1')await bounded(clerk.handleRedirectCallback({signInForceRedirectUrl:'/selling-vendor',signUpForceRedirectUrl:'/selling-vendor',signInFallbackRedirectUrl:'/selling-vendor',signUpFallbackRedirectUrl:'/selling-vendor'}));
         clerk.addListener(()=>{
           const key=(clerk.user?.id||'')+':'+(clerk.session?.id||'');
-          if(key!==sessionKey){sessionKey=key;load();}
+          if(key!==sessionKey){clearProductForm();clearVariantForm();sessionKey=key;load();}
         });
         sessionKey=(clerk.user?.id||'')+':'+(clerk.session?.id||'');await load();
       }catch{clerk=null;status('error','Sign-in is temporarily unavailable','We could not connect to DEMEOS authentication. Please try again.');}
@@ -225,11 +225,18 @@
     }
     syncProductPrice();
     let productMutationPending=false;
+    function mutationBusy(busy){
+      productMutationPending=busy;
+      for(const control of doc.querySelectorAll('#catalogue-tools input,#catalogue-tools textarea,#catalogue-tools select,#catalogue-tools button,#catalogue-list button,#variant-tools input,#variant-tools select,#variant-tools button,#stock-tools input,#stock-tools select,#stock-tools button'))control.disabled=busy;
+      $('business-select').disabled=busy||context?.businesses.length===1;
+      if(!busy){syncProductPrice();$('variant-save').disabled=!$('variant-product').options.length;$('stock-save').disabled=!$('stock-product').options.length;}
+    }
     async function mutateProduct(action,product){
       if(productMutationPending)return;
       const businessId=context?.business?.businessId;
       if(!businessId)return;
-      productMutationPending=true;
+      const catalogueRevision=context.business.catalogueRevision;
+      mutationBusy(true);
       const button=$('product-save');button.disabled=true;
       $('product-cancel').disabled=true;
       for(const control of $('catalogue-list').querySelectorAll('button'))control.disabled=true;
@@ -241,7 +248,7 @@
         if(!token)throw Error('Sign in again before changing products.');
         const response=await win.fetch(url.pathname+url.search,{method:'POST',credentials:'same-origin',
           headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
-          body:JSON.stringify({action,product})});
+          body:JSON.stringify({action,product,catalogueRevision})});
         const result=await response.json();
         if(!response.ok)throw Error(result.error||'Could not save product.');
         await load();
@@ -250,16 +257,19 @@
           (selectedAfterSave&&selectedAfterSave!==businessId)||
           !$('dashboard-status').hidden||$('private-workspace').hidden)
           throw Error('Product saved, but the dashboard could not refresh. Reload before editing again.');
+        const confirmed=context.business.products.find(p=>p.productId===product.productId);
+        if(action==='delete-product'?Boolean(confirmed):!confirmed||['name','description','priceMode','price','availability'].some(k=>product[k]!==undefined&&confirmed[k]!==product[k].trim()))throw Error('Could not verify the product change. Reload before editing again.');
         clearProductForm();$('product-feedback').textContent=action==='delete-product'?'Product deleted.':'Product saved.';
       }catch(error){$('product-feedback').textContent=error.message||'Product change failed.';}
-      finally{productMutationPending=false;button.disabled=false;$('product-cancel').disabled=false;
+      finally{mutationBusy(false);button.disabled=false;$('product-cancel').disabled=false;
         for(const control of $('catalogue-list').querySelectorAll('button'))control.disabled=false;}
     }
     async function mutateVariant(action,product){
       if(productMutationPending)return;
       const businessId=context?.business?.businessId;
       if(!businessId)return;
-      productMutationPending=true;
+      const catalogueRevision=context.business.catalogueRevision;
+      mutationBusy(true);
       $('variant-save').disabled=true;$('variant-cancel').disabled=true;
       for(const control of $('variant-list').querySelectorAll('button'))control.disabled=true;
       $('variant-feedback').textContent=action==='delete-variant'?'Deleting variant…':'Saving variant…';
@@ -270,15 +280,17 @@
         url.searchParams.set('resource','selling-dashboard');url.searchParams.set('businessId',businessId);
         const response=await win.fetch(url.pathname+url.search,{method:'POST',credentials:'same-origin',
           headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
-          body:JSON.stringify({action,product})});
+          body:JSON.stringify({action,product,catalogueRevision})});
         const result=await response.json();
         if(!response.ok)throw Error(result.error||'Variant change failed.');
         await load();
-        if(context?.business?.businessId!==businessId||$('private-workspace').hidden||!$('dashboard-status').hidden||new URLSearchParams(win.location.search).get('businessId')!==businessId)
+        if(context?.business?.businessId!==businessId||$('private-workspace').hidden||!$('dashboard-status').hidden||(new URLSearchParams(win.location.search).get('businessId')&&new URLSearchParams(win.location.search).get('businessId')!==businessId))
           throw Error('Variant saved, but the dashboard could not refresh.');
+        const confirmed=context.business.products.find(p=>p.productId===product.productId)?.variants.find(v=>v.variantId===product.variantId);
+        if(action==='delete-variant'?Boolean(confirmed):!confirmed||['name','sku','price','availability'].some(k=>confirmed[k]!==product[k].trim()))throw Error('Could not verify the variant change. Reload before editing again.');
         clearVariantForm();$('variant-feedback').textContent=action==='delete-variant'?'Variant deleted.':'Variant saved.';
       }catch(error){$('variant-feedback').textContent=error.message||'Variant change failed.';}
-      finally{productMutationPending=false;$('variant-save').disabled=!$('variant-product').options.length;$('variant-cancel').disabled=false;
+      finally{mutationBusy(false);$('variant-save').disabled=!$('variant-product').options.length;$('variant-cancel').disabled=false;
         for(const control of $('variant-list').querySelectorAll('button'))control.disabled=false;}
     }
     $('product-form').addEventListener('submit',event=>{
@@ -308,8 +320,8 @@
       if(productMutationPending||!context?.business)return;
       const productId=$('stock-product').value,quantity=Number($('stock-quantity').value),note=$('stock-note').value.trim();
       if(!productId||!Number.isSafeInteger(quantity)||quantity<0||quantity>1000000||!note)return;
-      const businessId=context.business.businessId;
-      productMutationPending=true;$('stock-save').disabled=true;$('stock-feedback').textContent='Saving stock…';
+      const businessId=context.business.businessId,catalogueRevision=context.business.catalogueRevision;
+      mutationBusy(true);$('stock-save').disabled=true;$('stock-feedback').textContent='Saving stock…';
       try{
         const token=await clerk.session?.getToken();
         if(!token)throw Error('Sign in again before changing stock.');
@@ -317,14 +329,14 @@
         url.searchParams.set('resource','selling-dashboard');url.searchParams.set('businessId',businessId);
         const response=await win.fetch(url.pathname+url.search,{method:'POST',credentials:'same-origin',
           headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
-          body:JSON.stringify({action:'adjust-stock',product:{productId,quantity,note}})});
+          body:JSON.stringify({action:'adjust-stock',product:{productId,quantity,note},catalogueRevision})});
         const result=await response.json();
         if(!response.ok)throw Error(result.error||'Stock adjustment failed.');
         await load();
-        if(context?.business?.businessId!==businessId||$('private-workspace').hidden||!$('dashboard-status').hidden||new URLSearchParams(win.location.search).get('businessId')!==businessId)throw Error('Stock saved, but the dashboard could not refresh.');
+        if(context?.business?.businessId!==businessId||$('private-workspace').hidden||!$('dashboard-status').hidden||(new URLSearchParams(win.location.search).get('businessId')&&new URLSearchParams(win.location.search).get('businessId')!==businessId))throw Error('Stock saved, but the dashboard could not refresh.');
         $('stock-quantity').value='';$('stock-note').value='';$('stock-feedback').textContent='Stock adjustment saved.';
       }catch(error){$('stock-feedback').textContent=error.message||'Stock adjustment failed.';}
-      finally{productMutationPending=false;$('stock-save').disabled=!$('stock-product').options.length;}
+      finally{mutationBusy(false);$('stock-save').disabled=!$('stock-product').options.length;}
     });
     $('product-cancel').addEventListener('click',clearProductForm);
     $('retry').addEventListener('click',()=>clerk?load():start());
@@ -334,7 +346,7 @@
     $('business-select').addEventListener('change',()=>{clearProductForm();clearVariantForm();$('product-feedback').textContent='';$('variant-feedback').textContent='';const id=$('business-select').value;if(!context?.businesses.some(b=>b.businessId===id))return;const url=new URL(win.location.href);url.searchParams.set('businessId',id);win.history.pushState({},'',url);load();});
     doc.querySelector('nav').addEventListener('click',event=>{
       const link=event.target.closest('a[data-section]');if(!link||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
-      event.preventDefault();win.history.pushState({},'',link.getAttribute('href'));load();$('main').focus();
+      event.preventDefault();if(productMutationPending)return;win.history.pushState({},'',link.getAttribute('href'));load();$('main').focus();
     });
     win.addEventListener('popstate',load);
     win.addEventListener('pageshow',event=>{if(event.persisted)load();});
