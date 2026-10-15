@@ -189,15 +189,16 @@
     $('product-form').addEventListener('submit',event=>{
       event.preventDefault();
       const productId=$('product-id').value||('product-'+win.crypto.randomUUID());
+      $('product-id').value=productId; // Retry the same record if the network response is lost.
       mutateProduct('save-product',{productId,name:$('product-name').value,description:$('product-description').value,
         priceMode:$('product-price-mode').value,price:$('product-price').value});
     });
     $('product-cancel').addEventListener('click',clearProductForm);
     $('retry').addEventListener('click',()=>clerk?load():start());
-    $('choose-business').addEventListener('click',()=>{const url=new URL(win.location.href);url.searchParams.delete('businessId');win.history.pushState({},'',url);load();});
+    $('choose-business').addEventListener('click',()=>{clearProductForm();$('product-feedback').textContent='';const url=new URL(win.location.href);url.searchParams.delete('businessId');win.history.pushState({},'',url);load();});
     $('sign-in').addEventListener('click',async()=>{try{await clerk?.openSignIn({forceRedirectUrl:'/selling-vendor',fallbackRedirectUrl:'/selling-vendor',signUpForceRedirectUrl:'/selling-vendor',signUpFallbackRedirectUrl:'/selling-vendor'});}catch{status('error','Sign-in is temporarily unavailable','Please try again.');}});
     $('sign-out').addEventListener('click',async()=>{++sequence;controller?.abort();status('loading','Signing out','Closing your private workspace…');try{await clerk.signOut();await load();}catch{status('error','Sign-out could not finish','Please retry or sign out through your account.');}});
-    $('business-select').addEventListener('change',()=>{const id=$('business-select').value;if(!context?.businesses.some(b=>b.businessId===id))return;const url=new URL(win.location.href);url.searchParams.set('businessId',id);win.history.pushState({},'',url);load();});
+    $('business-select').addEventListener('change',()=>{clearProductForm();$('product-feedback').textContent='';const id=$('business-select').value;if(!context?.businesses.some(b=>b.businessId===id))return;const url=new URL(win.location.href);url.searchParams.set('businessId',id);win.history.pushState({},'',url);load();});
     doc.querySelector('nav').addEventListener('click',event=>{
       const link=event.target.closest('a[data-section]');if(!link||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
       event.preventDefault();win.history.pushState({},'',link.getAttribute('href'));load();$('main').focus();
