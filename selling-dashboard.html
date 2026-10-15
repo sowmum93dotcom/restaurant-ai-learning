@@ -40,6 +40,21 @@
           </form>
           <p id="product-feedback" role="status" aria-live="polite"></p>
         </div><div id="catalogue-list" hidden aria-live="polite"></div>
+        <div id="variant-tools" hidden>
+          <form id="variant-form">
+            <h3 id="variant-form-title">Add variant</h3>
+            <input id="variant-id" type="hidden">
+            <label>Product<select id="variant-product" required></select></label>
+            <label>Variant name<input id="variant-name" maxlength="160" required></label>
+            <label>SKU<input id="variant-sku" maxlength="120"></label>
+            <label>Price override<input id="variant-price" maxlength="100"></label>
+            <label>Availability<select id="variant-availability"><option value="contact">Ask about availability</option><option value="available">Available</option><option value="unavailable">Unavailable</option></select></label>
+            <button id="variant-save" type="submit">Save variant</button>
+            <button id="variant-cancel" type="button">Clear form</button>
+          </form>
+          <p id="variant-feedback" role="status" aria-live="polite"></p>
+          <div id="variant-list"></div>
+        </div>
         <div id="stock-tools" hidden>
           <form id="stock-form">
             <h3>Adjust product stock</h3>
