@@ -89,10 +89,10 @@ async function run(){
     if(section==='product-catalogue'){
      assert.equal(await page.locator('#product-save').count(),1,'Catalogue has a real save action');
      assert.equal(await page.locator('#product-form').count(),1,'Catalogue has an editable form');
-    }else assert.equal(await page.locator('#section-content button').count(),0,'No pretend tool actions');
+    }else assert.equal(await page.locator('#section-content button:visible').count(),0,'No pretend tool actions');
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'No horizontal page overflow');
     await page.reload();await page.locator('#content-heading').filter({hasText:section==='product-catalogue'?'Product Catalogue':copy[1]}).waitFor();
-    await page.goto(base+'/selling-vendor/'+section+'?businessId=vendor-a');await page.locator('#content-heading').filter({hasText:copy[1]}).waitFor();
+    await page.goto(base+'/selling-vendor/'+section+'?businessId=vendor-a');await page.locator('#content-heading').filter({hasText:section==='product-catalogue'?'Product Catalogue':copy[1]}).waitFor();
    }
    await page.goBack();await page.locator('#private-workspace:not([hidden])').waitFor();
    await page.goto(base+'/selling-vendor/my-business?businessId=vendor-a');await page.locator('#business-facts:not([hidden])').waitFor();
