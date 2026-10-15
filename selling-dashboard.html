@@ -26,7 +26,19 @@
       <section id="dashboard-status" class="card" role="status" aria-live="polite" aria-busy="true"><h2 id="status-heading">Opening your workspace</h2><p id="status-message">Checking your session and business access…</p><button id="retry" hidden>Try again</button><button id="choose-business" hidden>Choose an authorized business</button><a id="registration" href="/marketing.html#business-profile" hidden>Business registration and approval</a></section>
       <div id="private-workspace" hidden>
         <section class="business-bar" aria-label="Current business"><div><p class="eyebrow">Current business</p><h2 id="business-name"></h2><p id="business-details"></p></div><span id="environment-label" class="badge"></span><label>Switch business<select id="business-select"></select></label></section>
-        <section class="card" id="section-content" aria-labelledby="content-heading"><h2 id="content-heading"></h2><p id="content-message"></p><dl id="business-facts" hidden></dl><div id="catalogue-list" hidden aria-live="polite"></div></section>
+        <section class="card" id="section-content" aria-labelledby="content-heading"><h2 id="content-heading"></h2><p id="content-message"></p><dl id="business-facts" hidden></dl><div id="catalogue-tools" hidden>
+          <form id="product-form">
+            <h3 id="product-form-title">Add product</h3>
+            <input id="product-id" type="hidden">
+            <label>Product name<input id="product-name" required maxlength="200"></label>
+            <label>Description<textarea id="product-description" required maxlength="1200"></textarea></label>
+            <label>Price type<select id="product-price-mode"><option value="contact">Contact for price</option><option value="fixed">Fixed price</option><option value="from">From</option><option value="range">Range</option></select></label>
+            <label>Price<input id="product-price" maxlength="100"></label>
+            <button type="submit" id="product-save">Save product</button>
+            <button type="button" id="product-cancel">Clear form</button>
+          </form>
+          <p id="product-feedback" role="status" aria-live="polite"></p>
+        </div><div id="catalogue-list" hidden aria-live="polite"></div></section>
         <p class="phase-note">Your private Selling workspace · You can review your business details now. Product and order tools are being prepared.</p>
       </div>
       <noscript><p class="card">Enable JavaScript to sign in and open your private Selling dashboard.</p></noscript>
