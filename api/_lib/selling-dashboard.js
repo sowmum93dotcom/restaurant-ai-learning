@@ -55,7 +55,7 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
       const store = repository();
       // SQL ownership relationship is authoritative, never a role/header/URL claim.
       const owned = await store.getOwnedBusinessProfiles(identity.trustedIdentityId);
-      const businesses = owned.map(profile=>businessSummary(profile,env,identity.trustedIdentityId)).filter(Boolean);
+      const businesses = owned.map(profile=>businessSummary(profile,env,identity.trustedIdentityId)).filter(Boolean).map(({products,...summary})=>summary);
       if (selected && !businesses.some(b=>b.businessId===selected)) return res.status(403).json({error:'Selling access is unavailable for this business.'});
       const businessId = selected || (businesses.length === 1 ? businesses[0].businessId : null);
       let business = null;
