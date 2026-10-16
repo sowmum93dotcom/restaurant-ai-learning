@@ -112,7 +112,9 @@ async function run(){
    await context.addCookies([{name:'gate-owner',value:'owner-a',url:base}]);
    await context.route('https://clerk.test/npm/@clerk/ui@1/dist/ui.browser.js',r=>r.fulfill({contentType:'text/javascript',body:'window.__internal_ClerkUICtor={};'}));
    await context.route('https://clerk.test/npm/@clerk/clerk-js@6/dist/clerk.browser.js',r=>r.fulfill({contentType:'text/javascript',body:`window.Clerk={user:{id:document.cookie.match(/gate-owner=(owner-[a-z]+)/)?.[1]||'owner-a'},session:{id:'session-a',async getToken(){return 'verified-token';}},async load(options){window.loadedAuthLocale=options.localization?.locale;},__internal_updateProps(value){window.updatedAuthLocale=value.options.localization.locale;},addListener(fn){this.listener=fn;},openSignIn(options){window.signInRequest=options;},async signOut(){this.user=null;this.session=null;this.listener();}};`}));
-   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+   const page=await context.newPage(),errors=[],failedRequests=[];
+   page.on('requestfailed',request=>{const failed={url:request.url(),error:request.failure()?.errorText||''};failedRequests.push(failed);console.log('Browser request failed: '+JSON.stringify(failed));});
+   page.on('pageerror',e=>{const error={name:e.name,message:e.message,stack:e.stack||'',page:page.url()};errors.push(error);console.log('Browser page error: '+JSON.stringify(error));});
    async function submissionJourney(businessId){
     const current=()=>repository.getKnownBusiness(businessId).then(r=>r.businessProfile.products[0]);
     let product=await current();const id=product.productId;
@@ -473,7 +475,11 @@ async function run(){
    await page.reload();await page.locator('#stock-list').filter({hasText:'Quantity: '+nextQuantity}).waitFor();
    assert.doesNotMatch(await page.locator('#stock-list').innerText(),/undefined|NaN/,'Reservation audit entries render real quantities');
 
-   assert.deepEqual(errors,[]);await context.close();
+   // WebKit reports some cancelled navigation fetches as synthetic pageerror
+   // events. Exempt only the same-origin auth-copy read with a matching, explicitly
+   // cancelled network request; real CORS failures and JS exceptions still fail.
+   const unexpected=errors.filter(error=>!(engine===webkit&&error.name==='Fetch API cannot load http'&&error.message.includes('/js/customer-auth-locales/')&&failedRequests.some(request=>request.url.startsWith(base+'/js/customer-auth-locales/')&&error.message.includes(request.url.replace('http:/',''))&&/cancelled|canceled|abort/i.test(request.error))));
+   assert.deepEqual(unexpected,[]);await context.close();
    console.log('Selling dashboard SQL + rendered gate passed at '+viewport.width+'px');
   }
  }finally{await browser?.close();await new Promise(r=>server.close(r));await new Promise(r=>uploadServer.close(r));await client.close();await require('node:fs/promises').rm(disk.root,{recursive:true,force:true});}
