@@ -312,6 +312,7 @@ async function run(){
       await page.locator('#private-workspace:visible').waitFor();
       assert.equal(await page.locator('#section-heading').innerText(),copy.translate(locale.code,title[0]));
       assert.equal(await page.locator('.selling-footer a[href="/privacy.html"]').innerText(),copy.translate(locale.code,'Privacy'));
+      assert.equal(await page.locator('.selling-footer p').evaluate(node=>getComputedStyle(node).direction),'ltr','Official statement retains its reading order in RTL locales');
       assert.equal(await page.locator('footer').count(),1);
       assert.equal(await page.locator('a[href*="marketing"]').count(),0,'Selling navigation never enters Marketing');
      }
