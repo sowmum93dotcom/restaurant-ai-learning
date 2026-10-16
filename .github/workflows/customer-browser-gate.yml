@@ -80,3 +80,28 @@ jobs:
             /tmp/demeos-owner-layout-*.json
             /tmp/demeos-admin-*.png
             /tmp/demeos-approval-*.png
+
+  selling-webkit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      DEMEOS_BROWSER_ENGINE: webkit
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install Selling test dependencies
+        run: npm install --no-save playwright@1.55.0
+      - name: Install WebKit and system libraries
+        run: npx playwright install --with-deps webkit
+      - name: Verify Selling SQL, uploads, identity and workspaces in WebKit
+        run: node browser-checks/selling-dashboard-gate.js
+      - name: Preserve rendered Selling WebKit review images
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: selling-webkit-review
+          path: /tmp/demeos-selling-*.png

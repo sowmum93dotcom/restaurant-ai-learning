@@ -1,7 +1,7 @@
 'use strict';
 // Exercises the shipped dashboard and API against real isolated SQL. The only
 // adapters are the identity provider and test server; there is no test UI/API.
-const {chromium}=require('playwright'),{PGlite}=require('@electric-sql/pglite');
+const {chromium,webkit}=require('playwright'),{PGlite}=require('@electric-sql/pglite');
 const assert=require('node:assert/strict'),http=require('node:http'),fs=require('node:fs'),path=require('node:path');
 const {createDatabase}=require('../api/_lib/database'),{createPersistenceRepository}=require('../api/_lib/persistence');
 const {createHandler}=require('../api/_lib/selling-dashboard');
@@ -87,7 +87,8 @@ async function run(){
  const base='http://127.0.0.1:'+server.address().port;
  let browser;
  try{
-  browser=await chromium.launch({headless:true,...(process.env.DEMEOS_BROWSER_EXECUTABLE_PATH?{executablePath:process.env.DEMEOS_BROWSER_EXECUTABLE_PATH}:{}),...(process.env.DEMEOS_BROWSER_CHANNEL?{channel:process.env.DEMEOS_BROWSER_CHANNEL}:{})});
+  const engine=process.env.DEMEOS_BROWSER_ENGINE==='webkit'?webkit:chromium;
+  browser=await engine.launch({headless:true,...(process.env.DEMEOS_BROWSER_EXECUTABLE_PATH?{executablePath:process.env.DEMEOS_BROWSER_EXECUTABLE_PATH}:{}),...(engine===chromium&&process.env.DEMEOS_BROWSER_CHANNEL?{channel:process.env.DEMEOS_BROWSER_CHANNEL}:{})});
   for(const viewport of [{width:375,height:812},{width:390,height:844},{width:430,height:932},{width:761,height:1000},{width:820,height:1180},{width:1024,height:1366},{width:1280,height:1000},{width:1440,height:1000}]){
    const context=await browser.newContext({viewport});
    await context.route('https://storage.gate/**',async route=>{const request=route.request();if(request.method()==='OPTIONS')return route.fulfill({status:204,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,PUT,OPTIONS','Access-Control-Allow-Headers':'content-type,x-content-type,x-vercel-blob-access'}});const response=await disk.fetchImpl(request.url(),{method:request.method(),headers:{'Content-Type':request.headers()['content-type'],'x-content-type':request.headers()['x-content-type'],'x-vercel-blob-access':request.headers()['x-vercel-blob-access']},body:request.method()==='PUT'?request.postDataBuffer():undefined});await route.fulfill({status:response.status,contentType:response.headers.get('content-type')||'application/octet-stream',headers:{'Access-Control-Allow-Origin':'*'},body:Buffer.from(await response.arrayBuffer())});});context.setDefaultTimeout(10000);
