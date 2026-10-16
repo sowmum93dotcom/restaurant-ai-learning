@@ -59,10 +59,12 @@ restaurant-ai-learning/
 └── README.md
 ```
 
-## AI Local Search Engine — Pipeline Demo
+## Verra — AI Local Search Engine Pipeline Demo
 
-Beyond the homepage, there are three linked pages that demonstrate the
-bigger idea we're exploring: a search engine covering two categories
+**Verra** is the name for the AI local search engine product we're
+exploring (the three pages below). Beyond the homepage, there are three
+linked pages that demonstrate the bigger idea: a search engine covering
+two categories
 (**restaurants** and **retail shops**) where a customer describes what
 they want and gets back ranked, location-aware, verified results.
 

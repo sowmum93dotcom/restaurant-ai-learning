@@ -18,6 +18,14 @@ body {
   padding: 2.5rem 1.5rem;
 }
 
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.75rem;
+  color: #f1d9b0;
+  margin-bottom: 0.5rem;
+}
+
 .hero h1 {
   font-size: 2rem;
   margin-bottom: 0.75rem;
