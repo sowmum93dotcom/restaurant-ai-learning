@@ -256,8 +256,10 @@ inspection remains mandatory and rejects mismatches.
 Video is **not completed**. The deployed Sharp driver has no inspectVideo or
 transcodeVideo implementation. The existing HTTP processor contract needs an
 approved HTTPS service (`DEMEOS_MEDIA_PROCESSING_URL`, server-only
-`DEMEOS_MEDIA_PROCESSING_TOKEN`, provider `http`) supporting `/inspect/video` and
-`/transcode/video`, plus image endpoints if replacing Sharp. It receives scoped,
+`DEMEOS_MEDIA_PROCESSING_TOKEN`) supporting `/inspect/video` and
+`/transcode/video`. Keep provider `sharp` to preserve the working image decoder;
+the configured HTTP service now supplies only the video methods. Provider `http`
+still requires the image endpoints too. It receives scoped,
 expiring private source and output URLs, must inspect actual bytes, enforce
 250 MB/60 seconds and persist verified MP4 outputs. No service, paid subscription
 or credentials were provisioned. Any processor deployment must be load-tested
@@ -278,3 +280,41 @@ corresponding Turkish authentication subset from the same official
 combined-flow headings are completed in Turkish; unavailable upstream errors use
 a neutral Turkish authentication error. Selected copy is passed to the existing
 Clerk instance and sign-in modal, without a new sign-in page or provider.
+
+
+## Business logo and workspace continuation
+
+The saved business identity, permitted contact facts and catalogue still come
+from the authoritative owned business profile. The business bar now displays
+its private saved logo. My Business uploads, replaces and removes a real logo
+through the existing media asset/session/private Blob/Sharp/SQL lifecycle, with
+purpose `brand` and brand reference `primary-brand`. The profile stores only
+`logoAssetId`; expiring delivery URLs are resolved afresh. No new database,
+identity system, registration record or dashboard is introduced.
+
+The current logo remains visible until replacement bytes have been inspected,
+optimized and saved. Completion and resume recheck ownership; stale removal
+cannot clear a newer logo. Removed/replaced assets are archived under the same
+retention semantics as product media. This is not physical object erasure.
+Verified unfinished logo processing can resume from My Business after refresh.
+Product media remains separately linked to its exact product.
+
+Catalogue cards display their saved main image. Overview links to the real
+catalogue, media, stock and business workspaces while retaining business
+selection. Empty variant and stock tools link to the catalogue. Private Orders
+continues to show actual existing reservation records; vendor fulfillment and
+payments remain dependencies of the separate purchasing workflow.
+
+The logo controls and feedback use all ten existing Selling locales. Local
+SQL/binary tests include upload, replacement, removal, signed-out/cross-owner
+rejection, stale revisions, and isolated Preview authorization. The rendered
+Selling gate exercises logo decode after reload in eight viewport sizes, in
+addition to the existing seven-workspace, image, catalogue, variant, stock,
+order, language and permission checks. These fixtures are not a claim of live
+Preview acceptance.
+
+Infrastructure inspection for this continuation confirmed the PR branch uses
+`DEMEOS_MEDIA_PROCESSING_PROVIDER=sharp`; no video processor URL/token is
+configured at branch or project level. Operational video therefore requires an
+approved HTTPS processor and its server credential, followed by real Preview
+upload/playback and timeout/load checks. No Production setting is changed.

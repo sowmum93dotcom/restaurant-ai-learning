@@ -25,6 +25,20 @@ async function verifyBusinessLayout(page,viewport){
  }else if(viewport.width>=1440) assert.ok(boxes.label.x>boxes.group.x,'Wide desktop retains the side-by-side business selector');
  assert.ok(boxes.title.height<=boxes.fontSize*3.5,'Business name stays readable at intermediate desktop widths too');
 }
+async function verifyLogo(page,repository,businessId){
+ const bytes=await require('sharp')({create:{width:40,height:28,channels:3,background:'#b89b55'}}).png().toBuffer();
+ for(const name of ['logo.png','replacement.png']){
+  await page.locator('#logo-file').setInputFiles({name,mimeType:'image/png',buffer:bytes});
+  await page.locator('#logo-upload').click();await page.locator('#logo-feedback').filter({hasText:'Business logo saved.'}).waitFor();
+  const id=(await repository.getKnownBusiness(businessId)).businessProfile.logoAssetId;assert.ok(id);
+  assert.equal((await repository.getBusinessMediaAsset(businessId,id)).purpose,'brand');
+  await page.reload();await page.locator('#business-logo:visible').waitFor();
+  assert.ok(await page.locator('#business-logo').evaluate(image=>image.complete&&image.naturalWidth>0),'Saved logo decodes after refresh');
+  if(name==='replacement.png')await page.screenshot({path:path.join(artifacts,'demeos-selling-logo-'+businessId+'-'+page.viewportSize().width+'.png'),fullPage:true});
+ }
+ page.once('dialog',dialog=>dialog.accept());await page.locator('#logo-remove').click();await page.locator('#logo-feedback').filter({hasText:'Business logo saved.'}).waitFor();
+ await page.reload();await page.locator('#business-form:visible').waitFor();assert.equal(await page.locator('#business-logo:visible').count(),0);assert.equal((await repository.getKnownBusiness(businessId)).businessProfile.logoAssetId,undefined);
+}
 async function run(){
  process.env.DEMEOS_MEDIA_UPLOAD_SECRET='browser-upload-secret-at-least-thirty-two-characters';
  const disk=await diskStorage({blobProtocol:true});
@@ -162,6 +176,7 @@ async function run(){
     await page.goto(base+'/selling-vendor/'+section+'?businessId=vendor-a');await page.locator('#content-heading').filter({hasText:['product-catalogue','stock-history'].includes(section)?(section==='stock-history'?'Stock & History':'Product Catalogue'):copy[1]}).waitFor();
    }
    await page.goto(base+'/selling-vendor/my-business?businessId=vendor-a');await page.locator('#business-form:visible').waitFor();
+   await verifyLogo(page,repository,'vendor-a');
    await page.locator('#business-edit-name').fill('North & Field Updated');await page.locator('#business-edit-location').fill('Greenwich, London');await page.locator('#business-edit-email').fill('seller@example.test');await page.locator('#business-edit-phone').fill('+44 20 7946 0123');await page.locator('#business-edit-website').fill('https://example.test');
    await page.locator('#business-edit-description').fill('Independent coffee shop');await page.locator('#business-accuracy').check();
    await page.locator('#business-save').click();await page.locator('#business-feedback').filter({hasText:'Business details saved.'}).waitFor();
@@ -348,6 +363,7 @@ async function run(){
    // Preview writes use the real dashboard and the explicitly isolated test business.
    if(viewport.width===375){
     await page.goto(base+'/selling-vendor/my-business');await page.locator('#business-form:visible').waitFor();
+    await verifyLogo(page,repository,'test-business-selling-a');
     await page.locator('#business-edit-email').fill('seller@example.test');await page.locator('#business-edit-phone').fill('+44 20 7946 0123');await page.locator('#business-edit-website').fill('https://example.test');
    await page.locator('#business-edit-description').fill('Isolated test business facts');await page.locator('#business-accuracy').check();await page.locator('#business-save').click();await page.locator('#business-feedback').filter({hasText:'Business details saved.'}).waitFor();
     assert.equal((await repository.getKnownBusiness('test-business-selling-a')).businessProfile.productsServices,'Isolated test business facts');assert.equal((await repository.getKnownBusiness('test-business-selling-a')).businessProfile.applicationAccess,undefined);

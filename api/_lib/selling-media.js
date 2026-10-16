@@ -29,24 +29,34 @@ async function listMedia(store,profile,backend){
   return {assetId:asset.assetId,productId:asset.relatedEntityId,kind:asset.kind,state:asset.state,previewUrl,failureReason:asset.failureReason||'',main:(profile.products||[]).find(p=>p.productId===asset.relatedEntityId)?.mediaGallery?.mainAssetId===asset.assetId,linked:(profile.products||[]).find(p=>p.productId===asset.relatedEntityId)?.mediaGallery?.assetIds?.includes(asset.assetId)||false};
  }));
 }
-async function mutateMedia({store,profile,identity,action,item,backend,env,saveProfile}){
- const product=profile.products.find(p=>p.productId===item.productId);
+async function readLogo(store,profile,backend){
+ const id=profile.logoAssetId;
+ if(!id)return null;
+ const asset=await store.getBusinessMediaAsset(profile.businessId,id);
+ if(!asset||asset.purpose!=='brand'||asset.brandReference!=='primary-brand'||asset.kind!=='image'||asset.state!=='ready')return null;
+ const prefix=`businesses/${encodeURIComponent(profile.businessId)}/media/${encodeURIComponent(id)}/processed/`;
+ if(!asset.processedStorageKey?.startsWith(prefix))return null;
+ const delivery=await backend.adapter?.createDeliveryRead({storageKey:asset.processedStorageKey,expiresAt:new Date(Date.now()+10*60*1000).toISOString()});
+ return {assetId:id,previewUrl:delivery?.deliveryUrl||null};
+}
+async function mutateMedia({store,profile,identity,action,item,backend,env,saveProfile,logo=false}){
+ const product=logo?{productId:profile.businessId}:profile.products.find(p=>p.productId===item.productId);
  if(!product)return {status:404,error:'Product not found.'};
  if(action==='register-media'){
   const kind=item.kind,contentType=item.contentType,sizeBytes=item.sizeBytes;
-  if(!['image','video'].includes(kind)||!(kind==='image'?contract.IMAGE_CONTENT_TYPES:contract.VIDEO_CONTENT_TYPES).includes(contentType)||!Number.isSafeInteger(sizeBytes)||sizeBytes<1||sizeBytes>(kind==='image'?contract.MAX_IMAGE_BYTES:contract.MAX_VIDEO_BYTES))return {status:400,error:'Choose a supported image up to 15 MB or video up to 250 MB.'};
+  if(logo&&kind!=='image'||!['image','video'].includes(kind)||!(kind==='image'?contract.IMAGE_CONTENT_TYPES:contract.VIDEO_CONTENT_TYPES).includes(contentType)||!Number.isSafeInteger(sizeBytes)||sizeBytes<1||sizeBytes>(kind==='image'?contract.MAX_IMAGE_BYTES:contract.MAX_VIDEO_BYTES))return {status:400,error:'Choose a supported image up to 15 MB or video up to 250 MB.'};
   const support=capabilities(backend,env);
   if(!(kind==='image'?support.images:support.videos))return {status:503,error:support.blocker||'Media processing is not configured.'};
   const assetId=typeof item.assetId==='string'&&/^media-[a-zA-Z0-9_-]{1,100}$/.test(item.assetId)?item.assetId:'media-'+randomUUID();
   let asset=await store.getBusinessMediaAsset(profile.businessId,assetId);
-  if(asset&&(asset.relatedEntityId!==product.productId||asset.contentType!==contentType||asset.sizeBytes!==sizeBytes||asset.state!=='pending-upload'))return {status:409,error:'Upload changed. Reload the media library.'};
-  if(!asset){asset={assetId,businessId:profile.businessId,kind,contentType,sizeBytes,state:'pending-upload',purpose:product.presentation?.kind==='service'?'service':'product',relatedEntityId:product.productId,createdAt:new Date().toISOString()};asset=await store.saveBusinessMediaAsset(profile.businessId,asset);}
+  if(asset&&(asset.relatedEntityId!==product.productId||asset.contentType!==contentType||asset.sizeBytes!==sizeBytes||asset.state!=='pending-upload'||asset.purpose!==(logo?'brand':product.presentation?.kind==='service'?'service':'product')||(logo&&asset.brandReference!=='primary-brand')))return {status:409,error:'Upload changed. Reload the media library.'};
+  if(!asset){asset={assetId,businessId:profile.businessId,kind,contentType,sizeBytes,state:'pending-upload',purpose:logo?'brand':product.presentation?.kind==='service'?'service':'product',...(logo?{brandReference:'primary-brand'}:{}),relatedEntityId:product.productId,createdAt:new Date().toISOString()};asset=await store.saveBusinessMediaAsset(profile.businessId,asset);}
   const session=asset&&createMediaUploadSession(asset),upload=session&&await backend.adapter.createUpload(asset,session);
   if(!upload)return {status:503,error:'Private media upload could not be started.'};
   return {status:201,assetId:asset.assetId,uploadSession:{...upload,uploadToken:session.uploadToken}};
  }
  const asset=await store.getBusinessMediaAsset(profile.businessId,item.assetId);
- if(!asset||asset.relatedEntityId!==product.productId||!['product','service'].includes(asset.purpose))return {status:404,error:'Product media not found.'};
+ if(!asset||asset.relatedEntityId!==product.productId||!(logo?asset.purpose==='brand'&&asset.brandReference==='primary-brand'&&asset.kind==='image':['product','service'].includes(asset.purpose)))return {status:404,error:'Product media not found.'};
  if(action==='set-main-media'&&(asset.state!=='ready'||asset.kind!=='image'||!product.mediaGallery?.assetIds?.includes(asset.assetId)))return {status:400,error:'Choose a ready image linked to this product.'};
  if(action==='complete-media'||action==='resume-media'){
   if(action==='resume-media'&&!['processing','ready'].includes(asset.state))return {status:409,error:'Only a previously verified upload can resume processing.'};
@@ -60,7 +70,7 @@ async function mutateMedia({store,profile,identity,action,item,backend,env,saveP
   const current=await store.getBusinessMediaAsset(profile.businessId,asset.assetId);
   if(current?.state!=='ready')return {status:202,state:current?.state||'processing',message:'File stored. Processing has not completed; reload to check its status.'};
  }
- if(action==='remove-media'){
+ if(action==='remove-media'&&!logo){
   if(asset.state!=='archived'){
    const archived=transitionMediaAsset(asset,profile.businessId,'archived');
    if(!archived||!await store.saveBusinessMediaAsset(profile.businessId,archived))return {status:409,error:'Media could not be removed.'};
@@ -68,6 +78,22 @@ async function mutateMedia({store,profile,identity,action,item,backend,env,saveP
  }
  const refreshed=await store.getKnownBusiness(profile.businessId),current=refreshed?.businessProfile;
  if(!current||!await store.isBusinessOwnedByIdentity(identity,profile.businessId))return {status:403,error:'Business access changed.'};
+ if(logo){
+  if(action==='remove-media'&&current.logoAssetId!==asset.assetId)return {status:409,error:'Business logo changed. Reload before removing it.'};
+  const next={...current};
+  if(action==='remove-media')delete next.logoAssetId;else next.logoAssetId=asset.assetId;
+  if(!await saveProfile(current,next))return {status:409,error:'Business changed. Reload before saving the logo.'};
+  // Keep the previous logo visible until the replacement has been decoded and saved.
+  const oldId=action==='remove-media'?asset.assetId:current.logoAssetId;
+  if(oldId&&oldId!==next.logoAssetId){
+   const old=await store.getBusinessMediaAsset(profile.businessId,oldId);
+   if(old?.purpose==='brand'&&old.brandReference==='primary-brand'){
+    const archived=transitionMediaAsset(old,profile.businessId,'archived');
+    if(archived)await store.saveBusinessMediaAsset(profile.businessId,archived);
+   }
+  }
+  return {status:200,ok:true};
+ }
  const next=structuredClone(current),target=next.products.find(p=>p.productId===product.productId);
  if(!target)return {status:409,error:'Product changed while processing media.'};
  const ids=target.mediaGallery?.assetIds||[];
@@ -82,4 +108,4 @@ async function mutateMedia({store,profile,identity,action,item,backend,env,saveP
  if(!await saveProfile(current,next))return {status:409,error:'Products changed. Reload before linking media.'};
  return {status:200,ok:true};
 }
-module.exports={mediaBackend,capabilities,listMedia,mutateMedia};
+module.exports={mediaBackend,capabilities,listMedia,readLogo,mutateMedia};

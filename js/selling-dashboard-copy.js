@@ -1744,6 +1744,19 @@
  "Your private DEMEOS Selling workspace · Changes apply only to the selected authorized business. Customer publication and live purchasing require separate authorization.": "Changes apply only to the selected authorized business. Publication and purchasing require separate authorization.",
  "Unnamed variant": "Product"
 };
+ const logoCopy={
+ en:['Business logo','Remove business logo?','Business logo saved.'],
+ es:['Logotipo de la empresa','¿Eliminar el logotipo de la empresa?','Logotipo de la empresa guardado.'],
+ fr:["Logo de l’entreprise","Supprimer le logo de l’entreprise ?","Logo de l’entreprise enregistré."],
+ ar:['شعار النشاط التجاري','هل تريد إزالة شعار النشاط التجاري؟','تم حفظ شعار النشاط التجاري.'],
+ pt:['Logótipo da empresa','Remover o logótipo da empresa?','Logótipo da empresa guardado.'],
+ zh:['商家标志','移除商家标志？','商家标志已保存。'],
+ hi:['व्यवसाय का लोगो','व्यवसाय का लोगो हटाएं?','व्यवसाय का लोगो सहेजा गया।'],
+ de:['Unternehmenslogo','Unternehmenslogo entfernen?','Unternehmenslogo gespeichert.'],
+ ja:['ビジネスロゴ','ビジネスロゴを削除しますか？','ビジネスロゴを保存しました。'],
+ tr:['İşletme logosu','İşletme logosu kaldırılsın mı?','İşletme logosu kaydedildi.']
+ };
+ for(const [locale,values] of Object.entries(logoCopy))['Business logo','Remove business logo?','Business logo saved.'].forEach((key,index)=>packs[locale][key]=values[index]);
  function resolve(value){return languages.find(l=>l.code===String(value||'').toLowerCase().split('-')[0])||languages[0];}
  function translate(locale,text,values={}){const source=aliases[text]||text;let result=packs[resolve(locale).code][source]||source;for(const [key,value] of Object.entries(values))result=result.replaceAll('{'+key+'}',String(value));return result;}
  const api=Object.freeze({languages,packs,aliases,resolve,translate});

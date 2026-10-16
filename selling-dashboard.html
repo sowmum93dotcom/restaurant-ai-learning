@@ -28,7 +28,7 @@
       <p class="eyebrow">DEMEOS Selling</p><h1 id="section-heading">Overview</h1>
       <section id="dashboard-status" class="card" role="status" aria-live="polite" aria-busy="true"><h2 id="status-heading">Opening your workspace</h2><p id="status-message">Checking your session and business access…</p><button id="retry" hidden>Try again</button><button id="choose-business" hidden>Choose an authorized business</button><a id="registration" href="/selling-vendor/my-business" hidden>Review Selling business access</a></section>
       <div id="private-workspace" hidden>
-        <section class="business-bar" aria-label="Current business"><div><p class="eyebrow">Current business</p><h2 id="business-name"></h2><p id="business-details"></p></div><span id="environment-label" class="badge"></span><label>Switch business<select id="business-select"></select></label></section>
+        <section class="business-bar" aria-label="Current business"><div><p class="eyebrow">Current business</p><img id="business-logo" class="business-logo" alt="Business logo" hidden><h2 id="business-name"></h2><p id="business-details"></p></div><span id="environment-label" class="badge"></span><label>Switch business<select id="business-select"></select></label></section>
         <section class="card" id="section-content" aria-labelledby="content-heading"><h2 id="content-heading"></h2><p id="content-message"></p><dl id="business-facts" hidden></dl><div id="catalogue-tools" hidden>
           <form id="product-form">
             <h3 id="product-form-title">Add product</h3>
@@ -47,6 +47,11 @@
           <p id="product-feedback" role="status" aria-live="polite"></p>
         </div><div id="catalogue-list" hidden aria-live="polite"></div>
         <div id="business-tools" hidden>
+          <section aria-labelledby="logo-heading">
+            <h3 id="logo-heading">Business logo</h3>
+            <form id="logo-form"><label for="logo-file">File</label><input id="logo-file" class="file-input" type="file" accept="image/jpeg,image/png,image/webp" required><button id="logo-choose" type="button">Choose file</button><p id="logo-filename" aria-live="polite">No file selected.</p><button id="logo-upload" type="submit">Upload image</button><button id="logo-remove" type="button" hidden>Remove</button></form>
+            <p id="logo-feedback" role="status" aria-live="polite"></p><div id="logo-pending"></div>
+          </section>
           <form id="business-form">
             <h3>Edit permitted business details</h3>
             <label>Business display name<input id="business-edit-name" required maxlength="200"></label>
@@ -62,7 +67,7 @@
           <p>Business identity, registration and approval decisions remain controlled by DEMEOS.</p>
           <a href="/selling-vendor/my-business">Review Selling business details</a>
         </div>
-        <dl id="overview-facts" hidden></dl>
+        <dl id="overview-facts" hidden></dl><div id="overview-tools" hidden class="workspace-actions"><a href="/selling-vendor/product-catalogue" data-workspace-link>Product Catalogue</a><a href="/selling-vendor/images-videos" data-workspace-link>Images &amp; Videos</a><a href="/selling-vendor/stock-history" data-workspace-link>Stock &amp; History</a><a href="/selling-vendor/my-business" data-workspace-link>My Business</a></div>
         <div id="orders-tools" hidden><p>These are the latest 50 private order records. Vendor status changes are not supported by the existing reservation workflow. Live ordering and payments are not enabled.</p><div id="orders-list"></div></div>
         <div id="media-tools" hidden>
           <p id="media-configuration" role="status"></p>

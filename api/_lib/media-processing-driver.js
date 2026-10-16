@@ -25,7 +25,13 @@ function createHttpMediaProcessingDrivers({baseUrl,token,fetchImpl=globalThis.fe
 }
 function getConfiguredMediaProcessingDrivers(env=process.env,fetchImpl=globalThis.fetch){
  const provider=clean(env.DEMEOS_MEDIA_PROCESSING_PROVIDER)||"http";
- if(provider==='sharp')return require('./media-sharp-driver').createSharpMediaDrivers({fetchImpl,storage:require('./media-storage-driver').getConfiguredMediaStorageAdapter(env,fetchImpl)});
+ if(provider==='sharp'){
+  const images=require('./media-sharp-driver').createSharpMediaDrivers({fetchImpl,storage:require('./media-storage-driver').getConfiguredMediaStorageAdapter(env,fetchImpl)});
+  // Keep the confirmed image pipeline. Delegate only video when an approved
+  // processor has explicitly been configured in this deployment environment.
+  const video=createHttpMediaProcessingDrivers({baseUrl:env.DEMEOS_MEDIA_PROCESSING_URL,token:env.DEMEOS_MEDIA_PROCESSING_TOKEN,fetchImpl});
+  return {...images,...(video?{inspectVideo:video.inspectVideo,transcodeVideo:video.transcodeVideo}:{})};
+ }
  if(provider!=="http")return null;
  return createHttpMediaProcessingDrivers({baseUrl:env.DEMEOS_MEDIA_PROCESSING_URL,token:env.DEMEOS_MEDIA_PROCESSING_TOKEN,fetchImpl});
 }
