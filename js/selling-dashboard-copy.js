@@ -166,7 +166,9 @@
   "Reserved stock prevents this change.": "Reserved stock prevents this change.",
   "Media processing failed. Remove this file and upload a valid replacement.": "Media processing failed. Remove this file and upload a valid replacement.",
   "Choose file": "Choose file",
-  "No file selected.": "No file selected."
+  "No file selected.": "No file selected.",
+  "One business workspace.": "One business workspace.",
+  "Test access authorized": "Test access authorized"
  },
  "es": {
   "Overview": "Resumen",
@@ -331,7 +333,9 @@
   "Reserved stock prevents this change.": "Las existencias reservadas impiden este cambio.",
   "Media processing failed. Remove this file and upload a valid replacement.": "Falló el procesamiento. Quita el archivo y sube uno válido.",
   "Choose file": "Elegir archivo",
-  "No file selected.": "Ningún archivo seleccionado."
+  "No file selected.": "Ningún archivo seleccionado.",
+  "One business workspace.": "Un espacio de trabajo empresarial.",
+  "Test access authorized": "Acceso de prueba autorizado"
  },
  "fr": {
   "Overview": "Vue d’ensemble",
@@ -496,7 +500,9 @@
   "Reserved stock prevents this change.": "Le stock réservé empêche ce changement.",
   "Media processing failed. Remove this file and upload a valid replacement.": "Traitement échoué. Retirez ce fichier et importez un fichier valide.",
   "Choose file": "Choisir un fichier",
-  "No file selected.": "Aucun fichier sélectionné."
+  "No file selected.": "Aucun fichier sélectionné.",
+  "One business workspace.": "Un espace de travail professionnel.",
+  "Test access authorized": "Accès de test autorisé"
  },
  "ar": {
   "Overview": "نظرة عامة",
@@ -661,7 +667,9 @@
   "Reserved stock prevents this change.": "المخزون المحجوز يمنع هذا التغيير.",
   "Media processing failed. Remove this file and upload a valid replacement.": "فشلت المعالجة. أزل الملف وارفع بديلاً صالحاً.",
   "Choose file": "اختر ملفاً",
-  "No file selected.": "لم يتم اختيار ملف."
+  "No file selected.": "لم يتم اختيار ملف.",
+  "One business workspace.": "مساحة عمل واحدة للنشاط.",
+  "Test access authorized": "وصول تجريبي مخوّل"
  },
  "pt": {
   "Overview": "Visão geral",
@@ -826,7 +834,9 @@
   "Reserved stock prevents this change.": "O estoque reservado impede esta alteração.",
   "Media processing failed. Remove this file and upload a valid replacement.": "Falha no processamento. Remova o arquivo e envie outro válido.",
   "Choose file": "Escolher arquivo",
-  "No file selected.": "Nenhum arquivo selecionado."
+  "No file selected.": "Nenhum arquivo selecionado.",
+  "One business workspace.": "Um espaço de trabalho empresarial.",
+  "Test access authorized": "Acesso de teste autorizado"
  },
  "zh": {
   "Overview": "概览",
@@ -991,7 +1001,9 @@
   "Reserved stock prevents this change.": "预留库存阻止此更改。",
   "Media processing failed. Remove this file and upload a valid replacement.": "媒体处理失败，请移除此文件并上传有效文件。",
   "Choose file": "选择文件",
-  "No file selected.": "未选择文件。"
+  "No file selected.": "未选择文件。",
+  "One business workspace.": "一个商家工作区。",
+  "Test access authorized": "测试权限已授权"
  },
  "hi": {
   "Overview": "अवलोकन",
@@ -1156,7 +1168,9 @@
   "Reserved stock prevents this change.": "आरक्षित स्टॉक के कारण यह बदलाव नहीं हो सकता।",
   "Media processing failed. Remove this file and upload a valid replacement.": "मीडिया प्रसंस्करण विफल हुआ। फ़ाइल हटाकर मान्य फ़ाइल अपलोड करें।",
   "Choose file": "फ़ाइल चुनें",
-  "No file selected.": "कोई फ़ाइल नहीं चुनी गई।"
+  "No file selected.": "कोई फ़ाइल नहीं चुनी गई।",
+  "One business workspace.": "एक व्यवसाय कार्यक्षेत्र।",
+  "Test access authorized": "परीक्षण पहुँच अधिकृत"
  },
  "de": {
   "Overview": "Übersicht",
@@ -1321,7 +1335,9 @@
   "Reserved stock prevents this change.": "Reservierter Bestand verhindert diese Änderung.",
   "Media processing failed. Remove this file and upload a valid replacement.": "Medienverarbeitung fehlgeschlagen. Datei entfernen und gültigen Ersatz hochladen.",
   "Choose file": "Datei auswählen",
-  "No file selected.": "Keine Datei ausgewählt."
+  "No file selected.": "Keine Datei ausgewählt.",
+  "One business workspace.": "Ein Arbeitsbereich für Ihr Unternehmen.",
+  "Test access authorized": "Testzugang autorisiert"
  },
  "ja": {
   "Overview": "概要",
@@ -1486,7 +1502,9 @@
   "Reserved stock prevents this change.": "予約在庫があるため変更できません。",
   "Media processing failed. Remove this file and upload a valid replacement.": "メディア処理に失敗しました。削除して有効なファイルを再アップロードしてください。",
   "Choose file": "ファイルを選択",
-  "No file selected.": "ファイルが選択されていません。"
+  "No file selected.": "ファイルが選択されていません。",
+  "One business workspace.": "ひとつの事業者ワークスペース。",
+  "Test access authorized": "テスト権限許可済み"
  },
  "tr": {
   "Overview": "Genel Bakış",
@@ -1651,7 +1669,9 @@
   "Reserved stock prevents this change.": "Ayrılmış stok bu değişikliği engelliyor.",
   "Media processing failed. Remove this file and upload a valid replacement.": "Medya işlenemedi. Dosyayı kaldırıp geçerli bir dosya yükleyin.",
   "Choose file": "Dosya seç",
-  "No file selected.": "Dosya seçilmedi."
+  "No file selected.": "Dosya seçilmedi.",
+  "One business workspace.": "Tek işletme çalışma alanı.",
+  "Test access authorized": "Test erişimi yetkili"
  }
 };
  const aliases={
@@ -1668,7 +1688,6 @@
  "Stock tools are not available yet": "Stock & History",
  "Stock adjustments and their audit history will appear here in a later phase. No stock changes can be made here yet.": "Set stock quantities and review the latest 30 ledger events. Earlier audit history remains stored.",
  "Your private orders": "Private Orders",
- "One business workspace.": "Private to your account.",
  "Dashboard language": "Language",
  "DEMEOS Selling Vendor home": "Selling Vendor",
  "Selling dashboard": "Selling Vendor",
@@ -1680,7 +1699,6 @@
  "Business display name": "Business name",
  "Business description": "Description",
  "Review Selling business access": "Review Selling business details",
- "Test access authorized": "Approved",
  "This account has no business with Selling access in this environment. Contact the business administrator to confirm access.": "Contact the business administrator to confirm access.",
  "This business is not authorized for your account in this environment. Choose an authorized business, or contact the business administrator.": "Contact the business administrator to confirm access.",
  "Use your existing DEMEOS business account. Access is checked against your saved business ownership and server-authorized Selling access.": "Use your existing DEMEOS business account.",

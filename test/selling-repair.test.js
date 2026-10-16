@@ -9,6 +9,7 @@ test('Selling has the nine established locales plus Turkish, complete copy and p
  assert.deepEqual(copy.languages.map(l=>l.code),[...shared.languages.map(l=>l.code),'tr']);
  for(const locale of copy.languages){
   assert.deepEqual(Object.keys(copy.packs[locale.code]),Object.keys(copy.packs.en));
+  assert.notEqual(copy.translate(locale.code,'Test access authorized'),copy.translate(locale.code,'Approved'),'A Preview grant must never be labelled real approval');
   for(const [key,value] of Object.entries(copy.packs[locale.code])){
    assert.ok(value.trim(),locale.code+': '+key);
    assert.deepEqual(value.match(/\{\w+\}/g)||[],key.match(/\{\w+\}/g)||[]);
