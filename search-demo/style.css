@@ -1,0 +1,195 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Segoe UI", Arial, sans-serif;
+  line-height: 1.6;
+  color: #222;
+  background-color: #f7f5f2;
+}
+
+.hero {
+  background-color: #7a2e2e;
+  color: #fff;
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+}
+
+.hero h1 {
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.subtitle {
+  max-width: 640px;
+  margin: 0 auto;
+  color: #f1d9b0;
+}
+
+.back-link {
+  margin-top: 1rem;
+}
+
+.back-link a {
+  color: #fff;
+  text-decoration: underline;
+}
+
+main {
+  max-width: 720px;
+  margin: 2rem auto;
+  padding: 0 1.5rem;
+}
+
+.search-panel,
+.parsed-panel,
+.results-panel {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 1.75rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-bottom: 1.5rem;
+}
+
+.search-panel label {
+  display: block;
+  font-weight: bold;
+  margin-top: 1rem;
+  margin-bottom: 0.3rem;
+}
+
+.search-panel label:first-of-type {
+  margin-top: 0;
+}
+
+#query-input,
+#location-select {
+  width: 100%;
+  padding: 0.65rem;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-family: inherit;
+}
+
+.filters {
+  margin-top: 1rem;
+}
+
+.filters label {
+  font-weight: normal;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+#search-btn {
+  display: block;
+  margin-top: 1.25rem;
+  padding: 0.75rem 1.5rem;
+  background-color: #7a2e2e;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+  width: 100%;
+}
+
+#search-btn:hover {
+  background-color: #5e2222;
+}
+
+.parsed-panel h2,
+.results-panel h2 {
+  color: #7a2e2e;
+  font-size: 1.1rem;
+  margin-bottom: 0.75rem;
+}
+
+.chip {
+  display: inline-block;
+  background-color: #f1d9b0;
+  color: #5e2222;
+  border-radius: 999px;
+  padding: 0.15rem 0.7rem;
+  font-size: 0.85rem;
+  margin: 0.1rem;
+}
+
+.result-card {
+  border: 1px solid #eee;
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.result-header h3 {
+  color: #222;
+}
+
+.badge {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.badge.verified {
+  background-color: #dff0d8;
+  color: #3c763d;
+}
+
+.badge.unverified {
+  background-color: #f2f2f2;
+  color: #777;
+}
+
+.result-meta {
+  color: #555;
+  font-size: 0.9rem;
+  margin-top: 0.25rem;
+}
+
+.result-highlight {
+  margin-top: 0.5rem;
+}
+
+.result-reasons {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: #7a2e2e;
+}
+
+.no-results {
+  color: #777;
+}
+
+footer {
+  text-align: center;
+  padding: 1.5rem;
+  color: #777;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 480px) {
+  .hero h1 {
+    font-size: 1.5rem;
+  }
+
+  .search-panel,
+  .parsed-panel,
+  .results-panel {
+    padding: 1.25rem;
+  }
+}

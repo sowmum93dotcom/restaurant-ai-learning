@@ -37,13 +37,47 @@ for anyone learning web development.
 
 ```
 restaurant-ai-learning/
-├── index.html       # Page content and structure
+├── index.html         # Homepage content and structure
 ├── css/
-│   └── style.css     # Styling and responsive layout
+│   └── style.css       # Homepage styling and responsive layout
 ├── js/
-│   └── script.js      # Button logic (builds a sample campaign)
+│   └── script.js        # Homepage button logic (builds a sample campaign)
+├── search-demo/
+│   ├── index.html       # AI search engine pipeline demo page
+│   ├── style.css        # Demo styling
+│   ├── data.js          # Sample restaurant + neighborhood data
+│   └── script.js        # Demo pipeline logic (parse → rank → display)
 └── README.md
 ```
+
+## AI Restaurant Search Engine — Pipeline Demo
+
+In `search-demo/`, there's a second, separate page that demonstrates the
+bigger idea we're exploring: a search engine where a customer describes
+what they want (e.g. *"affordable vegan pizza open now"*) and gets back
+ranked, location-aware restaurant results.
+
+This demo shows the **shape of the pipeline** without needing any real
+services set up:
+
+1. **Query understanding** — your typed search is scanned for cuisine,
+   dietary needs, price preference, and whether you want somewhere open
+   right now. (A real version would use an AI model for this step instead
+   of keyword matching.)
+2. **Location** — pick a sample neighborhood from the dropdown; distance
+   to each restaurant is calculated and factored into ranking.
+3. **Ranking** — every sample restaurant gets a score based on how well it
+   matches your query, its distance, its rating, and whether it's
+   verified — then results are sorted and shown with a plain-English
+   explanation of *why* each one matched.
+
+All restaurant data here is a small hard-coded sample (`data.js`) standing
+in for data that would eventually come from a real source like
+OpenStreetMap plus owner verification. No external AI API, map service, or
+database is called — everything runs locally in the browser.
+
+Open `search-demo/index.html` the same way as the homepage (see "How to
+run it" below), or click the link at the bottom of the homepage.
 
 ## How to run it
 
@@ -76,3 +110,8 @@ Then open `http://localhost:8000` in your browser.
   instead of hard-coded values.
 - Add a database to save campaigns.
 - Add user accounts.
+- Replace the search demo's sample data with real listings (starting from
+  OpenStreetMap data for one city/category).
+- Replace the demo's keyword-matching "query understanding" step with a
+  real AI model call.
+- Add a real owner "claim this listing" verification flow.

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Restaurant Search — Demo</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header class="hero">
+    <h1>AI Restaurant Search — Pipeline Demo</h1>
+    <p class="subtitle">
+      A working mini-version of the search pipeline we discussed: query understanding
+      &rarr; ranking &rarr; results. This demo uses a small built-in sample dataset and
+      simple rule-based logic instead of a real AI API or live location data, so it
+      runs instantly with no setup — but the pipeline shape is the same one a real
+      version would use.
+    </p>
+    <p class="back-link"><a href="../index.html">&larr; Back to homepage</a></p>
+  </header>
+
+  <main>
+    <section class="search-panel">
+      <label for="query-input">What are you looking for?</label>
+      <input
+        id="query-input"
+        type="text"
+        placeholder="e.g. cheap vegan pizza open now"
+        value="affordable vegan pizza open now"
+      />
+
+      <label for="location-select">Your location (simulated)</label>
+      <select id="location-select"></select>
+
+      <div class="filters">
+        <label><input type="checkbox" id="filter-verified" /> Verified only</label>
+      </div>
+
+      <button id="search-btn" type="button">Search</button>
+    </section>
+
+    <section class="parsed-panel" id="parsed-panel" hidden>
+      <h2>Step 1 &amp; 2 — What the AI step understood from your query</h2>
+      <div id="parsed-content"></div>
+    </section>
+
+    <section class="results-panel" id="results-panel" hidden>
+      <h2>Step 3 — Ranked results</h2>
+      <div id="results-list"></div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Demo only — sample data, no external AI or mapping services called.</p>
+  </footer>
+
+  <script src="data.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
