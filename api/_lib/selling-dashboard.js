@@ -93,7 +93,8 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
             // ownership, model, registration and administrative grants stay authoritative.
             next.customerContinuation={...original.customerContinuation,email,phone,website};
           }
-          if(!require('../businesses/[businessId].js').validateProfile({body:{businessProfile:next},query:{businessId}}))return res.status(400).json({error:'Complete your existing registration profile before changing these details.'});
+          // Profile edits must not reject an unchanged, intentionally incomplete catalogue draft.
+          if(!require('../businesses/[businessId].js').validateProfile({body:{businessProfile:{...next,products:[]}},query:{businessId}}))return res.status(400).json({error:'Complete your existing registration profile before changing these details.'});
           next.informationStatus={...original.informationStatus,source:'business-owner',status:'business-provided',...(original.informationStatus?.reviewState?{reviewState:'draft',submittedAt:null}:{}),ownerConfirmedAt:new Date().toISOString()};
           if(!await store.saveSellingProducts(identity.trustedIdentityId,businessId,original,next))return res.status(409).json({error:'Business access or details changed. Reload before saving.'});
           return res.status(200).json({ok:true});
