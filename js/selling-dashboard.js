@@ -64,7 +64,7 @@
     async function request(url,signal){
       for(let attempt=0;attempt<2;attempt++){
         const token=await bounded(clerk.session?.getToken({skipCache:attempt===1})||Promise.resolve(null));
-        const response=await win.fetch(url,{credentials:'same-origin',cache:'no-store',signal,headers:token?{Authorization:'Bearer '+token}:{}});
+        const response=await win.fetch(url,{credentials:'same-origin',cache:'no-store',keepalive:true,signal,headers:token?{Authorization:'Bearer '+token}:{}});
         if(response.status!==401||attempt===1)return response;
       }
     }
@@ -264,7 +264,7 @@
     async function start(){
       if(booting)return;booting=true;navigation();status('loading',t('Opening your workspace'),t('Checking your session and business access…'));
       try{
-        const response=await bounded(win.fetch('/api/public-config',{credentials:'same-origin',cache:'no-store'}));
+        const response=await bounded(win.fetch('/api/public-config',{credentials:'same-origin',cache:'no-store',keepalive:true}));
         if(!response.ok)throw Error('Authentication configuration unavailable');
         const config=await response.json(),key=config.clerkPublishableKey;
         if(typeof key!=='string'||!/^pk_(test|live)_/.test(key))throw Error('Invalid authentication configuration');
