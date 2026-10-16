@@ -13,7 +13,7 @@ function createHttpMediaProcessingDrivers({baseUrl,token,fetchImpl=globalThis.fe
  const source=(context)=>context&&typeof context.sourceUrl==="string"&&/^https:\/\//i.test(context.sourceUrl)?{sourceUrl:context.sourceUrl,sourceExpiresAt:context.sourceExpiresAt}:{};
  const outputs=(context)=>{
   if(!context||!Array.isArray(context.outputDestinations)||!context.outputDestinations.length)return{};
-  const safe=context.outputDestinations.map(d=>d&&typeof d.role==="string"&&typeof d.storageKey==="string"&&typeof d.uploadUrl==="string"&&/^https:\/\//i.test(d.uploadUrl)&&typeof d.contentType==="string"?{role:d.role,storageKey:d.storageKey,uploadUrl:d.uploadUrl,contentType:d.contentType}:null);
+  const safe=context.outputDestinations.map(d=>d&&typeof d.role==="string"&&typeof d.storageKey==="string"&&typeof d.uploadUrl==="string"&&/^https:\/\//i.test(d.uploadUrl)&&typeof d.contentType==="string"?{role:d.role,storageKey:d.storageKey,uploadUrl:d.uploadUrl,contentType:d.contentType,...(d.headers?{headers:d.headers}:{})}:null);
   return safe.every(Boolean)?{outputDestinations:safe}:{};
  };
  const inspect=(kind)=>(asset,context)=>call("/inspect/"+kind,{assetId:asset.assetId,businessId:asset.businessId,storageKey:asset.storageKey,contentType:asset.contentType,...source(context)});

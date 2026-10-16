@@ -27,7 +27,7 @@ async function verifyBusinessLayout(page,viewport){
 }
 async function run(){
  process.env.DEMEOS_MEDIA_UPLOAD_SECRET='browser-upload-secret-at-least-thirty-two-characters';
- const disk=await diskStorage();
+ const disk=await diskStorage({blobProtocol:true});
  const client=new PGlite(),database=createDatabase(client),repository=createPersistenceRepository(database,{environment:()=>env});
  const profile=(businessId,selling=true)=>({businessId,name:businessId==='vendor-a'?'North & Field':'Business '+businessId,type:'Independent shop',location:'London',applicationAccess:{selling,marketing:true},products:[],preparationModel:'selling'});
  await repository.createBusinessForOwner('owner-a',profile('vendor-a'));
@@ -76,11 +76,11 @@ async function run(){
   browser=await chromium.launch({headless:true,...(process.env.DEMEOS_BROWSER_EXECUTABLE_PATH?{executablePath:process.env.DEMEOS_BROWSER_EXECUTABLE_PATH}:{}),...(process.env.DEMEOS_BROWSER_CHANNEL?{channel:process.env.DEMEOS_BROWSER_CHANNEL}:{})});
   for(const viewport of [{width:375,height:812},{width:390,height:844},{width:430,height:932},{width:761,height:1000},{width:820,height:1180},{width:1024,height:1366},{width:1280,height:1000},{width:1440,height:1000}]){
    const context=await browser.newContext({viewport});
-   await context.route('https://storage.gate/**',async route=>{const request=route.request();if(request.method()==='OPTIONS')return route.fulfill({status:204,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,PUT,OPTIONS','Access-Control-Allow-Headers':'content-type'}});const response=await disk.fetchImpl(request.url(),{method:request.method(),headers:{'Content-Type':request.headers()['content-type']},body:request.method()==='PUT'?request.postDataBuffer():undefined});await route.fulfill({status:response.status,contentType:response.headers.get('content-type')||'application/octet-stream',headers:{'Access-Control-Allow-Origin':'*'},body:Buffer.from(await response.arrayBuffer())});});context.setDefaultTimeout(10000);
+   await context.route('https://storage.gate/**',async route=>{const request=route.request();if(request.method()==='OPTIONS')return route.fulfill({status:204,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,PUT,OPTIONS','Access-Control-Allow-Headers':'content-type,x-content-type,x-vercel-blob-access'}});const response=await disk.fetchImpl(request.url(),{method:request.method(),headers:{'Content-Type':request.headers()['content-type'],'x-content-type':request.headers()['x-content-type'],'x-vercel-blob-access':request.headers()['x-vercel-blob-access']},body:request.method()==='PUT'?request.postDataBuffer():undefined});await route.fulfill({status:response.status,contentType:response.headers.get('content-type')||'application/octet-stream',headers:{'Access-Control-Allow-Origin':'*'},body:Buffer.from(await response.arrayBuffer())});});context.setDefaultTimeout(10000);
    console.log('Browser gate: starting '+viewport.width+'px viewport');
    await context.addCookies([{name:'gate-owner',value:'owner-a',url:base}]);
    await context.route('https://clerk.test/npm/@clerk/ui@1/dist/ui.browser.js',r=>r.fulfill({contentType:'text/javascript',body:'window.__internal_ClerkUICtor={};'}));
-   await context.route('https://clerk.test/npm/@clerk/clerk-js@6/dist/clerk.browser.js',r=>r.fulfill({contentType:'text/javascript',body:`window.Clerk={user:{id:document.cookie.match(/gate-owner=(owner-[a-z]+)/)?.[1]||'owner-a'},session:{id:'session-a',async getToken(){return 'verified-token';}},async load(){},addListener(fn){this.listener=fn;},openSignIn(options){window.signInRequest=options;},async signOut(){this.user=null;this.session=null;this.listener();}};`}));
+   await context.route('https://clerk.test/npm/@clerk/clerk-js@6/dist/clerk.browser.js',r=>r.fulfill({contentType:'text/javascript',body:`window.Clerk={user:{id:document.cookie.match(/gate-owner=(owner-[a-z]+)/)?.[1]||'owner-a'},session:{id:'session-a',async getToken(){return 'verified-token';}},async load(options){window.loadedAuthLocale=options.localization?.locale;},__internal_updateProps(value){window.updatedAuthLocale=value.options.localization.locale;},addListener(fn){this.listener=fn;},openSignIn(options){window.signInRequest=options;},async signOut(){this.user=null;this.session=null;this.listener();}};`}));
    const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
    async function submissionJourney(businessId){
     const current=()=>repository.getKnownBusiness(businessId).then(r=>r.businessProfile.products[0]);
@@ -153,7 +153,7 @@ async function run(){
     }else if(section==='my-business'){
      assert.equal(await page.locator('#business-form:visible').count(),1,'Business uses permitted editing controls');
     }else if(section==='images-videos'){
-     assert.equal(await page.locator('#media-form:visible').count(),1,'Media has actual file controls');
+     assert.equal(await page.locator('#media-empty:visible').count(),1,'Empty media tools explain the saved-product prerequisite');assert.equal(await page.locator('[data-catalogue-link]').getAttribute('href'),'/selling-vendor/product-catalogue?businessId=vendor-a');
     }else if(section==='options-variants'){
      assert.equal(await page.locator('#variant-form:visible').count(),1,'Variants has a real editor');
     }else assert.equal(await page.locator('#section-content button:visible').count(),0,'No pretend tool actions');
@@ -162,10 +162,12 @@ async function run(){
     await page.goto(base+'/selling-vendor/'+section+'?businessId=vendor-a');await page.locator('#content-heading').filter({hasText:['product-catalogue','stock-history'].includes(section)?(section==='stock-history'?'Stock & History':'Product Catalogue'):copy[1]}).waitFor();
    }
    await page.goto(base+'/selling-vendor/my-business?businessId=vendor-a');await page.locator('#business-form:visible').waitFor();
-   await page.locator('#business-edit-name').fill('North & Field Updated');await page.locator('#business-edit-location').fill('Greenwich, London');await page.locator('#business-edit-description').fill('Independent coffee shop');await page.locator('#business-accuracy').check();
+   await page.locator('#business-edit-name').fill('North & Field Updated');await page.locator('#business-edit-location').fill('Greenwich, London');await page.locator('#business-edit-email').fill('seller@example.test');await page.locator('#business-edit-phone').fill('+44 20 7946 0123');await page.locator('#business-edit-website').fill('https://example.test');
+   await page.locator('#business-edit-description').fill('Independent coffee shop');await page.locator('#business-accuracy').check();
    await page.locator('#business-save').click();await page.locator('#business-feedback').filter({hasText:'Business details saved.'}).waitFor();
    assert.equal((await repository.getKnownBusiness('vendor-a')).businessProfile.name,'North & Field Updated');
    await page.reload();await page.locator('#business-name').filter({hasText:'North & Field Updated'}).waitFor();
+   assert.equal(await page.locator('#business-edit-email').inputValue(),'seller@example.test');assert.equal(await page.locator('#business-edit-website').inputValue(),'https://example.test');
    await page.locator('#business-edit-name').fill('North & Field');await page.locator('#business-accuracy').check();await page.locator('#business-save').click();await page.locator('#business-feedback').filter({hasText:'Business details saved.'}).waitFor();
    console.log('Browser gate: live catalogue CRUD '+viewport.width+'px');
    if(viewport.width===375){
@@ -185,7 +187,7 @@ async function run(){
    if(viewport.width===375){
     const failSave=async route=>{if(route.request().method()==='POST')await route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'Temporary persistence failure'})});else await route.continue();};
     await page.route('**/api/businesses?resource=selling-dashboard*',failSave);
-    await page.locator('#product-save').click();await page.locator('#product-feedback').filter({hasText:'Temporary persistence failure'}).waitFor();
+    await page.locator('#product-save').click();await page.locator('#product-feedback').filter({hasText:'The service could not complete this action. Please retry.'}).waitFor();
     assert.equal((await repository.getKnownBusiness('vendor-a')).businessProfile.products.length,0,'Failed write has no false persisted product');
     await page.unroute('**/api/businesses?resource=selling-dashboard*',failSave);
    }
@@ -243,11 +245,44 @@ async function run(){
    await page.goto(base+'/selling-vendor/images-videos?businessId=vendor-a');await page.locator('#media-form:visible').waitFor();
    const imageBytes=await require('sharp')({create:{width:24,height:18,channels:3,background:'#06172d'}}).png().toBuffer();
    await page.locator('#media-file').setInputFiles({name:'coffee.png',mimeType:'image/png',buffer:imageBytes});
+   if(viewport.width===375){
+    const refuseTransfer=async route=>route.request().method()==='PUT'?route.fulfill({status:403,body:'Upload refused'}):route.continue();
+    await page.route('https://storage.gate/**',refuseTransfer);
+    await page.locator('#media-upload').click();await page.locator('#media-feedback').filter({hasText:'File transfer failed. Retry the upload.'}).waitFor();
+    assert.equal((await repository.getKnownBusiness('vendor-a')).businessProfile.products[0].mediaGallery?.assetIds?.length||0,0,'Refused transfer never links or claims ready media');
+    await page.unroute('https://storage.gate/**',refuseTransfer);
+   }
    await page.locator('#media-upload').click();await page.locator('#media-feedback').filter({hasText:'File uploaded and linked to product.'}).waitFor();
    const linked=(await repository.getKnownBusiness('vendor-a')).businessProfile.products[0].mediaGallery.assetIds[0];
    assert.equal((await repository.getBusinessMediaAsset('vendor-a',linked)).state,'ready');
    await page.reload();await page.locator('#media-list img').waitFor();await page.waitForFunction(()=>document.querySelector('#media-list img')?.naturalWidth>0);
    if([375,1440].includes(viewport.width))await page.screenshot({path:path.join(artifacts,'demeos-selling-media-'+viewport.width+'.png'),fullPage:true});
+   if(viewport.width===375){
+    const copy=require('../js/selling-dashboard-copy');
+    assert.equal(await page.locator('#dashboard-language option').count(),10);
+    for(const locale of copy.languages){
+     await page.locator('#dashboard-language').selectOption(locale.code);
+     await page.locator('#media-list img').waitFor();
+     assert.equal(await page.locator('#media-upload').innerText(),copy.translate(locale.code,'Upload image'));
+     assert.equal(await page.locator('#media-list [data-main-asset]').count(),1,'Ready media stays usable in every locale');
+     for(const [section,title] of Object.entries(sections)){
+      await page.locator('nav [data-section="'+section+'"]').click();
+      await page.locator('#private-workspace:visible').waitFor();
+      assert.equal(await page.locator('#section-heading').innerText(),copy.translate(locale.code,title[0]));
+      assert.equal(await page.locator('a[href*="marketing"]').count(),0,'Selling navigation never enters Marketing');
+     }
+     await page.reload();await page.locator('#private-workspace:visible').waitFor();
+     assert.equal(await page.locator('#dashboard-language').inputValue(),locale.code);
+     assert.ok((await page.evaluate(()=>window.loadedAuthLocale)).startsWith(locale.code),'Existing Clerk receives the selected authentication locale on reload');
+     assert.equal(await page.locator('html').getAttribute('dir'),locale.direction);
+     await page.locator('nav [data-section="images-videos"]').click();await page.locator('#media-list img').waitFor();
+     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Translated interface stays within the viewport');
+     await page.screenshot({path:path.join(artifacts,'demeos-selling-language-'+locale.code+'.png'),fullPage:true});
+     console.log('Selling locale navigation, ready image and refresh passed: '+locale.code);
+    }
+    await page.locator('#dashboard-language').selectOption('en');
+   }
+
    if([375,1440].includes(viewport.width))await submissionJourney('vendor-a');
    page.once('dialog',dialog=>dialog.accept());await page.locator('#media-list button').filter({hasText:'Remove',exact:true}).click();
    await page.locator('#media-feedback').filter({hasText:'Media removed from product.'}).waitFor();await page.reload();
@@ -313,7 +348,8 @@ async function run(){
    // Preview writes use the real dashboard and the explicitly isolated test business.
    if(viewport.width===375){
     await page.goto(base+'/selling-vendor/my-business');await page.locator('#business-form:visible').waitFor();
-    await page.locator('#business-edit-description').fill('Isolated test business facts');await page.locator('#business-accuracy').check();await page.locator('#business-save').click();await page.locator('#business-feedback').filter({hasText:'Business details saved.'}).waitFor();
+    await page.locator('#business-edit-email').fill('seller@example.test');await page.locator('#business-edit-phone').fill('+44 20 7946 0123');await page.locator('#business-edit-website').fill('https://example.test');
+   await page.locator('#business-edit-description').fill('Isolated test business facts');await page.locator('#business-accuracy').check();await page.locator('#business-save').click();await page.locator('#business-feedback').filter({hasText:'Business details saved.'}).waitFor();
     assert.equal((await repository.getKnownBusiness('test-business-selling-a')).businessProfile.productsServices,'Isolated test business facts');assert.equal((await repository.getKnownBusiness('test-business-selling-a')).businessProfile.applicationAccess,undefined);
     await page.locator('nav [data-section=product-catalogue]').click();
     await page.locator('#product-form:visible').waitFor();
@@ -396,7 +432,7 @@ async function run(){
    const structuredVariant=(await repository.getKnownBusiness('vendor-b')).businessProfile.products[0].presentation.variants[0];
    assert.deepEqual(structuredVariant.selection,{size:'M'});assert.equal(structuredVariant.pricing.amount,21.5);
    await page.reload();await page.locator('.variant-item strong').filter({hasText:'Medium / Navy'}).waitFor();
-   page.once('dialog',dialog=>dialog.accept());await page.locator('.variant-item button').filter({hasText:'Delete',exact:true}).click();await page.locator('#variant-feedback').filter({hasText:'reserved stock'}).waitFor();
+   page.once('dialog',dialog=>dialog.accept());await page.locator('.variant-item button').filter({hasText:'Delete',exact:true}).click();await page.locator('#variant-feedback').filter({hasText:'Reserved stock prevents this change.'}).waitFor();
    await page.goto(base+'/selling-vendor/stock-history?businessId=vendor-b');await page.locator('#stock-form:visible').waitFor();
    const heldStock=(await repository.getVendorInventory('vendor-b')).entries[orderInventory.key('order-shirt','medium')];
    const nextQuantity=heldStock.onHand===5?4:5;

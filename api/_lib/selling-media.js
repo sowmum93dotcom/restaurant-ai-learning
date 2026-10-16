@@ -48,12 +48,13 @@ async function mutateMedia({store,profile,identity,action,item,backend,env,saveP
  const asset=await store.getBusinessMediaAsset(profile.businessId,item.assetId);
  if(!asset||asset.relatedEntityId!==product.productId||!['product','service'].includes(asset.purpose))return {status:404,error:'Product media not found.'};
  if(action==='set-main-media'&&(asset.state!=='ready'||asset.kind!=='image'||!product.mediaGallery?.assetIds?.includes(asset.assetId)))return {status:400,error:'Choose a ready image linked to this product.'};
- if(action==='complete-media'){
-  const processing=await completeVerifiedMediaUpload({asset,businessId:profile.businessId,assetId:asset.assetId,uploadToken:item.uploadToken,storageKey:item.storageKey,storageAdapter:backend.adapter});
+ if(action==='complete-media'||action==='resume-media'){
+  if(action==='resume-media'&&!['processing','ready'].includes(asset.state))return {status:409,error:'Only a previously verified upload can resume processing.'};
+  const processing=action==='resume-media'?{...asset,uploadCompletionReplay:true}:await completeVerifiedMediaUpload({asset,businessId:profile.businessId,assetId:asset.assetId,uploadToken:item.uploadToken,storageKey:item.storageKey,storageAdapter:backend.adapter});
   if(!processing)return {status:409,error:'The uploaded file could not be verified.'};
   if(!processing.uploadCompletionReplay&&!(await enqueueVerifiedMediaForProcessing(store,processing)))return {status:503,error:'Media processing could not be queued.'};
   if(processing.state!=='ready'&&backend.driver&&backend.drivers){
-   const scoped={...store,claimNextMediaProcessingJob:attempts=>store.claimNextMediaProcessingJob(attempts,profile.businessId,asset.assetId),recoverStaleMediaProcessingJobs:undefined,reconcileUnqueuedProcessingMedia:undefined};
+   const scoped={...store,claimNextMediaProcessingJob:attempts=>store.claimNextMediaProcessingJob(attempts,profile.businessId,asset.assetId),recoverStaleMediaProcessingJobs:typeof store.recoverStaleMediaProcessingJobs==='function'?(attempts,lease,limit)=>store.recoverStaleMediaProcessingJobs(attempts,lease,limit,profile.businessId,asset.assetId):undefined,reconcileUnqueuedProcessingMedia:undefined};
    await createMediaWorker({repository:scoped,drivers:backend.drivers,createProcessingRead:backend.driver.createProcessingRead,createProcessingWrite:backend.driver.createProcessingWrite,verifyProcessedOutput:backend.driver.verifyUpload})();
   }
   const current=await store.getBusinessMediaAsset(profile.businessId,asset.assetId);

@@ -36,7 +36,7 @@ Production database/environment change is part of this implementation.
 | Section | Real behavior and existing DEMEOS source | Boundary |
 | --- | --- | --- |
 | Overview | Counts saved products, available products, simple/structured variants, tracked inventory rows and the latest private orders from the selected business context. | Counts reflect actual loaded records; recent orders are bounded to 50. No invented revenue or sales analytics. |
-| My Business | Displays saved identity/contact information and permits name, location and description edits. Existing profile validation, explicit owner accuracy confirmation, SQL ownership and profile-revision checks protect saves. Existing information-review state returns to draft where applicable. | Ownership, Selling/Marketing grants, type, registration and contact-route administration stay in the existing registration workflow. Ordinary edits cannot approve the business. |
+| My Business | Displays saved identity/contact information and permits name, location, description and validated email/phone/website edits. Existing profile validation, explicit owner accuracy confirmation, SQL ownership and profile-revision checks protect saves. Existing information-review state returns to draft where applicable. | Ownership, Selling/Marketing grants, type, registration and contact-route administration stay in the existing registration workflow. Ordinary edits cannot approve the business. |
 | Product Catalogue | Create/edit/delete uses the existing `demeos_businesses.profile.products` array and `saveSellingProducts` repository. IDs remain stable on retries. Profile revisions and SQL compare-and-swap reject stale writes. | Edits preserve legacy publication flags until workflow enrollment, galleries, unknown extensions, variants and stock history. Managed submissions keep the working copy private. Structured price edits retain option/variant identities and override prices. Reserved items cannot be deleted. |
 | Options & Variants | Named variants use the existing branch's product-linked `variants` records. Existing `presentation.variants` are also displayed and edited without changing their exact option selection. SKU, optional price, base-price inheritance and availability persist through the same catalogue writer. | Invalid IDs/prices, duplicate SKU conflicts and stale writes are rejected. Recorded stock identities cannot be reused for replacement variants; reserved variants cannot be deleted. |
 | Stock & History | Uses existing `demeos_vendor_inventory` and `demeos_vendor_stock_history`, `vendor-inventory.js` row identities/validation and atomic `saveVendorInventory`. Product and exact variant rows have distinct balances. | Whole counts, reservations, catalogue/stock revisions and authenticated audit identity are protected. The view shows the latest 30 ledger events; older history stays in SQL. Earlier product-level audit records are retained, and an untracked legacy base count supplies its first ledger adjustment's starting balance. |
@@ -200,9 +200,7 @@ configured inspector/transcoder; the Sharp Preview has neither video function.
 It remains unavailable rather than reporting a simulated success.
 
 New workflow copy uses the existing locale-keyed JavaScript approach, with
-complete packs for the existing nine language codes plus Turkish. The current
-Selling dashboard's English/Turkish selector is preserved; this is not a claim
-that its older unrelated controls have all been translated into ten languages.
+complete packs for the existing nine language codes plus Turkish. The Selling selector now offers the shared nine locales plus Turkish. Its static and dynamic controls, feedback and accessibility labels use one locale-keyed copy module; the shared preference persists across navigation and refresh. Arabic sets right-to-left document direction. Business-entered facts and authoritative category names retain their source language.
 Canonical registry names remain the authoritative registry names.
 
 `test/selling-submissions.test.js` exercises actual SQL plus binary uploads for
@@ -216,3 +214,67 @@ revocation on mobile/desktop. Successful approval uses isolated server receipts;
 the default unavailable-capability path is tested separately and stays private.
 An actual signed-in cloud Clerk/Blob acceptance is a separate check and must not
 be inferred from the browser fixture.
+
+
+## 16 October functional repair
+
+The Selling UI no longer links to `/marketing.html#business-profile`. Its business
+links stay at `/selling-vendor/my-business` and preserve the selected business ID.
+Email, phone and website values can be edited alongside existing permitted facts;
+the server preserves continuation routes, ownership, preparation model and approval
+grants. No duplicate registration system or business records are introduced. An
+account without an authorised business is directed to contact its business
+administrator; this view does not claim to register or approve that account.
+
+The selector now derives the established English, Spanish, French, Arabic,
+Portuguese, Chinese, Hindi, German and Japanese locales from the shared registry
+and adds Turkish only to Selling. `selling-dashboard-copy.js` covers existing
+Selling controls and feedback; existing submission copy is retained. The shared
+`demeos-customer-language` preference is read/written without changing Customer UI.
+Native form validation receives a localised explanation. Vendor data, SKUs and
+canonical category names are not automatically translated.
+
+Private Blob PUTs now carry the SDK's `x-content-type` and
+`x-vercel-blob-access: private` metadata headers, propagated through the upload
+adapter, browser and Sharp output writes. The extensionless original object
+previously had only the HTTP Content-Type header. This is a confirmed protocol
+mismatch; a signed-in deployed upload is still required to determine whether it
+was the owner's only failure. Definite transfer errors no longer disappear behind
+a generic completion error. Ambiguous network responses and duplicate-object
+replies still use server verification before claiming success.
+
+A verified processing upload can be resumed after refresh through the existing
+owned Selling API, without reusing an expired upload token. Pending/unverified,
+foreign and archived assets cannot use this recovery path. Worker claims and
+stale lease recovery are scoped to the exact owned business and asset. Processing
+still uses the existing bounded SQL retry queue; ready state and linkage must be
+confirmed before success is displayed. A productless media view provides a direct
+link to the real catalogue, and saved unnamed drafts remain selectable. Safari's
+empty file MIME hint can be inferred from supported extensions, but server byte
+inspection remains mandatory and rejects mismatches.
+
+Video is **not completed**. The deployed Sharp driver has no inspectVideo or
+transcodeVideo implementation. The existing HTTP processor contract needs an
+approved HTTPS service (`DEMEOS_MEDIA_PROCESSING_URL`, server-only
+`DEMEOS_MEDIA_PROCESSING_TOKEN`, provider `http`) supporting `/inspect/video` and
+`/transcode/video`, plus image endpoints if replacing Sharp. It receives scoped,
+expiring private source and output URLs, must inspect actual bytes, enforce
+250 MB/60 seconds and persist verified MP4 outputs. No service, paid subscription
+or credentials were provisioned. Any processor deployment must be load-tested
+against the 60-second Selling API limit and use the existing authorised worker
+queue for recovery; local ffmpeg alone is not proof of Vercel reliability.
+
+Verification distinguishes actual SQL/binary/Chromium regression fixtures from
+real Preview acceptance. The owner-reported deployed image journey and iPad
+Safari remain unverified until secure sign-in is available. The prior cloud
+browser Google flow is blocked by a saved permission for accounts.google.com;
+no bypass or alternate sign-in route is used to evade that restriction.
+
+Selling authentication reuses the existing nine official Clerk locale JSON
+resources without changing Customer code. `selling-auth-tr.json` adds the
+corresponding Turkish authentication subset from the same official
+`@clerk/localizations` 4.21.1 package (MIT; see
+`js/customer-auth-locales/LICENSE.txt`). Missing upstream Turkish labels and
+combined-flow headings are completed in Turkish; unavailable upstream errors use
+a neutral Turkish authentication error. Selected copy is passed to the existing
+Clerk instance and sign-in modal, without a new sign-in page or provider.

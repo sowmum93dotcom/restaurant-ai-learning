@@ -28,7 +28,7 @@ function createSharpMediaDrivers({fetchImpl=globalThis.fetch,sharpImpl,storage}=
     const widths={master:1600,thumbnail:360,customer:1000,marketing:1200};
     if(!widths[destination.role]||destination.contentType!=='image/webp')throw Error('Invalid image output.');
     const {data,info}=await image.sharp(image.bytes,{limitInputPixels:40000000,failOn:'warning'}).rotate().resize({width:widths[destination.role],height:widths[destination.role],fit:'inside',withoutEnlargement:true}).webp({quality:85}).toBuffer({resolveWithObject:true});
-    await read(destination.uploadUrl,{method:'PUT',headers:{'Content-Type':'image/webp'},body:data});
+    await read(destination.uploadUrl,{method:'PUT',headers:{'Content-Type':'image/webp',...destination.headers},body:data});
     const delivery=await storage.createDeliveryRead({storageKey:destination.storageKey,expiresAt:new Date(Date.now()+10*60*1000).toISOString()});
     if(!delivery?.deliveryUrl)throw Error('Private image delivery is unavailable.');
     results.push({role:destination.role,storageKey:destination.storageKey,deliveryUrl:delivery.deliveryUrl,contentType:'image/webp',width:info.width,height:info.height});

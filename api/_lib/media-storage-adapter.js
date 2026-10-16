@@ -10,7 +10,7 @@ function createMediaStorageAdapter(driver){
    const storageKey=storageKeyFor(asset); if(!storageKey)return null;
    const result=await driver.createUpload({storageKey,contentType:asset.contentType||null,sizeBytes:asset.sizeBytes||null,businessId:asset.businessId,assetId:asset.assetId,expiresAt:session.expiresAt});
    if(!result||clean(result.storageKey)!==storageKey||!clean(result.uploadUrl)||!/^https:\/\//i.test(result.uploadUrl))return null;
-   return {storageKey,uploadUrl:result.uploadUrl,expiresAt:session.expiresAt};
+   return {storageKey,uploadUrl:result.uploadUrl,expiresAt:session.expiresAt,...(result.headers?{headers:result.headers}:{})};
   },
   async verifyUpload(asset,storageKey){
    const expected=storageKeyFor(asset); if(!expected||storageKey!==expected)return null;

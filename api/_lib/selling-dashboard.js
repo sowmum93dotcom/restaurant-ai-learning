@@ -55,7 +55,7 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
         // Recheck ownership and the applicable server authority on every load.
         if (!await store.isBusinessOwnedByIdentity(identity.trustedIdentityId,businessId)) return res.status(403).json({error:'Selling access is unavailable for this business.'});
         const actorContext = createAuthenticatedBusinessOwnerContext({trustedIdentityId:identity.trustedIdentityId,businessId});
-        if (!authorizeDemeosAction({actorContext,businessId,action:req.method==='POST'?(['register-media','complete-media','remove-media','set-main-media'].includes(req.body?.action)?'manage-business-media':'manage-business-profile'):'view-own-business-results'}).allowed) return res.status(403).json({error:'Selling access is unavailable for this business.'});
+        if (!authorizeDemeosAction({actorContext,businessId,action:req.method==='POST'?(['register-media','complete-media','resume-media','remove-media','set-main-media'].includes(req.body?.action)?'manage-business-media':'manage-business-profile'):'view-own-business-results'}).allowed) return res.status(403).json({error:'Selling access is unavailable for this business.'});
         const record = await store.getKnownBusiness(businessId);
         business = businessSummary(record?.businessProfile,env,identity.trustedIdentityId);
         if (!business || business.businessId !== businessId) return res.status(403).json({error:'Selling access is unavailable for this business.'});
@@ -74,17 +74,27 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
         const action=req.body?.action;
         if(action==='save-business-details'){
           const details=req.body.details,original=(await store.getKnownBusiness(businessId))?.businessProfile;
-          if(!details||typeof details!=='object'||Array.isArray(details)||Object.keys(details).some(k=>!['name','location','productsServices'].includes(k))||req.body.ownerAccuracyConfirmed!==true)return res.status(400).json({error:'Confirm the accuracy of the permitted business details.'});
+          if(!details||typeof details!=='object'||Array.isArray(details)||Object.keys(details).some(k=>!['name','location','productsServices','customerContinuation'].includes(k))||req.body.ownerAccuracyConfirmed!==true)return res.status(400).json({error:'Confirm the accuracy of the permitted business details.'});
           if(req.body.catalogueRevision!==catalogueRevision(original))return res.status(409).json({error:'Business changed. Reload before saving.'});
           if(['name','location'].some(k=>typeof details[k]!=='string'||!details[k].trim()||details[k].trim().length>200)||typeof details.productsServices!=='string'||details.productsServices.trim().length>2000)return res.status(400).json({error:'Enter a business name and location, and keep the description within 2000 characters.'});
           const next={...original,name:details.name.trim(),location:details.location.trim(),productsServices:details.productsServices.trim()};
+          if(details.customerContinuation!==undefined){
+            const contact=details.customerContinuation;
+            if(!contact||typeof contact!=='object'||Array.isArray(contact)||Object.keys(contact).some(k=>!['email','phone','website'].includes(k))||['email','phone','website'].some(k=>typeof contact[k]!=='string'||contact[k].length>({email:320,phone:100,website:500}[k])))return res.status(400).json({error:'Enter valid contact details.'});
+            const {email,phone,website}=Object.fromEntries(Object.entries(contact).map(([k,v])=>[k,v.trim()]));
+            if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||phone&&!/^\+?[0-9 ()-]{6,30}$/.test(phone))return res.status(400).json({error:'Enter valid contact details.'});
+            if(website){try{const url=new URL(website);if(!['https:','http:'].includes(url.protocol)||url.username||url.password)throw Error();}catch{return res.status(400).json({error:'Enter a valid website address.'});}}
+            // Contact values are ordinary owner facts. Existing continuation routes,
+            // ownership, model, registration and administrative grants stay authoritative.
+            next.customerContinuation={...original.customerContinuation,email,phone,website};
+          }
           if(!require('../businesses/[businessId].js').validateProfile({body:{businessProfile:next},query:{businessId}}))return res.status(400).json({error:'Complete your existing registration profile before changing these details.'});
           next.informationStatus={...original.informationStatus,source:'business-owner',status:'business-provided',...(original.informationStatus?.reviewState?{reviewState:'draft',submittedAt:null}:{}),ownerConfirmedAt:new Date().toISOString()};
           if(!await store.saveSellingProducts(identity.trustedIdentityId,businessId,original,next))return res.status(409).json({error:'Business access or details changed. Reload before saving.'});
           return res.status(200).json({ok:true});
         }
         const item=req.body?.product;
-        if (!['save-product','save-draft','delete-product','adjust-stock','save-variant','delete-variant','register-media','complete-media','remove-media','set-main-media','review-product','submit-product','publish-product','unpublish-product'].includes(action) || !item || typeof item!=='object' || Array.isArray(item))
+        if (!['save-product','save-draft','delete-product','adjust-stock','save-variant','delete-variant','register-media','complete-media','resume-media','remove-media','set-main-media','review-product','submit-product','publish-product','unpublish-product'].includes(action) || !item || typeof item!=='object' || Array.isArray(item))
           return res.status(400).json({error:'Invalid product request.'});
         const id=typeof item.productId==='string'?item.productId.trim():'';
         if (!/^[a-zA-Z0-9_-]{1,120}$/.test(id)) return res.status(400).json({error:'Invalid product ID.'});
@@ -96,8 +106,8 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
           const result=await submissions.mutate({store,profile:original,productId:id,action,identity:identity.trustedIdentityId,environment:env,confirmed:req.body.confirmed,resolveEvidence:resolveSubmissionEvidence});
           const {status,...body}=result;return res.status(status).json({...body,...(status>=400?{error:'Review the product and its current validation status before continuing.'}:{})});
         }
-        if(['register-media','complete-media','remove-media','set-main-media'].includes(action)){
-          const result=await media.mutateMedia({store,profile:original,identity:identity.trustedIdentityId,action,item,backend,env,saveProfile:(previous,next)=>{next.products=next.products.map(p=>submissions.reconcile(previous.products.find(old=>old.productId===p.productId),p,businessId,identity.trustedIdentityId,action==='complete-media'?'media-processing-completed':action==='set-main-media'?'main-image-selected':'media-removed'));return store.saveSellingProducts(identity.trustedIdentityId,businessId,previous,next);}});
+        if(['register-media','complete-media','resume-media','remove-media','set-main-media'].includes(action)){
+          const result=await media.mutateMedia({store,profile:original,identity:identity.trustedIdentityId,action,item,backend,env,saveProfile:(previous,next)=>{next.products=next.products.map(p=>submissions.reconcile(previous.products.find(old=>old.productId===p.productId),p,businessId,identity.trustedIdentityId,['complete-media','resume-media'].includes(action)?'media-processing-completed':action==='set-main-media'?'main-image-selected':'media-removed'));return store.saveSellingProducts(identity.trustedIdentityId,businessId,previous,next);}});
           const {status,...body}=result;return res.status(status).json(body);
         }
         const products=Array.isArray(original.products)?original.products.slice():[];

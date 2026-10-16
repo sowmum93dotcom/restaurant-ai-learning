@@ -38,7 +38,7 @@ function createVercelBlobStorageDriver({token,blobSdkLoader}={}){
      ...(contentType?{allowedContentTypes:[contentType]}:{}),...(sizeBytes?{maximumSizeInBytes:Number(sizeBytes)}:{}),token:secret});
     const result=await sdk.presignUrl(signed,{operation:"put",pathname:storageKey,access:"private",validUntil,
      ...(contentType?{allowedContentTypes:[contentType]}:{}),...(sizeBytes?{maximumSizeInBytes:Number(sizeBytes)}:{}),addRandomSuffix:false,allowOverwrite:false});
-    return result&&/^https:\/\//i.test(result.presignedUrl||"")?{storageKey,uploadUrl:result.presignedUrl}:null;
+    return result&&/^https:\/\//i.test(result.presignedUrl||"")?{storageKey,uploadUrl:result.presignedUrl,headers:{"x-content-type":contentType,"x-vercel-blob-access":"private"}}:null;
    }catch{return null;}
   },
   async createProcessingRead({storageKey,expiresAt}){
@@ -65,7 +65,7 @@ function createVercelBlobStorageDriver({token,blobSdkLoader}={}){
    try{
     const signed=await sdk.issueSignedToken({pathname:storageKey,operations:["put"],validUntil,allowedContentTypes:[contentType],maximumSizeInBytes:max,token:secret});
     const result=await sdk.presignUrl(signed,{operation:"put",pathname:storageKey,access:"private",validUntil,allowedContentTypes:[contentType],maximumSizeInBytes:max,addRandomSuffix:false,allowOverwrite:true});
-    return result&&/^https:\/\//i.test(result.presignedUrl||"")?{storageKey,uploadUrl:result.presignedUrl,contentType,expiresAt}:null;
+    return result&&/^https:\/\//i.test(result.presignedUrl||"")?{storageKey,uploadUrl:result.presignedUrl,contentType,expiresAt,headers:{"x-content-type":contentType,"x-vercel-blob-access":"private"}}:null;
    }catch{return null;}
   },
   async verifyUpload({storageKey}){

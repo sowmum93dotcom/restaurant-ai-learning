@@ -17,7 +17,7 @@ function createMediaWorker({repository,drivers,createProcessingRead,createProces
     const maximumSizeInBytes=asset.kind==="image"?15*1024*1024:250*1024*1024;
     const destination=await createProcessingWrite({storageKey,contentType,maximumSizeInBytes,expiresAt});
     if(!destination||!destination.uploadUrl)throw new Error("Private media output could not be delegated for processing.");
-    outputDestinations.push({role,storageKey:destination.storageKey,uploadUrl:destination.uploadUrl,contentType});
+    outputDestinations.push({role,storageKey:destination.storageKey,uploadUrl:destination.uploadUrl,contentType,...(destination.headers?{headers:destination.headers}:{})});
    }
   }
   const result=await baseProcessor(asset,{...(context||{}),sourceUrl:delegated.readUrl,sourceExpiresAt:delegated.expiresAt||expiresAt,...(outputDestinations?{outputDestinations}:{})});
