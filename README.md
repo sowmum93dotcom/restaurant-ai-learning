@@ -1,161 +1,152 @@
-# Restaurant AI Marketing — Learning Project
+# Verra — AI Local Search Engine (Learning Project)
 
-A simple, beginner-friendly web app for a restaurant homepage with an
-"AI Marketing Assistant" section. This is the **first working version (MVP)**.
+**Verra** is an AI local search engine covering two categories —
+**restaurants** and **retail shops** — where a customer describes what
+they want and gets back ranked, location-aware, verified results. Business
+owners can claim and manage their own listings, and admins can review and
+verify them.
+
+This is the **real backend version**: a Next.js app with real API routes
+and a real database (SQLite for local development), replacing the earlier
+static HTML/JS demo that stored everything in the browser's `localStorage`.
 
 ## What's included
 
-- A clean homepage showing the restaurant's name, cuisine type, location,
-  and website address.
-- An "AI Marketing Assistant" section where a restaurant owner can type
-  what they want to promote (e.g. a new dish or event) and click
-  **Generate Marketing Campaign** to see sample marketing copy appear
-  below.
+- **Homepage** (`/`) — a sample restaurant page with an "AI Marketing
+  Assistant" that generates sample marketing copy (still a local
+  placeholder, not a real AI call — see "What's NOT included yet" below).
+- **Search** (`/search`) — type what you want, get ranked results across
+  restaurants and retail shops, with a plain-English explanation of why
+  each one matched.
+- **Owner Panel** (`/owner`) — sign up / sign in, then claim an existing
+  business listing or add a new one.
+- **Admin Panel** (`/admin`) — sign in as an admin to review every
+  listing, verify/unverify, delete bad entries, and reset demo data.
 
 ## What's NOT included yet (on purpose)
 
-This version is intentionally simple, so it does **not** include:
-
 - Payments
-- User accounts / authentication
-- A database
-- Any external APIs
-- Real AI integration
+- Real AI query understanding (the search still uses simple keyword
+  matching server-side — see `lib/search.ts` — not a Claude API call yet)
+- Real identity verification (an owner "claiming" a listing is still a
+  self-attestation checkbox, not a confirmed email/phone/document check)
+- Real location data (listings use the same simulated map coordinates as
+  the earlier demo, not real addresses pulled from OpenStreetMap)
+- A hosted production database (this runs on local SQLite by default —
+  see "Moving to a real hosted database" below)
 
-The "Generate Marketing Campaign" button currently uses a small JavaScript
-function that builds sample text locally in your browser — it does not
-call any AI service. This keeps the project easy to understand while we
-build up the basics. Real AI integration can be added later.
+These are the next phases in the [Architecture Plan](#) doc this project
+was built from — this version completes the "real backend + database"
+phase.
 
 ## Technology
 
-Just plain **HTML, CSS, and JavaScript** — no frameworks, no build tools,
-no installation required. This keeps the project simple and easy to read
-for anyone learning web development.
+- **Next.js** (React + TypeScript, App Router) — one app for both the
+  pages and the API routes.
+- **Prisma** — type-safe database access and schema management.
+- **SQLite** — a real database that's a single file on disk, needs zero
+  setup. Swapping to a hosted Postgres database later is a small config
+  change (same Prisma schema).
+- Plain CSS (`app/globals.css`) — no CSS framework, kept simple.
+- Custom cookie-based sessions with hashed passwords (`bcryptjs`) — no
+  external auth provider needed for this phase.
 
 ## File structure
 
 ```
-restaurant-ai-learning/
-├── index.html           # Homepage content and structure
-├── css/
-│   └── style.css         # Homepage styling and responsive layout
-├── js/
-│   └── script.js          # Homepage button logic (builds a sample campaign)
-├── shared/
-│   └── listings.js        # Shared data layer used by all 3 demo pages below
-├── search-demo/
-│   ├── index.html         # Customer-facing AI search page
-│   ├── style.css
-│   └── script.js           # Search pipeline logic (parse → rank → display)
-├── owner-panel/
-│   ├── index.html         # Business owner: claim/add a listing
-│   ├── style.css
-│   └── script.js
-├── admin-panel/
-│   ├── index.html         # Admin: review/verify/delete listings
-│   ├── style.css
-│   └── script.js
+verra/
+├── app/
+│   ├── layout.tsx              # Root HTML layout
+│   ├── globals.css             # All styling
+│   ├── page.tsx                # Homepage
+│   ├── search/page.tsx         # Search page
+│   ├── owner/page.tsx          # Owner panel (signup/login + claim/add)
+│   ├── admin/page.tsx          # Admin panel (review/verify/delete)
+│   ├── components/
+│   │   └── MarketingAssistant.tsx
+│   └── api/                    # Backend API routes
+│       ├── search/route.ts
+│       ├── listings/[id]/route.ts
+│       ├── auth/{signup,login,logout,me}/route.ts
+│       ├── owner/listings/{route.ts,[id]/claim/route.ts}
+│       └── admin/{listings,reset}/...
+├── lib/
+│   ├── db.ts                   # Prisma client
+│   ├── auth.ts                 # Password hashing + session cookies
+│   ├── search.ts               # Query parsing + ranking logic
+│   ├── neighborhoods.ts        # Sample neighborhood data
+│   └── seedData.ts             # Sample listings (used by seed + reset)
+├── prisma/
+│   ├── schema.prisma           # Database schema
+│   └── seed.ts                 # Populates the database with sample data
 └── README.md
 ```
 
-## Verra — AI Local Search Engine Pipeline Demo
-
-**Verra** is the name for the AI local search engine product we're
-exploring (the three pages below). Beyond the homepage, there are three
-linked pages that demonstrate the bigger idea: a search engine covering
-two categories
-(**restaurants** and **retail shops**) where a customer describes what
-they want and gets back ranked, location-aware, verified results.
-
-### 1. Search (`search-demo/`)
-
-A customer types what they want (e.g. *"affordable vegan pizza open
-now"*) and the page shows the pipeline working:
-
-1. **Query understanding** — the text is scanned for type (cuisine/store
-   type), tags (dietary/product), price preference, and whether they want
-   somewhere open right now. (A real version would use an AI model here
-   instead of keyword matching.)
-2. **Location** — pick a sample neighborhood; distance to each listing
-   factors into ranking.
-3. **Ranking** — every listing gets a score based on match quality,
-   distance, rating, and verification status, then results are shown with
-   a plain-English explanation of *why* each one matched. A category
-   filter narrows results to restaurants, retail, or both.
-
-### 2. Owner Panel (`owner-panel/`)
-
-Lets a business owner search for their business, claim it, and correct
-its details — or add a new listing if it's not found yet. Checking the
-confirmation box marks the listing **verified** immediately. This is a
-**self-attestation**, not a real identity check — a real version would
-confirm ownership by email, phone, or document upload first.
-
-### 3. Admin Panel (`admin-panel/`)
-
-Lets you review every listing across both categories: see verified vs.
-unverified counts, filter by category/status/name, toggle verification,
-delete bad entries, or reset everything back to the original sample data.
-
-### How the three pages share data
-
-There's no real backend yet, so all three pages read and write the same
-listings through `shared/listings.js`, which stores them in your
-**browser's local storage** — a built-in browser feature for saving small
-amounts of data on your own device. This means:
-
-- Claiming a listing in the Owner Panel shows up as verified in the Admin
-  Panel and in Search immediately.
-- It only works **within one browser** — it does not sync across devices
-  or between different people. A real version would replace this file
-  with calls to an actual backend and database.
-
-All data starts from a small hard-coded sample (`shared/listings.js`)
-standing in for data that would eventually come from a real source like
-OpenStreetMap plus owner verification. No external AI API, map service,
-or real database is called — everything runs locally in the browser.
-
-Open any of the three pages the same way as the homepage (see "How to run
-it" below), or use the links in the homepage footer.
-
 ## How to run it
 
-You don't need to install anything. Just open the page in a browser:
+This now requires Node.js (unlike the earlier plain-HTML version).
 
-1. Download or clone this repository.
-2. Open the `index.html` file in any web browser (double-click it, or
-   right-click → "Open with" → your browser).
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+2. Set up your local environment file:
+   ```bash
+   cp .env.example .env
+   ```
+3. Create the database and fill it with sample data:
+   ```bash
+   npm run db:push
+   npm run db:seed
+   ```
+4. Start the app:
+   ```bash
+   npm run dev
+   ```
+5. Open `http://localhost:3000` in your browser.
 
-That's it — the page will load and you can try the AI Marketing Assistant
-section right away.
+**Seeded admin login:** `admin@verra.app` / `admin123` (change this before
+deploying anywhere real — it's only for local development).
 
-### Optional: run a local server
+Owner accounts aren't seeded — use the "Create an account" link on the
+Owner Panel to sign up with any email/password.
 
-Some browsers restrict certain features when opening files directly
-(this project doesn't currently need any, but it's a good habit). If you'd
-like to serve it locally instead:
+### Resetting the database
+
+If you want to start over with fresh sample data:
 
 ```bash
-# From inside the restaurant-ai-learning folder:
-python3 -m http.server 8000
+npm run db:seed
 ```
 
-Then open `http://localhost:8000` in your browser.
+(or use the "Reset to sample data" button in the Admin Panel, which does
+the same thing without clearing user accounts).
 
-## Next steps (future versions)
+## Moving to a real hosted database
 
-- Connect the "Generate Marketing Campaign" button to a real AI service.
-- Let the restaurant owner edit their own name/cuisine/location/website
-  instead of hard-coded values.
-- Add a database to save campaigns.
-- Add user accounts.
-- Replace the sample data with real listings (starting from OpenStreetMap
-  data for one city).
-- Replace the demo's keyword-matching "query understanding" step with a
-  real AI model call.
-- Replace local-storage "sharing" with a real backend and database, so
-  data syncs across devices and between different owners/admins.
-- Add real owner identity verification (email/phone/document) instead of
-  the current self-attestation checkbox.
-- Add admin login instead of an open admin panel.
+The local SQLite file (`prisma/dev.db`) is great for development but
+isn't shared between devices or deployed servers. To move to a real
+hosted Postgres database later (e.g. Supabase or Neon):
+
+1. Change `provider = "sqlite"` to `provider = "postgresql"` in
+   `prisma/schema.prisma`.
+2. Set `DATABASE_URL` in `.env` to your Postgres connection string.
+3. Run `npm run db:push` (or set up proper migrations with
+   `npx prisma migrate dev`) against the new database.
+
+No application code needs to change for this move — it was designed that
+way from the start.
+
+## Next steps (future phases)
+
+- Replace the keyword-matching query parser in `lib/search.ts` with a
+  real AI model call (Claude API) — see the Architecture Plan's
+  "Search & AI Pipeline" section.
+- Replace the self-attestation checkbox with real identity verification
+  (confirmation email, phone code, or document upload).
+- Replace the simulated map coordinates with real addresses, pulled from
+  OpenStreetMap and geocoded to real latitude/longitude (PostGIS).
+- Move from local SQLite to a hosted Postgres database (see above) and
+  deploy the app (e.g. to Vercel).
+- Connect the homepage's "Generate Marketing Campaign" button to a real
+  AI service.

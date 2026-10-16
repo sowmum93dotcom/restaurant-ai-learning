@@ -1,0 +1,69 @@
+// Prisma schema for Verra.
+//
+// Uses SQLite for local development (zero setup, a single file database).
+// To move to a hosted Postgres database later: change `provider` below to
+// "postgresql", point DATABASE_URL at your Postgres connection string, and
+// run `npm run db:push` again. The schema itself doesn't need to change for
+// that move (Postgres also supports everything used here).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String         @id @default(cuid())
+  email        String         @unique
+  passwordHash String
+  role         String // "owner" | "admin"
+  createdAt    DateTime       @default(now())
+  sessions     Session[]
+  claims       ListingClaim[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Listing {
+  id                String         @id @default(cuid())
+  category          String // "restaurant" | "retail"
+  name              String
+  neighborhood      String // references a fixed neighborhood id (see lib/neighborhoods.ts)
+  x                 Float // simulated map coordinate, same scheme as the earlier demo
+  y                 Float
+  hoursOpen         String // "HH:MM"
+  hoursClose        String // "HH:MM"
+  priceTier         Int // 1 ($) to 3 ($$$)
+  types             String // comma-separated, e.g. "italian,pizza"
+  tags              String // comma-separated, e.g. "vegan,gluten-free"
+  verified          Boolean        @default(false)
+  verificationLevel String         @default("unverified") // unverified | self_attested | confirmed
+  source            String         @default("seed") // seed | owner | admin
+  rating            Float          @default(0)
+  highlight         String         @default("")
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  claims            ListingClaim[]
+}
+
+model ListingClaim {
+  id          String    @id @default(cuid())
+  listingId   String
+  listing     Listing   @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status      String    @default("approved") // pending | approved | rejected
+  submittedAt DateTime  @default(now())
+  reviewedAt  DateTime?
+  reviewedBy  String?
+}
