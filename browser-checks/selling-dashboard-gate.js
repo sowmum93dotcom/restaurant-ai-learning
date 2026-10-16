@@ -66,9 +66,25 @@ async function run(){
   if(failure)throw Error('Simulated data boundary failure');
   const id=req.headers.cookie?.match(/gate-owner=(owner-[a-z]+)/)?.[1];return id?{trustedIdentityId:id}:null;
  }});
+ // WebKit does not expose Blob PUT bodies through intercepted request.postDataBuffer().
+ // Receive the browser's actual bytes over a separate loopback HTTP origin instead.
+ let refuseUploads=false;
+ const uploadServer=http.createServer(async(req,res)=>{
+  res.setHeader('Access-Control-Allow-Origin','*');res.setHeader('Access-Control-Allow-Methods','PUT,OPTIONS');res.setHeader('Access-Control-Allow-Headers','content-type,x-content-type,x-vercel-blob-access');
+  if(req.method==='OPTIONS'){res.statusCode=204;return res.end();}
+  if(req.method!=='PUT'){res.statusCode=405;return res.end();}
+  if(refuseUploads){res.statusCode=403;return res.end('Upload refused');}
+  try{
+   const chunks=[];let size=0;for await(const chunk of req){size+=chunk.length;if(size>15*1024*1024){res.statusCode=413;return res.end();}chunks.push(chunk);}
+   const response=await disk.fetchImpl('https://storage.gate'+req.url,{method:'PUT',headers:{'Content-Type':req.headers['content-type'],'x-content-type':req.headers['x-content-type'],'x-vercel-blob-access':req.headers['x-vercel-blob-access']},body:Buffer.concat(chunks)});
+   res.statusCode=response.status;res.end();
+  }catch(error){console.error(error);res.statusCode=500;res.end();}
+ });
+ await new Promise(r=>uploadServer.listen(0,'127.0.0.1',r));
+ const uploadBase='http://127.0.0.1:'+uploadServer.address().port;
  const server=http.createServer(async(req,res)=>{try{
   const url=new URL(req.url,'http://localhost');req.query=Object.fromEntries(url.searchParams);
-  res.status=code=>{res.statusCode=code;return res;};res.json=body=>{res.setHeader('Content-Type','application/json');res.end(JSON.stringify(body));return res;};
+  res.status=code=>{res.statusCode=code;return res;};res.json=body=>{if(body.uploadSession?.uploadUrl?.startsWith('https://storage.gate/'))body={...body,uploadSession:{...body.uploadSession,uploadUrl:body.uploadSession.uploadUrl.replace('https://storage.gate',uploadBase)}};res.setHeader('Content-Type','application/json');res.end(JSON.stringify(body));return res;};
   if(url.pathname==='/api/public-config')return res.json({clerkPublishableKey:'pk_test_'+Buffer.from('clerk.test$').toString('base64')});
   if(url.pathname==='/api/businesses'){
    if(req.method==='POST'){
@@ -262,11 +278,10 @@ async function run(){
    const imageBytes=await require('sharp')({create:{width:24,height:18,channels:3,background:'#06172d'}}).png().toBuffer();
    await page.locator('#media-file').setInputFiles({name:'coffee.png',mimeType:'image/png',buffer:imageBytes});
    if(viewport.width===375){
-    const refuseTransfer=async route=>route.request().method()==='PUT'?route.fulfill({status:403,body:'Upload refused'}):route.continue();
-    await page.route('https://storage.gate/**',refuseTransfer);
+    refuseUploads=true;
     await page.locator('#media-upload').click();await page.locator('#media-feedback').filter({hasText:'File transfer failed. Retry the upload.'}).waitFor();
     assert.equal((await repository.getKnownBusiness('vendor-a')).businessProfile.products[0].mediaGallery?.assetIds?.length||0,0,'Refused transfer never links or claims ready media');
-    await page.unroute('https://storage.gate/**',refuseTransfer);
+    refuseUploads=false;
    }
    await page.locator('#media-upload').click();await page.locator('#media-feedback').filter({hasText:'File uploaded and linked to product.'}).waitFor();
    const linked=(await repository.getKnownBusiness('vendor-a')).businessProfile.products[0].mediaGallery.assetIds[0];
@@ -461,6 +476,6 @@ async function run(){
    assert.deepEqual(errors,[]);await context.close();
    console.log('Selling dashboard SQL + rendered gate passed at '+viewport.width+'px');
   }
- }finally{await browser?.close();await new Promise(r=>server.close(r));await client.close();await require('node:fs/promises').rm(disk.root,{recursive:true,force:true});}
+ }finally{await browser?.close();await new Promise(r=>server.close(r));await new Promise(r=>uploadServer.close(r));await client.close();await require('node:fs/promises').rm(disk.root,{recursive:true,force:true});}
 }
 run().catch(error=>{console.error(error);process.exitCode=1;});
