@@ -20,4 +20,6 @@ jobs:
           sudo apt-get install -y ffmpeg
           npx playwright install --with-deps chromium chrome
       - name: Verify real MOV encoding, private storage, SQL ownership and playback
-        run: node tools/video-processor/verify.js --browser
+        run: |
+          node tools/video-processor/verify.js --browser
+          node tools/video-processor/verify.js --native --browser

@@ -44,3 +44,14 @@ test('Sharp keeps its real image processing when approved HTTP video delegation 
  assert.equal(result.durationSeconds,12);assert.equal(calls[0].url,'https://processor.example/inspect/video');assert.equal(calls[0].options.headers.authorization,'Bearer server-only-fixture');
  assert.equal(JSON.parse(calls[0].options.body).sourceUrl,'https://private.example/source');
 });
+
+
+test('native video is explicitly opt-in for Preview and never enables itself in Production',()=>{
+ const base={DEMEOS_MEDIA_PROCESSING_PROVIDER:'sharp',DEMEOS_VIDEO_PROCESSING_PROVIDER:'ffmpeg'};
+ const production=getConfiguredMediaProcessingDrivers({...base,VERCEL_ENV:'production'});
+ assert.equal(typeof production.optimizeImage,'function');assert.equal(production.transcodeVideo,undefined);
+ const preview=getConfiguredMediaProcessingDrivers({...base,VERCEL_ENV:'preview'});
+ assert.equal(typeof preview.optimizeImage,'function');assert.equal(typeof preview.inspectVideo,'function');assert.equal(typeof preview.transcodeVideo,'function');
+ const disabled=getConfiguredMediaProcessingDrivers({DEMEOS_MEDIA_PROCESSING_PROVIDER:'sharp',VERCEL_ENV:'preview'});
+ assert.equal(disabled.transcodeVideo,undefined);
+});

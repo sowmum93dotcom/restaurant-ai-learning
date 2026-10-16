@@ -1,9 +1,30 @@
-# DEMEOS private video processor — prepared, not activated
+# DEMEOS private video processor
 
-This is a separate, dependency-free Node HTTP service with actual FFmpeg/FFprobe.
+The processor runs natively in the existing Vercel Preview Function using bundled
+FFmpeg/FFprobe. An optional dependency-free Docker HTTP service is also provided.
 Sharp continues to process images in the existing application. This service only
 inspects and transcodes video. It does not own identities, SQL, catalogues or
 media records, and cannot publish anything.
+
+## Native Preview configuration
+
+The existing `sharp` image provider is retained. Only this PR branch's Preview
+receives `DEMEOS_VIDEO_PROCESSING_PROVIDER=ffmpeg`. The native video driver is
+explicitly disabled outside `VERCEL_ENV=preview`; no Production configuration
+is changed. Binaries are pinned as `ffmpeg-static@5.3.0` and
+`ffprobe-static@3.1.0`. Only the Linux/x64 FFprobe binary is resolved and traced;
+`vercel.json` includes the two exact executable paths in `api/businesses.js`.
+Their combined size is approximately 139 MiB before other Function dependencies.
+The existing 60-second Function limit is retained.
+
+No separate provider, new subscription, processor URL/token, database credential
+or owner infrastructure authorization is needed for this native path. Existing
+Vercel compute and private Blob usage charges apply. Activation is confined to
+the named Preview branch. Actual authenticated Preview upload/playback remains
+an acceptance requirement; a successful build is not that acceptance.
+
+Source: https://github.com/vercel-labs/ffmpeg-on-vercel and
+https://vercel.com/docs/functions/limitations .
 
 ## What is implemented
 
@@ -24,12 +45,13 @@ media records, and cannot publish anything.
   removed on both success and failure. No persistent disk is needed.
 - Existing SQL queue, retry/resume, output HEAD verification, owner authorization
   and product-gallery linking remain authoritative. A successful HTTP response
-  alone cannot mark missing output objects ready. Preview remains image-only
-  until the following configuration is deliberately supplied.
+  alone cannot mark missing output objects ready. The native driver uses the same scoped capabilities locally; images continue
+  through Sharp.
 
-## Exact activation requirements (owner approval required)
+## Optional external hosting (not required by the native Preview path)
 
-Proposed host: **Render Docker Web Service**, one `1c-2g` instance (legacy name
+Only if native execution proves insufficient and the owner chooses a separate
+service: **Render Docker Web Service**, one `1c-2g` instance (legacy name
 Standard), 1 CPU / 2 GB RAM, HTTPS endpoint, `/health` health check. Dockerfile:
 `tools/video-processor/Dockerfile`; Docker build context: repository root; branch:
 `rebuild/selling-foundation-phase-1`. Disable auto-deploys initially and deploy
@@ -67,8 +89,8 @@ Render receives expiring per-file read/write capabilities only. Never give it
 `BLOB_READ_WRITE_TOKEN`, Clerk secrets or a Postgres URL. Do not change Production
 environment variables. After approved activation, redeploy Preview and test an
 owner-authenticated MOV/MP4 upload, SQL ready state, product linking, playback,
-refresh and removal, alongside an image regression. Until then, deployed video
-upload/playback is explicitly **unfinished**.
+refresh and removal, alongside an image regression. This external option has not been activated and must not be purchased without
+explicit approval. It is not a prerequisite for the native Preview path.
 
 ## Reproducible verification
 
@@ -77,16 +99,18 @@ With Node 22, system FFmpeg/FFprobe and repository dependencies installed:
 ```
 node --test test/video-processor.test.js
 node tools/video-processor/verify.js
+node tools/video-processor/verify.js --native
 ```
 
 For real browser decoding too, install Google Chrome (`npx playwright install chrome`) and run:
 
 ```
 node tools/video-processor/verify.js --browser
+node tools/video-processor/verify.js --native --browser
 ```
 
 The verification generates actual 3-second MOV with PCM audio and 60-second MOV
-without audio, invokes the authenticated processor over real HTTP, registers and
+without audio, exercises both the authenticated HTTP processor and the bundled native driver, registers and
 completes uploads through the shipped Selling handler and isolated PGlite SQL,
 checks H.264/AAC, fast-start atoms, all three private objects, ready state,
 product linking, rejected cross-owner access and customerVisible=false, then

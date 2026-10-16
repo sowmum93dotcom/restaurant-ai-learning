@@ -29,7 +29,9 @@ function getConfiguredMediaProcessingDrivers(env=process.env,fetchImpl=globalThi
   const images=require('./media-sharp-driver').createSharpMediaDrivers({fetchImpl,storage:require('./media-storage-driver').getConfiguredMediaStorageAdapter(env,fetchImpl)});
   // Keep the confirmed image pipeline. Delegate only video when an approved
   // processor has explicitly been configured in this deployment environment.
-  const video=createHttpMediaProcessingDrivers({baseUrl:env.DEMEOS_MEDIA_PROCESSING_URL,token:env.DEMEOS_MEDIA_PROCESSING_TOKEN,fetchImpl,timeoutMs:45000});
+  const video=env.VERCEL_ENV==='preview'&&env.DEMEOS_VIDEO_PROCESSING_PROVIDER==='ffmpeg'
+   ?require('./media-ffmpeg-driver').createFfmpegVideoDrivers({fetchImpl})
+   :createHttpMediaProcessingDrivers({baseUrl:env.DEMEOS_MEDIA_PROCESSING_URL,token:env.DEMEOS_MEDIA_PROCESSING_TOKEN,fetchImpl,timeoutMs:45000});
   return {...images,...(video?{inspectVideo:video.inspectVideo,transcodeVideo:video.transcodeVideo}:{})};
  }
  if(provider!=="http")return null;

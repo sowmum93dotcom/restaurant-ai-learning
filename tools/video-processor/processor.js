@@ -14,14 +14,14 @@ function scope(payload){
 async function run(binary,args,timeout){
  return (await exec(binary,args,{timeout,killSignal:'SIGKILL',maxBuffer:1024*1024,windowsHide:true})).stdout;
 }
-async function probe(file){
- const data=JSON.parse(await run('ffprobe',['-v','error','-protocol_whitelist','file,pipe','-show_streams','-show_format','-of','json',file],4000));
+async function probe(file,{ffprobePath='ffprobe'}={}){
+ const data=JSON.parse(await run(ffprobePath,['-v','error','-protocol_whitelist','file,pipe','-show_streams','-show_format','-of','json',file],4000));
  const video=data.streams?.find(s=>s.codec_type==='video'&&!s.disposition?.attached_pic),duration=Number(data.format?.duration);
  if(!data.format?.format_name?.split(',').some(f=>['mov','mp4'].includes(f))||!video||!Number.isFinite(duration)||duration<=0||duration>60||!Number.isInteger(video.width)||video.width<2||!Number.isInteger(video.height)||video.height<2||video.width*video.height>3840*2160)throw Error('Video must be MP4/MOV, at most 60 seconds and at most 4K');
  const [n,d]=String(video.avg_frame_rate).split('/').map(Number);if(!d||n/d>120)throw Error('Video frame rate exceeds 120 fps');
  return {contentType:'video/mp4',width:video.width,height:video.height,durationSeconds:duration};
 }
-function createProcessor({hosts=[],fetchImpl=globalThis.fetch}={}){
+function createProcessor({hosts=[],fetchImpl=globalThis.fetch,ffmpegPath='ffmpeg',ffprobePath='ffprobe'}={}){
  if(!hosts.length)throw Error('STORAGE_HOSTS must contain exact approved Blob hostnames');
  async function source(payload,file){
   const prefix=scope(payload);
@@ -47,11 +47,11 @@ function createProcessor({hosts=[],fetchImpl=globalThis.fetch}={}){
   const directory=await fs.mkdtemp(path.join(os.tmpdir(),'demeos-video-'));
   try{
    const original=path.join(directory,'source'),output=path.join(directory,'video.mp4');
-   await source(payload,original);const inspected=await probe(original);
+   await source(payload,original);const inspected=await probe(original,{ffprobePath});
    if(operation==='inspect')return inspected;
    // Decode only the downloaded file. Network protocols, subtitles and data streams are excluded.
-   await run('ffmpeg',['-hide_banner','-loglevel','error','-nostdin','-threads','1','-protocol_whitelist','file,pipe','-i',original,'-map','0:v:0','-map','0:a:0?','-sn','-dn','-map_metadata','-1','-t','60','-vf',"scale=w='min(1280,iw)':h='min(1280,ih)':force_original_aspect_ratio=decrease:force_divisible_by=2",'-r','30','-c:v','libx264','-threads','1','-preset','veryfast','-crf','25','-maxrate','2500k','-bufsize','5000k','-pix_fmt','yuv420p','-c:a','aac','-b:a','128k','-ac','2','-movflags','+faststart','-f','mp4',output],22000);
-   const encoded=await probe(output),bytes=await fs.readFile(output);
+   await run(ffmpegPath,['-hide_banner','-loglevel','error','-nostdin','-threads','1','-protocol_whitelist','file,pipe','-i',original,'-map','0:v:0','-map','0:a:0?','-sn','-dn','-map_metadata','-1','-t','60','-vf',"scale=w='min(1280,iw)':h='min(1280,ih)':force_original_aspect_ratio=decrease:force_divisible_by=2",'-r','30','-c:v','libx264','-threads','1','-preset','veryfast','-crf','25','-maxrate','2500k','-bufsize','5000k','-pix_fmt','yuv420p','-c:a','aac','-b:a','128k','-ac','2','-movflags','+faststart','-f','mp4',output],22000);
+   const encoded=await probe(output,{ffprobePath}),bytes=await fs.readFile(output);
    if(!bytes.length||bytes.length>MAX_BYTES)throw Error('Invalid encoded output');
    await Promise.all(destinations.map(async d=>{
     const response=await fetchImpl(d.uploadUrl,{method:'PUT',redirect:'error',headers:{...d.headers,'content-type':'video/mp4'},body:bytes,signal:AbortSignal.timeout(8000)});

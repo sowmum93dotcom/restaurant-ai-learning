@@ -14,7 +14,8 @@ async function main(){
  const server=createServer({token,processor});await new Promise(r=>server.listen(0,'127.0.0.1',r));
  const base='http://127.0.0.1:'+server.address().port;
  const driverFetch=(url,options)=>fetch(String(url).replace('https://processor.fixture',base),options);
- const video=createHttpMediaProcessingDrivers({baseUrl:'https://processor.fixture',token,fetchImpl:driverFetch,timeoutMs:45000});
+ const video=process.argv.includes('--native')?require('../../api/_lib/media-ffmpeg-driver').createFfmpegVideoDrivers({fetchImpl:disk.fetchImpl}):createHttpMediaProcessingDrivers({baseUrl:'https://processor.fixture',token,fetchImpl:driverFetch,timeoutMs:45000});
+ assert.ok(video,'Native video binaries must be executable');
  const backend={...disk,drivers:{...disk.drivers,inspectVideo:video.inspectVideo,transcodeVideo:video.transcodeVideo}};
  const env={VERCEL_ENV:'production',DEMEOS_MEDIA_UPLOAD_SECRET:'isolated-video-upload-secret-at-least-32-characters'};
  const previousSecret=process.env.DEMEOS_MEDIA_UPLOAD_SECRET;process.env.DEMEOS_MEDIA_UPLOAD_SECRET=env.DEMEOS_MEDIA_UPLOAD_SECRET;
