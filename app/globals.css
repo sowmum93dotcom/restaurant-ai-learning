@@ -26,6 +26,14 @@ a {
   padding: 2.5rem 1.5rem;
 }
 
+.hero a {
+  color: #f1d9b0;
+}
+
+.hero a:hover {
+  color: #fff;
+}
+
 .hero h1 {
   font-size: 2rem;
   margin: 0 0 0.75rem;
