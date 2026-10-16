@@ -258,7 +258,9 @@
       return bounded(new Promise((resolve,reject)=>{const node=doc.createElement('script');node.src=src;node.async=true;node.crossOrigin='anonymous';if(key)node.dataset.clerkPublishableKey=key;node.onload=resolve;node.onerror=()=>{node.remove();reject(Error('Authentication SDK unavailable'));};doc.head.append(node);}));
     }
     const authLocales=new Map();
-    async function authLocalization(){const code=language;if(!authLocales.has(code)){const response=await bounded(win.fetch(code==='tr'?'/js/selling-auth-tr.json':'/js/customer-auth-locales/'+code+'.json',{credentials:'same-origin'}));if(!response.ok)throw Error(t('Sign-in is temporarily unavailable'));const copy=await response.json();if(!copy.locale?.startsWith(code))throw Error(t('Sign-in is temporarily unavailable'));authLocales.set(code,copy);}return authLocales.get(code);}
+    // A document navigation must not cancel an in-flight locale read in WebKit.
+    // This small same-origin GET carries no credentials outside the application.
+    async function authLocalization(){const code=language;if(!authLocales.has(code)){const response=await bounded(win.fetch(code==='tr'?'/js/selling-auth-tr.json':'/js/customer-auth-locales/'+code+'.json',{credentials:'same-origin',keepalive:true}));if(!response.ok)throw Error(t('Sign-in is temporarily unavailable'));const copy=await response.json();if(!copy.locale?.startsWith(code))throw Error(t('Sign-in is temporarily unavailable'));authLocales.set(code,copy);}return authLocales.get(code);}
     async function start(){
       if(booting)return;booting=true;navigation();status('loading',t('Opening your workspace'),t('Checking your session and business access…'));
       try{
