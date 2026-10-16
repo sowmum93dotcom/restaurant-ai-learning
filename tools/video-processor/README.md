@@ -35,7 +35,8 @@ https://vercel.com/docs/functions/limitations .
   of at least 32 random characters. Native execution uses existing Selling owner
   authorization and the SQL job claim.
 - Exact HTTPS storage-host allowlist, expiring read capabilities, asset/business
-  scoped output keys and no redirects. No permanent Blob or database credential.
+  scoped output keys and no redirects. No permanent Blob or database credential. FFmpeg/FFprobe children receive only
+  a fixed locale environment, so hosting credentials remain in the Node worker.
 - Download limit 250 MB; actual container/stream inspection, MP4/MOV only, maximum
   60 seconds, 4K pixels and 120 fps. Input MIME alone is never accepted as proof.
 - Real H.264/yuv420p video, optional AAC stereo audio, 30 fps, fast-start MP4.

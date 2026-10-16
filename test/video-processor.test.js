@@ -18,3 +18,16 @@ test('video worker fails closed when a private source exceeds the byte limit',as
  const processor=createProcessor({hosts:['store.example'],fetchImpl:async()=>new Response('not video',{headers:{'content-length':String(251*1024*1024)}})});
  await assert.rejects(()=>processor('inspect',{businessId:'shop',assetId:'video',storageKey:'businesses/shop/media/video/original',sourceUrl:'https://store.example/source',sourceExpiresAt:new Date(Date.now()+300000).toISOString()}),/too large/);
 });
+
+
+test('media subprocesses never inherit hosting or storage credentials',async()=>{
+ const {run}=require('../tools/video-processor/processor');
+ const keys=['BLOB_READ_WRITE_TOKEN','POSTGRES_URL','CLERK_SECRET_KEY','DEMEOS_MEDIA_PROCESSING_TOKEN'];
+ const previous=Object.fromEntries(keys.map(key=>[key,process.env[key]]));
+ try{
+  for(const key of keys)process.env[key]='isolated-secret-must-not-reach-decoder';
+  const child=JSON.parse(await run(process.execPath,['-e','process.stdout.write(JSON.stringify(process.env))'],5000));
+  for(const key of keys)assert.equal(child[key],undefined,key+' must remain in the authenticated parent');
+  assert.equal(child.LC_ALL,'C');
+ }finally{for(const key of keys){if(previous[key]===undefined)delete process.env[key];else process.env[key]=previous[key];}}
+});

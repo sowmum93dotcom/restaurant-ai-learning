@@ -12,7 +12,7 @@ function scope(payload){
  return `businesses/${encodeURIComponent(payload.businessId)}/media/${encodeURIComponent(payload.assetId)}/`;
 }
 async function run(binary,args,timeout){
- return (await exec(binary,args,{timeout,killSignal:'SIGKILL',maxBuffer:1024*1024,windowsHide:true})).stdout;
+ return (await exec(binary,args,{timeout,killSignal:'SIGKILL',maxBuffer:1024*1024,windowsHide:true,env:{LANG:'C',LC_ALL:'C'}})).stdout;
 }
 async function probe(file,{ffprobePath='ffprobe'}={}){
  const data=JSON.parse(await run(ffprobePath,['-v','error','-protocol_whitelist','file,pipe','-show_streams','-show_format','-of','json',file],4000));
@@ -63,4 +63,4 @@ function createProcessor({hosts=[],fetchImpl=globalThis.fetch,ffmpegPath='ffmpeg
   }finally{await fs.rm(directory,{recursive:true,force:true});}
  };
 }
-module.exports={createProcessor,allowedUrl,probe};
+module.exports={createProcessor,allowedUrl,probe,run};
