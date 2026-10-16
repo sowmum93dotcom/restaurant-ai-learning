@@ -51,7 +51,8 @@ test('native video is explicitly opt-in for Preview and never enables itself in 
  const production=getConfiguredMediaProcessingDrivers({...base,VERCEL_ENV:'production'});
  assert.equal(typeof production.optimizeImage,'function');assert.equal(production.transcodeVideo,undefined);
  const preview=getConfiguredMediaProcessingDrivers({...base,VERCEL_ENV:'preview'});
- assert.equal(typeof preview.optimizeImage,'function');assert.equal(typeof preview.inspectVideo,'function');assert.equal(typeof preview.transcodeVideo,'function');
+ const nativeType=process.platform==='linux'&&process.arch==='x64'?'function':'undefined';
+ assert.equal(typeof preview.optimizeImage,'function');assert.equal(typeof preview.inspectVideo,nativeType);assert.equal(typeof preview.transcodeVideo,nativeType);
  const disabled=getConfiguredMediaProcessingDrivers({DEMEOS_MEDIA_PROCESSING_PROVIDER:'sharp',VERCEL_ENV:'preview'});
  assert.equal(disabled.transcodeVideo,undefined);
 });

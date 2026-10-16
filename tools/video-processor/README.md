@@ -12,10 +12,13 @@ The existing `sharp` image provider is retained. Only this PR branch's Preview
 receives `DEMEOS_VIDEO_PROCESSING_PROVIDER=ffmpeg`. The native video driver is
 explicitly disabled outside `VERCEL_ENV=preview`; no Production configuration
 is changed. Binaries are pinned as `ffmpeg-static@5.3.0` and
-`ffprobe-static@3.1.0`. Only the Linux/x64 FFprobe binary is resolved and traced;
+`@ffprobe-installer/linux-x64@5.2.0`. Only the Linux/x64 FFprobe package is installed, resolved and traced;
 `vercel.json` includes the two exact executable paths in `api/businesses.js`.
-Their combined size is approximately 139 MiB before other Function dependencies.
-The existing 60-second Function limit is retained.
+Their combined size is approximately 152 MiB before other Function dependencies.
+The existing 60-second Function limit is retained. A version-pinned npm
+`allowScripts` entries permit the FFmpeg downloader and FFprobe executable permission script, and the root postinstall
+check executes both binaries in the opted-in Preview build so missing binaries
+fail deployment visibly.
 
 No separate provider, new subscription, processor URL/token, database credential
 or owner infrastructure authorization is needed for this native path. Existing
@@ -28,7 +31,9 @@ https://vercel.com/docs/functions/limitations .
 
 ## What is implemented
 
-- Bearer authentication with a server-only token of at least 32 random characters.
+- The optional HTTP service uses Bearer authentication with a server-only token
+  of at least 32 random characters. Native execution uses existing Selling owner
+  authorization and the SQL job claim.
 - Exact HTTPS storage-host allowlist, expiring read capabilities, asset/business
   scoped output keys and no redirects. No permanent Blob or database credential.
 - Download limit 250 MB; actual container/stream inspection, MP4/MOV only, maximum
@@ -38,7 +43,9 @@ https://vercel.com/docs/functions/limitations .
 - One encode is uploaded to the existing private master/customer/marketing output
   keys. These are independent private objects, not customer publication or writes
   to either the Marketing application or Customer interface.
-- One concurrent operation; overload returns 429, not a fabricated ready result.
+- One concurrent video operation per process. The HTTP service returns 429 on
+  overload; the native driver returns a failed processing result to the existing
+  durable retry queue. Neither path fabricates a ready result.
   FFmpeg has a 22-second execution budget, FFprobe 4 seconds per call and storage
   requests 8 seconds. Files exceeding the resource budget fail safely; performance
   on the selected host must be measured before acceptance. Temporary files are
