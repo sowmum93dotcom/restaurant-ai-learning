@@ -29,11 +29,11 @@ body {
   color: #f1d9b0;
 }
 
-.back-link {
+.nav-links {
   margin-top: 1rem;
 }
 
-.back-link a {
+.nav-links a {
   color: #fff;
   text-decoration: underline;
 }

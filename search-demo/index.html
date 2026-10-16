@@ -3,21 +3,25 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Restaurant Search — Demo</title>
+  <title>AI Local Search — Demo</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
   <header class="hero">
-    <h1>AI Restaurant Search — Pipeline Demo</h1>
+    <h1>AI Local Search — Pipeline Demo</h1>
     <p class="subtitle">
       A working mini-version of the search pipeline we discussed: query understanding
-      &rarr; ranking &rarr; results. This demo uses a small built-in sample dataset and
-      simple rule-based logic instead of a real AI API or live location data, so it
-      runs instantly with no setup — but the pipeline shape is the same one a real
-      version would use.
+      &rarr; ranking &rarr; results, across restaurants and retail shops. This demo uses
+      a small sample dataset and simple rule-based logic instead of a real AI API or
+      live location data, so it runs instantly with no setup — but the pipeline shape
+      is the same one a real version would use.
     </p>
-    <p class="back-link"><a href="../index.html">&larr; Back to homepage</a></p>
+    <p class="nav-links">
+      <a href="../index.html">&larr; Homepage</a> &middot;
+      <a href="../owner-panel/index.html">Owner Panel</a> &middot;
+      <a href="../admin-panel/index.html">Admin Panel</a>
+    </p>
   </header>
 
   <main>
@@ -32,6 +36,13 @@
 
       <label for="location-select">Your location (simulated)</label>
       <select id="location-select"></select>
+
+      <label for="category-select">Category</label>
+      <select id="category-select">
+        <option value="all">All categories</option>
+        <option value="restaurant">Restaurants</option>
+        <option value="retail">Retail / Shops</option>
+      </select>
 
       <div class="filters">
         <label><input type="checkbox" id="filter-verified" /> Verified only</label>
@@ -55,7 +66,7 @@
     <p>Demo only — sample data, no external AI or mapping services called.</p>
   </footer>
 
-  <script src="data.js"></script>
+  <script src="../shared/listings.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
