@@ -29,7 +29,7 @@
       <section id="dashboard-status" class="card" role="status" aria-live="polite" aria-busy="true"><h2 id="status-heading">Opening your workspace</h2><p id="status-message">Checking your session and business access…</p><button id="retry" hidden>Try again</button><button id="choose-business" hidden>Choose an authorized business</button><a id="registration" href="/selling-vendor/my-business" hidden>Review Selling business access</a></section>
       <div id="private-workspace" hidden>
         <section class="business-bar" aria-label="Current business"><div><p class="eyebrow">Current business</p><img id="business-logo" class="business-logo" alt="Business logo" hidden><h2 id="business-name"></h2><p id="business-details"></p></div><span id="environment-label" class="badge"></span><label>Switch business<select id="business-select"></select></label></section>
-        <section class="card" id="section-content" aria-labelledby="content-heading"><h2 id="content-heading"></h2><p id="content-message"></p><dl id="business-facts" hidden></dl><div id="catalogue-tools" hidden>
+        <section class="card" id="section-content" aria-labelledby="content-heading"><h2 id="content-heading"></h2><p id="content-message"></p><dl id="business-facts" hidden></dl><div id="record-tools" hidden><label for="record-search">Search saved records</label><input id="record-search" type="search" maxlength="200" aria-controls="catalogue-list media-list variant-list stock-list orders-list"><p id="record-count" role="status" aria-live="polite"></p></div><div id="catalogue-tools" hidden>
           <form id="product-form">
             <h3 id="product-form-title">Add product</h3>
             <input id="product-id" type="hidden">
@@ -113,5 +113,10 @@
       <noscript><p class="card">Enable JavaScript to sign in and open your private Selling dashboard.</p></noscript>
     </main>
   </div>
+  <footer class="selling-footer" aria-label="DEMEOS footer">
+    <img src="/images/demeos-logo.png" alt="DEMEOS logo" width="66" height="66">
+    <p>© 2026 DEMEOS — ONE SYSTEM. REAL VALUE. SHARED FUTURE.</p>
+    <nav aria-label="Information"><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a><a href="/contact.html">Contact</a></nav>
+  </footer>
 </body>
 </html>

@@ -178,6 +178,11 @@ async function run(){
     await page.locator('#content-heading').filter({hasText:['product-catalogue','stock-history'].includes(section)?(section==='stock-history'?'Stock & History':'Product Catalogue'):copy[1]}).waitFor();
     assert.equal(await page.locator('nav [aria-current=page]').getAttribute('data-section'),section);
     assert.equal(await page.locator('h1').innerText(),copy[0]);
+    assert.equal(await page.locator('footer.selling-footer').count(),1,'One shared footer on every workspace');
+    assert.equal(await page.locator('.selling-footer p').innerText(),'© 2026 DEMEOS — ONE SYSTEM. REAL VALUE. SHARED FUTURE.');
+    assert.ok(await page.locator('.selling-footer img').evaluate(image=>image.complete&&image.naturalWidth>0),'Official footer logo decodes');
+    for(const href of ['/privacy.html','/terms.html','/contact.html']){assert.equal(await page.locator('.selling-footer a[href="'+href+'"]').count(),1);assert.equal((await page.request.get(base+href)).status(),200);}
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'Shared footer fits the viewport');
     if(section==='product-catalogue'){
      assert.equal(await page.locator('#product-save').count(),1,'Catalogue has a real save action');
      assert.equal(await page.locator('#product-form').count(),1,'Catalogue has an editable form');
@@ -231,6 +236,10 @@ async function run(){
    assert.equal((await repository.getKnownBusiness('vendor-a')).businessProfile.products[0].availability,'available','Product availability persisted in SQL');
    await page.reload();
    await page.locator('.catalogue-item h3').filter({hasText:'Gate Coffee'}).waitFor();
+   await page.locator('#record-search').fill('NO MATCHING PRODUCT');assert.equal(await page.locator('#catalogue-list .catalogue-item:visible').count(),0);
+   assert.equal(await page.locator('#record-count').innerText(),'0 of 1 saved records');
+   await page.locator('#record-search').fill('coffee');assert.equal(await page.locator('#catalogue-list .catalogue-item:visible').count(),1);
+   await page.locator('#record-search').fill('');
    await page.locator('.catalogue-item button').filter({hasText:'Edit'}).click();
    await page.locator('#product-name').fill('Gate Coffee Updated');
    assert.equal(await page.locator('#product-availability').inputValue(),'available','Edit restores saved availability');
@@ -302,6 +311,8 @@ async function run(){
       await page.locator('nav [data-section="'+section+'"]').click();
       await page.locator('#private-workspace:visible').waitFor();
       assert.equal(await page.locator('#section-heading').innerText(),copy.translate(locale.code,title[0]));
+      assert.equal(await page.locator('.selling-footer a[href="/privacy.html"]').innerText(),copy.translate(locale.code,'Privacy'));
+      assert.equal(await page.locator('footer').count(),1);
       assert.equal(await page.locator('a[href*="marketing"]').count(),0,'Selling navigation never enters Marketing');
      }
      await page.reload();await page.locator('#private-workspace:visible').waitFor();

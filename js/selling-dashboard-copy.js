@@ -1757,6 +1757,34 @@
  tr:['İşletme logosu','İşletme logosu kaldırılsın mı?','İşletme logosu kaydedildi.']
  };
  for(const [locale,values] of Object.entries(logoCopy))['Business logo','Remove business logo?','Business logo saved.'].forEach((key,index)=>packs[locale][key]=values[index]);
+ const footerCopy={
+ en:['Privacy','Terms','Contact','Information','DEMEOS footer'],
+ es:['Privacidad','Condiciones','Contacto','Información','Pie de página DEMEOS'],
+ fr:['Confidentialité','Conditions','Contact','Informations','Pied de page DEMEOS'],
+ ar:['الخصوصية','الشروط','اتصل بنا','معلومات','تذييل DEMEOS'],
+ pt:['Privacidade','Termos','Contacto','Informações','Rodapé DEMEOS'],
+ zh:['隐私','条款','联系','信息','DEMEOS 页脚'],
+ hi:['गोपनीयता','शर्तें','संपर्क','जानकारी','DEMEOS फ़ुटर'],
+ de:['Datenschutz','Bedingungen','Kontakt','Informationen','DEMEOS-Fußzeile'],
+ ja:['プライバシー','利用規約','お問い合わせ','情報','DEMEOS フッター'],
+ tr:['Gizlilik','Koşullar','İletişim','Bilgi','DEMEOS altbilgisi']
+ };
+ for(const [locale,values] of Object.entries(footerCopy))['Privacy','Terms','Contact','Information','DEMEOS footer'].forEach((key,index)=>packs[locale][key]=values[index]);
+ // The owner's official brand statement stays exact in every locale.
+ for(const pack of Object.values(packs))pack['© 2026 DEMEOS — ONE SYSTEM. REAL VALUE. SHARED FUTURE.']='© 2026 DEMEOS — ONE SYSTEM. REAL VALUE. SHARED FUTURE.';
+ const recordCopy={
+ en:['Search saved records','{shown} of {total} saved records','Available stock','Low-stock threshold','Stock belongs to earlier product options.'],
+ es:['Buscar registros guardados','{shown} de {total} registros guardados','Existencias disponibles','Umbral de existencias bajas','Las existencias pertenecen a opciones anteriores del producto.'],
+ fr:['Rechercher les enregistrements','{shown} sur {total} enregistrements','Stock disponible','Seuil de stock faible','Le stock correspond à des options précédentes du produit.'],
+ ar:['البحث في السجلات المحفوظة','{shown} من {total} سجل محفوظ','المخزون المتاح','حد انخفاض المخزون','المخزون مرتبط بخيارات سابقة للمنتج.'],
+ pt:['Pesquisar registos guardados','{shown} de {total} registos guardados','Stock disponível','Limite de stock baixo','O stock pertence a opções anteriores do produto.'],
+ zh:['搜索已保存记录','显示 {shown} 条，共 {total} 条已保存记录','可用库存','低库存阈值','库存属于先前的商品选项。'],
+ hi:['सहेजे गए रिकॉर्ड खोजें','{total} में से {shown} सहेजे गए रिकॉर्ड','उपलब्ध स्टॉक','कम स्टॉक की सीमा','स्टॉक उत्पाद के पुराने विकल्पों से जुड़ा है।'],
+ de:['Gespeicherte Einträge suchen','{shown} von {total} gespeicherten Einträgen','Verfügbarer Bestand','Meldebestand','Der Bestand gehört zu früheren Produktoptionen.'],
+ ja:['保存済みの記録を検索','保存済み {total} 件中 {shown} 件','利用可能な在庫','在庫低下のしきい値','在庫は以前の商品オプションに属しています。'],
+ tr:['Kayıtlı kayıtlarda ara','{total} kayıtlı kayıttan {shown} tanesi','Kullanılabilir stok','Düşük stok eşiği','Stok, önceki ürün seçeneklerine aittir.']
+ };
+ for(const [locale,values] of Object.entries(recordCopy))['Search saved records','{shown} of {total} saved records','Available stock','Low-stock threshold','Stock belongs to earlier product options.'].forEach((key,index)=>packs[locale][key]=values[index]);
  function resolve(value){return languages.find(l=>l.code===String(value||'').toLowerCase().split('-')[0])||languages[0];}
  function translate(locale,text,values={}){const source=aliases[text]||text;let result=packs[resolve(locale).code][source]||source;for(const [key,value] of Object.entries(values))result=result.replaceAll('{'+key+'}',String(value));return result;}
  const api=Object.freeze({languages,packs,aliases,resolve,translate});

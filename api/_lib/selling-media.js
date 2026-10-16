@@ -65,7 +65,7 @@ async function mutateMedia({store,profile,identity,action,item,backend,env,saveP
   if(!processing.uploadCompletionReplay&&!(await enqueueVerifiedMediaForProcessing(store,processing)))return {status:503,error:'Media processing could not be queued.'};
   if(processing.state!=='ready'&&backend.driver&&backend.drivers){
    const scoped={...store,claimNextMediaProcessingJob:attempts=>store.claimNextMediaProcessingJob(attempts,profile.businessId,asset.assetId),recoverStaleMediaProcessingJobs:typeof store.recoverStaleMediaProcessingJobs==='function'?(attempts,lease,limit)=>store.recoverStaleMediaProcessingJobs(attempts,lease,limit,profile.businessId,asset.assetId):undefined,reconcileUnqueuedProcessingMedia:undefined};
-   await createMediaWorker({repository:scoped,drivers:backend.drivers,createProcessingRead:backend.driver.createProcessingRead,createProcessingWrite:backend.driver.createProcessingWrite,verifyProcessedOutput:backend.driver.verifyUpload})();
+   await createMediaWorker({repository:scoped,drivers:backend.drivers,createProcessingRead:backend.driver.createProcessingRead,createProcessingWrite:backend.driver.createProcessingWrite,createDeliveryRead:backend.driver.createDeliveryRead,verifyProcessedOutput:backend.driver.verifyUpload})();
   }
   const current=await store.getBusinessMediaAsset(profile.businessId,asset.assetId);
   if(current?.state!=='ready')return {status:202,state:current?.state||'processing',message:'File stored. Processing has not completed; reload to check its status.'};

@@ -23,7 +23,7 @@
     const doc=win.document,$=id=>doc.getElementById(id);
     let clerk=null,sequence=0,controller=null,context=null,sessionKey=null,booting=false;
     const currentSection=()=>sectionForPath(win.location.pathname);
-    let language='en',renderedContextKey='';
+    let language='en',renderedContextKey='',searchSection='';
     const i18n=win.DEMEOSSellingCopy;
     try{language=i18n.resolve(win.localStorage.getItem('demeos-customer-language')).code;}catch{}
     const t=(text,values)=>i18n.translate(language,text,values);
@@ -68,6 +68,14 @@
         if(response.status!==401||attempt===1)return response;
       }
     }
+    const recordLists={'product-catalogue':'catalogue-list','images-videos':'media-list','options-variants':'variant-list','stock-history':'stock-list','private-orders':'orders-list'};
+    function filterRecords(){
+      const list=$(recordLists[currentSection()]);if(!list)return;
+      const query=$('record-search').value.trim().toLocaleLowerCase(language),records=Array.from(list.children).filter(node=>node.matches('.catalogue-item'));
+      let shown=0;for(const record of records){record.hidden=Boolean(query&&!record.textContent.toLocaleLowerCase(language).includes(query));if(!record.hidden)shown++;}
+      $('record-count').textContent=t('{shown} of {total} saved records',{shown,total:records.length});
+    }
+    $('record-search').addEventListener('input',filterRecords);
     function render(data,preserveForms=false){
       if(data.contractVersion!==1||!data.vendor?.identityId||data.vendor.identityId!==clerk.user?.id||!Array.isArray(data.businesses))throw Error('Invalid context');
       const selected=new URLSearchParams(win.location.search).get('businessId');
@@ -97,6 +105,7 @@
       $('environment-label').textContent=business?(business.dataEnvironment==='test'?t('Test business · isolated data'):t('Selling access approved')):'';
       $('environment-label').dataset.environment=business?.dataEnvironment||'';
       const section=currentSection(),copy=sectionCopy()[section];translateSubmissions();
+      if(searchSection!==section){$('record-search').value='';searchSection=section;}$('record-tools').hidden=!business||!recordLists[section];
       const selectedCategory=$('product-category').value;$('product-category').replaceChildren();
       const blank=doc.createElement('option');blank.value='';blank.textContent=submissionCopy('chooseCategory');$('product-category').append(blank);
       for(const c of data.categories?.items||[]){const option=doc.createElement('option');option.value=c.categoryId;option.textContent=c.categoryId+' · '+c.categoryName;$('product-category').append(option);}
@@ -139,7 +148,7 @@
           const title=doc.createElement('h3');title.textContent=(business.products.find(p=>p.productId===asset.productId)?.name||t('Product'))+' · '+t(asset.kind==='image'?t('Image'):t('Video'));
           const state=doc.createElement('p');state.textContent=t(asset.state)+' · '+t(asset.linked?t('Linked to product'):t('Not linked'))+(asset.failureReason?' · '+t('Media processing failed. Remove this file and upload a valid replacement.'):'');article.append(title,state);
           if(asset.state==='processing'||asset.state==='ready'&&!asset.linked){const resume=doc.createElement('button');resume.type='button';resume.textContent=t('Resume processing');resume.addEventListener('click',()=>changeMedia('resume-media',{productId:asset.productId,assetId:asset.assetId}));article.append(resume);}
-          if(asset.state==='ready'&&asset.previewUrl){const preview=doc.createElement(asset.kind==='image'?'img':'video');preview.src=asset.previewUrl;preview.className='product-media-preview';if(asset.kind==='image')preview.alt=title.textContent;else{preview.controls=true;preview.preload='metadata';}article.append(preview);}
+          if(asset.state==='ready'&&asset.previewUrl){const preview=doc.createElement(asset.kind==='image'?'img':'video');preview.src=asset.previewUrl;preview.className='product-media-preview';if(asset.kind==='image')preview.alt=title.textContent;else{preview.controls=true;preview.preload='metadata';preview.playsInline=true;}article.append(preview);}
           const remove=doc.createElement('button');remove.type='button';remove.textContent=t('Remove');remove.addEventListener('click',()=>{if(win.confirm(t('Remove this media from the product?')))changeMedia('remove-media',{productId:asset.productId,assetId:asset.assetId});});article.append(remove);if(asset.kind==='image'&&asset.state==='ready'&&asset.linked){const main=doc.createElement('button');main.type='button';main.dataset.mainAsset=asset.assetId;main.textContent=submissionCopy(asset.main?'mainImage':'setMain');main.disabled=asset.main;main.addEventListener('click',()=>changeMedia('set-main-media',{productId:asset.productId,assetId:asset.assetId}));article.append(main);}$('media-list').append(article);
         }
         if(!business.media?.length){const empty=doc.createElement('p');empty.textContent=t('No product media saved.');$('media-list').append(empty);}
@@ -187,7 +196,8 @@
           const option=doc.createElement('option');option.value=JSON.stringify([row.productId,row.variantId]);option.textContent=[row.name,row.label].filter(Boolean).join(' · ');$('stock-product').append(option);
           const article=doc.createElement('article');article.className='catalogue-item';
           const title=doc.createElement('h3');title.textContent=option.textContent;
-          const count=doc.createElement('p');count.textContent=t('Quantity')+': '+(row.onHand??t('Not set'))+' · '+t('Reserved')+': '+row.reserved;article.append(title,count);
+          const count=doc.createElement('p');count.textContent=t('Quantity')+': '+(row.onHand??t('Not set'))+' · '+t('Reserved')+': '+row.reserved+' · '+t('Available stock')+': '+(row.available??t('Not set'))+' · '+t('Low-stock threshold')+': '+row.lowStock;article.append(title,count);
+          if(row.blocked){const warning=doc.createElement('p');warning.textContent=t('Stock belongs to earlier product options.');warning.setAttribute('role','status');article.append(warning);}
           for(const batch of business.inventory.history||[])for(const event of batch.changes||[]){
             if(event.productId!==row.productId||(event.variantId||'')!==row.variantId)continue;
             const line=doc.createElement('p');line.textContent=new Date(batch.recorded_at).toLocaleString(language)+' · '+(event.event?(t('Order')+' '+t(event.event)+' · '+t('Reserved')+' '+event.beforeReserved+' → '+event.afterReserved):(event.before??t('Not set'))+' → '+event.after+' · '+event.reason)+' · '+batch.trusted_identity_id;article.append(line);
@@ -221,6 +231,7 @@
       if(section==='my-business'&&business)for(const [label,value] of [[t('Business ID'),business.businessId],[t('Business name'),business.name],[t('Business type'),business.type||t('Not provided')],[t('Location'),business.location||t('Not provided')],[t('Selling access'),business.dataEnvironment==='test'?t('Test access authorized'):t('Approved')],[t('Description'),business.details.productsServices||t('Not provided')],[t('Email'),business.details.customerContinuation.email||t('Not provided')],[t('Phone'),business.details.customerContinuation.phone||t('Not provided')],[t('Website'),business.details.customerContinuation.website||t('Not provided')]]){
         const term=doc.createElement('dt'),detail=doc.createElement('dd');term.textContent=t(label);detail.textContent=value;$('business-facts').append(term,detail);
       }
+      filterRecords();
     }
     async function load(){
       const turn=++sequence;controller?.abort();controller=new AbortController();
@@ -271,6 +282,7 @@
     }
     $('dashboard-language').addEventListener('change',()=>{language=i18n.resolve($('dashboard-language').value).code;try{win.localStorage.setItem('demeos-customer-language',language);}catch{}navigation();if(context)render(context,true);else load();});
     function clearPrivateForms(){
+      $('record-search').value='';$('record-count').textContent='';
       clearProductForm();clearVariantForm();
       for(const id of ['stock-form','media-form','business-form','logo-form'])$(id).reset();
       for(const id of ['submission-feedback','product-feedback','variant-feedback','stock-feedback','media-feedback','business-feedback','logo-feedback'])$(id).textContent='';

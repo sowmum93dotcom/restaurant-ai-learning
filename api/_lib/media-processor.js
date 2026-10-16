@@ -29,7 +29,7 @@ function createMediaProcessor({inspectImage,inspectVideo,optimizeImage,transcode
    const optimized=await transcodeVideo(asset,inspected,context);
    if(!optimized||!isHttps(optimized.deliveryUrl)||!outputMatches(asset,context,optimized))
     return{success:false,error:"Video processing failed."};
-   return{success:true,storageKey:optimized.storageKey,deliveryUrl:optimized.deliveryUrl,width:inspected.width,height:inspected.height,
+   return{success:true,storageKey:optimized.storageKey,deliveryUrl:optimized.deliveryUrl,width:optimized.width||inspected.width,height:optimized.height||inspected.height,
     durationSeconds:inspected.durationSeconds,derivatives:optimized.derivatives};
   }
   return{success:false,error:"Unsupported media kind."};

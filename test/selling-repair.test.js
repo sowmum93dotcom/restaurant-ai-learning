@@ -12,7 +12,7 @@ test('Selling has the nine established locales plus Turkish, complete copy and p
   assert.notEqual(copy.translate(locale.code,'Test access authorized'),copy.translate(locale.code,'Approved'),'A Preview grant must never be labelled real approval');
   for(const [key,value] of Object.entries(copy.packs[locale.code])){
    assert.ok(value.trim(),locale.code+': '+key);
-   assert.deepEqual(value.match(/\{\w+\}/g)||[],key.match(/\{\w+\}/g)||[]);
+   assert.deepEqual((value.match(/\{\w+\}/g)||[]).sort(),(key.match(/\{\w+\}/g)||[]).sort());
   }
   if(locale.code!=='en')assert.notEqual(copy.translate(locale.code,'Save product'),'Save product',locale.code);
  }

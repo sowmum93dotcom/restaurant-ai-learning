@@ -1,6 +1,6 @@
 const {processNextMediaJob,reconcileMediaProcessingQueue}=require("./media-processing-queue.js");
 const {createMediaProcessor}=require("./media-processor.js");
-function createMediaWorker({repository,drivers,createProcessingRead,createProcessingWrite,verifyProcessedOutput,maxAttempts=5,reconcileLimit=50}={}){
+function createMediaWorker({repository,drivers,createProcessingRead,createProcessingWrite,createDeliveryRead,verifyProcessedOutput,maxAttempts=5,reconcileLimit=50}={}){
  const baseProcessor=createMediaProcessor(drivers||{});
  const processor=async(asset,context)=>{
   if(typeof createProcessingRead!=="function")return baseProcessor(asset,context);
@@ -17,7 +17,8 @@ function createMediaWorker({repository,drivers,createProcessingRead,createProces
     const maximumSizeInBytes=asset.kind==="image"?15*1024*1024:250*1024*1024;
     const destination=await createProcessingWrite({storageKey,contentType,maximumSizeInBytes,expiresAt});
     if(!destination||!destination.uploadUrl)throw new Error("Private media output could not be delegated for processing.");
-    outputDestinations.push({role,storageKey:destination.storageKey,uploadUrl:destination.uploadUrl,contentType,...(destination.headers?{headers:destination.headers}:{})});
+    const delivery=asset.kind==="video"&&typeof createDeliveryRead==="function"?await createDeliveryRead({storageKey,expiresAt}):null;
+    outputDestinations.push({...(delivery?.deliveryUrl?{deliveryUrl:delivery.deliveryUrl}:{}),role,storageKey:destination.storageKey,uploadUrl:destination.uploadUrl,contentType,...(destination.headers?{headers:destination.headers}:{})});
    }
   }
   const result=await baseProcessor(asset,{...(context||{}),sourceUrl:delegated.readUrl,sourceExpiresAt:delegated.expiresAt||expiresAt,...(outputDestinations?{outputDestinations}:{})});

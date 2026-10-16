@@ -162,3 +162,17 @@ dd { margin: 0; overflow-wrap: anywhere; }
 
 .workspace-actions{display:flex;flex-wrap:wrap;gap:16px;margin-top:24px}
 .workspace-actions[hidden]{display:none}
+
+/* One footer in the shared Selling document serves every workspace and access state. */
+.selling-footer{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:20px;padding:28px 32px;border-top:1px solid rgba(227,184,69,.38);background:#010610;color:#aebbc9}
+.selling-footer img{width:66px;height:66px;object-fit:contain;border-radius:7px}
+.selling-footer p{margin:0;max-width:640px;font-size:12px;line-height:1.7;letter-spacing:.05em;text-align:center;overflow-wrap:anywhere}
+.selling-footer nav{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 20px}
+.selling-footer a{display:inline-flex;align-items:center;min-height:44px;color:#e3b845;text-decoration:underline;text-underline-offset:4px;font-size:13px}
+.selling-footer a:focus-visible{outline:2px solid #f3d984;outline-offset:4px}
+@media(max-width:760px){.selling-footer{flex-direction:column;padding:24px 20px;gap:12px}.selling-footer p{max-width:360px}}
+
+#record-tools{margin:24px 0;padding-block:16px;border-block:1px solid var(--bo-line)}
+#record-tools label{display:block;margin-bottom:8px;color:var(--bo-gold-light)}
+#record-search{width:100%;max-width:640px;min-height:44px;padding:10px 12px;border:1px solid var(--bo-line);border-radius:8px;background:var(--bo-navy);color:var(--bo-white);font:inherit}
+#record-count{color:var(--bo-muted);font-size:13px}
