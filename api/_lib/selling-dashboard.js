@@ -66,7 +66,10 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
         business.inventory={...stock,rows:inventory.rowsFor(profile,inventory.entriesWithLegacyStock(profile,stock.entries))};
         business.media=await media.listMedia(store,profile,backend);business.mediaCapabilities=media.capabilities(backend,env);
         business.orders=typeof store.getVendorOrders==='function'?await store.getVendorOrders(identity.trustedIdentityId,businessId):[];
-        business.details={productsServices:profile.productsServices||'',customerContinuation:profile.customerContinuation||{},informationStatus:profile.informationStatus||{}};
+        business.details={productsServices:profile.productsServices||'',customerContinuation:{email:profile.customerContinuation?.email||'',phone:profile.customerContinuation?.phone||'',website:profile.customerContinuation?.website||''},informationStatus:profile.informationStatus||{}};
+        // Business identity is read from the same owned, authoritative record as the catalogue.
+        // Do not synthesize an approval status or expose private registration metadata.
+        business.identity={name:profile.name||'',type:profile.type||'',location:profile.location||'',description:profile.productsServices||'',contact:business.details.customerContinuation,informationStatus:business.details.informationStatus};
         business.summary={products:business.products.length,availableProducts:business.products.filter(p=>p.availability==='available').length,variants:(profile.products||[]).reduce((sum,p)=>sum+(p.variants?.length||0)+(p.presentation?.variants?.length||0),0),trackedStockRows:business.inventory.rows.filter(r=>r.onHand!==null).length,recentOrders:business.orders.length};
       }
       if (req.method === 'POST') {
