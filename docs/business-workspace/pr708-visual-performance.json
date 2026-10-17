@@ -1,0 +1,271 @@
+{
+  "runtime": "v24.19.0",
+  "database": "PGlite 0.5.8",
+  "method": "One warm-up/eight measured calls. Isolated embedded Postgres, no HTTP/Clerk/Neon network. Projection is preparation only, NOT the live catalogue path. Whole-profile writes remain O(n); max is not a statistical p95. Repeated writes use the same controlled value.",
+  "results": [
+    {
+      "products": 50,
+      "operation": "authoritative-profile-hydration",
+      "medianMs": 2.693,
+      "maxMs": 4.055,
+      "payloadBytes": 10263,
+      "calls": 8
+    },
+    {
+      "products": 50,
+      "operation": "jsonb-product-lookup",
+      "medianMs": 0.724,
+      "maxMs": 0.99,
+      "payloadBytes": 206,
+      "calls": 8
+    },
+    {
+      "products": 50,
+      "operation": "jsonb-product-update-current-path",
+      "medianMs": 0.974,
+      "maxMs": 1.209,
+      "payloadBytes": 4,
+      "calls": 8
+    },
+    {
+      "products": 50,
+      "operation": "catalogue-page-current-path",
+      "medianMs": 2.343,
+      "maxMs": 2.579,
+      "payloadBytes": 5053,
+      "calls": 8
+    },
+    {
+      "products": 50,
+      "operation": "deterministic-duplicate-detection",
+      "medianMs": 0.023,
+      "maxMs": 0.061,
+      "payloadBytes": 2,
+      "calls": 8
+    },
+    {
+      "products": 50,
+      "operation": "product-revision-check",
+      "medianMs": 0.004,
+      "maxMs": 0.023,
+      "payloadBytes": 4,
+      "calls": 8
+    },
+    {
+      "products": 50,
+      "operation": "business-ownership-check",
+      "medianMs": 0.335,
+      "maxMs": 0.61,
+      "payloadBytes": 4,
+      "calls": 8
+    },
+    {
+      "products": 50,
+      "operation": "analysis-result-indexed-lookup",
+      "medianMs": 0.432,
+      "maxMs": 0.624,
+      "payloadBytes": 4,
+      "calls": 8
+    },
+    {
+      "products": 50,
+      "operation": "prepared-projection-product-lookup",
+      "medianMs": 0.45,
+      "maxMs": 0.615,
+      "payloadBytes": 200,
+      "calls": 8
+    },
+    {
+      "products": 50,
+      "operation": "prepared-projection-page",
+      "medianMs": 0.873,
+      "maxMs": 1.421,
+      "payloadBytes": 5314,
+      "calls": 8
+    },
+    {
+      "products": 50,
+      "operation": "jsonb-update-with-projection-trigger",
+      "medianMs": 1.481,
+      "maxMs": 1.846,
+      "payloadBytes": 4,
+      "calls": 8
+    },
+    {
+      "products": 500,
+      "operation": "authoritative-profile-hydration",
+      "medianMs": 2.999,
+      "maxMs": 3.614,
+      "payloadBytes": 102414,
+      "calls": 8
+    },
+    {
+      "products": 500,
+      "operation": "jsonb-product-lookup",
+      "medianMs": 0.677,
+      "maxMs": 0.966,
+      "payloadBytes": 210,
+      "calls": 8
+    },
+    {
+      "products": 500,
+      "operation": "jsonb-product-update-current-path",
+      "medianMs": 2.737,
+      "maxMs": 3.662,
+      "payloadBytes": 4,
+      "calls": 8
+    },
+    {
+      "products": 500,
+      "operation": "catalogue-page-current-path",
+      "medianMs": 4.418,
+      "maxMs": 5.272,
+      "payloadBytes": 5145,
+      "calls": 8
+    },
+    {
+      "products": 500,
+      "operation": "deterministic-duplicate-detection",
+      "medianMs": 0.178,
+      "maxMs": 0.268,
+      "payloadBytes": 2,
+      "calls": 8
+    },
+    {
+      "products": 500,
+      "operation": "product-revision-check",
+      "medianMs": 0.003,
+      "maxMs": 0.018,
+      "payloadBytes": 4,
+      "calls": 8
+    },
+    {
+      "products": 500,
+      "operation": "business-ownership-check",
+      "medianMs": 0.313,
+      "maxMs": 0.361,
+      "payloadBytes": 4,
+      "calls": 8
+    },
+    {
+      "products": 500,
+      "operation": "analysis-result-indexed-lookup",
+      "medianMs": 0.379,
+      "maxMs": 0.447,
+      "payloadBytes": 4,
+      "calls": 8
+    },
+    {
+      "products": 500,
+      "operation": "prepared-projection-product-lookup",
+      "medianMs": 0.437,
+      "maxMs": 0.523,
+      "payloadBytes": 204,
+      "calls": 8
+    },
+    {
+      "products": 500,
+      "operation": "prepared-projection-page",
+      "medianMs": 1.079,
+      "maxMs": 1.265,
+      "payloadBytes": 5405,
+      "calls": 8
+    },
+    {
+      "products": 500,
+      "operation": "jsonb-update-with-projection-trigger",
+      "medianMs": 6.368,
+      "maxMs": 9.238,
+      "payloadBytes": 4,
+      "calls": 8
+    },
+    {
+      "products": 5000,
+      "operation": "authoritative-profile-hydration",
+      "medianMs": 12.416,
+      "maxMs": 22.32,
+      "payloadBytes": 1041915,
+      "calls": 8
+    },
+    {
+      "products": 5000,
+      "operation": "jsonb-product-lookup",
+      "medianMs": 1.881,
+      "maxMs": 2.66,
+      "payloadBytes": 214,
+      "calls": 8
+    },
+    {
+      "products": 5000,
+      "operation": "jsonb-product-update-current-path",
+      "medianMs": 21.492,
+      "maxMs": 22.303,
+      "payloadBytes": 4,
+      "calls": 8
+    },
+    {
+      "products": 5000,
+      "operation": "catalogue-page-current-path",
+      "medianMs": 28.619,
+      "maxMs": 32.897,
+      "payloadBytes": 5237,
+      "calls": 8
+    },
+    {
+      "products": 5000,
+      "operation": "deterministic-duplicate-detection",
+      "medianMs": 1.524,
+      "maxMs": 2.856,
+      "payloadBytes": 2,
+      "calls": 8
+    },
+    {
+      "products": 5000,
+      "operation": "product-revision-check",
+      "medianMs": 0.003,
+      "maxMs": 0.012,
+      "payloadBytes": 4,
+      "calls": 8
+    },
+    {
+      "products": 5000,
+      "operation": "business-ownership-check",
+      "medianMs": 0.49,
+      "maxMs": 0.561,
+      "payloadBytes": 4,
+      "calls": 8
+    },
+    {
+      "products": 5000,
+      "operation": "analysis-result-indexed-lookup",
+      "medianMs": 0.571,
+      "maxMs": 0.609,
+      "payloadBytes": 4,
+      "calls": 8
+    },
+    {
+      "products": 5000,
+      "operation": "prepared-projection-product-lookup",
+      "medianMs": 0.428,
+      "maxMs": 0.468,
+      "payloadBytes": 208,
+      "calls": 8
+    },
+    {
+      "products": 5000,
+      "operation": "prepared-projection-page",
+      "medianMs": 0.598,
+      "maxMs": 0.615,
+      "payloadBytes": 5496,
+      "calls": 8
+    },
+    {
+      "products": 5000,
+      "operation": "jsonb-update-with-projection-trigger",
+      "medianMs": 53.289,
+      "maxMs": 93.82,
+      "payloadBytes": 4,
+      "calls": 8
+    }
+  ]
+}
