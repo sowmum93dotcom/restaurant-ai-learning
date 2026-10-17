@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth";
 import { findNeighborhood } from "@/lib/neighborhoods";
+import { validateListingInput } from "@/lib/listingValidation";
 
 // GET /api/owner/listings?q=... — search listings by name, to claim one.
 export async function GET(req: NextRequest) {
@@ -28,35 +29,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Sign in first." }, { status: 401 });
   }
 
-  const body = await req.json().catch(() => null);
-  const { category, name, neighborhood, types, tags, priceTier, hoursOpen, hoursClose, highlight, confirmed } =
-    body ?? {};
+  const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
 
-  if (!confirmed) {
+  if (!body?.confirmed) {
     return NextResponse.json(
       { error: "You must confirm you are the owner or an authorized representative." },
       { status: 400 }
     );
   }
-  if (!category || !name || !neighborhood || !hoursOpen || !hoursClose) {
-    return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
-  }
 
-  const neighborhoodCoords = findNeighborhood(neighborhood) ?? { x: 0, y: 0 };
+  const validation = validateListingInput(body);
+  if (!validation.ok) {
+    return NextResponse.json({ error: validation.error }, { status: 400 });
+  }
+  const data = validation.data;
+
+  const neighborhoodCoords = findNeighborhood(data.neighborhood) ?? { x: 0, y: 0 };
 
   const listing = await prisma.listing.create({
     data: {
-      category,
-      name,
-      neighborhood,
+      ...data,
       x: neighborhoodCoords.x,
       y: neighborhoodCoords.y,
-      hoursOpen,
-      hoursClose,
-      priceTier: Number(priceTier) || 2,
-      types: typeof types === "string" ? types : "",
-      tags: typeof tags === "string" ? tags : "",
-      highlight: typeof highlight === "string" ? highlight : "",
       verified: true,
       verificationLevel: "self_attested",
       source: "owner",

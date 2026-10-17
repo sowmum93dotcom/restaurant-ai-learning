@@ -63,6 +63,7 @@ phase.
 
 ```
 verra/
+├── .github/workflows/ci.yml    # Runs a real Postgres + build on every push
 ├── app/
 │   ├── layout.tsx              # Root HTML layout
 │   ├── globals.css             # All styling
@@ -81,11 +82,13 @@ verra/
 ├── lib/
 │   ├── db.ts                   # Prisma client
 │   ├── auth.ts                 # Password hashing + session cookies
-│   ├── search.ts               # Query parsing + ranking logic
+│   ├── search.ts                # Query parsing + ranking logic
+│   ├── aiSearch.ts              # Real Claude API query understanding
+│   ├── listingValidation.ts    # Shared input validation (owner writes)
 │   ├── neighborhoods.ts        # Sample neighborhood data
 │   └── seedData.ts             # Sample listings (used by seed + reset)
 ├── prisma/
-│   ├── schema.prisma           # Database schema
+│   ├── schema.prisma           # Database schema (with indexes)
 │   └── seed.ts                 # Populates the database with sample data
 └── README.md
 ```
@@ -165,7 +168,6 @@ what's already in this repo.
    | Name | Value |
    |---|---|
    | `DATABASE_URL` | The Supabase connection string from step 1 |
-   | `SESSION_SECRET` | A long random string (e.g. `openssl rand -hex 32`) — not the dev placeholder |
    | `ANTHROPIC_API_KEY` | Your key from [console.anthropic.com](https://console.anthropic.com/) (optional — omit to use the keyword fallback) |
 4. Deploy. Vercel builds and gives you a live URL.
 

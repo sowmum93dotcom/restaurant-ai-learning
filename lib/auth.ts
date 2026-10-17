@@ -1,10 +1,32 @@
 import { randomBytes } from "crypto";
 import bcrypt from "bcryptjs";
-import type { NextRequest } from "next/server";
+import type { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
 export const SESSION_COOKIE = "verra_session";
 const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+// Centralized so both login and signup set the cookie identically, and so
+// the "secure" flag (HTTPS-only) is correct in production without every
+// call site having to remember it. Not set in local dev, since dev runs
+// over plain http://localhost.
+function cookieOptions(expires: Date) {
+  return {
+    httpOnly: true,
+    sameSite: "lax" as const,
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    expires,
+  };
+}
+
+export function setSessionCookie(res: NextResponse, token: string, expiresAt: Date): void {
+  res.cookies.set(SESSION_COOKIE, token, cookieOptions(expiresAt));
+}
+
+export function clearSessionCookie(res: NextResponse): void {
+  res.cookies.delete(SESSION_COOKIE);
+}
 
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 10);

@@ -30,6 +30,8 @@ model Session {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime
   createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 model Listing {
@@ -52,6 +54,11 @@ model Listing {
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
   claims            ListingClaim[]
+
+  // Search filters by category and verification status on every request
+  // (app/api/search/route.ts, app/api/admin/listings/route.ts).
+  @@index([category])
+  @@index([verified])
 }
 
 model ListingClaim {
@@ -64,4 +71,7 @@ model ListingClaim {
   submittedAt DateTime  @default(now())
   reviewedAt  DateTime?
   reviewedBy  String?
+
+  @@index([listingId])
+  @@index([userId])
 }

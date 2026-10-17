@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth";
+import { findNeighborhood } from "@/lib/neighborhoods";
+import { validateListingInput } from "@/lib/listingValidation";
 
 // POST /api/owner/listings/:id/claim — claim an existing listing and
 // correct its details. Marks it verified (self-attested), not a real
@@ -21,29 +23,42 @@ export async function POST(
     return NextResponse.json({ error: "Listing not found." }, { status: 404 });
   }
 
-  const body = await req.json().catch(() => null);
-  const { category, name, neighborhood, types, tags, priceTier, hoursOpen, hoursClose, highlight, confirmed } =
-    body ?? {};
+  const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
 
-  if (!confirmed) {
+  if (!body?.confirmed) {
     return NextResponse.json(
       { error: "You must confirm you are the owner or an authorized representative." },
       { status: 400 }
     );
   }
 
+  // Fields the owner didn't touch keep the listing's current value — only
+  // what they actually submit (plus that unchanged rest) gets validated.
+  const merged = {
+    category: body.category ?? existing.category,
+    name: body.name ?? existing.name,
+    neighborhood: body.neighborhood ?? existing.neighborhood,
+    types: body.types ?? existing.types,
+    tags: body.tags ?? existing.tags,
+    priceTier: body.priceTier ?? existing.priceTier,
+    hoursOpen: body.hoursOpen ?? existing.hoursOpen,
+    hoursClose: body.hoursClose ?? existing.hoursClose,
+    highlight: body.highlight ?? existing.highlight,
+  };
+
+  const validation = validateListingInput(merged);
+  if (!validation.ok) {
+    return NextResponse.json({ error: validation.error }, { status: 400 });
+  }
+  const data = validation.data;
+  const neighborhoodCoords = findNeighborhood(data.neighborhood) ?? { x: existing.x, y: existing.y };
+
   const listing = await prisma.listing.update({
     where: { id },
     data: {
-      category: category ?? existing.category,
-      name: name ?? existing.name,
-      neighborhood: neighborhood ?? existing.neighborhood,
-      types: typeof types === "string" ? types : existing.types,
-      tags: typeof tags === "string" ? tags : existing.tags,
-      priceTier: priceTier ? Number(priceTier) : existing.priceTier,
-      hoursOpen: hoursOpen ?? existing.hoursOpen,
-      hoursClose: hoursClose ?? existing.hoursClose,
-      highlight: typeof highlight === "string" ? highlight : existing.highlight,
+      ...data,
+      x: neighborhoodCoords.x,
+      y: neighborhoodCoords.y,
       verified: true,
       verificationLevel: "self_attested",
     },
