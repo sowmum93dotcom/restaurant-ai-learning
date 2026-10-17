@@ -67,8 +67,39 @@ test('bulk availability uses real SQL, rejects cross-business selections and pre
  assert.equal((await call({productIds:['a','foreign']})).code,404);assert.equal((await call({confirmed:false})).code,400);assert.equal((await call({productIds:['a','a']})).code,400);assert.equal((await call({catalogueRevision:'stale'})).code,409);
  assert.equal((await call({})).code,200);const saved=(await repo.getKnownBusiness('bulk-shop')).businessProfile;assert.ok(saved.products.every(p=>p.availability==='limited'&&p.submission.state==='draft'&&p.customerVisible===false));
  const inventory=require('../api/_lib/vendor-inventory'),change=inventory.applyChanges(saved,{},[{productId:'a',variantId:'',onHand:0,lowStock:2,sku:'A',reason:'Counted'}]);await repo.saveVendorInventory('owner-a','bulk-shop',saved,0,change.entries,change.audit);
+ const stockBefore=await repo.getVendorInventory('bulk-shop');
+ const threshold={action:'adjust-stock',inventoryRevision:stockBefore.revision,product:{productId:'a',variantId:'',quantity:0,lowStock:9,note:'Updated reorder threshold'}};
+ assert.equal((await call(threshold)).code,200);const thresholdSaved=await repo.getVendorInventory('bulk-shop');assert.equal(thresholdSaved.entries[inventory.key('a','')].lowStock,9);assert.equal(thresholdSaved.history[0].changes[0].reason,'Updated reorder threshold');assert.equal((await call(threshold)).code,409,'Retry cannot duplicate an adjustment');
  assert.equal((await call({availability:'available'})).code,409);assert.equal((await repo.getKnownBusiness('bulk-shop')).businessProfile.products[0].availability,'limited');
  // A product SKU is business-scoped and cannot collide with another product.
  const clash=await call({action:'save-product',product:{...saved.products[1],sku:'A'}});assert.equal(clash.code,400);
+ }finally{await db.close();}
+});
+
+test('product revision permits unrelated profile changes but rejects newer product content',async()=>{
+ const db=new PGlite(),repo=createPersistenceRepository(createDatabase(db));
+ const profile={businessId:'revision-shop',name:'Shop',type:'Shop',location:'London',preparationModel:'selling',applicationAccess:{selling:true},products:[{businessId:'revision-shop',productId:'p',name:'Original',description:'A product',priceMode:'contact',price:'',availability:'contact'}]};
+ try{
+ await repo.createBusinessForOwner('owner-a',profile);const before=(await repo.getKnownBusiness('revision-shop')).businessProfile;
+ const revision=catalogueRevision(before.products[0]),base=catalogueRevision(before);await repo.saveBusiness({...before,location:'Manchester'});
+ const handler=createHandler({authenticate:async()=>({trustedIdentityId:'owner-a'}),repository:()=>repo,environment:()=>env});
+ const call=async name=>{const res=response();await handler({method:'POST',query:{businessId:'revision-shop'},body:{action:'save-product',catalogueRevision:base,productRevision:revision,product:{productId:'p',name,description:'A product',priceMode:'contact',price:'',availability:'contact'}}},res);return res;};
+ assert.equal((await call('Saved after profile edit')).code,200);const saved=(await repo.getKnownBusiness('revision-shop')).businessProfile;assert.equal(saved.location,'Manchester');assert.equal(saved.products[0].name,'Saved after profile edit');assert.equal((await call('Stale overwrite')).code,409);assert.equal((await repo.getKnownBusiness('revision-shop')).businessProfile.products[0].name,'Saved after profile edit');
+ }finally{await db.close();}
+});
+
+test('private order keyset pages search genuine reservations and enforce ownership',async()=>{
+ const db=new PGlite(),database=createDatabase(db),repo=createPersistenceRepository(database);
+ const inventory=require('../api/_lib/vendor-inventory'),service=require('../api/_lib/vendor-orders').createVendorOrders(database,{authorizePurchase:()=>true});
+ const profile={businessId:'orders-shop',name:'Shop',type:'Shop',location:'London',preparationModel:'selling',applicationAccess:{selling:true},products:[{businessId:'orders-shop',productId:'toy',name:'Wooden toy',availability:'available',presentation:{version:1,categoryId:'family.toys',pricing:{mode:'fixed',currency:'GBP',amount:10},options:[],variants:[]}}]};
+ try{
+ await repo.createBusinessForOwner('owner-a',profile);const saved=(await repo.getKnownBusiness('orders-shop')).businessProfile;
+ const change=inventory.applyChanges(saved,{},[{productId:'toy',variantId:'',onHand:100,lowStock:5,sku:'TOY',reason:'Initial count'}]);await repo.saveVendorInventory('owner-a','orders-shop',saved,0,change.entries,change.audit);
+ const records=[];for(let i=0;i<53;i++)records.push(await service.reserve('customer-a','order-page-fixture-'+String(i).padStart(4,'0'),{businessId:'orders-shop',productId:'toy',variantId:'',selection:{},quantity:1,catalogueRevision:catalogueRevision(saved),stockIdentity:inventory.stockIdentity(saved.products[0])}));
+ const orders=require('../api/_lib/selling-order-page');const page=cursor=>repo.getSellingOrderPage({identity:'owner-a',businessId:'orders-shop',query:orders.parse({orderCursor:cursor||''})});
+ const a=await page(),b=await page(a.nextCursor),c=await page(b.nextCursor);assert.equal(a.total,53);assert.equal(a.orders.length,25);assert.equal(b.orders.length,25);assert.equal(c.orders.length,3);assert.equal(c.nextCursor,null);assert.equal(new Set([...a.orders,...b.orders,...c.orders].map(o=>o.id)).size,53);
+ assert.equal((await repo.getSellingOrderPage({identity:'owner-b',businessId:'orders-shop',query:orders.parse()})).total,0);
+ await service.release(records[0].id,'cancelled','customer-a');const filtered=await repo.getSellingOrderPage({identity:'owner-a',businessId:'orders-shop',query:orders.parse({orderState:'cancelled',q:'Wooden'})});assert.equal(filtered.total,1);assert.equal(filtered.orders[0].id,records[0].id);assert.equal(filtered.orders[0].remainingReserved,0);assert.equal(filtered.orders[0].customerId,undefined);
+ for(const query of [{orderCursor:'bad'},{orderState:'paid'},{q:['x']}])assert.throws(()=>orders.parse(query));
  }finally{await db.close();}
 });

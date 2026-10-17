@@ -75,6 +75,8 @@ const SCHEMA_STATEMENTS = [
     CHECK (record->>'state' = state),
     CHECK (record->>'paymentState' = 'not-started')
   )`,
+  `CREATE INDEX IF NOT EXISTS demeos_vendor_orders_business_page_idx
+    ON demeos_vendor_orders(business_id, created_at DESC, order_id DESC)`,
   `CREATE INDEX IF NOT EXISTS demeos_vendor_orders_expiry_idx
     ON demeos_vendor_orders(expires_at, order_id) WHERE state = 'reserved'`,
   `CREATE TABLE IF NOT EXISTS demeos_vendor_order_requests (

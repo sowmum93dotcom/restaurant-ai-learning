@@ -29,7 +29,7 @@
       <section id="dashboard-status" class="card" role="status" aria-live="polite" aria-busy="true"><h2 id="status-heading">Opening your workspace</h2><p id="status-message">Checking your session and business access…</p><button id="retry" hidden>Try again</button><button id="choose-business" hidden>Choose an authorized business</button><a id="registration" href="/selling-vendor/my-business" hidden>Review Selling business access</a></section>
       <div id="private-workspace" hidden>
         <section class="business-bar" aria-label="Current business"><div><p class="eyebrow">Current business</p><img id="business-logo" class="business-logo" alt="Business logo" hidden><h2 id="business-name"></h2><p id="business-details"></p></div><span id="environment-label" class="badge"></span><label>Switch business<select id="business-select"></select></label></section>
-        <section class="card" id="section-content" aria-labelledby="content-heading"><h2 id="content-heading"></h2><p id="content-message"></p><dl id="business-facts" hidden></dl><div id="record-tools" hidden><label for="record-search">Search saved records</label><input id="record-search" type="search" maxlength="200" aria-controls="catalogue-list media-list variant-list stock-list orders-list"><p id="record-count" role="status" aria-live="polite"></p></div><div id="catalogue-tools" hidden>
+        <section class="card" id="section-content" aria-labelledby="content-heading"><h2 id="content-heading"></h2><p id="content-message"></p><dl id="business-facts" hidden></dl><div id="record-tools" hidden><label for="record-search">Search saved records</label><input id="record-search" type="search" maxlength="200" aria-controls="catalogue-list media-list variant-list stock-list orders-list"><p id="record-count" role="status" aria-live="polite"></p></div><div id="catalogue-pagination" hidden class="catalogue-pagination"><button id="catalogue-previous" type="button">Previous page</button><button id="catalogue-next" type="button">Next page</button><p id="catalogue-page-status" role="status"></p></div><div id="catalogue-tools" hidden>
           <div id="catalogue-filters" class="catalogue-filters">
             <label>Category<select id="catalogue-category"><option value="">All categories</option></select></label>
             <label>Status<select id="catalogue-state"><option value="">All statuses</option></select></label>
@@ -37,7 +37,7 @@
             <label>Availability<select id="catalogue-availability"><option value="">All availability</option><option value="available">Available</option><option value="limited">Limited availability</option><option value="unavailable">Unavailable</option><option value="contact">Ask about availability</option></select></label>
             <label>Stock<select id="catalogue-stock"><option value="">All stock</option><option value="available">Available stock</option><option value="low">Low stock</option><option value="sold-out">Out of stock</option><option value="untracked">Not set</option></select></label>
             <label>Sort by<select id="catalogue-sort"><option value="updated">Recently updated</option><option value="created">Recently created</option><option value="name">Product name</option><option value="price">Price</option><option value="stock">Available stock</option></select></label>
-          </div><div class="catalogue-bulk"><label>Selected products<select id="catalogue-bulk-availability"><option value="contact">Ask about availability</option><option value="available">Available</option><option value="limited">Limited availability</option><option value="unavailable">Unavailable</option></select></label><button id="catalogue-apply" type="button">Update selected availability</button><button id="catalogue-export" type="button">Export selected</button></div><div id="catalogue-pagination" class="catalogue-pagination"><button id="catalogue-previous" type="button">Previous page</button><button id="catalogue-next" type="button">Next page</button><p id="catalogue-page-status" role="status"></p></div>
+          </div><div class="catalogue-bulk"><label>Selected products<select id="catalogue-bulk-availability"><option value="contact">Ask about availability</option><option value="available">Available</option><option value="limited">Limited availability</option><option value="unavailable">Unavailable</option></select></label><button id="catalogue-apply" type="button">Update selected availability</button><button id="catalogue-export" type="button">Export selected</button></div>
           <form id="product-form">
             <h3 id="product-form-title">Add product</h3>
             <input id="product-id" type="hidden">
@@ -78,7 +78,7 @@
           <a href="/selling-vendor/my-business">Review Selling business details</a>
         </div>
         <dl id="overview-facts" hidden></dl><div id="overview-tools" hidden class="workspace-actions"><a href="/selling-vendor/product-catalogue" data-workspace-link>Product Catalogue</a><a href="/selling-vendor/images-videos" data-workspace-link>Images &amp; Videos</a><a href="/selling-vendor/stock-history" data-workspace-link>Stock &amp; History</a><a href="/selling-vendor/my-business" data-workspace-link>My Business</a></div>
-        <div id="orders-tools" hidden><p>These are the latest 50 private order records. Vendor status changes are not supported by the existing reservation workflow. Live ordering and payments are not enabled.</p><div id="orders-list"></div></div>
+        <div id="orders-tools" hidden><p>Private reservation records. Vendor status changes and payments are not available.</p><label>Status<select id="orders-state"><option value="">All statuses</option><option value="reserved">Reserved</option><option value="cancelled">Cancelled</option><option value="expired">Expired</option></select></label><div class="catalogue-pagination"><button id="orders-previous" type="button">Previous page</button><button id="orders-next" type="button">Next page</button></div><div id="orders-list"></div></div>
         <div id="media-tools" hidden>
           <p id="media-configuration" role="status"></p>
           <p id="media-empty" hidden><span>Add a saved product first.</span> <a href="/selling-vendor/product-catalogue" data-catalogue-link>Add product</a></p>
@@ -112,6 +112,7 @@
             <h3>Adjust product stock</h3>
             <label>Product<select id="stock-product" required></select></label>
             <label>New quantity<input id="stock-quantity" type="number" min="0" max="1000000" step="1" required></label>
+            <label>Low-stock threshold<input id="stock-low-stock" type="number" min="0" max="1000000000" step="1" value="5" required></label>
             <label>Reason for change<input id="stock-note" maxlength="200" required></label>
             <button id="stock-save" type="submit">Save stock adjustment</button>
           </form>

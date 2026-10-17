@@ -123,6 +123,9 @@ async function run(){
     await page.locator('#media-file').setInputFiles({name:'alternate.png',mimeType:'image/png',buffer:await require('sharp')({create:{width:18,height:14,channels:3,background:'#c99a2e'}}).png().toBuffer()});
     await page.locator('#media-upload').click();await page.locator('#media-feedback').filter({hasText:'File uploaded and linked to product.'}).waitFor();
     product=await current();const alternate=product.mediaGallery.assetIds.find(assetId=>assetId!==originalMain);
+    const alternateCard=page.locator('#media-list article').filter({has:page.locator('[data-main-asset="'+alternate+'"]')});
+    await alternateCard.getByRole('button',{name:'Move earlier',exact:true}).click();await page.locator('#media-feedback').filter({hasText:'Saved and verified.'}).waitFor();
+    assert.equal((await current()).mediaGallery.assetIds[0],alternate,'Media ordering persists through SQL');
     await page.locator('[data-main-asset="'+alternate+'"]').click();await page.locator('#media-feedback').filter({hasText:'Saved and verified.'}).waitFor();
     await page.reload();await page.locator('[data-main-asset="'+alternate+'"]').waitFor();assert.equal((await current()).mediaGallery.mainAssetId,alternate);
     page.once('dialog',dialog=>dialog.accept());await page.locator('#media-list article').filter({has:page.locator('[data-main-asset="'+alternate+'"]')}).getByRole('button',{name:'Remove',exact:true}).click();await page.locator('#media-feedback').filter({hasText:'Media removed from product.'}).waitFor();
@@ -194,7 +197,7 @@ async function run(){
      assert.equal(await page.locator('#media-empty:visible').count(),1,'Empty media tools explain the saved-product prerequisite');assert.equal(await page.locator('[data-catalogue-link]').getAttribute('href'),'/selling-vendor/product-catalogue?businessId=vendor-a');
     }else if(section==='options-variants'){
      assert.equal(await page.locator('#variant-form:visible').count(),1,'Variants has a real editor');
-    }else assert.equal(await page.locator('#section-content button:visible').count(),0,'No pretend tool actions');
+    }else if(section==='private-orders'){assert.equal(await page.locator('#orders-previous:disabled').count(),1);assert.equal(await page.locator('#orders-next:disabled').count(),1);assert.equal(await page.locator('#orders-list button').count(),0,'No unsupported order transitions');}else assert.equal(await page.locator('#section-content button:visible').count(),0,'No pretend tool actions');
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'No horizontal page overflow');
     await page.reload();await page.locator('#content-heading').filter({hasText:['product-catalogue','stock-history'].includes(section)?(section==='stock-history'?'Stock & History':'Product Catalogue'):copy[1]}).waitFor();
     await page.goto(base+'/selling-vendor/'+section+'?businessId=vendor-a');await page.locator('#content-heading').filter({hasText:['product-catalogue','stock-history'].includes(section)?(section==='stock-history'?'Stock & History':'Product Catalogue'):copy[1]}).waitFor();
@@ -486,6 +489,30 @@ async function run(){
    assert.equal((await repository.getVendorInventory('vendor-b')).entries[orderInventory.key('order-shirt','medium')].reserved,2);
    await page.reload();await page.locator('#stock-list').filter({hasText:'Quantity: '+nextQuantity}).waitFor();
    assert.doesNotMatch(await page.locator('#stock-list').innerText(),/undefined|NaN/,'Reservation audit entries render real quantities');
+
+   if(viewport.width===375){
+    const businessId='vendor-a-second',original=(await repository.getKnownBusiness(businessId)).businessProfile;
+    const products=Array.from({length:62},(_,i)=>({businessId,productId:'catalogue-'+String(i).padStart(3,'0'),name:'Catalogue '+String(i).padStart(3,'0'),sku:'CODE-'+i,description:'Controlled catalogue workflow record',price:'10',priceMode:'fixed',availability:'contact',classification:{categoryId:'1',sectorId:'1',datasetVersion:'marketing-agent-categories-v1'}}));
+    await repository.saveBusiness({...original,products});await context.addCookies([{name:'gate-owner',value:'owner-a',url:base}]);
+    await page.goto(base+'/selling-vendor/product-catalogue?businessId='+businessId);await page.locator('#record-count').filter({hasText:'25 of 62 saved records'}).waitFor();
+    assert.equal(await page.locator('#catalogue-list article').count(),25);await page.locator('#catalogue-next').click();await page.locator('#catalogue-page-status').filter({hasText:'Page 2'}).waitFor();assert.equal(await page.locator('#catalogue-list article').count(),25);
+    await page.locator('#catalogue-previous').click();await page.locator('#catalogue-page-status').filter({hasText:'Page 1'}).waitFor();
+    await page.locator('#catalogue-category').selectOption('10');await page.locator('#record-count').filter({hasText:'0 of 62 saved records'}).waitFor();
+    await page.locator('#catalogue-category').selectOption('');await page.locator('#record-count').filter({hasText:'25 of 62 saved records'}).waitFor();
+    await page.locator('#record-search').fill('CODE-61');await page.locator('#record-count').filter({hasText:'1 of 62 saved records'}).waitFor();assert.equal(await page.locator('#catalogue-list h3').innerText(),'Catalogue 061');
+    await page.locator('[data-select-product]').check();await page.locator('#catalogue-bulk-availability').selectOption('unavailable');page.once('dialog',d=>d.accept());await page.locator('#catalogue-apply').click();await page.locator('#product-feedback').filter({hasText:'Availability updated.'}).waitFor();assert.equal((await repository.getKnownBusiness(businessId)).businessProfile.products.find(p=>p.productId==='catalogue-061').availability,'unavailable');
+    await page.locator('#record-search').fill('');await page.locator('#record-count').filter({hasText:'25 of 62 saved records'}).waitFor();
+    await page.locator('#product-name').fill('New device draft');await page.locator('#product-description').fill('A device with specified model');await page.locator('#product-sku').fill('DEVICE-NEW');await page.locator('#product-category').selectOption('11');await page.locator('[data-category-field=model]').fill('MODEL-1');await page.locator('[data-category-field=specifications]').fill('24 MP');
+    page.once('dialog',d=>d.accept());await page.reload();await page.locator('#product-feedback').filter({hasText:'Unsaved product recovered.'}).waitFor();assert.equal(await page.locator('#product-name').inputValue(),'New device draft');assert.equal(await page.locator('[data-category-field=model]').inputValue(),'MODEL-1');
+    await page.locator('#dashboard-language').selectOption('ar');assert.equal(await page.locator('[data-category-field=specifications]').inputValue(),'24 MP');assert.equal(await page.locator('html').getAttribute('dir'),'rtl');await page.locator('#dashboard-language').selectOption('en');
+    const profileEdit=(await repository.getKnownBusiness(businessId)).businessProfile;await repository.saveBusiness({...profileEdit,location:'New saved location'});
+    await page.locator('#product-save').click();await page.locator('#product-feedback').filter({hasText:'Product saved.'}).waitFor();let current=(await repository.getKnownBusiness(businessId)).businessProfile;assert.equal(current.location,'New saved location');const device=current.products.find(p=>p.sku==='DEVICE-NEW');assert.equal(device.categoryAttributes.byCategory['11'].model,'MODEL-1');
+    await page.locator('#record-search').fill('DEVICE-NEW');await page.locator('#record-count').filter({hasText:'1 of 63 saved records'}).waitFor();await page.locator('#catalogue-list > article > button').filter({hasText:'Edit',exact:true}).click();await page.locator('#product-name').fill('Stale edit');
+    current=(await repository.getKnownBusiness(businessId)).businessProfile;await repository.saveBusiness({...current,products:current.products.map(p=>p.productId===device.productId?{...p,name:'Newer session edit'}:p)});
+    await page.locator('#product-save').click();await page.locator('#product-feedback').filter({hasText:'Information changed. Reload and review.'}).waitFor();assert.equal((await repository.getKnownBusiness(businessId)).businessProfile.products.find(p=>p.productId===device.productId).name,'Newer session edit');
+    page.once('dialog',d=>d.accept());await page.locator('#product-cancel').click();await repository.saveBusiness(original);
+    console.log('Catalogue SQL pagination, filters, bulk changes, category fields, recovered drafts, Arabic and stale edits passed');
+   }
 
    // WebKit reports some cancelled navigation fetches as synthetic pageerror
    // events. Exempt only the same-origin auth-copy read with a matching, explicitly

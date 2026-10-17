@@ -29,7 +29,7 @@ test('permitted business edits, structured variants, genuine overview/orders and
     await createHandler({authenticate:async()=>identity?{trustedIdentityId:identity}:null,environment:()=>env,repository:()=>repository})({method,query:{businessId},body:{catalogueRevision:inventory.catalogueRevision(current),...body}},res);return res;
    }
    let context=(await call({},'owner-a','GET')).body.business;
-   assert.deepEqual(context.summary,{products:1,availableProducts:1,variants:1,trackedStockRows:1,recentOrders:preview?0:1});
+   assert.deepEqual(context.summary,{draftProducts:1,correctionProducts:0,lowStockProducts:0,outOfStockProducts:0,mediaAttention:0,products:1,availableProducts:1,variants:1,trackedStockRows:1,recentOrders:preview?0:1});
    if(order){assert.equal(context.orders[0].id,order.id);assert.equal(context.orders[0].line.totalPriceMinor,4300);assert.equal(context.orders[0].customerId,undefined);}else assert.deepEqual(context.orders,[],'Controlled test records cannot fabricate real orders');
    assert.equal((await call({},'owner-b','GET')).code,403);assert.deepEqual(await repository.getVendorOrders('owner-b',businessId),[]);
    const details={name:'Updated Shop',location:'Greenwich, London',productsServices:'Independent clothing shop'};

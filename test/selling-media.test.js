@@ -48,6 +48,17 @@ test('actual image bytes upload, decode, persist, reload and unlink through one 
    assert.equal((await call('complete-media',completion)).statusCode,200,'Completed upload retry is idempotent');
    const reloaded=await call(null,null,'owner-a','GET');assert.equal(reloaded.statusCode,200);
    assert.equal(reloaded.body.business.media[0].linked,true);assert.ok(reloaded.body.business.media[0].previewUrl);
+   const second={...item,assetId:item.assetId+'-second'};
+   const secondUpload=(await call('register-media',second)).body.uploadSession;
+   await disk.fetchImpl(secondUpload.uploadUrl,{method:'PUT',headers:{'Content-Type':'image/png'},body:bytes});
+   assert.equal((await call('complete-media',{productId:'coffee',assetId:second.assetId,storageKey:secondUpload.storageKey,uploadToken:secondUpload.uploadToken})).statusCode,200);
+   assert.equal((await call('move-media',{productId:'coffee',assetId:second.assetId,direction:'earlier'},'owner-b')).statusCode,403);
+   assert.equal((await call('move-media',{productId:'tea',assetId:second.assetId,direction:'earlier'})).statusCode,400);
+   assert.equal((await call('move-media',{productId:'coffee',assetId:second.assetId,direction:'earlier'})).statusCode,200);
+   const ordered=(await repository.getKnownBusiness(businessId)).businessProfile.products[0].mediaGallery;
+   assert.deepEqual(ordered.assetIds,[second.assetId,item.assetId]);assert.equal(ordered.mainAssetId,item.assetId,'Ordering preserves the main image');
+   assert.equal((await call(null,null,'owner-a','GET')).body.business.media[0].assetId,second.assetId);
+   assert.equal((await call('remove-media',{productId:'coffee',assetId:second.assetId})).statusCode,200);
    assert.equal((await call('remove-media',{productId:'coffee',assetId:item.assetId},'owner-b')).statusCode,403);
    assert.equal((await call('remove-media',{productId:'tea',assetId:item.assetId})).statusCode,404);
    assert.equal((await call('remove-media',{productId:'coffee',assetId:item.assetId})).statusCode,200);

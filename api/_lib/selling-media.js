@@ -22,10 +22,12 @@ async function listMedia(store,profile,backend){
  const galleryIds=(profile.products||[]).flatMap(p=>p.mediaGallery?.assetIds||[]);
  for(let i=0;i<galleryIds.length;i+=20)assets.push(...await store.getBusinessMediaAssetsByIds(profile.businessId,galleryIds.slice(i,i+20)));
  assets=Array.from(new Map(assets.map(a=>[a.assetId,a])).values()).filter(a=>a.businessId===profile.businessId&&['product','service'].includes(a.purpose)&&a.state!=='archived'&&(profile.products||[]).some(p=>p.productId===a.relatedEntityId));
+ assets.sort((a,b)=>a.relatedEntityId.localeCompare(b.relatedEntityId)||((profile.products.find(p=>p.productId===a.relatedEntityId)?.mediaGallery?.assetIds||[]).indexOf(a.assetId)-(profile.products.find(p=>p.productId===b.relatedEntityId)?.mediaGallery?.assetIds||[]).indexOf(b.assetId)));
  return Promise.all(assets.map(async asset=>{
   let previewUrl=null;
   const prefix=`businesses/${encodeURIComponent(profile.businessId)}/media/${encodeURIComponent(asset.assetId)}/processed/`;
-  if(asset.state==='ready'&&asset.processedStorageKey?.startsWith(prefix))previewUrl=(await backend.adapter?.createDeliveryRead({storageKey:asset.processedStorageKey,expiresAt:new Date(Date.now()+10*60*1000).toISOString()}))?.deliveryUrl||null;
+  const thumbnail=asset.kind==='image'?asset.derivatives?.find(d=>d.role==='thumbnail'&&d.storageKey?.startsWith(prefix))?.storageKey:null;
+  if(asset.state==='ready'&&asset.processedStorageKey?.startsWith(prefix))previewUrl=(await backend.adapter?.createDeliveryRead({storageKey:thumbnail||asset.processedStorageKey,expiresAt:new Date(Date.now()+10*60*1000).toISOString()}))?.deliveryUrl||null;
   return {assetId:asset.assetId,productId:asset.relatedEntityId,kind:asset.kind,state:asset.state,previewUrl,failureReason:asset.failureReason||'',main:(profile.products||[]).find(p=>p.productId===asset.relatedEntityId)?.mediaGallery?.mainAssetId===asset.assetId,linked:(profile.products||[]).find(p=>p.productId===asset.relatedEntityId)?.mediaGallery?.assetIds?.includes(asset.assetId)||false};
  }));
 }
@@ -54,6 +56,17 @@ async function mutateMedia({store,profile,identity,action,item,backend,env,saveP
   const session=asset&&createMediaUploadSession(asset),upload=session&&await backend.adapter.createUpload(asset,session);
   if(!upload)return {status:503,error:'Private media upload could not be started.'};
   return {status:201,assetId:asset.assetId,uploadSession:{...upload,uploadToken:session.uploadToken}};
+ }
+ if(action==='move-media'){
+  const ids=product.mediaGallery?.assetIds||[],index=ids.indexOf(item.assetId);
+  if(index<0||!['earlier','later'].includes(item.direction))return {status:400,error:'Choose linked media and a valid direction.'};
+  const selected=await store.getBusinessMediaAsset(profile.businessId,item.assetId);
+  if(!selected||selected.businessId!==profile.businessId||selected.relatedEntityId!==product.productId||!['product','service'].includes(selected.purpose)||selected.state!=='ready')return {status:400,error:'Choose ready media linked to this product.'};
+  const target=index+(item.direction==='earlier'?-1:1);if(target<0||target>=ids.length)return {status:200,ok:true};
+  const ordered=ids.slice();[ordered[index],ordered[target]]=[ordered[target],ordered[index]];
+  const next={...profile,products:profile.products.map(p=>p.productId===product.productId?{...p,mediaGallery:{...p.mediaGallery,assetIds:ordered}}:p)};
+  if(!await saveProfile(profile,next))return {status:409,error:'Product changed. Reload before ordering media.'};
+  return {status:200,ok:true};
  }
  const asset=await store.getBusinessMediaAsset(profile.businessId,item.assetId);
  if(!asset||asset.relatedEntityId!==product.productId||!(logo?asset.purpose==='brand'&&asset.brandReference==='primary-brand'&&asset.kind==='image':['product','service'].includes(asset.purpose)))return {status:404,error:'Product media not found.'};

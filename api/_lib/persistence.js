@@ -773,6 +773,18 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
 
     async getSellingCataloguePage(input) { return require('./selling-catalogue').queryPage(database,input); },
 
+    async getSellingMediaAttentionCount(identity,businessId) {
+      await database.ensureSchema();
+      const result=await database.query(`SELECT count(*)::integer AS count
+        FROM demeos_business_media_assets a JOIN demeos_businesses b USING(business_id)
+        WHERE a.business_id=$1 AND a.asset->>'purpose' IN ('product','service') AND a.asset->>'state'<>'archived'
+        AND EXISTS(SELECT 1 FROM demeos_business_owners o WHERE o.business_id=a.business_id AND o.trusted_identity_id=$2)
+        AND (a.asset->>'state'<>'ready' OR NOT EXISTS(SELECT 1 FROM jsonb_array_elements(COALESCE(b.profile->'products','[]'::jsonb)) p WHERE p->>'productId'=a.asset->>'relatedEntityId' AND COALESCE(p->'mediaGallery'->'assetIds','[]'::jsonb) ? a.asset_id))`,[businessId,identity]);
+      return result.rows[0].count;
+    },
+
+    async getSellingOrderPage(input) { return require('./selling-order-page').read(database,{...input,environment:environment()}); },
+
     async getVendorOrders(identity, businessId) { return vendorOrders.listOwned(identity, businessId); },
 
     async getVendorInventory(businessId) {
