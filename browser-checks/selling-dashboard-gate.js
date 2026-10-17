@@ -537,6 +537,28 @@ async function run(){
     console.log('Catalogue SQL pagination, filters, bulk changes, category fields, recovered drafts, Arabic and stale edits passed');
    }
 
+   if([375,1440].includes(viewport.width)){
+    env={VERCEL_ENV:'production'};await context.addCookies([{name:'gate-owner',value:'owner-a',url:base}]);
+    const businessId='vendor-a-second',previous=(await repository.getKnownBusiness(businessId)).businessProfile;
+    const productId='frame-product-'+viewport.width,assetId='frame-ui-'+viewport.width,storageKey='businesses/'+businessId+'/media/'+assetId+'/processed/master.mp4';
+    const tmp=await require('node:fs/promises').mkdtemp('/tmp/demeos-frame-ui-'),file=path.join(tmp,'source.mp4');
+    await require('node:util').promisify(require('node:child_process').execFile)(require('ffmpeg-static'),['-hide_banner','-loglevel','error','-f','lavfi','-i','testsrc2=size=320x180:rate=24','-t','2','-c:v','libx264','-threads','1','-pix_fmt','yuv420p',file],{timeout:10000});
+    const bytes=await require('node:fs/promises').readFile(file);await require('node:fs/promises').rm(tmp,{recursive:true,force:true});
+    await disk.fetchImpl('https://storage.gate/'+encodeURIComponent(storageKey),{method:'PUT',headers:{'Content-Type':'video/mp4','x-content-type':'video/mp4','x-vercel-blob-access':'private'},body:bytes});
+    await repository.saveBusiness({...previous,products:[{businessId,productId,name:'Real video frames',description:'Controlled actual MP4',priceMode:'contact',availability:'contact',mediaGallery:{assetIds:[assetId],mainAssetId:''}}]});
+    await repository.saveBusinessMediaAsset(businessId,{businessId,assetId,relatedEntityId:productId,purpose:'product',kind:'video',state:'ready',width:320,height:180,durationSeconds:2,contentType:'video/mp4',sizeBytes:bytes.length,storageKey:'businesses/'+businessId+'/media/'+assetId+'/original',processedStorageKey:storageKey,deliveryUrl:'https://storage.gate/'+encodeURIComponent(storageKey)});
+    disk.drivers.extractVideoFrames=require('../api/_lib/media-ffmpeg-driver').createFfmpegVideoDrivers({fetchImpl:disk.fetchImpl}).extractVideoFrames;
+    await page.goto(base+'/selling-vendor/images-videos?businessId='+businessId);await page.getByRole('button',{name:'Extract video frames',exact:true}).click();await page.getByRole('button',{name:'Video frames ready',exact:true}).waitFor();
+    await page.waitForFunction(()=>document.querySelectorAll('.video-frame-gallery img').length===4&&[...document.querySelectorAll('.video-frame-gallery img')].every(i=>i.naturalWidth>0));
+    assert.equal(await page.locator('video').evaluate(v=>Boolean(v.poster)),true);await page.reload();await page.getByRole('button',{name:'Video frames ready',exact:true}).waitFor();
+    const copy=require('../js/selling-dashboard-copy');for(const locale of copy.languages){await page.locator('#dashboard-language').selectOption(locale.code);await page.getByRole('button',{name:copy.translate(locale.code,'Video frames ready'),exact:true}).waitFor();assert.equal(await page.locator('html').getAttribute('dir'),locale.code==='ar'?'rtl':'ltr');}
+    await page.locator('#dashboard-language').selectOption('en');assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+    await page.screenshot({path:path.join(artifacts,'demeos-selling-real-frames-'+viewport.width+'.png'),fullPage:true});
+    const record=await repository.getBusinessMediaAsset(businessId,assetId);page.once('dialog',d=>d.accept());await page.getByRole('button',{name:'Remove',exact:true}).click();await page.locator('#media-feedback').filter({hasText:'Media removed from product.'}).waitFor();
+    for(const f of record.videoFrames.frames)assert.equal(await disk.driver.verifyUpload({storageKey:f.storageKey}),null);await repository.saveBusiness(previous);delete disk.drivers.extractVideoFrames;
+    console.log('Actual FFmpeg frame extraction, private posters, refresh, ten languages and cleanup passed at '+viewport.width+'px');
+   }
+
    // WebKit reports some cancelled navigation fetches as synthetic pageerror
    // events. Exempt only the same-origin auth-copy read with a matching, explicitly
    // cancelled network request; real CORS failures and JS exceptions still fail.

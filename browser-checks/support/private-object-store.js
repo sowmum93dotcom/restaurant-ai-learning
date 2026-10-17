@@ -12,6 +12,7 @@ async function diskStorage({blobProtocol=false}={}){
   try{return new Response(await fs.readFile(file(key)),{status:200,headers:{'Content-Type':types.get(key)}});}catch{return new Response('',{status:404});}
  }
  const driver={
+  async deleteObject({storageKey}){if(!/^businesses\/[^/]+\/media\/[^/]+\/processed\/frames-v1\/frame-[0-3]\.jpg$/.test(storageKey))return false;await fs.rm(file(storageKey),{force:true});return true;},
   async createUpload({storageKey,contentType}){return {storageKey,uploadUrl:url(storageKey),...(blobProtocol?{headers:{'x-content-type':contentType,'x-vercel-blob-access':'private'}}:{})};},
   async verifyUpload({storageKey}){try{const stat=await fs.stat(file(storageKey));return {exists:true,storageKey,sizeBytes:stat.size,contentType:types.get(storageKey)};}catch{return null;}},
   async createProcessingRead({storageKey,expiresAt}){return {storageKey,expiresAt,readUrl:url(storageKey)};},

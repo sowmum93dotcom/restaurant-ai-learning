@@ -13,7 +13,7 @@ function mediaBackend(env){
 }
 function capabilities(backend,env){
  const storage=Boolean(backend.adapter&&backend.driver&&env.DEMEOS_MEDIA_UPLOAD_SECRET?.length>=32);
- return {images:storage&&Boolean(backend.drivers?.inspectImage&&backend.drivers?.optimizeImage),videos:storage&&Boolean(backend.drivers?.inspectVideo&&backend.drivers?.transcodeVideo),
+ return {frames:storage&&Boolean(backend.drivers?.extractVideoFrames&&backend.driver?.deleteObject),images:storage&&Boolean(backend.drivers?.inspectImage&&backend.drivers?.optimizeImage),videos:storage&&Boolean(backend.drivers?.inspectVideo&&backend.drivers?.transcodeVideo),
   blocker:!storage?'Private storage and a media upload secret must be configured.':!backend.drivers?'Image/video processing is not configured.':!backend.drivers.transcodeVideo?'Video transcoding is not configured. Images are supported.':''};
 }
 async function listMedia(store,profile,backend){
@@ -30,7 +30,9 @@ async function listMedia(store,profile,backend){
   const prefix=`businesses/${encodeURIComponent(profile.businessId)}/media/${encodeURIComponent(asset.assetId)}/processed/`;
   const thumbnail=asset.kind==='image'?asset.derivatives?.find(d=>d.role==='thumbnail'&&d.storageKey?.startsWith(prefix))?.storageKey:null;
   if(asset.state==='ready'&&asset.processedStorageKey?.startsWith(prefix))previewUrl=(await backend.adapter?.createDeliveryRead({storageKey:thumbnail||asset.processedStorageKey,expiresAt:new Date(Date.now()+10*60*1000).toISOString()}))?.deliveryUrl||null;
-  return {assetId:asset.assetId,productId:asset.relatedEntityId,kind:asset.kind,state:asset.state,previewUrl,failureReason:asset.failureReason||'',main:products.get(asset.relatedEntityId)?.mediaGallery?.mainAssetId===asset.assetId,linked:products.get(asset.relatedEntityId)?.mediaGallery?.assetIds?.includes(asset.assetId)||false};
+  let framePreviews=[];
+  if(asset.state==='ready'&&require('./selling-video-frames').validate(asset,asset.videoFrames)){framePreviews=await Promise.all(asset.videoFrames.frames.map(async f=>({...f,previewUrl:(await backend.adapter?.createDeliveryRead({storageKey:f.storageKey,expiresAt:new Date(Date.now()+600000).toISOString()}))?.deliveryUrl||null})));framePreviews=framePreviews.map(({storageKey,...frame})=>frame);}
+  return {framePreviews,assetId:asset.assetId,productId:asset.relatedEntityId,kind:asset.kind,state:asset.state,previewUrl,failureReason:asset.failureReason||'',main:products.get(asset.relatedEntityId)?.mediaGallery?.mainAssetId===asset.assetId,linked:products.get(asset.relatedEntityId)?.mediaGallery?.assetIds?.includes(asset.assetId)||false};
  }));
 }
 async function readLogo(store,profile,backend){
@@ -72,6 +74,8 @@ async function mutateMedia({store,profile,identity,action,item,backend,env,saveP
  }
  const asset=await store.getBusinessMediaAsset(profile.businessId,item.assetId);
  if(!asset||asset.relatedEntityId!==product.productId||!(logo?asset.purpose==='brand'&&asset.brandReference==='primary-brand'&&asset.kind==='image':['product','service'].includes(asset.purpose)))return {status:404,error:'Product media not found.'};
+ if(action==='extract-video-frames')return require('./selling-video-frames').prepare({store,identity,profile,product,asset,backend});
+ if(action==='remove-media'&&asset.kind==='video'&&!await require('./selling-video-frames').cleanup({store,identity,asset,backend}))return {status:503,error:'Frame cleanup is incomplete. Retry removal.'};
  if(action==='set-main-media'&&(asset.state!=='ready'||asset.kind!=='image'||!product.mediaGallery?.assetIds?.includes(asset.assetId)))return {status:400,error:'Choose a ready image linked to this product.'};
  if(action==='complete-media'||action==='resume-media'){
   if(action==='resume-media'&&!['processing','ready'].includes(asset.state))return {status:409,error:'Only a previously verified upload can resume processing.'};

@@ -8,6 +8,14 @@ const SCHEMA_STATEMENTS = [
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`,
   // Latest private analysis per product; does not expand the catalogue JSONB.
+  `CREATE TABLE IF NOT EXISTS demeos_media_frame_jobs (
+    business_id TEXT NOT NULL REFERENCES demeos_businesses(business_id),asset_id TEXT NOT NULL,
+    input_hash TEXT NOT NULL,lease_id TEXT NOT NULL,state TEXT NOT NULL CHECK(state IN ('running','completed','failed','deleted')),
+    attempts INTEGER NOT NULL DEFAULT 1,metrics JSONB,updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY(business_id,asset_id)
+  )`,
+  `CREATE TABLE IF NOT EXISTS demeos_media_frame_events(lease_id TEXT NOT NULL,state TEXT NOT NULL,business_id TEXT NOT NULL,asset_id TEXT NOT NULL,input_hash TEXT NOT NULL,metrics JSONB,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),PRIMARY KEY(lease_id,state))`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS demeos_media_frame_one_active ON demeos_media_frame_jobs(business_id) WHERE state='running'`,
   `CREATE TABLE IF NOT EXISTS demeos_visual_execution_slots (
     business_id TEXT PRIMARY KEY REFERENCES demeos_businesses(business_id),
     claim_id TEXT NOT NULL,

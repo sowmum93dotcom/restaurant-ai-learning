@@ -819,6 +819,46 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
       ) SELECT revision FROM logged`,[businessId,JSON.stringify(profile),identity,revision,JSON.stringify(entries),JSON.stringify(changes),require('./selling-access').dataEnvironment(businessId,environment(),identity)==='test']);
       return result.rows[0]||null;
     },
+    async getSellingFrameJob(identity,businessId,assetId){
+      await database.ensureSchema();return (await database.query(`SELECT j.* FROM demeos_media_frame_jobs j WHERE j.business_id=$1 AND j.asset_id=$3 AND EXISTS(SELECT 1 FROM demeos_business_owners o WHERE o.business_id=$1 AND o.trusted_identity_id=$2)`,[businessId,identity,assetId])).rows[0]||null;
+    },
+    async reconcileSellingFrameJobs(identity,businessId){
+      await database.ensureSchema();await database.query(`WITH expired AS (
+        UPDATE demeos_media_frame_jobs SET state='failed',metrics=jsonb_build_object('code','native-deadline-expired','cleanupPending',true),updated_at=NOW()
+        WHERE business_id=$1 AND state='running' AND updated_at<NOW()-INTERVAL '5 minutes'
+        AND EXISTS(SELECT 1 FROM demeos_business_owners WHERE business_id=$1 AND trusted_identity_id=$2)
+        RETURNING *
+      ) INSERT INTO demeos_media_frame_events(lease_id,state,business_id,asset_id,input_hash,metrics) SELECT lease_id,'expired',business_id,asset_id,input_hash,metrics FROM expired ON CONFLICT DO NOTHING`,[businessId,identity]);
+    },
+    async claimSellingFrameJob(identity,profile,product,asset,inputHash){
+      await database.ensureSchema();
+      await this.reconcileSellingFrameJobs(identity,profile.businessId);
+      try{return (await database.query(`INSERT INTO demeos_media_frame_jobs(business_id,asset_id,input_hash,lease_id,state)
+        SELECT $1,$3,$4,$7,'running' WHERE EXISTS(SELECT 1 FROM demeos_businesses b JOIN demeos_business_owners o USING(business_id) WHERE b.business_id=$1 AND o.trusted_identity_id=$2 AND b.profile=$5::jsonb)
+        AND EXISTS(SELECT 1 FROM demeos_business_media_assets a WHERE a.business_id=$1 AND a.asset_id=$3 AND a.asset=$6::jsonb)
+        ON CONFLICT(business_id,asset_id) DO UPDATE SET state='running',lease_id=EXCLUDED.lease_id,attempts=demeos_media_frame_jobs.attempts+1,input_hash=EXCLUDED.input_hash,updated_at=NOW()
+        WHERE demeos_media_frame_jobs.state IN ('failed','deleted') AND demeos_media_frame_jobs.attempts<3 RETURNING asset_id,lease_id`,[profile.businessId,identity,asset.assetId,inputHash,JSON.stringify(profile),JSON.stringify(asset),require('node:crypto').randomUUID()])).rows[0]||null;}catch(error){if(error.code==='23505')return null;throw error;}
+    },
+    async saveSellingVideoFrames(identity,profile,product,asset,inputHash,videoFrames,metrics,leaseId){
+      await database.ensureSchema();
+      return database.transaction(async tx=>{
+        const saved=await tx.query(`UPDATE demeos_business_media_assets a SET asset=jsonb_set(a.asset,'{videoFrames}',$7::jsonb),updated_at=NOW()
+          WHERE a.business_id=$1 AND a.asset_id=$3 AND a.asset=$6::jsonb
+          AND EXISTS(SELECT 1 FROM demeos_businesses b JOIN demeos_business_owners o USING(business_id) WHERE b.business_id=$1 AND o.trusted_identity_id=$2 AND b.profile=$5::jsonb)
+          AND EXISTS(SELECT 1 FROM demeos_media_frame_jobs j WHERE j.business_id=$1 AND j.asset_id=$3 AND j.input_hash=$4 AND j.lease_id=$8 AND j.state='running') RETURNING asset_id`,[profile.businessId,identity,asset.assetId,inputHash,JSON.stringify(profile),JSON.stringify(asset),JSON.stringify(videoFrames),leaseId]);
+        if(!saved.rows[0])return false;
+        await tx.query(`WITH changed AS (UPDATE demeos_media_frame_jobs SET state='completed',metrics=$4::jsonb,updated_at=NOW() WHERE business_id=$1 AND asset_id=$2 AND input_hash=$3 AND lease_id=$5 RETURNING *) INSERT INTO demeos_media_frame_events(lease_id,state,business_id,asset_id,input_hash,metrics) SELECT lease_id,state,business_id,asset_id,input_hash,metrics FROM changed ON CONFLICT DO NOTHING`,[profile.businessId,asset.assetId,inputHash,JSON.stringify(metrics),leaseId]);return true;
+      });
+    },
+    async failSellingFrameJob(identity,businessId,assetId,inputHash,metrics,leaseId){
+      await database.ensureSchema();await database.query(`WITH changed AS (UPDATE demeos_media_frame_jobs SET state='failed',metrics=$5::jsonb,updated_at=NOW() WHERE business_id=$1 AND asset_id=$3 AND input_hash=$4 AND lease_id=$6 AND state='running' AND EXISTS(SELECT 1 FROM demeos_business_owners WHERE business_id=$1 AND trusted_identity_id=$2) RETURNING *) INSERT INTO demeos_media_frame_events(lease_id,state,business_id,asset_id,input_hash,metrics) SELECT lease_id,state,business_id,asset_id,input_hash,metrics FROM changed ON CONFLICT DO NOTHING`,[businessId,identity,assetId,inputHash,JSON.stringify(metrics),leaseId]);
+    },
+    async beginSellingFrameCleanup(identity,businessId,assetId){
+      await database.ensureSchema();try{return (await database.query(`UPDATE demeos_media_frame_jobs SET state='running',lease_id=$4,updated_at=NOW(),metrics='{"operation":"cleanup"}'::jsonb WHERE business_id=$1 AND asset_id=$3 AND state<>'running' AND EXISTS(SELECT 1 FROM demeos_business_owners WHERE business_id=$1 AND trusted_identity_id=$2) RETURNING lease_id,input_hash`,[businessId,identity,assetId,require('node:crypto').randomUUID()])).rows[0]||null;}catch(error){if(error.code==='23505')return null;throw error;}
+    },
+    async clearSellingFrameJob(identity,businessId,assetId,leaseId){
+      await database.ensureSchema();await database.query(`WITH changed AS (UPDATE demeos_media_frame_jobs SET state='deleted',metrics='{"filesDeleted":true}'::jsonb,updated_at=NOW() WHERE business_id=$1 AND asset_id=$3 AND lease_id=$4 AND state='running' AND EXISTS(SELECT 1 FROM demeos_business_owners WHERE business_id=$1 AND trusted_identity_id=$2) RETURNING *) INSERT INTO demeos_media_frame_events(lease_id,state,business_id,asset_id,input_hash,metrics) SELECT lease_id,state,business_id,asset_id,input_hash,metrics FROM changed ON CONFLICT DO NOTHING`,[businessId,identity,assetId,leaseId]);
+    },
     async getSellingIntelligenceMedia(identity,businessId,product) {
       await database.ensureSchema();
       return (await database.query(`SELECT a.asset FROM demeos_business_media_assets a

@@ -30,6 +30,11 @@ async function loadVercelBlobSdk(loader){
 function createVercelBlobStorageDriver({token,blobSdkLoader}={}){
  const secret=clean(token);if(!secret)return null;
  return{
+  async deleteObject({storageKey}){
+   if(typeof storageKey!=='string'||!/^businesses\/[^/]+\/media\/[^/]+\/processed\/frames-v1\/frame-[0-3]\.jpg$/.test(storageKey))return false;
+   const sdk=await loadVercelBlobSdk(blobSdkLoader);if(!sdk||typeof sdk.del!=='function')return false;
+   try{await sdk.del(storageKey,{token:secret});return true;}catch{return false;}
+  },
   async createUpload({storageKey,contentType,sizeBytes,expiresAt}){
    const sdk=await loadVercelBlobSdk(blobSdkLoader);if(!sdk||typeof sdk.issueSignedToken!=="function"||typeof sdk.presignUrl!=="function")return null;
    const validUntil=Date.parse(expiresAt);if(!Number.isFinite(validUntil)||validUntil<=Date.now())return null;

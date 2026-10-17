@@ -34,7 +34,7 @@ function createProcessor({hosts=[],fetchImpl=globalThis.fetch,ffmpegPath='ffmpeg
   if(!total)throw Error('Empty source');
  }
  return async function processVideo(operation,payload){
-  if(!['inspect','transcode'].includes(operation))throw Error('Unsupported operation');
+  if(!['inspect','transcode','frames'].includes(operation))throw Error('Unsupported operation');
   const prefix=scope(payload),destinations=payload.outputDestinations;
   if(operation==='transcode'){
    if(!Array.isArray(destinations)||destinations.length!==3||new Set(destinations.map(d=>d.role)).size!==3)throw Error('Three distinct private outputs required');
@@ -49,6 +49,21 @@ function createProcessor({hosts=[],fetchImpl=globalThis.fetch,ffmpegPath='ffmpeg
    const original=path.join(directory,'source'),output=path.join(directory,'video.mp4');
    await source(payload,original);const inspected=await probe(original,{ffprobePath});
    if(operation==='inspect')return inspected;
+   if(operation==='frames'){
+    if(payload.frameProtocolVersion!==1||!payload.storageKey.startsWith(prefix+'processed/')||!payload.storageKey.endsWith('.mp4'))throw Error('A processed MP4 and frame protocol v1 are required');
+    const {createHash}=require('node:crypto'),sourceDigest=createHash('sha256');
+    for await(const chunk of require('node:fs').createReadStream(original))sourceDigest.update(chunk);
+    const frames=[];
+    for(let i=0;i<4;i++){
+     const timestampSeconds=Number((inspected.durationSeconds*(i+.5)/4).toFixed(3)),file=path.join(directory,'frame-'+i+'.jpg');
+     await run(ffmpegPath,['-hide_banner','-loglevel','error','-nostdin','-threads','1','-protocol_whitelist','file,pipe','-ss',String(timestampSeconds),'-i',original,'-map','0:v:0','-frames:v','1','-sn','-dn','-map_metadata','-1','-vf',"scale=w='min(640,iw)':h='min(640,ih)':force_original_aspect_ratio=decrease",'-q:v','5','-threads','1',file],3000);
+     const bytes=await fs.readFile(file);if(!bytes.length||bytes.length>262144)throw Error('Frame exceeds its byte budget');
+     const sharp=require('sharp'),metadata=await sharp(bytes,{limitInputPixels:640*640,failOn:'warning'}).metadata();
+     if(metadata.format!=='jpeg'||!metadata.width||!metadata.height)throw Error('Invalid extracted frame');
+     frames.push({index:i,timestampSeconds,width:metadata.width,height:metadata.height,sizeBytes:bytes.length,contentType:'image/jpeg',contentHash:createHash('sha256').update(bytes).digest('hex'),bytesBase64:bytes.toString('base64')});
+    }
+    return {schemaVersion:1,sourceAssetId:payload.assetId,sourceHash:sourceDigest.digest('hex'),durationSeconds:inspected.durationSeconds,frames,limitation:'four-sampled-frames-not-full-video'};
+   }
    // Decode only the downloaded file. Network protocols, subtitles and data streams are excluded.
    await run(ffmpegPath,['-hide_banner','-loglevel','error','-nostdin','-threads','1','-protocol_whitelist','file,pipe','-i',original,'-map','0:v:0','-map','0:a:0?','-sn','-dn','-map_metadata','-1','-t','60','-vf',"scale=w='min(1280,iw)':h='min(1280,ih)':force_original_aspect_ratio=decrease:force_divisible_by=2",'-r','30','-c:v','libx264','-threads','1','-preset','veryfast','-crf','25','-maxrate','2500k','-bufsize','5000k','-pix_fmt','yuv420p','-c:a','aac','-b:a','128k','-ac','2','-movflags','+faststart','-f','mp4',output],22000);
    const encoded=await probe(output,{ffprobePath}),bytes=await fs.readFile(output);

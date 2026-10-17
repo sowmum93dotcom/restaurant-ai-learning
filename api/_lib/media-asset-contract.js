@@ -37,6 +37,7 @@ function normalizeMediaAsset(asset, businessId) {
   if(asset.sourceHash!==undefined){if(typeof asset.sourceHash!=='string'||!/^[a-f0-9]{64}$/.test(asset.sourceHash))return null;normalized.sourceHash=asset.sourceHash;}
   if(asset.processedHash!==undefined){if(typeof asset.processedHash!=='string'||!/^[a-f0-9]{64}$/.test(asset.processedHash)||!Number.isSafeInteger(asset.processedSizeBytes)||asset.processedSizeBytes<1||asset.processedSizeBytes>MAX_IMAGE_BYTES)return null;normalized.processedHash=asset.processedHash;normalized.processedSizeBytes=asset.processedSizeBytes;}
   const etag = normalizeText(asset.etag); if (etag) normalized.etag = etag;
+  if(asset.videoFrames!==undefined){if(!require('./selling-video-frames').validate(normalized,asset.videoFrames))return null;normalized.videoFrames=structuredClone(asset.videoFrames);}
   if (Array.isArray(asset.derivatives) && asset.derivatives.length) normalized.derivatives = asset.derivatives.map(function (item) { return { ...item }; });
   const deliveryUrl = normalizeText(asset.deliveryUrl);
   if (deliveryUrl) { if (!isHttpsUrl(deliveryUrl)) return null; normalized.deliveryUrl = deliveryUrl; }

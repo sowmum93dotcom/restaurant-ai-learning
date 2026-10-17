@@ -3,12 +3,13 @@ const {hash}=require('./selling-native-intelligence');
 const {catalogueRevision}=require('./vendor-inventory');
 const {dataEnvironment}=require('./selling-access');
 function mediaRevision(assets){
- return hash(assets.map(a=>({assetId:a.assetId,state:a.state,productId:a.relatedEntityId,processedHash:a.processedHash||null,processedStorageKey:a.processedStorageKey||null})).sort((a,b)=>a.assetId.localeCompare(b.assetId)));
+ return hash(assets.map(a=>({assetId:a.assetId,state:a.state,productId:a.relatedEntityId,processedHash:a.processedHash||null,processedStorageKey:a.processedStorageKey||null,frames:a.videoFrames||null})).sort((a,b)=>a.assetId.localeCompare(b.assetId)));
 }
 function technicalDetails(product,assets,businessId){
  return assets.filter(a=>a.businessId===businessId&&a.relatedEntityId===product.productId&&['product','service'].includes(a.purpose)&&a.state!=='archived').slice(0,64).map(a=>({
   assetId:a.assetId,kind:a.kind,state:a.state,width:a.width||null,height:a.height||null,
   aspectRatio:a.width&&a.height?a.width/a.height:null,sizeBytes:a.sizeBytes||null,contentType:a.contentType||null,
+  sampledFrames:require('./selling-video-frames').validate(a,a.videoFrames)?a.videoFrames.frames.map(({storageKey,...f})=>f):[],
   durationSeconds:a.durationSeconds||null,sourceHash:a.sourceHash||null,
   processedHash:a.processedHash||null,processedSizeBytes:a.processedSizeBytes||null,
   representation:{schemaVersion:1,status:a.kind==='image'&&a.state==='ready'&&a.processedHash?'hash-verified-image':'preprocessing-required',embeddings:'unavailable'},
@@ -27,6 +28,7 @@ function createVisualAuthorizer({store,environment=()=>process.env}){
   if(mediaRevision(assets)!==input.mediaRevision)return false;
   // Only hash-verified bounded image representations exist in this release.
   // Video frames remain rejected until extraction/storage provenance is deployed.
+  if(input.capability==='video-frame-semantics'){const frames=require('./selling-video-frames');return input.media.every(m=>assets.some(a=>a.businessId===input.businessId&&a.relatedEntityId===input.productId&&a.state==='ready'&&product.mediaGallery?.assetIds?.includes(a.assetId)&&a.assetId===m.assetId&&frames.validate(a,a.videoFrames)&&a.videoFrames.frames.some(f=>f.index===m.frameIndex&&f.timestampSeconds===m.timestampSeconds&&f.contentHash===m.contentHash&&f.sizeBytes===m.sizeBytes&&f.width===m.width&&f.height===m.height&&f.contentType===m.contentType)))&&new Set(input.media.map(m=>m.assetId)).size===1;}
   if(input.capability!=='image-semantics')return false;
   return input.media.every(m=>assets.some(a=>a.assetId===m.assetId&&a.businessId===input.businessId&&a.relatedEntityId===input.productId&&['product','service'].includes(a.purpose)&&a.state==='ready'&&a.kind==='image'&&product.mediaGallery?.assetIds?.includes(a.assetId)&&a.processedHash===m.contentHash&&a.processedSizeBytes===m.sizeBytes&&a.width===m.width&&a.height===m.height&&m.contentType==='image/webp'&&a.processedStorageKey?.startsWith(`businesses/${encodeURIComponent(input.businessId)}/media/${encodeURIComponent(a.assetId)}/processed/`)));
  };

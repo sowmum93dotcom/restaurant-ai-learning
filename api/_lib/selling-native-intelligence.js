@@ -55,7 +55,7 @@ function mediaAnalysis(product,assets,businessId){
   if(video){
    const prefix=`businesses/${encodeURIComponent(businessId)}/media/${encodeURIComponent(a.assetId)}/processed/`;
    add('video-playback',field,a.processedStorageKey?.startsWith(prefix)&&a.derivatives?.some(d=>d.role==='customer'&&d.contentType==='video/mp4'&&d.storageKey?.startsWith(prefix))?'passed':'failed','error');
-   if(!a.derivatives?.some(d=>['thumbnail','poster','cover'].includes(d.role)))add('video-cover',field,'unavailable','info');
+   if(!require('./selling-video-frames').validate(a,a.videoFrames)&&!a.derivatives?.some(d=>['thumbnail','poster','cover'].includes(d.role)))add('video-cover',field,'unavailable','info');
   }
  }
  if(new Set(ids).size!==ids.length)add('media-duplicate','mediaGallery','failed');

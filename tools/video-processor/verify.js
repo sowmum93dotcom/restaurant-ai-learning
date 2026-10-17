@@ -16,7 +16,7 @@ async function main(){
  const driverFetch=(url,options)=>fetch(String(url).replace('https://processor.fixture',base),options);
  const video=process.argv.includes('--native')?require('../../api/_lib/media-ffmpeg-driver').createFfmpegVideoDrivers({fetchImpl:disk.fetchImpl}):createHttpMediaProcessingDrivers({baseUrl:'https://processor.fixture',token,fetchImpl:driverFetch,timeoutMs:45000});
  assert.ok(video,'Native video binaries must be executable');
- const backend={...disk,drivers:{...disk.drivers,inspectVideo:video.inspectVideo,transcodeVideo:video.transcodeVideo}};
+ const backend={...disk,drivers:{...disk.drivers,inspectVideo:video.inspectVideo,transcodeVideo:video.transcodeVideo,...(video.extractVideoFrames?{extractVideoFrames:video.extractVideoFrames}:{})}};
  const env={VERCEL_ENV:'production',DEMEOS_MEDIA_UPLOAD_SECRET:'isolated-video-upload-secret-at-least-32-characters'};
  const previousSecret=process.env.DEMEOS_MEDIA_UPLOAD_SECRET;process.env.DEMEOS_MEDIA_UPLOAD_SECRET=env.DEMEOS_MEDIA_UPLOAD_SECRET;
  const businessId='video-owner-business',owner='video-owner';
@@ -49,6 +49,14 @@ async function main(){
    assert.ok(encoded.indexOf(Buffer.from('moov'))<encoded.indexOf(Buffer.from('mdat')),'MP4 metadata precedes media for fast-start playback');
    for(const d of saved.derivatives)assert.ok((await disk.driver.verifyUpload({storageKey:d.storageKey})).exists);
    playable.push(encoded);console.log(`Real MOV → H.264/AAC, SQL ready/link, 3 private outputs: ${seconds}s in ${Date.now()-start}ms`);
+   if(process.argv.includes('--native')){
+    const extracted=await call('extract-video-frames',{productId:item.productId,assetId:item.assetId});assert.equal(extracted.code,200,JSON.stringify(extracted.body));
+    const framed=await repo.getBusinessMediaAsset(businessId,item.assetId);assert.equal(framed.videoFrames.frames.length,4);
+    for(const frame of framed.videoFrames.frames)assert.equal((await disk.driver.verifyUpload({storageKey:frame.storageKey})).sizeBytes,frame.sizeBytes);
+    assert.equal((await call('extract-video-frames',{productId:item.productId,assetId:item.assetId})).body.cacheHit,true);
+    assert.deepEqual(await fs.readFile(disk.file(saved.processedStorageKey)),encoded);
+    console.log(JSON.stringify({videoSeconds:seconds,frameMetrics:extracted.body.metrics,liveModelInference:false}));
+   }
   }
   if(process.argv.includes('--browser')){
    const {chromium}=require('playwright');

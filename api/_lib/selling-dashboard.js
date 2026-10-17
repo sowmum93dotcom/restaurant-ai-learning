@@ -57,7 +57,7 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
         // Recheck ownership and the applicable server authority on every load.
         if (!await store.isBusinessOwnedByIdentity(identity.trustedIdentityId,businessId)) return res.status(403).json({error:'Selling access is unavailable for this business.'});
         const actorContext = createAuthenticatedBusinessOwnerContext({trustedIdentityId:identity.trustedIdentityId,businessId});
-        if (!authorizeDemeosAction({actorContext,businessId,action:req.method==='POST'?(['register-media','complete-media','resume-media','remove-media','set-main-media','move-media','register-logo','complete-logo','resume-logo','remove-logo'].includes(req.body?.action)?'manage-business-media':'manage-business-profile'):'view-own-business-results'}).allowed) return res.status(403).json({error:'Selling access is unavailable for this business.'});
+        if (!authorizeDemeosAction({actorContext,businessId,action:req.method==='POST'?(['register-media','complete-media','resume-media','remove-media','set-main-media','move-media','extract-video-frames','register-logo','complete-logo','resume-logo','remove-logo'].includes(req.body?.action)?'manage-business-media':'manage-business-profile'):'view-own-business-results'}).allowed) return res.status(403).json({error:'Selling access is unavailable for this business.'});
         const record = await store.getKnownBusiness(businessId);
         business = businessSummary(record?.businessProfile,env,identity.trustedIdentityId);
         if (!business || business.businessId !== businessId) return res.status(403).json({error:'Selling access is unavailable for this business.'});
@@ -149,7 +149,7 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
           return res.status(200).json({ok:true,updated:ids.length});
         }
         const item=req.body?.product;
-        if (!['save-product','save-draft','delete-product','adjust-stock','save-variant','delete-variant','register-media','complete-media','resume-media','remove-media','set-main-media','move-media','review-product','submit-product','publish-product','unpublish-product'].includes(action) || !item || typeof item!=='object' || Array.isArray(item))
+        if (!['save-product','save-draft','delete-product','adjust-stock','save-variant','delete-variant','register-media','complete-media','resume-media','remove-media','set-main-media','move-media','extract-video-frames','review-product','submit-product','publish-product','unpublish-product'].includes(action) || !item || typeof item!=='object' || Array.isArray(item))
           return res.status(400).json({error:'Invalid product request.'});
         const id=typeof item.productId==='string'?item.productId.trim():'';
         if (!/^[a-zA-Z0-9_-]{1,120}$/.test(id)) return res.status(400).json({error:'Invalid product ID.'});
@@ -164,7 +164,7 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
           const result=await submissions.mutate({store,profile:original,productId:id,action,identity:identity.trustedIdentityId,environment:env,confirmed:req.body.confirmed,resolveEvidence:resolveSubmissionEvidence});
           const {status,...body}=result;return res.status(status).json({...body,...(status>=400?{error:'Review the product and its current validation status before continuing.'}:{})});
         }
-        if(['register-media','complete-media','resume-media','remove-media','set-main-media','move-media'].includes(action)){
+        if(['register-media','complete-media','resume-media','remove-media','set-main-media','move-media','extract-video-frames'].includes(action)){
           const result=await media.mutateMedia({store,profile:original,identity:identity.trustedIdentityId,action,item,backend,env,saveProfile:(previous,next)=>{next.products=next.products.map(p=>submissions.reconcile(previous.products.find(old=>old.productId===p.productId),p,businessId,identity.trustedIdentityId,['complete-media','resume-media'].includes(action)?'media-processing-completed':action==='set-main-media'?'main-image-selected':action==='move-media'?'media-order-changed':'media-removed'));return store.saveSellingProducts(identity.trustedIdentityId,businessId,previous,next);}});
           const {status,...body}=result;return res.status(status).json(body);
         }
@@ -174,6 +174,7 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
           const stock=await store.getVendorInventory(businessId);
           if(Object.entries(stock.entries).some(([key,row])=>{const [productId,variantId]=JSON.parse(key);return productId===id&&(action==='delete-product'||variantId===item.variantId)&&row.reserved>0;}))return res.status(409).json({error:'This item has reserved stock for an order and cannot be deleted.'});
         }
+        if(action==='delete-product'&&index>=0&&typeof store.getSellingIntelligenceMedia==='function'){for(const a of await store.getSellingIntelligenceMedia(identity.trustedIdentityId,businessId,products[index]))if(a.kind==='video'&&!await require('./selling-video-frames').cleanup({store,identity:identity.trustedIdentityId,asset:a,backend}))return res.status(503).json({error:'Frame cleanup is incomplete. Retry removal.'});}
         if (action==='save-variant' || action==='delete-variant') {
           if (index<0) return res.status(404).json({error:'Product not found.'});
           const variantId=typeof item.variantId==='string'?item.variantId.trim():'';
