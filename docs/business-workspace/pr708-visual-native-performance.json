@@ -1,0 +1,121 @@
+{
+  "runtime": "v24.19.0",
+  "database": "PGlite 0.5.8",
+  "method": "one warm-up, eight measured calls; isolated process. Service includes metadata reads, hashing and cache retrieval, excludes HTTP/Clerk/network/initial profile hydration. Analysis includes classification, completeness, duplicates and metadata checks. CPU/RSS describe the whole benchmark process including database startup, not per-request resource usage.",
+  "resourceUsage": {
+    "processCpuUserMs": 4275.502,
+    "processCpuSystemMs": 578.483,
+    "rssDeltaBytes": 573767680,
+    "finalRssBytes": 616566784
+  },
+  "results": [
+    {
+      "products": 5,
+      "operation": "classification",
+      "medianMs": 0.336,
+      "maxMs": 0.945,
+      "payloadBytes": 284,
+      "measuredCalls": 8,
+      "cacheHits": 0
+    },
+    {
+      "products": 5,
+      "operation": "analysis",
+      "medianMs": 0.526,
+      "maxMs": 0.768,
+      "payloadBytes": 3569,
+      "measuredCalls": 8,
+      "cacheHits": 0
+    },
+    {
+      "products": 5,
+      "operation": "catalogue-sql-page",
+      "medianMs": 1.495,
+      "maxMs": 1.938,
+      "payloadBytes": 1534,
+      "measuredCalls": 8,
+      "cacheHits": 0
+    },
+    {
+      "products": 5,
+      "operation": "analysis-service",
+      "medianMs": 2.592,
+      "maxMs": 2.855,
+      "payloadBytes": 3628,
+      "measuredCalls": 8,
+      "cacheHits": 8
+    },
+    {
+      "products": 500,
+      "operation": "classification",
+      "medianMs": 0.246,
+      "maxMs": 0.387,
+      "payloadBytes": 284,
+      "measuredCalls": 8,
+      "cacheHits": 0
+    },
+    {
+      "products": 500,
+      "operation": "analysis",
+      "medianMs": 2.455,
+      "maxMs": 2.909,
+      "payloadBytes": 5479,
+      "measuredCalls": 8,
+      "cacheHits": 0
+    },
+    {
+      "products": 500,
+      "operation": "catalogue-sql-page",
+      "medianMs": 5.408,
+      "maxMs": 6.954,
+      "payloadBytes": 7652,
+      "measuredCalls": 8,
+      "cacheHits": 0
+    },
+    {
+      "products": 500,
+      "operation": "analysis-service",
+      "medianMs": 3.381,
+      "maxMs": 4.688,
+      "payloadBytes": 5538,
+      "measuredCalls": 8,
+      "cacheHits": 8
+    },
+    {
+      "products": 5000,
+      "operation": "classification",
+      "medianMs": 0.251,
+      "maxMs": 1.11,
+      "payloadBytes": 284,
+      "measuredCalls": 8,
+      "cacheHits": 0
+    },
+    {
+      "products": 5000,
+      "operation": "analysis",
+      "medianMs": 19.402,
+      "maxMs": 23.334,
+      "payloadBytes": 5482,
+      "measuredCalls": 8,
+      "cacheHits": 0
+    },
+    {
+      "products": 5000,
+      "operation": "catalogue-sql-page",
+      "medianMs": 33.626,
+      "maxMs": 39.214,
+      "payloadBytes": 7722,
+      "measuredCalls": 8,
+      "cacheHits": 0
+    },
+    {
+      "products": 5000,
+      "operation": "analysis-service",
+      "medianMs": 16.034,
+      "maxMs": 18.108,
+      "payloadBytes": 5541,
+      "measuredCalls": 8,
+      "cacheHits": 8
+    }
+  ]
+}

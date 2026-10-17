@@ -33,7 +33,7 @@ function resolveLine(profile,request,entries){
  if(!inventory.units(balance.onHand)||!inventory.units(balance.reserved)||balance.onHand-balance.reserved<request.quantity)fail('insufficient-stock');
  return {productId:product.productId,variantId:request.variantId,selection,stockIdentity:signature,stockKey:stockId,name:product.name,quantity:request.quantity,currency:pricing.currency,unitPriceMinor:rounded,totalPriceMinor:rounded*request.quantity,currencyDigits:digits};
 }
-function createVendorOrders(database,{authorizePurchase=(record,businessId)=>workspaceReadiness(record,businessId)?.selling?.canSell===true}={}){
+function createVendorOrders(database,{environment=()=>process.env,authorizePurchase=(record,businessId)=>workspaceReadiness(record,businessId)?.selling?.canSell===true}={}){
  async function existing(tx,customer,key,signature){const row=(await tx.query('SELECT result,request_signature FROM demeos_vendor_order_requests WHERE customer_id=$1 AND request_key=$2',[customer,key])).rows[0];if(row&&row.request_signature!==signature)fail('idempotency-conflict');return row?.result;}
  async function receipt(tx,customer,key,signature,businessId,result){
   await tx.query('INSERT INTO demeos_vendor_order_requests(customer_id,request_key,request_signature,business_id,result) VALUES($1,$2,$3,$4,$5::jsonb)',[customer,key,signature,businessId,JSON.stringify(result)]);return result;
@@ -90,7 +90,15 @@ function createVendorOrders(database,{authorizePurchase=(record,businessId)=>wor
   });
  }
  async function expireDue(){await database.ensureSchema();const due=(await database.query("SELECT order_id FROM demeos_vendor_orders WHERE state='reserved' AND expires_at<=clock_timestamp() ORDER BY expires_at,order_id LIMIT 100")).rows;const results=[];for(const row of due){try{results.push(await release(row.order_id,'expired','reservation-expiry-worker'));}catch(error){if(error.reason!=='invalid-transition')throw error;}}return results;}
- async function listOwned(identity,businessId){await database.ensureSchema();return (await database.query("SELECT record FROM demeos_vendor_orders v WHERE business_id=$1 AND EXISTS(SELECT 1 FROM demeos_business_owners o JOIN demeos_businesses b USING(business_id) WHERE o.business_id=v.business_id AND o.trusted_identity_id=$2 AND b.profile->'applicationAccess'->'selling' = 'true'::jsonb) ORDER BY created_at DESC,order_id DESC LIMIT 50",[businessId,identity])).rows.map(({record})=>({id:record.id,state:record.state,createdAt:record.createdAt,expiresAt:record.expiresAt,line:record.line}));}
+ async function listOwned(identity,businessId){
+  await database.ensureSchema();
+  const test=require('./selling-access').dataEnvironment(businessId,environment(),identity)==='test';
+  return (await database.query(`SELECT record FROM demeos_vendor_orders v WHERE business_id=$1
+   AND EXISTS(SELECT 1 FROM demeos_business_owners o JOIN demeos_businesses b USING(business_id)
+    WHERE o.business_id=v.business_id AND o.trusted_identity_id=$2
+      AND ((b.business_id !~* '^test-' AND b.profile->'applicationAccess'->'selling'='true'::jsonb) OR $3::boolean))
+   ORDER BY created_at DESC,order_id DESC LIMIT 50`,[businessId,identity,test])).rows.map(({record})=>({id:record.id,state:record.state,paymentState:record.paymentState,createdAt:record.createdAt,expiresAt:record.expiresAt,line:record.line}));
+ }
  return Object.freeze({reserve,release,expireDue,listOwned});
 }
 module.exports={createVendorOrders,resolveLine,requestSignature};

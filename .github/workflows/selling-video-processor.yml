@@ -1,0 +1,25 @@
+name: Selling Video Processor
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  real-video:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install isolated verification dependencies
+        run: npm install --no-save playwright@1.55.0
+      - name: Install actual video and browser runtimes
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          npx playwright install --with-deps chromium chrome
+      - name: Verify real MOV encoding, private storage, SQL ownership and playback
+        run: |
+          node tools/video-processor/verify.js --browser
+          node tools/video-processor/verify.js --native --browser

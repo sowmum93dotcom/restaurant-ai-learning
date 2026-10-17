@@ -13,7 +13,7 @@ function createHttpMediaProcessingDrivers({baseUrl,token,fetchImpl=globalThis.fe
  const source=(context)=>context&&typeof context.sourceUrl==="string"&&/^https:\/\//i.test(context.sourceUrl)?{sourceUrl:context.sourceUrl,sourceExpiresAt:context.sourceExpiresAt}:{};
  const outputs=(context)=>{
   if(!context||!Array.isArray(context.outputDestinations)||!context.outputDestinations.length)return{};
-  const safe=context.outputDestinations.map(d=>d&&typeof d.role==="string"&&typeof d.storageKey==="string"&&typeof d.uploadUrl==="string"&&/^https:\/\//i.test(d.uploadUrl)&&typeof d.contentType==="string"?{role:d.role,storageKey:d.storageKey,uploadUrl:d.uploadUrl,contentType:d.contentType}:null);
+  const safe=context.outputDestinations.map(d=>d&&typeof d.role==="string"&&typeof d.storageKey==="string"&&typeof d.uploadUrl==="string"&&/^https:\/\//i.test(d.uploadUrl)&&typeof d.contentType==="string"?{role:d.role,storageKey:d.storageKey,uploadUrl:d.uploadUrl,contentType:d.contentType,...(https(d.deliveryUrl)?{deliveryUrl:d.deliveryUrl}:{}),...(d.headers?{headers:d.headers}:{})}:null);
   return safe.every(Boolean)?{outputDestinations:safe}:{};
  };
  const inspect=(kind)=>(asset,context)=>call("/inspect/"+kind,{assetId:asset.assetId,businessId:asset.businessId,storageKey:asset.storageKey,contentType:asset.contentType,...source(context)});
@@ -24,11 +24,21 @@ function createHttpMediaProcessingDrivers({baseUrl,token,fetchImpl=globalThis.fe
  };
 }
 function getConfiguredMediaProcessingDrivers(env=process.env,fetchImpl=globalThis.fetch){
- const provider=clean(env.DEMEOS_MEDIA_PROCESSING_PROVIDER)||"http";if(provider!=="http")return null;
- return createHttpMediaProcessingDrivers({baseUrl:env.DEMEOS_MEDIA_PROCESSING_URL,token:env.DEMEOS_MEDIA_PROCESSING_TOKEN,fetchImpl});
+ const provider=clean(env.DEMEOS_MEDIA_PROCESSING_PROVIDER)||"http";
+ if(provider==='sharp'){
+  const images=require('./media-sharp-driver').createSharpMediaDrivers({fetchImpl,storage:require('./media-storage-driver').getConfiguredMediaStorageAdapter(env,fetchImpl)});
+  // Keep the confirmed image pipeline. Delegate only video when an approved
+  // processor has explicitly been configured in this deployment environment.
+  const video=env.VERCEL_ENV==='preview'&&env.DEMEOS_VIDEO_PROCESSING_PROVIDER==='ffmpeg'
+   ?require('./media-ffmpeg-driver').createFfmpegVideoDrivers({fetchImpl})
+   :createHttpMediaProcessingDrivers({baseUrl:env.DEMEOS_MEDIA_PROCESSING_URL,token:env.DEMEOS_MEDIA_PROCESSING_TOKEN,fetchImpl,timeoutMs:45000});
+  return {...images,...(video?{inspectVideo:video.inspectVideo,transcodeVideo:video.transcodeVideo,...(video.extractVideoFrames?{extractVideoFrames:video.extractVideoFrames}:{})}:{})};
+ }
+ if(provider!=="http")return null;
+ return createHttpMediaProcessingDrivers({baseUrl:env.DEMEOS_MEDIA_PROCESSING_URL,token:env.DEMEOS_MEDIA_PROCESSING_TOKEN,fetchImpl,timeoutMs:45000});
 }
 function getMediaProcessingConfiguration(env=process.env){
  const provider=clean(env.DEMEOS_MEDIA_PROCESSING_PROVIDER)||"http";
- return{provider,configured:provider==="http"&&Boolean(clean(env.DEMEOS_MEDIA_PROCESSING_URL)&&clean(env.DEMEOS_MEDIA_PROCESSING_TOKEN))};
+ return{provider,configured:provider==="sharp"||provider==="http"&&Boolean(clean(env.DEMEOS_MEDIA_PROCESSING_URL)&&clean(env.DEMEOS_MEDIA_PROCESSING_TOKEN))};
 }
 module.exports={createHttpMediaProcessingDrivers,getConfiguredMediaProcessingDrivers,getMediaProcessingConfiguration};

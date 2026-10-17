@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow"><title>Selling Vendor | DEMEOS</title>
+  <link rel="icon" type="image/png" href="/images/demeos-logo.png">
+  <link rel="stylesheet" href="/css/demeos-business-premium.css">
+  <link rel="stylesheet" href="/css/selling-dashboard.css">
+  <script defer src="/js/demeos-language-registry.js"></script>
+  <script defer src="/js/selling-dashboard-copy.js"></script>
+  <script defer src="/js/selling-submission-copy.js"></script>
+  <script defer src="/js/selling-dashboard.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header><a class="brand" href="/selling-vendor" aria-label="DEMEOS Selling Vendor home"><img src="/images/demeos-logo.png" alt="DEMEOS logo" width="56" height="56"><span>Selling Vendor</span></a><div class="account"><label for="dashboard-language">Language</label><select id="dashboard-language" aria-label="Dashboard language"><option value="en">English</option><option value="tr">Türkçe</option></select><span id="vendor-identity"></span><button id="sign-in" hidden>Sign in</button><button id="sign-out" hidden>Sign out</button></div></header>
+  <div class="dashboard">
+    <aside><p class="eyebrow">Your workspace</p><nav aria-label="Selling dashboard">
+      <a href="/selling-vendor" data-section="overview">Overview</a>
+      <a href="/selling-vendor/my-business" data-section="my-business">My Business</a>
+      <a href="/selling-vendor/product-catalogue" data-section="product-catalogue">Product Catalogue</a>
+      <a href="/selling-vendor/images-videos" data-section="images-videos">Images &amp; Videos</a>
+      <a href="/selling-vendor/options-variants" data-section="options-variants">Options &amp; Variants</a>
+      <a href="/selling-vendor/stock-history" data-section="stock-history">Stock &amp; History</a>
+      <a href="/selling-vendor/private-orders" data-section="private-orders">Private Orders</a>
+    </nav><p class="aside-note">One business workspace.<br>Private to your account.</p></aside>
+    <main id="main" tabindex="-1">
+      <p class="eyebrow">DEMEOS Selling</p><h1 id="section-heading">Overview</h1>
+      <section id="dashboard-status" class="card" role="status" aria-live="polite" aria-busy="true"><h2 id="status-heading">Opening your workspace</h2><p id="status-message">Checking your session and business access…</p><button id="retry" hidden>Try again</button><button id="choose-business" hidden>Choose an authorized business</button><a id="registration" href="/selling-vendor/my-business" hidden>Review Selling business access</a></section>
+      <div id="private-workspace" hidden>
+        <section class="business-bar" aria-label="Current business"><div><p class="eyebrow">Current business</p><img id="business-logo" class="business-logo" alt="Business logo" hidden><h2 id="business-name"></h2><p id="business-details"></p></div><span id="environment-label" class="badge"></span><label>Switch business<select id="business-select"></select></label></section>
+        <section class="card" id="section-content" aria-labelledby="content-heading"><h2 id="content-heading"></h2><p id="content-message"></p><dl id="business-facts" hidden></dl><div id="record-tools" hidden><label for="record-search">Search saved records</label><input id="record-search" type="search" maxlength="200" aria-controls="catalogue-list media-list variant-list stock-list orders-list"><p id="record-count" role="status" aria-live="polite"></p></div><div id="catalogue-pagination" hidden class="catalogue-pagination"><button id="catalogue-previous" type="button">Previous page</button><button id="catalogue-next" type="button">Next page</button><p id="catalogue-page-status" role="status"></p></div><div id="catalogue-tools" hidden>
+          <div id="catalogue-filters" class="catalogue-filters">
+            <label>Category<select id="catalogue-category"><option value="">All categories</option></select></label>
+            <label>Status<select id="catalogue-state"><option value="">All statuses</option></select></label>
+            <label>Validation<select id="catalogue-validation"><option value="">All checks</option><option value="not-checked">Not checked</option><option value="passed">Passed</option><option value="failed">Failed</option><option value="unavailable">Unavailable</option></select></label>
+            <label>Availability<select id="catalogue-availability"><option value="">All availability</option><option value="available">Available</option><option value="limited">Limited availability</option><option value="unavailable">Unavailable</option><option value="contact">Ask about availability</option></select></label>
+            <label>Stock<select id="catalogue-stock"><option value="">All stock</option><option value="available">Available stock</option><option value="low">Low stock</option><option value="sold-out">Out of stock</option><option value="untracked">Not set</option></select></label>
+            <label>Sort by<select id="catalogue-sort"><option value="updated">Recently updated</option><option value="created">Recently created</option><option value="name">Product name</option><option value="price">Price</option><option value="stock">Available stock</option></select></label>
+          </div><div class="catalogue-bulk"><label>Selected products<select id="catalogue-bulk-availability"><option value="contact">Ask about availability</option><option value="available">Available</option><option value="limited">Limited availability</option><option value="unavailable">Unavailable</option></select></label><button id="catalogue-apply" type="button">Update selected availability</button><button id="catalogue-export" type="button">Export selected</button></div>
+          <form id="product-form">
+            <h3 id="product-form-title">Add product</h3>
+            <input id="product-id" type="hidden">
+            <label>Product name<input id="product-name" required maxlength="200"></label>
+            <label>SKU<input id="product-sku" maxlength="120"></label>
+            <label>Description<textarea id="product-description" required maxlength="1200"></textarea></label>
+            <label><span data-submission-copy="category">DEMEOS business category</span><select id="product-category"></select></label>
+            <div id="product-category-fields"></div>
+            <label>Price type<select id="product-price-mode"><option value="contact">Contact for price</option><option value="fixed">Fixed price</option><option value="from">From</option><option value="range">Range</option></select></label>
+            <label>Price<input id="product-price" maxlength="100"></label>
+            <label>Availability<select id="product-availability"><option value="contact">Ask about availability</option><option value="available">Available</option><option value="limited">Limited availability</option><option value="unavailable">Unavailable</option></select></label>
+            <button type="submit" id="product-save">Save product</button>
+            <button type="button" id="product-save-draft" data-submission-copy="saveDraft">Save draft</button>
+            <button type="button" id="product-cancel">Clear form</button>
+          </form>
+          <section id="intelligence-panel" aria-labelledby="intelligence-heading">
+            <h3 id="intelligence-heading">Improve with DEMEOS Intelligence</h3>
+            <p>Suggestions require your review. Analysis does not approve publication.</p>
+            <button type="button" id="intelligence-run">Analyse product</button>
+            <p id="intelligence-status" role="status" aria-live="polite"></p>
+            <div id="intelligence-results"></div>
+          </section>
+          <p data-submission-copy="note">Saving does not publish. Required checks must pass before publication readiness.</p><p id="submission-feedback" role="status" aria-live="polite"></p>
+          <p id="product-feedback" role="status" aria-live="polite"></p>
+        </div><div id="catalogue-list" hidden aria-live="polite"></div>
+        <div id="business-tools" hidden>
+          <section aria-labelledby="logo-heading">
+            <h3 id="logo-heading">Business logo</h3>
+            <form id="logo-form"><label for="logo-file">File</label><input id="logo-file" class="file-input" type="file" accept="image/jpeg,image/png,image/webp" required><button id="logo-choose" type="button">Choose file</button><p id="logo-filename" aria-live="polite">No file selected.</p><button id="logo-upload" type="submit">Upload image</button><button id="logo-remove" type="button" hidden>Remove</button></form>
+            <p id="logo-feedback" role="status" aria-live="polite"></p><div id="logo-pending"></div>
+          </section>
+          <form id="business-form">
+            <h3>Edit permitted business details</h3>
+            <label>Business display name<input id="business-edit-name" required maxlength="200"></label>
+            <label>Location<input id="business-edit-location" required maxlength="200"></label>
+            <label>Business description<textarea id="business-edit-description" maxlength="2000"></textarea></label>
+            <label>Email<input id="business-edit-email" type="email" maxlength="320"></label>
+            <label>Phone<input id="business-edit-phone" type="tel" maxlength="100"></label>
+            <label>Website<input id="business-edit-website" type="url" maxlength="500"></label>
+            <label class="accuracy-confirmation"><input id="business-accuracy" type="checkbox" required> I confirm these business details are current and accurate.</label>
+            <button id="business-save" type="submit">Save business details</button>
+          </form>
+          <p id="business-feedback" role="status" aria-live="polite"></p>
+          <p>Business identity, registration and approval decisions remain controlled by DEMEOS.</p>
+          <a href="/selling-vendor/my-business">Review Selling business details</a>
+        </div>
+        <dl id="overview-facts" hidden></dl><div id="overview-tools" hidden class="workspace-actions"><a href="/selling-vendor/product-catalogue" data-workspace-link>Product Catalogue</a><a href="/selling-vendor/images-videos" data-workspace-link>Images &amp; Videos</a><a href="/selling-vendor/stock-history" data-workspace-link>Stock &amp; History</a><a href="/selling-vendor/my-business" data-workspace-link>My Business</a></div>
+        <div id="orders-tools" hidden><p>Private reservation records. Vendor status changes and payments are not available.</p><label>Status<select id="orders-state"><option value="">All statuses</option><option value="reserved">Reserved</option><option value="cancelled">Cancelled</option><option value="expired">Expired</option></select></label><div class="catalogue-pagination"><button id="orders-previous" type="button">Previous page</button><button id="orders-next" type="button">Next page</button></div><div id="orders-list"></div></div>
+        <div id="media-tools" hidden>
+          <p class="phase-note">Visual recognition is unavailable. No authorised model is deployed.</p><p id="media-configuration" role="status"></p>
+          <p id="media-empty" hidden><span>Add a saved product first.</span> <a href="/selling-vendor/product-catalogue" data-catalogue-link>Add product</a></p>
+          <form id="media-form">
+            <label>Product<select id="media-product" required></select></label>
+            <label>File type<select id="media-kind"><option value="image">Image</option><option value="video">Video</option></select></label>
+            <label for="media-file">File</label><input id="media-file" class="file-input" type="file" accept="image/jpeg,image/png,image/webp" required><button id="media-choose" type="button">Choose file</button><p id="media-filename" aria-live="polite">No file selected.</p>
+            <p>Images: JPEG, PNG or WebP, up to 15 MB. Videos, when configured: MP4 or QuickTime, up to 250 MB and 60 seconds. Media stays private until separately approved for customer publication.</p>
+            <button id="media-upload" type="submit">Upload image</button>
+          </form>
+          <p id="media-feedback" role="status" aria-live="polite"></p>
+          <div id="media-list"></div>
+        </div>
+        <div id="variant-tools" hidden>
+          <form id="variant-form">
+            <h3 id="variant-form-title">Add variant</h3>
+            <input id="variant-id" type="hidden">
+            <label>Product<select id="variant-product" required></select></label>
+            <label>Variant name<input id="variant-name" maxlength="160" required></label>
+            <label>SKU<input id="variant-sku" maxlength="120"></label>
+            <p id="variant-current-price"></p><label>Price override<input id="variant-price" maxlength="100" inputmode="decimal"></label><label><input id="variant-use-base-price" type="checkbox"> Use the product price (remove the variant override)</label>
+            <label>Availability<select id="variant-availability"><option value="contact">Ask about availability</option><option value="available">Available</option><option value="limited">Limited availability</option><option value="unavailable">Unavailable</option></select></label>
+            <button id="variant-save" type="submit">Save variant</button>
+            <button id="variant-cancel" type="button">Clear form</button>
+          </form>
+          <p id="variant-feedback" role="status" aria-live="polite"></p>
+          <div id="variant-list"></div>
+        </div>
+        <div id="stock-tools" hidden>
+          <form id="stock-form">
+            <h3>Adjust product stock</h3>
+            <label>Product<select id="stock-product" required></select></label>
+            <label>New quantity<input id="stock-quantity" type="number" min="0" max="1000000" step="1" required></label>
+            <label>Low-stock threshold<input id="stock-low-stock" type="number" min="0" max="1000000000" step="1" value="5" required></label>
+            <label>Reason for change<input id="stock-note" maxlength="200" required></label>
+            <button id="stock-save" type="submit">Save stock adjustment</button>
+          </form>
+          <p id="stock-feedback" role="status" aria-live="polite"></p>
+          <div id="stock-list"></div>
+        </div></section>
+        <p class="phase-note">Your private DEMEOS Selling workspace · Changes apply only to the selected authorized business. Customer publication and live purchasing require separate authorization.</p>
+      </div>
+      <noscript><p class="card">Enable JavaScript to sign in and open your private Selling dashboard.</p></noscript>
+    </main>
+  </div>
+  <footer class="selling-footer" aria-label="DEMEOS footer">
+    <img src="/images/demeos-logo.png" alt="DEMEOS logo" width="66" height="66">
+    <p dir="ltr">© 2026 DEMEOS — ONE SYSTEM. REAL VALUE. SHARED FUTURE.</p>
+    <nav aria-label="Information"><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a><a href="/contact.html">Contact</a></nav>
+  </footer>
+</body>
+</html>

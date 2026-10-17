@@ -6,6 +6,8 @@ function normalizeProcessingResult(asset,result){
  const processedStorageKey=typeof result.storageKey==="string"?result.storageKey.trim():"";
  if(!processedStorageKey||!/^https:\/\//i.test(deliveryUrl))return null;
  const updates={deliveryUrl,processedStorageKey};
+ if(result.sourceHash!==undefined){if(!/^[a-f0-9]{64}$/.test(result.sourceHash))return null;updates.sourceHash=result.sourceHash;}
+ if(result.processedHash!==undefined){if(!/^[a-f0-9]{64}$/.test(result.processedHash)||!Number.isSafeInteger(result.processedSizeBytes)||result.processedSizeBytes<1||result.processedSizeBytes>15*1024*1024)return null;updates.processedHash=result.processedHash;updates.processedSizeBytes=result.processedSizeBytes;}
  for(const key of ["width","height","durationSeconds"]){if(result[key]!==undefined)updates[key]=result[key];}
  const candidate=normalizeMediaAsset({...asset,...updates,state:"processing"},asset.businessId);
  if(!candidate)return null;

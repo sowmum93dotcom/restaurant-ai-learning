@@ -12,13 +12,13 @@ function units(value){return Number.isSafeInteger(value)&&value>=0&&value<=10000
 function rowsFor(profile,entries={}){
  return (profile?.products||[]).flatMap(product=>{
   if(product.presentation?.kind==='service')return [];
-  const variants=product.presentation?.variants||[];
+  const variants=[...(product.presentation?.variants||[]),...(product.variants||[])];
   // Options without exact variants cannot safely share an inferred balance.
   if(!variants.length&&product.presentation?.options?.length)return [];
   return (variants.length?variants:[{variantId:''}]).map(variant=>{
    const stored=entries[key(product.productId,variant.variantId)]||null;
    const identity=stockIdentity(product,variant),blocked=stored&&stored.identity!==identity,entry=blocked?null:stored;
-   const label=variant.selection?Object.entries(variant.selection).map(([field,value])=>product.presentation.options.find(o=>o.key===field)?.values.find(v=>v.value===value)?.label||value).join(' · '):'';
+   const label=variant.selection?Object.entries(variant.selection).map(([field,value])=>product.presentation.options.find(o=>o.key===field)?.values.find(v=>v.value===value)?.label||value).join(' · '):(variant.name||'');
    return {productId:product.productId,variantId:variant.variantId,name:product.name,label,identity,blocked:Boolean(blocked),...(entry?{...entry,available:entry.onHand-entry.reserved,status:entry.onHand-entry.reserved===0?'sold-out':entry.onHand-entry.reserved<=entry.lowStock?'low':'available'}:{onHand:null,reserved:0,available:null,lowStock:5,sku:'',status:'untracked'})};
   });
  });
@@ -44,4 +44,15 @@ function applyChanges(profile,entries,changes){
  for(const [id,entry] of Object.entries(next))if(valid.has(id)&&entry.sku){const sku=entry.sku.toLowerCase();if(skus.has(sku))throw Error('Each stock code must be unique within your business.');skus.add(sku);}
  return {entries:next,audit};
 }
-module.exports={stockIdentity,key,canManage,units,rowsFor,applyChanges,catalogueRevision};
+// Older dashboard counts remain intact and seed an untracked base row only.
+// The next adjustment persists that balance in the existing inventory ledger.
+function entriesWithLegacyStock(profile,entries={}){
+ const next=structuredClone(entries);
+ for(const product of profile?.products||[]){
+  const id=key(product.productId,'');
+  if(!next[id]&&Number.isSafeInteger(product.stockQuantity)&&!product.variants?.length&&!product.presentation?.variants?.length&&!product.presentation?.options?.length)
+   next[id]={identity:stockIdentity(product),onHand:product.stockQuantity,reserved:0,lowStock:5,sku:''};
+ }
+ return next;
+}
+module.exports={entriesWithLegacyStock,stockIdentity,key,canManage,units,rowsFor,applyChanges,catalogueRevision};

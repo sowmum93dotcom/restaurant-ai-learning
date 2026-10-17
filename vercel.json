@@ -59,11 +59,20 @@
     {
       "source": "/marketing-business/results",
       "destination": "/business-results.html"
+    },
+    {
+      "source": "/selling-vendor",
+      "destination": "/selling-dashboard.html"
+    },
+    {
+      "source": "/selling-vendor/:section(overview|my-business|product-catalogue|images-videos|options-variants|stock-history|private-orders)",
+      "destination": "/selling-dashboard.html"
     }
   ],
   "functions": {
     "api/businesses.js": {
-      "maxDuration": 60
+      "maxDuration": 60,
+      "includeFiles": "node_modules/{ffmpeg-static/ffmpeg,@ffprobe-installer/linux-x64/ffprobe}"
     }
   }
 }
