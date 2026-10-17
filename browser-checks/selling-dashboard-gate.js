@@ -236,10 +236,10 @@ async function run(){
    assert.equal((await repository.getKnownBusiness('vendor-a')).businessProfile.products[0].availability,'available','Product availability persisted in SQL');
    await page.reload();
    await page.locator('.catalogue-item h3').filter({hasText:'Gate Coffee'}).waitFor();
-   await page.locator('#record-search').fill('NO MATCHING PRODUCT');assert.equal(await page.locator('#catalogue-list .catalogue-item:visible').count(),0);
+   await page.locator('#record-search').fill('NO MATCHING PRODUCT');await page.waitForFunction(()=>document.getElementById('record-count').textContent==='0 of 1 saved records');assert.equal(await page.locator('#catalogue-list .catalogue-item:visible').count(),0);
    assert.equal(await page.locator('#record-count').innerText(),'0 of 1 saved records');
-   await page.locator('#record-search').fill('coffee');assert.equal(await page.locator('#catalogue-list .catalogue-item:visible').count(),1);
-   await page.locator('#record-search').fill('');
+   await page.locator('#record-search').fill('coffee');await page.waitForFunction(()=>document.getElementById('record-count').textContent==='1 of 1 saved records');assert.equal(await page.locator('#catalogue-list .catalogue-item:visible').count(),1);
+   await page.locator('#record-search').fill('');await page.waitForResponse(r=>r.url().includes('view=catalogue')&&new URL(r.url()).searchParams.get('q')===''&&r.status()===200);
    await page.locator('.catalogue-item button').filter({hasText:'Edit'}).click();
    await page.locator('#product-name').fill('Gate Coffee Updated');
    assert.equal(await page.locator('#product-availability').inputValue(),'available','Edit restores saved availability');

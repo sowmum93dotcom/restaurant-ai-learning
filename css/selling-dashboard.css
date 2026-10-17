@@ -176,3 +176,5 @@ dd { margin: 0; overflow-wrap: anywhere; }
 #record-tools label{display:block;margin-bottom:8px;color:var(--bo-gold-light)}
 #record-search{width:100%;max-width:640px;min-height:44px;padding:10px 12px;border:1px solid var(--bo-line);border-radius:8px;background:var(--bo-navy);color:var(--bo-white);font:inherit}
 #record-count{color:var(--bo-muted);font-size:13px}
+
+.catalogue-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:.65rem;margin-block:1rem}.catalogue-filters label{min-width:0}.catalogue-filters select{width:100%;min-width:0}.catalogue-pagination{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-block:1rem}.catalogue-metadata{font-size:.85rem;overflow-wrap:anywhere}#catalogue-list .product-media-preview{max-width:112px;max-height:96px;object-fit:contain}#catalogue-list .catalogue-item{padding:1rem}#product-form{scroll-margin-top:1rem}

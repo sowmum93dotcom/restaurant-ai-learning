@@ -771,6 +771,8 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
       return result.rows[0]?.profile || null;
     },
 
+    async getSellingCataloguePage(input) { return require('./selling-catalogue').queryPage(database,input); },
+
     async getVendorOrders(identity, businessId) { return vendorOrders.listOwned(identity, businessId); },
 
     async getVendorInventory(businessId) {

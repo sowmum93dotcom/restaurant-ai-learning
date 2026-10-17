@@ -30,12 +30,22 @@
       <div id="private-workspace" hidden>
         <section class="business-bar" aria-label="Current business"><div><p class="eyebrow">Current business</p><img id="business-logo" class="business-logo" alt="Business logo" hidden><h2 id="business-name"></h2><p id="business-details"></p></div><span id="environment-label" class="badge"></span><label>Switch business<select id="business-select"></select></label></section>
         <section class="card" id="section-content" aria-labelledby="content-heading"><h2 id="content-heading"></h2><p id="content-message"></p><dl id="business-facts" hidden></dl><div id="record-tools" hidden><label for="record-search">Search saved records</label><input id="record-search" type="search" maxlength="200" aria-controls="catalogue-list media-list variant-list stock-list orders-list"><p id="record-count" role="status" aria-live="polite"></p></div><div id="catalogue-tools" hidden>
+          <div id="catalogue-filters" class="catalogue-filters">
+            <label>Category<select id="catalogue-category"><option value="">All categories</option></select></label>
+            <label>Status<select id="catalogue-state"><option value="">All statuses</option></select></label>
+            <label>Validation<select id="catalogue-validation"><option value="">All checks</option><option value="not-checked">Not checked</option><option value="passed">Passed</option><option value="failed">Failed</option><option value="unavailable">Unavailable</option></select></label>
+            <label>Availability<select id="catalogue-availability"><option value="">All availability</option><option value="available">Available</option><option value="limited">Limited availability</option><option value="unavailable">Unavailable</option><option value="contact">Ask about availability</option></select></label>
+            <label>Stock<select id="catalogue-stock"><option value="">All stock</option><option value="available">Available stock</option><option value="low">Low stock</option><option value="sold-out">Out of stock</option><option value="untracked">Not set</option></select></label>
+            <label>Sort by<select id="catalogue-sort"><option value="updated">Recently updated</option><option value="created">Recently created</option><option value="name">Product name</option><option value="price">Price</option><option value="stock">Available stock</option></select></label>
+          </div><div class="catalogue-bulk"><label>Selected products<select id="catalogue-bulk-availability"><option value="contact">Ask about availability</option><option value="available">Available</option><option value="limited">Limited availability</option><option value="unavailable">Unavailable</option></select></label><button id="catalogue-apply" type="button">Update selected availability</button><button id="catalogue-export" type="button">Export selected</button></div><div id="catalogue-pagination" class="catalogue-pagination"><button id="catalogue-previous" type="button">Previous page</button><button id="catalogue-next" type="button">Next page</button><p id="catalogue-page-status" role="status"></p></div>
           <form id="product-form">
             <h3 id="product-form-title">Add product</h3>
             <input id="product-id" type="hidden">
             <label>Product name<input id="product-name" required maxlength="200"></label>
+            <label>SKU<input id="product-sku" maxlength="120"></label>
             <label>Description<textarea id="product-description" required maxlength="1200"></textarea></label>
             <label><span data-submission-copy="category">DEMEOS business category</span><select id="product-category"></select></label>
+            <div id="product-category-fields"></div>
             <label>Price type<select id="product-price-mode"><option value="contact">Contact for price</option><option value="fixed">Fixed price</option><option value="from">From</option><option value="range">Range</option></select></label>
             <label>Price<input id="product-price" maxlength="100"></label>
             <label>Availability<select id="product-availability"><option value="contact">Ask about availability</option><option value="available">Available</option><option value="limited">Limited availability</option><option value="unavailable">Unavailable</option></select></label>

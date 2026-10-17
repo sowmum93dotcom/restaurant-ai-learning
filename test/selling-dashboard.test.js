@@ -187,7 +187,7 @@ test('product writes reject malformed requests, limits and concurrent edits',asy
  assert.equal(await invoke('save-product',{...valid,priceMode:'contact'}),400);
  assert.equal(await invoke('save-product',valid),409,'conflicting writes must not silently overwrite records');
  assert.equal(calls,1);
- current={...current,products:Array.from({length:100},(_,i)=>({...valid,productId:'item-'+i}))};
+ current={...current,products:Array.from({length:10000},(_,i)=>({...valid,productId:'item-'+i}))};
  assert.equal(await invoke('save-product',valid),409,'catalogue must enforce the maximum product count');
  assert.equal(calls,1);
  assert.equal(await invoke('delete-product',{productId:'missing'}),404);

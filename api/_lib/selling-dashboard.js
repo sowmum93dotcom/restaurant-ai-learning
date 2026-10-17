@@ -11,6 +11,8 @@ const inventory=require('./vendor-inventory');
 const media=require('./selling-media');
 const submissions=require('./selling-submissions');
 const categories=require('./marketing-agent-categories');
+const catalogue=require('./selling-catalogue');
+const categoryFields=require('./selling-category-fields');
 
 function variantSummaries(product){
  const legacy=(product.variants||[]).map(v=>({variantId:v.variantId,name:v.name,sku:v.sku||'',price:v.price||'',availability:v.availability||'contact',inheritsPrice:!v.price}));
@@ -27,7 +29,7 @@ function businessSummary(profile, env, identityId) {
   if (environment === 'live' && !applicationAccess({businessProfile:profile}, id).selling) return null;
   if(!environment)return null;
   return {businessId:id,name:profile.name||'Unnamed business',type:profile.type||'',location:profile.location||'',dataEnvironment:environment,catalogueRevision:catalogueRevision(profile),
-    products:(Array.isArray(profile.products)?profile.products:[]).map(p=>({productId:p.productId,name:p.name,description:p.description,price:p.price,priceMode:p.priceMode,availability:p.availability||'contact',mediaGallery:p.mediaGallery||{assetIds:[],mainAssetId:''},stockQuantity:Number.isSafeInteger(p.stockQuantity)?p.stockQuantity:null,stockHistory:Array.isArray(p.stockHistory)?p.stockHistory:[],variants:variantSummaries(p),classification:p.classification||null,submission:p.submission||null}))};
+    products:(Array.isArray(profile.products)?profile.products:[]).map(p=>({productId:p.productId,name:p.name,description:p.description,price:p.price,priceMode:p.priceMode,availability:p.availability||'contact',mediaGallery:p.mediaGallery||{assetIds:[],mainAssetId:''},stockQuantity:Number.isSafeInteger(p.stockQuantity)?p.stockQuantity:null,stockHistory:Array.isArray(p.stockHistory)?p.stockHistory:[],sku:p.sku||'',variants:variantSummaries(p),classification:p.classification||null,categoryAttributes:p.categoryAttributes||null,submission:p.submission||null}))};
 }
 
 function createHandler({authenticate=authentication.resolveTrustedIdentityFromRequest, repository=()=>persistence.getRepository(), environment=()=>process.env,mediaBackend=media.mediaBackend,resolveSubmissionEvidence}={}) {
@@ -47,7 +49,7 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
       const store = repository();
       // SQL ownership relationship is authoritative, never a role/header/URL claim.
       const owned = await store.getOwnedBusinessProfiles(identity.trustedIdentityId);
-      const businesses = owned.map(profile=>businessSummary(profile,env,identity.trustedIdentityId)).filter(Boolean).map(({products,catalogueRevision,...summary})=>summary);
+      const businesses = owned.map(profile=>businessSummary({...profile,products:[]},env,identity.trustedIdentityId)).filter(Boolean).map(({products,catalogueRevision,...summary})=>summary);
       if (selected && !businesses.some(b=>b.businessId===selected)) return res.status(403).json({error:'Selling access is unavailable for this business.'});
       const businessId = selected || (businesses.length === 1 ? businesses[0].businessId : null);
       let business = null;
@@ -60,11 +62,23 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
         business = businessSummary(record?.businessProfile,env,identity.trustedIdentityId);
         if (!business || business.businessId !== businessId) return res.status(403).json({error:'Selling access is unavailable for this business.'});
       }
+      let catalogueQuery=null;
+      if(req.method==='GET'&&req.query?.view==='catalogue'){try{catalogueQuery=catalogue.parse(req.query);}catch{return res.status(400).json({error:'Check the catalogue filters.',code:'catalogue-query'});}}
       if(business){
         const profile=(await store.getKnownBusiness(businessId))?.businessProfile;
         const stock=typeof store.getVendorInventory==='function'?await store.getVendorInventory(businessId):{revision:0,entries:{},history:[]};
-        business.inventory={...stock,rows:inventory.rowsFor(profile,inventory.entriesWithLegacyStock(profile,stock.entries))};
-        business.media=await media.listMedia(store,profile,backend);business.mediaCapabilities=media.capabilities(backend,env);
+        const rows=inventory.rowsFor(profile,inventory.entriesWithLegacyStock(profile,stock.entries));
+        if(catalogueQuery){
+          const snapshot=catalogue.snapshot(business.catalogueRevision,stock.revision,catalogueQuery);
+          if(catalogueQuery.snapshot&&catalogueQuery.snapshot!==snapshot)return res.status(409).json({error:'Catalogue changed. Reload the results.',code:'catalogue-snapshot'});
+          const page=await store.getSellingCataloguePage({identity:identity.trustedIdentityId,businessId,profile,query:catalogueQuery,stock:catalogue.stockSummary(rows)});
+          if(!page?.current)return res.status(409).json({error:'Catalogue changed. Reload the results.',code:'catalogue-snapshot'});
+          business.products=businessSummary({...profile,products:page.products},env,identity.trustedIdentityId).products;
+          business.cataloguePage={catalogueTotal:profile.products.length,total:page.total,offset:catalogueQuery.offset,limit:catalogueQuery.limit,snapshot,hasNext:catalogueQuery.offset+page.products.length<page.total};
+        }
+        const pageIds=new Set(business.products.map(p=>p.productId));
+        business.inventory=catalogueQuery?{revision:stock.revision,rows:rows.filter(r=>pageIds.has(r.productId)),history:[]}:{...stock,rows};
+        business.media=await media.listMedia(store,catalogueQuery?{...profile,products:profile.products.filter(p=>pageIds.has(p.productId))}:profile,backend);business.mediaCapabilities=media.capabilities(backend,env);
         business.orders=typeof store.getVendorOrders==='function'?await store.getVendorOrders(identity.trustedIdentityId,businessId):[];
         business.details={productsServices:profile.productsServices||'',customerContinuation:{email:profile.customerContinuation?.email||'',phone:profile.customerContinuation?.phone||'',website:profile.customerContinuation?.website||''},informationStatus:profile.informationStatus||{}};
         // Business identity is read from the same owned, authoritative record as the catalogue.
@@ -72,7 +86,7 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
         business.logo=await media.readLogo(store,profile,backend);
         business.logoUploads=(typeof store.getBusinessMediaAssets==='function'?await store.getBusinessMediaAssets(businessId,100):[]).filter(a=>a.purpose==='brand'&&a.brandReference==='primary-brand'&&a.kind==='image'&&a.relatedEntityId===businessId&&['processing','ready','failed'].includes(a.state)&&a.assetId!==profile.logoAssetId).map(a=>({assetId:a.assetId,state:a.state}));
         business.identity={name:profile.name||'',type:profile.type||'',location:profile.location||'',description:profile.productsServices||'',contact:business.details.customerContinuation,informationStatus:business.details.informationStatus};
-        business.summary={products:business.products.length,availableProducts:business.products.filter(p=>p.availability==='available').length,variants:(profile.products||[]).reduce((sum,p)=>sum+(p.variants?.length||0)+(p.presentation?.variants?.length||0),0),trackedStockRows:business.inventory.rows.filter(r=>r.onHand!==null).length,recentOrders:business.orders.length};
+        business.summary={products:profile.products.length,availableProducts:profile.products.filter(p=>p.availability==='available').length,variants:(profile.products||[]).reduce((sum,p)=>sum+(p.variants?.length||0)+(p.presentation?.variants?.length||0),0),trackedStockRows:business.inventory.rows.filter(r=>r.onHand!==null).length,recentOrders:business.orders.length};
       }
       if (req.method === 'POST') {
         if (!businessId || !business) return res.status(403).json({error:'Select your business.'});
@@ -106,6 +120,21 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
           if(!item||typeof item!=='object'||Array.isArray(item))return res.status(400).json({error:'Choose a valid business logo.'});
           const result=await media.mutateMedia({store,profile:original,identity:identity.trustedIdentityId,action:action.replace('-logo','-media'),item,backend,env,logo:true,saveProfile:(previous,next)=>store.saveSellingProducts(identity.trustedIdentityId,businessId,previous,next)});
           const {status,...body}=result;return res.status(status).json(body);
+        }
+        if(action==='bulk-availability'){
+          const ids=req.body.productIds,availability=req.body.availability;
+          if(!Array.isArray(ids)||ids.length<1||ids.length>25||new Set(ids).size!==ids.length||ids.some(id=>typeof id!=='string'||!/^[a-zA-Z0-9_-]{1,120}$/.test(id))||!['contact','available','limited','unavailable'].includes(availability)||req.body.confirmed!==true)return res.status(400).json({error:'Confirm between 1 and 25 products and a permitted availability.'});
+          const original=(await store.getKnownBusiness(businessId))?.businessProfile;
+          if(!original||req.body.catalogueRevision!==catalogueRevision(original))return res.status(409).json({error:'Products changed. Reload before saving.'});
+          if(ids.some(id=>!original.products.some(p=>p.productId===id)))return res.status(404).json({error:'Selected products are unavailable.'});
+          const stock=await store.getVendorInventory(businessId);
+          const rows=inventory.rowsFor(original,inventory.entriesWithLegacyStock(original,stock.entries));
+          if(availability==='available'&&rows.some(r=>ids.includes(r.productId)&&(r.blocked||r.available===0)))return res.status(409).json({error:'Review stock before marking these products available.'});
+          const next={...original,products:original.products.map(p=>ids.includes(p.productId)?submissions.reconcile(p.submission?p:{...p,submission:submissions.draft(p,businessId,identity.trustedIdentityId)},{...p,availability,customerVisible:false},businessId,identity.trustedIdentityId,'bulk-availability-edited'):p)};
+          // The same guarded SQL update binds inventory and media evidence as well as the profile.
+          const assets=await store.getBusinessMediaAssets(businessId,10000);
+          if(!await store.saveSellingProducts(identity.trustedIdentityId,businessId,original,next,{inventoryRevision:stock.revision,assets}))return res.status(409).json({error:'Products or stock changed. Reload before saving.'});
+          return res.status(200).json({ok:true,updated:ids.length});
         }
         const item=req.body?.product;
         if (!['save-product','save-draft','delete-product','adjust-stock','save-variant','delete-variant','register-media','complete-media','resume-media','remove-media','set-main-media','review-product','submit-product','publish-product','unpublish-product'].includes(action) || !item || typeof item!=='object' || Array.isArray(item))
@@ -146,7 +175,7 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
             const name=clean(item.name,160),sku=clean(item.sku,120),price=clean(item.price,100),availability=clean(item.availability,20)||'contact';
             if(!name||(price&&!/^(?:0|[1-9]\d{0,8})(?:\.\d{1,2})?$/.test(price))||!['contact','available','limited','unavailable'].includes(availability))return res.status(400).json({error:'Enter a variant name, a valid optional price and availability.'});
             if(variantIndex<0&&flat.length>=100)return res.status(409).json({error:'Variant limit reached.'});
-            if(sku&&[...flat,...structured].some(v=>v.variantId!==variantId&&v.sku?.toLowerCase()===sku.toLowerCase()))return res.status(400).json({error:'Each variant SKU must be unique for this product.'});
+            if(sku&&products.some(p=>p.sku?.toLowerCase()===sku.toLowerCase()||variantSummaries(p).some(v=>!(p.productId===id&&v.variantId===variantId)&&v.sku.toLowerCase()===sku.toLowerCase())))return res.status(400).json({error:'Each SKU must be unique within your business.'});
             if(variantIndex<0&&typeof store.getVendorInventory==='function'){const stock=await store.getVendorInventory(businessId);if(stock.entries[inventory.key(id,variantId)])return res.status(409).json({error:'This variant identity has stock history. Create a new variant identity.'});}
             const variant={...(variantIndex>=0?variants[variantIndex]:{}),variantId,name,sku,availability};
             if(structuredIndex>=0){
@@ -175,13 +204,14 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
           products.splice(index,1);
         } else {
           const clean=(value,max)=>typeof value==='string'?value.trim().slice(0,max):'';
-          const name=clean(item.name,200),description=clean(item.description,1200);
+          const name=clean(item.name,200),description=clean(item.description,1200),sku=Object.hasOwn(item,'sku')?clean(item.sku,120):(index>=0?products[index].sku||'':'');
+          if(sku&&products.some(p=>p.productId!==id&&(p.sku?.toLowerCase()===sku.toLowerCase()||variantSummaries(p).some(v=>v.sku.toLowerCase()===sku.toLowerCase()))))return res.status(400).json({error:'SKU must be unique within your business.'});
           const price=clean(item.price,100),priceMode=clean(item.priceMode,20)||'contact';
           const availability=clean(item.availability,20)||'contact';
           if ((action!=='save-draft'&&(!name || !description)) || !['contact','fixed','from','range'].includes(priceMode) || !['contact','available','limited','unavailable'].includes(availability) ||
               (priceMode==='contact'&&price) || (action!=='save-draft'&&priceMode!=='contact'&&!price))
             return res.status(400).json({error:'Invalid product details.'});
-          if (index<0 && products.length>=100) return res.status(409).json({error:'Product limit reached.'});
+          if (index<0 && products.length>=10000) return res.status(409).json({error:'Product limit reached.'});
           if(index<0&&typeof store.getVendorInventory==='function'){const stock=await store.getVendorInventory(businessId);if(Object.keys(stock.entries).some(key=>JSON.parse(key)[0]===id))return res.status(409).json({error:'This product identity has stock history. Create the product with a new identity.'});}
           const previous=index>=0?products[index]:{};
           let classification=previous.classification;
@@ -189,6 +219,8 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
             classification=item.classification===null?undefined:submissions.categoryReference(item.classification);
             if(item.classification!==null&&!classification)return res.status(400).json({error:'Choose a valid DEMEOS category.',code:'category-integrity'});
           }
+          let attributes;
+          try{attributes=categoryFields.apply(previous.categoryAttributes,classification,item.categoryFields,{draft:action==='save-draft'});}catch(error){return res.status(400).json({error:error.message,code:'category-fields'});}
           let presentation=previous.presentation;
           if(presentation&&((previous.price||'')!==price||(previous.priceMode||'contact')!==priceMode)){
             const pricing={...presentation.pricing,mode:priceMode==='contact'?'quote':priceMode};
@@ -204,7 +236,7 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
             if(!require('../../js/customer-item-contract').pricing(pricing))return res.status(400).json({error:'Check the saved currency and product price range.'});
             presentation={...presentation,pricing};
           }
-          const product={...previous,...(presentation?{presentation}:{}),productId:id,businessId,name,description,price,priceMode,...(index<0?{customerVisible:false}:{}),
+          const product={...previous,...(presentation?{presentation}:{}),productId:id,businessId,name,sku,description,price,priceMode,categoryAttributes:attributes,...(index<0?{customerVisible:false}:{}),
             availability};
           if(classification)product.classification=classification;else delete product.classification;
           if (index<0) products.push(product); else products[index]=product;
@@ -214,9 +246,9 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
         for(const p of updated.products)if(!original.products.some(old=>old.productId===p.productId)){p.submission=submissions.draft(p,businessId,identity.trustedIdentityId);p.customerVisible=false;}
         const saved=await store.saveSellingProducts(identity.trustedIdentityId,businessId,original,updated);
         if (!saved) return res.status(409).json({error:'Business changed. Reload and retry.'});
-        return res.status(200).json({ok:true});
+        return res.status(200).json({ok:true,...(['save-product','save-draft'].includes(action)?{product:businessSummary(updated,env,identity.trustedIdentityId).products.find(p=>p.productId===id)}:{})});
       }
-      return res.status(200).json({contractVersion:1, vendor:{identityId:identity.trustedIdentityId}, businesses, business, categories:{datasetVersion:categories.DATASET_VERSION,sectors:categories.SECTORS,items:categories.CATEGORIES},phase:1});
+      return res.status(200).json({contractVersion:1, vendor:{identityId:identity.trustedIdentityId}, businesses, business, categories:{datasetVersion:categories.DATASET_VERSION,sectors:categories.SECTORS,items:categories.CATEGORIES,fieldDefinitions:categories.CATEGORIES.map(c=>categoryFields.definition(c.categoryId))},phase:1});
     } catch {
       return res.status(503).json({error:'Your Selling dashboard could not load. Please retry.'});
     }
