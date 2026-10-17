@@ -819,6 +819,44 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
       ) SELECT revision FROM logged`,[businessId,JSON.stringify(profile),identity,revision,JSON.stringify(entries),JSON.stringify(changes),require('./selling-access').dataEnvironment(businessId,environment(),identity)==='test']);
       return result.rows[0]||null;
     },
+    async getSellingIntelligenceMedia(identity,businessId,product) {
+      await database.ensureSchema();
+      return (await database.query(`SELECT a.asset FROM demeos_business_media_assets a
+        WHERE a.business_id=$1 AND a.asset->>'state'<>'archived'
+          AND (a.asset->>'relatedEntityId'=$3 OR a.asset_id=ANY($4::text[]))
+          AND EXISTS(SELECT 1 FROM demeos_business_owners o WHERE o.business_id=$1 AND o.trusted_identity_id=$2)
+        ORDER BY a.asset_id LIMIT 65`,[businessId,identity,product.productId,(product.mediaGallery?.assetIds||[]).slice(0,65)])).rows.map(r=>r.asset);
+    },
+    async getSellingIntelligence(identity,businessId,productId,inputHash) {
+      await database.ensureSchema();
+      return (await database.query(`SELECT i.result FROM demeos_selling_intelligence i
+        WHERE i.business_id=$1 AND i.product_id=$3 AND i.input_hash=$4
+        AND EXISTS(SELECT 1 FROM demeos_business_owners o WHERE o.business_id=$1 AND o.trusted_identity_id=$2)`,[businessId,identity,productId,inputHash])).rows[0]?.result||null;
+    },
+    async saveSellingIntelligence(identity,profile,product,assets,stock,result,expectedReviewHash=null) {
+      await database.ensureSchema();
+      const saved=await database.query(`WITH stored AS (INSERT INTO demeos_selling_intelligence(business_id,product_id,input_hash,result)
+        SELECT b.business_id,$3,$4,$5::jsonb FROM demeos_businesses b
+        WHERE b.business_id=$1 AND b.profile=$6::jsonb
+          AND EXISTS(SELECT 1 FROM demeos_business_owners o WHERE o.business_id=$1 AND o.trusted_identity_id=$2)
+          AND EXISTS(SELECT 1 FROM jsonb_array_elements(b.profile->'products') p WHERE p->>'productId'=$3)
+          AND COALESCE((SELECT revision FROM demeos_vendor_inventory WHERE business_id=$1),0)=$7
+          AND COALESCE((SELECT jsonb_object_agg(m.asset_id,m.asset) FROM
+            (SELECT a.asset_id,a.asset FROM demeos_business_media_assets a WHERE a.business_id=$1
+              AND a.asset->>'state'<>'archived' AND (a.asset->>'relatedEntityId'=$3 OR a.asset_id=ANY($8::text[]))
+              ORDER BY a.asset_id LIMIT 65) m),'{}'::jsonb)=$9::jsonb
+          AND ($10::text IS NULL OR EXISTS(SELECT 1 FROM demeos_selling_intelligence i WHERE i.business_id=$1 AND i.product_id=$3 AND i.input_hash=$10))
+        ON CONFLICT(business_id,product_id) DO UPDATE SET input_hash=EXCLUDED.input_hash,
+          result=CASE WHEN $10::text IS NULL AND demeos_selling_intelligence.input_hash=EXCLUDED.input_hash AND (demeos_selling_intelligence.result->>'validUntil')::timestamptz>NOW() THEN demeos_selling_intelligence.result ELSE EXCLUDED.result END,
+          updated_at=NOW()
+        WHERE $10::text IS NULL OR demeos_selling_intelligence.input_hash=$10
+        RETURNING business_id,product_id,input_hash,result), audited AS (
+          INSERT INTO demeos_selling_intelligence_events(business_id,product_id,input_hash,action,actor,result)
+          SELECT business_id,product_id,input_hash,CASE WHEN $10::text IS NULL THEN 'analyzed' ELSE 'vendor-reviewed' END,$2,result FROM stored
+          ON CONFLICT DO NOTHING
+        ) SELECT result FROM stored`,[profile.businessId,identity,product.productId,result.inputHash,JSON.stringify(result),JSON.stringify(profile),stock.revision,(product.mediaGallery?.assetIds||[]).slice(0,65),JSON.stringify(Object.fromEntries(assets.map(a=>[a.assetId,a]))),expectedReviewHash]);
+      return saved.rows[0]?.result||null;
+    },
     async saveSellingProducts(identity,businessId,previousProfile,profile,evidenceGuard) {
       await database.ensureSchema();
       const test=require('./selling-access').dataEnvironment(businessId,environment(),identity)==='test';

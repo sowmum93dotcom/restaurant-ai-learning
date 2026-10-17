@@ -221,6 +221,19 @@ async function run(){
    // Exercise real product persistence through the shipped form and isolated SQL.
    await page.goto(base+'/selling-vendor/product-catalogue?businessId=vendor-a');
    await page.locator('#product-form:visible').waitFor();
+   if(viewport.width===375){
+    const category=require('../api/_lib/marketing-agent-categories').getCategory('1');
+    await page.locator('#product-name').fill(category.categoryName);
+    await page.locator('#product-description').fill('Controlled product analysis');
+    await page.locator('#intelligence-run').click();
+    await page.locator('#intelligence-status').filter({hasText:'Analysis complete. Review the findings.'}).waitFor();
+    assert.ok(await page.locator('[data-intelligence-rule="main-image"]').count(),'Real saved media are required');
+    await page.locator('#intelligence-results button').filter({hasText:'Use suggested category: 1 ·'}).click();
+    assert.equal(await page.locator('#product-category').inputValue(),'1','Category choice updates only the editor');
+    assert.equal((await repository.getKnownBusiness('vendor-a')).businessProfile.products.length,0,'Analysis never saves or publishes');
+    assert.equal(await page.locator('#intelligence-results button').count(),0,'Editing invalidates displayed findings');
+    await page.locator('#product-category').selectOption('');
+   }
    await page.locator('#product-name').fill('Gate Coffee');
    await page.locator('#product-description').fill('Freshly roasted beans');
    await page.locator('#product-price-mode').selectOption('fixed');

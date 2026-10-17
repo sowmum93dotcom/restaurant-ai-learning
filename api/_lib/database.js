@@ -7,6 +7,25 @@ const SCHEMA_STATEMENTS = [
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`,
+  // Latest private analysis per product; does not expand the catalogue JSONB.
+  `CREATE TABLE IF NOT EXISTS demeos_selling_intelligence (
+    business_id TEXT NOT NULL REFERENCES demeos_businesses(business_id),
+    product_id TEXT NOT NULL,
+    input_hash TEXT NOT NULL CHECK (input_hash ~ '^[a-f0-9]{64}$'),
+    result JSONB NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (business_id, product_id)
+  )`,
+  `CREATE TABLE IF NOT EXISTS demeos_selling_intelligence_events (
+    business_id TEXT NOT NULL REFERENCES demeos_businesses(business_id),
+    product_id TEXT NOT NULL,
+    input_hash TEXT NOT NULL,
+    action TEXT NOT NULL CHECK (action IN ('analyzed','vendor-reviewed')),
+    actor TEXT NOT NULL,
+    result JSONB NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (business_id,product_id,input_hash,action)
+  )`,
   `CREATE TABLE IF NOT EXISTS demeos_business_application_reviews (
     business_id TEXT NOT NULL REFERENCES demeos_businesses(business_id),
     application_revision TEXT NOT NULL CHECK (application_revision ~ '^[a-f0-9]{64}$'),
@@ -240,6 +259,7 @@ const SCHEMA_STATEMENTS = [
   )`,
   `CREATE INDEX IF NOT EXISTS demeos_business_media_assets_business_created_idx
     ON demeos_business_media_assets (business_id, created_at DESC)`,
+  `CREATE INDEX IF NOT EXISTS demeos_media_product_lookup ON demeos_business_media_assets (business_id, (asset->>'relatedEntityId'), asset_id)`,
   `CREATE TABLE IF NOT EXISTS demeos_media_processing_jobs (
     job_id BIGSERIAL PRIMARY KEY,
     asset_id TEXT NOT NULL REFERENCES demeos_business_media_assets(asset_id),

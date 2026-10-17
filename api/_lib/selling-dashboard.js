@@ -62,6 +62,13 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
         business = businessSummary(record?.businessProfile,env,identity.trustedIdentityId);
         if (!business || business.businessId !== businessId) return res.status(403).json({error:'Selling access is unavailable for this business.'});
       }
+      if(req.method==='POST'&&['analyze-product','review-intelligence'].includes(req.body?.action)){
+        if(!businessId||!business)return res.status(403).json({error:'Select your business.'});
+        const profile=(await store.getKnownBusiness(businessId))?.businessProfile;
+        if(!profile||!businessSummary(profile,env,identity.trustedIdentityId))return res.status(403).json({error:'Business access unavailable.'});
+        const result=await require('./selling-intelligence-service').run({store,profile,identity:identity.trustedIdentityId,environment:env,body:req.body});
+        const {status,...body}=result;return res.status(status).json(body);
+      }
       let catalogueQuery=null,orderQuery=null;
       if(req.method==='GET'&&req.query?.view==='orders'){try{orderQuery=require('./selling-order-page').parse(req.query);}catch{return res.status(400).json({error:'Check the order filters.'});}}
       if(req.method==='GET'&&req.query?.view==='catalogue'){try{catalogueQuery=catalogue.parse(req.query);}catch{return res.status(400).json({error:'Check the catalogue filters.',code:'catalogue-query'});}}
@@ -253,6 +260,13 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
         const updated={...original,products:products.map(p=>submissions.reconcile(original.products.find(old=>old.productId===p.productId),p,businessId,identity.trustedIdentityId,action==='save-variant'||action==='delete-variant'?'variants-edited':'product-edited'))};
         // Only this trusted authoring path initializes a new draft.
         for(const p of updated.products)if(!original.products.some(old=>old.productId===p.productId)){p.submission=submissions.draft(p,businessId,identity.trustedIdentityId);p.customerVisible=false;}
+        if(['save-product','save-draft'].includes(action)){
+          const prior=original.products.find(p=>p.productId===id),next=updated.products.find(p=>p.productId===id);
+          if(next?.submission&&prior?.classification?.categoryId!==next.classification?.categoryId){
+            const event=next.submission.history.at(-1);
+            if(event)event.vendorAction={type:'category-selected',previousCategoryId:prior?.classification?.categoryId||null,categoryId:next.classification?.categoryId||null,registryVersion:categories.DATASET_VERSION};
+          }
+        }
         const saved=await store.saveSellingProducts(identity.trustedIdentityId,businessId,original,updated);
         if (!saved) return res.status(409).json({error:'Business changed. Reload and retry.'});
         return res.status(200).json({ok:true,...(['save-product','save-draft'].includes(action)?{product:businessSummary(updated,env,identity.trustedIdentityId).products.find(p=>p.productId===id)}:{})});

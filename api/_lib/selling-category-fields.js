@@ -11,7 +11,7 @@ const definitions={
  '81':[{key:'scope',label:'Service scope',required:true,maxLength:1200},{key:'duration',label:'Duration',required:false,maxLength:120}]
 };
 for(const [id,fields] of Object.entries(definitions)){if(!registry.getCategory(id))throw Error('Unknown field-definition category.');Object.freeze(fields.map(Object.freeze));Object.freeze(fields);}
-function definition(categoryId){return registry.getCategory(categoryId)?{schemaVersion:VERSION,categoryId,datasetVersion:registry.DATASET_VERSION,fields:definitions[categoryId]||[]}:null;}
+function definition(categoryId){return registry.getCategory(categoryId)?{schemaVersion:VERSION,categoryId,datasetVersion:registry.DATASET_VERSION,fields:(definitions[categoryId]||[]).map(field=>({...field,type:'string',schemaVersion:VERSION,categoryId,labelKey:field.label,helpTextKey:'Enter verified product information.',validation:{kind:'text',maxLength:field.maxLength}}))}:null;}
 function apply(previous,classification,input,{draft=false}={}){
  const schema=definition(classification?.categoryId);
  const next=structuredClone(previous||{schemaVersion:VERSION,byCategory:{}});

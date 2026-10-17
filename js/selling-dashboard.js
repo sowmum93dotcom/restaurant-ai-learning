@@ -37,7 +37,7 @@
     const walker=doc.createTreeWalker(doc.body,4);
     for(let node;node=walker.nextNode();)if(node.textContent.trim()&&!['SCRIPT','STYLE'].includes(node.parentElement?.tagName))staticText.push({node,source:node.textContent.trim()});
     const staticAttributes=Array.from(doc.querySelectorAll('[aria-label],[alt]')).flatMap(node=>['aria-label','alt'].filter(attr=>node.hasAttribute(attr)).map(attr=>({node,attr,source:node.getAttribute(attr)})));
-    function translateStatic(){$('media-filename').textContent=$('media-file').files[0]?.name||t('No file selected.');doc.title=t('Selling Vendor')+' | DEMEOS';for(const {node,source} of staticText)node.textContent=t(source);for(const {node,attr,source} of staticAttributes)node.setAttribute(attr,t(source));$('logo-filename').textContent=$('logo-file').files[0]?.name||t('No file selected.');doc.documentElement.dir=i18n.resolve(language).direction;translateSubmissions();$('product-form-title').textContent=t($('product-id').value?'Edit product':'Add product');$('variant-form-title').textContent=t($('variant-id').value?'Edit variant':'Add variant');}
+    function translateStatic(){$('media-filename').textContent=$('media-file').files[0]?.name||t('No file selected.');doc.title=t('Selling Vendor')+' | DEMEOS';for(const {node,source} of staticText)node.textContent=t(source);for(const {node,attr,source} of staticAttributes)node.setAttribute(attr,t(source));$('logo-filename').textContent=$('logo-file').files[0]?.name||t('No file selected.');doc.documentElement.dir=i18n.resolve(language).direction;translateSubmissions();renderIntelligence();$('product-form-title').textContent=t($('product-id').value?'Edit product':'Add product');$('variant-form-title').textContent=t($('variant-id').value?'Edit variant':'Add variant');}
     $('dashboard-language').replaceChildren(...i18n.languages.map(locale=>{const option=doc.createElement('option');option.value=locale.code;option.textContent=locale.name;return option;}));
     const sectionCopy=()=>Object.fromEntries(Object.entries(sections).map(([key,values])=>[key,values.map(value=>t(value))]));
     const submissionCopy=key=>(win.DEMEOSSellingSubmissionCopy?.[language]||win.DEMEOSSellingSubmissionCopy?.en||{})[key]||key;
@@ -45,7 +45,7 @@
     function translateSubmissions(){for(const node of doc.querySelectorAll('[data-submission-copy]'))node.textContent=submissionCopy(node.dataset.submissionCopy);}
     function translateNavigation(){translateStatic();for(const link of doc.querySelectorAll('nav [data-section]'))link.textContent=sectionCopy()[link.dataset.section][0];$('dashboard-language').value=language;doc.documentElement.lang=language;}
     function status(state,title,message){
-      context=null;$('business-logo').hidden=true;$('business-logo').removeAttribute('src');$('private-workspace').hidden=true;$('business-name').textContent='';$('business-details').textContent='';$('business-facts').replaceChildren();$('business-select').replaceChildren();
+      clearIntelligence();context=null;$('business-logo').hidden=true;$('business-logo').removeAttribute('src');$('private-workspace').hidden=true;$('business-name').textContent='';$('business-details').textContent='';$('business-facts').replaceChildren();$('business-select').replaceChildren();
       $('dashboard-status').hidden=false;$('dashboard-status').dataset.state=state;
       $('dashboard-status').setAttribute('aria-busy',String(state==='loading'));
       $('status-heading').textContent=title;$('status-message').textContent=message;
@@ -96,10 +96,73 @@
     $('orders-state').addEventListener('change',()=>{orderCursor='';orderPrevious=[];load();});
     $('orders-next').addEventListener('click',()=>{if(context?.business?.orderPage?.nextCursor){orderPrevious.push(orderCursor);orderCursor=context.business.orderPage.nextCursor;load();}});
     $('orders-previous').addEventListener('click',()=>{if(orderPrevious.length){orderCursor=orderPrevious.pop();load();}});
+    let intelligenceResult=null,intelligenceSequence=0;
+    const intelligenceMessages={
+      'business-authorisation':'Business authorisation must remain valid.',
+      'title-required':'Add a product title.',
+      'description-required':'Add a product description.',
+      'category-invalid':'Select a valid registry category.',
+      'category-attribute':'Complete the required category field with valid information.',
+      'price-invalid':'Check the price and price type.',
+      'availability-invalid':'Review availability and reserved stock.',
+      'variant-invalid':'Review variant identifiers, SKUs and availability.',
+      'category-conflict':'Product text supports another category. Review your selection.',
+      'classification-limit':'Category assistance supports up to 500 characters of title and description.',
+      'classification-insufficient':'The current rules cannot support a category suggestion.',
+      'possible-duplicate':'Similar products exist in this business. Review before adding another.',
+      'media-relationship':'Link each media asset to the correct product.',
+      'main-image':'Choose a ready main image.',
+      'media-processing':'Media processing is incomplete or failed. Review the media library.',
+      'media-properties':'Check media format, size, dimensions and video duration.',
+      'image-quality':'An image at least 1200 pixels wide is recommended.',
+      'media-duplicate':'A media asset is referenced more than once. Review the gallery.',
+      'video-playback':'A private processed MP4 derivative is required for playback readiness.',
+      'video-cover':'No stored video cover frame is available.',
+      'media-limit':'More than 64 media assets require a separate review.',
+      'media-integrity':'Review media ownership, associations and processed derivatives.'
+    };
+    const intelligenceReadiness={'incomplete-draft':'Incomplete draft','ready-for-vendor-review':'Ready for vendor review',submitted:'Submitted for validation',approved:'Approved under recorded validation',held:'Held for further checks',rejected:'Rejected with recorded reasons'};
+    const intelligenceClassification={'rules-supported':'Rules-supported match','plausible-candidate':'Plausible category candidates','insufficient-information':'Insufficient category information','conflicting-information':'Conflicting category information',unsupported:'Unsupported classification'};
+    function clearIntelligence(){intelligenceSequence++;intelligenceResult=null;$('intelligence-results').replaceChildren();$('intelligence-status').textContent='';}
+    function renderIntelligence(){
+      const result=intelligenceResult;if(!result)return;
+      const analysis=result.analysis,box=$('intelligence-results');box.replaceChildren();
+      const summary=doc.createElement('p');summary.textContent=t(intelligenceReadiness[analysis.readiness])+'. '+t(intelligenceClassification[analysis.classification.outcome]);box.append(summary);
+      const provenance=doc.createElement('p');provenance.className='catalogue-metadata';provenance.textContent=[analysis.rulesVersion,analysis.registryVersion,new Date(analysis.analyzedAt).toLocaleString(language),t(result.persisted?'Saved analysis':'Unsaved draft analysis')].join(' · ');box.append(provenance);
+      for(const candidate of analysis.classification.candidates){
+        const button=doc.createElement('button');button.type='button';button.textContent=t('Use suggested category')+': '+candidate.categoryId+' · '+candidate.categoryName;
+        button.addEventListener('click',()=>{$('product-category').value=candidate.categoryId;renderCategoryFields();rememberDraft();clearIntelligence();$('intelligence-status').textContent=t('Category selected in editor. Review fields and save to apply.');});box.append(button);
+      }
+      const list=doc.createElement('ul');
+      for(const finding of analysis.findings.filter(f=>f.status!=='passed')){const item=doc.createElement('li');const categoryField=context.categories.fieldDefinitions.find(d=>d.categoryId===$('product-category').value)?.fields.find(f=>'categoryAttributes.'+f.key===finding.field);item.textContent=t(intelligenceMessages[finding.ruleId]||'Review and correct this field.')+(categoryField?' '+t(categoryField.label):'');item.dataset.intelligenceRule=finding.ruleId;
+        const fieldId={name:'product-name',description:'product-description',classification:'product-category',price:'product-price',availability:'product-availability',variants:'variant-product'}[finding.field];
+        if(fieldId&&$(fieldId)&&finding.field!=='variants'){const fix=doc.createElement('button');fix.type='button';fix.textContent=t('Edit product');fix.addEventListener('click',()=>$(fieldId).focus());item.append(' ',fix);}list.append(item);}
+      box.append(list);
+      for(const duplicate of analysis.possibleDuplicates){const line=doc.createElement('p');line.textContent=t('Possible duplicate')+': '+duplicate.name+' · '+duplicate.productId;box.append(line);}
+      if(result.persisted){const review=doc.createElement('button');review.type='button';review.textContent=t(analysis.review.status==='reviewed'?'Findings reviewed':'Mark findings reviewed');review.disabled=analysis.review.status==='reviewed';review.addEventListener('click',()=>runIntelligence(true));box.append(review);}
+    }
+    async function runIntelligence(review=false){
+      if(productMutationPending||!context?.business)return;
+      const businessId=context.business.businessId,identity=clerk.user.id,seq=++intelligenceSequence;
+      const saved=context.business.products.find(p=>p.productId===$('product-id').value);
+      const body={action:review?'review-intelligence':'analyze-product',productId:saved?.productId||'unsaved-draft',productRevision:saved?.authoringRevision||'new'};
+      if(review){body.inputHash=intelligenceResult?.analysis.inputHash;body.confirmed=true;}
+      else body.editor={name:$('product-name').value,description:$('product-description').value,sku:$('product-sku').value,price:$('product-price').value,priceMode:$('product-price-mode').value,availability:$('product-availability').value,classification:productClassification(),categoryFields:readCategoryFields()};
+      $('intelligence-run').disabled=true;$('intelligence-status').textContent=t('Analysing product…');
+      try{
+        const token=await bounded(clerk.session.getToken());
+        const response=await win.fetch('/api/businesses?resource=selling-dashboard&businessId='+encodeURIComponent(businessId),{method:'POST',credentials:'same-origin',signal:win.AbortSignal.timeout(15000),headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify(body)});
+        const result=await response.json();if(!response.ok)throw Error(apiError(response,result));
+        if(seq!==intelligenceSequence||context?.business?.businessId!==businessId||clerk.user?.id!==identity)return;
+        intelligenceResult=result;renderIntelligence();$('intelligence-status').textContent=t(result.cacheHit?'Current saved analysis reused.':'Analysis complete. Review the findings.');
+      }catch(error){if(seq===intelligenceSequence)$('intelligence-status').textContent=failureMessage(error);}finally{$('intelligence-run').disabled=false;}
+    }
+    $('intelligence-run').addEventListener('click',()=>runIntelligence());
+    $('product-form').addEventListener('input',clearIntelligence);$('product-form').addEventListener('change',clearIntelligence);
     const draftFields=['id','name','sku','description','price-mode','price','availability','category'];
     const draftKey=()=>clerk?.user?.id&&context?.business?.businessId?'demeos-selling-draft:'+clerk.user.id+':'+context.business.businessId:null;
     function captureCategoryFields(){const id=$('product-category').value;if(id)categoryDraftValues[id]=Object.fromEntries(Array.from($('product-category-fields').querySelectorAll('[data-category-field]')).map(node=>[node.dataset.categoryField,node.value]));}
-    function renderCategoryFields(){const id=$('product-category').value,schema=context?.categories?.fieldDefinitions?.find(d=>d.categoryId===id);$('product-category-fields').replaceChildren();for(const field of schema?.fields||[]){const label=doc.createElement('label'),text=doc.createElement('span'),input=doc.createElement('textarea');text.textContent=t(field.label)+(field.required?' *':'');input.dataset.categoryField=field.key;input.maxLength=field.maxLength;input.required=field.required;input.value=categoryDraftValues[id]?.[field.key]||'';label.append(text,input);$('product-category-fields').append(label);}}
+    function renderCategoryFields(){const id=$('product-category').value,schema=context?.categories?.fieldDefinitions?.find(d=>d.categoryId===id);$('product-category-fields').replaceChildren();for(const field of schema?.fields||[]){const label=doc.createElement('label'),text=doc.createElement('span'),input=doc.createElement('textarea');text.textContent=t(field.label)+(field.required?' *':'');input.dataset.categoryField=field.key;input.maxLength=field.maxLength;input.required=field.required;input.title=t(field.helpTextKey||'Enter verified product information.');input.value=categoryDraftValues[id]?.[field.key]||'';label.append(text,input);$('product-category-fields').append(label);}}
     function readCategoryFields(){captureCategoryFields();const id=$('product-category').value,schema=context?.categories?.fieldDefinitions?.find(d=>d.categoryId===id);return schema?{schemaVersion:schema.schemaVersion,categoryId:id,datasetVersion:schema.datasetVersion,values:categoryDraftValues[id]||{}}:undefined;}
     $('product-category').addEventListener('change',()=>{renderCategoryFields();rememberDraft();});
     function rememberDraft(){captureCategoryFields();editorDirty=true;const key=draftKey();if(!key)return;editorRevision=editorRevision||context.business.catalogueRevision;try{win.sessionStorage.setItem(key,JSON.stringify({revision:editorRevision,productRevision:editorProductRevision,categoryDraftValues,fields:Object.fromEntries(draftFields.map(k=>[k,$('product-'+k).value]))}));}catch{}}
@@ -340,7 +403,7 @@
     }
     $('product-price-mode').addEventListener('change',syncProductPrice);
     function productClassification(){const category=context?.categories?.items.find(c=>c.categoryId===$('product-category').value);return category?{categoryId:category.categoryId,sectorId:category.sectorId,datasetVersion:context.categories.datasetVersion}:null;}
-    function clearProductForm(){
+    function clearProductForm(){clearIntelligence();
       const key=draftKey();try{if(key)win.sessionStorage.removeItem(key);}catch{}editorRevision='';editorProductRevision='new';editorDirty=false;categoryDraftValues={};$('product-category-fields').replaceChildren();
       $('product-form').reset();$('product-id').value='';$('product-form-title').textContent=t('Add product');syncProductPrice();
     }
