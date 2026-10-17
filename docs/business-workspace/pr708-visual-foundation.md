@@ -1,3 +1,5 @@
+> Historical evidence for 861cf938. The subsequent implementation and current status are in [pr708-real-execution.md](pr708-real-execution.md) and [pr708-real-execution-verification.md](pr708-real-execution-verification.md). Statements below about unavailable frame extraction describe the earlier commit.
+
 # PR 708: DEMEOS-controlled visual execution foundation
 
 Status: code foundation and isolated verification, not a deployed visual AI system.

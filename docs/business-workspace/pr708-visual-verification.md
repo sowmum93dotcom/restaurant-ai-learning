@@ -1,3 +1,5 @@
+> Historical evidence for 861cf938. The subsequent implementation and current status are in [pr708-real-execution.md](pr708-real-execution.md) and [pr708-real-execution-verification.md](pr708-real-execution-verification.md). Statements below about unavailable frame extraction describe the earlier commit.
+
 # PR 708 visual foundation: verification record
 
 Verified locally on 2026-10-17. Base code: 7fc08013d9fa6e3c6cf70bb697cf24f147303160.

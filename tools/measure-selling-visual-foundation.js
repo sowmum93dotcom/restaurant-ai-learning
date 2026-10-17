@@ -29,7 +29,13 @@ const environment={VERCEL_ENV:'preview',DEMEOS_SELLING_DATA_ENVIRONMENT:'test',D
    await measure(size,'prepared-projection-page',async()=>(await db.query(`SELECT p.product FROM demeos_selling_product_projection p WHERE p.business_id=$1 AND EXISTS(SELECT 1 FROM demeos_business_owners o WHERE o.business_id=$1 AND o.trusted_identity_id=$2) ORDER BY lower(p.product->>'name'),p.product_id LIMIT 25`,[businessId,owner])).rows);
    await measure(size,'jsonb-update-with-projection-trigger',()=>repo.saveBusiness({...stored,products:stored.products.map(p=>p.productId===product.productId?{...p,description:'Controlled projection update'}:p)}));
    await projection.rollbackProjection(db,environment);
+   const records=projection.createProductPersistence(db,environment);await records.install();await records.backfill(owner,businessId);
+   await measure(size,'product-record-owned-lookup',()=>records.read(owner,businessId,product.productId));
+   let expected='1';
+   await measure(size,'product-record-CAS-update-with-audit',async()=>{const result=await records.write(owner,businessId,product.productId,expected,{...product,description:'Controlled record update'});if(!result)throw Error('CAS failed');expected=result.revision;return result;});
+   await measure(size,'product-record-indexed-page',async()=>(await db.query(`SELECT p.product,p.revision::text FROM demeos_selling_product_records p JOIN demeos_selling_product_state s USING(business_id) JOIN demeos_businesses b USING(business_id) WHERE p.business_id=$1 AND NOT p.deleted AND b.updated_at=s.source_stamp AND EXISTS(SELECT 1 FROM demeos_business_owners o WHERE o.business_id=$1 AND o.trusted_identity_id=$2) ORDER BY lower(p.product->>'name'),p.product_id LIMIT 25`,[businessId,owner])).rows);
+
   }
-  console.log(JSON.stringify({runtime:process.version,database:'PGlite 0.5.8',method:'One warm-up/eight measured calls. Isolated embedded Postgres, no HTTP/Clerk/Neon network. Projection is preparation only, NOT the live catalogue path. Whole-profile writes remain O(n); max is not a statistical p95. Repeated writes use the same controlled value.',results},null,2));
+  console.log(JSON.stringify({runtime:process.version,database:'PGlite 0.5.8',method:'One warm-up/eight measured calls. Isolated embedded Postgres, no HTTP/Clerk/Neon network. Projection and product-record CAS are isolated preparation only, NOT the live catalogue path. Product-record writes include ownership, source stamp, revision lock and immutable audit. Whole-profile writes remain O(n); max is not a statistical p95. Repeated writes use the same controlled value.',results},null,2));
  }finally{await client.close();}
 })().catch(error=>{console.error(error);process.exitCode=1;});
