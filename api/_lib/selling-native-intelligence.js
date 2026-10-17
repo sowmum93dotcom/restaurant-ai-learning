@@ -6,7 +6,7 @@ const {interpretCategories}=require('./customer-category-classification');
 const fields=require('./selling-category-fields');
 const submissions=require('./selling-submissions');
 const mediaContract=require('./media-asset-contract');
-const VERSION='selling-native-intelligence-v1';
+const VERSION='selling-native-intelligence-v2';
 const LIMITS=Object.freeze({products:10000,media:64,duplicates:25,text:500});
 const normalize=value=>String(value||'').normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim();
 function canonical(value){if(Array.isArray(value))return value.map(canonical);if(value&&typeof value==='object')return Object.fromEntries(Object.keys(value).sort().filter(k=>value[k]!==undefined).map(k=>[k,canonical(value[k])]));return value;}
@@ -38,7 +38,7 @@ function mediaAnalysis(product,assets,businessId){
  const ownedIds=new Set(related.map(a=>a.assetId));
  add('media-relationship','mediaGallery',ids.every(id=>ownedIds.has(id))&&related.every(a=>ids.includes(a.assetId))?'passed':'failed','error');
  add('main-image','mediaGallery.mainAssetId',product.presentation?.kind==='service'||related.some(a=>a.assetId===main&&ids.includes(a.assetId)&&a.kind==='image'&&a.state==='ready')?'passed':'failed','error');
- const seen=new Set();
+ const seen=new Set(),hashes=new Set();
  for(const a of related){
   const field='media.'+a.assetId;
   add('media-processing',field,a.state==='ready'?'passed':a.state==='failed'?'failed':'unavailable','error');
@@ -51,6 +51,7 @@ function mediaAnalysis(product,assets,businessId){
   // not a claim of perceptual/semantic duplicate detection or an invented hash.
   if(a.processedStorageKey&&seen.has(a.processedStorageKey))add('media-duplicate',field,'failed');
   seen.add(a.processedStorageKey);
+  if(/^[a-f0-9]{64}$/.test(a.sourceHash||'')){if(hashes.has(a.sourceHash))add('media-duplicate',field,'failed');hashes.add(a.sourceHash);}
   if(video){
    const prefix=`businesses/${encodeURIComponent(businessId)}/media/${encodeURIComponent(a.assetId)}/processed/`;
    add('video-playback',field,a.processedStorageKey?.startsWith(prefix)&&a.derivatives?.some(d=>d.role==='customer'&&d.contentType==='video/mp4'&&d.storageKey?.startsWith(prefix))?'passed':'failed','error');
@@ -96,6 +97,6 @@ function analyze({profile,product,assets=[],stock={revision:0,entries:{},history
  const checked=product.submission?.validation;
  const verifiedApproval=prerequisites.rules.every(r=>r.status==='passed')&&['approved','published'].includes(lifecycle)&&checked?.state==='approved'&&checked.contentHash===submissions.contentHash(product)&&checked.mediaFingerprint===prerequisites.media.fingerprint&&submissions.MANDATORY.every(id=>checked.rules?.some(r=>r.id===id&&r.status==='passed'&&(r.code==='not-applicable'||r.independentlyVerified===true||r.authorityDecisionId&&Date.parse(r.expiresAt)>Date.now())));
  const readiness=lifecycle==='rejected'?'rejected':lifecycle==='validating'?'submitted':lifecycle==='review-required'||['approved','published'].includes(lifecycle)&&!verifiedApproval?'held':verifiedApproval?'approved':complete?'ready-for-vendor-review':'incomplete-draft';
- return {schemaVersion:1,rulesVersion:VERSION,registryVersion:registry.DATASET_VERSION,fieldSchemaVersion:fields.VERSION,businessId:profile.businessId,productId:product.productId,productRevision:require('./vendor-inventory').catalogueRevision(product),contextRevision:require('./vendor-inventory').catalogueRevision(profile),stockRevision:stock.revision,inputHash:fingerprint({profile,product,assets,stock}),analyzedAt:now,validUntil:new Date(Math.min(Date.parse(now)+86400000,...(product.submission?.validation?.rules||[]).map(r=>Date.parse(r.expiresAt)).filter(Number.isFinite))).toISOString(),classification,findings,possibleDuplicates,readiness,lifecycle,publicationPermitted:false,model:{available:false,reason:'no-authorised-model'},review:{status:'unreviewed',actions:[]},metrics:{durationMs:Number((performance.now()-started).toFixed(3)),productsExamined:profile.products.length,mediaExamined:Math.min(assets.length,LIMITS.media)}};
+ return {schemaVersion:1,rulesVersion:VERSION,registryVersion:registry.DATASET_VERSION,fieldSchemaVersion:fields.VERSION,businessId:profile.businessId,productId:product.productId,productRevision:require('./vendor-inventory').catalogueRevision(product),contextRevision:require('./vendor-inventory').catalogueRevision(profile),stockRevision:stock.revision,inputHash:fingerprint({profile,product,assets,stock}),analyzedAt:now,validUntil:new Date(Math.min(Date.parse(now)+86400000,...(product.submission?.validation?.rules||[]).map(r=>Date.parse(r.expiresAt)).filter(Number.isFinite))).toISOString(),classification,findings,mediaTechnicalDetails:require('./selling-visual-readiness').technicalDetails(product,assets,profile.businessId),possibleDuplicates,readiness,lifecycle,publicationPermitted:false,model:{available:false,reason:'no-authorised-model'},review:{status:'unreviewed',actions:[]},metrics:{durationMs:Number((performance.now()-started).toFixed(3)),productsExamined:profile.products.length,mediaExamined:Math.min(assets.length,LIMITS.media)}};
 }
 module.exports={VERSION,LIMITS,hash,normalize,classify,duplicates,mediaAnalysis,fingerprint,analyze};

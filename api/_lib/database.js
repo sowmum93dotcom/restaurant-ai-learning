@@ -8,6 +8,23 @@ const SCHEMA_STATEMENTS = [
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`,
   // Latest private analysis per product; does not expand the catalogue JSONB.
+  `CREATE TABLE IF NOT EXISTS demeos_visual_execution_slots (
+    business_id TEXT PRIMARY KEY REFERENCES demeos_businesses(business_id),
+    claim_id TEXT NOT NULL,
+    input_hash TEXT NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    window_start TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    jobs INTEGER NOT NULL DEFAULT 1,
+    result JSONB,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`,
+  `CREATE TABLE IF NOT EXISTS demeos_visual_execution_events (
+    claim_id TEXT PRIMARY KEY,
+    business_id TEXT NOT NULL REFERENCES demeos_businesses(business_id),
+    input_hash TEXT NOT NULL,
+    result JSONB NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`,
   `CREATE TABLE IF NOT EXISTS demeos_selling_intelligence (
     business_id TEXT NOT NULL REFERENCES demeos_businesses(business_id),
     product_id TEXT NOT NULL,

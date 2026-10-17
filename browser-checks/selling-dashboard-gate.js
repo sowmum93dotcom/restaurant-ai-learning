@@ -320,8 +320,10 @@ async function run(){
    }
    await page.locator('#media-upload').click();await page.locator('#media-feedback').filter({hasText:'File uploaded and linked to product.'}).waitFor();
    const linked=(await repository.getKnownBusiness('vendor-a')).businessProfile.products[0].mediaGallery.assetIds[0];
-   assert.equal((await repository.getBusinessMediaAsset('vendor-a',linked)).state,'ready');
+   const storedImage=await repository.getBusinessMediaAsset('vendor-a',linked);assert.equal(storedImage.state,'ready');assert.match(storedImage.sourceHash,/^[a-f0-9]{64}$/);assert.match(storedImage.processedHash,/^[a-f0-9]{64}$/);assert.ok(storedImage.processedSizeBytes>0);
    await page.reload();await page.locator('#media-list img').waitFor();await page.waitForFunction(()=>document.querySelector('#media-list img')?.naturalWidth>0);
+   assert.ok(await page.locator('#media-list .media-actions button').count()>0);
+   assert.ok(await page.locator('#media-list .media-actions button').evaluateAll(nodes=>nodes.every(n=>parseFloat(getComputedStyle(n).fontSize)<=14&&n.getBoundingClientRect().height>=44)),'Media controls stay compact with accessible touch targets');
    if([375,1440].includes(viewport.width))await page.screenshot({path:path.join(artifacts,'demeos-selling-media-'+viewport.width+'.png'),fullPage:true});
    if(viewport.width===375){
     const copy=require('../js/selling-dashboard-copy');

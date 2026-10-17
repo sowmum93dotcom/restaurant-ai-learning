@@ -1,5 +1,6 @@
 'use strict';
 // Real image decoding/optimization for the existing private storage lifecycle.
+const {createHash}=require('node:crypto');
 const {MAX_IMAGE_BYTES}=require('./media-asset-contract');
 function createSharpMediaDrivers({fetchImpl=globalThis.fetch,sharpImpl,storage}={}){
  const images=new WeakMap();
@@ -18,7 +19,7 @@ function createSharpMediaDrivers({fetchImpl=globalThis.fetch,sharpImpl,storage}=
    const types={jpeg:'image/jpeg',png:'image/png',webp:'image/webp'};
    if(types[metadata.format]!==asset.contentType||!metadata.width||!metadata.height||(metadata.pages||1)>1)throw Error('Use a valid, non-animated JPEG, PNG or WebP image.');
    images.set(asset,{bytes,sharp});
-   return {width:metadata.width,height:metadata.height,contentType:asset.contentType};
+   return {width:metadata.width,height:metadata.height,contentType:asset.contentType,sourceHash:createHash('sha256').update(bytes).digest('hex')};
   },
   async optimizeImage(asset,inspected,context){
    const image=images.get(asset);images.delete(asset);
@@ -31,7 +32,7 @@ function createSharpMediaDrivers({fetchImpl=globalThis.fetch,sharpImpl,storage}=
     await read(destination.uploadUrl,{method:'PUT',headers:{'Content-Type':'image/webp',...destination.headers},body:data});
     const delivery=await storage.createDeliveryRead({storageKey:destination.storageKey,expiresAt:new Date(Date.now()+10*60*1000).toISOString()});
     if(!delivery?.deliveryUrl)throw Error('Private image delivery is unavailable.');
-    results.push({role:destination.role,storageKey:destination.storageKey,deliveryUrl:delivery.deliveryUrl,contentType:'image/webp',width:info.width,height:info.height});
+    results.push({role:destination.role,storageKey:destination.storageKey,deliveryUrl:delivery.deliveryUrl,contentType:'image/webp',width:info.width,height:info.height,processedHash:createHash('sha256').update(data).digest('hex'),processedSizeBytes:data.length});
    }
    const master=results.find(r=>r.role==='master');
    return {...master,derivatives:results.filter(r=>r.role!=='master')};

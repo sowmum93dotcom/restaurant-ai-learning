@@ -19,16 +19,18 @@ function capabilities(backend,env){
 async function listMedia(store,profile,backend){
  if(typeof store.getBusinessMediaAssets!=='function')return [];
  let assets=await store.getBusinessMediaAssets(profile.businessId,100);
+ const products=new Map((profile.products||[]).map(p=>[p.productId,p]));
+ const positions=new Map((profile.products||[]).map(p=>[p.productId,new Map((p.mediaGallery?.assetIds||[]).map((id,i)=>[id,i]))]));
  const galleryIds=(profile.products||[]).flatMap(p=>p.mediaGallery?.assetIds||[]);
  for(let i=0;i<galleryIds.length;i+=20)assets.push(...await store.getBusinessMediaAssetsByIds(profile.businessId,galleryIds.slice(i,i+20)));
- assets=Array.from(new Map(assets.map(a=>[a.assetId,a])).values()).filter(a=>a.businessId===profile.businessId&&['product','service'].includes(a.purpose)&&a.state!=='archived'&&(profile.products||[]).some(p=>p.productId===a.relatedEntityId));
- assets.sort((a,b)=>a.relatedEntityId.localeCompare(b.relatedEntityId)||((profile.products.find(p=>p.productId===a.relatedEntityId)?.mediaGallery?.assetIds||[]).indexOf(a.assetId)-(profile.products.find(p=>p.productId===b.relatedEntityId)?.mediaGallery?.assetIds||[]).indexOf(b.assetId)));
+ assets=Array.from(new Map(assets.map(a=>[a.assetId,a])).values()).filter(a=>a.businessId===profile.businessId&&['product','service'].includes(a.purpose)&&a.state!=='archived'&&products.has(a.relatedEntityId));
+ assets.sort((a,b)=>a.relatedEntityId.localeCompare(b.relatedEntityId)||((positions.get(a.relatedEntityId)?.get(a.assetId)??-1)-(positions.get(b.relatedEntityId)?.get(b.assetId)??-1)));
  return Promise.all(assets.map(async asset=>{
   let previewUrl=null;
   const prefix=`businesses/${encodeURIComponent(profile.businessId)}/media/${encodeURIComponent(asset.assetId)}/processed/`;
   const thumbnail=asset.kind==='image'?asset.derivatives?.find(d=>d.role==='thumbnail'&&d.storageKey?.startsWith(prefix))?.storageKey:null;
   if(asset.state==='ready'&&asset.processedStorageKey?.startsWith(prefix))previewUrl=(await backend.adapter?.createDeliveryRead({storageKey:thumbnail||asset.processedStorageKey,expiresAt:new Date(Date.now()+10*60*1000).toISOString()}))?.deliveryUrl||null;
-  return {assetId:asset.assetId,productId:asset.relatedEntityId,kind:asset.kind,state:asset.state,previewUrl,failureReason:asset.failureReason||'',main:(profile.products||[]).find(p=>p.productId===asset.relatedEntityId)?.mediaGallery?.mainAssetId===asset.assetId,linked:(profile.products||[]).find(p=>p.productId===asset.relatedEntityId)?.mediaGallery?.assetIds?.includes(asset.assetId)||false};
+  return {assetId:asset.assetId,productId:asset.relatedEntityId,kind:asset.kind,state:asset.state,previewUrl,failureReason:asset.failureReason||'',main:products.get(asset.relatedEntityId)?.mediaGallery?.mainAssetId===asset.assetId,linked:products.get(asset.relatedEntityId)?.mediaGallery?.assetIds?.includes(asset.assetId)||false};
  }));
 }
 async function readLogo(store,profile,backend){
