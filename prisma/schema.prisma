@@ -1,17 +1,15 @@
 // Prisma schema for Verra.
 //
-// Uses SQLite for local development (zero setup, a single file database).
-// To move to a hosted Postgres database later: change `provider` below to
-// "postgresql", point DATABASE_URL at your Postgres connection string, and
-// run `npm run db:push` again. The schema itself doesn't need to change for
-// that move (Postgres also supports everything used here).
+// Uses PostgreSQL — a hosted database in production (e.g. Supabase or
+// Neon), a local Postgres instance for development. Point DATABASE_URL
+// at whichever one you're using; no schema changes needed either way.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 

@@ -6,9 +6,15 @@ they want and gets back ranked, location-aware, verified results. Business
 owners can claim and manage their own listings, and admins can review and
 verify them.
 
-This is the **real backend version**: a Next.js app with real API routes
-and a real database (SQLite for local development), replacing the earlier
-static HTML/JS demo that stored everything in the browser's `localStorage`.
+This is the **real system**, not a demo: a Next.js app with its own API
+routes and a real PostgreSQL database, replacing the earlier static
+HTML/JS version that stored everything in the browser's `localStorage`.
+
+**Current status: built, not yet deployed.** The app runs against a real
+Postgres database (locally during development; a hosted one in
+production), and calls the real Claude API for search when configured —
+but it isn't live anywhere yet. See "Deploying" below for exactly what's
+needed to put it on the internet.
 
 ## What's included
 
@@ -35,8 +41,8 @@ static HTML/JS demo that stored everything in the browser's `localStorage`.
   self-attestation checkbox, not a confirmed email/phone/document check)
 - Real location data (listings use the same simulated map coordinates as
   the earlier demo, not real addresses pulled from OpenStreetMap)
-- A hosted production database (this runs on local SQLite by default —
-  see "Moving to a real hosted database" below)
+- **Hosting** — nothing is deployed publicly yet; the app only runs
+  wherever you start it (see "Deploying" below)
 
 These are the next phases in the [Architecture Plan](#) doc this project
 was built from — this version completes the "real backend + database"
@@ -47,9 +53,8 @@ phase.
 - **Next.js** (React + TypeScript, App Router) — one app for both the
   pages and the API routes.
 - **Prisma** — type-safe database access and schema management.
-- **SQLite** — a real database that's a single file on disk, needs zero
-  setup. Swapping to a hosted Postgres database later is a small config
-  change (same Prisma schema).
+- **PostgreSQL** — a local instance for development, a hosted one (e.g.
+  Supabase) in production. Same schema, same code, either way.
 - Plain CSS (`app/globals.css`) — no CSS framework, kept simple.
 - Custom cookie-based sessions with hashed passwords (`bcryptjs`) — no
   external auth provider needed for this phase.
@@ -85,28 +90,35 @@ verra/
 └── README.md
 ```
 
-## How to run it
+## How to run it locally
 
-This now requires Node.js (unlike the earlier plain-HTML version).
+This requires Node.js and a PostgreSQL server (unlike the earlier
+plain-HTML version, and unlike the brief SQLite phase this project passed
+through — it's Postgres now, matching production).
 
 1. Install dependencies:
    ```bash
    npm install
    ```
-2. Set up your local environment file:
+2. Have a Postgres server running and create a database for this project
+   (e.g. `createdb verra`, or use Postgres.app / Docker / your OS's
+   package manager if you don't have one yet).
+3. Set up your local environment file:
    ```bash
    cp .env.example .env
    ```
-3. Create the database and fill it with sample data:
+   Edit `DATABASE_URL` in `.env` to match your local Postgres
+   (user/password/host/port/database name).
+4. Create the schema and fill it with sample data:
    ```bash
    npm run db:push
    npm run db:seed
    ```
-4. Start the app:
+5. Start the app:
    ```bash
    npm run dev
    ```
-5. Open `http://localhost:3000` in your browser.
+6. Open `http://localhost:3000` in your browser.
 
 **Seeded admin login:** `admin@verra.app` / `admin123` (change this before
 deploying anywhere real — it's only for local development).
@@ -125,20 +137,51 @@ npm run db:seed
 (or use the "Reset to sample data" button in the Admin Panel, which does
 the same thing without clearing user accounts).
 
-## Moving to a real hosted database
+## Deploying (making it actually live)
 
-The local SQLite file (`prisma/dev.db`) is great for development but
-isn't shared between devices or deployed servers. To move to a real
-hosted Postgres database later (e.g. Supabase or Neon):
+Nothing here happens automatically — each step below is something you do
+once, using your own accounts. None of it requires a code change beyond
+what's already in this repo.
 
-1. Change `provider = "sqlite"` to `provider = "postgresql"` in
-   `prisma/schema.prisma`.
-2. Set `DATABASE_URL` in `.env` to your Postgres connection string.
-3. Run `npm run db:push` (or set up proper migrations with
-   `npx prisma migrate dev`) against the new database.
+### 1. Create a hosted database (Supabase)
 
-No application code needs to change for this move — it was designed that
-way from the start.
+1. Create a project at [supabase.com](https://supabase.com) (free tier
+   is enough to start).
+2. In the project, go to **Project Settings → Database → Connection
+   string → URI**. Copy the one labeled **Transaction pooler** (port
+   `6543`) — that's the one that works with serverless hosting like
+   Vercel; the direct connection (port `5432`) will time out there.
+3. You'll paste this in as `DATABASE_URL` in the next step.
+
+### 2. Deploy the app (Vercel)
+
+1. Push this repo to GitHub (already done if you're reading this from
+   the repo).
+2. Go to [vercel.com](https://vercel.com), **Add New → Project**, and
+   import this GitHub repo. Vercel auto-detects Next.js — no config
+   needed.
+3. Before the first deploy, add these **Environment Variables** in
+   Vercel's project settings:
+   | Name | Value |
+   |---|---|
+   | `DATABASE_URL` | The Supabase connection string from step 1 |
+   | `SESSION_SECRET` | A long random string (e.g. `openssl rand -hex 32`) — not the dev placeholder |
+   | `ANTHROPIC_API_KEY` | Your key from [console.anthropic.com](https://console.anthropic.com/) (optional — omit to use the keyword fallback) |
+4. Deploy. Vercel builds and gives you a live URL.
+
+### 3. Create the schema and seed data on the live database
+
+Prisma needs to run once against the live database to create its tables.
+From your own machine (with `DATABASE_URL` in `.env` pointed at the same
+Supabase connection string):
+```bash
+npm run db:push
+npm run db:seed
+```
+After this, the live site at your Vercel URL should show the same 11
+sample listings as local development, and the seeded admin login
+(`admin@verra.app` / `admin123` — **change this password** before
+sharing the URL with anyone).
 
 ## Enabling real AI query understanding
 
@@ -155,8 +198,9 @@ than breaking; the results page always shows which one actually ran.
 - Replace the self-attestation checkbox with real identity verification
   (confirmation email, phone code, or document upload).
 - Replace the simulated map coordinates with real addresses, pulled from
-  OpenStreetMap and geocoded to real latitude/longitude (PostGIS).
-- Move from local SQLite to a hosted Postgres database (see above) and
-  deploy the app (e.g. to Vercel).
+  OpenStreetMap and geocoded to real latitude/longitude (PostGIS, which
+  Supabase supports as an extension).
+- Actually deploy it (see "Deploying" above) — the code is ready, this
+  just needs your Supabase/Vercel accounts and credentials.
 - Connect the homepage's "Generate Marketing Campaign" button to a real
   AI service.
