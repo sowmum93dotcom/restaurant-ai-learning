@@ -257,6 +257,14 @@ async function run(){
    await page.locator('#record-search').fill('coffee');await page.waitForFunction(()=>document.getElementById('record-count').textContent==='1 of 1 saved records');assert.equal(await page.locator('#catalogue-list .catalogue-item:visible').count(),1);
    await page.locator('#record-search').fill('');await page.waitForResponse(r=>r.url().includes('view=catalogue')&&new URL(r.url()).searchParams.get('q')===''&&r.status()===200);
    await page.locator('.catalogue-item button').filter({hasText:'Edit'}).click();
+   if(viewport.width===375){
+    await page.locator('#intelligence-run').click();await page.locator('#intelligence-status').filter({hasText:'Analysis complete. Review the findings.'}).waitFor();
+    await page.locator('#intelligence-results button').filter({hasText:'Mark findings reviewed'}).click();
+    await page.locator('#intelligence-results button:disabled').filter({hasText:'Findings reviewed'}).waitFor();
+    await page.reload();await page.locator('.catalogue-item button').filter({hasText:'Edit',exact:true}).click();
+    await page.locator('#intelligence-run').click();await page.locator('#intelligence-status').filter({hasText:'Current saved analysis reused.'}).waitFor();
+    assert.equal(await page.locator('#intelligence-results button:disabled').filter({hasText:'Findings reviewed'}).count(),1,'Review persists across refresh');
+   }
    await page.locator('#product-name').fill('Gate Coffee Updated');
    assert.equal(await page.locator('#product-availability').inputValue(),'available','Edit restores saved availability');
    await page.locator('#product-availability').selectOption('unavailable');

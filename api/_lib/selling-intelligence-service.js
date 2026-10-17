@@ -10,6 +10,7 @@ function editorProduct(saved,input,businessId){
  for(const [key,max] of Object.entries(limits))if(typeof input[key]!=='string'||input[key].length>max)throw Error('editor');
  if(input.classification!==null&&!categoryReference(input.classification))throw Error('category');
  const product={...(saved||{productId:'unsaved-draft',businessId}),...Object.fromEntries(Object.keys(limits).map(k=>[k,input[k].trim()])),classification:input.classification};
+ if(input.classification===null)delete product.classification;
  product.categoryAttributes=fields.apply(saved?.categoryAttributes,input.classification,input.categoryFields,{draft:true});
  if(!saved?.categoryAttributes&&!Object.keys(product.categoryAttributes.byCategory).length)delete product.categoryAttributes;
  return product;

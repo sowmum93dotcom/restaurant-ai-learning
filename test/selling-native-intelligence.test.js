@@ -29,6 +29,8 @@ test('completeness explains incomplete drafts and required category fields witho
  for(const f of result.findings)for(const key of ['ruleId','severity','field','explanation','suggestedCorrection','status'])assert.ok(f[key]);
  for(const c of ['9','10','11','39','81'])for(const f of fields.definition(c).fields){assert.equal(f.type,'string');assert.ok(f.validation.maxLength);assert.ok(f.labelKey);assert.ok(f.helpTextKey);}
  assert.deepEqual(fields.definition('1').fields,[]);
+ for(const pricing of [{mode:'quote'},{mode:'range',currency:'GBP',min:2,max:5}]){const structured=product({presentation:{variants:[{variantId:'v1',pricing}]}});assert.equal(native.analyze(input(structured)).findings.find(f=>f.ruleId==='variant-invalid').status,'passed');}
+
 });
 test('duplicates remain bounded and private to the authorised business',()=>{
  const p=product(),rows=Array.from({length:100},(_,i)=>product({productId:'p'+i}));
@@ -72,6 +74,9 @@ test('native intelligence HTTP API persists in SQL, reuses cache, audits review 
  assert.equal((await call({productId:'other-product'})).code,404);assert.equal((await call({productRevision:'old'})).code,409);
  assert.equal(await repo.getSellingIntelligence('other-owner',p.businessId,p.productId,first.body.analysis.inputHash),null);
  assert.deepEqual(await repo.getSellingIntelligenceMedia('other-owner',p.businessId,p),[]);
+ assert.equal((await client.query('SELECT count(*) AS n FROM demeos_selling_intelligence_events')).rows[0].n,2,'Retries do not duplicate audit events');
+ await client.query("UPDATE demeos_selling_intelligence SET result=jsonb_set(result,'{validUntil}','\"2000-01-01T00:00:00.000Z\"'::jsonb)");
+ const renewed=await call();assert.equal(renewed.body.cacheHit,false,'Expired evidence cannot be reused');assert.ok(Date.parse(renewed.body.analysis.validUntil)>Date.now());
  const current=(await repo.getKnownBusiness(p.businessId)).businessProfile;
  await repo.saveBusiness({...current,name:'Changed context'});
  assert.equal((await call({action:'review-intelligence',inputHash:first.body.analysis.inputHash,confirmed:true})).code,409);
