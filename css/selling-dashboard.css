@@ -178,3 +178,4 @@ dd { margin: 0; overflow-wrap: anywhere; }
 #record-count{color:var(--bo-muted);font-size:13px}
 
 .catalogue-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:.65rem;margin-block:1rem}.catalogue-filters label{min-width:0}.catalogue-filters select{width:100%;min-width:0}.catalogue-pagination{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-block:1rem}.catalogue-metadata{font-size:.85rem;overflow-wrap:anywhere}#catalogue-list .product-media-preview{max-width:112px;max-height:96px;object-fit:contain}#catalogue-list .catalogue-item{padding:1rem}#product-form{scroll-margin-top:1rem}
+#media-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr));gap:1rem}#media-list .catalogue-item{padding:1rem;min-width:0}#media-list .product-media-preview{display:block;width:100%;max-width:240px;height:150px;object-fit:contain}#media-list .catalogue-item button{margin:.25rem}
