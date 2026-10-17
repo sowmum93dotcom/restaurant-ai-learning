@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   const verifiedOnly = Boolean(body?.verifiedOnly);
 
   const userNeighborhood = findNeighborhood(neighborhoodId) ?? findNeighborhood("downtown")!;
-  const parsed = parseQuery(queryText);
+  const parsed = await parseQuery(queryText);
 
   const listings = await prisma.listing.findMany();
 

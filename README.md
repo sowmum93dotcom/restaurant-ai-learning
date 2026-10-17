@@ -17,7 +17,9 @@ static HTML/JS demo that stored everything in the browser's `localStorage`.
   placeholder, not a real AI call — see "What's NOT included yet" below).
 - **Search** (`/search`) — type what you want, get ranked results across
   restaurants and retail shops, with a plain-English explanation of why
-  each one matched.
+  each one matched. Query understanding uses a real Claude API call when
+  `ANTHROPIC_API_KEY` is set (see `lib/aiSearch.ts`), and falls back to
+  keyword matching otherwise — the results page shows which one ran.
 - **Owner Panel** (`/owner`) — sign up / sign in, then claim an existing
   business listing or add a new one.
 - **Admin Panel** (`/admin`) — sign in as an admin to review every
@@ -26,8 +28,9 @@ static HTML/JS demo that stored everything in the browser's `localStorage`.
 ## What's NOT included yet (on purpose)
 
 - Payments
-- Real AI query understanding (the search still uses simple keyword
-  matching server-side — see `lib/search.ts` — not a Claude API call yet)
+- An API key in this sandbox — real AI query understanding is wired up
+  (`lib/aiSearch.ts`) but needs you to set `ANTHROPIC_API_KEY`; without it,
+  search runs on the keyword-matching fallback in `lib/search.ts`
 - Real identity verification (an owner "claiming" a listing is still a
   self-attestation checkbox, not a confirmed email/phone/document check)
 - Real location data (listings use the same simulated map coordinates as
@@ -137,11 +140,18 @@ hosted Postgres database later (e.g. Supabase or Neon):
 No application code needs to change for this move — it was designed that
 way from the start.
 
+## Enabling real AI query understanding
+
+Set `ANTHROPIC_API_KEY` in `.env` (get a key at
+[console.anthropic.com](https://console.anthropic.com/)) and restart the
+dev server. Search will then call Claude (`claude-opus-5-5`) to extract
+filters from the query instead of keyword matching — no other config
+needed. If the call fails for any reason (bad key, network issue,
+rate limit), search automatically falls back to keyword matching rather
+than breaking; the results page always shows which one actually ran.
+
 ## Next steps (future phases)
 
-- Replace the keyword-matching query parser in `lib/search.ts` with a
-  real AI model call (Claude API) — see the Architecture Plan's
-  "Search & AI Pipeline" section.
 - Replace the self-attestation checkbox with real identity verification
   (confirmation email, phone code, or document upload).
 - Replace the simulated map coordinates with real addresses, pulled from

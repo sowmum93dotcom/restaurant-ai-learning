@@ -2,14 +2,14 @@
 // and ranking. This is the same logic the earlier static demo ran in the
 // browser, now run on the server against real database rows.
 //
-// The query-understanding step below is still simple keyword matching, not
-// a real AI model call — that's the next phase (see the Architecture Plan
-// doc's "Search & AI Pipeline" section). This phase's job is the real
-// backend + database; swapping this function's internals for a Claude API
-// call later won't require changing anything that calls it.
+// Query understanding tries a real Claude API call first (see
+// lib/aiSearch.ts) and falls back to the keyword matcher below if no API
+// key is configured, the call fails, or times out — search never breaks
+// just because the AI service is unavailable.
 
 import type { Listing } from "@prisma/client";
 import { findNeighborhood } from "@/lib/neighborhoods";
+import { parseQueryWithAI } from "@/lib/aiSearch";
 
 const TYPE_WORDS = [
   "italian", "pizza", "chinese", "japanese", "sushi", "mexican",
@@ -34,7 +34,9 @@ export type ParsedQuery = {
   wantsOpenNow: boolean;
 };
 
-export function parseQuery(text: string): ParsedQuery {
+export type ParsedQueryResult = ParsedQuery & { source: "ai" | "keyword" };
+
+function parseQueryKeyword(text: string): ParsedQuery {
   const lower = text.toLowerCase();
 
   const types = TYPE_WORDS.filter((word) => lower.includes(word));
@@ -50,6 +52,12 @@ export function parseQuery(text: string): ParsedQuery {
     lower.includes("open now") || lower.includes("open right now");
 
   return { rawText: text, types, tags, priceTier, wantsOpenNow };
+}
+
+export async function parseQuery(text: string): Promise<ParsedQueryResult> {
+  const aiResult = await parseQueryWithAI(text);
+  if (aiResult) return { ...aiResult, source: "ai" };
+  return { ...parseQueryKeyword(text), source: "keyword" };
 }
 
 export function computeOpenNow(hoursOpen: string, hoursClose: string): boolean {

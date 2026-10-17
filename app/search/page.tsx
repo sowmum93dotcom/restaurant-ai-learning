@@ -9,6 +9,7 @@ type ParsedQuery = {
   tags: string[];
   priceTier: number | null;
   wantsOpenNow: boolean;
+  source: "ai" | "keyword";
 };
 
 type ScoredListing = {
@@ -137,6 +138,17 @@ export default function SearchPage() {
           <section className="panel">
             <h2>Step 1 &amp; 2 — what the server understood</h2>
             <p>
+              <strong>Parsed by:</strong>{" "}
+              {parsed.source === "ai" ? (
+                <span className="chip" style={{ background: "#dff0d8", color: "#3c763d" }}>Claude AI</span>
+              ) : (
+                <span className="chip">keyword fallback</span>
+              )}
+              {parsed.source === "keyword" && (
+                <span className="hint"> — no ANTHROPIC_API_KEY configured, or the AI call failed</span>
+              )}
+            </p>
+            <p>
               <strong>Types detected:</strong>{" "}
               {parsed.types.length ? parsed.types.map((t) => <span className="chip" key={t}>{t}</span>) : "none"}
             </p>
@@ -184,7 +196,7 @@ export default function SearchPage() {
       </main>
 
       <footer>
-        <p>Verra — real backend, real database. Query understanding is still simple keyword matching for now.</p>
+        <p>Verra — real backend, real database. Query understanding uses Claude when ANTHROPIC_API_KEY is set, and falls back to keyword matching otherwise.</p>
       </footer>
     </>
   );
