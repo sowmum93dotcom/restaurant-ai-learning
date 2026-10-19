@@ -392,6 +392,7 @@ async function run(){
    assert.equal(stockProduct.history[0].changes[0].reason,'Initial stock count');
    await page.reload();
    await page.locator('#stock-list').filter({hasText:'Quantity: 12'}).waitFor();
+   await page.locator('#stock-list').filter({hasText:'Initial stock count'}).waitFor();
    await page.locator('#stock-quantity').fill('9');
    await page.locator('#stock-note').fill('Damaged units');
    await page.locator('#stock-save').click();
@@ -512,6 +513,7 @@ async function run(){
     await page.locator('#stock-save').click();await page.locator('#stock-feedback').filter({hasText:'Stock adjustment saved.'}).waitFor();
     assert.equal(Object.values((await repository.getVendorInventory('test-business-selling-a')).entries)[0].onHand,7);
     await page.reload();await page.locator('#stock-list').filter({hasText:'Quantity: 7'}).waitFor();
+    await page.locator('#stock-list').filter({hasText:'Preview count'}).waitFor();
     assert.equal((await repository.getVendorInventory('test-business-selling-a')).history[0].changes[0].reason,'Preview count');
     await page.goto(base+'/selling-vendor/product-catalogue');await page.locator('.catalogue-item').waitFor();
     page.once('dialog',dialog=>dialog.accept());

@@ -29,6 +29,17 @@ test('SQL catalogue search, filters, stable pages, literal search, isolation and
  assert.equal((await read({stock:'untracked'})).cataloguePage.total,61);
  const denied=response();await handler({method:'GET',identity:'owner-b',query:{businessId:'shop-a',view:'catalogue'}},denied);assert.equal(denied.code,403);
  const direct=await repo.getSellingCataloguePage({identity:'owner-b',businessId:'shop-a',profile,query:catalogue.parse(),stock:{}});assert.equal(direct.current,false);assert.equal(direct.products.length,0);
+ const inventory=require('../api/_lib/vendor-inventory'),savedProfile=(await repo.getKnownBusiness('shop-a')).businessProfile;
+ const adjustment=inventory.applyChanges(savedProfile,{},[{productId:'p-0000',variantId:'',onHand:4,lowStock:2,sku:'SKU-0',reason:'Preview count'},{productId:'p-0030',variantId:'',onHand:8,lowStock:2,sku:'SKU-30',reason:'Other page count'}]);
+ await repo.saveVendorInventory('owner-a','shop-a',savedProfile,0,adjustment.entries,adjustment.audit);
+ const stockPage=await read({productId:'p-0000'});
+ assert.equal(stockPage.inventory.rows.length,1);assert.equal(stockPage.inventory.rows[0].onHand,4);
+ assert.equal(stockPage.inventory.history.length,1,'Paginated stock keeps its saved audit batch');
+ assert.equal(stockPage.inventory.history[0].trusted_identity_id,'owner-a');
+ assert.deepEqual(stockPage.inventory.history[0].changes.map(e=>[e.productId,e.after,e.reason]),[['p-0000',4,'Preview count']],'Audit payload includes only products on this page');
+ const otherStockPage=await read({productId:'p-0030'});assert.deepEqual(otherStockPage.inventory.history[0].changes.map(e=>e.productId),['p-0030']);
+ assert.equal((await read({productId:'p-0060'})).inventory.history.length,0,'Unchanged products have no unrelated history');
+ assert.equal((await repo.getVendorInventory('shop-a')).history[0].changes.length,2,'Page filtering preserves the original audit record');
  const fresh=(await repo.getKnownBusiness('shop-a')).businessProfile;await repo.saveBusiness({...fresh,name:'Changed'});
  const stale=response();await handler({method:'GET',query:{businessId:'shop-a',view:'catalogue',sort:'name',offset:'25',snapshot:first.cataloguePage.snapshot}},stale);assert.equal(stale.code,409);assert.equal(stale.body.code,'catalogue-snapshot');
  }finally{await db.close();}

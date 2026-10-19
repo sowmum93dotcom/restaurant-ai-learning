@@ -88,7 +88,9 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
           business.cataloguePage={catalogueTotal:profile.products.length,total:page.total,offset:catalogueQuery.offset,limit:catalogueQuery.limit,snapshot,hasNext:catalogueQuery.offset+page.products.length<page.total};
         }
         const pageIds=new Set(business.products.map(p=>p.productId));
-        business.inventory=catalogueQuery?{revision:stock.revision,rows:rows.filter(r=>pageIds.has(r.productId)),history:[]}:{...stock,rows};
+        // Paginated workspaces still need the bounded ledger for visible products.
+        // Trim individual changes too: one batch can cover several catalogue pages.
+        business.inventory=catalogueQuery?{revision:stock.revision,rows:rows.filter(r=>pageIds.has(r.productId)),history:(stock.history||[]).map(batch=>({...batch,changes:(batch.changes||[]).filter(event=>pageIds.has(event.productId))})).filter(batch=>batch.changes.length)}:{...stock,rows};
         business.media=metadataOnly?[]:await media.listMedia(store,catalogueQuery?{...profile,products:profile.products.filter(p=>pageIds.has(p.productId))}:profile,backend);business.mediaCapabilities=media.capabilities(backend,env);
         if(orderQuery){const page=await store.getSellingOrderPage({identity:identity.trustedIdentityId,businessId,query:orderQuery});business.orders=page.orders;business.orderPage={total:page.total,nextCursor:page.nextCursor};}
         else business.orders=typeof store.getVendorOrders==='function'?await store.getVendorOrders(identity.trustedIdentityId,businessId):[];
