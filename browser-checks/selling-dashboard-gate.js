@@ -306,6 +306,14 @@ async function run(){
    await page.locator('#product-feedback').filter({hasText:'Product saved.'}).waitFor();
    await page.goto(base+'/selling-vendor/options-variants?businessId=vendor-a');
    await page.locator('#variant-form:visible').waitFor();
+   await page.locator('#variant-name').fill('Unfinished variant');
+   page.once('dialog',dialog=>dialog.dismiss());await page.locator('#variant-cancel').click();
+   assert.equal(await page.locator('#variant-name').inputValue(),'Unfinished variant','Declining clear preserves a new unsaved variant');
+   page.once('dialog',dialog=>dialog.dismiss());await page.locator('nav a[data-section=overview]').click();
+   assert.equal(await page.locator('#variant-name').inputValue(),'Unfinished variant','Declining navigation preserves variant work');
+   assert.match(page.url(),/options-variants/);
+   page.once('dialog',dialog=>dialog.accept());await page.locator('#variant-cancel').click();
+   assert.equal(await page.locator('#variant-name').inputValue(),'','Confirmed clear resets the variant form');
    await page.locator('#variant-name').fill('Small / Black');
    await page.locator('#variant-sku').fill('COFFEE-S');
    await page.locator('#variant-price').fill('4.50');
@@ -317,6 +325,9 @@ async function run(){
    assert.equal(savedVariant.name,'Small / Black');assert.equal(savedVariant.price,'4.50');
    await page.reload();await page.locator('.variant-item strong').filter({hasText:'Small / Black'}).waitFor();
    await page.locator('.variant-item button').filter({hasText:'Edit',exact:true}).click();
+   await page.locator('#variant-name').fill('Unfinished saved variant edit');
+   page.once('dialog',dialog=>dialog.dismiss());await page.locator('.variant-item button').filter({hasText:'Edit',exact:true}).click();
+   assert.equal(await page.locator('#variant-name').inputValue(),'Unfinished saved variant edit','Opening another edit cannot silently replace unsaved changes');
    await page.locator('#variant-name').fill('Medium / Black');await page.locator('#variant-price').fill('5.50');
    await page.locator('#variant-save').click();await page.locator('#variant-feedback').filter({hasText:'Variant saved.'}).waitFor();
    savedVariant=(await repository.getKnownBusiness('vendor-a')).businessProfile.products[0].variants[0];
