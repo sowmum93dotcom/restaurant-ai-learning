@@ -1956,6 +1956,163 @@
   ]
 };
  for(const [locale,values] of Object.entries(businessLocationCopy))["Choose the country where your business is based. Enter your business address below.", "Business country", "Street address", "Address line 2 (optional)", "City / town / locality", "State / province / region (if used)", "Postcode / ZIP (if used)", "Service / delivery area (optional)", "Your service area can be different from your business address.", "Phone with country calling code", "Include + and the country calling code, for example +44 20 7946 0123.", "Choose a country", "Business address"].forEach((key,index)=>packs[locale][key]=values[index]);
+ const visualRuntimeCopy={
+  "en": [
+    "AI suggestions",
+    "AI suggestions are unverified. Review each one before use.",
+    "Accept suggestion",
+    "Save edited suggestion",
+    "Reject suggestion",
+    "Use suggestion in editor",
+    "Visual analysis could not complete. Try again.",
+    "Sampled video frames only.",
+    "Suggested text",
+    "Needs review",
+    "Accepted",
+    "Edited",
+    "Rejected"
+  ],
+  "es": [
+    "Sugerencias de IA",
+    "Las sugerencias de IA no están verificadas. Revise cada una antes de usarla.",
+    "Aceptar sugerencia",
+    "Guardar sugerencia editada",
+    "Rechazar sugerencia",
+    "Usar sugerencia en el editor",
+    "No se pudo completar el análisis visual. Inténtelo de nuevo.",
+    "Solo fotogramas de vídeo seleccionados.",
+    "Texto sugerido",
+    "Requiere revisión",
+    "Aceptada",
+    "Editada",
+    "Rechazada"
+  ],
+  "fr": [
+    "Suggestions de l’IA",
+    "Les suggestions de l’IA ne sont pas vérifiées. Examinez chacune avant de l’utiliser.",
+    "Accepter la suggestion",
+    "Enregistrer la suggestion modifiée",
+    "Rejeter la suggestion",
+    "Utiliser la suggestion dans l’éditeur",
+    "L’analyse visuelle n’a pas pu aboutir. Réessayez.",
+    "Images vidéo échantillonnées uniquement.",
+    "Texte suggéré",
+    "À examiner",
+    "Acceptée",
+    "Modifiée",
+    "Rejetée"
+  ],
+  "ar": [
+    "اقتراحات الذكاء الاصطناعي",
+    "اقتراحات الذكاء الاصطناعي غير موثقة. راجع كل اقتراح قبل استخدامه.",
+    "قبول الاقتراح",
+    "حفظ الاقتراح المعدّل",
+    "رفض الاقتراح",
+    "استخدام الاقتراح في المحرر",
+    "تعذر إكمال التحليل البصري. حاول مرة أخرى.",
+    "إطارات فيديو مختارة فقط.",
+    "النص المقترح",
+    "تحتاج إلى مراجعة",
+    "مقبول",
+    "معدّل",
+    "مرفوض"
+  ],
+  "pt": [
+    "Sugestões de IA",
+    "As sugestões de IA não estão verificadas. Reveja cada uma antes de a usar.",
+    "Aceitar sugestão",
+    "Guardar sugestão editada",
+    "Rejeitar sugestão",
+    "Usar sugestão no editor",
+    "Não foi possível concluir a análise visual. Tente novamente.",
+    "Apenas fotogramas de vídeo selecionados.",
+    "Texto sugerido",
+    "Requer revisão",
+    "Aceite",
+    "Editada",
+    "Rejeitada"
+  ],
+  "zh": [
+    "AI建议",
+    "AI建议尚未验证。使用前请逐一审核。",
+    "接受建议",
+    "保存修改后的建议",
+    "拒绝建议",
+    "在编辑器中使用建议",
+    "视觉分析未能完成，请重试。",
+    "仅分析抽样的视频帧。",
+    "建议文本",
+    "需要审核",
+    "已接受",
+    "已修改",
+    "已拒绝"
+  ],
+  "hi": [
+    "AI सुझाव",
+    "AI सुझाव सत्यापित नहीं हैं। उपयोग से पहले हर सुझाव की समीक्षा करें।",
+    "सुझाव स्वीकार करें",
+    "संपादित सुझाव सहेजें",
+    "सुझाव अस्वीकार करें",
+    "संपादक में सुझाव उपयोग करें",
+    "दृश्य विश्लेषण पूरा नहीं हो सका। फिर से प्रयास करें।",
+    "केवल चुने हुए वीडियो फ़्रेम।",
+    "सुझाया गया पाठ",
+    "समीक्षा आवश्यक",
+    "स्वीकृत",
+    "संपादित",
+    "अस्वीकृत"
+  ],
+  "de": [
+    "KI-Vorschläge",
+    "KI-Vorschläge sind nicht verifiziert. Prüfen Sie jeden vor der Verwendung.",
+    "Vorschlag annehmen",
+    "Bearbeiteten Vorschlag speichern",
+    "Vorschlag ablehnen",
+    "Vorschlag im Editor verwenden",
+    "Die visuelle Analyse konnte nicht abgeschlossen werden. Versuchen Sie es erneut.",
+    "Nur ausgewählte Videobilder.",
+    "Vorgeschlagener Text",
+    "Prüfung erforderlich",
+    "Angenommen",
+    "Bearbeitet",
+    "Abgelehnt"
+  ],
+  "ja": [
+    "AIの提案",
+    "AIの提案は未検証です。使用前に一つずつ確認してください。",
+    "提案を承認",
+    "編集した提案を保存",
+    "提案を却下",
+    "エディターで提案を使用",
+    "画像解析を完了できませんでした。もう一度お試しください。",
+    "抽出した動画フレームのみ。",
+    "提案テキスト",
+    "確認が必要",
+    "承認済み",
+    "編集済み",
+    "却下済み"
+  ],
+  "tr": [
+    "Yapay zekâ önerileri",
+    "Yapay zekâ önerileri doğrulanmamıştır. Kullanmadan önce her birini inceleyin.",
+    "Öneriyi kabul et",
+    "Düzenlenen öneriyi kaydet",
+    "Öneriyi reddet",
+    "Öneriyi düzenleyicide kullan",
+    "Görsel analiz tamamlanamadı. Tekrar deneyin.",
+    "Yalnızca seçilen video kareleri.",
+    "Önerilen metin",
+    "İnceleme gerekli",
+    "Kabul edildi",
+    "Düzenlendi",
+    "Reddedildi"
+  ]
+};
+ for(const [locale,values] of Object.entries(visualRuntimeCopy))["AI suggestions", "AI suggestions are unverified. Review each one before use.", "Accept suggestion", "Save edited suggestion", "Reject suggestion", "Use suggestion in editor", "Visual analysis could not complete. Try again.", "Sampled video frames only.", "Suggested text", "Needs review", "Accepted", "Edited", "Rejected"].forEach((key,index)=>packs[locale][key]=values[index]);
+ const visualStatusCopy={"en": ["Add a ready product image or prepare video frames before visual analysis.", "No visual suggestions were returned."], "es": ["Añada una imagen del producto lista o prepare fotogramas de vídeo antes del análisis visual.", "No se devolvieron sugerencias visuales."], "fr": ["Ajoutez une image du produit prête ou préparez les images vidéo avant l’analyse visuelle.", "Aucune suggestion visuelle n’a été renvoyée."], "ar": ["أضف صورة منتج جاهزة أو جهّز إطارات الفيديو قبل التحليل البصري.", "لم يتم إرجاع اقتراحات بصرية."], "pt": ["Adicione uma imagem do produto pronta ou prepare fotogramas de vídeo antes da análise visual.", "Não foram devolvidas sugestões visuais."], "zh": ["请先添加已处理完成的商品图片或准备视频帧，再进行视觉分析。", "未返回视觉建议。"], "hi": ["दृश्य विश्लेषण से पहले तैयार उत्पाद चित्र जोड़ें या वीडियो फ़्रेम तैयार करें।", "कोई दृश्य सुझाव प्राप्त नहीं हुए।"], "de": ["Fügen Sie vor der visuellen Analyse ein fertiges Produktbild hinzu oder bereiten Sie Videobilder vor.", "Es wurden keine visuellen Vorschläge zurückgegeben."], "ja": ["画像解析の前に、処理済みの商品画像を追加するか動画フレームを準備してください。", "画像に関する提案はありませんでした。"], "tr": ["Görsel analizden önce hazır bir ürün görseli ekleyin veya video karelerini hazırlayın.", "Görsel öneri döndürülmedi."]};
+ for(const [locale,values] of Object.entries(visualStatusCopy))["Add a ready product image or prepare video frames before visual analysis.", "No visual suggestions were returned."].forEach((key,index)=>packs[locale][key]=values[index]);
+ const visualSavedCopy={"en": "Save product changes before visual analysis.", "es": "Guarde los cambios del producto antes del análisis visual.", "fr": "Enregistrez les modifications du produit avant l’analyse visuelle.", "ar": "احفظ تغييرات المنتج قبل التحليل البصري.", "pt": "Guarde as alterações do produto antes da análise visual.", "zh": "请先保存商品更改，再进行视觉分析。", "hi": "दृश्य विश्लेषण से पहले उत्पाद के बदलाव सहेजें।", "de": "Speichern Sie Produktänderungen vor der visuellen Analyse.", "ja": "画像解析の前に商品の変更を保存してください。", "tr": "Görsel analizden önce ürün değişikliklerini kaydedin."};
+ for(const [locale,value] of Object.entries(visualSavedCopy))packs[locale]["Save product changes before visual analysis."]=value;
  function resolve(value){return languages.find(l=>l.code===String(value||'').toLowerCase().split('-')[0])||languages[0];}
  function translate(locale,text,values={}){const source=aliases[text]||text;let result=packs[resolve(locale).code][source]||source;for(const [key,value] of Object.entries(values))result=result.replaceAll('{'+key+'}',String(value));return result;}
  const api=Object.freeze({languages,packs,aliases,resolve,translate});

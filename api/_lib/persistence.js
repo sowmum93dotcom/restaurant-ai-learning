@@ -16,6 +16,7 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
   }
 
   return {
+    createSellingModelLedger(){return require('./selling-model-ledger').createModelLedger(database);},
     async getCustomerPrivacyControls(trustedCustomerIdentityId) {
       const safeDefaults = { usePreferencesAsGuidance: false, useFeedbackAsGuidance: false };
       if (!isNonEmptyString(trustedCustomerIdentityId)) return safeDefaults;
@@ -873,7 +874,7 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
         WHERE i.business_id=$1 AND i.product_id=$3 AND i.input_hash=$4
         AND EXISTS(SELECT 1 FROM demeos_business_owners o WHERE o.business_id=$1 AND o.trusted_identity_id=$2)`,[businessId,identity,productId,inputHash])).rows[0]?.result||null;
     },
-    async saveSellingIntelligence(identity,profile,product,assets,stock,result,expectedReviewHash=null) {
+    async saveSellingIntelligence(identity,profile,product,assets,stock,result,expectedReviewHash=null,expectedResult=null) {
       await database.ensureSchema();
       const saved=await database.query(`WITH stored AS (INSERT INTO demeos_selling_intelligence(business_id,product_id,input_hash,result)
         SELECT b.business_id,$3,$4,$5::jsonb FROM demeos_businesses b
@@ -889,12 +890,17 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
         ON CONFLICT(business_id,product_id) DO UPDATE SET input_hash=EXCLUDED.input_hash,
           result=CASE WHEN $10::text IS NULL AND demeos_selling_intelligence.input_hash=EXCLUDED.input_hash AND (demeos_selling_intelligence.result->>'validUntil')::timestamptz>NOW() THEN demeos_selling_intelligence.result ELSE EXCLUDED.result END,
           updated_at=NOW()
-        WHERE $10::text IS NULL OR demeos_selling_intelligence.input_hash=$10
+        WHERE ($10::text IS NULL OR demeos_selling_intelligence.input_hash=$10)
+          AND ($11::jsonb IS NULL OR demeos_selling_intelligence.result=$11::jsonb)
         RETURNING business_id,product_id,input_hash,result), audited AS (
           INSERT INTO demeos_selling_intelligence_events(business_id,product_id,input_hash,action,actor,result)
           SELECT business_id,product_id,input_hash,CASE WHEN $10::text IS NULL THEN 'analyzed' ELSE 'vendor-reviewed' END,$2,result FROM stored
           ON CONFLICT DO NOTHING
-        ) SELECT result FROM stored`,[profile.businessId,identity,product.productId,result.inputHash,JSON.stringify(result),JSON.stringify(profile),stock.revision,(product.mediaGallery?.assetIds||[]).slice(0,65),JSON.stringify(Object.fromEntries(assets.map(a=>[a.assetId,a]))),expectedReviewHash]);
+        ), visual_audited AS (
+          INSERT INTO demeos_visual_execution_events(claim_id,business_id,input_hash,result)
+          SELECT $12,business_id,input_hash,jsonb_build_object('status','vendor-reviewed','actor',$2::text,'analysis',result) FROM stored
+          WHERE $11::jsonb IS NOT NULL AND result->'visual'->>'status'='succeeded'
+        ) SELECT result FROM stored`,[profile.businessId,identity,product.productId,result.inputHash,JSON.stringify(result),JSON.stringify(profile),stock.revision,(product.mediaGallery?.assetIds||[]).slice(0,65),JSON.stringify(Object.fromEntries(assets.map(a=>[a.assetId,a]))),expectedReviewHash,expectedResult?JSON.stringify(expectedResult):null,'review:'+require('node:crypto').randomUUID()]);
       return saved.rows[0]?.result||null;
     },
     async saveSellingProducts(identity,businessId,previousProfile,profile,evidenceGuard) {

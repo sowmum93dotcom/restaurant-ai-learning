@@ -1,0 +1,63 @@
+# DEMEOS private visual runtime
+
+This service runs DEMEOS-controlled Qwen3-VL weights on the existing raw GPU. It is not an external AI inference API. The existing Selling dashboard and 171-category classification remain in place.
+
+## What is implemented
+
+- A warm, dedicated GPU child loads only the pinned local safetensors snapshot `ebb281ec70b05090aa6165b016eac8ec08e71b17`, with BF16, SDPA, offline Hugging Face/Transformers settings and remote model code disabled.
+- A non-root supervisor accepts one job at a time and no inference queue. A job that reaches its deadline loses its whole worker process group via SIGKILL; a replacement must finish loading/warming before becoming ready. HTTP cancellation is not represented as proof of GPU cancellation.
+- The service has no SQL, permanent Blob, Hugging Face or cloud-provider credentials. The model child receives only a small explicit environment allowlist. Model files, checksum manifest and service code must be read-only to the service user. An external egress firewall/network policy is still required; offline library flags are not a network firewall.
+- HTTPS transport requires a server-only bearer secret plus HMAC of the entire request. Requests have unique IDs, expiry/deadline checks and replay rejection. Unauthenticated callers are rejected before their bodies are read. The service binds loopback by default. Eight connections and six MiB request size are the upper bounds.
+- The Vercel-side transport fetches only authorised private media from explicitly configured hosts, verifies byte counts and SHA256, and forwards **bytes, not URLs**. No endpoint, source URL, secret or executor can be supplied by a browser request. Ownership and product/media revisions are rechecked before forwarding and before returning results.
+- Maximum one image or four already extracted video frames, four MiB media total, 1,600-pixel input bounds, model preprocessing capped at 640 × 640 pixels per image, at most 256 generated tokens (within the existing 512-token ceiling), 32 KiB proposal output and the **unchanged 2,000 ms overall execution deadline**. Transfer and ledger time consume that existing deadline; the remote worker receives only the remaining time. Synchronized host clocks are required. No claim is made that this model meets that deadline yet.
+- A reviewed code hash binds `contracts.py`, `server.py` and `worker.py`; the weights manifest hash binds all 13 stored files. Code/model changes invalidate analysis caches and must be reviewed again.
+- Existing durable SQL budgets enforce one active business slot, 20 jobs/hour and validated cache reuse. Abandoned active slots remain unavailable until an operator reconciles them; the code does not blindly reset a possibly running GPU job after a web-function crash.
+
+## Dashboard behavior
+
+The existing **Analyse product** action still performs the DEMEOS-native deterministic checks. When the reviewed runtime is explicitly enabled for the authorised isolated Preview business, saved unchanged products also receive visual suggestions based on their main ready image (or the first ready image; otherwise, stored verified video frames).
+
+The server stores model provenance and suggestions in the existing owned intelligence record. Accept, edit and reject decisions are saved with exact-result compare-and-swap protection and immutable review events in the existing visual event table. No schema migration or backfill was added. Concurrent reviews cannot silently overwrite one another. A changed product, media, stock or runtime configuration invalidates the old analysis. Equivalent editor data reuses the exact stored product record, avoiding incorrect revision failures from JSON object key ordering.
+
+An accepted title/description can be copied into the existing editor. **The vendor must still save the product separately.** Analysis/review does not change products, prices, stock, access grants, safety checks, publication or customer visibility. Model statements remain unverified suggestions, not independent validation evidence. Category classification continues through the existing 171-category pipeline; this worker does not invent a category registry or claim verified image-based category accuracy.
+
+All added review controls and unavailable/empty-result messages use the existing ten Selling languages and Arabic RTL layout. This is the main vendor dashboard, not a separate dashboard.
+
+## Current activation state
+
+**Disabled by default; Production execution is rejected even if the enable setting is present.** No GPU service was installed or activated by this implementation turn. The owner previously demonstrated a synthetic red-image result; this new supervisor, transport, prompt, output schema and complete deadline still require genuine GPU acceptance.
+
+Do not fill review IDs with placeholder approvals. Activation requires an actual licence/security review, trusted source verification of weights, the exact deployed code hash, a reviewed end-to-end benchmark, correct Preview database isolation, the existing owner grant, a private HTTPS route and controlled network egress. Do not extend the two-second boundary to make a benchmark pass. If it cannot pass, retain unavailable behavior and bring measured evidence for a separately reviewed asynchronous/deadline change.
+
+## Operator preparation on the existing pod
+
+These are a runbook, not commands that have already run. Resume the saved pod/volume first; use current connection details. Reuse `/workspace/demeos-model` rather than downloading the weights again. The existing source copy has not yet passed full integrity verification.
+
+1. Review source, dependencies/base image and the trusted snapshot checksums. `inspect_model.py MODEL_DIRECTORY NEW_MANIFEST_PATH` records local checksums with progress, but **cannot establish their trust or source by itself**. Compare the stored weight hashes and configuration/tokenizer files with a trusted copy of the pinned publisher snapshot. Preserve the resulting manifest as root-owned read-only input.
+2. Run `sh tools/visual-runtime/prepare.sh` from the reviewed checkout. It prepares `/opt/demeos-visual-runtime`, a dedicated `demeos-ai` user, a venv reusing the image's existing PyTorch and a secret file readable only by that user. It does not start inference, a Pod or any paid infrastructure. It does not replace the base PyTorch installation. Its small primary dependency pin set is not a substitute for reviewing the complete base image and installed environment; `environment.txt` records the result.
+3. If the Global volume is writable to the service user, use `stage_model.py SOURCE TRUSTED_MANIFEST NEW_LOCAL_DIRECTORY` as root. It copies existing bytes with progress, verifies their checksums and creates a root-owned read-only-to-service local model. It does not download weights or overwrite an existing destination. Keep a root-owned read-only copy of the manifest outside the writable volume too. Check the 30 GB container disk has enough space. After a Pod stop the local copy may need restoring from the Global volume.
+4. Set `DEMEOS_MODEL_PATH`, `DEMEOS_WEIGHTS_MANIFEST` and `DEMEOS_RUNTIME_SECRET_FILE` to the reviewed read-only local files. Start `server.py` with the prepared venv as **demeos-ai**, not root. Expose the loopback listener through a reviewed private HTTPS proxy. An explicitly acknowledged provider TLS proxy can use `DEMEOS_RUNTIME_BIND=0.0.0.0` and `DEMEOS_RUNTIME_BEHIND_TLS_PROXY=true`; that flag does not configure TLS, firewall rules or permission by itself. Never expose the port over unencrypted public HTTP or log auth headers/request bodies.
+5. Use authenticated `/healthz` to confirm the exact ready model, code and weights hashes. Health metadata is not product accuracy or performance evidence. Run `benchmark.py` against the real HTTPS route with the secret **file**, reviewed weights manifest and reviewed runtime code hash, writing a new report path. The script stops on the first failed case and never enables execution. Its optional loopback mode measures hardware only, not Vercel-to-GPU latency. Reports explicitly leave product/multilingual accuracy and activation approval false.
+6. Finish the authorised-media, 171-category, ten-language, hallucination/abstention, latency and VRAM acceptance against genuine GPU output, including the actual Vercel-to-service route. Record approval evidence and enforce the existing $35/24-GPU-hour evaluation cap outside this process. **Stopping the Python service does not stop Runpod compute billing.**
+
+Keep the secret out of chat, screenshots, Git and model requests. Configure it through the normal secure environment/secret workflow. Do not give the model worker permanent database, Blob or provider keys.
+
+### Vercel Preview-only composition
+
+Only after acceptance, configure branch-scoped Preview values:
+
+- Existing isolated Preview database settings and exact test business/owner authorisation.
+- `DEMEOS_VISUAL_RUNTIME_ENABLED=true`.
+- `DEMEOS_VISUAL_RUNTIME_ORIGIN`: reviewed HTTPS origin, no path/query/userinfo.
+- `DEMEOS_VISUAL_RUNTIME_HOST`: that exact hostname.
+- `DEMEOS_VISUAL_RUNTIME_SECRET`: the secret securely matching the service secret file.
+- `DEMEOS_VISUAL_MEDIA_HOSTS`: comma-separated exact private storage hosts, no wildcard.
+- `DEMEOS_VISUAL_RUNTIME_MANIFEST`: JSON with `operator: "DEMEOS"`, `modelId: "Qwen3-VL-4B-Instruct"`, pinned `modelVersion`, reviewed `weightsManifestHash` and `runtimeCodeHash`, actual `licenceReviewId`, `securityReviewId`, `benchmarkReviewId`, `benchmarkTimeoutMs: 2000` and reviewed capabilities (`image-semantics` and/or `video-frame-semantics`).
+
+Removing the enable setting disables new model execution without touching product data. Changing review/model/code metadata creates a new cache identity. No browser flag can enable the runtime, and no Production configuration is added here.
+
+## Verification evidence
+
+Automated coverage exercises real local SQL, HTTP authentication/replay limits, transport signing/media hashes, ownership, cache/revision checks, per-proposal persistence/audit, and process-group termination. **The subprocess and model responses in those tests are explicitly labelled fixtures, not genuine GPU inference.** The Python supervisor tests do not import Torch or download weights.
+
+The browser gate exercises the shipped dashboard/API with fixture suggestions at mobile and desktop widths, all ten languages, accepting/editing/rejecting, reload persistence, and explicit transfer into the unsaved editor. Ordinary native analysis remains available with model execution disabled. The run summary in `docs/business-workspace/pr708-private-runtime.md` distinguishes local checks from outstanding deployed/GPU acceptance.

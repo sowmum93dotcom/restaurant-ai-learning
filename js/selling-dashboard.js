@@ -133,12 +133,33 @@
     function renderIntelligence(){
       const result=intelligenceResult;if(!result)return;
       const analysis=result.analysis,box=$('intelligence-results');box.replaceChildren();
-      if(!analysis.model?.available){const status=doc.createElement('p');status.className='catalogue-metadata';status.dataset.visualStatus='unavailable';status.textContent=t('Visual recognition is unavailable. No authorised model is deployed.');box.append(status);}
+      if(!analysis.model?.available){const status=doc.createElement('p');status.className='catalogue-metadata';status.dataset.visualStatus='unavailable';status.textContent=t(analysis.visual?.code==='save-product-first'?'Save product changes before visual analysis.':analysis.visual?.code==='verified-media-required'?'Add a ready product image or prepare video frames before visual analysis.':analysis.visual?'Visual analysis could not complete. Try again.':'Visual recognition is unavailable. No authorised model is deployed.');box.append(status);}
       const summary=doc.createElement('p');summary.textContent=t(intelligenceReadiness[analysis.readiness])+'. '+t(intelligenceClassification[analysis.classification.outcome]);box.append(summary);
       const provenance=doc.createElement('p');provenance.className='catalogue-metadata';provenance.textContent=[analysis.rulesVersion,analysis.registryVersion,new Date(analysis.analyzedAt).toLocaleString(language),t(result.persisted?'Saved analysis':'Unsaved draft analysis')].join(' · ');box.append(provenance);
       for(const candidate of analysis.classification.candidates){
         const button=doc.createElement('button');button.type='button';button.textContent=t('Use suggested category')+': '+candidate.categoryId+' · '+candidate.categoryName;
         button.addEventListener('click',()=>{$('product-category').value=candidate.categoryId;renderCategoryFields();rememberDraft();clearIntelligence();$('intelligence-status').textContent=t('Category selected in editor. Review fields and save to apply.');});box.append(button);
+      }
+      if(analysis.visual?.status==='succeeded'){
+        const heading=doc.createElement('h4');heading.textContent=t('AI suggestions');box.append(heading);
+        const note=doc.createElement('p');note.textContent=t('AI suggestions are unverified. Review each one before use.');box.append(note);
+        const model=doc.createElement('p');model.className='catalogue-metadata';model.textContent=analysis.visual.provenance.modelId+' · '+analysis.visual.provenance.modelVersion;box.append(model);
+        if(analysis.visual.output.proposals.some(p=>p.kind==='video-summary')){const warning=doc.createElement('p');warning.textContent=t('Sampled video frames only.');box.append(warning);}
+        if(!analysis.visual.proposals.length){const empty=doc.createElement('p');empty.textContent=t('No visual suggestions were returned.');box.append(empty);}
+        for(const proposal of analysis.visual.proposals){
+          const row=doc.createElement('article');row.className='catalogue-item';row.dataset.visualProposal=proposal.proposalId;
+          const label=doc.createElement('label');label.textContent=t('Suggested text');
+          const value=doc.createElement('textarea');value.value=proposal.review.value||proposal.value;value.maxLength=proposal.kind==='title'?200:2000;value.readOnly=proposal.review.state!=='pending';label.append(value);row.append(label);
+          const state=doc.createElement('p');state.textContent=t({pending:'Needs review',accepted:'Accepted',edited:'Edited',rejected:'Rejected'}[proposal.review.state]);row.append(state);
+          if(proposal.review.state==='pending')for(const [decision,title] of [['accepted','Accept suggestion'],['edited','Save edited suggestion'],['rejected','Reject suggestion']]){
+            const button=doc.createElement('button');button.type='button';button.textContent=t(title);button.addEventListener('click',()=>runIntelligence(true,{proposalId:proposal.proposalId,decision,...(decision==='edited'?{value:value.value.trim()}:{})}));row.append(button);
+          }
+          const field={title:'product-name',description:'product-description'}[proposal.kind];
+          if(field&&['accepted','edited'].includes(proposal.review.state)){
+            const use=doc.createElement('button');use.type='button';use.textContent=t('Use suggestion in editor');use.addEventListener('click',()=>{$(field).value=proposal.review.value;rememberDraft();clearIntelligence();$(field).focus();});row.append(use);
+          }
+          box.append(row);
+        }
       }
       const list=doc.createElement('ul');
       for(const finding of analysis.findings.filter(f=>f.status!=='passed')){const item=doc.createElement('li');const categoryField=context.categories.fieldDefinitions.find(d=>d.categoryId===$('product-category').value)?.fields.find(f=>'categoryAttributes.'+f.key===finding.field);item.textContent=t(intelligenceMessages[finding.ruleId]||'Review and correct this field.')+(categoryField?' '+t(categoryField.label):'');item.dataset.intelligenceRule=finding.ruleId;
@@ -146,14 +167,14 @@
         if(fieldId&&$(fieldId)&&finding.field!=='variants'){const fix=doc.createElement('button');fix.type='button';fix.textContent=t('Edit product');fix.addEventListener('click',()=>$(fieldId).focus());item.append(' ',fix);}list.append(item);}
       box.append(list);
       for(const duplicate of analysis.possibleDuplicates){const line=doc.createElement('p');line.textContent=t('Possible duplicate')+': '+duplicate.name+' · '+duplicate.productId;box.append(line);}
-      if(result.persisted){const review=doc.createElement('button');review.type='button';review.textContent=t(analysis.review.status==='reviewed'?'Findings reviewed':'Mark findings reviewed');review.disabled=analysis.review.status==='reviewed';review.addEventListener('click',()=>runIntelligence(true));box.append(review);}
+      if(result.persisted){const review=doc.createElement('button');review.type='button';review.textContent=t(analysis.review.status==='reviewed'?'Findings reviewed':'Mark findings reviewed');review.disabled=analysis.review.status==='reviewed'||Boolean(analysis.visual?.proposals?.some(p=>p.review.state==='pending'));review.addEventListener('click',()=>runIntelligence(true));box.append(review);}
     }
-    async function runIntelligence(review=false){
+    async function runIntelligence(review=false,decision=null){
       if(productMutationPending||!context?.business)return;
       const businessId=context.business.businessId,identity=clerk.user.id,seq=++intelligenceSequence;
       const saved=context.business.products.find(p=>p.productId===$('product-id').value);
       const body={action:review?'review-intelligence':'analyze-product',productId:saved?.productId||'unsaved-draft',productRevision:saved?.authoringRevision||'new'};
-      if(review){body.inputHash=intelligenceResult?.analysis.inputHash;body.confirmed=true;}
+      if(review){body.inputHash=intelligenceResult?.analysis.inputHash;body.confirmed=true;if(decision)Object.assign(body,decision);}
       else body.editor={name:$('product-name').value,description:$('product-description').value,sku:$('product-sku').value,price:$('product-price').value,priceMode:$('product-price-mode').value,availability:$('product-availability').value,classification:productClassification(),categoryFields:readCategoryFields()};
       $('intelligence-run').disabled=true;$('intelligence-status').textContent=t('Analysing product…');
       try{

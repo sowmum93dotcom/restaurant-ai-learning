@@ -15,7 +15,7 @@ function editorProduct(saved,input,businessId){
  if(!saved?.categoryAttributes&&!Object.keys(product.categoryAttributes.byCategory).length)delete product.categoryAttributes;
  return product;
 }
-async function run({store,profile,identity,environment,body}){
+async function run({store,profile,identity,environment,body,visualRunner=null}){
  const id=body.productId;
  if(typeof id!=='string'||!/^[a-zA-Z0-9_-]{1,120}$/.test(id)||!['analyze-product','review-intelligence'].includes(body.action))return {status:400,error:'Check the required fields and permitted values.'};
  const saved=profile.products.find(p=>p.productId===id);
@@ -26,20 +26,42 @@ async function run({store,profile,identity,environment,body}){
  if(!product)return {status:400,error:'Check the required fields and permitted values.'};
  const assets=saved?await store.getSellingIntelligenceMedia(identity,profile.businessId,saved):[];
  const stock=await store.getVendorInventory(profile.businessId);
+ const persisted=Boolean(saved&&native.hash(product)===native.hash(saved));
+ // Equivalent editor objects can have a different JSON key order from stored JSONB.
+ // Bind execution to the exact saved record, rather than an editor reconstruction.
+ if(persisted)product=saved;
  const input={profile,product,assets,stock,environment,identity};
- const inputHash=native.fingerprint(input),persisted=Boolean(saved&&native.hash(product)===native.hash(saved));
+ const inputHash=visualRunner?native.hash([native.fingerprint(input),visualRunner.signature]):native.fingerprint(input);
  const storedCache=persisted?await store.getSellingIntelligence(identity,profile.businessId,id,inputHash):null;
  const cached=storedCache&&Date.parse(storedCache.validUntil)>Date.now()?storedCache:null;
  if(body.action==='review-intelligence'){
   if(body.editor!==undefined||!cached||body.inputHash!==inputHash||body.confirmed!==true)return {status:409,error:'Information changed. Reload and review.'};
-  if(cached.review.status==='reviewed')return {status:200,analysis:cached,cacheHit:true,persisted:true};
-  const result={...cached,review:{status:'reviewed',actions:[{action:'vendor-reviewed',actor:identity,at:new Date().toISOString(),inputHash}]}};
-  const stored=await store.saveSellingIntelligence(identity,profile,saved,assets,stock,result,inputHash);
+  let result;
+  if(body.proposalId!==undefined){
+   if(typeof body.proposalId!=='string'||!cached.visual?.proposals?.some(p=>p.proposalId===body.proposalId))return {status:400,error:'Check the required fields and permitted values.'};
+   try{
+    const boundary=require('./selling-model-boundary');
+    const proposal=cached.visual.proposals.find(p=>p.proposalId===body.proposalId);
+    const reviewed=boundary.reviewProposal(proposal,{actor:identity,businessId:profile.businessId,productId:id,productRevision:catalogueRevision(saved),decision:body.decision,value:body.value});
+    if(body.decision==='edited'&&!boundary.validateVisualOutput({schemaVersion:2,outputSchema:boundary.VISUAL_CONTRACT.outputSchema,proposals:[{kind:proposal.kind,value:body.value,evidence:proposal.evidence,confidence:null}]},{media:assets.flatMap(a=>a.kind==='image'?[{contentHash:a.processedHash}]:(a.videoFrames?.frames||[]).map(f=>({contentHash:f.contentHash})))}))throw Error('invalid-edit');
+    result={...cached,visual:{...cached.visual,proposals:cached.visual.proposals.map(p=>p.proposalId===proposal.proposalId?reviewed:p)},review:{...cached.review,actions:[...cached.review.actions,{action:'visual-proposal-'+body.decision,proposalId:proposal.proposalId,actor:identity,at:new Date().toISOString(),inputHash}]}};
+   }catch{return {status:400,error:'Check the required fields and permitted values.'};}
+  }else{
+   if(cached.visual?.proposals?.some(p=>p.review.state==='pending'))return {status:409,error:'Information changed. Reload and review.'};
+   if(cached.review.status==='reviewed')return {status:200,analysis:cached,cacheHit:true,persisted:true};
+   result={...cached,review:{status:'reviewed',actions:[...cached.review.actions,{action:'vendor-reviewed',actor:identity,at:new Date().toISOString(),inputHash}]}};
+  }
+  const stored=await store.saveSellingIntelligence(identity,profile,saved,assets,stock,result,inputHash,cached);
   return stored?{status:200,analysis:stored,persisted:true,cacheHit:true}:{status:409,error:'Information changed. Reload and review.'};
  }
  if(cached)return {status:200,analysis:cached,cacheHit:true,persisted:true};
- const result=native.analyze(input);
- if(!persisted)return {status:200,analysis:result,cacheHit:false,persisted:false};
+ const result=native.analyze(input);result.inputHash=inputHash;
+ if(persisted&&visualRunner){
+  result.visual=await visualRunner.analyze({profile,product,assets,identity});
+  result.model=result.visual.status==='succeeded'?{available:true,modelId:result.visual.provenance.modelId,modelVersion:result.visual.provenance.modelVersion}:{available:false,reason:result.visual.code||'model-execution-failed'};
+  if(result.visual.status!=='succeeded')result.validUntil=new Date(Date.now()+5000).toISOString();
+ }
+ if(!persisted){if(visualRunner)result.visual={status:'unavailable',code:'save-product-first'};return {status:200,analysis:result,cacheHit:false,persisted:false};}
  const stored=await store.saveSellingIntelligence(identity,profile,saved,assets,stock,result);
  return stored?{status:200,analysis:stored,cacheHit:false,persisted:true}:{status:409,error:'Information changed. Reload and review.'};
 }

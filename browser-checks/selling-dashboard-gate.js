@@ -49,6 +49,7 @@ async function run(){
  await repository.createBusinessForOwner('owner-a',profile('pending',false));
  await repository.createBusinessForOwner('owner-a',{...profile('test-business-selling-a',false),name:'DEMEOS Test Vendor',applicationAccess:undefined});
  await repository.createBusinessForOwner('owner-b',profile('vendor-b'));
+ let visualRuntimeFixture=false;
  let env={VERCEL_ENV:'production'},failure=false,delay=0,submissionEvidence;
  const reviewedFixtureEvidence=async request=>({...request,outcome:'passed',independentlyVerified:true,authorityDecisionId:'isolated-browser-authority-fixture',capabilityVersion:'fixture-v1',expiresAt:new Date(Date.now()+3600000).toISOString()});
  // A genuine reservation from the existing service in isolated SQL, not a fabricated order row.
@@ -61,7 +62,14 @@ async function run(){
  const orderSnapshot=(await repository.getKnownBusiness('vendor-b')).businessProfile;
  const genuineOrder=await orderService.reserve('order-customer','browser-order-000001',{businessId:'vendor-b',productId:'order-shirt',variantId:'medium',selection:{size:'M'},quantity:2,catalogueRevision:orderInventory.catalogueRevision(orderSnapshot),stockIdentity:orderInventory.stockIdentity(orderProfile.products[0],orderProfile.products[0].presentation.variants[0])});
 
- const handler=createHandler({resolveSubmissionEvidence:request=>submissionEvidence?submissionEvidence(request):null,repository:()=>repository,environment:()=>({...env,DEMEOS_MEDIA_UPLOAD_SECRET:process.env.DEMEOS_MEDIA_UPLOAD_SECRET}),mediaBackend:()=>disk,authenticate:async req=>{
+ // Declared model fixture for UI/proposal persistence only; never real GPU evidence.
+ const visualRunnerFactory=({store,environment})=>visualRuntimeFixture?{signature:'browser-visual-fixture-v1',async analyze({profile,product,assets,identity}){
+  const boundary=require('../api/_lib/selling-model-boundary'),readiness=require('../api/_lib/selling-visual-readiness');
+  const selection=require('../api/_lib/selling-visual-runtime').selectMedia(product,assets);
+  const input={schemaVersion:2,inputSchema:boundary.VISUAL_CONTRACT.inputSchema,...selection,businessId:profile.businessId,productId:product.productId,productRevision:require('../api/_lib/vendor-inventory').catalogueRevision(product),mediaRevision:readiness.mediaRevision(assets),text:product.name};
+  return boundary.createExecutionAdapter({manifest:{operator:'DEMEOS',modelId:'browser-fixture-not-a-model',modelVersion:'1',licenceReviewId:'fixture-only',securityReviewId:'fixture-only',capabilities:['image-semantics']},ledger:store.createSellingModelLedger(),authorize:readiness.createVisualAuthorizer({store,environment:()=>environment}),runtime:{execute:async()=>({schemaVersion:2,outputSchema:boundary.VISUAL_CONTRACT.outputSchema,proposals:[['title','Fixture suggested title'],['description','Fixture suggested description'],['image-description','Fixture image description']].map(([kind,value])=>({kind,value,evidence:[selection.media[0].contentHash],confidence:null}))})}}).execute(input,identity);
+ }}:null;
+ const handler=createHandler({visualRunnerFactory,resolveSubmissionEvidence:request=>submissionEvidence?submissionEvidence(request):null,repository:()=>repository,environment:()=>({...env,DEMEOS_MEDIA_UPLOAD_SECRET:process.env.DEMEOS_MEDIA_UPLOAD_SECRET}),mediaBackend:()=>disk,authenticate:async req=>{
   if(delay)await new Promise(r=>setTimeout(r,delay));
   if(failure)throw Error('Simulated data boundary failure');
   const id=req.headers.cookie?.match(/gate-owner=(owner-[a-z]+)/)?.[1];return id?{trustedIdentityId:id}:null;
@@ -465,6 +473,37 @@ async function run(){
     const previewMediaId=(await repository.getKnownBusiness('test-business-selling-a')).businessProfile.products[0].mediaGallery.assetIds[0];
     await page.reload();await page.waitForFunction(()=>document.querySelector('#media-list img')?.naturalWidth>0);
     await submissionJourney('test-business-selling-a');
+    visualRuntimeFixture=true;
+    await page.goto(base+'/selling-vendor/product-catalogue');await page.locator('#catalogue-list article button').filter({hasText:'Edit',exact:true}).first().click();
+    const beforeVisual=(await repository.getKnownBusiness('test-business-selling-a')).businessProfile;
+    await page.locator('#intelligence-run').click();await page.locator('[data-visual-proposal]').first().waitFor();
+    assert.equal(await page.locator('[data-visual-proposal]').count(),3);
+    const visualCopy=require('../js/selling-dashboard-copy');
+    for(const width of [375,1440]){
+     await page.setViewportSize({width,height:1000});
+     for(const locale of visualCopy.languages){
+      await page.locator('#dashboard-language').selectOption(locale.code);
+      assert.equal(await page.locator('[data-visual-proposal]').count(),3);
+      assert.equal(await page.locator('#intelligence-results').getByRole('button',{name:visualCopy.translate(locale.code,'Accept suggestion'),exact:true}).count(),3);
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+     }
+     await page.locator('#dashboard-language').selectOption('en');
+     await page.screenshot({path:path.join(artifacts,'demeos-selling-visual-proposal-fixture-'+width+'.png'),fullPage:true});
+    }
+    await page.setViewportSize(viewport);
+    await page.locator('[data-visual-proposal]').nth(0).getByRole('button',{name:'Accept suggestion',exact:true}).click();await page.locator('[data-visual-proposal]').nth(0).getByText('Accepted',{exact:true}).waitFor();
+    await page.locator('[data-visual-proposal]').nth(1).locator('textarea').fill('Owner corrected fixture description');
+    await page.locator('[data-visual-proposal]').nth(1).getByRole('button',{name:'Save edited suggestion',exact:true}).click();await page.locator('[data-visual-proposal]').nth(1).getByText('Edited',{exact:true}).waitFor();
+    await page.locator('[data-visual-proposal]').nth(2).getByRole('button',{name:'Reject suggestion',exact:true}).click();await page.locator('[data-visual-proposal]').nth(2).getByText('Rejected',{exact:true}).waitFor();
+    await page.reload();await page.locator('#catalogue-list article button').filter({hasText:'Edit',exact:true}).first().click();await page.locator('#intelligence-run').click();await page.locator('[data-visual-proposal]').first().waitFor();
+    assert.equal(await page.locator('[data-visual-proposal]').nth(1).locator('textarea').inputValue(),'Owner corrected fixture description');
+    assert.deepEqual((await repository.getKnownBusiness('test-business-selling-a')).businessProfile,beforeVisual,'Review does not edit or publish products');
+    await page.locator('[data-visual-proposal]').nth(0).getByRole('button',{name:'Use suggestion in editor',exact:true}).click();assert.equal(await page.locator('#product-name').inputValue(),'Fixture suggested title');
+    assert.deepEqual((await repository.getKnownBusiness('test-business-selling-a')).businessProfile,beforeVisual,'Applying an accepted suggestion only changes the unsaved editor');
+    page.once('dialog',dialog=>dialog.accept());await page.locator('#product-cancel').click();visualRuntimeFixture=false;
+    await page.goto(base+'/selling-vendor/images-videos');await page.locator('#media-form:visible').waitFor();
+    console.log('Visual proposal fixture UI: ten locales, mobile/desktop, accept/edit/reject, reload and explicit editor transfer passed');
+
    page.once('dialog',dialog=>dialog.accept());await page.locator('#media-list button').filter({hasText:'Remove',exact:true}).click();
     await page.locator('#media-feedback').filter({hasText:'Media removed from product.'}).waitFor();
     assert.equal((await repository.getBusinessMediaAsset('test-business-selling-a',previewMediaId)).state,'archived');

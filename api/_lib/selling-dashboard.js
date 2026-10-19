@@ -33,7 +33,7 @@ function businessSummary(profile, env, identityId) {
     products:(Array.isArray(profile.products)?profile.products:[]).map(p=>({productId:p.productId,authoringRevision:catalogueRevision(p),name:p.name,description:p.description,price:p.price,priceMode:p.priceMode,availability:p.availability||'contact',mediaGallery:p.mediaGallery||{assetIds:[],mainAssetId:''},stockQuantity:Number.isSafeInteger(p.stockQuantity)?p.stockQuantity:null,stockHistory:Array.isArray(p.stockHistory)?p.stockHistory:[],sku:p.sku||'',variants:variantSummaries(p),classification:p.classification||null,categoryAttributes:p.categoryAttributes||null,submission:p.submission||null}))};
 }
 
-function createHandler({authenticate=authentication.resolveTrustedIdentityFromRequest, repository=()=>persistence.getRepository(), environment=()=>process.env,mediaBackend=media.mediaBackend,resolveSubmissionEvidence}={}) {
+function createHandler({authenticate=authentication.resolveTrustedIdentityFromRequest, repository=()=>persistence.getRepository(), environment=()=>process.env,mediaBackend=media.mediaBackend,resolveSubmissionEvidence,visualRunnerFactory=require('./selling-visual-runtime').createConfiguredVisualRunner}={}) {
   return async function sellingDashboard(req, res) {
     res.setHeader('Cache-Control', 'private, no-store');
     res.setHeader('Vercel-CDN-Cache-Control', 'no-store');
@@ -67,7 +67,7 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
         if(!businessId||!business)return res.status(403).json({error:'Select your business.'});
         const profile=(await store.getKnownBusiness(businessId))?.businessProfile;
         if(!profile||!businessSummary(profile,env,identity.trustedIdentityId))return res.status(403).json({error:'Business access unavailable.'});
-        const result=await require('./selling-intelligence-service').run({store,profile,identity:identity.trustedIdentityId,environment:env,body:req.body});
+        const result=await require('./selling-intelligence-service').run({store,profile,identity:identity.trustedIdentityId,environment:env,body:req.body,visualRunner:visualRunnerFactory({store,environment:env,backend})});
         const {status,...body}=result;return res.status(status).json(body);
       }
       let catalogueQuery=null,orderQuery=null;
