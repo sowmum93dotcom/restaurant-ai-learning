@@ -33,7 +33,7 @@ test('business logo uses actual decoded bytes, SQL ownership, replacement, remov
    const withDraft=(await repo.getKnownBusiness(id)).businessProfile;
    await repo.saveSellingProducts('owner',id,withDraft,{...withDraft,products:[{businessId:id,productId:'draft',name:'',description:'',priceMode:'contact',price:'',customerVisible:false}]});
    const current=(await repo.getKnownBusiness(id)).businessProfile,saved=response();
-   await createHandler({authenticate:async()=>({trustedIdentityId:'owner'}),environment:()=>env,repository:()=>repo,mediaBackend:()=>disk})({method:'POST',query:{businessId:id},body:{action:'save-business-details',catalogueRevision:catalogueRevision(current),ownerAccuracyConfirmed:true,details:{name:'Saved Shop Updated',location:'London',productsServices:'Updated facts',customerContinuation:{email:'shop@example.com',phone:'',website:''}}}},saved);
+   await createHandler({authenticate:async()=>({trustedIdentityId:'owner'}),environment:()=>env,repository:()=>repo,mediaBackend:()=>disk})({method:'POST',query:{businessId:id},body:{action:'save-business-details',catalogueRevision:catalogueRevision(current),ownerAccuracyConfirmed:true,details:{name:'Saved Shop Updated',businessAddress:{countryCode:'GB',addressLine1:'10 Market Street',addressLine2:'',locality:'London',region:'',postalCode:''},serviceArea:'',productsServices:'Updated facts',customerContinuation:{email:'shop@example.com',phone:'',website:''}}}},saved);
    assert.equal(saved.statusCode,200,'Unchanged incomplete drafts do not block business profile edits');
    const afterEdit=(await repo.getKnownBusiness(id)).businessProfile;assert.equal(afterEdit.logoAssetId,item.assetId);assert.equal(afterEdit.products[0].name,'');assert.equal(afterEdit.name,'Saved Shop Updated');
 

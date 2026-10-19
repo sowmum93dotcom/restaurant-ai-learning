@@ -13,6 +13,7 @@ const submissions=require('./selling-submissions');
 const categories=require('./marketing-agent-categories');
 const catalogue=require('./selling-catalogue');
 const categoryFields=require('./selling-category-fields');
+const businessLocation=require('../../js/selling-business-location');
 
 function variantSummaries(product){
  const legacy=(product.variants||[]).map(v=>({variantId:v.variantId,name:v.name,sku:v.sku||'',price:v.price||'',availability:v.availability||'contact',inheritsPrice:!v.price}));
@@ -28,7 +29,7 @@ function businessSummary(profile, env, identityId) {
   // has its own authority and never changes the real applicationAccess field.
   if (environment === 'live' && !applicationAccess({businessProfile:profile}, id).selling) return null;
   if(!environment)return null;
-  return {businessId:id,name:profile.name||'Unnamed business',type:profile.type||'',location:profile.location||'',dataEnvironment:environment,catalogueRevision:catalogueRevision(profile),
+  return {businessId:id,name:profile.name||'Unnamed business',type:profile.type||'',location:businessLocation.summary(profile.businessAddress)||profile.location||'',businessAddress:businessLocation.normalize(profile.businessAddress),serviceArea:profile.serviceArea||'',dataEnvironment:environment,catalogueRevision:catalogueRevision(profile),
     products:(Array.isArray(profile.products)?profile.products:[]).map(p=>({productId:p.productId,authoringRevision:catalogueRevision(p),name:p.name,description:p.description,price:p.price,priceMode:p.priceMode,availability:p.availability||'contact',mediaGallery:p.mediaGallery||{assetIds:[],mainAssetId:''},stockQuantity:Number.isSafeInteger(p.stockQuantity)?p.stockQuantity:null,stockHistory:Array.isArray(p.stockHistory)?p.stockHistory:[],sku:p.sku||'',variants:variantSummaries(p),classification:p.classification||null,categoryAttributes:p.categoryAttributes||null,submission:p.submission||null}))};
 }
 
@@ -49,7 +50,7 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
       const store = repository();
       // SQL ownership relationship is authoritative, never a role/header/URL claim.
       const owned = await store.getOwnedBusinessProfiles(identity.trustedIdentityId);
-      const businesses = owned.map(profile=>businessSummary({...profile,products:[]},env,identity.trustedIdentityId)).filter(Boolean).map(({products,catalogueRevision,...summary})=>summary);
+      const businesses = owned.map(profile=>businessSummary({...profile,products:[]},env,identity.trustedIdentityId)).filter(Boolean).map(({products,catalogueRevision,businessAddress,serviceArea,...summary})=>summary);
       if (selected && !businesses.some(b=>b.businessId===selected)) return res.status(403).json({error:'Selling access is unavailable for this business.'});
       const businessId = selected || (businesses.length === 1 ? businesses[0].businessId : null);
       let business = null;
@@ -96,7 +97,7 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
         // Do not synthesize an approval status or expose private registration metadata.
         business.logo=await media.readLogo(store,profile,backend);
         business.logoUploads=(typeof store.getBusinessMediaAssets==='function'?await store.getBusinessMediaAssets(businessId,100):[]).filter(a=>a.purpose==='brand'&&a.brandReference==='primary-brand'&&a.kind==='image'&&a.relatedEntityId===businessId&&['processing','ready','failed'].includes(a.state)&&a.assetId!==profile.logoAssetId).map(a=>({assetId:a.assetId,state:a.state}));
-        business.identity={name:profile.name||'',type:profile.type||'',location:profile.location||'',description:profile.productsServices||'',contact:business.details.customerContinuation,informationStatus:business.details.informationStatus};
+        business.identity={name:profile.name||'',type:profile.type||'',location:business.location,businessAddress:business.businessAddress,serviceArea:business.serviceArea,description:profile.productsServices||'',contact:business.details.customerContinuation,informationStatus:business.details.informationStatus};
         business.summary={draftProducts:profile.products.filter(p=>!p.submission||p.submission.state==='draft').length,correctionProducts:profile.products.filter(p=>p.submission?.state==='changes-required').length,lowStockProducts:Object.values(stockByProduct).filter(r=>r.status==='low').length,outOfStockProducts:Object.values(stockByProduct).filter(r=>r.status==='sold-out').length,mediaAttention:typeof store.getSellingMediaAttentionCount==='function'?await store.getSellingMediaAttentionCount(identity.trustedIdentityId,businessId):business.media.filter(a=>a.state!=='ready'||!a.linked).length,products:profile.products.length,availableProducts:profile.products.filter(p=>p.availability==='available').length,variants:(profile.products||[]).reduce((sum,p)=>sum+(p.variants?.length||0)+(p.presentation?.variants?.length||0),0),trackedStockRows:rows.filter(r=>r.onHand!==null).length,recentOrders:business.orders.length};
         if(metadataOnly){business.products=[];business.inventory={revision:stock.revision,rows:[],history:[]};}
       }
@@ -105,15 +106,16 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
         const action=req.body?.action;
         if(action==='save-business-details'){
           const details=req.body.details,original=(await store.getKnownBusiness(businessId))?.businessProfile;
-          if(!details||typeof details!=='object'||Array.isArray(details)||Object.keys(details).some(k=>!['name','location','productsServices','customerContinuation'].includes(k))||req.body.ownerAccuracyConfirmed!==true)return res.status(400).json({error:'Confirm the accuracy of the permitted business details.'});
+          if(!details||typeof details!=='object'||Array.isArray(details)||Object.keys(details).some(k=>!['name','businessAddress','serviceArea','productsServices','customerContinuation'].includes(k))||req.body.ownerAccuracyConfirmed!==true)return res.status(400).json({error:'Confirm the accuracy of the permitted business details.'});
           if(req.body.catalogueRevision!==catalogueRevision(original))return res.status(409).json({error:'Business changed. Reload before saving.'});
-          if(['name','location'].some(k=>typeof details[k]!=='string'||!details[k].trim()||details[k].trim().length>200)||typeof details.productsServices!=='string'||details.productsServices.trim().length>2000)return res.status(400).json({error:'Enter a business name and location, and keep the description within 2000 characters.'});
-          const next={...original,name:details.name.trim(),location:details.location.trim(),productsServices:details.productsServices.trim()};
+          const address=businessLocation.normalize(details.businessAddress);
+          if(!address||typeof details.serviceArea!=='string'||details.serviceArea.trim().length>500||['name'].some(k=>typeof details[k]!=='string'||!details[k].trim()||details[k].trim().length>200)||typeof details.productsServices!=='string'||details.productsServices.trim().length>2000)return res.status(400).json({error:'Enter a business name and location, and keep the description within 2000 characters.'});
+          const next={...original,name:details.name.trim(),businessAddress:address,serviceArea:details.serviceArea.trim(),location:businessLocation.summary(address),productsServices:details.productsServices.trim()};
           if(details.customerContinuation!==undefined){
             const contact=details.customerContinuation;
             if(!contact||typeof contact!=='object'||Array.isArray(contact)||Object.keys(contact).some(k=>!['email','phone','website'].includes(k))||['email','phone','website'].some(k=>typeof contact[k]!=='string'||contact[k].length>({email:320,phone:100,website:500}[k])))return res.status(400).json({error:'Enter valid contact details.'});
             const {email,phone,website}=Object.fromEntries(Object.entries(contact).map(([k,v])=>[k,v.trim()]));
-            if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||phone&&!/^\+?[0-9 ()-]{6,30}$/.test(phone))return res.status(400).json({error:'Enter valid contact details.'});
+            if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||!businessLocation.internationalPhone(phone))return res.status(400).json({error:'Enter valid contact details.'});
             if(website){try{const url=new URL(website);if(!['https:','http:'].includes(url.protocol)||url.username||url.password)throw Error();}catch{return res.status(400).json({error:'Enter a valid website address.'});}}
             // Contact values are ordinary owner facts. Existing continuation routes,
             // ownership, model, registration and administrative grants stay authoritative.

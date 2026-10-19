@@ -28,16 +28,22 @@
     let categoryDraftValues={},orderCursor='',orderPrevious=[];
     const productSections=new Set(['product-catalogue','images-videos','options-variants','stock-history']);
     const catalogueFilters=['category','state','validation','availability','stock','sort'];
-    const i18n=win.DEMEOSSellingCopy;
+    const i18n=win.DEMEOSSellingCopy,location=win.DEMEOSSellingLocation;
     try{language=i18n.resolve(win.localStorage.getItem('demeos-customer-language')).code;}catch{}
     const t=(text,values)=>i18n.translate(language,text,values);
     const apiError=(response,result)=>t(result?.error?.includes('reserved stock')?'Reserved stock prevents this change.':response.status===401?'Sign in again to restore access.':response.status===403?'Selling access unavailable':response.status===409?'Information changed. Reload and review.':response.status===400?'Check the required fields and permitted values.':'The service could not complete this action. Please retry.');
     const failureMessage=error=>['TypeError','SyntaxError','AbortError','TimeoutError'].includes(error?.name)?t('The service could not complete this action. Please retry.'):error?.message||t('The service could not complete this action. Please retry.');
+    function renderCountries(){
+      const select=$('business-edit-countryCode'),selected=select.value;
+      const placeholder=doc.createElement('option');placeholder.value='';placeholder.textContent=t('Choose a country');
+      const options=location.countries.map(code=>{const option=doc.createElement('option');option.value=code;option.textContent=location.flag(code)+' '+location.countryName(code,language);return option;}).sort((a,b)=>a.textContent.slice(5).localeCompare(b.textContent.slice(5),language));
+      select.replaceChildren(placeholder,...options);select.value=selected;
+    }
     const staticText=[];
     const walker=doc.createTreeWalker(doc.body,4);
     for(let node;node=walker.nextNode();)if(node.textContent.trim()&&!['SCRIPT','STYLE'].includes(node.parentElement?.tagName))staticText.push({node,source:node.textContent.trim()});
     const staticAttributes=Array.from(doc.querySelectorAll('[aria-label],[alt]')).flatMap(node=>['aria-label','alt'].filter(attr=>node.hasAttribute(attr)).map(attr=>({node,attr,source:node.getAttribute(attr)})));
-    function translateStatic(){$('media-filename').textContent=$('media-file').files[0]?.name||t('No file selected.');doc.title=t('Selling Vendor')+' | DEMEOS';for(const {node,source} of staticText)node.textContent=t(source);for(const {node,attr,source} of staticAttributes)node.setAttribute(attr,t(source));$('logo-filename').textContent=$('logo-file').files[0]?.name||t('No file selected.');doc.documentElement.dir=i18n.resolve(language).direction;translateSubmissions();renderIntelligence();if(intelligenceResult)$('intelligence-status').textContent=t('Analysis complete. Review the findings.');$('product-form-title').textContent=t($('product-id').value?'Edit product':'Add product');$('variant-form-title').textContent=t($('variant-id').value?'Edit variant':'Add variant');}
+    function translateStatic(){renderCountries();$('media-filename').textContent=$('media-file').files[0]?.name||t('No file selected.');doc.title=t('Selling Vendor')+' | DEMEOS';for(const {node,source} of staticText)node.textContent=t(source);for(const {node,attr,source} of staticAttributes)node.setAttribute(attr,t(source));$('logo-filename').textContent=$('logo-file').files[0]?.name||t('No file selected.');doc.documentElement.dir=i18n.resolve(language).direction;translateSubmissions();renderIntelligence();if(intelligenceResult)$('intelligence-status').textContent=t('Analysis complete. Review the findings.');$('product-form-title').textContent=t($('product-id').value?'Edit product':'Add product');$('variant-form-title').textContent=t($('variant-id').value?'Edit variant':'Add variant');}
     $('dashboard-language').replaceChildren(...i18n.languages.map(locale=>{const option=doc.createElement('option');option.value=locale.code;option.textContent=locale.name;return option;}));
     const sectionCopy=()=>Object.fromEntries(Object.entries(sections).map(([key,values])=>[key,values.map(value=>t(value))]));
     const submissionCopy=key=>(win.DEMEOSSellingSubmissionCopy?.[language]||win.DEMEOSSellingSubmissionCopy?.en||{})[key]||key;
@@ -196,7 +202,7 @@
         if(['processing','ready'].includes(asset.state)){const resume=doc.createElement('button');resume.type='button';resume.textContent=t('Resume processing');resume.addEventListener('click',()=>changeLogo('resume-logo',{assetId:asset.assetId}));row.append(resume);}
         $('logo-pending').append(row);
       }
-      $('business-details').textContent=business?[business.type,business.location].filter(Boolean).join(' · '):t('Only businesses authorized for your account are listed.');
+      $('business-details').textContent=business?[business.type,business.businessAddress?location.flag(business.businessAddress.countryCode)+' '+location.summary(business.businessAddress,language):t('Business address')+': '+t('Not provided')].filter(Boolean).join(' · '):t('Only businesses authorized for your account are listed.');
       $('environment-label').textContent=business?(business.dataEnvironment==='test'?t('Test business · isolated data'):t('Selling access approved')):'';
       $('environment-label').dataset.environment=business?.dataEnvironment||'';
       const section=currentSection(),copy=sectionCopy()[section];translateSubmissions();
@@ -315,7 +321,7 @@
         if(!preserveForms){$('stock-quantity').value=row?.onHand===null||!row?'':String(row.onHand);$('stock-low-stock').value=String(row?.lowStock??5);}
       }
       $('business-tools').hidden=section!=='my-business'||!business;
-      if(section==='my-business'&&business&&!preserveForms){$('business-edit-name').value=business.name;$('business-edit-location').value=business.location;$('business-edit-description').value=business.details.productsServices;for(const field of ['email','phone','website'])$('business-edit-'+field).value=business.details.customerContinuation[field]||'';$('business-accuracy').checked=false;}
+      if(section==='my-business'&&business&&!preserveForms){$('business-edit-name').value=business.name;for(const field of location.fields)$('business-edit-'+field).value=business.businessAddress?.[field]||'';$('business-edit-serviceArea').value=business.serviceArea||'';$('business-edit-description').value=business.details.productsServices;for(const field of ['email','phone','website'])$('business-edit-'+field).value=business.details.customerContinuation[field]||'';$('business-accuracy').checked=false;}
       $('overview-tools').hidden=section!=='overview'||!business;$('overview-facts').hidden=section!=='overview'||!business;$('overview-facts').replaceChildren();
       if(section==='overview'&&business)for(const [key,label] of [['products',t('Saved products')],['availableProducts',t('Available products')],['variants',t('Saved variants')],['draftProducts',t('Draft products')],['correctionProducts',t('Products needing correction')],['lowStockProducts',t('Low-stock products')],['outOfStockProducts',t('Out-of-stock products')],['mediaAttention',t('Media requiring attention')],['trackedStockRows',t('Tracked stock rows')],['recentOrders',t('Recent private orders (up to 50)')]]){const dt=doc.createElement('dt'),dd=doc.createElement('dd');dt.textContent=t(label);dd.textContent=String(business.summary[key]);dd.dataset.metric=key;$('overview-facts').append(dt,dd);}
       $('orders-tools').hidden=section!=='private-orders'||!business;$('orders-list').replaceChildren();
@@ -330,7 +336,7 @@
       }
       $('business-facts').hidden=section!=='my-business'||!business;
       $('business-facts').replaceChildren();
-      if(section==='my-business'&&business)for(const [label,value] of [[t('Business ID'),business.businessId],[t('Business name'),business.name],[t('Business type'),business.type||t('Not provided')],[t('Location'),business.location||t('Not provided')],[t('Selling access'),business.dataEnvironment==='test'?t('Test access authorized'):t('Approved')],[t('Description'),business.details.productsServices||t('Not provided')],[t('Email'),business.details.customerContinuation.email||t('Not provided')],[t('Phone'),business.details.customerContinuation.phone||t('Not provided')],[t('Website'),business.details.customerContinuation.website||t('Not provided')]]){
+      if(section==='my-business'&&business)for(const [label,value] of [[t('Business ID'),business.businessId],[t('Business name'),business.name],[t('Business type'),business.type||t('Not provided')],[t('Business country'),business.businessAddress?location.flag(business.businessAddress.countryCode)+' '+location.countryName(business.businessAddress.countryCode,language):t('Not provided')],[t('Business address'),business.businessAddress?[business.businessAddress.addressLine1,business.businessAddress.addressLine2,location.summary(business.businessAddress,language),business.businessAddress.postalCode].filter(Boolean).join(', '):t('Not provided')],[t('Service / delivery area (optional)'),business.serviceArea||t('Not provided')],[t('Selling access'),business.dataEnvironment==='test'?t('Test access authorized'):t('Approved')],[t('Description'),business.details.productsServices||t('Not provided')],[t('Email'),business.details.customerContinuation.email||t('Not provided')],[t('Phone'),business.details.customerContinuation.phone||t('Not provided')],[t('Website'),business.details.customerContinuation.website||t('Not provided')]]){
         const term=doc.createElement('dt'),detail=doc.createElement('dd');term.textContent=t(label);detail.textContent=value;$('business-facts').append(term,detail);
       }
       filterRecords();
@@ -560,13 +566,14 @@
     $('business-form').addEventListener('submit',async event=>{
       event.preventDefault();if(productMutationPending||!context?.business)return;
       const businessId=context.business.businessId,identity=clerk.user.id,catalogueRevision=context.business.catalogueRevision;
-      const details={name:$('business-edit-name').value.trim(),location:$('business-edit-location').value.trim(),productsServices:$('business-edit-description').value.trim(),customerContinuation:Object.fromEntries(['email','phone','website'].map(field=>[field,$('business-edit-'+field).value.trim()]))},ownerAccuracyConfirmed=$('business-accuracy').checked;
+      const details={name:$('business-edit-name').value.trim(),businessAddress:Object.fromEntries(location.fields.map(field=>[field,$('business-edit-'+field).value.trim()])),serviceArea:$('business-edit-serviceArea').value.trim(),productsServices:$('business-edit-description').value.trim(),customerContinuation:Object.fromEntries(['email','phone','website'].map(field=>[field,$('business-edit-'+field).value.trim()]))},ownerAccuracyConfirmed=$('business-accuracy').checked;
+      if(!location.normalize(details.businessAddress)||!location.internationalPhone(details.customerContinuation.phone)){$('business-feedback').textContent=t('Check the required fields and permitted values.');return;}
       mutationBusy(true);$('business-feedback').textContent=t('Saving business details…');
       try{
         const token=await bounded(clerk.session.getToken());if(!token)throw Error(t('Sign in again before saving.'));
         const response=await win.fetch('/api/businesses?resource=selling-dashboard&businessId='+encodeURIComponent(businessId),{method:'POST',credentials:'same-origin',signal:win.AbortSignal.timeout(30000),headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({action:'save-business-details',details,ownerAccuracyConfirmed,catalogueRevision})});
         const result=await response.json();if(!response.ok)throw Error(apiError(response,result));
-        await load();if(clerk.user?.id!==identity||context?.business?.businessId!==businessId||context.business.name!==details.name||context.business.location!==details.location||context.business.details.productsServices!==details.productsServices||['email','phone','website'].some(field=>(context.business.details.customerContinuation[field]||'')!==details.customerContinuation[field]))throw Error(t('Business details changed, but could not be verified. Reload before continuing.'));
+        await load();if(clerk.user?.id!==identity||context?.business?.businessId!==businessId||context.business.name!==details.name||location.fields.some(field=>context.business.businessAddress?.[field]!==details.businessAddress[field])||context.business.serviceArea!==details.serviceArea||context.business.details.productsServices!==details.productsServices||['email','phone','website'].some(field=>(context.business.details.customerContinuation[field]||'')!==details.customerContinuation[field]))throw Error(t('Business details changed, but could not be verified. Reload before continuing.'));
         $('business-feedback').textContent=t('Business details saved.');
       }catch(error){$('business-feedback').textContent=failureMessage(error);}
       finally{mutationBusy(false);}

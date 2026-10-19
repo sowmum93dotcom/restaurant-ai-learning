@@ -9,6 +9,7 @@
   <script defer src="/js/demeos-language-registry.js"></script>
   <script defer src="/js/selling-dashboard-copy.js"></script>
   <script defer src="/js/selling-submission-copy.js"></script>
+  <script defer src="/js/selling-business-location.js"></script>
   <script defer src="/js/selling-dashboard.js"></script>
 </head>
 <body>
@@ -72,10 +73,19 @@
           <form id="business-form">
             <h3>Edit permitted business details</h3>
             <label>Business display name<input id="business-edit-name" required maxlength="200"></label>
-            <label>Location<input id="business-edit-location" required maxlength="200"></label>
+            <p id="business-address-help">Choose the country where your business is based. Enter your business address below.</p>
+            <label>Business country<select id="business-edit-countryCode" autocomplete="country" required aria-describedby="business-address-help"></select></label>
+            <label>Street address<input id="business-edit-addressLine1" autocomplete="address-line1" required maxlength="200"></label>
+            <label>Address line 2 (optional)<input id="business-edit-addressLine2" autocomplete="address-line2" maxlength="200"></label>
+            <label>City / town / locality<input id="business-edit-locality" autocomplete="address-level2" required maxlength="100"></label>
+            <label>State / province / region (if used)<input id="business-edit-region" autocomplete="address-level1" maxlength="100"></label>
+            <label>Postcode / ZIP (if used)<input id="business-edit-postalCode" autocomplete="postal-code" maxlength="32"></label>
+            <label>Service / delivery area (optional)<textarea id="business-edit-serviceArea" maxlength="500"></textarea></label>
+            <p>Your service area can be different from your business address.</p>
             <label>Business description<textarea id="business-edit-description" maxlength="2000"></textarea></label>
             <label>Email<input id="business-edit-email" type="email" maxlength="320"></label>
-            <label>Phone<input id="business-edit-phone" type="tel" maxlength="100"></label>
+            <label>Phone with country calling code<input id="business-edit-phone" type="tel" autocomplete="tel" maxlength="30" aria-describedby="business-phone-help"></label>
+            <p id="business-phone-help">Include + and the country calling code, for example +44 20 7946 0123.</p>
             <label>Website<input id="business-edit-website" type="url" maxlength="500"></label>
             <label class="accuracy-confirmation"><input id="business-accuracy" type="checkbox" required> I confirm these business details are current and accurate.</label>
             <button id="business-save" type="submit">Save business details</button>

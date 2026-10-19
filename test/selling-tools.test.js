@@ -32,7 +32,7 @@ test('permitted business edits, structured variants, genuine overview/orders and
    assert.deepEqual(context.summary,{draftProducts:1,correctionProducts:0,lowStockProducts:0,outOfStockProducts:0,mediaAttention:0,products:1,availableProducts:1,variants:1,trackedStockRows:1,recentOrders:preview?0:1});
    if(order){assert.equal(context.orders[0].id,order.id);assert.equal(context.orders[0].line.totalPriceMinor,4300);assert.equal(context.orders[0].customerId,undefined);}else assert.deepEqual(context.orders,[],'Controlled test records cannot fabricate real orders');
    assert.equal((await call({},'owner-b','GET')).code,403);assert.deepEqual(await repository.getVendorOrders('owner-b',businessId),[]);
-   const details={name:'Updated Shop',location:'Greenwich, London',productsServices:'Independent clothing shop'};
+   const details={name:'Updated Shop',businessAddress:{countryCode:'GB',addressLine1:'10 Market Street',addressLine2:'',locality:'London',region:'',postalCode:''},serviceArea:'Greenwich',productsServices:'Independent clothing shop'};
    assert.equal((await call({action:'save-business-details',details,ownerAccuracyConfirmed:false})).code,400);
    assert.equal((await call({action:'save-business-details',details:{...details,applicationAccess:{selling:true}},ownerAccuracyConfirmed:true})).code,400);
    assert.equal((await call({action:'save-business-details',details,ownerAccuracyConfirmed:true},'owner-b')).code,403);

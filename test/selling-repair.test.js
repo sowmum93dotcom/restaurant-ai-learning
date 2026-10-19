@@ -36,7 +36,7 @@ test('contact edits and resumed verified binary uploads enforce SQL ownership in
   await repo.createBusinessForOwner(owner,{businessId,name:'Repair business',type:'Shop',location:'London',preparationModel:'selling',applicationAccess:isolated?undefined:{selling:true},customerContinuation:{routes:[],bookingLink:'https://example.test/booking'},products:[]});
   const saved=async()=>(await repo.getKnownBusiness(businessId)).businessProfile;
   async function call(action,product,body={},identity=owner){const res={setHeader(){},status(n){this.code=n;return this;},json(v){this.body=v;return this;}};await createHandler({repository:()=>repo,environment:()=>env,mediaBackend:()=>disk,authenticate:async()=>({trustedIdentityId:identity})})({method:'POST',query:{businessId},body:{action,product,catalogueRevision:catalogueRevision(await saved()),...body}},res);return res;}
-  const details={name:'Repair shop',location:'London',productsServices:'Real fixture description',customerContinuation:{email:'seller@example.test',phone:'+44 20 7946 0123',website:'https://example.test'}};
+  const details={name:'Repair shop',businessAddress:{countryCode:'GB',addressLine1:'10 Market Street',addressLine2:'',locality:'London',region:'',postalCode:''},serviceArea:'',productsServices:'Real fixture description',customerContinuation:{email:'seller@example.test',phone:'+44 20 7946 0123',website:'https://example.test'}};
   assert.equal((await call('save-business-details',null,{details,ownerAccuracyConfirmed:true})).code,200);
   assert.equal((await saved()).customerContinuation.email,details.customerContinuation.email);
   assert.equal((await saved()).customerContinuation.bookingLink,'https://example.test/booking');

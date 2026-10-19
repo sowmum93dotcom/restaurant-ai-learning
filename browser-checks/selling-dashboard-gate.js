@@ -204,11 +204,23 @@ async function run(){
    }
    await page.goto(base+'/selling-vendor/my-business?businessId=vendor-a');await page.locator('#business-form:visible').waitFor();
    await verifyLogo(page,repository,'vendor-a');
-   await page.locator('#business-edit-name').fill('North & Field Updated');await page.locator('#business-edit-location').fill('Greenwich, London');await page.locator('#business-edit-email').fill('seller@example.test');await page.locator('#business-edit-phone').fill('+44 20 7946 0123');await page.locator('#business-edit-website').fill('https://example.test');
+   await page.locator('#business-edit-name').fill('North & Field Updated');await page.locator('#business-edit-countryCode').selectOption('GB');await page.locator('#business-edit-addressLine1').fill('10 Market Street');await page.locator('#business-edit-locality').fill('London');await page.locator('#business-edit-serviceArea').fill('Greenwich');await page.locator('#business-edit-email').fill('seller@example.test');await page.locator('#business-edit-phone').fill('+44 20 7946 0123');await page.locator('#business-edit-website').fill('https://example.test');
+   assert.equal(await page.locator('#business-edit-countryCode option').count(),250);
+   if(viewport.width===375){
+    for(const locale of require('../js/selling-dashboard-copy').languages){
+     await page.locator('#dashboard-language').selectOption(locale.code);
+     assert.equal(await page.locator('#business-edit-countryCode').inputValue(),'GB','Language switching preserves chosen country');
+     assert.equal(await page.locator('#business-edit-addressLine1').inputValue(),'10 Market Street','Language switching preserves unsaved address');
+     assert.match(await page.locator('#business-edit-countryCode option[value=GB]').innerText(),new RegExp(require('../js/selling-business-location').countryName('GB',locale.code)));
+    }
+    await page.locator('#dashboard-language').selectOption('en');
+   }
    await page.locator('#business-edit-description').fill('Independent coffee shop');await page.locator('#business-accuracy').check();
    await page.locator('#business-save').click();await page.locator('#business-feedback').filter({hasText:'Business details saved.'}).waitFor();
    assert.equal((await repository.getKnownBusiness('vendor-a')).businessProfile.name,'North & Field Updated');
    await page.reload();await page.locator('#business-name').filter({hasText:'North & Field Updated'}).waitFor();
+   await page.screenshot({path:path.join(artifacts,'demeos-selling-business-address-'+viewport.width+'.png'),fullPage:true});
+   assert.equal(await page.locator('#business-edit-countryCode').inputValue(),'GB');assert.equal(await page.locator('#business-edit-addressLine1').inputValue(),'10 Market Street');assert.equal(await page.locator('#business-edit-serviceArea').inputValue(),'Greenwich');assert.match(await page.locator('#business-details').innerText(),/United Kingdom/);
    assert.equal(await page.locator('#business-edit-email').inputValue(),'seller@example.test');assert.equal(await page.locator('#business-edit-website').inputValue(),'https://example.test');
    await page.locator('#business-edit-name').fill('North & Field');await page.locator('#business-accuracy').check();await page.locator('#business-save').click();await page.locator('#business-feedback').filter({hasText:'Business details saved.'}).waitFor();
    console.log('Browser gate: live catalogue CRUD '+viewport.width+'px');
@@ -420,6 +432,7 @@ async function run(){
    if(viewport.width===375){
     await page.goto(base+'/selling-vendor/my-business');await page.locator('#business-form:visible').waitFor();
     await verifyLogo(page,repository,'test-business-selling-a');
+    await page.locator('#business-edit-countryCode').selectOption('GB');await page.locator('#business-edit-addressLine1').fill('10 Market Street');await page.locator('#business-edit-locality').fill('London');
     await page.locator('#business-edit-email').fill('seller@example.test');await page.locator('#business-edit-phone').fill('+44 20 7946 0123');await page.locator('#business-edit-website').fill('https://example.test');
    await page.locator('#business-edit-description').fill('Isolated test business facts');await page.locator('#business-accuracy').check();await page.locator('#business-save').click();await page.locator('#business-feedback').filter({hasText:'Business details saved.'}).waitFor();
     assert.equal((await repository.getKnownBusiness('test-business-selling-a')).businessProfile.productsServices,'Isolated test business facts');assert.equal((await repository.getKnownBusiness('test-business-selling-a')).businessProfile.applicationAccess,undefined);
