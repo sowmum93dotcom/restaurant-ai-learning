@@ -1,5 +1,7 @@
 """Private, authenticated single-GPU supervisor. Standard library HTTP only."""
 import hashlib
+import ctypes
+import errno
 import hmac
 import json
 import os
@@ -16,6 +18,51 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from contracts import (MAX_OUTPUT, MAX_REQUEST, MODEL_ID, MODEL_VERSION, TIMEOUT_MS,
                        strict_json, validate_output, validate_request)
+
+
+def deny_outbound_network():
+    """Fail closed unless Linux enforces inherited outbound syscall denial.
+
+    Inbound authenticated HTTP can accept/read/write accepted sockets. No
+    outbound sockets are inherited by the model child (Popen closes other fds).
+    io_uring is denied too, so it cannot submit network operations around this
+    syscall filter. This is an egress restriction, not a general OS sandbox.
+    """
+    library = ctypes.CDLL('libseccomp.so.2')
+    library.seccomp_init.argtypes, library.seccomp_init.restype = [ctypes.c_uint32], ctypes.c_void_p
+    library.seccomp_release.argtypes = [ctypes.c_void_p]
+    library.seccomp_syscall_resolve_name.argtypes = [ctypes.c_char_p]
+    library.seccomp_syscall_resolve_name.restype = ctypes.c_int
+    library.seccomp_rule_add.argtypes = [ctypes.c_void_p, ctypes.c_uint32, ctypes.c_int, ctypes.c_uint]
+    library.seccomp_rule_add_array.argtypes = [ctypes.c_void_p, ctypes.c_uint32, ctypes.c_int, ctypes.c_uint, ctypes.c_void_p]
+    library.seccomp_attr_set.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.c_uint32]
+    library.seccomp_load.argtypes = [ctypes.c_void_p]
+    context = library.seccomp_init(0x7fff0000)  # SCMP_ACT_ALLOW
+    if not context:
+        raise RuntimeError('egress-filter-unavailable')
+    try:
+        # CTL_TSYNC applies the restriction to any existing threads; future
+        # threads, forks and execs inherit it. NO_NEW_PRIVS defaults to enabled.
+        if library.seccomp_attr_set(context, 4, 1) != 0:
+            raise RuntimeError('egress-filter-unavailable')
+        for name in ('connect', 'sendmsg', 'sendmmsg',
+                     'io_uring_setup', 'io_uring_enter', 'io_uring_register'):
+            number = library.seccomp_syscall_resolve_name(name.encode())
+            if number < 0 or library.seccomp_rule_add(context, 0x00050000 | errno.EPERM, number, 0) != 0:
+                raise RuntimeError('egress-filter-unavailable')
+        # Python's sendall uses sendto with a NULL destination on an already
+        # accepted connection. Permit that reply path; deny addressed datagrams.
+        class ArgumentComparison(ctypes.Structure):
+            _fields_ = [('arg', ctypes.c_uint), ('op', ctypes.c_uint),
+                        ('a', ctypes.c_uint64), ('b', ctypes.c_uint64)]
+        destination = ArgumentComparison(4, 1, 0, 0)  # arg4 != NULL, SCMP_CMP_NE
+        number = library.seccomp_syscall_resolve_name(b'sendto')
+        if number < 0 or library.seccomp_rule_add_array(context, 0x00050000 | errno.EPERM, number, 1, ctypes.byref(destination)) != 0:
+            raise RuntimeError('egress-filter-unavailable')
+        if library.seccomp_load(context) != 0:
+            raise RuntimeError('egress-filter-unavailable')
+    finally:
+        library.seccomp_release(context)
 
 
 class Supervisor:
@@ -276,6 +323,7 @@ def main():
     secret = Path(os.environ['DEMEOS_RUNTIME_SECRET_FILE']).read_bytes().strip()
     if not 32 <= len(secret) <= 256 or any(byte <= 32 or byte > 126 for byte in secret):
         raise ValueError('invalid-secret')
+    deny_outbound_network()
     # The model child receives no parent environment credentials or proxy settings.
     child_env = worker_environment()
     code_hash = runtime_code_hash()

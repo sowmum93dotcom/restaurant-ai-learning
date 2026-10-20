@@ -6,6 +6,7 @@ import http.client
 import json
 import os
 import socket
+import subprocess
 import sys
 import tempfile
 import threading
@@ -85,12 +86,47 @@ class RuntimeTests(unittest.TestCase):
                                DEMEOS_RUNTIME_PORT=str(occupied.getsockname()[1]))
             with patch.dict(os.environ, environment), patch('server.os.geteuid', return_value=1001), \
                  patch('server.os.access', return_value=False), patch('server.verify_weights', return_value=WEIGHTS), \
-                 patch('server.Supervisor', return_value=self.supervisor):
+                 patch('server.Supervisor', return_value=self.supervisor), patch('server.deny_outbound_network'):
                 with self.assertRaises(OSError):
                     runtime_main()
             self.assertTrue(self.supervisor.closed)
             self.assertFalse(self.supervisor.ready)
             self.assertIsNone(self.supervisor.process)
+
+    def test_kernel_egress_denial_survives_exec_and_allows_inbound_http(self):
+        code = '''
+import socket, subprocess, sys, threading
+from server import deny_outbound_network
+deny_outbound_network()
+listener = socket.socket()
+listener.bind(('127.0.0.1', 0)); listener.listen()
+print(listener.getsockname()[1], flush=True)
+def answer():
+    connection, _ = listener.accept()
+    connection.sendall(b'ok'); connection.close()
+t = threading.Thread(target=answer); t.start()
+for family, kind in [(socket.AF_INET,socket.SOCK_STREAM), (socket.AF_INET6,socket.SOCK_STREAM), (socket.AF_INET,socket.SOCK_DGRAM)]:
+    s = socket.socket(family,kind)
+    try:
+        if kind == socket.SOCK_DGRAM: s.sendto(b'x',('127.0.0.1',9))
+        else: s.connect(('::1' if family == socket.AF_INET6 else '127.0.0.1',9))
+    except PermissionError: pass
+    else: raise AssertionError('outbound permitted')
+    finally: s.close()
+child = subprocess.run([sys.executable, '-c', "import socket; s=socket.socket(); s.connect(('127.0.0.1',9))"], capture_output=True)
+assert child.returncode != 0 and b'PermissionError' in child.stderr
+t.join(3); assert not t.is_alive()
+'''
+        child = subprocess.Popen([sys.executable, '-c', code], cwd=Path(__file__).parent, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        try:
+            port = int(child.stdout.readline())
+            with socket.create_connection(('127.0.0.1', port), timeout=3) as connection:
+                self.assertEqual(connection.recv(2), b'ok')
+            _, errors = child.communicate(timeout=5)
+            self.assertEqual(child.returncode, 0, errors)
+        finally:
+            if child.poll() is None: child.kill(); child.wait()
+            child.stdout.close(); child.stderr.close()
 
     def test_contract_rejects_untrusted_urls_privileged_output_and_bad_hashes(self):
         good = request()
