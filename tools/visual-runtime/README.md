@@ -49,6 +49,12 @@ All added review controls and unavailable/empty-result messages use the existing
 
 These are local GPU measurements using synthetic red media, not real-product accuracy, multilingual quality, physical Safari acceptance or full application-to-GPU HTTPS latency. The service was terminated after measurement and both GPU and recovery CPU compute were stopped. Model files and evidence were retained. See the latest section of `docs/business-workspace/pr708-runpod-checkpoint.md` for provenance and restart boundaries.
 
+For a single supplied image the model returns a description-only row, and the
+host binds it to that one input's verified hash. Panels within that image cannot
+become additional source files. Multiple-frame requests still require valid,
+model-selected indices; a description-only row is rejected for multiple sources.
+Invalid explicit indices are never repaired or silently replaced.
+
 Do not fill review IDs with placeholder approvals. Activation requires an actual licence/security review, trusted source verification of weights, the exact deployed code hash, a reviewed end-to-end benchmark, correct Preview database isolation, the existing owner grant, a private HTTPS route and controlled network egress. Do not extend the two-second boundary to make a benchmark pass. If it cannot pass, retain unavailable behavior and bring measured evidence for a separately reviewed asynchronous/deadline change.
 
 ## Operator preparation on the existing pod

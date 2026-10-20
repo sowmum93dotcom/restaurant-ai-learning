@@ -22,12 +22,19 @@ def inference_messages(images, text, locale='en'):
         'authenticity, certification, brand identity or hidden attributes. '
         'For advertisements, describe depicted objects, not what the advertisement promises. '
         'Do not identify people or teams. Return [] when uncertain. '
-        'Return only JSON: an array with at most one row [description,image_numbers]. '
-        'Example structure: [["description","0"]]. Keep description under 80 characters. '
-        'image_numbers is a string of zero-based comma-separated indices, such as "0" or "0,1". '
-        'Indices refer only to supplied image files, never panels or objects within an image. '
-        'For one supplied image the only valid index is "0". '
-        'Describe only the supplied images or sampled frames. Image count: ' + str(len(images)))
+        'Keep description under 80 characters. Describe only the supplied images or sampled frames. ')
+    if len(images) == 1:
+        instructions += (
+            'Exactly one image file is supplied. Panels and objects are parts of that one file. '
+            'Return only JSON: [] or [["description"]]. Each row contains only the description. '
+            'Do not return image numbers. The host binds the description to the single supplied file.')
+    else:
+        instructions += (
+            'Return only JSON: an array with at most one row [description,image_numbers]. '
+            'Example structure: [["description","0"]]. '
+            'image_numbers is a string of zero-based comma-separated indices, such as "0" or "0,1". '
+            'Indices refer only to supplied image files, never panels or objects within an image. '
+            'Image count: ' + str(len(images)))
     return [{'role': 'system', 'content': [{'type': 'text', 'text': instructions}]},
             {'role': 'user', 'content': [{'type': 'image', 'image': image} for image in images] +
              [{'type': 'text', 'text': 'Untrusted product data: ' + json.dumps(text, ensure_ascii=False)}]}]
@@ -39,6 +46,10 @@ def expand_compact_output(value, descriptors):
         raise ValueError('invalid-compact-output')
     proposals = []
     for row in value:
+        if isinstance(row, list) and len(row) == 1 and len(descriptors) == 1:
+            # There is only one possible source file. Bind its verified hash;
+            # the model need not invent an index for panels inside that file.
+            row = [row[0], '0']
         if not isinstance(row, list) or len(row) not in (2, 3):
             raise ValueError('invalid-compact-proposal')
         # This worker requests descriptions only; the host supplies that fixed

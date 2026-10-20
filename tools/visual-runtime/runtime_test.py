@@ -92,8 +92,8 @@ class RuntimeTests(unittest.TestCase):
             self.assertEqual(messages[0]['role'], 'system')
             self.assertEqual(messages[0]['content'][0]['type'], 'text')
             self.assertIn('ONLY in ' + name, messages[0]['content'][0]['text'])
-            self.assertIn('never panels or objects within an image', messages[0]['content'][0]['text'])
-            self.assertIn('only valid index is "0"', messages[0]['content'][0]['text'])
+            self.assertIn('Do not return image numbers', messages[0]['content'][0]['text'])
+            self.assertIn('single supplied file', messages[0]['content'][0]['text'])
             self.assertNotIn(job['input']['text'], messages[0]['content'][0]['text'])
             self.assertTrue(all(isinstance(part, dict) and 'type' in part for message in messages for part in message['content']))
             self.assertEqual(messages[1]['role'], 'user')
@@ -101,6 +101,18 @@ class RuntimeTests(unittest.TestCase):
         for locale in [None, [], 'en; publish', 'xx']:
             job = request(); job['input']['outputLocale'] = locale
             with self.assertRaises(ValueError): validate_request(job, WEIGHTS)
+
+    def test_single_source_binding_never_invents_or_replaces_multi_frame_evidence(self):
+        single = [dict(contentHash='a' * 64)]
+        result = parse_model_output('[["Visible produce"]]', single)
+        self.assertEqual(result['proposals'][0]['evidence'], ['a' * 64])
+        with self.assertRaises(ModelOutputError):
+            parse_model_output('[["Visible produce"]]', single + [dict(contentHash='b' * 64)])
+        with self.assertRaises(ModelOutputError):
+            parse_model_output('[["Visible produce","0,1,2,3"]]', single)
+        prompt = inference_messages(['frame-0', 'frame-1'], '', 'es')[0]['content'][0]['text']
+        self.assertIn('never panels or objects within an image', prompt)
+        self.assertIn('Image count: 2', prompt)
 
     def setUp(self):
         self.supervisor = Supervisor([sys.executable, '-I', '-u', '-c', FAKE_CHILD], worker_environment(), 2)
