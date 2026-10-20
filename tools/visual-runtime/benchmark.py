@@ -78,6 +78,9 @@ def main():
                 report.update(passed=duration <= 2000, endToEndMs=duration, measurements=result['measurements'], output=result['output'])
             except Exception as error:
                 report.update(passed=False, errorType=type(error).__name__, endToEndMs=(time.perf_counter() - started) * 1000)
+                if isinstance(error, urllib.error.HTTPError):
+                    report['httpStatus'] = error.code
+                    error.close()  # Never store response bodies, headers or credential values.
             results.append(report)
             print(f'{count} image(s), sample {sample + 1}: ' + ('passed' if report['passed'] else 'failed'), flush=True)
             if not report['passed']:

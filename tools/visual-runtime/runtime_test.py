@@ -16,6 +16,7 @@ from pathlib import Path
 from unittest.mock import patch
 from contracts import MODEL_ID, MODEL_VERSION, strict_json, validate_request, validate_output
 from server import RuntimeHTTPServer, Supervisor, verify_weights, worker_environment, runtime_code_hash, main as runtime_main
+from worker import expand_compact_output
 
 FAKE_CHILD = '''import json,sys,time
 print(json.dumps({'ready':True,'modelVersion':%r}),flush=True)
@@ -48,6 +49,19 @@ class RuntimeTests(unittest.TestCase):
 
     def tearDown(self):
         self.supervisor.close()
+
+    def test_compact_model_output_cannot_invent_or_escape_media_evidence(self):
+        descriptors = [dict(contentHash='a' * 64), dict(contentHash='b' * 64)]
+        output = expand_compact_output([['video-summary', 'Two sampled red frames.', [0, 1]]], descriptors)
+        self.assertEqual(output['proposals'][0]['evidence'], ['a' * 64, 'b' * 64])
+        self.assertIsNone(output['proposals'][0]['confidence'])
+        self.assertEqual(expand_compact_output([], descriptors)['proposals'], [])
+        for indices in [[-1], [2], [True], ['0'], [0, 0], [], ['a' * 64]]:
+            with self.assertRaises(ValueError):
+                expand_compact_output([['description', 'Red.', indices]], descriptors)
+        for kind, value in [('price', '10'), ('description', '<script>'), ('description', '')]:
+            with self.assertRaises(ValueError):
+                expand_compact_output([[kind, value, [0]]], descriptors)
 
     def test_occupied_listener_port_does_not_leave_a_worker_running(self):
         with tempfile.TemporaryDirectory() as directory, socket.socket() as occupied:
