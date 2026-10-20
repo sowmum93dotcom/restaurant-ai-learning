@@ -1,0 +1,21 @@
+{
+  "modelId": "Qwen3-VL-4B-Instruct",
+  "modelVersion": "ebb281ec70b05090aa6165b016eac8ec08e71b17",
+  "weightsManifestHash": "e2c07fc24e1523d0987dfb6b082020c0eb74a04eb622f36c153fd97c5d254ae2",
+  "runtimeCodeHash": "6ead9d99ccb85c6b3e00d17133ad0c9239e9c5e2e60eb64f7c231d885ff7c85e",
+  "route": "loopback-hardware-only",
+  "timeoutMs": 2000,
+  "results": [
+    {
+      "mediaCount": 1,
+      "sample": 1,
+      "passed": false,
+      "errorType": "HTTPError",
+      "endToEndMs": 2143.1351979990723
+    }
+  ],
+  "twoSecondBoundaryPassed": false,
+  "productAccuracyVerified": false,
+  "multilingualAccuracyVerified": false,
+  "activationApproved": false
+}
