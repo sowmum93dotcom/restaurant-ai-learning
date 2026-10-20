@@ -27,6 +27,8 @@ def inference_messages(images, text, locale='en'):
         instructions += (
             'Exactly one image file is supplied. Panels and objects are parts of that one file. '
             'Return only one plain line of description, without brackets, quotes, numbering or markdown. '
+            'Use a short noun phrase of at most six words naming the main visible object and its colour. '
+            'Do not narrate the scene or list background details. '
             'Return ABSTAIN when uncertain. Do not return image numbers or JSON. '
             'The host binds the description to the single supplied file.')
     else:
@@ -118,6 +120,10 @@ def main():
             trust_remote_code=False, use_safetensors=True).eval()
 
     def infer(images, text, descriptors, maximum=96, parse=True, locale='en'):
+        # A concise single-image label has a smaller generation budget.
+        # Exhaustion is still rejected, never accepted as truncated text.
+        if len(images) == 1:
+            maximum = min(maximum, 64)
         messages = inference_messages(images, text, locale)
         inputs = processor.apply_chat_template(messages, tokenize=True, add_generation_prompt=True,
                                               return_dict=True, return_tensors='pt').to('cuda')

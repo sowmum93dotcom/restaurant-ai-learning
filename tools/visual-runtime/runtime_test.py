@@ -106,6 +106,7 @@ class RuntimeTests(unittest.TestCase):
             self.assertIn('ONLY in ' + name, messages[0]['content'][0]['text'])
             self.assertIn('Do not return image numbers', messages[0]['content'][0]['text'])
             self.assertIn('single supplied file', messages[0]['content'][0]['text'])
+            self.assertIn('at most six words', messages[0]['content'][0]['text'])
             self.assertNotIn(job['input']['text'], messages[0]['content'][0]['text'])
             self.assertTrue(all(isinstance(part, dict) and 'type' in part for message in messages for part in message['content']))
             self.assertEqual(messages[1]['role'], 'user')
