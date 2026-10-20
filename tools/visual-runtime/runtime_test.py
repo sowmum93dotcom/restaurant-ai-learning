@@ -57,6 +57,9 @@ class RuntimeTests(unittest.TestCase):
         self.assertIsNone(output['proposals'][0]['confidence'])
         self.assertEqual(expand_compact_output([], descriptors)['proposals'], [])
         self.assertEqual(expand_compact_output([['description', 'Solid red color', '0']], descriptors)['proposals'][0]['evidence'], ['a' * 64])
+        self.assertEqual(expand_compact_output([['Solid red color', '0']], descriptors), expand_compact_output([['description', 'Solid red color', '0']], descriptors))
+        same_frames = [dict(contentHash='a' * 64)] * 4
+        self.assertEqual(len(expand_compact_output([['Four sampled red frames.', '0,1,2,3']], same_frames)['proposals'][0]['evidence']), 4)
         self.assertEqual(expand_compact_output([['video-summary', 'Two sampled red frames.', '0,1']], descriptors), output)
         for indices in [[-1], [2], [True], ['0'], [0, 0], [], ['a' * 64]]:
             with self.assertRaises(ValueError):
@@ -67,6 +70,9 @@ class RuntimeTests(unittest.TestCase):
         for kind, value in [('price', '10'), ('description', '<script>'), ('description', '')]:
             with self.assertRaises(ValueError):
                 expand_compact_output([[kind, value, [0]]], descriptors)
+        for value in ['<script>', '', '\x00']:
+            with self.assertRaises(ValueError):
+                expand_compact_output([[value, '0']], descriptors)
 
     def test_occupied_listener_port_does_not_leave_a_worker_running(self):
         with tempfile.TemporaryDirectory() as directory, socket.socket() as occupied:
