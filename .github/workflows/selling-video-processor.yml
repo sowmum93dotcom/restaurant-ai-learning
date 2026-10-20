@@ -5,7 +5,8 @@ on:
   workflow_dispatch:
 jobs:
   real-video:
-    runs-on: ubuntu-latest
+    # Match the supported browser environment instead of a moving OS alias.
+    runs-on: ubuntu-24.04
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4

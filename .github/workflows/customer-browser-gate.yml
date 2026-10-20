@@ -9,7 +9,8 @@ jobs:
   browser:
     env:
       DEMEOS_BROWSER_CHANNEL: chrome
-    runs-on: ubuntu-latest
+    # Playwright 1.55 is verified on 24.04; ubuntu-latest can select 26.04.
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - name: Checkout
@@ -82,7 +83,7 @@ jobs:
             /tmp/demeos-approval-*.png
 
   selling-webkit:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     env:
       DEMEOS_BROWSER_ENGINE: webkit
