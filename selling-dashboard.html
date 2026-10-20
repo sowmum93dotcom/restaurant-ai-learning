@@ -29,10 +29,11 @@
       <p class="eyebrow">DEMEOS Selling</p><h1 id="section-heading">Overview</h1>
       <section id="dashboard-status" class="card" role="status" aria-live="polite" aria-busy="true"><h2 id="status-heading">Opening your workspace</h2><p id="status-message">Checking your session and business access…</p><button id="retry" hidden>Try again</button><button id="choose-business" hidden>Choose an authorized business</button><a id="registration" href="/selling-vendor/my-business" hidden>Review Selling business access</a></section>
       <div id="private-workspace" hidden>
-        <section class="business-bar" aria-label="Current business"><div><p class="eyebrow">Current business</p><img id="business-logo" class="business-logo" alt="Business logo" hidden><h2 id="business-name"></h2><p id="business-details"></p></div><span id="environment-label" class="badge"></span><label>Switch business<select id="business-select"></select></label></section>
+        <section class="business-bar" aria-label="Current business"><div><p class="eyebrow">Current business</p><img id="business-logo" class="business-logo" alt="Business logo" hidden><h2 id="business-name"></h2><p id="business-details"></p><p id="business-sales-channel" class="sales-channel-label"></p></div><span id="environment-label" class="badge"></span><label>Switch business<select id="business-select"></select></label></section>
         <section class="card" id="section-content" aria-labelledby="content-heading"><h2 id="content-heading"></h2><p id="content-message"></p><dl id="business-facts" hidden></dl><div id="record-tools" hidden><label for="record-search">Search saved records</label><input id="record-search" type="search" maxlength="200" aria-controls="catalogue-list media-list variant-list stock-list orders-list"><p id="record-count" role="status" aria-live="polite"></p></div><div id="catalogue-pagination" hidden class="catalogue-pagination"><button id="catalogue-previous" type="button">Previous page</button><button id="catalogue-next" type="button">Next page</button><p id="catalogue-page-status" role="status"></p></div><div id="catalogue-tools" hidden>
           <div id="catalogue-filters" class="catalogue-filters">
             <label>Category<select id="catalogue-category"><option value="">All categories</option></select></label>
+            <label>Sales channel<select id="catalogue-channel"><option value="">All sales channels</option><option value="b2c">B2C · Individual customers</option><option value="b2b">B2B · Business buyers</option></select></label>
             <label>Status<select id="catalogue-state"><option value="">All statuses</option></select></label>
             <label>Validation<select id="catalogue-validation"><option value="">All checks</option><option value="not-checked">Not checked</option><option value="passed">Passed</option><option value="failed">Failed</option><option value="unavailable">Unavailable</option></select></label>
             <label>Availability<select id="catalogue-availability"><option value="">All availability</option><option value="available">Available</option><option value="limited">Limited availability</option><option value="unavailable">Unavailable</option><option value="contact">Ask about availability</option></select></label>
@@ -47,8 +48,22 @@
             <label>Description<textarea id="product-description" required maxlength="1200"></textarea></label>
             <label><span data-submission-copy="category">DEMEOS business category</span><select id="product-category"></select></label>
             <div id="product-category-fields"></div>
+            <label>Sales channel<select id="product-sales-channel"><option value="b2c">B2C · Individual customers</option><option value="b2b">B2B · Business buyers</option><option value="both">Both · B2B and B2C</option></select></label>
+            <p>Product channels must be enabled in My Business. Stock is shared across sales channels.</p>
+            <fieldset id="retail-terms"><legend>Retail terms · B2C</legend>
             <label>Price type<select id="product-price-mode"><option value="contact">Contact for price</option><option value="fixed">Fixed price</option><option value="from">From</option><option value="range">Range</option></select></label>
             <label>Price<input id="product-price" maxlength="100"></label>
+            </fieldset>
+            <fieldset id="business-terms" hidden><legend>Business terms · B2B</legend>
+              <label>Business buying method<select id="product-b2b-method"><option value="quote">Request a quote</option><option value="direct">Fixed wholesale price</option></select></label>
+              <label>Wholesale currency<input id="product-b2b-currency" maxlength="3" pattern="[A-Za-z]{3}" placeholder="GBP / USD / EUR"></label>
+              <label id="wholesale-price-label">Wholesale unit price<input id="product-b2b-price" inputmode="decimal" maxlength="20"></label>
+              <label>Minimum order quantity<input id="product-b2b-minimum" type="number" min="1" max="1000000" step="1" value="1"></label>
+              <label>Units per pack<input id="product-b2b-pack" type="number" min="1" max="1000000" step="1" value="1"></label>
+              <div id="wholesale-tier-tools"><h4>Quantity discounts</h4><div id="wholesale-tiers"></div><button id="wholesale-add-tier" type="button">Add quantity discount</button></div>
+              <p>Quantities must be whole packs. Each discount needs a higher quantity and a lower unit price.</p>
+              <p>Business purchasing requires verified business buyers. Saving terms does not enable business checkout or quote requests.</p>
+            </fieldset>
             <label>Availability<select id="product-availability"><option value="contact">Ask about availability</option><option value="available">Available</option><option value="limited">Limited availability</option><option value="unavailable">Unavailable</option></select></label>
             <button type="submit" id="product-save">Save product</button>
             <button type="button" id="product-save-draft" data-submission-copy="saveDraft">Save draft</button>
@@ -72,6 +87,7 @@
           </section>
           <form id="business-form">
             <h3>Edit permitted business details</h3>
+            <label>Business sales channels<select id="business-edit-salesChannel"><option value="b2c">B2C · Individual customers</option><option value="b2b">B2B · Business buyers</option><option value="both">Both · B2B and B2C</option></select></label><p>Enable both channels before moving existing products between them.</p>
             <label>Business display name<input id="business-edit-name" required maxlength="200"></label>
             <p id="business-address-help">Choose the country where your business is based. Enter your business address below.</p>
             <label>Business country<select id="business-edit-countryCode" autocomplete="country" required aria-describedby="business-address-help"></select></label>
@@ -95,7 +111,7 @@
           <a href="/selling-vendor/my-business">Review Selling business details</a>
         </div>
         <dl id="overview-facts" hidden></dl><div id="overview-tools" hidden class="workspace-actions"><a href="/selling-vendor/product-catalogue" data-workspace-link>Product Catalogue</a><a href="/selling-vendor/images-videos" data-workspace-link>Images &amp; Videos</a><a href="/selling-vendor/stock-history" data-workspace-link>Stock &amp; History</a><a href="/selling-vendor/my-business" data-workspace-link>My Business</a></div>
-        <div id="orders-tools" hidden><p>Private reservation records. Vendor status changes and payments are not available.</p><label>Status<select id="orders-state"><option value="">All statuses</option><option value="reserved">Reserved</option><option value="cancelled">Cancelled</option><option value="expired">Expired</option></select></label><div class="catalogue-pagination"><button id="orders-previous" type="button">Previous page</button><button id="orders-next" type="button">Next page</button></div><div id="orders-list"></div></div>
+        <div id="orders-tools" hidden><p>Private reservation records. Vendor status changes and payments are not available.</p><label>Sales channel<select id="orders-channel"><option value="">All sales channels</option><option value="b2c">B2C · Individual customers</option><option value="b2b">B2B · Business buyers</option><option value="unrecorded">Channel not recorded</option></select></label><label>Status<select id="orders-state"><option value="">All statuses</option><option value="reserved">Reserved</option><option value="cancelled">Cancelled</option><option value="expired">Expired</option></select></label><div class="catalogue-pagination"><button id="orders-previous" type="button">Previous page</button><button id="orders-next" type="button">Next page</button></div><div id="orders-list"></div></div>
         <div id="media-tools" hidden>
           <p class="phase-note">Visual recognition is unavailable. No authorised model is deployed.</p><p id="media-configuration" role="status"></p>
           <p id="media-empty" hidden><span>Add a saved product first.</span> <a href="/selling-vendor/product-catalogue" data-catalogue-link>Add product</a></p>

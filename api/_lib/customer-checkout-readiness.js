@@ -13,6 +13,7 @@ function checkoutReadiness(context) {
   if (!product || !required(product.id) || product.vendorId !== vendor.id ||
       product.approvalStatus !== "approved" || product.availability !== "available" ||
       product.customerVisible !== true) return blocked("product-not-approved");
+  if (!require('./selling-sales-channels').allowsConsumer(vendor,product)) return blocked("sales-channel-unavailable");
   if (!Number.isSafeInteger(product.priceMinor) || product.priceMinor <= 0 ||
       !/^[A-Z]{3}$/.test(product.currency || "")) return blocked("invalid-price");
   if (!transaction || transaction.vendorId !== vendor.id || transaction.productId !== product.id ||

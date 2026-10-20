@@ -6,9 +6,10 @@ const SORTS=Object.freeze({name:"lower(p->>'name') ASC",updated:"COALESCE(p->'su
 function parse(query={}){
  const read=(key,fallback='')=>{const value=query[key]??fallback;if(typeof value!=='string')throw Error('Invalid catalogue query.');return value;};
  const productId=read('productId');
+ const channel=read('channel');
  const q=read('q').trim(),category=read('category'),state=read('state'),availability=read('availability'),stock=read('stock'),validation=read('validation'),sort=read('sort','updated'),offset=read('offset','0'),snapshot=read('snapshot');
- if(productId&&!/^[a-zA-Z0-9_-]{1,120}$/.test(productId)||q.length>200||category&&!categories.getCategory(category)||state&&!STATES.includes(state)||availability&&!['contact','available','limited','unavailable'].includes(availability)||stock&&!['available','low','sold-out','untracked'].includes(stock)||validation&&!['passed','failed','unavailable','not-checked'].includes(validation)||!Object.hasOwn(SORTS,sort)||!/^\d{1,6}$/.test(offset)||Number(offset)>100000||snapshot&&!/^[a-f0-9]{64}$/.test(snapshot))throw Error('Invalid catalogue query.');
- return {q,productId,category,state,availability,stock,validation,sort,offset:Number(offset),limit:25,snapshot};
+ if(channel&&!['b2c','b2b'].includes(channel)||productId&&!/^[a-zA-Z0-9_-]{1,120}$/.test(productId)||q.length>200||category&&!categories.getCategory(category)||state&&!STATES.includes(state)||availability&&!['contact','available','limited','unavailable'].includes(availability)||stock&&!['available','low','sold-out','untracked'].includes(stock)||validation&&!['passed','failed','unavailable','not-checked'].includes(validation)||!Object.hasOwn(SORTS,sort)||!/^\d{1,6}$/.test(offset)||Number(offset)>100000||snapshot&&!/^[a-f0-9]{64}$/.test(snapshot))throw Error('Invalid catalogue query.');
+ return {channel,q,productId,category,state,availability,stock,validation,sort,offset:Number(offset),limit:25,snapshot};
 }
 function stockSummary(rows){
  const result={};for(const row of rows){const item=result[row.productId]||={quantity:null,status:'untracked',skus:[],attention:false};if(row.sku)item.skus.push(row.sku);if(row.available!==null&&!row.blocked){item.quantity=(item.quantity??0)+row.available;if(['low','sold-out'].includes(row.status))item.attention=true;}}
@@ -27,7 +28,7 @@ async function queryPage(database,{identity,businessId,profile,query,stock}){
  ), products AS (
  SELECT p, COALESCE($4::jsonb->(p->>'productId'),'{"status":"untracked","quantity":null,"skus":[]}'::jsonb) s FROM source, jsonb_array_elements(COALESCE(profile->'products','[]'::jsonb)) p
  ), filtered AS (
- SELECT p,s FROM products WHERE ($14='' OR p->>'productId'=$14) AND
+ SELECT p,s FROM products WHERE ($15='' OR COALESCE(p->>'salesChannel','b2c') IN ($15,'both')) AND ($14='' OR p->>'productId'=$14) AND
  ($5='' OR strpos(lower(concat_ws(' ',p->>'name',p->>'productId',p->>'sku',p->'variants',p->'presentation'->'variants',s->'skus',p->'classification'->>'categoryId',$13::jsonb->>(p->'classification'->>'categoryId'))),lower($5))>0)
  AND ($6='' OR p->'classification'->>'categoryId'=$6)
  AND ($7='' OR COALESCE(p->'submission'->>'state','draft')=$7)
@@ -38,7 +39,7 @@ async function queryPage(database,{identity,businessId,profile,query,stock}){
  WHEN EXISTS(SELECT 1 FROM jsonb_array_elements(COALESCE(p->'submission'->'validation'->'rules',p->'submission'->'review'->'rules','[]'::jsonb)) r WHERE r->>'status'<>'passed') THEN 'unavailable' ELSE 'passed' END=$10)
  ), page AS (SELECT p FROM filtered ORDER BY ${SORTS[query.sort]}, p->>'productId' ASC LIMIT $11 OFFSET $12)
  SELECT EXISTS(SELECT 1 FROM source) AS current,(SELECT count(*)::integer FROM filtered) AS total,
- COALESCE((SELECT jsonb_agg(p) FROM page),'[]'::jsonb) AS products`,[businessId,identity,JSON.stringify(profile),JSON.stringify(stock),query.q,query.category,query.state,query.availability,query.stock,query.validation,query.limit,query.offset,JSON.stringify(Object.fromEntries(categories.CATEGORIES.map(c=>[c.categoryId,c.categoryName]))),query.productId]);
+ COALESCE((SELECT jsonb_agg(p) FROM page),'[]'::jsonb) AS products`,[businessId,identity,JSON.stringify(profile),JSON.stringify(stock),query.q,query.category,query.state,query.availability,query.stock,query.validation,query.limit,query.offset,JSON.stringify(Object.fromEntries(categories.CATEGORIES.map(c=>[c.categoryId,c.categoryName]))),query.productId,query.channel||'']);
  return result.rows[0];
 }
 module.exports={parse,stockSummary,snapshot,queryPage,SORTS};

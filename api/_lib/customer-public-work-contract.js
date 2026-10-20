@@ -78,7 +78,7 @@ function toPublicCustomerWorkItem(item, {forSearchClassification = false, valida
   if (Array.isArray(item.products)) {
     const duplicateProductIds = duplicateIdentifiers(item.products, "productId");
     const products = item.products.filter(function (product) {
-      return product && typeof product === "object" && !Array.isArray(product) && product.customerVisible !== false &&
+      return product && typeof product === "object" && !Array.isArray(product) && product.customerVisible !== false && require('./selling-sales-channels').allowsConsumer(item,product) &&
         !duplicateProductIds.has(normalizedRequiredString(product.productId)) &&
         normalizedRequiredString(product.productId) && normalizedRequiredString(product.name) &&
         normalizedRequiredString(product.description) &&

@@ -80,3 +80,14 @@ test('pool transactions pin all statements to one connection and release on roll
  await db.transaction(async tx=>{assert.equal(tx,connection);await tx.query('SELECT isolated');});assert.deepEqual(seen,['CONNECT','BEGIN','SELECT isolated','COMMIT','RELEASE']);seen.length=0;
  await assert.rejects(db.transaction(async tx=>{await tx.query('SELECT failing');throw Error('rollback proof');}),/rollback proof/);assert.deepEqual(seen,['CONNECT','BEGIN','SELECT failing','ROLLBACK','RELEASE']);
 });
+
+test('consumer reservations cannot buy B2B-only products or supply their own buyer channel',()=>fixture(async({orders,repo,request})=>{
+ const before=await repo.getVendorInventory('vendor');
+ const saved=(await repo.getKnownBusiness('vendor')).businessProfile;
+ const b2b={...saved,salesChannel:'both',products:saved.products.map(p=>({...p,salesChannel:'b2b'}))};
+ await repo.saveBusiness(b2b);const current=(await repo.getKnownBusiness('vendor')).businessProfile;
+ await rejected(orders.reserve('customer','request-b2b-only-0001',request(current)),'sales-channel-unavailable');
+ await rejected(orders.reserve('customer','request-b2b-spoof-001',{...request(current),salesChannel:'b2b',buyerVerified:true}),'invalid-request');
+ assert.deepEqual((await repo.getVendorInventory('vendor')).entries,before.entries,'Denied channel does not reserve any shared stock');
+ assert.equal((await repo.getVendorOrders('owner','vendor')).length,0);
+}));

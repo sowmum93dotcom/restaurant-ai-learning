@@ -14,6 +14,7 @@ const categories=require('./marketing-agent-categories');
 const catalogue=require('./selling-catalogue');
 const categoryFields=require('./selling-category-fields');
 const businessLocation=require('../../js/selling-business-location');
+const sales=require('./selling-sales-channels');
 
 function variantSummaries(product){
  const legacy=(product.variants||[]).map(v=>({variantId:v.variantId,name:v.name,sku:v.sku||'',price:v.price||'',availability:v.availability||'contact',inheritsPrice:!v.price}));
@@ -29,8 +30,8 @@ function businessSummary(profile, env, identityId) {
   // has its own authority and never changes the real applicationAccess field.
   if (environment === 'live' && !applicationAccess({businessProfile:profile}, id).selling) return null;
   if(!environment)return null;
-  return {businessId:id,name:profile.name||'Unnamed business',type:profile.type||'',location:businessLocation.summary(profile.businessAddress)||profile.location||'',businessAddress:businessLocation.normalize(profile.businessAddress),serviceArea:profile.serviceArea||'',dataEnvironment:environment,catalogueRevision:catalogueRevision(profile),
-    products:(Array.isArray(profile.products)?profile.products:[]).map(p=>({productId:p.productId,authoringRevision:catalogueRevision(p),name:p.name,description:p.description,price:p.price,priceMode:p.priceMode,availability:p.availability||'contact',mediaGallery:p.mediaGallery||{assetIds:[],mainAssetId:''},stockQuantity:Number.isSafeInteger(p.stockQuantity)?p.stockQuantity:null,stockHistory:Array.isArray(p.stockHistory)?p.stockHistory:[],sku:p.sku||'',variants:variantSummaries(p),classification:p.classification||null,categoryAttributes:p.categoryAttributes||null,submission:p.submission||null}))};
+  return {salesChannel:sales.mode(profile.salesChannel),businessId:id,name:profile.name||'Unnamed business',type:profile.type||'',location:businessLocation.summary(profile.businessAddress)||profile.location||'',businessAddress:businessLocation.normalize(profile.businessAddress),serviceArea:profile.serviceArea||'',dataEnvironment:environment,catalogueRevision:catalogueRevision(profile),
+    products:(Array.isArray(profile.products)?profile.products:[]).map(p=>({productId:p.productId,authoringRevision:catalogueRevision(p),salesChannel:sales.mode(p.salesChannel),businessTerms:p.businessTerms||null,name:p.name,description:p.description,price:p.price,priceMode:p.priceMode,availability:p.availability||'contact',mediaGallery:p.mediaGallery||{assetIds:[],mainAssetId:''},stockQuantity:Number.isSafeInteger(p.stockQuantity)?p.stockQuantity:null,stockHistory:Array.isArray(p.stockHistory)?p.stockHistory:[],sku:p.sku||'',variants:variantSummaries(p),classification:p.classification||null,categoryAttributes:p.categoryAttributes||null,submission:p.submission||null}))};
 }
 
 function createHandler({authenticate=authentication.resolveTrustedIdentityFromRequest, repository=()=>persistence.getRepository(), environment=()=>process.env,mediaBackend=media.mediaBackend,resolveSubmissionEvidence,visualRunnerFactory=require('./selling-visual-runtime').createConfiguredVisualRunner}={}) {
@@ -108,11 +109,13 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
         const action=req.body?.action;
         if(action==='save-business-details'){
           const details=req.body.details,original=(await store.getKnownBusiness(businessId))?.businessProfile;
-          if(!details||typeof details!=='object'||Array.isArray(details)||Object.keys(details).some(k=>!['name','businessAddress','serviceArea','productsServices','customerContinuation'].includes(k))||req.body.ownerAccuracyConfirmed!==true)return res.status(400).json({error:'Confirm the accuracy of the permitted business details.'});
+          if(!details||typeof details!=='object'||Array.isArray(details)||Object.keys(details).some(k=>!['name','businessAddress','serviceArea','productsServices','customerContinuation','salesChannel'].includes(k))||req.body.ownerAccuracyConfirmed!==true)return res.status(400).json({error:'Confirm the accuracy of the permitted business details.'});
           if(req.body.catalogueRevision!==catalogueRevision(original))return res.status(409).json({error:'Business changed. Reload before saving.'});
+          const salesChannel=sales.mode(Object.hasOwn(details,'salesChannel')?details.salesChannel:original.salesChannel);
+          if(!salesChannel||original.products.some(p=>!sales.permitted(salesChannel,p.salesChannel)))return res.status(400).json({error:'Choose channels that include your existing products.',code:'sales-channel'});
           const address=businessLocation.normalize(details.businessAddress);
           if(!address||typeof details.serviceArea!=='string'||details.serviceArea.trim().length>500||['name'].some(k=>typeof details[k]!=='string'||!details[k].trim()||details[k].trim().length>200)||typeof details.productsServices!=='string'||details.productsServices.trim().length>2000)return res.status(400).json({error:'Enter a business name and location, and keep the description within 2000 characters.'});
-          const next={...original,name:details.name.trim(),businessAddress:address,serviceArea:details.serviceArea.trim(),location:businessLocation.summary(address),productsServices:details.productsServices.trim()};
+          const next={...original,salesChannel,name:details.name.trim(),businessAddress:address,serviceArea:details.serviceArea.trim(),location:businessLocation.summary(address),productsServices:details.productsServices.trim()};
           if(details.customerContinuation!==undefined){
             const contact=details.customerContinuation;
             if(!contact||typeof contact!=='object'||Array.isArray(contact)||Object.keys(contact).some(k=>!['email','phone','website'].includes(k))||['email','phone','website'].some(k=>typeof contact[k]!=='string'||contact[k].length>({email:320,phone:100,website:500}[k])))return res.status(400).json({error:'Enter valid contact details.'});
@@ -257,8 +260,10 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
             if(!require('../../js/customer-item-contract').pricing(pricing))return res.status(400).json({error:'Check the saved currency and product price range.'});
             presentation={...presentation,pricing};
           }
-          const product={...previous,...(presentation?{presentation}:{}),productId:id,businessId,name,sku,description,price,priceMode,categoryAttributes:attributes,...(index<0?{customerVisible:false}:{}),
+          let channelTerms;try{channelTerms=sales.apply(original,previous,item);}catch{return res.status(400).json({error:'Check your sales channels and business terms.',code:'sales-channel'});}
+          const product={...previous,...channelTerms,...(presentation?{presentation}:{}),productId:id,businessId,name,sku,description,price,priceMode,categoryAttributes:attributes,...(index<0?{customerVisible:false}:{}),
             availability};
+          if(!sales.includes(product.salesChannel,'b2b'))delete product.businessTerms;
           if(classification)product.classification=classification;else delete product.classification;
           if (index<0) products.push(product); else products[index]=product;
         }

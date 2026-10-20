@@ -1066,6 +1066,7 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
             customerContinuation: row.profile && row.profile.profileVersion >= 2 ? row.profile.customerContinuation : undefined,
             fulfilment: row.profile && row.profile.profileVersion >= 2 ? row.profile.fulfilment : undefined,
             operationalAvailability: row.profile && row.profile.profileVersion >= 3 ? row.profile.operationalAvailability : undefined,
+            salesChannel: row.profile?.salesChannel,
             products: row.profile && row.profile.profileVersion >= 4 ? row.profile.products : undefined,
             businessId: row.business_id,
             informationSource: row.profile && row.profile.profileVersion >= 2 && row.profile.informationStatus && row.profile.informationStatus.status === "business-provided" ? "business-provided" : undefined,

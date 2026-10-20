@@ -16,6 +16,7 @@ function resolveLine(profile,request,entries){
  if(inventory.catalogueRevision(profile)!==request.catalogueRevision)fail('stale-catalogue');
  const product=profile.products?.find(p=>p.productId===request.productId&&p.businessId===profile.businessId);
  const presentation=item.normalize(product?.presentation);
+ if(!require('./selling-sales-channels').allowsConsumer(profile,product))fail('sales-channel-unavailable');
  if(profile.businessId.startsWith('test-')||request.productId.startsWith('test-')||profile.testMode===true||product?.controlledTest===true)fail('controlled-record');
  if(!product||!presentation||presentation.kind!=='product'||!['available','limited'].includes(product.availability))fail('product-unavailable');
  const variant=presentation.variants.find(v=>v.variantId===request.variantId);
@@ -60,7 +61,7 @@ function createVendorOrders(database,{environment=()=>process.env,authorizePurch
    const entries=structuredClone(stock.entries);
    entries[line.stockKey].reserved+=line.quantity;
    const clock=(await tx.query('SELECT clock_timestamp() AS now')).rows[0].now,createdAt=new Date(clock).toISOString(),expiresAt=new Date(new Date(clock).getTime()+900000).toISOString();
-   const record={id:randomUUID(),businessId:request.businessId,customerId:customer,source:'authoritative-catalogue',mode:'live',state:'reserved',paymentState:'not-started',catalogueRevision:request.catalogueRevision,line,remainingReserved:line.quantity,createdAt,expiresAt};
+   const record={id:randomUUID(),businessId:request.businessId,customerId:customer,source:'authoritative-catalogue',salesChannel:'b2c',mode:'live',state:'reserved',paymentState:'not-started',catalogueRevision:request.catalogueRevision,line,remainingReserved:line.quantity,createdAt,expiresAt};
    await tx.query('INSERT INTO demeos_vendor_orders(order_id,business_id,customer_id,request_key,request_signature,record,state,expires_at) VALUES($1,$2,$3,$4,$5,$6::jsonb,$7,$8)',[record.id,record.businessId,customer,requestKey,signature,JSON.stringify(record),record.state,expiresAt]);
    const revision=await writeStock(tx,record.businessId,stock,entries,customer,[{event:'reserved',orderId:record.id,productId:line.productId,variantId:line.variantId,identity:line.stockIdentity,quantity:line.quantity,beforeReserved:stock.entries[line.stockKey].reserved,afterReserved:entries[line.stockKey].reserved}]);
    await tx.query('INSERT INTO demeos_vendor_order_events(order_id,event,actor_id,inventory_revision) VALUES($1,$2,$3,$4)',[record.id,'reserved',customer,revision]);return receipt(tx,customer,requestKey,signature,request.businessId,{record});
@@ -97,7 +98,7 @@ function createVendorOrders(database,{environment=()=>process.env,authorizePurch
    AND EXISTS(SELECT 1 FROM demeos_business_owners o JOIN demeos_businesses b USING(business_id)
     WHERE o.business_id=v.business_id AND o.trusted_identity_id=$2
       AND ((b.business_id !~* '^test-' AND b.profile->'applicationAccess'->'selling'='true'::jsonb) OR $3::boolean))
-   ORDER BY created_at DESC,order_id DESC LIMIT 50`,[businessId,identity,test])).rows.map(({record})=>({id:record.id,state:record.state,paymentState:record.paymentState,createdAt:record.createdAt,expiresAt:record.expiresAt,line:record.line}));
+   ORDER BY created_at DESC,order_id DESC LIMIT 50`,[businessId,identity,test])).rows.map(({record})=>({salesChannel:record.salesChannel||'unrecorded',id:record.id,state:record.state,paymentState:record.paymentState,createdAt:record.createdAt,expiresAt:record.expiresAt,line:record.line}));
  }
  return Object.freeze({reserve,release,expireDue,listOwned});
 }

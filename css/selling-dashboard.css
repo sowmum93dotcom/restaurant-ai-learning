@@ -212,3 +212,10 @@ main .danger-action{color:#ffb8ae;border-color:rgba(255,184,174,.3)}
 #intelligence-results [data-visual-proposal]{max-width:620px;min-width:0}
 #intelligence-results [data-visual-proposal] label{display:grid;gap:6px}
 #intelligence-results [data-visual-proposal] textarea{width:100%;max-width:100%;min-height:88px;resize:vertical;padding:10px;font:inherit;color:var(--bo-white);background:var(--bo-navy);border:1px solid var(--bo-line);border-radius:8px}
+
+/* Sales channels share one catalogue and inventory; commercial terms remain distinct. */
+#product-form fieldset{min-width:0;margin:1rem 0;padding:1rem;border:1px solid var(--border,rgba(214,176,82,.35));border-radius:12px;}
+#product-form legend{padding:0 .5rem;font-weight:700;}
+.wholesale-tier{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:.6rem;align-items:end;margin:.75rem 0;}
+.wholesale-tier input{min-width:0;width:100%;box-sizing:border-box;}
+@media(max-width:760px){.wholesale-tier{grid-template-columns:minmax(0,1fr);}}

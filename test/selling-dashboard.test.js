@@ -51,7 +51,7 @@ test('real SQL ownership, application grants, test isolation, revocation and res
   await t.test('authorized real owner sees only approved owned live summaries, no products or orders',async()=>{
    const res=await invoke();assert.equal(res.code,200);assert.deepEqual(res.body.businesses.map(b=>b.businessId),['real-a','real-a-second']);assert.equal(res.body.business,null);
    assert.equal(res.headers['Cache-Control'],'private, no-store');assert.equal(res.headers['Vercel-CDN-Cache-Control'],'no-store');
-   assert.deepEqual(Object.keys(res.body.businesses[0]).sort(),['businessId','dataEnvironment','location','name','type']);
+   assert.deepEqual(Object.keys(res.body.businesses[0]).sort(),['businessId','dataEnvironment','location','name','salesChannel','type']);
    assert.equal((await invoke({businessId:'real-a'})).body.business.businessId,'real-a');
   });
   await t.test('unauthenticated and cross-owner access is denied despite spoofed request claims',async()=>{
