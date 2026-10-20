@@ -61,6 +61,34 @@ Do not fill review IDs with placeholder approvals. Activation requires an actual
 
 ## Operator preparation on the existing pod
 
+### Confirm capacity before starting the CPU bridge
+
+`capacity_guard.py` is an operator-only helper for the existing Vast instance
+56929706. Without `--start` it only reads status and price. It cannot create,
+recreate, migrate or delete resources. Keep its provider key in a private file
+outside the runtime/model environment. Do not supply provider keys to the model.
+
+A paid lease requires a currently authorised test interval and explicit
+operator-verified `--spent-usd` across both providers. The helper does not read
+account billing or establish those charges itself. It checks the $35 total cap,
+at least $1 reserve for delayed/storage/transfer costs, GPU rate at most
+$0.55/hour and known CPU bridge rate $0.30/hour. Reconfirm actual CPU pricing
+separately; the helper does not manage Runpod or verify its shutdown. Its lease
+must not be started while a preceding CPU shutdown is unverified. The lease
+starts before the provider request, defaults to 600 seconds and cannot exceed
+720 seconds, leaving time for cleanup within a 15-minute approved interval.
+
+Start the GPU first. An unavailable/rejected start can queue a later activation;
+the helper cancels that queue, reads back stopped state, exits nonzero, and never
+permits a CPU bridge. Only an observed provider running state emits
+`cpuBridgeAllowed: true`; that is not a CUDA, model-integrity or inference test.
+Wait for that event before starting the existing CPU bridge. A timeout, lease
+end, interrupt or exception requests GPU stop and reads back its result.
+`confirmedStopped: false` requires operator follow-up; it must never be reported
+as stopped billing. Always stop and independently verify the CPU bridge too.
+No helper grants permission to restart unavailable hardware, exceed an approval
+window, retry in a loop, or leave a process running after ending the task.
+
 Use current connection details and reuse `/workspace/demeos-model` rather than downloading the weights again. The source copy passed publisher-derived integrity verification on 19 October; the approved A5000 evaluation independently staged and reverified all 13 files on 20 October. See `docs/business-workspace/pr708-runpod-checkpoint.md` for the distinction between preparation, measurement and activation.
 
 Set `DEMEOS_RUNTIME_PORT` to an unused local port. The official Runpod image already uses the default 8081 for nginx; the A5000 evaluation uses 18081. A listener bind failure must terminate the supervised worker rather than leave it using GPU memory.
