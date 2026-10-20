@@ -20,6 +20,16 @@ test('wholesale pricing requires a signed-in owner before loading any business d
  await handler({method:'POST',query:{businessId:'channel-shop'},body:{action:'estimate-wholesale',product:{productId:'tea',quantity:24}}},res);
  assert.equal(res.code,401);assert.equal(headers['Cache-Control'],'private, no-store');assert.equal(headers['Vercel-CDN-Cache-Control'],'no-store');
 });
+test('private catalogue exports separate channels and prices, preserve tiers and escape spreadsheet formulas',()=>{
+ const {catalogueCsv}=require('../js/selling-dashboard');
+ const products=[{productId:'business',salesChannel:'b2b',name:'Business tea',price:'obsolete-retail-price',businessTerms:wholesale},{productId:'both',salesChannel:'both',price:'12.00',businessTerms:wholesale},{productId:'retail',name:'  =HYPERLINK("unsafe")',price:'14.00',businessTerms:{...wholesale,unitPrice:'hidden-wholesale-price'}},{productId:'quote',salesChannel:'b2b',businessTerms:{...wholesale,method:'quote',unitPrice:'obsolete-fixed-price'}},{productId:'unselected',name:'Private unselected record'}];
+ const csv=catalogueCsv(products,['business','both','retail','quote','missing']);
+ assert.ok(csv.startsWith('\ufeff"Product ID"'));assert.match(csv,/"Sales channel","Retail price","Wholesale method","Wholesale currency","Wholesale unit price"/);
+ assert.equal(csv.includes('obsolete-retail-price'),false);assert.equal(csv.includes('hidden-wholesale-price'),false);assert.equal(csv.includes('obsolete-fixed-price'),false);assert.equal(csv.includes('Private unselected record'),false);
+ assert.match(csv,/"both","12.00","direct","GBP","8.50","12","6"/);assert.match(csv,/"minimumQuantity"":24,""unitPrice"":""8.00""/);assert.ok(csv.includes('"\'  =HYPERLINK(""unsafe"")"'));
+ for(const name of ['+SUM(1,2)','@SUM(1,2)','-1+1','\ttext','\n=1'])assert.ok(catalogueCsv([{productId:'p',name}],['p']).split('\r\n')[1].startsWith('"p","\''),'Dangerous spreadsheet prefix must be text');
+ const legacy=catalogueCsv([{productId:'old',price:'7.00'}],['old']);assert.match(legacy,/"b2c","7.00"/);
+});
 test('wholesale terms reject contradictory discounts, invalid packs, invented currencies and currency precision',()=>{
  assert.deepEqual(sales.businessTerms(wholesale),wholesale);
  for(const change of [{currency:'ZZZ'},{currency:'JPY'},{minimumQuantity:13},{packSize:0},{minimumQuantity:1.5},{unitPrice:'-1'},{unitPrice:'1e3'},{tiers:[{minimumQuantity:12,unitPrice:'7'}]},{tiers:[{minimumQuantity:25,unitPrice:'7'}]},{tiers:[{minimumQuantity:24,unitPrice:'9'}]},{method:'quote'},{buyerVerified:true}])assert.throws(()=>sales.businessTerms({...wholesale,...change}));

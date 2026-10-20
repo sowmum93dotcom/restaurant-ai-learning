@@ -12,6 +12,11 @@ test('catalogue query rejects arrays, invalid states, unknown categories and SQL
  for(const query of [{q:['a']},{category:'999'},{state:'active'},{sort:'price; DROP TABLE demeos_businesses'},{offset:'-1'},{offset:'100001'},{snapshot:'wrong'},{validation:'approved'}])assert.throws(()=>catalogue.parse(query));
  assert.equal(catalogue.parse().limit,25);
 });
+test('retail price sort ignores obsolete retail amounts on B2B-only products',async()=>{
+ const db=new PGlite(),repo=createPersistenceRepository(createDatabase(db));
+ const profile={businessId:'price-shop',name:'Price shop',type:'Shop',location:'London',preparationModel:'selling',salesChannel:'both',applicationAccess:{selling:true},products:[{productId:'wholesale',name:'Wholesale',salesChannel:'b2b',priceMode:'fixed',price:'1'},{productId:'retail',name:'Retail',priceMode:'fixed',price:'10'},{productId:'both',name:'Both',salesChannel:'both',priceMode:'fixed',price:'2'}]};
+ try{await repo.createBusinessForOwner('price-owner',profile);const saved=(await repo.getKnownBusiness(profile.businessId)).businessProfile;const page=await repo.getSellingCataloguePage({identity:'price-owner',businessId:profile.businessId,profile:saved,query:catalogue.parse({sort:'price'}),stock:{}});assert.deepEqual(page.products.map(p=>p.productId),['both','retail','wholesale']);}finally{await db.close();}
+});
 test('SQL catalogue search, filters, stable pages, literal search, isolation and stale snapshot',async()=>{
  const db=new PGlite(),repo=createPersistenceRepository(createDatabase(db));
  const product=i=>({productId:'p-'+String(i).padStart(4,'0'),businessId:'shop-a',name:i===7?'Literal %_ tea':'Tea '+String(i).padStart(4,'0'),sku:'SKU-'+i,description:'Saved tea',priceMode:'fixed',price:String(i),availability:i%2?'available':'unavailable',classification:{categoryId:i%2?'1':'2',sectorId:'1',datasetVersion:'marketing-agent-categories-v1'},submission:{state:i%3?'draft':'changes-required',createdAt:'2026-01-01T00:00:00.000Z',updatedAt:'2026-01-01T00:00:00.000Z'}});
@@ -50,7 +55,7 @@ test('catalogue snapshot binds filters, profile revision and inventory revision'
  for(const args of [['b',1,query],['a',2,query],['a',1,{...query,q:'x'}]])assert.notEqual(catalogue.snapshot(...args),snapshot);
 });
 test('catalogue copy covers every established Selling language',()=>{
- const copy=require('../js/selling-dashboard-copy');for(const lang of copy.languages)for(const key of ['All categories','All statuses','All checks','Sort by','Next page','Previous page','Unsaved product recovered. Review before saving.','Discard unsaved product changes?'])assert.ok(copy.packs[lang.code][key],lang.code+': '+key);
+ const copy=require('../js/selling-dashboard-copy');for(const lang of copy.languages)for(const key of ['All categories','All statuses','All checks','Sort by','Retail price','Next page','Previous page','Unsaved product recovered. Review before saving.','Discard unsaved product changes?'])assert.ok(copy.packs[lang.code][key],lang.code+': '+key);
 });
 
 test('category attributes use registry IDs, enforce required values and preserve earlier category data',()=>{

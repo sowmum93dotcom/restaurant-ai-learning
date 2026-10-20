@@ -2,7 +2,7 @@
 const {createHash}=require('node:crypto');
 const categories=require('./marketing-agent-categories');
 const {STATES}=require('./selling-submissions');
-const SORTS=Object.freeze({name:"lower(p->>'name') ASC",updated:"COALESCE(p->'submission'->>'updatedAt','') DESC",created:"COALESCE(p->'submission'->>'createdAt','') DESC",price:"CASE WHEN p->>'priceMode' IN ('fixed','from') AND p->>'price' ~ '^[0-9]+([.][0-9]{1,2})?$' THEN (p->>'price')::numeric END ASC NULLS LAST",stock:"(s->>'quantity')::bigint ASC NULLS LAST"});
+const SORTS=Object.freeze({name:"lower(p->>'name') ASC",updated:"COALESCE(p->'submission'->>'updatedAt','') DESC",created:"COALESCE(p->'submission'->>'createdAt','') DESC",price:"CASE WHEN COALESCE(p->>'salesChannel','b2c') IN ('b2c','both') AND p->>'priceMode' IN ('fixed','from') AND p->>'price' ~ '^[0-9]+([.][0-9]{1,2})?$' THEN (p->>'price')::numeric END ASC NULLS LAST",stock:"(s->>'quantity')::bigint ASC NULLS LAST"});
 function parse(query={}){
  const read=(key,fallback='')=>{const value=query[key]??fallback;if(typeof value!=='string')throw Error('Invalid catalogue query.');return value;};
  const productId=read('productId');
