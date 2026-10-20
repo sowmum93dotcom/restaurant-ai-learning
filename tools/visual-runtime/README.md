@@ -10,6 +10,18 @@ Model inference runs inside the account-controlled GPU container using local fil
 
 Vendor corrections are stored review decisions. They do not automatically retrain the base model. Any future fine-tuning needs a separate authorised dataset, training process, versioned model and evaluation. The current worker proposes visual descriptions; the existing DEMEOS rules and category pipeline retain their separate responsibilities.
 
+The requested output language is a validated `outputLocale` field in the signed
+visual input, not an instruction inferred from product text. Existing callers
+without this optional v2 field default to English. The Selling dashboard sends
+its selected language; the service and GPU boundary accept only the existing
+ten Selling locales. Language participates in both analysis and GPU cache
+identity. Switching languages clears displayed suggestions and invalidates late
+responses; a proposal from another language cannot be reviewed as the current
+analysis. Trusted model instructions use the system role, with product text
+confined to a separate untrusted user message. Advertising text is not evidence
+of delivery, freshness, certification, stock, safety or price. These controls
+still require genuine quality evaluation and do not certify model statements.
+
 ## What is implemented
 
 - A warm, dedicated GPU child loads only the pinned local safetensors snapshot `ebb281ec70b05090aa6165b016eac8ec08e71b17`, with BF16, SDPA, offline Hugging Face/Transformers settings and remote model code disabled.

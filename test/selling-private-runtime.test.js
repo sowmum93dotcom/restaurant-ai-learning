@@ -31,14 +31,14 @@ test('signed transport, verified bytes, SQL caching and per-proposal review pres
  const contentHash=createHash('sha256').update(bytes).digest('hex'),businessId='test-business-runtime';
  const asset={assetId:'image',businessId,relatedEntityId:'p1',purpose:'product',kind:'image',state:'ready',width:24,height:24,contentType:'image/webp',sizeBytes:bytes.length,processedSizeBytes:bytes.length,sourceHash:contentHash,processedHash:contentHash,processedStorageKey:`businesses/${businessId}/media/image/processed/master.webp`};
  const backend={driver:{createProcessingRead:async({storageKey})=>({storageKey,readUrl:'https://private.demeos.example/signed-image'})}};
- let calls=0,corrupt=false,wrongProvenance=false;
+ let calls=0,corrupt=false,wrongProvenance=false;const receivedLocales=[];
  // Declared fixture response; no model or hosted inference is used by this test.
  const fetchImpl=async(url,options)=>{
   if(url==='https://private.demeos.example/signed-image')return new Response(corrupt?Buffer.from('corrupt'):bytes);
   assert.equal(url,'https://gpu.demeos.example/v1/infer');assert.equal(options.redirect,'error');
   assert.equal(options.headers['X-DEMEOS-Signature'],createHmac('sha256',secret).update(options.body).digest('hex'));
   const body=JSON.parse(options.body);assert.equal(JSON.stringify(body).includes(secret),false);assert.equal(body.media[0],bytes.toString('base64'));
-  assert.ok(body.deadline<=Date.now()+2000);calls++;
+  assert.ok(body.deadline<=Date.now()+2000);receivedLocales.push(body.input.outputLocale);calls++;
   return Response.json({protocolVersion:1,jobId:body.jobId,inputHash:body.inputHash,modelVersion:wrongProvenance?'foreign':runtime.REVISION,weightsManifestHash:manifest.weightsManifestHash,runtimeCodeHash:manifest.runtimeCodeHash,measurements:{durationMs:5,peakVramBytes:100},output:{schemaVersion:2,outputSchema:'demeos-visual-output-v2',proposals:[{kind:'title',value:'Fixture product title',evidence:[contentHash],confidence:null},{kind:'description',value:'Fixture visible description',evidence:[contentHash],confidence:null}]}});
  };
  try{
@@ -78,5 +78,11 @@ test('signed transport, verified bytes, SQL caching and per-proposal review pres
   corrupt=true;result=await call();assert.equal(result.body.analysis.visual.status,'failed');assert.equal(calls,1,'Corrupt bytes never reach the GPU transport');
   corrupt=false;await db.query("DELETE FROM demeos_selling_intelligence WHERE business_id=$1",[businessId]);wrongProvenance=true;
   result=await call();assert.equal(result.body.analysis.visual.status,'failed');assert.equal(result.body.analysis.model.available,false);assert.equal(calls,2);
+  wrongProvenance=false;
+  const french=await call({outputLocale:'fr'});assert.equal(french.body.analysis.visual.status,'succeeded');assert.equal(french.body.analysis.visual.outputLocale,'fr');assert.equal(receivedLocales.at(-1),'fr');assert.equal(calls,3);
+  assert.equal((await call({outputLocale:'fr'})).body.cacheHit,true);assert.equal(calls,3);
+  const english=await call({outputLocale:'en'});assert.equal(english.body.cacheHit,false);assert.equal(english.body.analysis.visual.outputLocale,'en');assert.equal(receivedLocales.at(-1),'en');assert.equal(calls,4);assert.notEqual(english.body.analysis.inputHash,french.body.analysis.inputHash);
+  assert.equal((await call({outputLocale:'en',action:'review-intelligence',inputHash:french.body.analysis.inputHash,confirmed:true})).code,409);
+  assert.equal((await call({outputLocale:'unsupported'})).code,400);assert.equal(calls,4);
  }finally{await db.close();}
 });

@@ -184,7 +184,7 @@
       if(productMutationPending||!context?.business)return;
       const businessId=context.business.businessId,identity=clerk.user.id,seq=++intelligenceSequence;
       const saved=context.business.products.find(p=>p.productId===$('product-id').value);
-      const body={action:review?'review-intelligence':'analyze-product',productId:saved?.productId||'unsaved-draft',productRevision:saved?.authoringRevision||'new'};
+      const body={outputLocale:language,action:review?'review-intelligence':'analyze-product',productId:saved?.productId||'unsaved-draft',productRevision:saved?.authoringRevision||'new'};
       if(review){body.inputHash=intelligenceResult?.analysis.inputHash;body.confirmed=true;if(decision)Object.assign(body,decision);}
       else body.editor={name:$('product-name').value,description:$('product-description').value,sku:$('product-sku').value,price:$('product-price').value,priceMode:$('product-price-mode').value,availability:$('product-availability').value,classification:productClassification(),categoryFields:readCategoryFields()};
       $('intelligence-run').disabled=true;$('intelligence-status').textContent=t('Analysing product…');
@@ -467,7 +467,7 @@
       }catch{clerk=null;status('error',t('Sign-in is temporarily unavailable'),t('We could not connect to DEMEOS authentication. Please try again.'));}
       finally{booting=false;}
     }
-    $('dashboard-language').addEventListener('change',()=>{language=i18n.resolve($('dashboard-language').value).code;try{win.localStorage.setItem('demeos-customer-language',language);}catch{}navigation();if(context)render(context,true);else load();});
+    $('dashboard-language').addEventListener('change',()=>{clearIntelligence();language=i18n.resolve($('dashboard-language').value).code;try{win.localStorage.setItem('demeos-customer-language',language);}catch{}navigation();if(context)render(context,true);else load();});
     function clearPrivateForms(){
       $('record-search').value='';orderCursor='';orderPrevious=[];$('record-count').textContent='';
       const priorKey=draftKey();let recovery=null;try{if(priorKey)recovery=win.sessionStorage.getItem(priorKey);}catch{}clearProductForm();try{if(priorKey&&recovery)win.sessionStorage.setItem(priorKey,recovery);}catch{}clearVariantForm();

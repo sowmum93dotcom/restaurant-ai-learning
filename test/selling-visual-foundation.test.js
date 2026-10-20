@@ -17,6 +17,8 @@ test('visual execution is unavailable by default and cannot be selected by reque
 });
 test('visual contract rejects foreign URLs, excessive bytes, malformed frames and unsupported capabilities',async()=>{
  const good=input();assert.equal(boundary.validateVisualInput(good),true);
+ for(const outputLocale of boundary.VISUAL_CONTRACT.outputLocales)assert.equal(boundary.validateVisualInput({...good,outputLocale}),true);
+ for(const outputLocale of [null,[],{},'xx','en; publish'])assert.equal(boundary.validateVisualInput({...good,outputLocale}),false);
  for(const change of [{...good,sourceUrl:'https://private.example'},{...good,media:[{...good.media[0],sizeBytes:5000000}]},{...good,productRevision:'old'},{...good,media:new Array(1)},{...good,media:[{...good.media[0],frameIndex:1}]}])assert.equal(boundary.validateVisualInput(change),false);
  assert.equal((await adapter().execute({...good,capability:'publish-product'},'owner')).code,'unsupported-capability');
  const frames={...good,capability:'video-frame-semantics',media:[{...good.media[0],frameIndex:0,timestampSeconds:1}]};assert.equal(boundary.validateVisualInput(frames),true);assert.equal(boundary.validateVisualInput({...frames,media:Array.from({length:5},()=>frames.media[0])}),false);

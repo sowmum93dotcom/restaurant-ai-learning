@@ -17,6 +17,8 @@ function editorProduct(saved,input,businessId){
 }
 async function run({store,profile,identity,environment,body,visualRunner=null}){
  const id=body.productId;
+ const outputLocale=body.outputLocale===undefined?'en':body.outputLocale;
+ if(!require('./selling-model-boundary').VISUAL_CONTRACT.outputLocales.includes(outputLocale))return {status:400,error:'Check the required fields and permitted values.'};
  if(typeof id!=='string'||!/^[a-zA-Z0-9_-]{1,120}$/.test(id)||!['analyze-product','review-intelligence'].includes(body.action))return {status:400,error:'Check the required fields and permitted values.'};
  const saved=profile.products.find(p=>p.productId===id);
  if(!saved&&id!=='unsaved-draft')return {status:404,error:'Product not found.'};
@@ -31,7 +33,7 @@ async function run({store,profile,identity,environment,body,visualRunner=null}){
  // Bind execution to the exact saved record, rather than an editor reconstruction.
  if(persisted)product=saved;
  const input={profile,product,assets,stock,environment,identity};
- const inputHash=visualRunner?native.hash([native.fingerprint(input),visualRunner.signature]):native.fingerprint(input);
+ const inputHash=visualRunner?native.hash([native.fingerprint(input),visualRunner.signature,outputLocale]):native.fingerprint(input);
  const storedCache=persisted?await store.getSellingIntelligence(identity,profile.businessId,id,inputHash):null;
  const cached=storedCache&&Date.parse(storedCache.validUntil)>Date.now()?storedCache:null;
  if(body.action==='review-intelligence'){
@@ -57,7 +59,7 @@ async function run({store,profile,identity,environment,body,visualRunner=null}){
  if(cached)return {status:200,analysis:cached,cacheHit:true,persisted:true};
  const result=native.analyze(input);result.inputHash=inputHash;
  if(persisted&&visualRunner){
-  result.visual=await visualRunner.analyze({profile,product,assets,identity});
+  result.visual=await visualRunner.analyze({profile,product,assets,identity,outputLocale});
   result.model=result.visual.status==='succeeded'?{available:true,modelId:result.visual.provenance.modelId,modelVersion:result.visual.provenance.modelVersion}:{available:false,reason:result.visual.code||'model-execution-failed'};
   if(result.visual.status!=='succeeded')result.validUntil=new Date(Date.now()+5000).toISOString();
  }

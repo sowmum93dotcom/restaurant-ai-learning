@@ -519,11 +519,17 @@ async function run(){
      await page.setViewportSize({width,height:1000});
      for(const locale of visualCopy.languages){
       await page.locator('#dashboard-language').selectOption(locale.code);
+      assert.equal(await page.locator('[data-visual-proposal]').count(),0,'Changing output language clears old suggestions');
+      const languageRequest=page.waitForRequest(request=>request.method()==='POST'&&request.url().includes('resource=selling-dashboard')&&request.postDataJSON()?.action==='analyze-product');
+      await page.locator('#intelligence-run').click();
+      assert.equal((await languageRequest).postDataJSON().outputLocale,locale.code);
+      await page.locator('[data-visual-proposal]').first().waitFor();
       assert.equal(await page.locator('[data-visual-proposal]').count(),3);
       assert.equal(await page.locator('#intelligence-results').getByRole('button',{name:visualCopy.translate(locale.code,'Accept suggestion'),exact:true}).count(),3);
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
      }
      await page.locator('#dashboard-language').selectOption('en');
+     await page.locator('#intelligence-run').click();await page.locator('[data-visual-proposal]').first().waitFor();
      await page.screenshot({path:path.join(artifacts,'demeos-selling-visual-proposal-fixture-'+width+'.png'),fullPage:true});
     }
     await page.setViewportSize(viewport);

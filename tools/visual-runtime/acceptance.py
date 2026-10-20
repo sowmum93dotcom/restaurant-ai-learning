@@ -14,9 +14,9 @@ import uuid
 from pathlib import Path
 
 from benchmark import NoRedirects, http_failure
-from contracts import MODEL_ID, MODEL_VERSION, TIMEOUT_MS, TOKEN, strict_json, validate_output
+from contracts import MODEL_ID, MODEL_VERSION, TIMEOUT_MS, TOKEN, OUTPUT_LANGUAGES, strict_json, validate_output
 
-LOCALES = ('en', 'es', 'fr', 'ar', 'pt', 'zh', 'hi', 'de', 'ja', 'tr')
+LOCALES = tuple(OUTPUT_LANGUAGES)
 
 
 def bounded_file(path, maximum):
@@ -84,7 +84,8 @@ def run_case(case, asset, origin, secret, weights_hash, code_hash, opener):
     request_input = dict(schemaVersion=2, inputSchema='demeos-visual-input-v2', capability='image-semantics',
                          businessId='test-business-acceptance', productId=case['id'],
                          productRevision=hashlib.sha256(case['text'].encode()).hexdigest(),
-                         mediaRevision=descriptor['contentHash'], media=[descriptor], text=case['text'])
+                         mediaRevision=descriptor['contentHash'], media=[descriptor], text=case['text'],
+                         outputLocale=case['locale'])
     request_hash = hashlib.sha256(json.dumps(request_input, sort_keys=True).encode()).hexdigest()
     now, job_id = int(time.time() * 1000), str(uuid.uuid4())
     payload = json.dumps(dict(protocolVersion=1, jobId=job_id, issuedAt=now, deadline=now + TIMEOUT_MS,

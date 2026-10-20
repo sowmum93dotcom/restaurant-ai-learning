@@ -33,11 +33,12 @@ function selectMedia(product,assets){
 function createConfiguredVisualRunner({store,environment,backend,fetchImpl=globalThis.fetch}={}){
  const config=configuration(environment);if(!config||typeof store?.createSellingModelLedger!=='function'||typeof backend?.driver?.createProcessingRead!=='function')return null;
  const signature=hash([boundary.VISUAL_CONTRACT,config.manifest,'demeos-private-runtime-v1']);
- return {signature,async analyze({profile,product,assets,identity}){
+ return {signature,async analyze({profile,product,assets,identity,outputLocale='en'}){
   // Real/live business media remains disabled even when a Preview is misconfigured.
   if(access.dataEnvironment(profile.businessId,environment,identity)!=='test')return {status:'unavailable',code:'preview-authorisation-required'};
+  if(!boundary.VISUAL_CONTRACT.outputLocales.includes(outputLocale))return {status:'unavailable',code:'unsupported-output-locale'};
   const selection=selectMedia(product,assets);if(!selection)return {status:'unavailable',code:'verified-media-required'};
-  const input={schemaVersion:2,inputSchema:boundary.VISUAL_CONTRACT.inputSchema,...selection,businessId:profile.businessId,productId:product.productId,productRevision:catalogueRevision(product),mediaRevision:readiness.mediaRevision(assets),text:JSON.stringify({name:product.name||'',description:product.description||''}).slice(0,2000)};
+  const input={schemaVersion:2,inputSchema:boundary.VISUAL_CONTRACT.inputSchema,...selection,businessId:profile.businessId,productId:product.productId,productRevision:catalogueRevision(product),mediaRevision:readiness.mediaRevision(assets),outputLocale,text:JSON.stringify({name:product.name||'',description:product.description||''}).slice(0,2000)};
   const authorize=readiness.createVisualAuthorizer({store,environment:()=>environment});let measurements=null;
   const runtime={async execute({input,inputHash,limits,deadline,signal}){
    const media=[];
@@ -63,7 +64,7 @@ function createConfiguredVisualRunner({store,environment,backend,fetchImpl=globa
   }};
   const executor=boundary.createExecutionAdapter({manifest:config.manifest,runtime,authorize,ledger:store.createSellingModelLedger()});
   const result=await executor.execute(input,identity);
-  return {...result,...(result.status==='succeeded'&&measurements?{measurements}:{})};
+  return {...result,outputLocale,...(result.status==='succeeded'&&measurements?{measurements}:{})};
  }};
 }
 module.exports={MODEL,REVISION,configuration,readBounded,selectMedia,createConfiguredVisualRunner};

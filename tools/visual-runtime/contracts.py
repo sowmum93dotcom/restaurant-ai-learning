@@ -10,6 +10,9 @@ MODEL_VERSION = 'ebb281ec70b05090aa6165b016eac8ec08e71b17'
 MAX_REQUEST = 6 * 1024 * 1024
 MAX_OUTPUT = 32768
 TIMEOUT_MS = 2000
+OUTPUT_LANGUAGES = {'en': 'English', 'es': 'Spanish', 'fr': 'French', 'ar': 'Arabic',
+                    'pt': 'Portuguese', 'zh': 'Simplified Chinese', 'hi': 'Hindi',
+                    'de': 'German', 'ja': 'Japanese', 'tr': 'Turkish'}
 TEXT_KINDS = {'title', 'description', 'observable-attribute', 'image-description',
               'video-summary', 'media-consistency', 'visible-product', 'image-quality'}
 TOKEN = re.compile(r'^[a-zA-Z0-9_.:-]{1,120}$')
@@ -52,8 +55,13 @@ def validate_request(value, weights_hash, now=None, code_hash=None):
         or not integer(value['deadline'], int(now + 1), int(now + TIMEOUT_MS))):
         raise ValueError('invalid-job')
     request = value['input']
-    if (not exact(request, ['schemaVersion', 'inputSchema', 'capability', 'businessId',
-                          'productId', 'productRevision', 'mediaRevision', 'media', 'text'])
+    input_keys = ['schemaVersion', 'inputSchema', 'capability', 'businessId',
+                  'productId', 'productRevision', 'mediaRevision', 'media', 'text']
+    if isinstance(request, dict) and 'outputLocale' in request:
+        input_keys.append('outputLocale')
+    if (not exact(request, input_keys)
+        or not isinstance(request.get('outputLocale', 'en'), str)
+        or request.get('outputLocale', 'en') not in OUTPUT_LANGUAGES
         or request['schemaVersion'] != 2 or request['inputSchema'] != 'demeos-visual-input-v2'
         or request['capability'] not in ['image-semantics', 'video-frame-semantics']
         or any(not isinstance(request[k], str) or not TOKEN.fullmatch(request[k])
