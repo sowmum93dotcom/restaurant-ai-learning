@@ -66,7 +66,13 @@ Set `DEMEOS_RUNTIME_PORT` to an unused local port. The official Runpod image alr
 
 Failed benchmark reports retain the HTTP status and, only for an exact known
 status/code pair, a fixed runtime error code such as `execution-timeout` or
-`runtime-unavailable`. Arbitrary response text, headers and credentials are never
+`runtime-unavailable`. The worker also reports one of four fixed HTTP 502 codes:
+`model-json-invalid`, `model-output-limit` (invalid JSON after exhausting the
+generation budget), `model-evidence-invalid`, or `model-output-invalid`. These
+codes distinguish generation/parser failures from the supervisor's HTTP 504
+deadline. The supervisor still kills and recovers the failed child; a rejection
+is never a successful empty result. Unknown or extended error envelopes remain
+unavailable. Arbitrary response text, headers and credentials are never
 saved. The benchmark stops after its first failure; a synthetic result does not
 establish product accuracy. Run its local fixture checks before paying for GPU
 time: `python3 -m unittest discover -s tools/visual-runtime -p '*_test.py'`.

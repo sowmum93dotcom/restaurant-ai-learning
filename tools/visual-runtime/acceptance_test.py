@@ -71,6 +71,8 @@ class AcceptanceTests(unittest.TestCase):
                 if self.mode == 'extra': response['private'] = 'private-runtime-secret'
                 if self.mode == 'timeout':
                     status, body = 504, b'{"code":"execution-timeout"}'
+                elif self.mode == 'invalid-model':
+                    status, body = 502, b'{"code":"model-evidence-invalid"}'
                 else: status, body = 200, json.dumps(response).encode()
                 self.send_response(status); self.send_header('Content-Length', str(len(body))); self.end_headers(); self.wfile.write(body)
             def log_message(self, *_): pass
@@ -82,12 +84,14 @@ class AcceptanceTests(unittest.TestCase):
                 _, assets, _ = load_pack(path, root)
                 origin = f'http://127.0.0.1:{server.server_port}'
                 opener = urllib.request.build_opener(NoRedirects())
-                for mode in ['valid', 'wrong-hash', 'bad-measurement', 'extra', 'timeout']:
+                for mode in ['valid', 'wrong-hash', 'bad-measurement', 'extra', 'timeout', 'invalid-model']:
                     Fixture.mode = mode
                     result = run_case(pack['cases'][0], assets['fixture'], origin, secret, 'a'*64, 'a'*64, opener)
                     self.assertEqual(result['passed'], mode == 'valid')
                     self.assertEqual(result['humanReview'], 'pending')
                     self.assertNotIn('private-runtime-secret', json.dumps(result))
+                    if mode == 'invalid-model':
+                        self.assertEqual(result['runtimeErrorCode'], 'model-evidence-invalid')
                 Fixture.mode = 'timeout'; Fixture.calls = 0
                 pack['cases'].append(dict(pack['cases'][0], id='fixture-tr', locale='tr'))
                 path.write_text(json.dumps(pack)); (root/'secret').write_bytes(secret); (root/'manifest').write_text('{}')

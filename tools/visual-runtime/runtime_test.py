@@ -15,15 +15,19 @@ import unittest
 import uuid
 from pathlib import Path
 from unittest.mock import patch
-from contracts import MODEL_ID, MODEL_VERSION, strict_json, validate_request, validate_output
+from contracts import MODEL_ID, MODEL_VERSION, ModelOutputError, strict_json, validate_request, validate_output
 from server import RuntimeHTTPServer, Supervisor, verify_weights, worker_environment, runtime_code_hash, main as runtime_main
-from worker import expand_compact_output, inference_messages
+from worker import expand_compact_output, inference_messages, parse_model_output
 
 FAKE_CHILD = '''import json,sys,time
 print(json.dumps({'ready':True,'modelVersion':%r}),flush=True)
 for line in sys.stdin:
  r=json.loads(line)
  if r['input']['text']=='hang':time.sleep(10)
+ if r['input']['text']=='invalid-model':
+  print(json.dumps({'error':{'code':'model-evidence-invalid'}}),flush=True);continue
+ if r['input']['text']=='unsafe-error':
+  print(json.dumps({'error':{'code':'private-model-text','detail':'private-product-data'}}),flush=True);continue
  print(json.dumps({'output':{'schemaVersion':2,'outputSchema':'demeos-visual-output-v2','proposals':[]},'measurements':{'durationMs':1,'peakVramBytes':0}}),flush=True)
 ''' % MODEL_VERSION
 SECRET = b'fixture-secret-for-supervisor-tests-only'
@@ -44,6 +48,40 @@ def request(text='', deadline=2000):
 
 
 class RuntimeTests(unittest.TestCase):
+    def test_model_failures_are_fixed_codes_without_raw_output(self):
+        descriptors = [dict(contentHash='a' * 64)]
+        cases = [('private malformed text', False, 'model-json-invalid'),
+                 ('[["unfinished private text', True, 'model-output-limit'),
+                 ('[["Private text","0,1,2,3"]]', False, 'model-evidence-invalid'),
+                 ('[["<private>","0"]]', False, 'model-output-invalid')]
+        for raw, reached, code in cases:
+            with self.subTest(code=code), self.assertRaises(ModelOutputError) as caught:
+                parse_model_output(raw, descriptors, reached)
+            self.assertEqual(str(caught.exception), code)
+            self.assertNotIn('private', str(caught.exception).lower())
+        self.assertEqual(parse_model_output('[]', descriptors, True)['proposals'], [])
+        with self.assertRaises(ValueError): ModelOutputError('private-product-data')
+
+    def test_http_model_rejection_is_distinct_and_unknown_child_details_do_not_escape(self):
+        server = RuntimeHTTPServer(('127.0.0.1', 0), self.supervisor, SECRET, WEIGHTS)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            for text, expected_status, expected_code in [('invalid-model', 502, 'model-evidence-invalid'),
+                                                         ('unsafe-error', 503, 'runtime-unavailable')]:
+                self.supervisor.start()
+                raw = json.dumps(request(text)).encode()
+                conn = http.client.HTTPConnection('127.0.0.1', server.server_port, timeout=3)
+                conn.request('POST', '/v1/infer', raw, {'Content-Type': 'application/json',
+                             'Authorization': 'Bearer ' + SECRET.decode(),
+                             'X-DEMEOS-Signature': hmac.new(SECRET, raw, hashlib.sha256).hexdigest()})
+                response = conn.getresponse()
+                self.assertEqual(response.status, expected_status)
+                self.assertEqual(json.loads(response.read()), {'code': expected_code})
+                conn.close()
+        finally:
+            server.shutdown(); server.server_close(); thread.join(2)
+
     def test_output_locale_is_validated_and_untrusted_text_cannot_choose_policy(self):
         from contracts import OUTPUT_LANGUAGES
         for locale, name in OUTPUT_LANGUAGES.items():

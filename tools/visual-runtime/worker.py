@@ -7,7 +7,7 @@ import time
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from server import runtime_code_hash
-from contracts import MODEL_VERSION, OUTPUT_LANGUAGES, strict_json, validate_output, validate_request
+from contracts import MODEL_VERSION, OUTPUT_LANGUAGES, ModelOutputError, strict_json, validate_output, validate_request
 
 
 def inference_messages(images, text, locale='en'):
@@ -60,6 +60,18 @@ def expand_compact_output(value, descriptors):
     return validate_output(dict(schemaVersion=2, outputSchema='demeos-visual-output-v2', proposals=proposals), descriptors)
 
 
+def parse_model_output(text, descriptors, token_limit_reached=False):
+    try:
+        value = strict_json(text)
+    except ValueError:
+        raise ModelOutputError('model-output-limit' if token_limit_reached else 'model-json-invalid') from None
+    try:
+        return expand_compact_output(value, descriptors)
+    except ValueError as error:
+        code = 'model-evidence-invalid' if str(error) == 'invalid-evidence-index' else 'model-output-invalid'
+        raise ModelOutputError(code) from None
+
+
 def main():
     model_path, weights_hash, code_hash = sys.argv[1:4]
     if runtime_code_hash() != code_hash:
@@ -82,7 +94,8 @@ def main():
         with torch.inference_mode():
             output = model.generate(**inputs, max_new_tokens=maximum, do_sample=False)
         text = processor.decode(output[0, inputs['input_ids'].shape[1]:], skip_special_tokens=True)
-        return expand_compact_output(strict_json(text), descriptors) if parse else text
+        generated_count = output.shape[1] - inputs['input_ids'].shape[1]
+        return parse_model_output(text, descriptors, generated_count >= maximum) if parse else text
 
     # Warm the loaded model before accepting HTTP work. This is not an accuracy test.
     with contextlib.redirect_stdout(sys.stderr):
@@ -107,8 +120,12 @@ def main():
         started = time.perf_counter()
         with contextlib.redirect_stdout(sys.stderr):
             torch.cuda.reset_peak_memory_stats()
-            result = infer(images, request['input']['text'], request['input']['media'],
-                           locale=request['input'].get('outputLocale', 'en'))
+            try:
+                result = infer(images, request['input']['text'], request['input']['media'],
+                               locale=request['input'].get('outputLocale', 'en'))
+            except ModelOutputError as error:
+                print(json.dumps({'error': {'code': error.code}}), file=sys.__stdout__, flush=True)
+                continue
             torch.cuda.synchronize()
         result = validate_output(result, request['input']['media'])
         print(json.dumps({'output': result, 'measurements': {

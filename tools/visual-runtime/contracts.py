@@ -13,6 +13,19 @@ TIMEOUT_MS = 2000
 OUTPUT_LANGUAGES = {'en': 'English', 'es': 'Spanish', 'fr': 'French', 'ar': 'Arabic',
                     'pt': 'Portuguese', 'zh': 'Simplified Chinese', 'hi': 'Hindi',
                     'de': 'German', 'ja': 'Japanese', 'tr': 'Turkish'}
+MODEL_FAILURE_CODES = frozenset({'model-output-limit', 'model-json-invalid',
+                                'model-evidence-invalid', 'model-output-invalid'})
+
+
+class ModelOutputError(RuntimeError):
+    """A fixed diagnostic code; never carry model text or product data."""
+    def __init__(self, code):
+        if code not in MODEL_FAILURE_CODES:
+            raise ValueError('invalid-model-failure-code')
+        self.code = code
+        super().__init__(code)
+
+
 TEXT_KINDS = {'title', 'description', 'observable-attribute', 'image-description',
               'video-summary', 'media-consistency', 'visible-product', 'image-quality'}
 TOKEN = re.compile(r'^[a-zA-Z0-9_.:-]{1,120}$')

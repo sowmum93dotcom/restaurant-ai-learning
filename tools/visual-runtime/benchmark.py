@@ -11,7 +11,7 @@ import urllib.parse
 import urllib.request
 import uuid
 from pathlib import Path
-from contracts import MODEL_ID, MODEL_VERSION, strict_json, validate_output
+from contracts import MODEL_ID, MODEL_VERSION, MODEL_FAILURE_CODES, strict_json, validate_output
 
 
 class NoRedirects(urllib.request.HTTPRedirectHandler):
@@ -30,8 +30,10 @@ def http_failure(error):
         if len(raw) <= 256:
             body = strict_json(raw)
             if (isinstance(body, dict) and set(body) == {'code'}
-                and error.code in codes and body['code'] == codes[error.code]):
-                result['runtimeErrorCode'] = codes[error.code]
+                and isinstance(body['code'], str)
+                and (error.code in codes and body['code'] == codes[error.code]
+                     or error.code == 502 and body['code'] in MODEL_FAILURE_CODES)):
+                result['runtimeErrorCode'] = body['code']
     except Exception:
         pass  # Preserve status even for malformed, oversized or unreadable bodies.
     finally:

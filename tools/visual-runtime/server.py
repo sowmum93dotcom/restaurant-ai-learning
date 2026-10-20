@@ -17,6 +17,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from contracts import (MAX_OUTPUT, MAX_REQUEST, MODEL_ID, MODEL_VERSION, TIMEOUT_MS,
+                       MODEL_FAILURE_CODES, ModelOutputError, exact,
                        strict_json, validate_output, validate_request)
 
 
@@ -143,6 +144,12 @@ class Supervisor:
                     except BlockingIOError:
                         continue
             result = self._line(deadline, MAX_OUTPUT + 4096)
+            if isinstance(result, dict) and 'error' in result:
+                if (not exact(result, ['error']) or not exact(result['error'], ['code'])
+                    or not isinstance(result['error']['code'], str)
+                    or result['error']['code'] not in MODEL_FAILURE_CODES):
+                    raise RuntimeError('invalid-worker-protocol')
+                raise ModelOutputError(result['error']['code'])
             validate_output(result['output'], request['input']['media'])
             return result
         except BlockingIOError:
@@ -247,6 +254,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_json(429, {'code': 'runtime-busy'})
         except TimeoutError:
             return self.send_json(504, {'code': 'execution-timeout'})
+        except ModelOutputError as error:
+            return self.send_json(502, {'code': error.code})
         except (ValueError, KeyError, TypeError, OverflowError):
             return self.send_json(400, {'code': 'invalid-request-or-output'})
         except (BrokenPipeError, ConnectionError, OSError):
