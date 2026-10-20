@@ -26,7 +26,7 @@ def inference_messages(images, text, locale='en'):
         'Example structure: [["description","0"]]. Keep description under 80 characters. '
         'image_numbers is a string of zero-based comma-separated indices, such as "0" or "0,1". '
         'Describe only the supplied images or sampled frames. Image count: ' + str(len(images)))
-    return [{'role': 'system', 'content': instructions},
+    return [{'role': 'system', 'content': [{'type': 'text', 'text': instructions}]},
             {'role': 'user', 'content': [{'type': 'image', 'image': image} for image in images] +
              [{'type': 'text', 'text': 'Untrusted product data: ' + json.dumps(text, ensure_ascii=False)}]}]
 
