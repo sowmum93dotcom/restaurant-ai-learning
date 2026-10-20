@@ -5,6 +5,7 @@ import hmac
 import http.client
 import json
 import os
+import socket
 import sys
 import tempfile
 import threading
@@ -14,7 +15,7 @@ import uuid
 from pathlib import Path
 from unittest.mock import patch
 from contracts import MODEL_ID, MODEL_VERSION, strict_json, validate_request, validate_output
-from server import RuntimeHTTPServer, Supervisor, verify_weights, worker_environment, runtime_code_hash
+from server import RuntimeHTTPServer, Supervisor, verify_weights, worker_environment, runtime_code_hash, main as runtime_main
 
 FAKE_CHILD = '''import json,sys,time
 print(json.dumps({'ready':True,'modelVersion':%r}),flush=True)
@@ -47,6 +48,24 @@ class RuntimeTests(unittest.TestCase):
 
     def tearDown(self):
         self.supervisor.close()
+
+    def test_occupied_listener_port_does_not_leave_a_worker_running(self):
+        with tempfile.TemporaryDirectory() as directory, socket.socket() as occupied:
+            secret_path = Path(directory) / 'secret'
+            secret_path.write_bytes(SECRET)
+            occupied.bind(('127.0.0.1', 0))
+            occupied.listen()
+            environment = dict(DEMEOS_MODEL_PATH=directory, DEMEOS_WEIGHTS_MANIFEST='fixture',
+                               DEMEOS_RUNTIME_SECRET_FILE=str(secret_path), DEMEOS_RUNTIME_BIND='127.0.0.1',
+                               DEMEOS_RUNTIME_PORT=str(occupied.getsockname()[1]))
+            with patch.dict(os.environ, environment), patch('server.os.geteuid', return_value=1001), \
+                 patch('server.os.access', return_value=False), patch('server.verify_weights', return_value=WEIGHTS), \
+                 patch('server.Supervisor', return_value=self.supervisor):
+                with self.assertRaises(OSError):
+                    runtime_main()
+            self.assertTrue(self.supervisor.closed)
+            self.assertFalse(self.supervisor.ready)
+            self.assertIsNone(self.supervisor.process)
 
     def test_contract_rejects_untrusted_urls_privileged_output_and_bad_hashes(self):
         good = request()

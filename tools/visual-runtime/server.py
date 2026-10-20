@@ -280,22 +280,22 @@ def main():
     child_env = worker_environment()
     code_hash = runtime_code_hash()
     supervisor = Supervisor([sys.executable, '-I', '-u', str(Path(__file__).with_name('worker.py')), model_path, weights_hash, code_hash], child_env)
-    supervisor.start()
-    bind = os.environ.get('DEMEOS_RUNTIME_BIND', '127.0.0.1')
-    if bind not in ['127.0.0.1', '0.0.0.0'] or bind == '0.0.0.0' and os.environ.get('DEMEOS_RUNTIME_BEHIND_TLS_PROXY') != 'true':
-        supervisor.close()
-        raise ValueError('A non-loopback listener requires an explicitly configured TLS proxy.')
-    server = RuntimeHTTPServer((bind, int(os.environ.get('DEMEOS_RUNTIME_PORT', '8081'))), supervisor, secret, weights_hash, code_hash)
-    def stop(*_):
-        supervisor.close()
-        raise SystemExit(0)
-    signal.signal(signal.SIGTERM, stop)
-    signal.signal(signal.SIGINT, stop)
+    server = None
     try:
+        supervisor.start()
+        bind = os.environ.get('DEMEOS_RUNTIME_BIND', '127.0.0.1')
+        if bind not in ['127.0.0.1', '0.0.0.0'] or bind == '0.0.0.0' and os.environ.get('DEMEOS_RUNTIME_BEHIND_TLS_PROXY') != 'true':
+            raise ValueError('A non-loopback listener requires an explicitly configured TLS proxy.')
+        server = RuntimeHTTPServer((bind, int(os.environ.get('DEMEOS_RUNTIME_PORT', '8081'))), supervisor, secret, weights_hash, code_hash)
+        def stop(*_):
+            raise SystemExit(0)
+        signal.signal(signal.SIGTERM, stop)
+        signal.signal(signal.SIGINT, stop)
         server.serve_forever()
     finally:
         supervisor.close()
-        server.server_close()
+        if server is not None:
+            server.server_close()
 
 
 if __name__ == '__main__':

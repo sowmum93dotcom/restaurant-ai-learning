@@ -31,7 +31,9 @@ Do not fill review IDs with placeholder approvals. Activation requires an actual
 
 ## Operator preparation on the existing pod
 
-These are a runbook, not commands that have already run. Resume the saved pod/volume first; use current connection details. Reuse `/workspace/demeos-model` rather than downloading the weights again. The existing source copy has not yet passed full integrity verification.
+Use current connection details and reuse `/workspace/demeos-model` rather than downloading the weights again. The source copy passed publisher-derived integrity verification on 19 October; the approved A5000 evaluation independently staged and reverified all 13 files on 20 October. See `docs/business-workspace/pr708-runpod-checkpoint.md` for the distinction between preparation, measurement and activation.
+
+Set `DEMEOS_RUNTIME_PORT` to an unused local port. The official Runpod image already uses the default 8081 for nginx; the A5000 evaluation uses 18081. A listener bind failure must terminate the supervised worker rather than leave it using GPU memory.
 
 1. Review source, dependencies/base image and the trusted snapshot checksums. `inspect_model.py MODEL_DIRECTORY NEW_MANIFEST_PATH` records local checksums with progress, but **cannot establish their trust or source by itself**. Compare the stored weight hashes and configuration/tokenizer files with a trusted copy of the pinned publisher snapshot. Preserve the resulting manifest as root-owned read-only input.
 2. Run `sh tools/visual-runtime/prepare.sh` from the reviewed checkout. It prepares `/opt/demeos-visual-runtime`, a dedicated `demeos-ai` user, a venv reusing the image's existing PyTorch and a secret file readable only by that user. It does not start inference, a Pod or any paid infrastructure. It does not replace the base PyTorch installation. Its small primary dependency pin set is not a substitute for reviewing the complete base image and installed environment; `environment.txt` records the result.
