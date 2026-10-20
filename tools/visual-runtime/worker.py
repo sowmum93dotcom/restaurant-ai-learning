@@ -25,6 +25,8 @@ def inference_messages(images, text, locale='en'):
         'Return only JSON: an array with at most one row [description,image_numbers]. '
         'Example structure: [["description","0"]]. Keep description under 80 characters. '
         'image_numbers is a string of zero-based comma-separated indices, such as "0" or "0,1". '
+        'Indices refer only to supplied image files, never panels or objects within an image. '
+        'For one supplied image the only valid index is "0". '
         'Describe only the supplied images or sampled frames. Image count: ' + str(len(images)))
     return [{'role': 'system', 'content': [{'type': 'text', 'text': instructions}]},
             {'role': 'user', 'content': [{'type': 'image', 'image': image} for image in images] +

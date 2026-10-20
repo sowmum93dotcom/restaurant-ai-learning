@@ -54,6 +54,8 @@ class RuntimeTests(unittest.TestCase):
             self.assertEqual(messages[0]['role'], 'system')
             self.assertEqual(messages[0]['content'][0]['type'], 'text')
             self.assertIn('ONLY in ' + name, messages[0]['content'][0]['text'])
+            self.assertIn('never panels or objects within an image', messages[0]['content'][0]['text'])
+            self.assertIn('only valid index is "0"', messages[0]['content'][0]['text'])
             self.assertNotIn(job['input']['text'], messages[0]['content'][0]['text'])
             self.assertTrue(all(isinstance(part, dict) and 'type' in part for message in messages for part in message['content']))
             self.assertEqual(messages[1]['role'], 'user')
