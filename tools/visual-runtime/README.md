@@ -2,6 +2,14 @@
 
 This service runs DEMEOS-controlled Qwen3-VL weights on the existing raw GPU. It is not an external AI inference API. The existing Selling dashboard and 171-category classification remain in place.
 
+## Ownership and control
+
+DEMEOS controls the application, its existing 171-category pipeline, business rules, permissions, vendor review workflow, execution contracts and operation of this service. The underlying Qwen3-VL-4B-Instruct base model was developed by Qwen; it is a licensed external model, not a foundation model trained from scratch by DEMEOS. The publisher identifies its licence as Apache-2.0. Preserve that attribution and complete the actual licence review before activation; a licence label is not an activation approval.
+
+Model inference runs inside the account-controlled GPU container using local files. It does not call a hosted model inference API. The inherited syscall filter denies outbound network operations in the supervisor and model child. This does not make the rental provider, storage, hosting, GPU drivers or software dependencies DEMEOS-owned infrastructure. The same execution contract can be operated on compatible DEMEOS-owned hardware later, with fresh compatibility and acceptance checks.
+
+Vendor corrections are stored review decisions. They do not automatically retrain the base model. Any future fine-tuning needs a separate authorised dataset, training process, versioned model and evaluation. The current worker proposes visual descriptions; the existing DEMEOS rules and category pipeline retain their separate responsibilities.
+
 ## What is implemented
 
 - A warm, dedicated GPU child loads only the pinned local safetensors snapshot `ebb281ec70b05090aa6165b016eac8ec08e71b17`, with BF16, SDPA, offline Hugging Face/Transformers settings and remote model code disabled.
@@ -9,7 +17,7 @@ This service runs DEMEOS-controlled Qwen3-VL weights on the existing raw GPU. It
 - The service has no SQL, permanent Blob, Hugging Face or cloud-provider credentials. The model child receives only a small explicit environment allowlist. Model files, checksum manifest and service code must be read-only to the service user. An external egress firewall/network policy is still required; offline library flags are not a network firewall.
 - HTTPS transport requires a server-only bearer secret plus HMAC of the entire request. Requests have unique IDs, expiry/deadline checks and replay rejection. Unauthenticated callers are rejected before their bodies are read. The service binds loopback by default. Eight connections and six MiB request size are the upper bounds.
 - The Vercel-side transport fetches only authorised private media from explicitly configured hosts, verifies byte counts and SHA256, and forwards **bytes, not URLs**. No endpoint, source URL, secret or executor can be supplied by a browser request. Ownership and product/media revisions are rechecked before forwarding and before returning results.
-- Maximum one image or four already extracted video frames, four MiB media total, 1,600-pixel input bounds, model preprocessing capped at 640 × 640 pixels per image, at most 256 generated tokens (within the existing 512-token ceiling), 32 KiB proposal output and the **unchanged 2,000 ms overall execution deadline**. Transfer and ledger time consume that existing deadline; the remote worker receives only the remaining time. Synchronized host clocks are required. No claim is made that this model meets that deadline yet.
+- Maximum one image or four already extracted video frames, four MiB media total, 1,600-pixel input bounds, model preprocessing capped at 640 × 640 pixels per image, at most 256 generated tokens (within the existing 512-token ceiling), 32 KiB proposal output and the **unchanged 2,000 ms overall execution deadline**. Transfer and ledger time consume that existing deadline; the remote worker receives only the remaining time. Synchronized host clocks are required. Passing the local GPU benchmark does not establish that the complete application route meets that deadline.
 - A reviewed code hash binds `contracts.py`, `server.py` and `worker.py`; the weights manifest hash binds all 13 stored files. Code/model changes invalidate analysis caches and must be reviewed again.
 - Existing durable SQL budgets enforce one active business slot, 20 jobs/hour and validated cache reuse. Abandoned active slots remain unavailable until an operator reconciles them; the code does not blindly reset a possibly running GPU job after a web-function crash.
 
@@ -25,7 +33,9 @@ All added review controls and unavailable/empty-result messages use the existing
 
 ## Current activation state
 
-**Disabled by default; Production execution is rejected even if the enable setting is present.** No GPU service was installed or activated by this implementation turn. The owner previously demonstrated a synthetic red-image result; this new supervisor, transport, prompt, output schema and complete deadline still require genuine GPU acceptance.
+**Disabled by default; Production execution is rejected even if the enable setting is present.** On 20 October 2026 the reviewed service ran genuine inference on the existing Vast RTX 4090 evaluation instance. All 13 pinned model files passed the trusted manifest checks. Five single-image and five four-frame synthetic cases passed the unchanged 2,000 ms deadline through authenticated loopback HTTP. Measured client times were 308.98–321.36 ms for one image and 470.18–479.42 ms for four frames; peak allocated model VRAM was 9,013,145,600 bytes (8.39 GiB).
+
+These are local GPU measurements using synthetic red media, not real-product accuracy, multilingual quality, physical Safari acceptance or full application-to-GPU HTTPS latency. The service was terminated after measurement and both GPU and recovery CPU compute were stopped. Model files and evidence were retained. See the latest section of `docs/business-workspace/pr708-runpod-checkpoint.md` for provenance and restart boundaries.
 
 Do not fill review IDs with placeholder approvals. Activation requires an actual licence/security review, trusted source verification of weights, the exact deployed code hash, a reviewed end-to-end benchmark, correct Preview database isolation, the existing owner grant, a private HTTPS route and controlled network egress. Do not extend the two-second boundary to make a benchmark pass. If it cannot pass, retain unavailable behavior and bring measured evidence for a separately reviewed asynchronous/deadline change.
 
@@ -86,6 +96,33 @@ Only after acceptance, configure branch-scoped Preview values:
 Removing the enable setting disables new model execution without touching product data. Changing review/model/code metadata creates a new cache identity. No browser flag can enable the runtime, and no Production configuration is added here.
 
 ## Verification evidence
+
+`acceptance.py` is a separate controlled-media evaluator. Its checked-in pack
+uses three existing repository images in all ten Selling languages plus one
+conflicting advertising/instruction case (31 requests). These are controlled
+fixtures, not real-business product acceptance or independently sourced photos.
+Asset checksums, image bounds and every case are preflighted before networking.
+The evaluator binds replies to the request and deployed model/code hashes,
+validates measurements/output, checkpoints evidence and stops on the first
+execution failure. Existing reports are never overwritten. It never enables
+execution or automatically marks language, product or category quality verified.
+Each output retains its review rubric and pending human-review status; completing
+31 HTTP requests alone is not semantic acceptance.
+
+Validate without a GPU or any credential:
+
+```sh
+python3 tools/visual-runtime/acceptance.py \
+  --pack tools/visual-runtime/acceptance-cases.json --media-root . --validate-only
+```
+
+On the operator host, use the same command without `--validate-only`, adding
+`--origin`, `--secret-file`, `--weights-manifest`, `--runtime-code-hash` and a new
+`--output` path. HTTP is accepted only for explicit `--local-hardware-only`
+loopback measurement. This does not exercise the dashboard, its authorisation,
+the 171-category pipeline or application media transfer; those need separate
+isolated Preview acceptance. No runtime code or model change is made by the
+evaluator. Its HTTP test responses are explicitly fixtures, not GPU evidence.
 
 Automated coverage exercises real local SQL, HTTP authentication/replay limits, transport signing/media hashes, ownership, cache/revision checks, per-proposal persistence/audit, and process-group termination. **The subprocess and model responses in those tests are explicitly labelled fixtures, not genuine GPU inference.** The Python supervisor tests do not import Torch or download weights.
 

@@ -22,6 +22,8 @@ These local results are not authenticated deployed Preview acceptance, physical 
 
 ## Exact next live step
 
-Use the already provisioned Runpod pod and attached saved Global volume. Confirm model-copy integrity and restore the non-root private runtime from the reviewed checkout. Establish the private HTTPS route and run the genuine benchmark. The operator runbook is `tools/visual-runtime/README.md`.
+The 20 October RTX 4090 evaluation passed ten genuine local GPU inference cases and all 13 model-file checks. See the latest checkpoint in `pr708-runpod-checkpoint.md`; the historical implementation-turn statements above do not describe the later hardware evaluation. Both evaluation machines are stopped with data retained.
+
+The next live step is acceptance using authorised product media, the existing 171-category pipeline and all ten Selling languages, followed by the complete private HTTPS application route in isolated Preview. Reconfirm current costs and GPU availability before resuming the existing allocation. The operator runbook is `tools/visual-runtime/README.md`.
 
 Only enable branch-scoped Preview execution after the exact code/weights, network policy, isolation, benchmark and category/language acceptance have genuine review records. If two seconds cannot be met, keep execution unavailable and review measured alternatives. No Production activation is authorised.
