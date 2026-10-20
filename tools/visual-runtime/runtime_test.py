@@ -69,16 +69,28 @@ class RuntimeTests(unittest.TestCase):
         try:
             for text, expected_status, expected_code in [('invalid-model', 502, 'model-evidence-invalid'),
                                                          ('unsafe-error', 503, 'runtime-unavailable')]:
-                self.supervisor.start()
+                # Recovery is asynchronous. Wait for its ready state instead
+                # of racing a manual restart against the recovery thread.
+                deadline = time.monotonic() + 3
+                ready = False
+                while time.monotonic() < deadline:
+                    with self.supervisor.lock:
+                        ready = self.supervisor.ready
+                    if ready: break
+                    time.sleep(.005)
+                self.assertTrue(ready, 'fixture worker did not recover')
                 raw = json.dumps(request(text)).encode()
                 conn = http.client.HTTPConnection('127.0.0.1', server.server_port, timeout=3)
                 conn.request('POST', '/v1/infer', raw, {'Content-Type': 'application/json',
                              'Authorization': 'Bearer ' + SECRET.decode(),
                              'X-DEMEOS-Signature': hmac.new(SECRET, raw, hashlib.sha256).hexdigest()})
-                response = conn.getresponse()
-                self.assertEqual(response.status, expected_status)
-                self.assertEqual(json.loads(response.read()), {'code': expected_code})
-                conn.close()
+                try:
+                    response = conn.getresponse()
+                    body = json.loads(response.read())
+                    self.assertEqual(response.status, expected_status)
+                    self.assertEqual(body, {'code': expected_code})
+                finally:
+                    conn.close()
         finally:
             server.shutdown(); server.server_close(); thread.join(2)
 
