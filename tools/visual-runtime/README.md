@@ -42,6 +42,33 @@ Set `DEMEOS_RUNTIME_PORT` to an unused local port. The official Runpod image alr
 5. Use authenticated `/healthz` to confirm the exact ready model, code and weights hashes. Health metadata is not product accuracy or performance evidence. Run `benchmark.py` against the real HTTPS route with the secret **file**, reviewed weights manifest and reviewed runtime code hash, writing a new report path. The script stops on the first failed case and never enables execution. Its optional loopback mode measures hardware only, not Vercel-to-GPU latency. Reports explicitly leave product/multilingual accuracy and activation approval false.
 6. Finish the authorised-media, 171-category, ten-language, hallucination/abstention, latency and VRAM acceptance against genuine GPU output, including the actual Vercel-to-service route. Record approval evidence and enforce the existing $35/24-GPU-hour evaluation cap outside this process. **Stopping the Python service does not stop Runpod compute billing.**
 
+Failed benchmark reports retain the HTTP status and, only for an exact known
+status/code pair, a fixed runtime error code such as `execution-timeout` or
+`runtime-unavailable`. Arbitrary response text, headers and credentials are never
+saved. The benchmark stops after its first failure; a synthetic result does not
+establish product accuracy. Run its local fixture checks before paying for GPU
+time: `python3 -m unittest discover -s tools/visual-runtime -p '*_test.py'`.
+
+### Renting first, then moving to owned hardware
+
+The runtime is independent of the GPU rental provider. Reuse this checkout and
+the pinned model/manifest on a compatible Linux NVIDIA machine. This is not a
+new model, category registry or dashboard. `prepare.sh` currently requires the
+existing PyTorch 2.8.0+cu128 environment; a different GPU architecture or base
+environment needs compatibility verification rather than an unreviewed upgrade.
+
+Before ordering, verify actual capacity and the full evaluation cost: existing
+spending, compute, setup/minimum term, disks, retained storage, transfer and tax.
+The owner's current total cap remains $35, including previous charges. An
+unpriced or higher-commitment dedicated rental is not authorised by that cap.
+Do not create a duplicate Runpod pod or remove the existing Global volume.
+
+Preserve the source model and incomplete-shard backup. A transfer to a selected
+replacement host must copy existing files, then compare every file against the
+trusted publisher-derived manifest. Local checks, historical integrity evidence
+and prior synthetic inference do not establish fresh GPU acceptance. Keep the
+dashboard runtime disabled and Production unchanged until acceptance passes.
+
 Keep the secret out of chat, screenshots, Git and model requests. Configure it through the normal secure environment/secret workflow. Do not give the model worker permanent database, Blob or provider keys.
 
 ### Vercel Preview-only composition

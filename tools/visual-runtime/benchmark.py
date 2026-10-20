@@ -19,6 +19,26 @@ class NoRedirects(urllib.request.HTTPRedirectHandler):
         return None
 
 
+def http_failure(error):
+    """Keep only known runtime status/code pairs, never arbitrary server text."""
+    codes = {400: 'invalid-request-or-output', 401: 'authentication-required',
+             404: 'not-found', 409: 'duplicate-or-busy', 429: 'runtime-busy',
+             503: 'runtime-unavailable', 504: 'execution-timeout'}
+    result = {'httpStatus': error.code}
+    try:
+        raw = error.read(257)
+        if len(raw) <= 256:
+            body = strict_json(raw)
+            if (isinstance(body, dict) and set(body) == {'code'}
+                and error.code in codes and body['code'] == codes[error.code]):
+                result['runtimeErrorCode'] = codes[error.code]
+    except Exception:
+        pass  # Preserve status even for malformed, oversized or unreadable bodies.
+    finally:
+        error.close()
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--origin', required=True)
@@ -79,8 +99,7 @@ def main():
             except Exception as error:
                 report.update(passed=False, errorType=type(error).__name__, endToEndMs=(time.perf_counter() - started) * 1000)
                 if isinstance(error, urllib.error.HTTPError):
-                    report['httpStatus'] = error.code
-                    error.close()  # Never store response bodies, headers or credential values.
+                    report.update(http_failure(error))
             results.append(report)
             print(f'{count} image(s), sample {sample + 1}: ' + ('passed' if report['passed'] else 'failed'), flush=True)
             if not report['passed']:
