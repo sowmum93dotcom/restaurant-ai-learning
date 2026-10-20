@@ -218,4 +218,7 @@ main .danger-action{color:#ffb8ae;border-color:rgba(255,184,174,.3)}
 #product-form legend{padding:0 .5rem;font-weight:700;}
 .wholesale-tier{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:.6rem;align-items:end;margin:.75rem 0;}
 .wholesale-tier input{min-width:0;width:100%;box-sizing:border-box;}
+.catalogue-item .wholesale-calculator label{display:grid;gap:8px;}
+.wholesale-calculator input{width:100%;min-width:0;}
+.wholesale-calculator [role="status"]{overflow-wrap:anywhere;}
 @media(max-width:760px){.wholesale-tier{grid-template-columns:minmax(0,1fr);}}

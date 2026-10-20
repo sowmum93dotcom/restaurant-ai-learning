@@ -25,4 +25,18 @@ function apply(profile,previous,input){
 }
 // Invalid explicit settings fail closed. Missing settings preserve the legacy B2C path.
 const allowsConsumer=(profile,product)=>includes(profile?.salesChannel,'b2c')&&includes(product?.salesChannel,'b2c');
-module.exports={MODES,mode,includes,permitted,businessTerms,apply,allowsConsumer};
+// Owner-only merchandise estimates. No buyer authority, taxes, delivery,
+// reservations or payments are established by calculating a saved price.
+function estimate(input,quantity){
+ const terms=businessTerms(input);
+ if(!Number.isSafeInteger(quantity)||quantity<terms.minimumQuantity||quantity>1000000||quantity%terms.packSize)throw Error('Invalid wholesale quantity.');
+ const base={quantity,packs:quantity/terms.packSize,currency:terms.currency};
+ if(terms.method==='quote')return {...base,status:'quote-required'};
+ const digits=new Intl.NumberFormat('en',{style:'currency',currency:terms.currency}).resolvedOptions().maximumFractionDigits;
+ const toMinor=value=>{const [whole,fraction='']=value.split('.');return BigInt(whole)*10n**BigInt(digits)+BigInt(fraction.padEnd(digits,'0')||'0');};
+ const amount=value=>{const raw=value.toString().padStart(digits+1,'0');return digits?raw.slice(0,-digits)+'.'+raw.slice(-digits):raw;};
+ const tier=terms.tiers.filter(t=>quantity>=t.minimumQuantity).at(-1);
+ const unit=toMinor(tier?.unitPrice||terms.unitPrice),subtotal=unit*BigInt(quantity),saving=(toMinor(terms.unitPrice)-unit)*BigInt(quantity);
+ return {...base,status:'calculated',unitPrice:amount(unit),subtotal:amount(subtotal),subtotalMinor:subtotal.toString(),saving:amount(saving),appliedMinimumQuantity:tier?.minimumQuantity||terms.minimumQuantity};
+}
+module.exports={MODES,mode,includes,permitted,businessTerms,apply,allowsConsumer,estimate};

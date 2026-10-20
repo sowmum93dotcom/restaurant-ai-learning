@@ -71,6 +71,19 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
         const result=await require('./selling-intelligence-service').run({store,profile,identity:identity.trustedIdentityId,environment:env,body:req.body,visualRunner:visualRunnerFactory({store,environment:env,backend})});
         const {status,...body}=result;return res.status(status).json(body);
       }
+      if(req.method==='POST'&&req.body?.action==='estimate-wholesale'){
+        if(!businessId||!business)return res.status(403).json({error:'Select your business.'});
+        const profile=(await store.getKnownBusiness(businessId))?.businessProfile;
+        if(!businessSummary(profile,env,identity.trustedIdentityId))return res.status(403).json({error:'Business access unavailable.'});
+        const item=req.body.product;
+        if(!item||typeof item!=='object'||Array.isArray(item)||Object.keys(item).some(k=>!['productId','quantity'].includes(k))||typeof item.productId!=='string')return res.status(400).json({error:'Choose a saved product and quantity.',code:'wholesale-quantity'});
+        if(req.body.catalogueRevision!==catalogueRevision(profile))return res.status(409).json({error:'Saved terms changed. Reload before calculating.'});
+        const product=profile.products.find(p=>p.productId===item.productId);
+        if(!product)return res.status(404).json({error:'Product unavailable.'});
+        if(!sales.includes(profile.salesChannel,'b2b')||!sales.includes(product.salesChannel,'b2b'))return res.status(400).json({error:'Business terms unavailable.',code:'sales-channel'});
+        try{return res.status(200).json({ok:true,productId:product.productId,catalogueRevision:catalogueRevision(profile),estimate:sales.estimate(product.businessTerms,item.quantity)});}
+        catch{return res.status(400).json({error:'Check the saved terms, minimum quantity and whole packs.',code:'wholesale-quantity'});}
+      }
       let catalogueQuery=null,orderQuery=null;
       if(req.method==='GET'&&req.query?.view==='orders'){try{orderQuery=require('./selling-order-page').parse(req.query);}catch{return res.status(400).json({error:'Check the order filters.'});}}
       if(req.method==='GET'&&req.query?.view==='catalogue'){try{catalogueQuery=catalogue.parse(req.query);}catch{return res.status(400).json({error:'Check the catalogue filters.',code:'catalogue-query'});}}

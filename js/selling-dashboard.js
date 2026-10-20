@@ -198,6 +198,30 @@
         const remove=doc.createElement('button');remove.type='button';remove.textContent=t('Remove quantity discount');remove.addEventListener('click',()=>{row.remove();rememberDraft();syncSalesForm();});row.append(remove);$('wholesale-tiers').append(row);
       }
     }
+    function wholesaleCalculator(item,product,business){
+      if(!product.businessTerms||!['b2b','both'].includes(product.salesChannel))return;
+      const panel=doc.createElement('details'),summary=doc.createElement('summary'),form=doc.createElement('form'),label=doc.createElement('label'),title=doc.createElement('span'),input=doc.createElement('input'),button=doc.createElement('button'),note=doc.createElement('p'),output=doc.createElement('div');
+      panel.className='wholesale-calculator';panel.dataset.wholesaleCalculator=product.productId;summary.textContent=t('Wholesale price calculator');title.textContent=t('Quantity in units');input.type='number';input.inputMode='numeric';input.required=true;input.min=String(product.businessTerms.minimumQuantity);input.max='1000000';input.step=String(product.businessTerms.packSize);input.value=String(product.businessTerms.minimumQuantity);button.type='submit';button.textContent=t('Calculate saved price');note.textContent=t('Uses saved product terms. Tax, delivery, variant pricing and stock availability are not included. No order is created.');output.setAttribute('role','status');output.setAttribute('aria-live','polite');output.dataset.wholesaleResult='';label.append(title,input);form.append(label,button);panel.append(summary,note,form,output);item.append(panel);
+      let request=0,pending=null;
+      input.addEventListener('input',()=>{request++;pending?.abort();button.disabled=false;output.replaceChildren();});
+      form.addEventListener('submit',async event=>{
+        event.preventDefault();if(!form.reportValidity()||productMutationPending)return;
+        const run=++request,snapshot=context,identity=clerk.user?.id,quantity=Number(input.value);pending?.abort();pending=new win.AbortController();const active=pending,timer=win.setTimeout(()=>active.abort(),15000),signal=active.signal;
+        const current=()=>run===request&&panel.isConnected&&context===snapshot&&clerk.user?.id===identity;
+        button.disabled=true;output.textContent=t('Calculating saved terms…');
+        try{
+          const token=await bounded(clerk.session.getToken());if(!current())return;
+          const response=await win.fetch('/api/businesses?resource=selling-dashboard&businessId='+encodeURIComponent(business.businessId),{method:'POST',credentials:'same-origin',signal,headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({action:'estimate-wholesale',product:{productId:product.productId,quantity},catalogueRevision:business.catalogueRevision})});
+          const result=await response.json();if(!current())return;
+          if(!response.ok)throw Error(result.code==='wholesale-quantity'?t('Enter at least the minimum quantity, in whole packs.'):apiError(response,result));
+          const value=result.estimate;if(result.productId!==product.productId||result.catalogueRevision!==business.catalogueRevision||value?.quantity!==quantity||!['calculated','quote-required'].includes(value.status))throw Error(t('The service could not complete this action. Please retry.'));
+          output.replaceChildren();
+          if(value.status==='quote-required'){output.textContent=t('A quote is required. No fixed price is saved.');return;}
+          for(const [key,text] of [['Quantity in units',value.quantity],['Packs',value.packs],['Wholesale unit price',value.currency+' '+value.unitPrice],['Product subtotal',value.currency+' '+value.subtotal],['Quantity discount saving',value.currency+' '+value.saving]]){const line=doc.createElement('p');line.textContent=t(key)+': '+text;output.append(line);}
+        }catch(error){if(current())output.textContent=failureMessage(error);}
+        finally{win.clearTimeout(timer);if(current())button.disabled=false;}
+      });
+    }
     function readBusinessTerms(){return {method:$('product-b2b-method').value,currency:$('product-b2b-currency').value.trim().toUpperCase(),unitPrice:$('product-b2b-method').value==='quote'?'':$('product-b2b-price').value.trim(),minimumQuantity:Number($('product-b2b-minimum').value),packSize:Number($('product-b2b-pack').value),tiers:$('product-b2b-method').value==='quote'?[]:Array.from($('wholesale-tiers').children).map(row=>({minimumQuantity:Number(row.querySelector('[data-wholesale-tier=minimumQuantity]').value),unitPrice:row.querySelector('[data-wholesale-tier=unitPrice]').value.trim()}))};}
     function readSalesTerms(){return {salesChannel:$('product-sales-channel').value,...($('product-sales-channel').value!=='b2c'?{businessTerms:readBusinessTerms()}: {})};}
     function syncSalesForm(){const b2b=$('product-sales-channel').value!=='b2c',fixed=$('product-b2b-method').value==='direct';$('business-terms').hidden=!b2b;$('retail-terms').hidden=$('product-sales-channel').value==='b2b';$('product-price').required=!$('retail-terms').hidden&&$('product-price-mode').value!=='contact';$('wholesale-price-label').hidden=!fixed;$('wholesale-tier-tools').hidden=!fixed;for(const id of ['currency','minimum','pack'])$('product-b2b-'+id).required=b2b;$('product-b2b-price').required=b2b&&fixed;for(const input of $('wholesale-tiers').querySelectorAll('input'))input.required=b2b&&fixed;$('wholesale-add-tier').disabled=$('wholesale-tiers').children.length>=5;}
@@ -277,7 +301,7 @@
           remove.addEventListener('click',()=>{if(win.confirm(t('Delete this product?')))mutateProduct('delete-product',{productId:product.productId});});
           const channel=doc.createElement('p');channel.className='badge';channel.dataset.salesChannel=product.salesChannel;channel.textContent=channelLabel(product.salesChannel);const channelNodes=[channel];if(product.businessTerms){const terms=doc.createElement('p'),b=product.businessTerms;terms.textContent=t('Business terms · B2B')+': '+t(b.method==='quote'?'Request a quote':'Fixed wholesale price')+(b.unitPrice?' · '+b.currency+' '+b.unitPrice:'')+' · '+t('Minimum order quantity')+': '+b.minimumQuantity+' · '+t('Units per pack')+': '+b.packSize;channelNodes.push(terms);for(const tier of b.tiers||[]){const line=doc.createElement('p');line.textContent=t('Discount from quantity')+': '+tier.minimumQuantity+' · '+b.currency+' '+tier.unitPrice;channelNodes.push(line);}}
           const metadata=doc.createElement('p');metadata.className='catalogue-metadata';const rows=business.inventory?.rows.filter(r=>r.productId===product.productId)||[];metadata.textContent=[product.productId,product.sku,context.categories.items.find(c=>c.categoryId===product.classification?.categoryId)?.categoryName,rows.length?t('Available stock')+': '+rows.map(r=>r.available??t('Not set')).join(' / '):'',product.submission?.updatedAt?t('Last updated')+': '+new Date(product.submission.updatedAt).toLocaleString(language):''].filter(Boolean).join(' · ');
-          const select=doc.createElement('input');select.type='checkbox';select.dataset.selectProduct=product.productId;select.setAttribute('aria-label',t('Select product')+': '+(product.name||product.productId));item.append(select,title,...channelNodes,metadata,description,price,availability,edit,remove);renderSubmission(item,product,business);catalogue.append(item);
+          const select=doc.createElement('input');select.type='checkbox';select.dataset.selectProduct=product.productId;select.setAttribute('aria-label',t('Select product')+': '+(product.name||product.productId));item.append(select,title,...channelNodes,metadata,description,price,availability,edit,remove);wholesaleCalculator(item,product,business);renderSubmission(item,product,business);catalogue.append(item);
         }
       }
       $('media-tools').hidden=section!=='images-videos'||!business;
