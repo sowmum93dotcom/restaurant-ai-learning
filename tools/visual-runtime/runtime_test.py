@@ -56,7 +56,12 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(output['proposals'][0]['evidence'], ['a' * 64, 'b' * 64])
         self.assertIsNone(output['proposals'][0]['confidence'])
         self.assertEqual(expand_compact_output([], descriptors)['proposals'], [])
+        self.assertEqual(expand_compact_output([['description', 'Solid red color', '0']], descriptors)['proposals'][0]['evidence'], ['a' * 64])
+        self.assertEqual(expand_compact_output([['video-summary', 'Two sampled red frames.', '0,1']], descriptors), output)
         for indices in [[-1], [2], [True], ['0'], [0, 0], [], ['a' * 64]]:
+            with self.assertRaises(ValueError):
+                expand_compact_output([['description', 'Red.', indices]], descriptors)
+        for indices in ['', '00', '-1', '2', '4', '0,0', '0,', ',0', '0, 1', '0.0', '０', 'a' * 64, True, 0, {}]:
             with self.assertRaises(ValueError):
                 expand_compact_output([['description', 'Red.', indices]], descriptors)
         for kind, value in [('price', '10'), ('description', '<script>'), ('description', '')]:
