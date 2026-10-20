@@ -17,7 +17,7 @@ from pathlib import Path
 from unittest.mock import patch
 from contracts import MODEL_ID, MODEL_VERSION, ModelOutputError, strict_json, validate_request, validate_output
 from server import RuntimeHTTPServer, Supervisor, verify_weights, worker_environment, runtime_code_hash, main as runtime_main
-from worker import expand_compact_output, inference_messages, parse_model_output
+from worker import expand_compact_output, inference_messages, parse_model_output, parse_single_description
 
 FAKE_CHILD = '''import json,sys,time
 print(json.dumps({'ready':True,'modelVersion':%r}),flush=True)
@@ -113,6 +113,20 @@ class RuntimeTests(unittest.TestCase):
         prompt = inference_messages(['frame-0', 'frame-1'], '', 'es')[0]['content'][0]['text']
         self.assertIn('never panels or objects within an image', prompt)
         self.assertIn('Image count: 2', prompt)
+
+    def test_single_description_is_encoded_by_host_and_never_repairs_invalid_output(self):
+        descriptors = [dict(contentHash='a' * 64)]
+        for text in ['خيمة بجانب بحيرة', 'Anuncio con frutas y verduras', 'Visible "quoted" text']:
+            result = parse_single_description(text, descriptors)
+            self.assertEqual(result['proposals'][0]['value'], text)
+            self.assertEqual(result['proposals'][0]['evidence'], ['a' * 64])
+            self.assertEqual(json.loads(json.dumps(result)), result)
+        self.assertEqual(parse_single_description('ABSTAIN', descriptors)['proposals'], [])
+        for text in ['', '[]', '[unquoted text]', '{"description":"text"}', '```text```', 'one\ntwo',
+                     '<script>', 'x' * 161, 'private\x00text']:
+            with self.assertRaises(ModelOutputError): parse_single_description(text, descriptors)
+        with self.assertRaises(ModelOutputError): parse_single_description('unfinished text', descriptors, True)
+        with self.assertRaises(ModelOutputError): parse_single_description('text', descriptors * 2)
 
     def setUp(self):
         self.supervisor = Supervisor([sys.executable, '-I', '-u', '-c', FAKE_CHILD], worker_environment(), 2)

@@ -21,16 +21,17 @@ def inference_messages(images, text, locale='en'):
         'Never assert freshness, delivery, availability, price, stock, safety, allergen suitability, '
         'authenticity, certification, brand identity or hidden attributes. '
         'For advertisements, describe depicted objects, not what the advertisement promises. '
-        'Do not identify people or teams. Return [] when uncertain. '
+        'Do not identify people or teams. Abstain when uncertain. '
         'Keep description under 80 characters. Describe only the supplied images or sampled frames. ')
     if len(images) == 1:
         instructions += (
             'Exactly one image file is supplied. Panels and objects are parts of that one file. '
-            'Return only JSON: [] or [["description"]]. Each row contains only the description. '
-            'Do not return image numbers. The host binds the description to the single supplied file.')
+            'Return only one plain line of description, without brackets, quotes, numbering or markdown. '
+            'Return ABSTAIN when uncertain. Do not return image numbers or JSON. '
+            'The host binds the description to the single supplied file.')
     else:
         instructions += (
-            'Return only JSON: an array with at most one row [description,image_numbers]. '
+            'Return [] when uncertain. Return only JSON: an array with at most one row [description,image_numbers]. '
             'Example structure: [["description","0"]]. '
             'image_numbers is a string of zero-based comma-separated indices, such as "0" or "0,1". '
             'Indices refer only to supplied image files, never panels or objects within an image. '
@@ -83,6 +84,24 @@ def parse_model_output(text, descriptors, token_limit_reached=False):
         raise ModelOutputError(code) from None
 
 
+def parse_single_description(text, descriptors, token_limit_reached=False):
+    """The host owns JSON encoding and the only possible source-file binding."""
+    if token_limit_reached:
+        raise ModelOutputError('model-output-limit')
+    if not isinstance(text, str) or len(descriptors) != 1:
+        raise ModelOutputError('model-output-invalid')
+    text = text.strip()
+    if text == 'ABSTAIN':
+        return expand_compact_output([], descriptors)
+    if (not 1 <= len(text) <= 160 or text[0] in '[{`"' or text[-1] in ']}`"'
+        or any(ord(char) < 32 or ord(char) == 127 for char in text)):
+        raise ModelOutputError('model-output-invalid')
+    try:
+        return expand_compact_output([[text]], descriptors)
+    except ValueError:
+        raise ModelOutputError('model-output-invalid') from None
+
+
 def main():
     model_path, weights_hash, code_hash = sys.argv[1:4]
     if runtime_code_hash() != code_hash:
@@ -106,7 +125,10 @@ def main():
             output = model.generate(**inputs, max_new_tokens=maximum, do_sample=False)
         text = processor.decode(output[0, inputs['input_ids'].shape[1]:], skip_special_tokens=True)
         generated_count = output.shape[1] - inputs['input_ids'].shape[1]
-        return parse_model_output(text, descriptors, generated_count >= maximum) if parse else text
+        if not parse:
+            return text
+        parser = parse_single_description if len(images) == 1 else parse_model_output
+        return parser(text, descriptors, generated_count >= maximum)
 
     # Warm the loaded model before accepting HTTP work. This is not an accuracy test.
     with contextlib.redirect_stdout(sys.stderr):

@@ -49,8 +49,10 @@ All added review controls and unavailable/empty-result messages use the existing
 
 These are local GPU measurements using synthetic red media, not real-product accuracy, multilingual quality, physical Safari acceptance or full application-to-GPU HTTPS latency. The service was terminated after measurement and both GPU and recovery CPU compute were stopped. Model files and evidence were retained. See the latest section of `docs/business-workspace/pr708-runpod-checkpoint.md` for provenance and restart boundaries.
 
-For a single supplied image the model returns a description-only row, and the
-host binds it to that one input's verified hash. Panels within that image cannot
+For a single supplied image the model returns one bounded plain description,
+and DEMEOS owns JSON encoding and binding to that input's verified hash.
+ABSTAIN is the only empty-result sentinel; truncated, structured, multiline,
+empty or oversized descriptions are rejected. Panels within that image cannot
 become additional source files. Multiple-frame requests still require valid,
 model-selected indices; a description-only row is rejected for multiple sources.
 Invalid explicit indices are never repaired or silently replaced.
