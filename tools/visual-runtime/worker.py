@@ -27,7 +27,7 @@ def inference_messages(images, text, locale='en'):
         instructions += (
             'Exactly one image file is supplied. Panels and objects are parts of that one file. '
             'Return only one plain line of description, without brackets, quotes, numbering or markdown. '
-            'Use a short noun phrase of at most six words naming the main visible object and its colour. '
+            'Use a short noun phrase of at most three words naming only the main visible object. '
             'Do not narrate the scene or list background details. '
             'Return ABSTAIN when uncertain. Do not return image numbers or JSON. '
             'The host binds the description to the single supplied file.')

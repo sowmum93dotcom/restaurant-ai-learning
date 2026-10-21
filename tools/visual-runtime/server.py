@@ -91,13 +91,15 @@ class Supervisor:
                     return strict_json(result)
         raise TimeoutError('execution-timeout')
 
-    def _kill(self):
+    def _kill(self, wait=True):
         self.ready = False
         if self.process is not None:
             try:
                 os.killpg(self.process.pid, signal.SIGKILL)
             except ProcessLookupError:
                 pass
+            if not wait:
+                return  # Recovery retains the process and admission stays closed until reaped.
             self.process.wait(timeout=2)
             self.process.stdin.close()
             self.process.stdout.close()
@@ -156,7 +158,7 @@ class Supervisor:
             raise
         except Exception:
             # Kill the entire child process group; cancelling HTTP alone is insufficient.
-            self._kill()
+            self._kill(wait=False)
             threading.Thread(target=self._recover, daemon=True).start()
             raise
         finally:

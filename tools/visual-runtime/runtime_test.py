@@ -106,7 +106,7 @@ class RuntimeTests(unittest.TestCase):
             self.assertIn('ONLY in ' + name, messages[0]['content'][0]['text'])
             self.assertIn('Do not return image numbers', messages[0]['content'][0]['text'])
             self.assertIn('single supplied file', messages[0]['content'][0]['text'])
-            self.assertIn('at most six words', messages[0]['content'][0]['text'])
+            self.assertIn('at most three words', messages[0]['content'][0]['text'])
             self.assertNotIn(job['input']['text'], messages[0]['content'][0]['text'])
             self.assertTrue(all(isinstance(part, dict) and 'type' in part for message in messages for part in message['content']))
             self.assertEqual(messages[1]['role'], 'user')
@@ -256,7 +256,34 @@ t.join(3); assert not t.is_alive()
         self.assertFalse(job.is_alive())
         self.assertTrue(any(isinstance(error, TimeoutError) for error in errors))
         self.assertLess(time.monotonic() - started, 1.5)
+        deadline = time.monotonic() + 1
+        while time.monotonic() < deadline:
+            try: os.kill(old_pid, 0)
+            except ProcessLookupError: break
+            time.sleep(.005)
         with self.assertRaises(ProcessLookupError): os.kill(old_pid, 0)
+
+    def test_slow_gpu_reaping_cannot_delay_timeout_or_admit_overlapping_work(self):
+        process = self.supervisor.process
+        original_wait = process.wait
+        reaping, release = threading.Event(), threading.Event()
+        def delayed_wait(*args, **kwargs):
+            reaping.set()
+            release.wait(2)
+            return original_wait(*args, **kwargs)
+        with patch.object(process, 'wait', side_effect=delayed_wait):
+            try:
+                started = time.monotonic()
+                with self.assertRaises(TimeoutError): self.supervisor.execute(request('hang', 200))
+                self.assertLess(time.monotonic() - started, .8)
+                self.assertTrue(reaping.wait(1))
+                self.assertFalse(self.supervisor.ready)
+                with self.assertRaises(BlockingIOError): self.supervisor.execute(request())
+            finally:
+                release.set()
+        deadline = time.monotonic() + 2
+        while not self.supervisor.ready and time.monotonic() < deadline: time.sleep(.005)
+        self.assertTrue(self.supervisor.ready)
 
     def test_authenticated_http_replay_protection_and_health(self):
         server = RuntimeHTTPServer(('127.0.0.1', 0), self.supervisor, SECRET, WEIGHTS)
