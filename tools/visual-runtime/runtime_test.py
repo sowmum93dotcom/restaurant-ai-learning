@@ -103,10 +103,10 @@ class RuntimeTests(unittest.TestCase):
             messages = inference_messages(['declared-image-fixture'], job['input']['text'], locale)
             self.assertEqual(messages[0]['role'], 'system')
             self.assertEqual(messages[0]['content'][0]['type'], 'text')
-            self.assertIn('ONLY in ' + name, messages[0]['content'][0]['text'])
-            self.assertIn('Do not return image numbers', messages[0]['content'][0]['text'])
-            self.assertIn('single supplied file', messages[0]['content'][0]['text'])
-            self.assertIn('at most three words', messages[0]['content'][0]['text'])
+            self.assertIn('ausschließlich auf Deutsch' if locale == 'de' else 'ONLY in ' + name, messages[0]['content'][0]['text'])
+            self.assertIn('Keine Adjektive' if locale == 'de' else 'Do not return image numbers', messages[0]['content'][0]['text'])
+            self.assertIn('einzigen geprüften Datei' if locale == 'de' else 'single supplied file', messages[0]['content'][0]['text'])
+            self.assertIn('höchstens drei Wörtern' if locale == 'de' else 'at most three words', messages[0]['content'][0]['text'])
             self.assertNotIn(job['input']['text'], messages[0]['content'][0]['text'])
             self.assertTrue(all(isinstance(part, dict) and 'type' in part for message in messages for part in message['content']))
             self.assertEqual(messages[1]['role'], 'user')
@@ -157,9 +157,9 @@ class RuntimeTests(unittest.TestCase):
 
     def test_german_known_english_fallbacks_reject_without_rewriting(self):
         from contracts import validate_description_policy
-        for text in ['Camping tent', 'Vegetables', 'Fresh produce', 'Soccer player', 'Grocery bag']:
+        for text in ['Camping tent', 'Vegetables', 'Fresh produce', 'Soccer player', 'Grocery bag', 'Campground with 帐篷', 'Wicker Korb', 'Зельт', 'خيمة']:
             with self.assertRaises(ValueError): validate_description_policy(text, 'de')
-        for text in ['Zelt', 'Fußballspieler', 'Gemüse', 'Obst und Gemüse']:
+        for text in ['Zelt', 'Fußballspieler', 'Gemüse', 'Obst und Gemüse', 'Weidenkorb', 'Straße', 'Weißes Zelt']:
             validate_description_policy(text, 'de')
         validate_description_policy('Camping tent', 'en')
         prompt = inference_messages(['fixture'], '', 'de')[0]['content'][0]['text']

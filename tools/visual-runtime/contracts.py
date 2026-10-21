@@ -121,9 +121,12 @@ def validate_request(value, weights_hash, now=None, code_hash=None):
 FRESHNESS = re.compile(
     r"\b(?:fresh|freshly|freshness|frisch\w*|frais|fraîche\w*|fresc[oa]s?|taze)\b"
     r"|新鲜|新鮮|ताज़ा|ताजा|طازج", re.IGNORECASE)
+GERMAN_ENGLISH_TERMS = ('tent', 'groceries', 'vegetables', 'produce', 'campground',
+                        'wicker', 'with', 'illuminated', 'fire', 'near', 'lake',
+                        'soccer player', 'football player', 'grocery bag',
+                        'fruit and vegetables')
 GERMAN_ENGLISH_FALLBACK = re.compile(
-    r"\b(?:tent|groceries|vegetables|produce)\b"
-    r"|\b(?:soccer player|football player|grocery bag|fruit and vegetables)\b",
+    r'\b(?:' + '|'.join(re.escape(term) for term in GERMAN_ENGLISH_TERMS) + r')\b',
     re.IGNORECASE)
 
 
@@ -131,8 +134,11 @@ def validate_description_policy(text, output_locale=None):
     normalized = unicodedata.normalize('NFC', text)
     if FRESHNESS.search(normalized):
         raise ValueError('unsupported-visual-claim')
-    if output_locale == 'de' and GERMAN_ENGLISH_FALLBACK.search(normalized):
-        raise ValueError('wrong-output-language')
+    if output_locale == 'de':
+        if (GERMAN_ENGLISH_FALLBACK.search(normalized)
+            or any(char.isalpha() and not unicodedata.name(char, '').startswith('LATIN ')
+                   for char in normalized)):
+            raise ValueError('wrong-output-language')
 
 
 def validate_output(value, descriptors, output_locale=None):
