@@ -177,10 +177,10 @@ def main():
         from PIL import Image
         from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
         Image.MAX_IMAGE_PIXELS = 1600 * 1600
-        processor = AutoProcessor.from_pretrained(model_path, local_files_only=True, trust_remote_code=False, max_pixels=448 * 448)
+        processor = AutoProcessor.from_pretrained(model_path, local_files_only=True, trust_remote_code=False, max_pixels=320 * 320)
         # The pinned fast processor reads size, even when AutoProcessor retains
         # max_pixels as a separate attribute. Set the effective resize bound.
-        processor.image_processor.size = {'shortest_edge': 56 * 56, 'longest_edge': 448 * 448}
+        processor.image_processor.size = {'shortest_edge': 56 * 56, 'longest_edge': 320 * 320}
         model = Qwen3VLForConditionalGeneration.from_pretrained(
             model_path, dtype=torch.bfloat16, device_map='cuda:0',
             attn_implementation='sdpa', local_files_only=True,
