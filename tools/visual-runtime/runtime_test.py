@@ -141,6 +141,47 @@ class RuntimeTests(unittest.TestCase):
         with self.assertRaises(ModelOutputError): parse_single_description('unfinished text', descriptors, True)
         with self.assertRaises(ModelOutputError): parse_single_description('text', descriptors * 2)
 
+    def test_freshness_claims_are_rejected_in_all_ten_locales(self):
+        descriptors = [dict(contentHash='a' * 64)]
+        from contracts import validate_description_policy
+        for text in ['Fresh produce', 'Freshly picked fruit', 'Frisches Gemüse', 'Légumes frais',
+                     'Frutas frescas', 'Produtos frescos', 'Taze sebzeler', '新鲜蔬菜',
+                     '新鮮な野菜', 'ताज़ा फल', 'ताजा फल', 'خضروات طازجة']:
+            with self.subTest(text=text):
+                with self.assertRaises(ValueError): validate_description_policy(text)
+                with self.assertRaises(ModelOutputError): parse_single_description(text, descriptors)
+                with self.assertRaises(ModelOutputError):
+                    parse_model_output(json.dumps([[text, '0']]), descriptors * 2)
+        for text in ['Freshwater fish', 'Zelt am See', 'Gemüse im Beutel', '水果', '野菜', 'خضروات']:
+            validate_description_policy(text)
+
+    def test_german_known_english_fallbacks_reject_without_rewriting(self):
+        from contracts import validate_description_policy
+        for text in ['Camping tent', 'Vegetables', 'Fresh produce', 'Soccer player', 'Grocery bag']:
+            with self.assertRaises(ValueError): validate_description_policy(text, 'de')
+        for text in ['Zelt', 'Fußballspieler', 'Gemüse', 'Obst und Gemüse']:
+            validate_description_policy(text, 'de')
+        validate_description_policy('Camping tent', 'en')
+        prompt = inference_messages(['fixture'], '', 'de')[0]['content'][0]['text']
+        self.assertIn('ausschließlich auf Deutsch', prompt)
+
+    def test_supervisor_rejects_quality_failures_even_if_child_omits_its_guard(self):
+        for text, locale in [('Fresh produce', 'en'), ('Camping tent', 'de')]:
+            job = request()
+            job['input']['outputLocale'] = locale
+            output = dict(schemaVersion=2, outputSchema='demeos-visual-output-v2', proposals=[
+                dict(kind='description', value=text, confidence=None,
+                     evidence=[job['input']['media'][0]['contentHash']])])
+            # Declared child-protocol fixture, never genuine model output.
+            with patch.object(self.supervisor, '_line', return_value=dict(output=output)), \
+                 patch.object(self.supervisor, '_recover'):
+                with self.assertRaises(ModelOutputError) as caught:
+                    self.supervisor.execute(job)
+                self.assertEqual(caught.exception.code, 'model-output-invalid')
+                self.assertNotIn(text, str(caught.exception))
+                self.assertFalse(self.supervisor.ready)
+            self.supervisor.start()
+
     def setUp(self):
         self.supervisor = Supervisor([sys.executable, '-I', '-u', '-c', FAKE_CHILD], worker_environment(), 2)
         self.supervisor.start()

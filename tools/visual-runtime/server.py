@@ -152,7 +152,11 @@ class Supervisor:
                     or result['error']['code'] not in MODEL_FAILURE_CODES):
                     raise RuntimeError('invalid-worker-protocol')
                 raise ModelOutputError(result['error']['code'])
-            validate_output(result['output'], request['input']['media'])
+            try:
+                validate_output(result['output'], request['input']['media'],
+                                output_locale=request['input'].get('outputLocale', 'en'))
+            except ValueError:
+                raise ModelOutputError('model-output-invalid') from None
             return result
         except BlockingIOError:
             raise

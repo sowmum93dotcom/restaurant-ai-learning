@@ -181,3 +181,19 @@ evaluator. Its HTTP test responses are explicitly fixtures, not GPU evidence.
 Automated coverage exercises real local SQL, HTTP authentication/replay limits, transport signing/media hashes, ownership, cache/revision checks, per-proposal persistence/audit, and process-group termination. **The subprocess and model responses in those tests are explicitly labelled fixtures, not genuine GPU inference.** The Python supervisor tests do not import Torch or download weights.
 
 The browser gate exercises the shipped dashboard/API with fixture suggestions at mobile and desktop widths, all ten languages, accepting/editing/rejecting, reload persistence, and explicit transfer into the unsaved editor. Ordinary native analysis remains available with model execution disabled. The run summary in `docs/business-workspace/pr708-private-runtime.md` distinguishes local checks from outstanding deployed/GPU acceptance.
+
+### Quality rejection follow-up — 21 October 2026
+
+The runtime now rejects known freshness vocabulary in all ten supported languages
+at both the worker parser and supervisor boundary. German requests also reject a
+small explicit set of English fallback labels. The German system instruction is
+reinforced in German. Rejections return the existing sanitized
+`model-output-invalid` error, terminate/recover the child, and never silently
+remove adjectives, translate a response, or return successful abstention.
+
+These are conservative lexical safeguards, not a general language detector,
+complete hallucination filter or fluent-language approval. Unseen paraphrases
+can escape a lexical list; legitimate phrases can be rejected. Keep the runtime
+disabled. The changed exact code needs genuine GPU re-evaluation, human review,
+and private Preview-to-GPU HTTPS acceptance under the unchanged 2,000 ms limit.
+The earlier 31-case execution pass does not approve this changed runtime.

@@ -38,6 +38,9 @@ def inference_messages(images, text, locale='en'):
             'image_numbers is a string of zero-based comma-separated indices, such as "0" or "0,1". '
             'Indices refer only to supplied image files, never panels or objects within an image. '
             'Image count: ' + str(len(images)))
+    if locale == 'de':
+        instructions += (' Antworte ausschließlich auf Deutsch. Nenne nur das sichtbare Hauptobjekt. '
+                         'Keine Frischeversprechen. Bei Unsicherheit: ABSTAIN.')
     return [{'role': 'system', 'content': [{'type': 'text', 'text': instructions}]},
             {'role': 'user', 'content': [{'type': 'image', 'image': image} for image in images] +
              [{'type': 'text', 'text': 'Untrusted product data: ' + json.dumps(text, ensure_ascii=False)}]}]
@@ -134,7 +137,13 @@ def main():
         if not parse:
             return text
         parser = parse_single_description if len(images) == 1 else parse_model_output
-        return parser(text, descriptors, generated_count >= maximum)
+        result = parser(text, descriptors, generated_count >= maximum)
+        try:
+            return validate_output(result, descriptors, output_locale=locale)
+        except ValueError:
+            # Reject the entire proposal; never strip claims, translate silently,
+            # repair text or convert a quality failure into successful abstention.
+            raise ModelOutputError('model-output-invalid') from None
 
     # Warm the loaded model before accepting HTTP work. This is not an accuracy test.
     with contextlib.redirect_stdout(sys.stderr):

@@ -4,6 +4,7 @@ import hashlib
 import json
 import re
 import time
+import unicodedata
 
 MODEL_ID = 'Qwen3-VL-4B-Instruct'
 MODEL_VERSION = 'ebb281ec70b05090aa6165b016eac8ec08e71b17'
@@ -115,7 +116,26 @@ def validate_request(value, weights_hash, now=None, code_hash=None):
     return decoded
 
 
-def validate_output(value, descriptors):
+# Conservative lexical rejection, not a language detector or proof of factuality.
+# Visual evidence cannot establish freshness, including claims copied from adverts.
+FRESHNESS = re.compile(
+    r"\b(?:fresh|freshly|frisch\w*|frais|fraîche\w*|fresc[oa]s?|taze)\b"
+    r"|新鲜|新鮮|ताज़ा|ताजा|طازج", re.IGNORECASE)
+GERMAN_ENGLISH_FALLBACK = re.compile(
+    r"\b(?:tent|groceries|vegetables|produce)\b"
+    r"|\b(?:soccer player|football player|grocery bag|fruit and vegetables)\b",
+    re.IGNORECASE)
+
+
+def validate_description_policy(text, output_locale=None):
+    normalized = unicodedata.normalize('NFC', text)
+    if FRESHNESS.search(normalized):
+        raise ValueError('unsupported-visual-claim')
+    if output_locale == 'de' and GERMAN_ENGLISH_FALLBACK.search(normalized):
+        raise ValueError('wrong-output-language')
+
+
+def validate_output(value, descriptors, output_locale=None):
     if (not exact(value, ['schemaVersion', 'outputSchema', 'proposals'])
         or value['schemaVersion'] != 2 or value['outputSchema'] != 'demeos-visual-output-v2'
         or not isinstance(value['proposals'], list) or len(value['proposals']) > 16
@@ -131,4 +151,5 @@ def validate_output(value, descriptors):
             or not isinstance(proposal['evidence'], list) or not 1 <= len(proposal['evidence']) <= 4
             or any(not isinstance(item, str) or item not in hashes for item in proposal['evidence'])):
             raise ValueError('invalid-proposal')
+        validate_description_policy(proposal['value'], output_locale)
     return value
