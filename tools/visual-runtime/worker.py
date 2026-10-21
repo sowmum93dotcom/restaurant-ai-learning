@@ -4,10 +4,39 @@ import io
 import json
 import sys
 import time
+import unicodedata
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from server import runtime_code_hash
 from contracts import MODEL_VERSION, OUTPUT_LANGUAGES, ModelOutputError, strict_json, validate_output, validate_request
+
+
+# Generation-time exclusions supplement the independent output rejection guard.
+# These bounded phrases are not a language classifier or a complete claim filter.
+FRESHNESS_TERMS = ('fresh', 'freshly', 'freshness', 'frisch', 'frische', 'frisches',
+                   'frischen', 'frischer', 'frischem', 'frais', 'fraîche', 'fraîches',
+                   'fresco', 'fresca', 'frescos', 'frescas', 'taze', '新鲜', '新鮮',
+                   'ताज़ा', 'ताजा', 'طازج', 'طازجة')
+GERMAN_ENGLISH_TERMS = ('tent', 'groceries', 'vegetables', 'produce',
+                        'soccer player', 'football player', 'grocery bag')
+
+
+def generation_blocklist(tokenizer, locale):
+    if locale not in OUTPUT_LANGUAGES:
+        raise ValueError('invalid-output-locale')
+    terms = FRESHNESS_TERMS + (GERMAN_ENGLISH_TERMS if locale == 'de' else ())
+    sequences = set()
+    special = set(tokenizer.all_special_ids)
+    for term in terms:
+        for form in (term, term.capitalize(), term.upper()):
+            for prefix in ('', ' '):
+                for normalization in ('NFC', 'NFD'):
+                    ids = tokenizer.encode(prefix + unicodedata.normalize(normalization, form),
+                                           add_special_tokens=False)
+                    if not ids or any(type(token) is not int or token in special for token in ids):
+                        raise ValueError('invalid-generation-blocklist')
+                    sequences.add(tuple(ids))
+    return [list(ids) for ids in sorted(sequences)]
 
 
 def inference_messages(images, text, locale='en'):
@@ -29,6 +58,7 @@ def inference_messages(images, text, locale='en'):
             'Return only one plain line of description, without brackets, quotes, numbering or markdown. '
             'Use a short noun phrase of at most three words naming only the main visible object. '
             'Do not narrate the scene or list background details. '
+            'Use object nouns, without adjectives or advertising wording. '
             'Return ABSTAIN when uncertain. Do not return image numbers or JSON. '
             'The host binds the description to the single supplied file.')
     else:
@@ -122,6 +152,8 @@ def main():
             attn_implementation='sdpa', local_files_only=True,
             trust_remote_code=False, use_safetensors=True).eval()
 
+    blocked = {locale: generation_blocklist(processor.tokenizer, locale) for locale in OUTPUT_LANGUAGES}
+
     def infer(images, text, descriptors, maximum=96, parse=True, locale='en'):
         # A concise single-image label has a smaller generation budget.
         # Exhaustion is still rejected, never accepted as truncated text.
@@ -131,7 +163,8 @@ def main():
         inputs = processor.apply_chat_template(messages, tokenize=True, add_generation_prompt=True,
                                               return_dict=True, return_tensors='pt').to('cuda')
         with torch.inference_mode():
-            output = model.generate(**inputs, max_new_tokens=maximum, do_sample=False)
+            output = model.generate(**inputs, max_new_tokens=maximum, do_sample=False,
+                                    bad_words_ids=blocked[locale])
         text = processor.decode(output[0, inputs['input_ids'].shape[1]:], skip_special_tokens=True)
         generated_count = output.shape[1] - inputs['input_ids'].shape[1]
         if not parse:

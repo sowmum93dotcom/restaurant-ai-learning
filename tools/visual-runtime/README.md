@@ -197,3 +197,11 @@ can escape a lexical list; legitimate phrases can be rejected. Keep the runtime
 disabled. The changed exact code needs genuine GPU re-evaluation, human review,
 and private Preview-to-GPU HTTPS acceptance under the unchanged 2,000 ms limit.
 The earlier 31-case execution pass does not approve this changed runtime.
+
+The follow-up decoder also excludes bounded freshness token sequences before
+generation (case, leading-space and Unicode normalization variants), with a
+German-only English-label exclusion. These exclusions are precomputed from the
+existing local tokenizer. Special tokens including EOS cannot be excluded. The
+independent rejection guard remains in the parser and supervisor; no response is
+rewritten. This is a lexical constraint, not complete factuality or language
+certification, and still requires exact-build GPU measurement.

@@ -119,7 +119,7 @@ def validate_request(value, weights_hash, now=None, code_hash=None):
 # Conservative lexical rejection, not a language detector or proof of factuality.
 # Visual evidence cannot establish freshness, including claims copied from adverts.
 FRESHNESS = re.compile(
-    r"\b(?:fresh|freshly|frisch\w*|frais|fraîche\w*|fresc[oa]s?|taze)\b"
+    r"\b(?:fresh|freshly|freshness|frisch\w*|frais|fraîche\w*|fresc[oa]s?|taze)\b"
     r"|新鲜|新鮮|ताज़ा|ताजा|طازج", re.IGNORECASE)
 GERMAN_ENGLISH_FALLBACK = re.compile(
     r"\b(?:tent|groceries|vegetables|produce)\b"

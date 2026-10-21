@@ -17,7 +17,7 @@ from pathlib import Path
 from unittest.mock import patch
 from contracts import MODEL_ID, MODEL_VERSION, ModelOutputError, strict_json, validate_request, validate_output
 from server import RuntimeHTTPServer, Supervisor, verify_weights, worker_environment, runtime_code_hash, main as runtime_main
-from worker import expand_compact_output, inference_messages, parse_model_output, parse_single_description
+from worker import expand_compact_output, inference_messages, parse_model_output, parse_single_description, generation_blocklist
 
 FAKE_CHILD = '''import json,sys,time
 print(json.dumps({'ready':True,'modelVersion':%r}),flush=True)
@@ -181,6 +181,26 @@ class RuntimeTests(unittest.TestCase):
                 self.assertNotIn(text, str(caught.exception))
                 self.assertFalse(self.supervisor.ready)
             self.supervisor.start()
+
+    def test_decoding_policy_covers_prefix_case_and_locale_without_masking_special_tokens(self):
+        class DeclaredTokenizerFixture:
+            all_special_ids = [1000000]
+            def encode(self, text, add_special_tokens):
+                self.assert_no_special = not add_special_tokens
+                return [ord(char) for char in text]
+        tokenizer = DeclaredTokenizerFixture()
+        english = generation_blocklist(tokenizer, 'en')
+        german = generation_blocklist(tokenizer, 'de')
+        for word in ['Fresh', ' fresh', 'FRESH', '新鲜', 'طازجة', 'Frisches']:
+            self.assertIn([ord(c) for c in word], english)
+        self.assertNotIn([ord(c) for c in 'tent'], english)
+        self.assertIn([ord(c) for c in 'tent'], german)
+        self.assertNotIn([ord(c) for c in 'ABSTAIN'], german)
+        self.assertTrue(tokenizer.assert_no_special)
+        self.assertTrue(all(1000000 not in row for row in german))
+        with self.assertRaises(ValueError): generation_blocklist(tokenizer, 'xx')
+        tokenizer.all_special_ids = [ord('f')]
+        with self.assertRaises(ValueError): generation_blocklist(tokenizer, 'en')
 
     def setUp(self):
         self.supervisor = Supervisor([sys.executable, '-I', '-u', '-c', FAKE_CHILD], worker_environment(), 2)
