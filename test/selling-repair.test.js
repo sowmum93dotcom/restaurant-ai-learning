@@ -22,7 +22,8 @@ test('Selling links stay in Selling and all initial interface copy is covered',(
  assert.doesNotMatch(html,/marketing\.html|business-workspace\.html/);
  const texts=Array.from(html.matchAll(/>([^<>]+)</g),m=>m[1].trim()).filter(Boolean);
  const submission=require('../js/selling-submission-copy');
- const allowed=new Set(['English','Türkçe','DEMEOS Selling','SKU','DEMEOS logo']);
+ const allowed=new Set(['English','Türkçe','DEMEOS Selling','SKU','DEMEOS logo','DEMEOS ROOT AI ↗']);
+ assert.match(html,/<a href="\/root-ai" class="root-entry">DEMEOS ROOT AI ↗<\/a>/,'ROOT entry shares no business ID or token');
  for(const text of texts){const decoded=text.replaceAll('&amp;','&');assert.ok(copy.packs.en[decoded]||copy.aliases[decoded]||Object.values(submission.en).includes(decoded)||allowed.has(decoded)||decoded==='Saving does not publish. Required checks must pass before publication readiness.','Missing copy: '+decoded);}
 });
 test('contact edits and resumed verified binary uploads enforce SQL ownership in live and isolated Preview',async t=>{

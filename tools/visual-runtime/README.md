@@ -147,7 +147,7 @@ Only after acceptance, configure branch-scoped Preview values:
 - `DEMEOS_VISUAL_MEDIA_HOSTS`: comma-separated exact private storage hosts, no wildcard.
 - `DEMEOS_VISUAL_RUNTIME_MANIFEST`: JSON with `operator: "DEMEOS"`, `modelId: "Qwen3-VL-4B-Instruct"`, pinned `modelVersion`, reviewed `weightsManifestHash` and `runtimeCodeHash`, actual `licenceReviewId`, `securityReviewId`, `benchmarkReviewId`, `benchmarkTimeoutMs: 2000` and reviewed capabilities (`image-semantics` and/or `video-frame-semantics`).
 
-Removing the enable setting disables new model execution without touching product data. Changing review/model/code metadata creates a new cache identity. No browser flag can enable the runtime, and no Production configuration is added here.
+Disabling the project enable setting applies to subsequent deployments; redeploy and verify the disabled runtime, and revoke/rotate the service credential to prevent older immutable Preview deployments from executing. Product data is untouched. Changing review/model/code metadata creates a new cache identity. No browser flag can enable the runtime, and no Production configuration is added here.
 
 ## Verification evidence
 

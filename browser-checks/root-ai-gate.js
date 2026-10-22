@@ -1,0 +1,46 @@
+'use strict';
+// Shipped UI -> real HTTP handler -> authoritative registry. Clerk is a named
+// fixture here; this does NOT prove deployed sign-in, GPU or persistence.
+const {chromium,webkit}=require('playwright');
+const assert=require('node:assert/strict'),http=require('node:http'),fs=require('node:fs'),path=require('node:path');
+const {createHandler}=require('../api/_lib/root-intelligence');
+const copy=require('../js/root-ai-copy');
+const baseDir=path.resolve(__dirname,'..');
+const handler=createHandler({authenticate:async req=>req.headers.authorization==='Bearer root-browser-auth-fixture'?{trustedIdentityId:'root-only-no-vendor'}:null,environment:()=>({VERCEL_ENV:'preview'})});
+const server=http.createServer(async(req,res)=>{
+ try{
+  const url=new URL(req.url,'http://localhost');
+  if(url.pathname==='/api/public-config'){res.setHeader('Content-Type','application/json');return res.end(JSON.stringify({clerkPublishableKey:'pk_test_'+Buffer.from('root-auth-fixture.example$').toString('base64')}));}
+  if(url.pathname==='/api/root/workspace'){
+   let raw='';for await(const chunk of req){raw+=chunk;if(raw.length>4096){res.writeHead(413);return res.end();}}
+   req.query=Object.fromEntries(url.searchParams);req.body=raw?JSON.parse(raw):undefined;
+   res.status=code=>{res.statusCode=code;return res;};res.json=data=>{res.setHeader('Content-Type','application/json');res.end(JSON.stringify(data));return res;};return await handler(req,res);
+  }
+  const filename=path.resolve(baseDir,'.'+(url.pathname==='/root-ai'?'/root-ai.html':url.pathname));
+  if(!filename.startsWith(baseDir+path.sep)){res.writeHead(404);return res.end();}
+  res.setHeader('Content-Type',filename.endsWith('.js')?'application/javascript':filename.endsWith('.css')?'text/css':filename.endsWith('.png')?'image/png':filename.endsWith('.json')?'application/json':'text/html');fs.createReadStream(filename).on('error',()=>{res.statusCode=404;res.end();}).pipe(res);
+ }catch{res.statusCode=500;res.end();}
+});
+(async()=>{
+ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+ const browser=await(process.env.DEMEOS_BROWSER_ENGINE==='webkit'?webkit:chromium).launch({headless:true});
+ try{
+  for(const width of [375,820,1440]){
+   const context=await browser.newContext({viewport:{width,height:1000}});
+   await context.addInitScript(()=>{window.__internal_ClerkUICtor={};const listeners=[];window.Clerk={user:{id:'root-only-no-vendor'},session:{id:'fixture-session',getToken:async()=>'root-browser-auth-fixture'},load:async()=>{},addListener:fn=>listeners.push(fn),signOut:async()=>{window.Clerk.user=null;window.Clerk.session=null;listeners.forEach(fn=>fn());}};});
+   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(String(e)));
+   await page.goto('http://127.0.0.1:'+server.address().port+'/root-ai');await page.locator('#workspace:not([hidden])').waitFor();
+   assert.equal(await page.locator('#category option').count(),172);assert.equal(await page.locator('#capabilities li').count(),171);
+   assert.equal(await page.locator('.identity img').evaluate(img=>img.complete&&img.naturalWidth>0),true);
+   await page.locator('#text').fill('Groceries');await page.locator('#category').selectOption('9');await page.locator('#run').click();await page.locator('#result:not([hidden])').waitFor();assert.match(await page.locator('#evidence').innerText(),/Groceries/);
+   await page.locator('#text').fill('<script>throw new Error("unsafe")</script>');assert.equal(await page.locator('#result').isVisible(),false);await page.locator('#run').click();await page.locator('#result:not([hidden])').waitFor();assert.match(await page.locator('blockquote').innerText(),/<script>/);
+   await page.locator('#customer').click();await page.locator('#workspace:not([hidden])').waitFor();assert.equal(await page.locator('#text').inputValue(),'');assert.equal(await page.locator('#result').isVisible(),false);assert.equal(await page.locator('#customer').getAttribute('aria-pressed'),'true');
+   for(const locale of Object.keys(copy.rows)){
+    await page.locator('#language').selectOption(locale);await page.locator('#workspace:not([hidden])').waitFor();assert.equal(await page.locator('h1').innerText(),copy.translate(locale,'heading'));assert.equal(await page.locator('html').getAttribute('dir'),locale==='ar'?'rtl':'ltr');assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no overflow '+width+' '+locale);
+   }
+   await page.locator('#language').selectOption('en');await page.locator('#workspace:not([hidden])').waitFor();await page.locator('#filter').fill('Groceries');assert.equal(await page.locator('#capabilities li').count(),1);
+   await page.screenshot({path:path.join(process.env.DEMEOS_BROWSER_ARTIFACT_DIR||'/tmp','demeos-root-'+width+'.png'),fullPage:true});
+   await page.locator('#signout').click();await page.locator('#signin:not([hidden])').waitFor();assert.equal(await page.locator('#workspace').isVisible(),false);assert.deepEqual(errors,[]);await context.close();console.log('ROOT HTTP/browser fixture gate passed at',width,'px, ten locales; no genuine Clerk/GPU/persistence claim');
+  }
+ }finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
+})().catch(error=>{console.error(error);server.close();process.exitCode=1;});

@@ -35,6 +35,8 @@ jobs:
         run: node browser-checks/business-workspace-gate.js
       - name: Run Selling foundation SQL, access and rendered dashboard gate
         run: node browser-checks/selling-dashboard-gate.js
+      - name: Run independent ROOT HTTP, privacy and responsive gate
+        run: node browser-checks/root-ai-gate.js
       - name: Run private administrative application review gate
         run: node browser-checks/admin-business-review-gate.js
       - name: Run business approval and separate application journey
@@ -78,6 +80,7 @@ jobs:
             /tmp/demeos-account-*.png
             /tmp/demeos-owner-*.png
             /tmp/demeos-selling-*.png
+            /tmp/demeos-root-*.png
             /tmp/demeos-owner-layout-*.json
             /tmp/demeos-admin-*.png
             /tmp/demeos-approval-*.png
@@ -100,6 +103,8 @@ jobs:
         run: npx playwright install --with-deps webkit
       - name: Verify Selling SQL, uploads, identity and workspaces in WebKit
         run: node browser-checks/selling-dashboard-gate.js
+      - name: Verify independent ROOT in WebKit
+        run: node browser-checks/root-ai-gate.js
       - name: Preserve rendered Selling WebKit review images
         if: always()
         uses: actions/upload-artifact@v4
