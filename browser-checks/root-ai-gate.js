@@ -9,7 +9,18 @@ const {PGlite}=require('@electric-sql/pglite'),{createDatabase}=require('../api/
 const db=new PGlite(),database=createDatabase(db);
 const env={VERCEL_ENV:'preview',VERCEL_GIT_COMMIT_REF:'root-gate',DEMEOS_SELLING_DATA_ENVIRONMENT:'test',DEMEOS_SELLING_TEST_PREVIEW_BRANCH:'root-gate',DEMEOS_SELLING_TEST_DATABASE_HOST:'isolated.example',POSTGRES_URL:'postgresql://fixture:fixture@isolated.example/isolated',DEMEOS_ROOT_PERSISTENCE_ENABLED:'true',DEMEOS_ROOT_PREVIEW_OWNER_IDS:'["root-only-no-vendor"]'};
 const baseDir=path.resolve(__dirname,'..');
-const handler=createHandler({authenticate:async req=>req.headers.authorization==='Bearer root-browser-auth-fixture'?{trustedIdentityId:'root-only-no-vendor'}:null,environment:()=>env,workStore:()=>createStore(database)});
+// Named catalogue/auth fixtures, through the actual existing search handler.
+// No model, live customer identity or published deployment evidence is implied.
+const persistence=require('../api/_lib/persistence'),customerAuth=require('../api/_lib/demeos-customer-authentication');
+const savedRepository=persistence.getRepository,savedIdentity=customerAuth.resolveTrustedCustomerIdentityFromRequest;
+persistence.getRepository=()=>({getCustomerWork:async()=>[
+ ...[['cheap','£89'],['expensive','£160']].map(([id,price])=>({workItemId:id,businessId:'business-'+id,businessName:'Published '+id,content:'Black waterproof jacket',participationAction:'Interested',customerContinuation:{routes:['website'],website:'https://example.com'},products:[{productId:'product-'+id,businessId:'business-'+id,name:'Black jacket',description:'Black waterproof jacket',availability:'available',price,continuationRoute:'website'}]}))
+]});
+customerAuth.resolveTrustedCustomerIdentityFromRequest=async()=>null;
+const customerSearchHandler=require('../api/customer/possibilities');
+persistence.getRepository=savedRepository;customerAuth.resolveTrustedCustomerIdentityFromRequest=savedIdentity;
+let customerSearchRequests=0;
+const handler=createHandler({authenticate:async req=>req.headers.authorization==='Bearer root-browser-auth-fixture'?{trustedIdentityId:'root-only-no-vendor'}:null,environment:()=>env,workStore:()=>createStore(database),customerSearchHandler:async(req,res)=>{customerSearchRequests++;return customerSearchHandler(req,res);}});
 const server=http.createServer(async(req,res)=>{
  try{
   const url=new URL(req.url,'http://localhost');
@@ -41,6 +52,13 @@ const server=http.createServer(async(req,res)=>{
    await page.locator('#text').fill('<script>throw new Error("unsafe")</script>');assert.equal(await page.locator('#result').isVisible(),false);await page.locator('#run').click();await page.locator('#result:not([hidden])').waitFor();assert.match(await page.locator('blockquote').innerText(),/<script>/);
    await page.locator('#customer').click();await page.locator('#workspace:not([hidden])').waitFor();assert.equal(await page.locator('#text').inputValue(),'');assert.equal(await page.locator('#result').isVisible(),false);assert.equal(await page.locator('#customer').getAttribute('aria-pressed'),'true');
    assert.equal(await page.locator('#work-history button').count(),0,'Customer history is isolated from Business');
+   assert.equal(await page.locator('#integration').isVisible(),false);assert.equal(await page.locator('#customer-search').isVisible(),true);
+   const beforeSearch=customerSearchRequests;
+   await page.locator('#text').fill('black waterproof jacket under £100');await page.locator('#search-customer').click();assert.equal(customerSearchRequests,beforeSearch,'No search without explicit confirmation');
+   await page.locator('#search-consent').check();await page.locator('#search-customer').click();await page.locator('#search-status').filter({hasText:copy.translate('en','searchFound')}).waitFor();
+   assert.equal(await page.locator('#search-results li').count(),1);assert.match(await page.locator('#search-results').innerText(),/Published cheap/);assert.doesNotMatch(await page.locator('#search-results').innerText(),/expensive/);assert.equal(await page.locator('#search-consent').isChecked(),false);
+   await page.locator('#text').fill('unrelated telescope orchestra');assert.equal(await page.locator('#search-results li').count(),0);assert.equal(await page.locator('#search-consent').isChecked(),false);
+   await page.locator('#search-consent').check();await page.locator('#search-customer').click();await page.locator('#search-status').filter({hasText:copy.translate('en','searchEmpty')}).waitFor();assert.equal(await page.locator('#search-results li').count(),0);
    for(const locale of Object.keys(copy.rows)){
     await page.locator('#language').selectOption(locale);await page.locator('#workspace:not([hidden])').waitFor();assert.equal(await page.locator('h1').innerText(),copy.translate(locale,'heading'));assert.equal(await page.locator('html').getAttribute('dir'),locale==='ar'?'rtl':'ltr');assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no overflow '+width+' '+locale);
    }

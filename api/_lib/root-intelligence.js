@@ -34,7 +34,7 @@ function analyze(input){
     limitations:['canonical-english-matching-only','supplied-text-not-independent-evidence','no-model-inference','no-commercial-writeback'],
     review:{status:'not-saved',requiresUserCorrection:true},persistence:'none'};
 }
-function createHandler({authenticate=authentication.resolveTrustedIdentityFromRequest,environment=()=>process.env,repository=()=>require('./persistence').getRepository(),workStore=()=>require('./root-work-store').createStore(require('./database').getDatabase()),visualRunnerFactory}={}){
+function createHandler({authenticate=authentication.resolveTrustedIdentityFromRequest,environment=()=>process.env,repository=()=>require('./persistence').getRepository(),workStore=()=>require('./root-work-store').createStore(require('./database').getDatabase()),visualRunnerFactory,customerSearchHandler}={}){
   return async(req,res)=>{
     res.setHeader('Cache-Control','private, no-store');res.setHeader('Vercel-CDN-Cache-Control','no-store');res.setHeader('Vary','Cookie, Authorization');
     const reply=(status,code,data={})=>res.status(status).json({code,...data});
@@ -65,6 +65,23 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
         const history=persistenceAllowed(environment(),identity.trustedIdentityId)?{status:'available',works:await workStore().list(identity.trustedIdentityId,context)}:{status:'unavailable',reason:'persistence-review-pending'};
         return reply(200,'root-workspace',{workspace:context,registry:{datasetVersion:registry.DATASET_VERSION,sectors:registry.SECTORS,categories:capabilityMap()},locales:LOCALES,
           runtime:{status:'unavailable',reason:'root-model-acceptance-pending',hostedInferenceFallback:false,controlledSellingVisual:persistenceAllowed(environment(),identity.trustedIdentityId)&&environment().DEMEOS_ROOT_VISUAL_PREVIEW_ENABLED==='true'&&Boolean(require('./selling-visual-runtime').configuration(environment()))},history});
+      }
+      if(plain(req.body)&&req.body.action==='search-customer'){
+        if(audience!=='customer'||req.body.confirmed!==true)return reply(403,'explicit-customer-sharing-required');
+        if(Object.keys(req.body).some(k=>!['action','audience','confirmed','locale','text'].includes(k))||!LOCALES.includes(req.body.locale)||typeof req.body.text!=='string'||!req.body.text.trim()||req.body.text.length>500)return reply(400,'invalid-request');
+        const {buildCustomerUnderstanding,confirmCustomerUnderstanding}=require('../../js/customer-understanding');
+        const understanding=confirmCustomerUnderstanding(buildCustomerUnderstanding('',req.body.text));
+        // Delegate to Customer Experience's existing public catalogue/search
+        // boundary. It independently resolves customer identity, privacy/history,
+        // public work, deterministic validation and guarded ranking. A ROOT
+        // personal workspace never becomes Selling or customer-history authority.
+        const headers={...req.headers,'x-demeos-customer-locale':req.body.locale};
+        delete headers['x-demeos-test-mode'];delete headers['x-demeos-discover-test'];
+        let searchStatus=503,search;
+        const response={setHeader:(key,value)=>res.setHeader(key,value),status(code){searchStatus=code;return this;},json(value){search=value;return this;}};
+        await (customerSearchHandler||require('../customer/possibilities'))({method:'POST',url:'/api/customer/possibilities',headers,query:{},body:{understanding}},response);
+        if(searchStatus!==200||!Array.isArray(search?.possibilities))return reply(searchStatus>=400&&searchStatus<=599?searchStatus:503,'customer-search-unavailable');
+        return reply(200,'customer-search-complete',{workspace:context,search});
       }
       if(plain(req.body)&&['save-work','review-work'].includes(req.body.action)){
         if(!persistenceAllowed(environment(),identity.trustedIdentityId))return reply(503,'root-persistence-unavailable');
