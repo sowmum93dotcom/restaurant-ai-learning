@@ -1,6 +1,6 @@
 (function(){'use strict';
 const $=id=>document.getElementById(id),copy=window.DEMEOSRootCopy,shared=window.DEMEOSSellingCopy;
-let locale='en',audience='business',clerk=null,context=null,sequence=0,sessionKey='',busy=false,booting=false,sharedProducts=[],selectedWork=null,saveRequestId=null;
+let locale='en',audience='business',clerk=null,context=null,sequence=0,sessionKey='',busy=false,booting=false,sharedProducts=[],selectedWork=null,saveRequestId=null,activeRequest=null;
 try{locale=shared.resolve(localStorage.getItem('demeos-customer-language')).code;}catch{}
 const t=key=>copy.translate(locale,key);
 function syncCustomerSearch(){
@@ -11,14 +11,26 @@ function syncCustomerSearch(){
 }
 function option(value,text){const n=document.createElement('option');n.value=value;n.textContent=text;return n;}
 shared.languages.forEach(l=>$('language').append(option(l.code,l.name)));
-function reset(){sequence++;$('category-diagnostics').open=false;$('development-tools').open=false;context=null;sharedProducts=[];$('share-consent').checked=false;$('selling-product').replaceChildren();$('selling-product').hidden=true;$('share-selling').hidden=true;$('load-selling').disabled=false;$('share-selling').disabled=false;$('integration-status').textContent='';$('integration').hidden=audience!=='business';$('workspace').hidden=true;$('result').hidden=true;$('text').value='';$('count').textContent='0 / 500';$('filter').value='';$('evidence').replaceChildren();$('capabilities').replaceChildren();$('category').replaceChildren();syncCustomerSearch();}
+function cancelRequest(){if(activeRequest){activeRequest.abort();activeRequest=null;}busy=false;['run','save-work','load-selling','share-selling','visual-run','runtime-preflight'].forEach(id=>$(id).disabled=false);$('visual-consent').checked=false;$('preflight-status').textContent='';}
+function reset(){sequence++;cancelRequest();$('category-diagnostics').open=false;$('development-tools').open=false;context=null;sharedProducts=[];$('share-consent').checked=false;$('selling-product').replaceChildren();$('selling-product').hidden=true;$('share-selling').hidden=true;$('load-selling').disabled=false;$('share-selling').disabled=false;$('integration-status').textContent='';$('integration').hidden=audience!=='business';$('workspace').hidden=true;$('result').hidden=true;$('text').value='';$('count').textContent='0 / 500';$('filter').value='';$('evidence').replaceChildren();$('capabilities').replaceChildren();$('category').replaceChildren();syncCustomerSearch();}
 function status(key){$('status').textContent=t(key);$('retry').hidden=key!=='error';}
 function clearSaved(){selectedWork=null;saveRequestId=null;$('save-consent').checked=false;$('saved-work').hidden=true;$('work-review').hidden=true;$('work-history').replaceChildren();$('review-text').value='';$('save-status').textContent='';$('review-status').textContent='';$('save-work').disabled=false;$('visual-run').disabled=false;syncVisual();}
 function syncVisual(){const enabled=audience==='business'&&context?.runtime?.controlledSellingVisual===true&&sharedProducts.length>0&&$('share-consent').checked;$('visual-tool').hidden=!enabled;if(!enabled)$('visual-consent').checked=false;}
-function invalidate(){sequence++;busy=false;selectedWork=null;saveRequestId=null;$('save-consent').checked=false;$('work-review').hidden=true;$('save-work').disabled=false;$('run').disabled=false;$('load-selling').disabled=false;$('share-selling').disabled=false;$('result').hidden=true;syncCustomerSearch();}
+function invalidate(){sequence++;cancelRequest();selectedWork=null;saveRequestId=null;$('save-consent').checked=false;$('work-review').hidden=true;$('save-work').disabled=false;$('run').disabled=false;$('load-selling').disabled=false;$('share-selling').disabled=false;$('result').hidden=true;syncCustomerSearch();}
 function translate(){document.documentElement.lang=locale;document.documentElement.dir=shared.resolve(locale).direction;$('language').value=locale;document.querySelectorAll('[data-copy]').forEach(n=>{const key=n.dataset.copy;n.textContent=copy.keys.includes(key)?t(key):shared.translate(locale,({signin:'Sign in',signout:'Sign out',retry:'Try again',language:'Language',privacy:'Privacy',terms:'Terms',skip:'Skip to content'})[key]||key);});}
 async function bounded(promise){let timer;try{return await Promise.race([promise,new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('timeout')),15000);})]);}finally{clearTimeout(timer);}}
-async function api(body){const token=await bounded(clerk.session.getToken());if(!token)throw Error('session');const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);try{const response=await fetch('/api/root/workspace'+(body?'':'?audience='+audience),{method:body?'POST':'GET',credentials:'same-origin',cache:'no-store',signal:controller.signal,headers:{Authorization:'Bearer '+token,...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})});if(!response.ok)throw Error('unavailable');return await response.json();}finally{clearTimeout(timer);}}
+async function api(body){
+ const turn=sequence,session=clerk.session;
+ const token=await bounded(session.getToken());
+ // Token resolution can outlive sign-out, edits or a context change. Never
+ // send that old request with a new workspace or session after it resolves.
+ if(turn!==sequence||session!==clerk?.session)throw Error('cancelled');
+ if(!token)throw Error('session');
+ const controller=new AbortController();activeRequest=controller;
+ const timer=setTimeout(()=>controller.abort(),15000);
+ try{const response=await fetch('/api/root/workspace'+(body?'':'?audience='+audience),{method:body?'POST':'GET',credentials:'same-origin',cache:'no-store',signal:controller.signal,headers:{Authorization:'Bearer '+token,...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})});if(!response.ok)throw Error('unavailable');return await response.json();}
+ finally{clearTimeout(timer);if(activeRequest===controller)activeRequest=null;}
+}
 function capabilities(){const query=$('filter').value.trim().toLocaleLowerCase();const rows=context.registry.categories.filter(c=>c.name.toLocaleLowerCase().includes(query)||c.categoryId===query);$('category-count').textContent=rows.length+' / '+context.registry.categories.length;$('capabilities').replaceChildren();rows.forEach(c=>{const li=document.createElement('li'),detail=document.createElement('small');li.textContent=c.name+' · '+c.categoryId;detail.textContent=t(c.fields.length?'fields':'unreviewed');li.append(detail);$('capabilities').append(li);});}
 async function load(){reset();clearSaved();const turn=sequence;busy=false;$('run').disabled=false;$('signin').hidden=!!clerk?.user;$('signout').hidden=!clerk?.user;if(!clerk?.user||!clerk?.session){status('signedout');return;}status('loading');try{const data=await api();if(turn!==sequence)return;context=data;$('workspace').hidden=false;$('category').append(option('',t('none')));data.registry.categories.forEach(c=>$('category').append(option(c.categoryId,c.name)));capabilities();renderHistory();syncCustomerSearch();status('ready');}catch{if(turn===sequence)status('error');}}
 function renderHistory(){
@@ -58,6 +70,7 @@ for(const [id,decision] of [['accept-work','accepted'],['correct-work','correcte
  try{const data=await api({action:'review-work',audience,confirmed:true,workId:work.work_id,revision:work.revision,decision,...(decision==='corrected'?{text:$('review-text').value}:{})});if(turn!==sequence)return;selectedWork=data.work;context.history.works=context.history.works.map(w=>w.work_id===data.work.work_id?data.work:w);renderHistory();$('review-status').textContent=t('reviewSaved');}
  catch{if(turn===sequence)$('review-status').textContent=t('error');}finally{if(turn===sequence)busy=false;}
 });
+$('selling-product').addEventListener('change',()=>{invalidate();$('integration-status').textContent='';});
 $('share-consent').addEventListener('change',()=>{invalidate();sharedProducts=[];$('selling-product').replaceChildren();$('selling-product').hidden=true;$('share-selling').hidden=true;$('integration-status').textContent='';syncVisual();});
 $('load-selling').addEventListener('click',async()=>{
  if(busy||!context||!$('share-consent').checked)return;

@@ -46,6 +46,19 @@ const server=http.createServer(async(req,res)=>{
    const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(String(e)));
    await page.goto('http://127.0.0.1:'+server.address().port+'/root-ai');await page.locator('#workspace:not([hidden])').waitFor();
    assert.equal(await page.locator('#category option').count(),172);assert.equal(await page.locator('#capabilities li').count(),171);
+   // A delayed token must not send the old Business request after switching
+   // contexts. Use the real UI and HTTP handler; no GPU success is simulated.
+   const sent=[];page.on('request',request=>{if(request.method()==='POST'&&request.url().includes('/api/root/workspace'))sent.push(request.postDataJSON());});
+   await page.evaluate(()=>{window.rootOriginalToken=window.Clerk.session.getToken;window.Clerk.session.getToken=()=>new Promise(resolve=>{window.rootReleaseToken=resolve;});});
+   await page.locator('#text').fill('stale business request');await page.locator('#run').click();
+   await page.waitForFunction(()=>typeof window.rootReleaseToken==='function');
+   await page.evaluate(()=>{window.Clerk.session.getToken=window.rootOriginalToken;});
+   await page.locator('#customer').click();await page.locator('#workspace:not([hidden])').waitFor();
+   await page.evaluate(()=>window.rootReleaseToken('root-browser-auth-fixture'));
+   await page.locator('#text').fill('Groceries');await page.locator('#run').click();await page.locator('#result:not([hidden])').waitFor();
+   assert.equal(sent.some(body=>body.text==='stale business request'),false);
+   assert.equal(await page.locator('#runtime-preflight').isDisabled(),false);
+   await page.locator('#business').click();await page.locator('#workspace:not([hidden])').waitFor();
    assert.equal(await page.locator('.identity img').evaluate(img=>img.complete&&img.naturalWidth>0),true);
    assert.equal(await page.locator('#category').isVisible(),false);assert.equal(await page.locator('#capabilities').isVisible(),false);await page.locator('#category-diagnostics summary').click();await page.locator('#text').fill('Groceries');await page.locator('#category').selectOption('9');await page.locator('#run').click();await page.locator('#result:not([hidden])').waitFor();assert.match(await page.locator('#evidence').innerText(),/Groceries/);
    await page.locator('#save-consent').check();await page.locator('#save-work').click();await page.locator('#save-status').filter({hasText:copy.translate('en','workSaved')}).waitFor();await page.locator('#work-history button').first().click();await page.locator('#accept-work').click();await page.locator('#review-status').filter({hasText:copy.translate('en','reviewSaved')}).waitFor();await page.locator('#review-text').fill('Owner correction '+width);await page.locator('#correct-work').click();await page.locator('#review-status').filter({hasText:copy.translate('en','reviewSaved')}).waitFor();await page.reload();await page.locator('#workspace:not([hidden])').waitFor();await page.locator('#work-history button').first().click();assert.equal(await page.locator('#review-text').inputValue(),'Owner correction '+width);await page.locator('#reject-work').click();await page.locator('#review-status').filter({hasText:copy.translate('en','reviewSaved')}).waitFor();
