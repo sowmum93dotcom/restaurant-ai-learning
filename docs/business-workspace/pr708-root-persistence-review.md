@@ -1,0 +1,13 @@
+# ROOT isolated Preview migration review
+
+Engineering review, not legal or independent security certification. Scope: the three additive statements exported as SCHEMA in api/_lib/root-work-store.js. No Production migration is authorised.
+
+ROOT tables are separate from Selling/business/customer tables and have no vendor foreign key. Personal workspace identity and audience come from the verified server principal. Every read/update joins or locks that owner/audience relationship. Work and audit use composite workspace keys; a foreign work UUID cannot be reviewed. No browser-selected tenant, role or result can grant access or become saved evidence. Browser-supplied corrected text remains an explicit user correction, not model evidence or verification.
+
+Save/review and audit execute together on one transaction connection. Workspace locks serialize quotas (100 saved works/hour, 1,000 total) and review mutations; exact revision checks prevent lost updates. Idempotency uses a per-workspace UUID and exact source/locale/category comparison. History reads are bounded to 50; no model requests or cross-user cache is introduced. ROOT does not write prices, stock, orders, catalogue, permissions or publication.
+
+Apply only after direct inspection of branch Preview database configuration verifies it equals the test host guard and differs from Production. Use the existing isolated database; do not create another project. Production rejects the ROOT handler before database access. Migration is not added to global ensureSchema. Existing database.transaction currently calls global ensureSchema for established application tables; no ROOT statements enter that manager. Preserve all pre-existing tables and rows. Roll back by disabling ROOT persistence; retain the additive tables and audit, do not drop or truncate them.
+
+UI must require explicit save consent. Unsaved work stays request-only. Saved source text/results are private, and history must be cleared from the page on account/audience/language changes. No automatic training or hosted inference. Broader customer rollout requires reviewed retention/export/deletion policy, organisation membership, operational abuse controls and independent security acceptance. The bounded owner-controlled Preview is not customer readiness.
+
+Acceptance before deployment: real isolated SQL tests for cross-user/cross-audience reads/reviews, malformed input, idempotency conflict, concurrent review and audit atomicity, save/reload, no writes to existing business records, additive reapplication and disabled/unisolated/Production gates. Actual Preview migration and signed-in persistence require separately recorded evidence; writing this review alone is not migration acceptance.

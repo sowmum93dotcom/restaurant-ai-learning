@@ -23,6 +23,18 @@ zh:['可选 Selling 集成','仅为本次请求与 ROOT 共享已保存产品。
 hi:['वैकल्पिक Selling एकीकरण','केवल इस अनुरोध के लिए सहेजा उत्पाद ROOT से साझा करें।','अधिकृत Selling उत्पाद चुनें','सहेजे उत्पाद की जाँच','कोई अधिकृत सहेजा उत्पाद नहीं'],
 ja:['任意の Selling 連携','このリクエストのみで保存済み商品を ROOT と共有します。','権限のある Selling 商品を選択','保存済み商品を確認','権限のある保存済み商品なし']};
 keys.push('integration','consent','loadSelling','shareSelling','noSelling');Object.keys(rows).forEach(locale=>rows[locale].push(...integrationCopy[locale]));
+const savedCopy={
+en:['Private saved work','Save this text and analysis privately in this ROOT workspace.','Save current analysis','Your correction','Accept','Save correction','Reject','Work saved privately','Review saved','History shows the latest 50 saved works. No automatic product changes.'],
+es:['Trabajo privado guardado','Guardar este texto y análisis de forma privada en este espacio ROOT.','Guardar análisis actual','Tu corrección','Aceptar','Guardar corrección','Rechazar','Trabajo guardado de forma privada','Revisión guardada','Últimos 50 trabajos guardados. Sin cambios automáticos en productos.'],
+fr:['Travail privé enregistré','Enregistrer ce texte et cette analyse dans cet espace ROOT privé.','Enregistrer l’analyse','Votre correction','Accepter','Enregistrer la correction','Refuser','Travail enregistré en privé','Vérification enregistrée','Les 50 derniers travaux. Aucune modification automatique des produits.'],
+de:['Private gespeicherte Arbeit','Text und Analyse privat in diesem ROOT-Bereich speichern.','Aktuelle Analyse speichern','Ihre Korrektur','Annehmen','Korrektur speichern','Ablehnen','Arbeit privat gespeichert','Prüfung gespeichert','Die letzten 50 Arbeiten. Keine automatischen Produktänderungen.'],
+pt:['Trabalho privado guardado','Guardar texto e análise em privado neste espaço ROOT.','Guardar análise atual','A sua correção','Aceitar','Guardar correção','Rejeitar','Trabalho guardado em privado','Revisão guardada','Últimos 50 trabalhos. Sem alterações automáticas de produtos.'],
+tr:['Özel kayıtlı çalışma','Metin ve analizi bu ROOT alanında özel olarak kaydet.','Mevcut analizi kaydet','Düzeltmeniz','Kabul et','Düzeltmeyi kaydet','Reddet','Çalışma özel kaydedildi','İnceleme kaydedildi','Son 50 kayıtlı çalışma. Otomatik ürün değişikliği yok.'],
+ar:['العمل الخاص المحفوظ','حفظ النص والتحليل بشكل خاص في مساحة ROOT هذه.','حفظ التحليل الحالي','تصحيحك','قبول','حفظ التصحيح','رفض','تم حفظ العمل بشكل خاص','تم حفظ المراجعة','آخر ٥٠ عملاً محفوظًا. لا تعديل تلقائي للمنتجات.'],
+zh:['私人已保存工作','将文本和分析私密保存到此 ROOT 工作空间。','保存当前分析','您的修正','接受','保存修正','拒绝','已私密保存工作','已保存审核','显示最近50项工作。不自动修改产品。'],
+hi:['निजी सहेजा काम','पाठ और विश्लेषण इस ROOT कार्यक्षेत्र में निजी रूप से सहेजें।','वर्तमान विश्लेषण सहेजें','आपका सुधार','स्वीकार','सुधार सहेजें','अस्वीकार','काम निजी रूप से सहेजा गया','समीक्षा सहेजी गई','हाल के 50 काम। कोई स्वचालित उत्पाद बदलाव नहीं।'],
+ja:['非公開の保存済み作業','この ROOT スペースにテキストと分析を非公開で保存します。','現在の分析を保存','あなたの修正','承認','修正を保存','却下','非公開で保存しました','確認を保存しました','最新50件の作業。商品の自動変更はありません。']};
+keys.push('savedWork','saveConsent','saveWork','correctionText','acceptWork','correctWork','rejectWork','workSaved','reviewSaved','savedHistory');Object.keys(rows).forEach(locale=>rows[locale].push(...savedCopy[locale]));
 const api={keys,rows,translate:(locale,key)=>{const index=keys.indexOf(key);return index<0?key:(rows[locale]||rows.en)[index];}};
 if(typeof module==='object'&&module.exports)module.exports=api;root.DEMEOSRootCopy=api;
 })(typeof window==='object'?window:{});

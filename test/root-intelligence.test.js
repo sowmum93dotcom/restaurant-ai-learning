@@ -50,3 +50,8 @@ test('all ten languages preserve input without claiming translated category matc
 test('unavailable dependencies fail closed without leaking errors',async()=>{
  const handler=root.createHandler({environment:()=>({VERCEL_ENV:'preview'}),authenticate:async()=>{throw Error('private credential');}});const res={setHeader(){},status(code){this.code=code;return this;},json(value){this.body=value;return this;}};await handler({method:'GET'},res);assert.equal(res.code,503);assert.equal(JSON.stringify(res.body).includes('credential'),false);
 });
+test('ROOT persistence requires independent explicit owner grant and exact isolated Preview settings',()=>{
+ const env={VERCEL_ENV:'preview',VERCEL_GIT_COMMIT_REF:'root',DEMEOS_SELLING_DATA_ENVIRONMENT:'test',DEMEOS_SELLING_TEST_PREVIEW_BRANCH:'root',DEMEOS_SELLING_TEST_DATABASE_HOST:'isolated.example',POSTGRES_URL:'postgresql://fixture:fixture@isolated.example/isolated',DEMEOS_ROOT_PERSISTENCE_ENABLED:'true',DEMEOS_ROOT_PREVIEW_OWNER_IDS:'["alice"]'};
+ assert.equal(root.persistenceAllowed(env,'alice'),true);assert.equal(root.persistenceAllowed(env,'bob'),false);
+ for(const patch of [{VERCEL_ENV:'production'},{POSTGRES_URL:'postgresql://fixture:fixture@wrong.example/isolated'},{VERCEL_GIT_COMMIT_REF:'another'},{DEMEOS_ROOT_PERSISTENCE_ENABLED:'false'},{DEMEOS_ROOT_PREVIEW_OWNER_IDS:'invalid'}])assert.equal(root.persistenceAllowed({...env,...patch},'alice'),false);
+});

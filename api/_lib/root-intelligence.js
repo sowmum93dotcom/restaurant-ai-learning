@@ -7,6 +7,9 @@ const {interpretCategories}=require('./customer-category-classification');
 const authentication=require('./demeos-authentication');
 const LOCALES=Object.freeze(['en','es','fr','ar','pt','zh','hi','de','ja','tr']);
 const plain=x=>x!==null&&typeof x==='object'&&!Array.isArray(x)&&Object.getPrototypeOf(x)===Object.prototype;
+function persistenceAllowed(env,identity){
+  try{return env.DEMEOS_ROOT_PERSISTENCE_ENABLED==='true'&&require('./selling-access').isolatedTestEnvironment(env)&&Array.isArray(JSON.parse(env.DEMEOS_ROOT_PREVIEW_OWNER_IDS||'null'))&&JSON.parse(env.DEMEOS_ROOT_PREVIEW_OWNER_IDS).includes(identity);}catch{return false;}
+}
 function capabilityMap(){
   return registry.CATEGORIES.map(category=>({categoryId:category.categoryId,sectorId:category.sectorId,name:category.categoryName,
     capabilities:{'literal-category-evidence':'available-english-canonical-name','field-checklist':fields.definition(category.categoryId).fields.length?'available-reviewed-fields':'not-reviewed',
@@ -31,7 +34,7 @@ function analyze(input){
     limitations:['canonical-english-matching-only','supplied-text-not-independent-evidence','no-model-inference','no-commercial-writeback'],
     review:{status:'not-saved',requiresUserCorrection:true},persistence:'none'};
 }
-function createHandler({authenticate=authentication.resolveTrustedIdentityFromRequest,environment=()=>process.env,repository=()=>require('./persistence').getRepository()}={}){
+function createHandler({authenticate=authentication.resolveTrustedIdentityFromRequest,environment=()=>process.env,repository=()=>require('./persistence').getRepository(),workStore=()=>require('./root-work-store').createStore(require('./database').getDatabase())}={}){
   return async(req,res)=>{
     res.setHeader('Cache-Control','private, no-store');res.setHeader('Vercel-CDN-Cache-Control','no-store');res.setHeader('Vary','Cookie, Authorization');
     const reply=(status,code,data={})=>res.status(status).json({code,...data});
@@ -47,8 +50,25 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
       const context=workspace(identity.trustedIdentityId,audience);
       if(req.method==='GET'){
         if(Object.keys(req.query||{}).some(k=>!['resource','audience'].includes(k)))return reply(400,'invalid-request');
+        const history=persistenceAllowed(environment(),identity.trustedIdentityId)?{status:'available',works:await workStore().list(identity.trustedIdentityId,context)}:{status:'unavailable',reason:'persistence-review-pending'};
         return reply(200,'root-workspace',{workspace:context,registry:{datasetVersion:registry.DATASET_VERSION,sectors:registry.SECTORS,categories:capabilityMap()},locales:LOCALES,
-          runtime:{status:'unavailable',reason:'root-model-acceptance-pending',hostedInferenceFallback:false},history:{status:'unavailable',reason:'persistence-review-pending'}});
+          runtime:{status:'unavailable',reason:'root-model-acceptance-pending',hostedInferenceFallback:false},history});
+      }
+      if(plain(req.body)&&['save-work','review-work'].includes(req.body.action)){
+        if(!persistenceAllowed(environment(),identity.trustedIdentityId))return reply(503,'root-persistence-unavailable');
+        if(req.body.confirmed!==true)return reply(400,'explicit-save-required');
+        let saved;
+        if(req.body.action==='save-work'){
+          if(Object.keys(req.body).some(k=>!['action','audience','locale','text','categoryId','confirmed','requestId'].includes(k)))return reply(400,'invalid-request');
+          const result=analyze({action:'understand',audience,locale:req.body.locale,text:req.body.text,categoryId:req.body.categoryId});
+          if(!result)return reply(400,'invalid-request');
+          saved=await workStore().save(identity.trustedIdentityId,context,req.body.requestId,result);
+        }else{
+          if(Object.keys(req.body).some(k=>!['action','audience','confirmed','workId','revision','decision','text'].includes(k)))return reply(400,'invalid-request');
+          saved=await workStore().review(identity.trustedIdentityId,context,{workId:req.body.workId,revision:req.body.revision,decision:req.body.decision,text:req.body.text});
+        }
+        const codes={invalid:400,conflict:409,denied:403,limited:429,saved:201,reviewed:200};
+        return reply(codes[saved.status]||503,'root-work-'+saved.status,{workspace:context,...(['saved','reviewed'].includes(saved.status)?{work:saved.work}: {})});
       }
       if(plain(req.body)&&['selling-options','understand-selling'].includes(req.body.action)){
         if(audience!=='business'||req.body.confirmed!==true)return reply(403,'explicit-sharing-required');
@@ -68,3 +88,4 @@ module.exports.analyze=analyze;
 module.exports.capabilityMap=capabilityMap;
 module.exports.workspace=workspace;
 module.exports.LOCALES=LOCALES;
+module.exports.persistenceAllowed=persistenceAllowed;
