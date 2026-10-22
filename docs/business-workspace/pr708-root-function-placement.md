@@ -10,7 +10,7 @@ The actual owner-authorised Preview acceptance product 19 Oct request fetched pr
 
 ## Placement change
 
-The shared ROOT/Customer handler api/public-config.js is configured in vercel.json to run in London, lhr1, next to the existing aws-eu-west-2 database. The existing businesses.js duration and FFmpeg inclusion remain intact. No authentication, ownership check, deadline, budget, database schema, runtime/model code, registry, search engine or product writeback is changed. This reduces avoidable database distance; improved inference timing is not yet established.
+The shared ROOT/Customer handler api/public-config.js is configured in vercel.json to run in London, lhr1, next to the existing aws-eu-west-2 database. The existing businesses.js duration and FFmpeg inclusion remain intact. No authentication, ownership check, deadline, budget, database schema, runtime/model code, registry, search engine or product writeback is changed. A fresh request after that deployment still logged cle1. A deployment-only serverlessFunctionRegion override also left regions iad1 and a fresh request in cle1. The documented top-level regions setting is now set to lhr1 as well, retaining the individual shared-handler setting. This applies to this branch Preview deployment; no Production deployment occurs. London execution and improved inference timing require fresh verification.
 
 Vercel documents per-function regions and recommends placement near the data source: https://vercel.com/docs/functions/configuring-functions/region . JSON parsing, preservation of existing rewrites and business-function configuration, and whitespace validation passed locally. The PR body records the named follow-up deployment; improved native timing still requires a live retry.
 
@@ -23,3 +23,9 @@ Five credential-free operating logs/helpers were preserved in /workspace/demeos-
 ROOT live GPU save/reload/review acceptance remains incomplete. Prior genuine loopback 31/31 and hardware benchmark 10/10 results are distinct from this failed live application request. Human language/semantic quality and independent external-account acceptance also remain open.
 
 Fresh post-stop RunPod balance: $20.22. Last Vast balance: $23.32, with retained storage and delayed billing. These imply approximately $16.46 deductions against the previously verified $60 deposits, not a final invoice. The owner-approved ceilings remain $100 cumulative and $2.50/GPU-hour. No top-up is currently indicated. See pr708-approved-gpu-stopped-20261023.jpg.
+
+## Owner-approved reservation reconciliation
+
+The owner explicitly approved closing the exact expired claim and recording its failure audit. Fresh read-only inspection showed the exact database timestamp includes microseconds: 2026-10-22 23:35:31.588078+00. The millisecond comparison safely changed zero rows. The conditional update using the exact timestamp changed only claim 16c23d36-5481-47e4-97c8-14d12c3d7ea8 to inactive/failed and inserted its audit atomically. Independent read-back verified active false, jobs still 1 and matching failure audit true. No records were deleted or budget counters reset. This earlier approval blocker is resolved.
+
+RunPod subsequently reported that the stopped L40S GPUs are unavailable. Automatic migration would create a new pod; that option was not selected. Existing models and the Global volume remain preserved. No new hardware resource is authorised by this checkpoint.
