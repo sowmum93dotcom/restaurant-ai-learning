@@ -2,3 +2,5 @@
 label.consent{display:flex;gap:.75rem;align-items:start}.consent input{width:24px;min-width:24px;height:24px}#integration-status{overflow-wrap:anywhere}
 #work-history button{max-width:100%;overflow-wrap:anywhere;text-align:start}#work-review button{margin:.3rem}
 #search-request,#search-results{overflow-wrap:anywhere}#search-results{padding-inline-start:1.25rem}#search-results li{padding-block:.6rem;border-bottom:1px solid var(--bo-line)}#search-results p{margin-block:.3rem}
+
+.diagnostics summary{cursor:pointer;color:var(--bo-gold-light);min-height:44px;padding-block:.6rem;overflow-wrap:anywhere}.diagnostics[open] summary{margin-bottom:1rem}.diagnostics{min-width:0}form .diagnostics{margin-block:.5rem 1rem}aside,.columns>section{min-width:0}nav button{flex:1;max-width:220px}@media(max-width:400px){.account{align-items:stretch}.account label{flex-basis:100%}header{padding-inline:1rem}.identity{gap:.6rem}}

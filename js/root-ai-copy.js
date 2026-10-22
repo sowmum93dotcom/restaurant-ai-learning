@@ -60,6 +60,18 @@ zh:['查找已发布的商品与服务','客户体验会搜索已发布的商品
 hi:['प्रकाशित प्रस्ताव खोजें','Customer Experience प्रकाशित प्रस्ताव खोजता है। उपलब्धता, भागीदारी और ऑर्डर वहीं प्रबंधित होते हैं।','इस अनुरोध की पुष्टि करके DEMEOS Customer Experience को भेजें। उसके इतिहास और गोपनीयता नियंत्रण लागू होंगे।','DEMEOS कैटलॉग खोजें','Customer Experience खोलें','ऊपर अनुरोध लिखें, फिर यहाँ पुष्टि करें।','इस अनुरोध से मेल खाने वाले प्रकाशित प्रस्ताव।','कोई प्रकाशित प्रस्ताव मेल नहीं खाता। अन्य विवरण आज़माएँ।'],
 ja:['公開済みのオファーを探す','Customer Experience が公開済みのオファーを検索します。提供状況、参加、注文はそちらで管理されます。','このリクエストを確認し、DEMEOS Customer Experience に送信します。同アプリの履歴・プライバシー設定が適用されます。','DEMEOS カタログを検索','Customer Experience を開く','上にリクエストを入力し、ここで確認してください。','このリクエストに一致する公開済みのオファー。','一致する公開済みのオファーはありません。別の内容をお試しください。']};
 keys.push('searchHeading','searchScope','searchConsent','searchRun','searchContinue','searchPrompt','searchFound','searchEmpty');Object.keys(rows).forEach(locale=>rows[locale].push(...searchCopy[locale]));
+const diagnosticCopy={
+en:['Development diagnostics','Development tool: category verification'],
+es:['Diagnósticos de desarrollo','Herramienta de desarrollo: verificar categoría'],
+fr:['Diagnostics de développement','Outil de développement : vérification de catégorie'],
+de:['Entwicklungsdiagnose','Entwicklungswerkzeug: Kategorieprüfung'],
+zh:['开发诊断','开发工具：类别验证'],
+pt:['Diagnóstico de desenvolvimento','Ferramenta de desenvolvimento: verificar categoria'],
+ar:['تشخيصات التطوير','أداة تطوير: التحقق من الفئة'],
+tr:['Geliştirme tanılamaları','Geliştirme aracı: kategori doğrulama'],
+hi:['विकास निदान','विकास उपकरण: श्रेणी सत्यापन'],
+ja:['開発診断','開発ツール：カテゴリ検証']};
+keys.push('diagnostics','categoryDiagnostic');Object.keys(rows).forEach(locale=>rows[locale].push(...diagnosticCopy[locale]));
 const api={keys,rows,translate:(locale,key)=>{const index=keys.indexOf(key);return index<0?key:(rows[locale]||rows.en)[index];}};
 if(typeof module==='object'&&module.exports)module.exports=api;root.DEMEOSRootCopy=api;
 })(typeof window==='object'?window:{});

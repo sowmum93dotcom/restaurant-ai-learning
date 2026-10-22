@@ -65,3 +65,9 @@ Before any paid action: authenticate through the owner's existing authorised pro
 Acceptance goal: verify checksum/pinned Qwen3-VL-4B model files on actual hardware, start the existing reviewed native inference runtime, validate real private ROOT image -> signed GPU execution -> versioned result -> private saved result -> user accept/correct/reject; separately measure preflight, cold/warm and end-to-end latency and multilanguage quality. Log actual billed GPU hours and spend. Disable runtime and independently stop paid compute after evaluation. No Production deployment or merge without explicit approval.
 
 Authorisation does not mean an account connection is available to every ChatGPT session. Never claim a pod has been allocated or tested without provider evidence.
+
+## Owner user experience clarification — 22 October 2026
+
+The existing ROOT application is a temporary development workspace. Ordinary users must not need to browse or select the 171 categories. Keep the authoritative registry behind ROOT and Marketing Search; expose manual category verification and capability listings only as explicitly labelled development diagnostics. Preserve one application, navy-and-gold branding, independent Business/Customer permissions and consent.
+
+Natural-language intelligence interaction is the intended primary experience after native execution acceptance. Until then, label deterministic evidence checks accurately and keep unavailable model capabilities explicit. Do not relabel category matches as model intelligence or create a simulated chat response. Completion still requires genuine native GPU execution, private saved-result retrieval and review, existing Marketing Search handoff, external-account isolation and end-to-end acceptance. No merge or Production deployment is authorised.
