@@ -67,6 +67,11 @@ function createExecutionAdapter({manifest,runtime,authorize,ledger,clock=()=>Dat
     return fail('invalid-cache');
    }
    if(claim?.status!=='claimed'||!token(claim.claimId))return fail('job-already-claimed-or-budget-exceeded','limited');
+   if(clock()-started>=l.timeoutMs){
+    metrics.durationMs=Math.max(0,clock()-started);metrics.estimatedComputeMs=metrics.durationMs;
+    await ledger.finish({claimId:claim.claimId,inputHash,terminal:true,metrics}).catch(()=>{});
+    return fail('execution-timeout','failed');
+   }
    if(outstanding){await ledger.finish({claimId:claim.claimId,inputHash,terminal:true,metrics});return fail('runtime-busy','limited');}
    outstanding++;
    const controller=new AbortController();let pending=false,timer;
@@ -81,10 +86,11 @@ function createExecutionAdapter({manifest,runtime,authorize,ledger,clock=()=>Dat
      }
     })();
     pending=true;work.finally(()=>{pending=false;outstanding--;}).catch(()=>{});
-    const raw=await Promise.race([work,new Promise((_,reject)=>{timer=setTimeout(()=>{controller.abort();reject(Error('execution-timeout'));},l.timeoutMs);})]);
+    const raw=await Promise.race([work,new Promise((_,reject)=>{timer=setTimeout(()=>{controller.abort();reject(Error('execution-timeout'));},Math.max(0,started+l.timeoutMs-clock()));})]);
     if(clock()-started>l.timeoutMs)return fail('execution-timeout','failed');
     if(!validateVisualOutput(raw,input))return fail('invalid-model-output','failed');
     if(!await check())return fail('scope-or-revision-rejected');
+    if(clock()-started>l.timeoutMs)return fail('execution-timeout','failed');
     const at=new Date(clock()).toISOString();metrics.outputBytes=Buffer.byteLength(JSON.stringify(raw));
     const provenance={operator:'DEMEOS',modelId:model.modelId,modelVersion:model.modelVersion,licenceReviewId:model.licenceReviewId,securityReviewId:model.securityReviewId,inputHash,businessId:input.businessId,productId:input.productId,productRevision:input.productRevision,mediaRevision:input.mediaRevision,at};
     metrics.durationMs=Math.max(0,clock()-started);metrics.estimatedComputeMs=metrics.durationMs; // wall-time upper estimate, not measured GPU time

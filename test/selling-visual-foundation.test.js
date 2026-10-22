@@ -48,6 +48,16 @@ test('deadline aborts a hung runtime and prevents overlapping jobs after timeout
  let observed;const a=adapter({runtime:{execute:async({signal})=>{observed=signal;return new Promise(()=>{});}}});
  const result=await a.execute(input(),'owner');assert.equal(result.code,'execution-timeout');assert.equal(observed.aborted,true);assert.equal((await a.execute(input(),'owner')).code,'runtime-busy');
 });
+test('admission time consumes the unchanged deadline and an expired claim never starts a GPU request',async()=>{
+ let now=0,calls=0,closed=0;
+ const a=adapter({clock:()=>now,runtime:{execute:async()=>{calls++;return output();}},ledger:{claim:async()=>{now=2001;return {status:'claimed',claimId:'expired-fixture'};},finish:async({terminal,result})=>{assert.equal(terminal,true);assert.equal(result,undefined);closed++;}}});
+ const result=await a.execute(input(),'owner');assert.equal(result.code,'execution-timeout');assert.equal(calls,0);assert.equal(closed,1);
+});
+test('a permission recheck that crosses the deadline cannot save an otherwise valid model result',async()=>{
+ let now=0,checks=0,saved=0;
+ const a=adapter({clock:()=>now,authorize:async()=>{if(++checks===2)now=2001;return true;},ledger:{claim:async()=>({status:'claimed',claimId:'scope-time-fixture'}),finish:async({result})=>{if(result)saved++;}}});
+ const result=await a.execute(input(),'owner');assert.equal(result.code,'execution-timeout');assert.equal(saved,0);
+});
 test('durable SQL ledger enforces ownership, deduplication, cache reuse and budgets',async()=>{
  const client=new PGlite(),db=createDatabase(client),repo=createPersistenceRepository(db);
  try{
