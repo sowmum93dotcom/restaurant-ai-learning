@@ -18,3 +18,11 @@ Native runtime hash remains `7368e842310e3f1cd76ba711936ed955964519c0b7b41c0ebbd
 ## Acceptance still open
 
 A fresh native HTTPS pass, ROOT application GPU execution, private saved-result retrieval and user review have not passed. An actual separate external-user account acceptance run also remains open. Preview GPU feature flags remain disabled. PR #708 stays draft and unmerged; Production is unchanged.
+
+## Provider shutdown checkpoint
+
+The selected existing 4090 never exposed a connection endpoint or container/system logs. Provider audit records start at 22:20:30 and stop at 22:41:03 Europe/London, 22 October: 1,233 seconds. At the quoted $0.894/hour including temporary disk, that interval corresponds to $0.306195; this is a rate-based calculation, not a final invoice. All RunPod rows were verified at $0.00/hour after shutdown. The same Global volume still shows 13 GB and 225 objects, before and after the stop. The initial automatic-review stop rejection was resolved by directly verifying this separate persistent volume and that no container work had run.
+
+Retained 4090 recovery, L40, second 4090 and A5000 allocations explicitly report GPUs unavailable; each was left unchanged. No migration, CPU fallback, replacement resource or duplicate was created. Vast instance 56929706 remains Inactive, with retained storage $0.017/hour. Displayed balances are RunPod $20.92 and Vast $23.33, implying $15.75 deductions against the previously verified $60 deposits. These rounded delayed balances include storage and are not final evaluation invoices.
+
+No fresh native inference or ROOT native saved result was produced during this checkpoint. The provider startup/capacity problem blocks the next real GPU evaluation. The separate actual external-user acceptance run remains unverified. The existing ROOT Preview work page remains available with native features disabled.
