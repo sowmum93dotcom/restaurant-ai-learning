@@ -14,6 +14,7 @@ const { validateCustomerPreference } = require("./_lib/customer-preference-contr
 const { buildTrustedCustomerUnderstanding } = require("./_lib/customer-understanding-context.js");
 const { getRepository } = require("./_lib/persistence.js");
 const {queueCustomerAction}=require('./_lib/customer-search-events');
+let rootRegionReported = false;
 
 function isCustomerIdentityRequest(req) {
   return req?.query?.resource === "customer-identity" ||
@@ -21,7 +22,14 @@ function isCustomerIdentityRequest(req) {
 }
 
 async function publicConfig(req, res) {
-  if(req?.query?.resource==='root-intelligence')return require('./_lib/root-intelligence')(req,res);
+  if(req?.query?.resource==='root-intelligence') {
+    // Operator-only placement evidence; never include request data or credentials.
+    if(process.env.VERCEL_ENV === 'preview' && !rootRegionReported) {
+      rootRegionReported = true;
+      console.info('DEMEOS_ROOT_FUNCTION_REGION', process.env.VERCEL_REGION || 'unknown');
+    }
+    return require('./_lib/root-intelligence')(req,res);
+  }
   res.setHeader("Cache-Control", "no-store");
   if(req?.query?.resource==='customer-checkout'||(typeof req?.url==='string'&&req.url.split('?')[0]==='/api/customer/checkout'))return require('./_lib/customer-checkout')(req,res);
   const preparationRequest = req?.query?.resource === 'customer-preparation' || (typeof req?.url === 'string' && req.url.startsWith('/api/customer/preparation'));
