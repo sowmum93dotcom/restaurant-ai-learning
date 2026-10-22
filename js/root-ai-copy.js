@@ -84,6 +84,18 @@ zh:['待审核','已接受','已修正','已拒绝','审核记录您的决定，
 hi:['समीक्षा लंबित','स्वीकृत','सुधारा गया','अस्वीकृत','समीक्षा आपका निर्णय दर्ज करती है। यह जानकारी या मॉडल सुझावों का स्वतंत्र सत्यापन नहीं है।','मॉडल सुझाव · असत्यापित'],
 ja:['確認待ち','承認済み','修正済み','却下済み','確認はあなたの判断を記録します。情報やモデルの提案を独立して検証するものではありません。','モデルの提案 · 未検証']};
 keys.push('reviewPending','reviewAccepted','reviewCorrected','reviewRejected','reviewBoundary','modelEvidence');Object.keys(rows).forEach(locale=>rows[locale].push(...reviewCopy[locale]));
+const conflictCopy={
+en:'This saved work changed in another session. Your draft remains below. Reopen the latest saved version before reviewing again.',
+es:'Este trabajo cambió en otra sesión. Tu borrador sigue abajo. Abre la versión guardada más reciente antes de revisar de nuevo.',
+fr:'Ce travail a changé dans une autre session. Votre brouillon reste ci-dessous. Rouvrez la dernière version avant de vérifier à nouveau.',
+de:'Diese Arbeit wurde in einer anderen Sitzung geändert. Ihr Entwurf bleibt unten erhalten. Öffnen Sie vor der Prüfung die neueste Version.',
+pt:'Este trabalho mudou noutra sessão. O rascunho permanece abaixo. Reabra a versão guardada mais recente antes de rever.',
+tr:'Bu çalışma başka bir oturumda değişti. Taslağınız aşağıda duruyor. Yeniden incelemeden önce son kayıtlı sürümü açın.',
+ar:'تغير هذا العمل في جلسة أخرى. تظل مسودتك أدناه. أعد فتح أحدث نسخة محفوظة قبل المراجعة مجددًا.',
+zh:'此工作已在另一会话中更改。您的草稿保留在下方。再次审核前，请重新打开最新保存的版本。',
+hi:'यह काम दूसरे सत्र में बदला गया है। आपका मसौदा नीचे है। दोबारा समीक्षा से पहले नवीनतम सहेजा संस्करण खोलें।',
+ja:'別のセッションで変更されました。下書きは下に残っています。再確認する前に最新の保存版を開いてください。'};
+keys.push('reviewConflict');Object.keys(rows).forEach(locale=>rows[locale].push(conflictCopy[locale]));
 const api={keys,rows,translate:(locale,key)=>{const index=keys.indexOf(key);return index<0?key:(rows[locale]||rows.en)[index];}};
 if(typeof module==='object'&&module.exports)module.exports=api;root.DEMEOSRootCopy=api;
 })(typeof window==='object'?window:{});

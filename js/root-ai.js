@@ -28,14 +28,14 @@ async function api(body){
  if(!token)throw Error('session');
  const controller=new AbortController();activeRequest=controller;
  const timer=setTimeout(()=>controller.abort(),15000);
- try{const response=await fetch('/api/root/workspace'+(body?'':'?audience='+audience),{method:body?'POST':'GET',credentials:'same-origin',cache:'no-store',signal:controller.signal,headers:{Authorization:'Bearer '+token,...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})});if(!response.ok)throw Error('unavailable');return await response.json();}
+ try{const response=await fetch('/api/root/workspace'+(body?'':'?audience='+audience),{method:body?'POST':'GET',credentials:'same-origin',cache:'no-store',signal:controller.signal,headers:{Authorization:'Bearer '+token,...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})});if(!response.ok){const error=Error('unavailable');error.status=response.status;throw error;}return await response.json();}
  finally{clearTimeout(timer);if(activeRequest===controller)activeRequest=null;}
 }
 function capabilities(){const query=$('filter').value.trim().toLocaleLowerCase();const rows=context.registry.categories.filter(c=>c.name.toLocaleLowerCase().includes(query)||c.categoryId===query);$('category-count').textContent=rows.length+' / '+context.registry.categories.length;$('capabilities').replaceChildren();rows.forEach(c=>{const li=document.createElement('li'),detail=document.createElement('small');li.textContent=c.name+' · '+c.categoryId;detail.textContent=t(c.fields.length?'fields':'unreviewed');li.append(detail);$('capabilities').append(li);});}
 async function load(){reset();clearSaved();const turn=sequence;busy=false;$('run').disabled=false;$('signin').hidden=!!clerk?.user;$('signout').hidden=!clerk?.user;if(!clerk?.user||!clerk?.session){status('signedout');return;}status('loading');try{const data=await api();if(turn!==sequence)return;context=data;$('workspace').hidden=false;$('category').append(option('',t('none')));data.registry.categories.forEach(c=>$('category').append(option(c.categoryId,c.name)));capabilities();renderHistory();syncCustomerSearch();status('ready');}catch{if(turn===sequence)status('error');}}
 function reviewState(work){return t(({pending:'reviewPending',accepted:'reviewAccepted',corrected:'reviewCorrected',rejected:'reviewRejected'})[work.review_state]||'reviewPending');}
 function showReview(work){
- selectedWork=work;$('work-review').hidden=false;$('work-review-state').textContent=reviewState(work);
+ selectedWork=work;['accept-work','correct-work','reject-work'].forEach(id=>$(id).disabled=false);$('work-review').hidden=false;$('work-review-state').textContent=reviewState(work);
  const suggestions=work.result.engine.modelExecuted?(work.result.visual?.proposals||[]).map(p=>typeof p.value==='string'?p.value:JSON.stringify(p.value)).filter(Boolean).join('\n'):work.result.source.text;
  $('review-text').value=(work.reviewed_text??suggestions).slice(0,500);$('review-status').textContent='';
 }
@@ -74,7 +74,17 @@ $('save-work').addEventListener('click',async()=>{
 for(const [id,decision] of [['accept-work','accepted'],['correct-work','corrected'],['reject-work','rejected']])$(id).addEventListener('click',async()=>{
  if(busy||!selectedWork)return;busy=true;const turn=++sequence;const work=selectedWork;$('review-status').textContent=t('loading');
  try{const data=await api({action:'review-work',audience,confirmed:true,workId:work.work_id,revision:work.revision,decision,...(decision==='corrected'?{text:$('review-text').value}:{})});if(turn!==sequence)return;selectedWork=data.work;context.history.works=context.history.works.map(w=>w.work_id===data.work.work_id?data.work:w);renderHistory();showReview(data.work);$('review-status').textContent=t('reviewSaved');}
- catch{if(turn===sequence)$('review-status').textContent=t('error');}finally{if(turn===sequence)busy=false;}
+ catch(error){
+  if(turn===sequence){
+   if(error.status===409){
+    // Keep the unsaved correction visible, but require reopening a current
+    // revision. A fresh GET reloads only this authenticated personal history.
+    selectedWork=null;['accept-work','correct-work','reject-work'].forEach(id=>$(id).disabled=true);
+    $('review-status').textContent=t('reviewConflict');
+    try{const fresh=await api();if(turn===sequence&&fresh.history?.status==='available'){context.history=fresh.history;renderHistory();$('review-status').textContent=t('reviewConflict');}}catch{if(turn===sequence)$('review-status').textContent=t('reviewConflict');}
+   }else $('review-status').textContent=t('error');
+  }
+ }finally{if(turn===sequence)busy=false;}
 });
 $('selling-product').addEventListener('change',()=>{invalidate();$('integration-status').textContent='';});
 $('share-consent').addEventListener('change',()=>{invalidate();sharedProducts=[];$('selling-product').replaceChildren();$('selling-product').hidden=true;$('share-selling').hidden=true;$('integration-status').textContent='';syncVisual();});

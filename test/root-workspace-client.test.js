@@ -4,7 +4,7 @@
 const test=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs');
 const copy=require('../js/root-ai-copy');
 const tick=async()=>{for(let i=0;i<8;i++)await new Promise(resolve=>setImmediate(resolve));};
-async function client(works){
+async function client(works,settings={}){
  class Element{
   constructor(){this.value='';this.checked=false;this.disabled=false;this.hidden=false;this.children=[];this.listeners={};this.textContent='';this.dataset={};}
   addEventListener(name,fn){this.listeners[name]=fn;}
@@ -24,11 +24,12 @@ async function client(works){
   if(url==='/api/public-config')return {ok:true,json:async()=>({clerkPublishableKey:'pk_test_'+Buffer.from('fixture.example$').toString('base64')})};
   if(url.includes('locales'))return {ok:true,json:async()=>({})};
   const body=options.body?JSON.parse(options.body):null;calls.push(body);
+  if(body?.action==='review-work'&&settings.conflict){context.history={status:'available',works:settings.latestWorks};return {ok:false,status:409};}
   if(body?.action==='prepare-controlled-runtime'){
    preflightSignal=options.signal;
    return new Promise((resolve,reject)=>options.signal.addEventListener('abort',()=>reject(Error('aborted'))));
   }
-  return {ok:true,json:async()=>body?.action==='selling-options'?{products:[{businessId:'fixture',productId:'p',revision:'r',name:'Fixture',businessName:'Fixture'}]}:context};
+  return {ok:true,json:async()=>JSON.parse(JSON.stringify(body?.action==='selling-options'?{products:[{businessId:'fixture',productId:'p',revision:'r',name:'Fixture',businessName:'Fixture'}]}:context))};
  };
  vm.runInNewContext(fs.readFileSync('js/root-ai.js','utf8'),{window,document,fetch,localStorage:{getItem(){},setItem(){}},location:{origin:'https://preview.example',search:''},URLSearchParams,atob:value=>Buffer.from(value,'base64').toString(),AbortController,setTimeout,clearTimeout,crypto:require('node:crypto').webcrypto});
  await tick();assert.equal(nodes.workspace.hidden,false);
@@ -67,4 +68,22 @@ test('ROOT reopens native suggestions for review without replacing original evid
   assert.equal(nodes['save-work'].disabled,true,'native evidence cannot be re-saved as deterministic text');
   assert.ok(nodes.evidence.children.some(node=>node.textContent===copy.translate('en','modelEvidence')));
  }
+});
+
+test('ROOT review conflict preserves the draft and reloads the latest authorised revision before another decision',async()=>{
+ const result={source:{text:'Original product text'},engine:{modelExecuted:false},literalCategoryEvidence:[],selectedCategory:null,checklist:[]};
+ const work={work_id:'fixture',revision:1,result,review_state:'pending',reviewed_text:null};
+ const latest={...work,revision:2,review_state:'corrected',reviewed_text:'Saved in another session'};
+ const {nodes,calls}=await client([work],{conflict:true,latestWorks:[latest]});
+ await nodes['work-history'].children[0].children[0].fire('click');
+ nodes['review-text'].value='My unsaved correction';await nodes['correct-work'].fire('click');
+ assert.equal(nodes['review-text'].value,'My unsaved correction');
+ assert.equal(nodes['review-status'].textContent,copy.translate('en','reviewConflict'));
+ for(const id of ['accept-work','correct-work','reject-work'])assert.equal(nodes[id].disabled,true);
+ const attempts=calls.filter(body=>body?.action==='review-work').length;
+ await nodes['correct-work'].fire('click');assert.equal(calls.filter(body=>body?.action==='review-work').length,attempts);
+ await nodes['work-history'].children[0].children[0].fire('click');
+ assert.equal(nodes['review-text'].value,'Saved in another session');
+ assert.equal(nodes['correct-work'].disabled,false);
+ await nodes['correct-work'].fire('click');assert.equal(calls.filter(body=>body?.action==='review-work').at(-1).revision,2);
 });
