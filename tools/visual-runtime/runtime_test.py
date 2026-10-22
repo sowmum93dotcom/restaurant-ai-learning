@@ -48,6 +48,49 @@ def request(text='', deadline=2000):
 
 
 class RuntimeTests(unittest.TestCase):
+    def test_authenticated_connection_reuse_and_errors_close_before_reading_a_body(self):
+        server = RuntimeHTTPServer(('127.0.0.1', 0), self.supervisor, SECRET, WEIGHTS)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        conn = http.client.HTTPConnection('127.0.0.1', server.server_port, timeout=3)
+        try:
+            conn.request('GET', '/healthz', headers={'Authorization': 'Bearer ' + SECRET.decode()})
+            response = conn.getresponse()
+            self.assertEqual(response.status, 200)
+            self.assertEqual(response.getheader('Connection'), 'keep-alive')
+            response.read()
+            original_socket = conn.sock
+            raw = json.dumps(request()).encode()
+            conn.request('POST', '/v1/infer', raw, {'Content-Type': 'application/json',
+                         'Authorization': 'Bearer ' + SECRET.decode(),
+                         'X-DEMEOS-Signature': hmac.new(SECRET, raw, hashlib.sha256).hexdigest()})
+            response = conn.getresponse()
+            self.assertEqual(response.status, 200)
+            response.read()
+            self.assertIs(conn.sock, original_socket)
+            # An unconsumed body cannot be left on a reusable proxy connection.
+            conn.putrequest('GET', '/healthz')
+            conn.putheader('Authorization', 'Bearer ' + SECRET.decode())
+            conn.putheader('Content-Length', '100000')
+            conn.endheaders()
+            response = conn.getresponse()
+            self.assertEqual(response.status, 400)
+            self.assertEqual(response.getheader('Connection'), 'close')
+            response.read()
+            self.assertIsNone(conn.sock)
+            # Authentication rejection also returns without waiting for a body.
+            conn.putrequest('POST', '/v1/infer')
+            conn.putheader('Content-Length', '100000')
+            conn.endheaders()
+            response = conn.getresponse()
+            self.assertEqual(response.status, 401)
+            self.assertEqual(response.getheader('Connection'), 'close')
+            response.read()
+            self.assertIsNone(conn.sock)
+        finally:
+            conn.close()
+            server.shutdown(); server.server_close(); thread.join(2)
+
     def test_model_failures_are_fixed_codes_without_raw_output(self):
         descriptors = [dict(contentHash='a' * 64)]
         cases = [('private malformed text', False, 'model-json-invalid'),

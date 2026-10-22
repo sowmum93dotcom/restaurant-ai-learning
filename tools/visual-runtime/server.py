@@ -210,6 +210,7 @@ class RuntimeHTTPServer(ThreadingHTTPServer):
 
 class Handler(BaseHTTPRequestHandler):
     server_version = 'DEMEOS'
+    protocol_version = 'HTTP/1.1'
 
     def setup(self):
         super().setup()
@@ -224,7 +225,13 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header('Content-Type', 'application/json')
         self.send_header('Content-Length', str(len(data)))
         self.send_header('Cache-Control', 'no-store')
-        self.send_header('Connection', 'close')
+        # Reuse only a successful, fully consumed authenticated request. Errors
+        # close before another request can be parsed; unread health bodies must
+        # never become another client's request on a proxy's pooled connection.
+        keep = (status == 200 and self.request_version == 'HTTP/1.1'
+                and 'close' not in [part.strip().lower() for part in self.headers.get('Connection', '').split(',')])
+        self.close_connection = not keep
+        self.send_header('Connection', 'keep-alive' if keep else 'close')
         self.end_headers()
         self.wfile.write(data)
 
@@ -275,6 +282,9 @@ class Handler(BaseHTTPRequestHandler):
         expected = b'Bearer ' + self.server.secret
         if not hmac.compare_digest(self.headers.get('Authorization', '').encode(), expected):
             return self.send_json(401, {'code': 'authentication-required'})
+        lengths = self.headers.get_all('Content-Length', [])
+        if self.headers.get('Transfer-Encoding') or len(lengths) > 1 or lengths and lengths != ['0']:
+            return self.send_json(400, {'code': 'invalid-request'})
         ready = self.server.supervisor.ready
         return self.send_json(200 if ready else 503, {'ready': ready, 'busy': self.server.supervisor.lock.locked(),
                               'modelId': MODEL_ID, 'modelVersion': MODEL_VERSION,
