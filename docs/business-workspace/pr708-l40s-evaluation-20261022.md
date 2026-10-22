@@ -73,3 +73,49 @@ Both temporary Preview enable settings were disabled during diagnosis. At 19:02:
 The authorisation path called getKnownBusiness repeatedly, which also queried campaign/customer aggregates unrelated to visual authorisation. A fresh ownership-filtered SQL snapshot now reads the current product/profile and the same bounded media selection together; every permission/revision check still reads current database state. ROOT uses this path only for visual delegation; legacy deterministic sharing keeps its existing compatibility. Foreign ownership, media changes and ownership revoked during execution remain denied. No new table, migration, executor, model, registry, dashboard, permission grant, hosted inference or deadline increase was introduced.
 Preview-only fixed stage timings contain only stage names, elapsed milliseconds and fixed execution codes, never supplied text, media URLs, IDs or secrets. These distinguish media signing/fetch, scope recheck and validated GPU return in the next genuine run.
 Validation: 30 focused ROOT/private-runtime/visual checks and 32 ownership/persistence checks passed. These include real local SQL and protocol tests with explicitly labelled model fixtures; they are not fresh GPU acceptance. The changed application path still requires a new bounded live request and saved-result/review evidence before completion can be claimed.
+
+## Final transport checkpoint — incomplete acceptance, compute stopped
+
+Continue the owner-approved architecture: one shared DEMEOS-controlled ROOT intelligence system, separate applications and authorisation/data ownership, existing 171-category registry and guarded search. This checkpoint does not redesign it or declare the assignment complete. PR #708 remains open and draft; no merge or Production deployment was performed.
+
+The fresh atomic scope repair was followed by two further genuine ROOT requests against the existing verified acceptance product. The second timed out at 2,269 ms overall (scope rechecked at 907 ms). Combining SQL ledger admission/cache into one round trip and charging admission time against the unchanged deadline reduced the third request to 2,083 ms overall (scope rechecked at 727 ms), still a failure. Expired admissions never start GPU work; a final permission check crossing the deadline cannot persist success. The one-job and 20-jobs/hour rules remain. The third failed reservation, f3f88b98-d527-416f-84e8-157f8cf96e22, is still active in SQL; closing that exact expired claim and adding its failure audit was rejected by automatic approval review, which requires explicit approval for that write. It must not be blanket-reset or treated as a running GPU.
+
+HTTP/1.1 connection reuse alone did not solve the external path. Native code f325db5f7606acdabcd57c7f9efbe7baa672bffabb461900c22e9feef1acd06b returned HTTP 400 for the first external case at 2,376.505 ms; no model duration was present in that failed report. Bounded gzip transport was then committed as f52c317d245c14b11ae7ee0f1080b65d970ae8c1, exact native runtime hash 7368e842310e3f1cd76ba711936ed955964519c0b7b41c0ebbddcc91c44befa3. This authenticates compressed wire bytes before bounded decoding, preserving the original image, checksum and 2,000 ms deadline. It passed 31 Python protocol fixtures on both operator and GPU hosts, plus 19 focused Node checks. Fixtures are not native acceptance.
+
+The full-size original camping image still failed current external Node clients. Node 24 returned HTTP 504 execution-timeout at 2,049.539 ms. A separate warm request returned genuine, provenance-validated native output, `Tent beside lake fire`, with model duration 205.811 ms and peak VRAM 8,964,444,672 bytes, but end-to-end time was 2,235.595 ms. Therefore its acceptance status is false. The matching original-image loopback comparison completed in 270.091 ms (model 207.633 ms). These measurements identify transport overhead as material; they do not establish its exact internal cause or approve quality. Only the first controlled case was run in each external comparison; do not claim a new 31-case HTTPS pass. Raw operator reports are in pr708-evidence-20261022 beside this document.
+
+A smaller derived-image diagnostic was prepared to investigate transfer size. Automatic approval review rejected continuation because it changes the required acceptance media. That diagnostic is not accepted evidence and no derivative was substituted into ROOT. Explicit approval is required before proceeding with smaller representations; originals must remain preserved and derivative/source hashes must be recorded separately.
+
+The dedicated native processes were terminated; a fresh nvidia-smi process query was empty at 20:09:53 UTC. Nineteen additional credential-free reports/logs/recovery helpers were copied to the existing Global https-session-20261022 directory and SHA256-verified by read-back; transport-checkpoint-sha256.json records them. The provider Stop action was then completed and independently verified: all eight existing RunPod pods show $0.00/hour, the L40S shows Compute Not running and Container storage Not running. The original dizzy_indigo_worm Global mount remains /workspace, now 13 GB and 225 objects. The preserved Vast instance 56929706 remains Inactive, with 18/80 GB retained disk. No resource was deleted or duplicated.
+
+Both branch Preview execution flags are false, verified through the connector and rendered ROOT availability. The per-run Preview credential was rotated after testing. Deployment dpl_BDZoVK9UWwp5CxpfT5fYd5A6KH9g was READY with target null and branch commit f52c317; subsequent evidence commits remain Preview only. The standalone workspace still functions with model execution honestly unavailable.
+
+### Costs observed after shutdown
+
+| Item | Exact displayed value / verified rate |
+| --- | --- |
+| L40S GPU during evaluation | $1.09/hour |
+| Temporary container disk during evaluation | $0.007/hour; combined $1.097/hour, UI rounds $1.10 |
+| RunPod compute after stopping | $0.00/hour |
+| Last observed RunPod balance | $21.26 |
+| Last observed Vast balance | $23.36 |
+| Verified original deposits | $35 RunPod + $25 Vast = $60 |
+| Cumulative displayed deductions, including previous spending | $60 - $21.26 - $23.36 = $15.38 |
+| Retained Vast disk rate | $0.017/hour; data retained intentionally |
+
+Balances are delayed, cent-rounded provider displays, not a settled itemised invoice or exact isolated-session charge. Global/retained storage can continue charging after GPU shutdown. No new payment was made. The observed deductions remain below the owner's $100 cumulative ceiling and the active GPU rate below $2.50/hour.
+
+### Owner acceptance matrix
+
+| Required capability | Actual evidence | Remaining gap |
+| --- | --- | --- |
+| ROOT independent application | Existing /root-ai login, personal workspace, supplied-text analysis and saved review work in Preview | Independent general native model tools and separate external-user live acceptance remain incomplete |
+| Authorised DEMEOS vendor | Actual owned product selection and deterministic share; fresh ownership/media revision checks and SQL tests | Native saved vendor result still fails deadline |
+| Customer request | Real Customer request saved, corrected and retrieved through ROOT; SQL work d224c931-6762-4443-9331-7eeb703c1741, revision 2, corrected | Deterministic category evidence only, not model reasoning or commerce availability |
+| Existing Marketing Search Engine | ROOT imports the existing category interpreter and authoritative 171-category registry; no duplicate registry/search engine | Full ROOT-to-semantic-search/guarded-ranking user journey not demonstrated |
+| B2B/B2C separation | Actual Business and Customer histories differ; Customer hides Selling integration; existing access tests pass | Broader multi-application live journeys still required |
+| External-user isolation | Personal identity/audience workspace derivation and foreign/revoked-owner denial tests | A separate real external account live test was not performed; do not equate owner Customer mode with external identity |
+| Native GPU and saved retrieval | Original model integrity verified; genuine loopback and external HTTPS output measured | SQL confirms zero saved ROOT works with modelExecuted=true; GPU-to-save/review is incomplete |
+| End-to-end recorded evidence | Customer deterministic save/correction/retrieval captured in screenshots and SQL; failed native flow retained | All eight requirements are not yet passed; no customer or Production release |
+
+Customer request: `On-Demand Groceries: I need apples and carrots for dinner. ROOT customer Preview acceptance 22 October.` The saved correction is `Customer Preview test: apples and carrots requested. Category match only; no model or availability claim.` Opening the saved work retrieved that exact correction. Switching Business restored only the prior Business work; switching Customer restored only the Customer work and kept Selling hidden. These are real Preview persistence checks, expressly not native inference evidence. See pr708-evidence-20261022/application-infrastructure-checkpoint.json and root-customer-review-retrieved.jpg.
