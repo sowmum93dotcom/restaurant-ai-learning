@@ -34,7 +34,7 @@ function analyze(input){
     limitations:['canonical-english-matching-only','supplied-text-not-independent-evidence','no-model-inference','no-commercial-writeback'],
     review:{status:'not-saved',requiresUserCorrection:true},persistence:'none'};
 }
-function createHandler({authenticate=authentication.resolveTrustedIdentityFromRequest,environment=()=>process.env,repository=()=>require('./persistence').getRepository(),workStore=()=>require('./root-work-store').createStore(require('./database').getDatabase())}={}){
+function createHandler({authenticate=authentication.resolveTrustedIdentityFromRequest,environment=()=>process.env,repository=()=>require('./persistence').getRepository(),workStore=()=>require('./root-work-store').createStore(require('./database').getDatabase()),visualRunnerFactory}={}){
   return async(req,res)=>{
     res.setHeader('Cache-Control','private, no-store');res.setHeader('Vercel-CDN-Cache-Control','no-store');res.setHeader('Vary','Cookie, Authorization');
     const reply=(status,code,data={})=>res.status(status).json({code,...data});
@@ -52,7 +52,7 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
         if(Object.keys(req.query||{}).some(k=>!['resource','audience'].includes(k)))return reply(400,'invalid-request');
         const history=persistenceAllowed(environment(),identity.trustedIdentityId)?{status:'available',works:await workStore().list(identity.trustedIdentityId,context)}:{status:'unavailable',reason:'persistence-review-pending'};
         return reply(200,'root-workspace',{workspace:context,registry:{datasetVersion:registry.DATASET_VERSION,sectors:registry.SECTORS,categories:capabilityMap()},locales:LOCALES,
-          runtime:{status:'unavailable',reason:'root-model-acceptance-pending',hostedInferenceFallback:false},history});
+          runtime:{status:'unavailable',reason:'root-model-acceptance-pending',hostedInferenceFallback:false,controlledSellingVisual:persistenceAllowed(environment(),identity.trustedIdentityId)&&environment().DEMEOS_ROOT_VISUAL_PREVIEW_ENABLED==='true'&&Boolean(require('./selling-visual-runtime').configuration(environment()))},history});
       }
       if(plain(req.body)&&['save-work','review-work'].includes(req.body.action)){
         if(!persistenceAllowed(environment(),identity.trustedIdentityId))return reply(503,'root-persistence-unavailable');
@@ -69,6 +69,23 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
         }
         const codes={invalid:400,conflict:409,denied:403,limited:429,saved:201,reviewed:200};
         return reply(codes[saved.status]||503,'root-work-'+saved.status,{workspace:context,...(['saved','reviewed'].includes(saved.status)?{work:saved.work}: {})});
+      }
+      if(plain(req.body)&&req.body.action==='prepare-controlled-runtime'){
+        if(Object.keys(req.body).some(k=>!['action','audience','confirmed'].includes(k))||audience!=='business'||req.body.confirmed!==true)return reply(400,'invalid-request');
+        if(!persistenceAllowed(environment(),identity.trustedIdentityId)||environment().DEMEOS_ROOT_VISUAL_PREVIEW_ENABLED!=='true')return reply(503,'root-model-unavailable');
+        const health=await require('./root-runtime-health').check(environment());
+        return reply(health.status==='ready'?200:503,'root-connection-'+health.status,{health});
+      }
+      if(plain(req.body)&&req.body.action==='visual-selling'){
+        if(audience!=='business'||req.body.confirmed!==true)return reply(403,'explicit-sharing-required');
+        if(!persistenceAllowed(environment(),identity.trustedIdentityId)||environment().DEMEOS_ROOT_VISUAL_PREVIEW_ENABLED!=='true')return reply(503,'root-model-unavailable');
+        if(!require('./root-work-store').validId(req.body.requestId)||req.body.saveConfirmed!==true)return reply(400,'explicit-save-required');
+        const {requestId,saveConfirmed,...body}=req.body;
+        const execution=await require('./root-selling-integration').run({repository,identity:identity.trustedIdentityId,env:environment(),body,analyze,visualRunnerFactory});
+        if(execution.status!==200)return reply(execution.status,execution.code);
+        const saved=await workStore().save(identity.trustedIdentityId,context,requestId,execution.result);
+        if(saved.status!=='saved')return reply(503,'root-work-not-saved');
+        return reply(201,'visual-suggestions-require-review',{workspace:context,result:saved.work.result,work:saved.work});
       }
       if(plain(req.body)&&['selling-options','understand-selling'].includes(req.body.action)){
         if(audience!=='business'||req.body.confirmed!==true)return reply(403,'explicit-sharing-required');
