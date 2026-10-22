@@ -42,6 +42,11 @@ test('strict bounded input, methods and cross-site request checks',async()=>{
  assert.equal((await invoke({method:'DELETE'})).code,405);
  assert.equal((await invoke({method:'POST',body:input,headers:{'content-type':'text/plain'}})).code,403);
  assert.equal((await invoke({method:'POST',body:input,headers:{'sec-fetch-site':'cross-site'}})).code,403);
+ assert.equal((await invoke({method:'POST',body:input,headers:{host:'preview.example',origin:'https://foreign.example'}})).code,403);
+ assert.equal((await invoke({method:'POST',body:input,headers:{host:'preview.example',origin:'null'}})).code,403);
+ assert.equal((await invoke({method:'POST',body:input,headers:{host:'preview.example',origin:'https://preview.example/path'}})).code,403);
+ assert.equal((await invoke({method:'POST',body:input,headers:{host:'preview.example',origin:'https://preview.example'}})).code,200);
+ assert.equal((await invoke({method:'POST',body:input,headers:{host:'preview.example',origin:'https://preview.example', 'sec-fetch-site':'cross-site'}})).code,403);
 });
 test('all ten languages preserve input without claiming translated category matching',async()=>{
  assert.deepEqual(Object.keys(copy.rows).sort(),[...root.LOCALES].sort());
