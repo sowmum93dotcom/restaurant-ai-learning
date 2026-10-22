@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "ownerApproval": "Explicit approval in conversation on 22 October 2026 for separately checksummed 320px diagnostic copies, preserving originals",
+  "scope": "diagnostic-only; no ROOT private-media substitution or native acceptance yet",
+  "transformation": {
+    "implementation": "Pillow Image.thumbnail((320,320)); WebP quality=82",
+    "pillowVersion": "12.3.0"
+  },
+  "packHash": "5d4f7ca6799bec2303087c73f55012a9174746c61605abd8f5ed617f26680d97",
+  "caseCount": 31,
+  "assets": [
+    {
+      "originalPath": "images/controlled-test/camping.webp",
+      "originalHash": "f5ae495f5e6f279a60d68685f800ac9ec13fad7161f4fa3eade658cf588cbe47",
+      "derivedPath": "images/controlled-test/camping-bounded-320.webp",
+      "derivedHash": "98ff45b0c475040c41764af842167f656c150a241b8aef1e37eb856f38d7051e",
+      "bytes": 19032,
+      "width": 320,
+      "height": 213
+    },
+    {
+      "originalPath": "images/controlled-test/football.webp",
+      "originalHash": "c5056b08db0e6edb884535b0d32b920be440f4c5916fbf061cb6931d6d8e2066",
+      "derivedPath": "images/controlled-test/football-bounded-320.webp",
+      "derivedHash": "36c98cd70ebbffa2dd4ad2473b17bef9084ee9ad9bbc1856d35c7a5a2a933218",
+      "bytes": 18806,
+      "width": 320,
+      "height": 213
+    },
+    {
+      "originalPath": "images/controlled-test/groceries.webp",
+      "originalHash": "274010507bf48b88cefe1aa166ee5412581fe98a133a3b8ad7957b7a14236038",
+      "derivedPath": "images/controlled-test/groceries-bounded-320.webp",
+      "derivedHash": "9eaeec0815cac48ab66f0b2105bd4a8e89c32858ee85d34d5b8dd2e450d36c40",
+      "bytes": 24876,
+      "width": 320,
+      "height": 213
+    }
+  ],
+  "originalsPreserved": true,
+  "gpuExecuted": false,
+  "predecessorFormattingPackHash": "01e0a51601d4a0679f95f6fc2fbaf20a38e1e7853549b4bb60ab52052530ce8f"
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "scope": "diagnostic-only",
+  "sourcePackHash": "34be1d7cf089258fab4149ab0b596abfa578db0734a679e7dcd5bfc93113c05b",
+  "derivedPackHash": "5d4f7ca6799bec2303087c73f55012a9174746c61605abd8f5ed617f26680d97",
+  "pillowVersion": "12.3.0",
+  "transformation": {
+    "maxWidth": 320,
+    "maxHeight": 320,
+    "format": "WEBP",
+    "quality": 82
+  },
+  "assets": [
+    {
+      "assetId": "camping",
+      "sourcePath": "images/controlled-test/camping.webp",
+      "sourceHash": "f5ae495f5e6f279a60d68685f800ac9ec13fad7161f4fa3eade658cf588cbe47",
+      "derivedPath": "images/controlled-test/camping-bounded-320.webp",
+      "derivedHash": "98ff45b0c475040c41764af842167f656c150a241b8aef1e37eb856f38d7051e",
+      "sizeBytes": 19032,
+      "width": 320,
+      "height": 213
+    },
+    {
+      "assetId": "football",
+      "sourcePath": "images/controlled-test/football.webp",
+      "sourceHash": "c5056b08db0e6edb884535b0d32b920be440f4c5916fbf061cb6931d6d8e2066",
+      "derivedPath": "images/controlled-test/football-bounded-320.webp",
+      "derivedHash": "36c98cd70ebbffa2dd4ad2473b17bef9084ee9ad9bbc1856d35c7a5a2a933218",
+      "sizeBytes": 18806,
+      "width": 320,
+      "height": 213
+    },
+    {
+      "assetId": "groceries",
+      "sourcePath": "images/controlled-test/groceries.webp",
+      "sourceHash": "274010507bf48b88cefe1aa166ee5412581fe98a133a3b8ad7957b7a14236038",
+      "derivedPath": "images/controlled-test/groceries-bounded-320.webp",
+      "derivedHash": "9eaeec0815cac48ab66f0b2105bd4a8e89c32858ee85d34d5b8dd2e450d36c40",
+      "sizeBytes": 24876,
+      "width": 320,
+      "height": 213
+    }
+  ],
+  "gpuExecuted": false,
+  "activationApproved": false
+}
