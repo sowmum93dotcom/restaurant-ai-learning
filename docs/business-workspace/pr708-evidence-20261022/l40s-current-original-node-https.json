@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "scope": "repository-controlled-fixtures",
+  "packHash": "34be1d7cf089258fab4149ab0b596abfa578db0734a679e7dcd5bfc93113c05b",
+  "modelId": "Qwen3-VL-4B-Instruct",
+  "modelVersion": "ebb281ec70b05090aa6165b016eac8ec08e71b17",
+  "weightsManifestHash": "e2c07fc24e1523d0987dfb6b082020c0eb74a04eb622f36c153fd97c5d254ae2",
+  "runtimeCodeHash": "7368e842310e3f1cd76ba711936ed955964519c0b7b41c0ebbddcc91c44befa3",
+  "route": "native-operator-node-https-client-to-runtime",
+  "timeoutMs": 2000,
+  "plannedCaseCount": 31,
+  "results": [
+    {
+      "caseId": "camping-en",
+      "locale": "en",
+      "assetHash": "f5ae495f5e6f279a60d68685f800ac9ec13fad7161f4fa3eade658cf588cbe47",
+      "reviewFocus": [
+        "Describe visible tent or outdoor scene, without inventing capacity, fabric, brand or weather resistance.",
+        "Use the requested product text language; a fluent reviewer must judge this."
+      ],
+      "humanReview": "pending",
+      "passed": false,
+      "endToEndMs": 2852.043791965116,
+      "errorType": "HTTPError",
+      "httpStatus": 400,
+      "runtimeErrorCode": "invalid-request-or-output"
+    }
+  ],
+  "executionPassed": false,
+  "productAccuracyVerified": false,
+  "multilingualAccuracyVerified": false,
+  "categoryAccuracyVerified": false,
+  "activationApproved": false,
+  "operatorSourceHash": "5d8686bb618ac8a5b6b7f5471c3c5315928ce6f4f184f0d641abaa41ae620b46",
+  "preflightMs": 1340.387178992387,
+  "health": {
+    "ready": true,
+    "busy": false,
+    "modelId": "Qwen3-VL-4B-Instruct",
+    "modelVersion": "ebb281ec70b05090aa6165b016eac8ec08e71b17",
+    "weightsManifestHash": "e2c07fc24e1523d0987dfb6b082020c0eb74a04eb622f36c153fd97c5d254ae2",
+    "runtimeCodeHash": "7368e842310e3f1cd76ba711936ed955964519c0b7b41c0ebbddcc91c44befa3"
+  }
+}
