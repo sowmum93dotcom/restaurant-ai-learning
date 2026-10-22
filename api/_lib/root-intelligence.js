@@ -69,6 +69,10 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
       if(plain(req.body)&&req.body.action==='search-customer'){
         if(audience!=='customer'||req.body.confirmed!==true)return reply(403,'explicit-customer-sharing-required');
         if(Object.keys(req.body).some(k=>!['action','audience','confirmed','locale','text'].includes(k))||!LOCALES.includes(req.body.locale)||typeof req.body.text!=='string'||!req.body.text.trim()||req.body.text.length>500)return reply(400,'invalid-request');
+        // Public catalogue delegation still touches storage. Require the same
+        // verified branch/database isolation as the other controlled integrations;
+        // this environment check confers no vendor or organisation permission.
+        if(!require('./selling-access').isolatedTestEnvironment(environment()))return reply(503,'customer-search-unavailable');
         const {buildCustomerUnderstanding,confirmCustomerUnderstanding}=require('../../js/customer-understanding');
         const understanding=confirmCustomerUnderstanding(buildCustomerUnderstanding('',req.body.text));
         // Delegate to Customer Experience's existing public catalogue/search

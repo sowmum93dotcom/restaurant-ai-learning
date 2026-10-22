@@ -3,9 +3,9 @@ const test=require('node:test'),assert=require('node:assert/strict');
 const root=require('../api/_lib/root-intelligence');
 const {validateConfirmedUnderstanding}=require('../api/_lib/customer-possibility-contract');
 const body={action:'search-customer',audience:'customer',locale:'en',text:'black waterproof jacket under £100',confirmed:true};
-async function invoke({input=body,identity='external-root-user',env='preview',delegate,query={},headers={}}={}){
+async function invoke({input=body,identity='external-root-user',env='preview',envPatch={},delegate,query={},headers={}}={}){
  const response={headers:{},setHeader(k,v){this.headers[k]=v;},status(code){this.code=code;return this;},json(value){this.body=value;return this;}};
- await root.createHandler({authenticate:async()=>identity?{trustedIdentityId:identity}:null,environment:()=>({VERCEL_ENV:env}),repository:()=>{throw Error('ROOT must not open Selling data');},customerSearchHandler:delegate})({method:'POST',url:'/api/root/workspace',query,headers:{'content-type':'application/json',authorization:'Bearer current-user',host:'preview.example',...headers},body:input},response);
+ await root.createHandler({authenticate:async()=>identity?{trustedIdentityId:identity}:null,environment:()=>({VERCEL_ENV:env,VERCEL_GIT_COMMIT_REF:'root-search-test',DEMEOS_SELLING_DATA_ENVIRONMENT:'test',DEMEOS_SELLING_TEST_PREVIEW_BRANCH:'root-search-test',DEMEOS_SELLING_TEST_DATABASE_HOST:'isolated.example',POSTGRES_URL:'postgresql://fixture:fixture@isolated.example/isolated',...envPatch}),repository:()=>{throw Error('ROOT must not open Selling data');},customerSearchHandler:delegate})({method:'POST',url:'/api/root/workspace',query,headers:{'content-type':'application/json',authorization:'Bearer current-user',host:'preview.example',...headers},body:input},response);
  return response;
 }
 test('ROOT requires Customer audience, current confirmation, bounded text and trusted identity before search delegation',async()=>{
@@ -15,6 +15,11 @@ test('ROOT requires Customer audience, current confirmation, bounded text and tr
  }
  assert.equal((await invoke({identity:null,delegate})).code,401);
  assert.equal((await invoke({env:'production',delegate})).code,503);assert.equal(calls,0);
+});
+test('catalogue delegation cannot open storage in an unverified branch or database environment',async()=>{
+ let called=0;const delegate=async()=>{called++;};
+ for(const envPatch of [{DEMEOS_SELLING_DATA_ENVIRONMENT:'live'},{VERCEL_GIT_COMMIT_REF:'another-branch'},{POSTGRES_URL:'postgresql://fixture:fixture@shared.example/shared'},{DEMEOS_SELLING_TEST_DATABASE_HOST:''},{POSTGRES_URL:''}])assert.equal((await invoke({envPatch,delegate})).code,503);
+ assert.equal(called,0);
 });
 test('delegation sends only a canonical confirmed request and preserves independent Customer Experience authority',async()=>{
  const response=await invoke({input:{...body,text:'  black   jacket  ',locale:'ar'},query:{'demeos-test':'1'},headers:{'x-demeos-test-mode':'controlled-preview','x-demeos-discover-test':'controlled-preview'},delegate:async(req,res)=>{
