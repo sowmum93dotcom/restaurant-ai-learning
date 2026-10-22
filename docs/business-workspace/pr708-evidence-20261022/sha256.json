@@ -4,5 +4,7 @@
   "https-node-gzip-acceptance-20261022.json": "15c0896443b60c65c5115dfe102c45e3a517d6a231cb474292334239f03440b8",
   "https-node-gzip-warm-acceptance-20261022.json": "90ff616f6c031555788c66fa7b9fd019c2da5835b652ead031a5eac3faaba5e0",
   "root-customer-review-retrieved.jpg": "35f38a1ae504fb811673bef6788b7d40b34d45107376aeae9a746487b42c7bac",
-  "root-customer-reviewed.jpg": "2768bb90c2f209c89561c4ee61d426786269b1c169a5fdf4850e3bfb7128d8af"
+  "root-customer-reviewed.jpg": "2768bb90c2f209c89561c4ee61d426786269b1c169a5fdf4850e3bfb7128d8af",
+  "root-customer-search-checkpoint.json": "159113fef04275e9c12aed17f40aa807f629d8607e0af62ad2198d795d1655ed",
+  "root-customer-search-empty.jpg": "7c84dda523e411b2e33759fcdebf06bb687b96bd01825dd2710dfc8f73a2f89a"
 }
