@@ -11,6 +11,7 @@ import subprocess
 import sys
 import threading
 import time
+import zlib
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -208,6 +209,21 @@ class RuntimeHTTPServer(ThreadingHTTPServer):
             self.connections.release()
 
 
+def decode_wire_body(raw, encoding):
+    if encoding is None:
+        return raw
+    if encoding != 'gzip':
+        raise ValueError('invalid-content-encoding')
+    try:
+        decoder = zlib.decompressobj(16 + zlib.MAX_WBITS)
+        decoded = decoder.decompress(raw, MAX_REQUEST + 1)
+        if len(decoded) > MAX_REQUEST or not decoder.eof or decoder.unconsumed_tail or decoder.unused_data:
+            raise ValueError('invalid-compressed-request')
+        return decoded
+    except zlib.error:
+        raise ValueError('invalid-compressed-request') from None
+
+
 class Handler(BaseHTTPRequestHandler):
     server_version = 'DEMEOS'
     protocol_version = 'HTTP/1.1'
@@ -245,13 +261,17 @@ class Handler(BaseHTTPRequestHandler):
             or not raw_length.isascii() or not raw_length.isdigit() or not 0 < int(raw_length) <= MAX_REQUEST
             or self.headers.get('Content-Type') != 'application/json'):
             return self.send_json(400, {'code': 'invalid-request'})
+        encodings = self.headers.get_all('Content-Encoding', [])
+        if len(encodings) > 1 or encodings and encodings != ['gzip']:
+            return self.send_json(400, {'code': 'invalid-request'})
         try:
             raw = self.rfile.read(int(raw_length))
             signature = self.headers.get('X-DEMEOS-Signature', '')
             expected = hmac.new(self.server.secret, raw, hashlib.sha256).hexdigest()
             if len(raw) != int(raw_length) or not hmac.compare_digest(signature, expected):
                 return self.send_json(401, {'code': 'authentication-required'})
-            request = strict_json(raw)
+            # Authenticate the exact wire bytes before bounded decompression.
+            request = strict_json(decode_wire_body(raw, encodings[0] if encodings else None))
             validate_request(request, self.server.weights_hash, code_hash=self.server.code_hash)
             with self.server.replay_lock:
                 now = time.monotonic()

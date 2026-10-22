@@ -1,5 +1,6 @@
 """Real supervisor/HTTP tests with a declared fake child; no GPU inference."""
 import base64
+import gzip
 import hashlib
 import hmac
 import http.client
@@ -15,7 +16,7 @@ import unittest
 import uuid
 from pathlib import Path
 from unittest.mock import patch
-from contracts import MODEL_ID, MODEL_VERSION, ModelOutputError, strict_json, validate_request, validate_output
+from contracts import MODEL_ID, MODEL_VERSION, MAX_REQUEST, ModelOutputError, strict_json, validate_request, validate_output
 from server import RuntimeHTTPServer, Supervisor, verify_weights, worker_environment, runtime_code_hash, main as runtime_main
 from worker import expand_compact_output, inference_messages, parse_model_output, parse_single_description, generation_blocklist
 
@@ -48,6 +49,34 @@ def request(text='', deadline=2000):
 
 
 class RuntimeTests(unittest.TestCase):
+    def test_gzip_authenticates_wire_bytes_and_rejects_bombs_truncation_and_trailing_members(self):
+        server = RuntimeHTTPServer(('127.0.0.1', 0), self.supervisor, SECRET, WEIGHTS)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            raw = json.dumps(request()).encode()
+            compressed = gzip.compress(raw, mtime=0)
+            cases = [(compressed, compressed, 200),
+                     (compressed, raw, 401),
+                     (compressed[:-1], compressed[:-1], 400),
+                     (compressed + gzip.compress(b'extra', mtime=0), compressed + gzip.compress(b'extra', mtime=0), 400),
+                     (gzip.compress(b'x' * (MAX_REQUEST + 1), mtime=0), gzip.compress(b'x' * (MAX_REQUEST + 1), mtime=0), 400)]
+            with patch.object(self.supervisor, 'execute', wraps=self.supervisor.execute) as dispatch:
+                for wire, signed, status in cases:
+                    conn = http.client.HTTPConnection('127.0.0.1', server.server_port, timeout=3)
+                    try:
+                        conn.request('POST', '/v1/infer', wire, {'Content-Type': 'application/json',
+                                     'Content-Encoding': 'gzip', 'Authorization': 'Bearer ' + SECRET.decode(),
+                                     'X-DEMEOS-Signature': hmac.new(SECRET, signed, hashlib.sha256).hexdigest()})
+                        response = conn.getresponse()
+                        self.assertEqual(response.status, status)
+                        response.read()
+                    finally:
+                        conn.close()
+                self.assertEqual(dispatch.call_count, 1, 'Invalid compressed input must never enter the worker')
+        finally:
+            server.shutdown(); server.server_close(); thread.join(2)
+
     def test_authenticated_connection_reuse_and_errors_close_before_reading_a_body(self):
         server = RuntimeHTTPServer(('127.0.0.1', 0), self.supervisor, SECRET, WEIGHTS)
         thread = threading.Thread(target=server.serve_forever, daemon=True)

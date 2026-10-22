@@ -1,6 +1,7 @@
 'use strict';
 // DEMEOS-operated GPU transport. No request-selected endpoint or media URL.
 const {createHash,createHmac,randomUUID}=require('node:crypto');
+const {gzipSync}=require('node:zlib');
 const boundary=require('./selling-model-boundary'),access=require('./selling-access');
 const readiness=require('./selling-visual-readiness'),frames=require('./selling-video-frames');
 const {hash}=require('./selling-native-intelligence'),{catalogueRevision}=require('./vendor-inventory');
@@ -62,8 +63,9 @@ function createConfiguredVisualRunner({store,environment,backend,fetchImpl=globa
    observe('scope-rechecked');
    const jobId=randomUUID();
    const payload=JSON.stringify({protocolVersion:1,jobId,issuedAt:Date.now(),deadline,modelId:config.manifest.modelId,modelVersion:config.manifest.modelVersion,weightsManifestHash:config.manifest.weightsManifestHash,runtimeCodeHash:config.manifest.runtimeCodeHash,inputHash,input,media});
-   const signature=createHmac('sha256',config.secret).update(payload).digest('hex');
-   const response=await fetchImpl(config.origin+'/v1/infer',{method:'POST',redirect:'error',signal,headers:{'Content-Type':'application/json',Authorization:'Bearer '+config.secret,'X-DEMEOS-Signature':signature},body:payload});
+   const wire=gzipSync(Buffer.from(payload),{level:1});
+   const signature=createHmac('sha256',config.secret).update(wire).digest('hex');
+   const response=await fetchImpl(config.origin+'/v1/infer',{method:'POST',redirect:'error',signal,headers:{'Content-Type':'application/json','Content-Encoding':'gzip',Authorization:'Bearer '+config.secret,'X-DEMEOS-Signature':signature},body:wire});
    const body=JSON.parse((await readBounded(response,limits.maxOutputBytes+4096,signal)).toString('utf8'));
    if(Object.keys(body).some(k=>!['protocolVersion','jobId','inputHash','modelVersion','weightsManifestHash','runtimeCodeHash','output','measurements'].includes(k))||Object.keys(body.measurements||{}).some(k=>!['durationMs','peakVramBytes'].includes(k))||body.protocolVersion!==1||body.jobId!==jobId||body.inputHash!==inputHash||body.modelVersion!==config.manifest.modelVersion||body.weightsManifestHash!==config.manifest.weightsManifestHash||body.runtimeCodeHash!==config.manifest.runtimeCodeHash||!Number.isFinite(body.measurements?.durationMs)||body.measurements.durationMs<0||body.measurements.durationMs>limits.timeoutMs||!Number.isSafeInteger(body.measurements.peakVramBytes)||body.measurements.peakVramBytes<0)throw Error('invalid-runtime-provenance');
    measurements=body.measurements;observe('gpu-output-validated');return body.output;

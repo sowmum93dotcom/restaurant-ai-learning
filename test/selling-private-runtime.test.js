@@ -59,7 +59,8 @@ test('signed transport, verified bytes, SQL caching and per-proposal review pres
   if(url==='https://private.demeos.example/signed-image')return new Response(corrupt?Buffer.from('corrupt'):bytes);
   assert.equal(url,'https://gpu.demeos.example/v1/infer');assert.equal(options.redirect,'error');
   assert.equal(options.headers['X-DEMEOS-Signature'],createHmac('sha256',secret).update(options.body).digest('hex'));
-  const body=JSON.parse(options.body);assert.equal(JSON.stringify(body).includes(secret),false);assert.equal(body.media[0],bytes.toString('base64'));
+  assert.equal(options.headers['Content-Encoding'],'gzip');
+  const body=JSON.parse(require('node:zlib').gunzipSync(options.body));assert.equal(JSON.stringify(body).includes(secret),false);assert.equal(body.media[0],bytes.toString('base64'));
   assert.ok(body.deadline<=Date.now()+2000);receivedLocales.push(body.input.outputLocale);calls++;
   return Response.json({protocolVersion:1,jobId:body.jobId,inputHash:body.inputHash,modelVersion:wrongProvenance?'foreign':runtime.REVISION,weightsManifestHash:manifest.weightsManifestHash,runtimeCodeHash:manifest.runtimeCodeHash,measurements:{durationMs:5,peakVramBytes:100},output:{schemaVersion:2,outputSchema:'demeos-visual-output-v2',proposals:[{kind:'title',value:'Fixture product title',evidence:[contentHash],confidence:null},{kind:'description',value:'Fixture visible description',evidence:[contentHash],confidence:null}]}});
  };
