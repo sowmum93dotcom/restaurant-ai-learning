@@ -19,12 +19,14 @@ function technicalDetails(product,assets,businessId){
 }
 function createVisualAuthorizer({store,environment=()=>process.env}){
  return async(identity,input)=>{
-  if(!identity||!dataEnvironment(input.businessId,environment(),identity)||!await store.isBusinessOwnedByIdentity(identity,input.businessId))return false;
-  const business=await store.getKnownBusiness(input.businessId),profile=business?.businessProfile;
+  if(!identity||!dataEnvironment(input.businessId,environment(),identity))return false;
+  const atomic=typeof store.getSellingVisualScope==='function';
+  if(!atomic&&!await store.isBusinessOwnedByIdentity(identity,input.businessId))return false;
+  const business=atomic?await store.getSellingVisualScope(identity,input.businessId,input.productId):await store.getKnownBusiness(input.businessId),profile=business?.businessProfile;
   if(!profile||!profile.applicationAccess?.selling&&dataEnvironment(input.businessId,environment(),identity)!=='test')return false;
   const product=profile.products?.find(p=>p.productId===input.productId&&p.businessId===input.businessId);
   if(!product||catalogueRevision(product)!==input.productRevision)return false;
-  const assets=await store.getSellingIntelligenceMedia(identity,input.businessId,product);
+  const assets=atomic?business.assets:await store.getSellingIntelligenceMedia(identity,input.businessId,product);
   if(mediaRevision(assets)!==input.mediaRevision)return false;
   // Only hash-verified bounded image representations exist in this release.
   // Video frames remain rejected until extraction/storage provenance is deployed.

@@ -40,30 +40,36 @@ function createConfiguredVisualRunner({store,environment,backend,fetchImpl=globa
   const selection=selectMedia(product,assets);if(!selection)return {status:'unavailable',code:'verified-media-required'};
   const input={schemaVersion:2,inputSchema:boundary.VISUAL_CONTRACT.inputSchema,...selection,businessId:profile.businessId,productId:product.productId,productRevision:catalogueRevision(product),mediaRevision:readiness.mediaRevision(assets),outputLocale,text:JSON.stringify({name:product.name||'',description:product.description||''}).slice(0,2000)};
   const authorize=readiness.createVisualAuthorizer({store,environment:()=>environment});let measurements=null;
+  // Fixed operator timings only: never source text, media URLs, IDs or secrets.
+  const trace=environment.VERCEL_ENV==='preview'&&environment.DEMEOS_ROOT_VISUAL_PREVIEW_ENABLED==='true';
+  const observedAt=Date.now();
+  const observe=(stage,code)=>{if(trace)console.info('DEMEOS_ROOT_GPU_STAGE',JSON.stringify({stage,elapsedMs:Date.now()-observedAt,...(code?{code}: {})}));};
   const runtime={async execute({input,inputHash,limits,deadline,signal}){
    const media=[];
    for(const descriptor of input.media){
     const asset=assets.find(a=>a.assetId===descriptor.assetId);
     const storageKey=input.capability==='image-semantics'?asset.processedStorageKey:asset.videoFrames.frames.find(f=>f.index===descriptor.frameIndex).storageKey;
     const read=await backend.driver.createProcessingRead({storageKey,expiresAt:new Date(deadline).toISOString()});
+    observe('media-read-issued');
     const source=new URL(read?.readUrl);
     if(source.protocol!=='https:'||source.username||source.password||!config.hosts.includes(source.hostname)||read.storageKey!==storageKey)throw Error('private-media-unavailable');
     const response=await fetchImpl(source.href,{redirect:'error',signal});
     const bytes=await readBounded(response,descriptor.sizeBytes,signal);
     if(bytes.length!==descriptor.sizeBytes||createHash('sha256').update(bytes).digest('hex')!==descriptor.contentHash)throw Error('media-integrity-failed');
-    media.push(bytes.toString('base64'));
+    media.push(bytes.toString('base64'));observe('media-bytes-verified');
    }
    if(signal.aborted||!await authorize(identity,input))throw Error('scope-changed');
+   observe('scope-rechecked');
    const jobId=randomUUID();
    const payload=JSON.stringify({protocolVersion:1,jobId,issuedAt:Date.now(),deadline,modelId:config.manifest.modelId,modelVersion:config.manifest.modelVersion,weightsManifestHash:config.manifest.weightsManifestHash,runtimeCodeHash:config.manifest.runtimeCodeHash,inputHash,input,media});
    const signature=createHmac('sha256',config.secret).update(payload).digest('hex');
    const response=await fetchImpl(config.origin+'/v1/infer',{method:'POST',redirect:'error',signal,headers:{'Content-Type':'application/json',Authorization:'Bearer '+config.secret,'X-DEMEOS-Signature':signature},body:payload});
    const body=JSON.parse((await readBounded(response,limits.maxOutputBytes+4096,signal)).toString('utf8'));
    if(Object.keys(body).some(k=>!['protocolVersion','jobId','inputHash','modelVersion','weightsManifestHash','runtimeCodeHash','output','measurements'].includes(k))||Object.keys(body.measurements||{}).some(k=>!['durationMs','peakVramBytes'].includes(k))||body.protocolVersion!==1||body.jobId!==jobId||body.inputHash!==inputHash||body.modelVersion!==config.manifest.modelVersion||body.weightsManifestHash!==config.manifest.weightsManifestHash||body.runtimeCodeHash!==config.manifest.runtimeCodeHash||!Number.isFinite(body.measurements?.durationMs)||body.measurements.durationMs<0||body.measurements.durationMs>limits.timeoutMs||!Number.isSafeInteger(body.measurements.peakVramBytes)||body.measurements.peakVramBytes<0)throw Error('invalid-runtime-provenance');
-   measurements=body.measurements;return body.output;
+   measurements=body.measurements;observe('gpu-output-validated');return body.output;
   }};
   const executor=boundary.createExecutionAdapter({manifest:config.manifest,runtime,authorize,ledger:store.createSellingModelLedger()});
-  const result=await executor.execute(input,identity);
+  const result=await executor.execute(input,identity);observe('execution-finished',result.code);
   return {...result,outputLocale,...(result.status==='succeeded'&&measurements?{measurements}:{})};
  }};
 }

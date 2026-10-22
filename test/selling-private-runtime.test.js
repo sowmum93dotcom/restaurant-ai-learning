@@ -25,6 +25,28 @@ test('real Python supervisor and HTTP protocol reject unauthenticated requests a
  const {stderr}=await promisify(execFile)('python3',['-m','unittest','discover','-s','tools/visual-runtime','-p','*_test.py'],{timeout:15000});
  assert.match(stderr,/OK/);
 });
+test('fresh SQL visual scope avoids campaign reads and immediately rejects changed media or revoked ownership',async()=>{
+ const db=new PGlite(),database=createDatabase(db);let reads=0;
+ const tracked={...database,query(...args){reads++;return database.query(...args);}};
+ const repo=createPersistenceRepository(tracked,{environment:()=>env}),businessId='test-business-runtime';
+ const product={businessId,productId:'scope-product',name:'Scope fixture',mediaGallery:{assetIds:['scope-image'],mainAssetId:'scope-image'}};
+ const asset={assetId:'scope-image',businessId,relatedEntityId:product.productId,purpose:'product',kind:'image',state:'ready',width:24,height:24,processedSizeBytes:50,processedHash:'b'.repeat(64),processedStorageKey:`businesses/${businessId}/media/scope-image/processed/master.webp`};
+ try{
+  await repo.createBusinessForOwner('owner',{businessId,name:'SQL permission fixture',products:[product]});
+  await repo.saveBusinessMediaAsset(businessId,asset);
+  const readiness=require('../api/_lib/selling-visual-readiness');
+  const saved=(await repo.getSellingVisualScope('owner',businessId,product.productId)).businessProfile.products[0];
+  const input={businessId,productId:product.productId,productRevision:catalogueRevision(saved),mediaRevision:readiness.mediaRevision([asset]),...runtime.selectMedia(saved,[asset])};
+  const authorize=readiness.createVisualAuthorizer({store:repo,environment:()=>env});
+  reads=0;assert.equal(await authorize('owner',input),true);assert.equal(reads,1,'No campaign/profile/owner query chain in the timed recheck');
+  assert.equal(await repo.getSellingVisualScope('foreign',businessId,product.productId),null);
+  await repo.saveBusinessMediaAsset(businessId,{...asset,processedHash:'c'.repeat(64)});
+  assert.equal(await authorize('owner',input),false,'A new check must not reuse old media or permissions');
+  await repo.saveBusinessMediaAsset(businessId,asset);
+  await db.query('DELETE FROM demeos_business_owners WHERE business_id=$1',[businessId]);
+  assert.equal(await authorize('owner',input),false,'Revoked ownership cannot use a prior snapshot');
+ }finally{await db.close();}
+});
 test('signed transport, verified bytes, SQL caching and per-proposal review preserve products and reject stale/foreign writes',async()=>{
  const db=new PGlite(),repo=createPersistenceRepository(createDatabase(db),{environment:()=>env});
  const bytes=await require('sharp')({create:{width:24,height:24,channels:3,background:'#c02020'}}).webp().toBuffer();

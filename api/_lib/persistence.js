@@ -860,6 +860,23 @@ function createPersistenceRepository(database, { getMediaStorageAdapter = getCon
     async clearSellingFrameJob(identity,businessId,assetId,leaseId){
       await database.ensureSchema();await database.query(`WITH changed AS (UPDATE demeos_media_frame_jobs SET state='deleted',metrics='{"filesDeleted":true}'::jsonb,updated_at=NOW() WHERE business_id=$1 AND asset_id=$3 AND lease_id=$4 AND state='running' AND EXISTS(SELECT 1 FROM demeos_business_owners WHERE business_id=$1 AND trusted_identity_id=$2) RETURNING *) INSERT INTO demeos_media_frame_events(lease_id,state,business_id,asset_id,input_hash,metrics) SELECT lease_id,state,business_id,asset_id,input_hash,metrics FROM changed ON CONFLICT DO NOTHING`,[businessId,identity,assetId,leaseId]);
     },
+    // A fresh, ownership-filtered snapshot for each visual authorisation check.
+    // This avoids three serial database trips without caching permissions.
+    async getSellingVisualScope(identity,businessId,productId) {
+      await database.ensureSchema();
+      const row=(await database.query(`SELECT b.profile,COALESCE(m.assets,'[]'::jsonb) AS assets
+        FROM demeos_businesses b
+        CROSS JOIN LATERAL (SELECT p AS product FROM jsonb_array_elements(COALESCE(b.profile->'products','[]'::jsonb)) p
+          WHERE p->>'productId'=$3 AND p->>'businessId'=b.business_id LIMIT 1) p
+        LEFT JOIN LATERAL (SELECT jsonb_agg(a.asset ORDER BY a.asset_id) AS assets FROM (
+          SELECT a.asset_id,a.asset FROM demeos_business_media_assets a WHERE a.business_id=b.business_id
+            AND a.asset->>'state'<>'archived' AND (a.asset->>'relatedEntityId'=$3 OR a.asset_id IN
+              (SELECT jsonb_array_elements_text(COALESCE(p.product->'mediaGallery'->'assetIds','[]'::jsonb))))
+          ORDER BY a.asset_id LIMIT 65) a) m ON TRUE
+        WHERE b.business_id=$1 AND EXISTS(SELECT 1 FROM demeos_business_owners o
+          WHERE o.business_id=b.business_id AND o.trusted_identity_id=$2)`,[businessId,identity,productId])).rows[0];
+      return row?{businessProfile:row.profile,assets:row.assets}:null;
+    },
     async getSellingIntelligenceMedia(identity,businessId,product) {
       await database.ensureSchema();
       return (await database.query(`SELECT a.asset FROM demeos_business_media_assets a

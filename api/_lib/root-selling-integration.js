@@ -23,8 +23,12 @@ async function run({repository,identity,env,body,analyze,visualRunnerFactory=req
   return {status:200,code:'selling-options',products};
  }
  if(!['understand-selling','visual-selling'].includes(body.action)||typeof body.businessId!=='string'||body.businessId.length>200||typeof body.productId!=='string'||body.productId.length>200||typeof body.revision!=='string'||body.revision.length>200)return {status:400,code:'invalid-request'};
- if(!await store.isBusinessOwnedByIdentity(identity,body.businessId))return {status:403,code:'integration-access-denied'};
- const profile=(await store.getKnownBusiness(body.businessId))?.businessProfile;
+ const readScope=async()=>{
+  if(body.action==='visual-selling'&&typeof store.getSellingVisualScope==='function')return store.getSellingVisualScope(identity,body.businessId,body.productId);
+  if(!await store.isBusinessOwnedByIdentity(identity,body.businessId))return null;
+  return store.getKnownBusiness(body.businessId);
+ };
+ const profile=(await readScope())?.businessProfile;
  if(!permitted(profile,identity,env))return {status:403,code:'integration-access-denied'};
  const product=profile.products?.find(p=>p.productId===body.productId);
  if(!product)return {status:403,code:'integration-access-denied'};
@@ -33,9 +37,9 @@ async function run({repository,identity,env,body,analyze,visualRunnerFactory=req
  const result=analyze({action:'understand',audience:'business',locale:body.locale,text,categoryId:getCategory(product.classification?.categoryId)?product.classification.categoryId:''});
  if(!result)return {status:400,code:'source-exceeds-text-contract'};
  // Revoke access immediately on changed ownership/grants or source revision.
- const current=(await store.getKnownBusiness(body.businessId))?.businessProfile;
+ const currentScope=await readScope(),current=currentScope?.businessProfile;
  const currentProduct=current?.products?.find(p=>p.productId===body.productId);
- if(!await store.isBusinessOwnedByIdentity(identity,body.businessId)||!permitted(current,identity,env))return {status:403,code:'integration-access-denied'};
+ if(!permitted(current,identity,env))return {status:403,code:'integration-access-denied'};
  if(!currentProduct||catalogueRevision(currentProduct)!==body.revision)return {status:409,code:'source-changed'};
  if(body.action==='visual-selling'){
   // This is an explicit delegated Selling capability, not generic ROOT access
@@ -43,13 +47,12 @@ async function run({repository,identity,env,body,analyze,visualRunnerFactory=req
   const backend=require('./selling-media').mediaBackend(env);
   const runner=visualRunnerFactory({store,environment:env,backend});
   if(!runner)return {status:503,code:'root-model-unavailable'};
-  const assets=await store.getSellingIntelligenceMedia(identity,body.businessId,currentProduct);
+  const assets=Array.isArray(currentScope.assets)?currentScope.assets:await store.getSellingIntelligenceMedia(identity,body.businessId,currentProduct);
   const visual=await runner.analyze({profile:current,product:currentProduct,assets,identity,outputLocale:body.locale});
   if(visual.status!=='succeeded')return {status:503,code:'root-model-unavailable'};
   // Model response is already schema/evidence/provenance/deadline validated by
   // the existing runner. It remains an unverified suggestion requiring review.
-  if(!await store.isBusinessOwnedByIdentity(identity,body.businessId))return {status:403,code:'integration-access-denied'};
-  const latest=(await store.getKnownBusiness(body.businessId))?.businessProfile;
+  const latest=(await readScope())?.businessProfile;
   const latestProduct=latest?.products?.find(p=>p.productId===body.productId);
   if(!permitted(latest,identity,env))return {status:403,code:'integration-access-denied'};
   if(!latestProduct||catalogueRevision(latestProduct)!==body.revision)return {status:409,code:'source-changed'};
