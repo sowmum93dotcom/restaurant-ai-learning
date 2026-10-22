@@ -4,7 +4,7 @@
 const test=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs');
 const copy=require('../js/root-ai-copy');
 const tick=async()=>{for(let i=0;i<8;i++)await new Promise(resolve=>setImmediate(resolve));};
-async function client(){
+async function client(works){
  class Element{
   constructor(){this.value='';this.checked=false;this.disabled=false;this.hidden=false;this.children=[];this.listeners={};this.textContent='';this.dataset={};}
   addEventListener(name,fn){this.listeners[name]=fn;}
@@ -19,7 +19,7 @@ async function client(){
  const session={id:'session',getToken:async()=>'fixture-token'};
  const window={DEMEOSRootCopy:copy,DEMEOSSellingCopy:{languages:[{code:'en',name:'English'}],resolve:()=>({code:'en',direction:'ltr'}),translate:(_locale,text)=>text},CustomerUnderstanding:{buildCustomerUnderstanding:(_old,text)=>text?{understanding:text}:null},__internal_ClerkUICtor:{},Clerk:{user:{id:'alice'},session,load:async()=>{},addListener(){}}};
  let preflightSignal;
- const context={registry:{categories:[]},runtime:{controlledSellingVisual:true},history:{status:'unavailable'}};
+ const context={registry:{categories:[]},runtime:{controlledSellingVisual:true},history:works?{status:'available',works}:{status:'unavailable'}};
  const fetch=async(url,options={})=>{
   if(url==='/api/public-config')return {ok:true,json:async()=>({clerkPublishableKey:'pk_test_'+Buffer.from('fixture.example$').toString('base64')})};
   if(url.includes('locales'))return {ok:true,json:async()=>({})};
@@ -53,4 +53,18 @@ test('ROOT aborts obsolete preflight and restores GPU controls and consent on co
  assert.equal(app.preflightSignal.aborted,true);assert.equal(nodes['runtime-preflight'].disabled,false);
  assert.equal(nodes['visual-run'].disabled,false);assert.equal(nodes['visual-consent'].checked,false);
  assert.equal(nodes['preflight-status'].textContent,'');assert.equal(nodes.integration.hidden,true);
+});
+
+test('ROOT reopens native suggestions for review without replacing original evidence or a saved correction',async()=>{
+ const result={source:{text:'Original product text'},engine:{modelExecuted:true,modelId:'fixture-only'},visual:{proposals:[{value:'Unverified fixture suggestion'}]},literalCategoryEvidence:[],selectedCategory:null,checklist:[]};
+ for(const state of ['pending','accepted','corrected','rejected']){
+  const work={work_id:'fixture',result,review_state:state,reviewed_text:state==='corrected'?'Owner correction':null};
+  const {nodes}=await client([work]);
+  await nodes['work-history'].children[0].children[0].fire('click');
+  assert.equal(nodes.text.value,'Original product text');
+  assert.equal(nodes['review-text'].value,state==='corrected'?'Owner correction':'Unverified fixture suggestion');
+  assert.equal(nodes['work-review-state'].textContent,copy.translate('en',({pending:'reviewPending',accepted:'reviewAccepted',corrected:'reviewCorrected',rejected:'reviewRejected'})[state]));
+  assert.equal(nodes['save-work'].disabled,true,'native evidence cannot be re-saved as deterministic text');
+  assert.ok(nodes.evidence.children.some(node=>node.textContent===copy.translate('en','modelEvidence')));
+ }
 });

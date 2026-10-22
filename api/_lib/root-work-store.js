@@ -9,6 +9,12 @@ const SCHEMA=[
  `CREATE TABLE IF NOT EXISTS demeos_root_audit(workspace_id TEXT NOT NULL, work_id UUID NOT NULL, revision INTEGER NOT NULL, event_id UUID NOT NULL, action TEXT NOT NULL CHECK(action IN ('saved','accepted','corrected','rejected')), actor TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), PRIMARY KEY(workspace_id,event_id), UNIQUE(workspace_id,work_id,revision), FOREIGN KEY(workspace_id,work_id) REFERENCES demeos_root_work(workspace_id,work_id))`
 ];
 const validId=x=>typeof x==='string'&&/^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(x);
+// Retries may regenerate a request UUID or carry persistence/review metadata.
+// Everything else is original evidence, including engine and native provenance.
+function resultFingerprint(result){
+ const {requestId,persistence,review,...evidence}=result;
+ return hash(evidence);
+}
 function createStore(database){
  const owner=async(client,identity,workspace,lock=false)=>{
   const found=await client.query(`SELECT workspace_id FROM demeos_root_workspaces WHERE workspace_id=$1 AND owner_identity_id=$2 AND audience=$3${lock?' FOR UPDATE':''}`,[workspace.workspaceId,identity,workspace.audience]);return found.rows.length===1;
@@ -24,7 +30,7 @@ function createStore(database){
     if(!await owner(client,identity,workspace,true))return {status:'denied'};
     const existing=await client.query(`SELECT * FROM demeos_root_work WHERE workspace_id=$1 AND request_id=$2`,[workspace.workspaceId,requestId]);
     if(existing.rows[0]){
-     const prior=existing.rows[0].result;if(hash([prior.source,prior.locale,prior.selectedCategory])!==hash([result.source,result.locale,result.selectedCategory]))return {status:'conflict'};
+     const prior=existing.rows[0].result;if(resultFingerprint(prior)!==resultFingerprint(result))return {status:'conflict'};
      return {status:'saved',work:existing.rows[0],reused:true};
     }
     const count=await client.query(`SELECT COUNT(*)::int AS total,COUNT(*) FILTER(WHERE created_at>NOW()-INTERVAL '1 hour')::int AS recent FROM demeos_root_work WHERE workspace_id=$1`,[workspace.workspaceId]);

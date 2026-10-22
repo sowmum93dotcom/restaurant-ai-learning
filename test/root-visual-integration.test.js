@@ -32,10 +32,10 @@ test('ROOT visual result traverses real SQL save, reload and review without cros
   const product={businessId:'test-business-root',productId:'p',name:'On-Demand Groceries',description:'Carrots',classification:{categoryId:'9',sectorId:'1'}};
   const profile={businessId:product.businessId,name:'SQL integration fixture',products:[product]};
   const repository={isBusinessOwnedByIdentity:async identity=>identity==='alice',getKnownBusiness:async()=>({businessProfile:profile}),getSellingIntelligenceMedia:async()=>[],getSellingVisualScope:async identity=>identity==='alice'?{businessProfile:profile,assets:[]}:null};
-  let available=true;
+  let available=true,suggestion='Unverified fixture carrots';
   const config={...env,DEMEOS_ROOT_PREVIEW_OWNER_IDS:'["alice","bob"]'};
   async function call(body,identity='alice',audience='business'){
-   const handler=createHandler({environment:()=>config,authenticate:async()=>({trustedIdentityId:identity}),repository:()=>repository,workStore:()=>store,visualRunnerFactory:()=>({analyze:async()=>available?{status:'succeeded',provenance:{modelId:'sql-fixture-not-gpu',modelVersion:'fixture'},proposals:[{kind:'image-description',value:'Unverified fixture carrots'}]}:{status:'unavailable'}})});
+   const handler=createHandler({environment:()=>config,authenticate:async()=>({trustedIdentityId:identity}),repository:()=>repository,workStore:()=>store,visualRunnerFactory:()=>({analyze:async()=>available?{status:'succeeded',provenance:{modelId:'sql-fixture-not-gpu',modelVersion:'fixture'},proposals:[{kind:'image-description',value:suggestion}]}:{status:'unavailable'}})});
    const res={setHeader(){},status(code){this.code=code;return this;},json(value){this.body=value;return this;}};
    await handler({method:body?'POST':'GET',query:{audience},headers:{'content-type':'application/json'},body},res);return res;
   }
@@ -43,6 +43,7 @@ test('ROOT visual result traverses real SQL save, reload and review without cros
   const saved=await call(request);assert.equal(saved.code,201);
   const work=saved.body.work;assert.equal(work.result.engine.modelExecuted,true);assert.equal(work.review_state,'pending');
   const original=JSON.parse(JSON.stringify(work.result));
+  suggestion='Different fixture interpretation';assert.equal((await call(request)).code,409,'a reused save key cannot substitute a changed native result');suggestion='Unverified fixture carrots';
   let history=(await call()).body.history.works;
   assert.equal(history.length,1);assert.deepEqual(history[0].result,original);
   assert.equal((await call(undefined,'alice','customer')).body.history.works.length,0);

@@ -72,6 +72,18 @@ tr:['Geliştirme tanılamaları','Geliştirme aracı: kategori doğrulama'],
 hi:['विकास निदान','विकास उपकरण: श्रेणी सत्यापन'],
 ja:['開発診断','開発ツール：カテゴリ検証']};
 keys.push('diagnostics','categoryDiagnostic');Object.keys(rows).forEach(locale=>rows[locale].push(...diagnosticCopy[locale]));
+const reviewCopy={
+en:['Pending review','Accepted','Corrected','Rejected','Your review records your decision. It does not independently verify the supplied information or model suggestions.','Model suggestions · unverified'],
+es:['Revisión pendiente','Aceptado','Corregido','Rechazado','La revisión registra tu decisión. No verifica de forma independiente la información ni las sugerencias.','Sugerencias del modelo · no verificadas'],
+fr:['À vérifier','Accepté','Corrigé','Refusé','La vérification enregistre votre décision. Elle ne valide pas indépendamment les informations ou suggestions.','Suggestions du modèle · non vérifiées'],
+de:['Prüfung ausstehend','Angenommen','Korrigiert','Abgelehnt','Die Prüfung speichert Ihre Entscheidung. Sie bestätigt Angaben oder Modellvorschläge nicht unabhängig.','Modellvorschläge · ungeprüft'],
+pt:['Revisão pendente','Aceite','Corrigido','Rejeitado','A revisão regista a sua decisão. Não verifica de forma independente informações ou sugestões.','Sugestões do modelo · não verificadas'],
+tr:['İnceleme bekliyor','Kabul edildi','Düzeltildi','Reddedildi','İnceleme kararınızı kaydeder. Bilgileri veya model önerilerini bağımsız olarak doğrulamaz.','Model önerileri · doğrulanmamış'],
+ar:['بانتظار المراجعة','مقبول','تم التصحيح','مرفوض','تسجل المراجعة قرارك. ولا تتحقق بشكل مستقل من المعلومات أو مقترحات النموذج.','مقترحات النموذج · غير مؤكدة'],
+zh:['待审核','已接受','已修正','已拒绝','审核记录您的决定，并不独立验证所提供的信息或模型建议。','模型建议 · 未经验证'],
+hi:['समीक्षा लंबित','स्वीकृत','सुधारा गया','अस्वीकृत','समीक्षा आपका निर्णय दर्ज करती है। यह जानकारी या मॉडल सुझावों का स्वतंत्र सत्यापन नहीं है।','मॉडल सुझाव · असत्यापित'],
+ja:['確認待ち','承認済み','修正済み','却下済み','確認はあなたの判断を記録します。情報やモデルの提案を独立して検証するものではありません。','モデルの提案 · 未検証']};
+keys.push('reviewPending','reviewAccepted','reviewCorrected','reviewRejected','reviewBoundary','modelEvidence');Object.keys(rows).forEach(locale=>rows[locale].push(...reviewCopy[locale]));
 const api={keys,rows,translate:(locale,key)=>{const index=keys.indexOf(key);return index<0?key:(rows[locale]||rows.en)[index];}};
 if(typeof module==='object'&&module.exports)module.exports=api;root.DEMEOSRootCopy=api;
 })(typeof window==='object'?window:{});

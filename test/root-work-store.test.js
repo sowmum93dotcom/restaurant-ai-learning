@@ -13,6 +13,15 @@ test('ROOT persistence is additive, tenant/audience scoped, idempotent and revis
   assert.equal((await store.list('alice',business)).length,1);assert.deepEqual(await store.list('bob',business),[]);assert.deepEqual(await store.list('alice',customer),[]);assert.deepEqual(await store.list('bob',other),[]);
   const replay=await store.save('alice',business,requestId,analyze(input));assert.equal(replay.work.work_id,saved.work.work_id);assert.equal(replay.reused,true);
   assert.equal((await store.save('alice',business,requestId,analyze({...input,text:'Changed'}))).status,'conflict');
+  assert.equal((await store.save('alice',business,requestId,{...result,engine:{...result.engine,modelExecuted:true,modelId:'fixture-only'}})).status,'conflict','same text cannot substitute a model result for deterministic evidence');
+  const native={...result,engine:{kind:'fixture-not-gpu',modelExecuted:true,modelId:'fixture',modelVersion:'v1'},visual:{provenance:{modelId:'fixture',modelVersion:'v1',weightsHash:'pinned-fixture'},proposals:[{kind:'image-description',value:'Unverified carrots'}]}};
+  const nativeRequest=randomUUID(),nativeSaved=await store.save('alice',business,nativeRequest,native);
+  assert.equal((await store.save('alice',business,nativeRequest,{...native,requestId:randomUUID()})).reused,true);
+  for(const visual of [{...native.visual,proposals:[{kind:'image-description',value:'Changed suggestion'}]},{...native.visual,provenance:{...native.visual.provenance,weightsHash:'different-fixture'}}]){
+   assert.equal((await store.save('alice',business,nativeRequest,{...native,visual})).status,'conflict');
+  }
+  const nativeRows=(await store.list('alice',business)).filter(row=>row.work_id===nativeSaved.work.work_id);
+  assert.equal(nativeRows.length,1);assert.deepEqual(nativeRows[0].result.visual,native.visual);
   assert.equal((await store.save('bob',business,randomUUID(),result)).status,'denied');
   const workId=saved.work.work_id;
   assert.equal((await store.review('bob',business,{workId,revision:1,decision:'accepted'})).status,'denied');
@@ -22,9 +31,9 @@ test('ROOT persistence is additive, tenant/audience scoped, idempotent and revis
   const corrected=await store.review('alice',business,{workId,revision:2,decision:'corrected',text:'Carrots only'});assert.equal(corrected.status,'reviewed');assert.equal(corrected.work.revision,3);assert.equal(corrected.work.reviewed_text,'Carrots only');assert.equal(corrected.work.result.source.text,'Groceries');
   assert.equal((await store.review('alice',business,{workId,revision:3,decision:'accepted',text:'cannot inject correction'})).status,'invalid');
   assert.equal((await store.review('alice',business,{workId,revision:3,decision:'corrected',text:'x'.repeat(501)})).status,'invalid');
-  const audit=await database.query('SELECT * FROM demeos_root_audit WHERE workspace_id=$1 ORDER BY revision',[business.workspaceId]);assert.equal(audit.rows.length,3);assert.deepEqual(audit.rows.map(r=>r.revision),[1,2,3]);assert.ok(audit.rows.every(r=>r.actor==='alice'));
+  const audit=await database.query('SELECT * FROM demeos_root_audit WHERE workspace_id=$1 AND work_id=$2 ORDER BY revision',[business.workspaceId,workId]);assert.equal(audit.rows.length,3);assert.deepEqual(audit.rows.map(r=>r.revision),[1,2,3]);assert.ok(audit.rows.every(r=>r.actor==='alice'));
   const businessCount=await database.query('SELECT COUNT(*)::int AS count FROM demeos_businesses');assert.equal(businessCount.rows[0].count,0,'ROOT never creates a vendor record');
   await database.query(`CREATE OR REPLACE FUNCTION root_reject_audit() RETURNS trigger AS $$ BEGIN RAISE EXCEPTION 'audit fixture failure'; END; $$ LANGUAGE plpgsql`);await database.query(`CREATE TRIGGER root_audit_failure BEFORE INSERT ON demeos_root_audit FOR EACH ROW EXECUTE FUNCTION root_reject_audit()`);
-  await assert.rejects(store.review('alice',business,{workId,revision:3,decision:'rejected'}));assert.equal((await store.list('alice',business))[0].revision,3,'failed audit must roll back the review');
+  await assert.rejects(store.review('alice',business,{workId,revision:3,decision:'rejected'}));assert.equal((await store.list('alice',business)).find(row=>row.work_id===workId).revision,3,'failed audit must roll back the review');
  }finally{await client.close();}
 });

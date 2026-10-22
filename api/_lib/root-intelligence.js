@@ -117,7 +117,7 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
         const execution=await require('./root-selling-integration').run({repository,identity:identity.trustedIdentityId,env:environment(),body,analyze,visualRunnerFactory});
         if(execution.status!==200)return reply(execution.status,execution.code);
         const saved=await workStore().save(identity.trustedIdentityId,context,requestId,execution.result);
-        if(saved.status!=='saved')return reply(503,'root-work-not-saved');
+        if(saved.status!=='saved')return reply(({conflict:409,denied:403,invalid:400,limited:429})[saved.status]||503,'root-work-not-saved');
         return reply(201,'visual-suggestions-require-review',{workspace:context,result:saved.work.result,work:saved.work});
       }
       if(plain(req.body)&&['selling-options','understand-selling'].includes(req.body.action)){
