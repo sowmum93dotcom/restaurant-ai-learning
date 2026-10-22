@@ -40,8 +40,20 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
     const reply=(status,code,data={})=>res.status(status).json({code,...data});
     if(!['GET','POST'].includes(req.method)){res.setHeader('Allow','GET, POST');return reply(405,'method-not-allowed');}
     if(!['preview','development'].includes(environment().VERCEL_ENV))return reply(503,'root-preview-only');
-    // Require same-origin JSON for mutation-like requests, even though this slice writes nothing.
-    if(req.method==='POST'&&(!/^application\/json(?:;|$)/i.test(req.headers?.['content-type']||'')||req.headers?.['sec-fetch-site']==='cross-site'))return reply(403,'request-not-allowed');
+    // Signed-in ROOT mutations must never accept an explicit foreign browser Origin.
+    // An absent Origin remains valid for existing reviewed non-browser callers.
+    if(req.method==='POST'){
+      if(!/^application\/json(?:;|$)/i.test(req.headers?.['content-type']||'')||req.headers?.['sec-fetch-site']==='cross-site')return reply(403,'request-not-allowed');
+      const origin=req.headers?.origin;
+      if(origin!==undefined){
+        const host=req.headers?.host;
+        if(typeof origin!=='string'||typeof host!=='string'||!host||host.includes(',')||host.includes('/')||host.includes('\\'))return reply(403,'request-not-allowed');
+        try{
+          const parsed=new URL(origin);
+          if(parsed.origin!==origin||parsed.host.toLowerCase()!==host.toLowerCase()||!['https:','http:'].includes(parsed.protocol))return reply(403,'request-not-allowed');
+        }catch{return reply(403,'request-not-allowed');}
+      }
+    }
     try{
       const identity=await authenticate(req);
       if(typeof identity?.trustedIdentityId!=='string'||!identity.trustedIdentityId)return reply(401,'sign-in-required');
