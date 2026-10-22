@@ -8,4 +8,6 @@ test('explicit health preflight pins provenance and cannot claim inference or fo
  for(const patch of [{ready:false},{busy:true},{runtimeCodeHash:'c'.repeat(64)},{modelId:'foreign'},{extra:'untrusted'}])assert.equal((await check(env,async()=>Response.json({...healthy,...patch}))).status,'unavailable');
  let fetched=false;assert.equal((await check({...env,VERCEL_ENV:'production'},async()=>{fetched=true;})).status,'unavailable');assert.equal(fetched,false);
  assert.equal((await check(env,async()=>new Response('No auth',{status:401}))).status,'unavailable');
+ for(const status of [201,202,301,401,403,429,500,503])assert.equal((await check(env,async()=>Response.json(healthy,{status}))).status,'unavailable','HTTP '+status+' cannot establish readiness even with a valid-looking body');
+ assert.equal((await check(env,async()=>new Response(null,{status:204}))).status,'unavailable');
 });

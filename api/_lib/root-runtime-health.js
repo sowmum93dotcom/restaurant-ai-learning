@@ -6,6 +6,7 @@ async function check(environment,fetchImpl=globalThis.fetch){
  const started=Date.now(),controller=new AbortController(),timer=setTimeout(()=>controller.abort(),10000);
  try{
   const response=await fetchImpl(config.origin+'/healthz',{method:'GET',redirect:'error',signal:controller.signal,headers:{Authorization:'Bearer '+config.secret}});
+  if(response.status!==200)return {status:'unavailable'};
   const value=JSON.parse((await readBounded(response,4096,controller.signal)).toString('utf8'));
   if(Object.keys(value).sort().join(',')!=='busy,modelId,modelVersion,ready,runtimeCodeHash,weightsManifestHash'||value.ready!==true||value.busy!==false||!['modelId','modelVersion','runtimeCodeHash','weightsManifestHash'].every(k=>value[k]===config.manifest[k]))return {status:'unavailable'};
   return {status:'ready',connectionPreflightMs:Date.now()-started,inferenceExecuted:false};
