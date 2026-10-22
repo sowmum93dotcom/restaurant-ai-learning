@@ -81,6 +81,11 @@
     "api/businesses.js": {
       "maxDuration": 60,
       "includeFiles": "node_modules/{ffmpeg-static/ffmpeg,@ffprobe-installer/linux-x64/ffprobe}"
+    },
+    "api/public-config.js": {
+      "regions": [
+        "lhr1"
+      ]
     }
   }
 }
