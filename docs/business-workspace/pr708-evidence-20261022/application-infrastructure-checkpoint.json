@@ -28,17 +28,18 @@
     "computeUSDPerHour": 0,
     "quotedGPUUSDPerHour": 1.09,
     "quotedTemporaryDiskUSDPerHour": 0.007,
-    "runpodDisplayedBalanceUSD": 21.26,
+    "runpodDisplayedBalanceUSD": 21.21,
     "vastDisplayedBalanceUSD": 23.36,
     "verifiedDepositsUSD": 60,
-    "displayedCumulativeDeductionsUSD": 15.38,
+    "displayedCumulativeDeductionsUSD": 15.43,
     "billingStatus": "Displayed balances, not settled invoice; preserved storage continues.",
     "globalVolume": "dizzy_indigo_worm",
     "globalStoredGB": 13,
     "globalObjects": 225,
     "vastInstance": "56929706",
     "vastStatus": "Inactive",
-    "vastRetainedDiskUSDPerHour": 0.017
+    "vastRetainedDiskUSDPerHour": 0.017,
+    "billingNote": "Later balance refresh after verified compute shutdown; storage and delayed charges continue."
   },
   "blockedActions": [
     {

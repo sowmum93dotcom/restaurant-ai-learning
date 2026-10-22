@@ -97,10 +97,10 @@ Both branch Preview execution flags are false, verified through the connector an
 | L40S GPU during evaluation | $1.09/hour |
 | Temporary container disk during evaluation | $0.007/hour; combined $1.097/hour, UI rounds $1.10 |
 | RunPod compute after stopping | $0.00/hour |
-| Last observed RunPod balance | $21.26 |
+| Last observed RunPod balance | $21.21 |
 | Last observed Vast balance | $23.36 |
 | Verified original deposits | $35 RunPod + $25 Vast = $60 |
-| Cumulative displayed deductions, including previous spending | $60 - $21.26 - $23.36 = $15.38 |
+| Cumulative displayed deductions, including previous spending | $60 - $21.21 - $23.36 = $15.43 |
 | Retained Vast disk rate | $0.017/hour; data retained intentionally |
 
 Balances are delayed, cent-rounded provider displays, not a settled itemised invoice or exact isolated-session charge. Global/retained storage can continue charging after GPU shutdown. No new payment was made. The observed deductions remain below the owner's $100 cumulative ceiling and the active GPU rate below $2.50/hour.
