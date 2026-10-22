@@ -41,3 +41,16 @@ DEMEOS controls service orchestration, private execution configuration, permissi
 - Separate Preview and Production deployments, test businesses blocked in Production, and explicit approval before enabling live execution.
 
 This contract intentionally adds **no** customer-facing routes, database tables, GPU resource, paid service or Production configuration on its own.
+
+
+## ROOT network-wide integration contract — 22 October 2026
+
+ROOT is one independent intelligence service for DEMEOS vendors, DEMEOS future Customer Experience, Marketing and Admin systems, and independent businesses or customers. Its service and standalone application must not depend on those unfinished interfaces. Selling is only one optional client.
+
+**Distinct principals:** ROOT personal Business and Customer modes are personal contexts and are not proof of legal organisation membership; Selling vendor authority requires checked Selling ownership; future Marketing, Customer Experience, Admin, business-team and external platform client identities require separately reviewed, disabled-by-default grants. ROOT must reject all unapproved app-to-app requests.
+
+**Network service:** Provide a versioned, server-side request envelope binding authenticated principal, client, audience, consent, capability, resource, tenant scope and policy version. Verify authorisation at ROOT; never trust browser claims or an unverified inherited vendor role. Enforce tenant segregation in storage, GPU jobs, logs and caches; rate limits; replay protection; audit trails; revocation; and provenance. Return independent evidence separately from unverified model suggestions. Never perform unauthorised catalogue, price, stock, order or publication writes. Unavailable model execution must remain explicitly unavailable.
+
+**Development order:** (1) review and specify ROOT shared capability contracts; (2) implement server-side identity and grants with cross-tenant denial tests; (3) verify standalone non-vendor access; (4) preserve and use existing Selling handoff while preparing future separate Marketing/Customer/Admin integrations; (5) perform genuine image-to-GPU-to-private-ROOT-result-to-review acceptance with the one existing model executor; (6) expand verified Business and Customer tools across the authoritative 171 categories. Do not build another dashboard or category registry or treat 171-category listing as completed tools.
+
+**Compute preflight:** Preserve the existing pinned Qwen3-VL-4B model and RunPod Global volume dizzy_indigo_worm. Prefer one available 48 GB L40 or RTX A6000 for initial acceptance if it can attach the existing model volume; the quote, availability and region must be checked live. Check both GPU providers' balances, all stopped/running allocations, cumulative charges, model hashes, disk/network costs and exact owner budget before paid activation. Previous approval limits were $0.90/hour and $35 cumulative evaluation. A general statement that money is not a problem is not a numeric new spending authorisation; obtain a new explicit cap before exceeding the previous limit. Do not auto-create pods, pay, delete stored data, merge or deploy to Production.
