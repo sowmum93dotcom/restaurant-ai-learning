@@ -1,0 +1,205 @@
+{
+  "date": "2026-10-22",
+  "assignmentComplete": false,
+  "customerReady": false,
+  "implementationCommit": "b63322fdda1ed681cd75ed7b6d1d54c8a00a6fa5",
+  "pr": 708,
+  "draft": true,
+  "merged": false,
+  "productionChanged": false,
+  "preview": {
+    "deploymentId": "dpl_5XfxVZP7z74tjpPk8W3JMzi6hG2z",
+    "state": "READY",
+    "environment": "preview",
+    "immutableHost": "restaurant-ai-learning-bergffjoa-sowmum93dotcom.vercel.app",
+    "testedApplication": "https://restaurant-ai-learning-git-rebuild-sellin-bc7dd9-sowmum93dotcom.vercel.app/root-ai",
+    "signedInObserved": true
+  },
+  "liveAcceptance": {
+    "engine": "deterministic, not model inference",
+    "canonicalCategoryId": "9",
+    "fieldChecks": 2,
+    "sellingOwnedProductsListed": 2,
+    "sellingReadOnlyAnalysis": true,
+    "save": true,
+    "accept": true,
+    "correction": true,
+    "reloadPreservesCorrection": true,
+    "sqlWorkCount": 1,
+    "sqlReviewState": "corrected",
+    "sqlRevision": 3,
+    "sqlAuditEvents": 3,
+    "customerModeHistoryCount": 0,
+    "customerModeSellingIntegrationVisible": false,
+    "existingBusinessCountAfterMigration": 2,
+    "modelExecuted": false
+  },
+  "software": {
+    "ciBaseline": {
+      "runId": 39709042871,
+      "jobId": 119595714037,
+      "tests": 1577,
+      "passed": 1577,
+      "failed": 0,
+      "durationMs": 89348.44785
+    },
+    "ciBrowser": {
+      "runId": 39709042869,
+      "status": "success",
+      "engines": [
+        "chromium",
+        "webkit"
+      ],
+      "widths": [
+        375,
+        820,
+        1440
+      ],
+      "locales": [
+        "en",
+        "es",
+        "fr",
+        "ar",
+        "pt",
+        "zh",
+        "hi",
+        "de",
+        "ja",
+        "tr"
+      ],
+      "identity": "explicit fixture",
+      "database": "real isolated PGlite",
+      "gpuEvidence": false
+    },
+    "ciVideo": {
+      "runId": 39709042901,
+      "status": "success"
+    },
+    "focusedRootPassed": 14,
+    "pythonRuntimePassed": 29,
+    "pythonKind": "software/supervisor fixtures, not GPU",
+    "localLimitations": [
+      "FFmpeg executable absent",
+      "Playwright Chromium executable absent"
+    ],
+    "introducedRegressionsFixed": [
+      "identity rewrite order",
+      "new ROOT brand-link copy allowance"
+    ]
+  },
+  "historicalInference": {
+    "notNewRootAcceptance": true,
+    "modelId": "Qwen3-VL-4B-Instruct",
+    "modelVersion": "ebb281ec70b05090aa6165b016eac8ec08e71b17",
+    "runtimeCodeHash": "896e7aa734ddd2f7a8a35da257cd1ca61956a26854fb9966fb107baaa50e4ed1",
+    "weightsManifestHash": "e2c07fc24e1523d0987dfb6b082020c0eb74a04eb622f36c153fd97c5d254ae2",
+    "previouslyVerifiedModelFiles": 13,
+    "previousControlledWarmHttpsCases": 31,
+    "previousWarmMs": [
+      1070.417566,
+      1753.086677
+    ],
+    "previousHardwareCases": 10,
+    "coldTwoSecondAcceptance": false,
+    "fluentOrFullCategoryApproval": false
+  },
+  "infrastructure": {
+    "runpod4090": {
+      "id": "5uwdkbmub1kr0j",
+      "restart": "GPU unavailable; Do nothing; stopped"
+    },
+    "vast": {
+      "id": 56929706,
+      "restart": "Scheduling only; Stop/Continue; fresh reload Inactive",
+      "retainedDiskGb": 80
+    },
+    "runpodA5000": {
+      "id": "bbiq2rg1134zyb",
+      "restart": "GPU unavailable; Do nothing; stopped"
+    },
+    "newPods": 0,
+    "newPayments": 0,
+    "runningGpuObserved": false,
+    "newModelDownloads": 0,
+    "globalVolume": {
+      "id": "cmvcuubvp000007l59ohq62xx",
+      "name": "dizzy_indigo_worm",
+      "displayedGb": 12.8,
+      "displayedObjects": 178,
+      "modified": false
+    },
+    "modelFilesRehashedToday": false,
+    "runtimeEnabled": false,
+    "rootVisualFlagConfigured": false,
+    "rootPersistence": "only exact Preview branch and explicit independent ROOT owner"
+  },
+  "spending": {
+    "runpodBalanceUsd": 24.03,
+    "runpodSoleDepositUsd": 35,
+    "vastBalanceUsd": 23.65,
+    "vastSoleDepositUsd": 25,
+    "approximateCumulativeDeductionsUsd": 12.32,
+    "evaluationCapUsd": 35,
+    "gpuPlusTemporaryDiskCeilingUsdPerHour": 0.9,
+    "finalItemisedBilling": false,
+    "retainedStorageStillCharges": true
+  },
+  "replacementQuoteOnly": {
+    "created": false,
+    "gpu": "RTX 4090",
+    "gpuUsdPerHour": 0.89,
+    "temporaryDiskGb": 50,
+    "temporaryDiskUsdPerHour": 0.007,
+    "combinedUsdPerHour": 0.897,
+    "volume": "same existing dizzy_indigo_worm",
+    "template": "runpod/pytorch:1.4.1-cu1281-torch280-ubuntu2404",
+    "capacityInSelector": true,
+    "capacityReserved": false,
+    "fullyConfiguredOrDeployed": false,
+    "newAllocationApprovalRequired": true
+  },
+  "browserInterruption": "Later provider form-fill timed out; documentation and canonical-origin recovery reported credential_state_unavailable. Browser work stopped without reset or alternate credential entry.",
+  "remaining": [
+    "genuine ROOT private-media-to-GPU-to-saved-result-to-review acceptance",
+    "fresh model integrity on authorised running hardware",
+    "cold connection and end-to-end latency",
+    "broader semantic/fluent-language/fine-detail review",
+    "independent ROOT uploads/general model tools",
+    "organisation/team membership and external-client grants",
+    "multi-turn conversations and reviewed retention/export/deletion",
+    "actual category-specific testing beyond five existing field checklists"
+  ],
+  "filesChanged": [
+    ".github/workflows/customer-browser-gate.yml",
+    "api/_lib/root-intelligence.js",
+    "api/_lib/root-runtime-health.js",
+    "api/_lib/root-selling-integration.js",
+    "api/_lib/root-work-store.js",
+    "api/public-config.js",
+    "browser-checks/root-ai-gate.js",
+    "css/root-ai.css",
+    "docs/business-workspace/pr708-https-evidence/preview-preflight-20261021.json",
+    "docs/business-workspace/pr708-https-evidence/preview-preflight-stopped.jpg",
+    "docs/business-workspace/pr708-https-evidence/root-signed-in-20261022.jpg",
+    "docs/business-workspace/pr708-root-acceptance-20261022.json",
+    "docs/business-workspace/pr708-root-persistence-review.md",
+    "docs/business-workspace/pr708-root-phase1-final-report.md",
+    "docs/business-workspace/pr708-root-phase1.md",
+    "docs/business-workspace/pr708-root-visual-review.md",
+    "docs/business-workspace/pr708-runpod-checkpoint.md",
+    "images/demeos-root-ai-approved.png",
+    "js/root-ai-copy.js",
+    "js/root-ai.js",
+    "root-ai.html",
+    "selling-dashboard.html",
+    "test/root-intelligence.test.js",
+    "test/root-runtime-health.test.js",
+    "test/root-selling-integration.test.js",
+    "test/root-visual-integration.test.js",
+    "test/root-work-store.test.js",
+    "test/selling-repair.test.js",
+    "tools/visual-runtime/README.md",
+    "vercel.json"
+  ]
+}
+
