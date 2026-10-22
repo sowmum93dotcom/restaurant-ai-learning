@@ -1,6 +1,6 @@
 # ROOT native access boundary and health validation
 
-ROOT is not complete. No new model execution, model integrity or native saved-result acceptance is claimed.
+ROOT is not complete. The earlier access checkpoint below is historical: the subsequently approved CPU bridge established real native execution. See `pr708-evidence-20261022/vast-native-current-summary.json`. Fresh current-runtime acceptance passed 31/31 original controlled cases and 10/10 hardware benchmark runs on the existing RTX 4090. All 13 model files were verified read-only as the service user. These are loopback hardware results, not HTTPS or ROOT saved-result acceptance. Raw reports were preserved on the original Global volume with matching read-back hashes. The bridge and Vast compute were stopped and the new temporary instance key removed. The existing L40S is being used for the remaining HTTPS stage. No resource was duplicated.
 
 ## Actual operator actions
 
