@@ -1,0 +1,170 @@
+{
+  "date_utc": "2026-10-23",
+  "scope": "PR708 isolated Preview only",
+  "complete": false,
+  "source": "362afda4856e3ea69f1b003fd39647381693960d",
+  "deployment": "dpl_8UozQcbRj5NkmJnoRtiDf1674WYo",
+  "function_region": "lhr1",
+  "region_evidence": "Own VERCEL_REGION log; envelope cle1 is not compute-region evidence",
+  "gpu": {
+    "pod": "7rptp0uyhzklfj",
+    "type": "NVIDIA L40S",
+    "location": "EU-NL-1",
+    "quoted_total_usd_per_hour": 1.1,
+    "status": "stopped; Details Not running, total $0.00/hr",
+    "temporary_console": "disabled, Stopped",
+    "volume": "original dizzy_indigo_worm mounted /workspace; preserved",
+    "service_terminated_utc": "2026-10-23T00:53:12Z"
+  },
+  "model": {
+    "name": "Qwen3-VL-4B-Instruct",
+    "snapshot": "ebb281ec70b05090aa6165b016eac8ec08e71b17",
+    "weights_sha256": "e2c07fc24e1523d0987dfb6b082020c0eb74a04eb622f36c153fd97c5d254ae2",
+    "runtime_sha256": "7368e842310e3f1cd76ba711936ed955964519c0b7b41c0ebbddcc91c44befa3",
+    "read_only_files_verified_as_demeos_ai": 13,
+    "hosted_inference": false
+  },
+  "controlled_cases": {
+    "original_https": {
+      "passed": 31,
+      "total": 31,
+      "route": "native-operator-node-https-client-to-runtime",
+      "min_ms": 394.1031839931384,
+      "max_ms": 1878.4084569779225,
+      "preflight_ms": 418.0875440360978,
+      "deadline_ms": 2000
+    },
+    "hardware_loopback": {
+      "passed": 10,
+      "total": 10,
+      "max_ms": 826.0778189869598
+    },
+    "python_https": {
+      "passed": false,
+      "first_status": 403,
+      "inference": false,
+      "elapsed_ms": 32.22910698968917
+    },
+    "human_semantic_quality_approved": false,
+    "full_171_category_accuracy_approved": false
+  },
+  "live_root": {
+    "preflight_ms": 184,
+    "boundary_duration_ms": 1233,
+    "runner_execution_finished_ms": 1255,
+    "gpu_ms": 310.4159529902972,
+    "executions": 1,
+    "retries": 0,
+    "input_bytes": 112610,
+    "output_bytes": 227,
+    "peak_vram_bytes": 8969970688,
+    "input_hash": "5acd4ce26c21878ac02ef26c1af5be5dc36c6a1f3c5a39669315606f91739ac5",
+    "trace_request": "kzksw-1792716275100-7f8fe47a2d47",
+    "stages_ms": {
+      "media_read_issued": 399,
+      "media_bytes_verified": 664,
+      "scope_rechecked": 670,
+      "gpu_output_validated": 1235,
+      "execution_finished": 1255
+    },
+    "suggestion": "Blue gold silver logo",
+    "suggestion_verified": false,
+    "private_works": [
+      {
+        "id": "db15b53d-945b-4cff-9dd0-fe09b18b5465",
+        "revision": 2,
+        "state": "accepted",
+        "executions": 1,
+        "audit": [
+          "saved",
+          "accepted"
+        ]
+      },
+      {
+        "id": "89220bdc-10e6-498c-8447-94a6fe6b1818",
+        "revision": 2,
+        "state": "corrected",
+        "executions": 0,
+        "cache_hit": true,
+        "audit": [
+          "saved",
+          "corrected"
+        ],
+        "reviewed_text": "Preview acceptance correction: blue, gold and silver logo. No product changes."
+      },
+      {
+        "id": "a75550fc-bd90-47f9-a8f6-544d55588f04",
+        "revision": 2,
+        "state": "rejected",
+        "executions": 0,
+        "cache_hit": true,
+        "audit": [
+          "saved",
+          "rejected"
+        ]
+      }
+    ],
+    "reload_verified": true,
+    "counts_note": "One actual model execution plus two verified cache reuses; three private works, not three inferences."
+  },
+  "sql": {
+    "project": "shiny-sun-84024932",
+    "branch": "br-flat-snow-zatzl87u",
+    "claim": "46ae3790-184c-4a3c-910e-c94f73a99933",
+    "claim_active": false,
+    "claim_status": "succeeded",
+    "jobs": 1,
+    "executions": 1,
+    "catalogue_profile_md5_before_and_after": "c8275721a144ba6f30d64ca99c614d47",
+    "catalogue_updated_at_unchanged": "2026-10-20T05:14:40.465Z",
+    "native_business_works": 3,
+    "native_customer_works": 0
+  },
+  "context_and_search": {
+    "same_owner_business_customer_ui_separation": true,
+    "customer_query": "I am looking for a camping tent.",
+    "explicit_consent": true,
+    "existing_search_result": "No published offers match this request. Try different details.",
+    "manual_category_required": false,
+    "real_second_account_isolation_verified": false,
+    "unauthenticated_probe": {
+      "status": 302,
+      "redirect": true,
+      "history_returned": false,
+      "application_level_401_verified": false
+    }
+  },
+  "cleanup": {
+    "preview_flags_edited_false": true,
+    "branch_sensitive_runtime_secret_rotated": true,
+    "service_stopped": true,
+    "console_disabled": true,
+    "gpu_stopped": true,
+    "http_18081_configured_on_stopped_pod": true,
+    "new_cleanup_preview_verification": "pending source publication",
+    "production_deployed": false,
+    "pr_merged": false
+  },
+  "evidence": {
+    "preserved_directory": "/workspace/demeos-evaluation-20261023/nl-current-7rptp0uyhzklfj",
+    "hash_verified_copies": 19,
+    "synced_before_stop": true,
+    "reports_sha256": {
+      "demeos-nl-https-benchmark.json": "3609ec2f227a80071ea52d0b4347fbc5a22600a1cd5feaf686de0c68c1854bfb",
+      "demeos-nl-hardware-benchmark.json": "05203bab6ddc1b6a0c52f3ad0ea4e4109754651b22e0087f9bdb76dd218841d5",
+      "demeos-nl-original-https.json": "3d2da68f17c09a12454243b3feaeb00661c605631c66e718955976df56be538e"
+    }
+  },
+  "validation": {
+    "source_362afda_baseline_run": "39877211727 success",
+    "source_362afda_video_run": "39877211751 success; job 120165600241",
+    "source_362afda_browser_run": "39877211805 success; Chromium and WebKit",
+    "copy_change_client_tests": "4/4 pass"
+  },
+  "remaining": [
+    "Independent multilingual semantic quality review",
+    "Real second-account isolation acceptance",
+    "Physical iPhone/iPad Safari acceptance",
+    "Natural-language primary experience beyond the explicitly labelled development tool; no completion claim"
+  ]
+}
