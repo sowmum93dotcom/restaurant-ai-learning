@@ -1,4 +1,16 @@
-# Current live GPU acceptance — 22 October 2026
+# Current live GPU acceptance — 23 October 2026
+
+The genuine ROOT Preview → native L40S → private SQL save and reload/review acceptance passed. Original HTTPS cases passed 31/31 within 2000 ms. The actual ROOT boundary completed in 1233 ms, one execution; runner completion was 1255 ms. Accepted, corrected and rejected private works persisted. The two later works reused the verified cache; they are not additional model executions.
+
+The latest verified report is [PR708 live native acceptance](pr708-root-live-native-acceptance-20261023.md), with [machine-readable evidence](pr708-evidence-20261022/root-live-native-acceptance-20261023.json). That report supersedes the expired access/credential blockers and failed timing checkpoints preserved below. Independent semantic quality, real second-account isolation, physical-device review and broader natural-language experience remain open. ROOT is not complete; PR708 stays draft, unmerged and Preview-only.
+
+All nine RunPod resources were verified at $0/hour; the native service and temporary console are stopped. Nineteen evidence files are hash-verified and synced on the original volume. The branch runtime secret is rotated and both exact Preview execution flags are false. Cleanup Preview `dpl_J8DkSD9W4Lc8q3c2rsub7LV49xFY`, source `9187f17a7792cd48655f6830d5f4bb3e2879358c`, is READY in London. Its signed-in saved history remains accessible, GPU controls are hidden, and the corrected wording is visible after reload.
+
+The native review now keeps literal category checks and category field checklists inside their own closed development disclosure, preserving diagnostics without presenting them as model evidence. No duplicate application, category registry, search engine, model download, hosted inference, merge or Production deployment.
+
+---
+
+# Historical GPU acceptance — 22 October 2026
 
 PR #708 remains draft and unmerged. ROOT is not complete. Production is unchanged.
 

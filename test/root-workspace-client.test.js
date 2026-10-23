@@ -6,7 +6,7 @@ const copy=require('../js/root-ai-copy');
 const tick=async()=>{for(let i=0;i<8;i++)await new Promise(resolve=>setImmediate(resolve));};
 async function client(works,settings={}){
  class Element{
-  constructor(){this.value='';this.checked=false;this.disabled=false;this.hidden=false;this.children=[];this.listeners={};this.textContent='';this.dataset={};}
+  constructor(tagName){this.tagName=tagName;this.value='';this.checked=false;this.disabled=false;this.hidden=false;this.children=[];this.listeners={};this.textContent='';this.dataset={};}
   addEventListener(name,fn){this.listeners[name]=fn;}
   append(...children){this.children.push(...children);}
   replaceChildren(...children){this.children=children;}
@@ -15,7 +15,7 @@ async function client(works,settings={}){
  }
  const nodes=Object.fromEntries([...fs.readFileSync('root-ai.html','utf8').matchAll(/id="([^"]+)"/g)].map(match=>[match[1],new Element()]));
  const historyCopy=new Element(),calls=[];
- const document={getElementById:id=>nodes[id],createElement:()=>new Element(),documentElement:{},querySelectorAll:()=>[],querySelector:()=>historyCopy};
+ const document={getElementById:id=>nodes[id],createElement:tag=>new Element(tag),documentElement:{},querySelectorAll:()=>[],querySelector:()=>historyCopy};
  const session={id:'session',getToken:async()=>'fixture-token'};
  const window={DEMEOSRootCopy:copy,DEMEOSSellingCopy:{languages:[{code:'en',name:'English'}],resolve:()=>({code:'en',direction:'ltr'}),translate:(_locale,text)=>text},CustomerUnderstanding:{buildCustomerUnderstanding:(_old,text)=>text?{understanding:text}:null},__internal_ClerkUICtor:{},Clerk:{user:{id:'alice'},session,load:async()=>{},addListener(){}}};
  let preflightSignal;
@@ -67,6 +67,11 @@ test('ROOT reopens native suggestions for review without replacing original evid
   assert.equal(nodes['work-review-state'].textContent,copy.translate('en',({pending:'reviewPending',accepted:'reviewAccepted',corrected:'reviewCorrected',rejected:'reviewRejected'})[state]));
   assert.equal(nodes['save-work'].disabled,true,'native evidence cannot be re-saved as deterministic text');
   assert.ok(nodes.evidence.children.some(node=>node.textContent===copy.translate('en','modelEvidence')));
+  const diagnostics=nodes.evidence.children.find(node=>node.tagName==='details');
+  assert.ok(diagnostics,'category checks have a separate disclosure');
+  assert.notEqual(diagnostics.open,true,'native category diagnostics stay closed');
+  assert.equal(diagnostics.children[0].textContent,copy.translate('en','categoryDiagnostic'));
+  assert.ok(!nodes.evidence.children.some(node=>node.textContent.startsWith(copy.translate('en','matched')+':')),'literal category matching is not presented as model evidence');
  }
 });
 

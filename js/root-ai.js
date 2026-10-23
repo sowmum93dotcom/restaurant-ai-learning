@@ -43,7 +43,32 @@ function renderHistory(){
  const enabled=context?.history?.status==='available';$('saved-work').hidden=!enabled;document.querySelector('[data-copy="history"]').textContent=t(enabled?'savedHistory':'history');$('work-history').replaceChildren();if(!enabled)return;
  context.history.works.forEach(work=>{const li=document.createElement('li'),button=document.createElement('button');button.type='button';button.textContent=work.result.source.text.slice(0,80)+' · '+reviewState(work);button.addEventListener('click',()=>{invalidate();selectedWork=work;$('text').value=work.result.source.text;$('count').textContent=$('text').value.length+' / 500';$('category').value=work.result.selectedCategory?.categoryId||'';render(work.result);showReview(work);});li.append(button);$('work-history').append(li);});
 }
-function render(result){const container=$('evidence');container.replaceChildren();const heading=document.createElement('p');heading.textContent=t('matched')+': '+(result.literalCategoryEvidence.map(c=>c.name).join(', ')||'—');container.append(heading);const text=document.createElement('blockquote');text.textContent=result.source.text;container.append(text);if(result.selectedCategory){const title=document.createElement('p');title.textContent=result.selectedCategory.name+' · '+t('checklist');container.append(title);if(!result.checklist.length){const p=document.createElement('p');p.textContent=t('unreviewed');container.append(p);}result.checklist.forEach(field=>{const p=document.createElement('p');p.textContent=shared.translate(locale,field.label);container.append(p);});}if(result.engine.modelExecuted&&result.visual){const p=document.createElement('p');p.textContent=t('modelEvidence');container.append(p);for(const proposal of result.visual.proposals||[]){const value=document.createElement('p');value.textContent=typeof proposal.value==='string'?proposal.value:JSON.stringify(proposal.value);container.append(value);}}$('save-work').disabled=result.engine.modelExecuted===true;$('result').hidden=false;syncCustomerSearch();}
+function render(result){
+ const container=$('evidence');container.replaceChildren();
+ const native=result.engine.modelExecuted===true;
+ const text=document.createElement('blockquote');text.textContent=result.source.text;
+ // Category matching and field checklists are development diagnostics, not
+ // evidence produced or verified by the model. Keep them available separately.
+ const diagnostics=native?document.createElement('details'):container;
+ if(native){
+  const summary=document.createElement('summary');summary.textContent=t('categoryDiagnostic');
+  diagnostics.className='diagnostics';diagnostics.append(summary);
+  container.append(text);
+ }
+ const heading=document.createElement('p');heading.textContent=t('matched')+': '+(result.literalCategoryEvidence.map(c=>c.name).join(', ')||'—');diagnostics.append(heading);
+ if(!native)container.append(text);
+ if(result.selectedCategory){
+  const title=document.createElement('p');title.textContent=result.selectedCategory.name+' · '+t('checklist');diagnostics.append(title);
+  if(!result.checklist.length){const p=document.createElement('p');p.textContent=t('unreviewed');diagnostics.append(p);}
+  result.checklist.forEach(field=>{const p=document.createElement('p');p.textContent=shared.translate(locale,field.label);diagnostics.append(p);});
+ }
+ if(native&&result.visual){
+  const p=document.createElement('p');p.textContent=t('modelEvidence');container.append(p);
+  for(const proposal of result.visual.proposals||[]){const value=document.createElement('p');value.textContent=typeof proposal.value==='string'?proposal.value:JSON.stringify(proposal.value);container.append(value);}
+ }
+ if(native)container.append(diagnostics);
+ $('save-work').disabled=native;$('result').hidden=false;syncCustomerSearch();
+}
 $('search-customer').addEventListener('click',async()=>{
  if(busy||!context||audience!=='customer'||!$('search-consent').checked||!$('text').value.trim())return;
  busy=true;const turn=++sequence;$('search-customer').disabled=true;$('search-results').replaceChildren();$('search-status').textContent=t('loading');

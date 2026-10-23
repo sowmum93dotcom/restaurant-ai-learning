@@ -141,9 +141,22 @@
     "console_disabled": true,
     "gpu_stopped": true,
     "http_18081_configured_on_stopped_pod": true,
-    "new_cleanup_preview_verification": "pending source publication",
+    "new_cleanup_preview_verification": {
+      "id": "dpl_J8DkSD9W4Lc8q3c2rsub7LV49xFY",
+      "source": "9187f17a7792cd48655f6830d5f4bb3e2879358c",
+      "state": "READY",
+      "target": null,
+      "regions": [
+        "lhr1"
+      ],
+      "signed_in_private_reviews_reopened": true,
+      "gpu_controls_hidden": true,
+      "corrected_copy_visible": true
+    },
     "production_deployed": false,
-    "pr_merged": false
+    "pr_merged": false,
+    "all_nine_runpod_rows_usd_per_hour": 0,
+    "latest_displayed_runpod_balance_usd": 19.67
   },
   "evidence": {
     "preserved_directory": "/workspace/demeos-evaluation-20261023/nl-current-7rptp0uyhzklfj",
@@ -159,7 +172,11 @@
     "source_362afda_baseline_run": "39877211727 success",
     "source_362afda_video_run": "39877211751 success; job 120165600241",
     "source_362afda_browser_run": "39877211805 success; Chromium and WebKit",
-    "copy_change_client_tests": "4/4 pass"
+    "copy_change_client_tests": "4/4 pass",
+    "copy_9187f17_baseline_run": "39881351331 success",
+    "copy_9187f17_video_run": "39881351328 success",
+    "copy_9187f17_browser_run": "39881351326 in progress at evidence checkpoint; WebKit ROOT step passed",
+    "native_review_diagnostic_separation": "4/4 client tests pass; category checks are a closed separate development disclosure"
   },
   "remaining": [
     "Independent multilingual semantic quality review",
