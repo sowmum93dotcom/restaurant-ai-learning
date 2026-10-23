@@ -92,3 +92,27 @@ test('ROOT review conflict preserves the draft and reloads the latest authorised
  assert.equal(nodes['correct-work'].disabled,false);
  await nodes['correct-work'].fire('click');assert.equal(calls.filter(body=>body?.action==='review-work').at(-1).revision,2);
 });
+
+
+test('ROOT request entry keeps text diagnostics closed and separates Business tools from Customer search',async()=>{
+ const {nodes,calls}=await client();
+ assert.equal(nodes['text-diagnostics'].open,false);
+ assert.equal(nodes['request-hint'].textContent,copy.translate('en','requestBusiness'));
+ assert.equal(nodes['media-entry'].hidden,false);
+ assert.equal(nodes['customer-search'].hidden,true);
+ nodes['text-diagnostics'].open=true;nodes['category-diagnostics'].open=true;
+ nodes.text.value='Find a camping tent';await nodes.text.fire('input');
+ assert.equal(calls.filter(Boolean).length,0,'typing alone sends no request');
+ await nodes.customer.fire('click');await tick();
+ assert.equal(nodes.text.value,'','old Business text cannot become Customer consent');
+ assert.equal(nodes['text-diagnostics'].open,false);
+ assert.equal(nodes['category-diagnostics'].open,false);
+ assert.equal(nodes['request-hint'].textContent,copy.translate('en','requestCustomer'));
+ assert.equal(nodes['media-entry'].hidden,true);
+ assert.equal(nodes['customer-search'].hidden,false);
+ assert.equal(nodes.integration.hidden,true);
+ assert.equal(nodes['search-consent'].checked,false);
+ for(const locale of Object.keys(copy.rows))for(const key of ['requestHeading','requestText','requestBusiness','requestCustomer','textDiagnostics','openMediaTools']){
+  assert.equal(typeof copy.translate(locale,key),'string');assert.notEqual(copy.translate(locale,key),key);
+ }
+});

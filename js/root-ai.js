@@ -4,6 +4,8 @@ let locale='en',audience='business',clerk=null,context=null,sequence=0,sessionKe
 try{locale=shared.resolve(localStorage.getItem('demeos-customer-language')).code;}catch{}
 const t=key=>copy.translate(locale,key);
 function syncCustomerSearch(){
+ $('request-hint').textContent=t(audience==='customer'?'requestCustomer':'requestBusiness');
+ $('media-entry').hidden=audience!=='business';
  $('customer-search').hidden=audience!=='customer'||!context;
  $('search-consent').checked=false;$('search-status').textContent='';$('search-results').replaceChildren();
  const request=window.CustomerUnderstanding.buildCustomerUnderstanding('',$('text').value);
@@ -12,7 +14,7 @@ function syncCustomerSearch(){
 function option(value,text){const n=document.createElement('option');n.value=value;n.textContent=text;return n;}
 shared.languages.forEach(l=>$('language').append(option(l.code,l.name)));
 function cancelRequest(){if(activeRequest){activeRequest.abort();activeRequest=null;}busy=false;['run','save-work','load-selling','share-selling','visual-run','runtime-preflight'].forEach(id=>$(id).disabled=false);$('visual-consent').checked=false;$('preflight-status').textContent='';}
-function reset(){sequence++;cancelRequest();$('category-diagnostics').open=false;$('development-tools').open=false;context=null;sharedProducts=[];$('share-consent').checked=false;$('selling-product').replaceChildren();$('selling-product').hidden=true;$('share-selling').hidden=true;$('load-selling').disabled=false;$('share-selling').disabled=false;$('integration-status').textContent='';$('integration').hidden=audience!=='business';$('workspace').hidden=true;$('result').hidden=true;$('text').value='';$('count').textContent='0 / 500';$('filter').value='';$('evidence').replaceChildren();$('capabilities').replaceChildren();$('category').replaceChildren();syncCustomerSearch();}
+function reset(){sequence++;cancelRequest();$('text-diagnostics').open=false;$('category-diagnostics').open=false;$('development-tools').open=false;context=null;sharedProducts=[];$('share-consent').checked=false;$('selling-product').replaceChildren();$('selling-product').hidden=true;$('share-selling').hidden=true;$('load-selling').disabled=false;$('share-selling').disabled=false;$('integration-status').textContent='';$('integration').hidden=audience!=='business';$('workspace').hidden=true;$('result').hidden=true;$('text').value='';$('count').textContent='0 / 500';$('filter').value='';$('evidence').replaceChildren();$('capabilities').replaceChildren();$('category').replaceChildren();syncCustomerSearch();}
 function status(key){$('status').textContent=t(key);$('retry').hidden=key!=='error';}
 function clearSaved(){selectedWork=null;saveRequestId=null;$('save-consent').checked=false;$('saved-work').hidden=true;$('work-review').hidden=true;$('work-history').replaceChildren();$('review-text').value='';$('save-status').textContent='';$('review-status').textContent='';$('save-work').disabled=false;$('visual-run').disabled=false;syncVisual();}
 function syncVisual(){const enabled=audience==='business'&&context?.runtime?.controlledSellingVisual===true&&sharedProducts.length>0&&$('share-consent').checked;$('visual-tool').hidden=!enabled;if(!enabled)$('visual-consent').checked=false;}
