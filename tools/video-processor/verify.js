@@ -3,6 +3,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs/promises'),path=require('node:path'),os=require('node:os'),http=require('node:http');
 const {execFile}=require('node:child_process'),{promisify}=require('node:util');
 const exec=promisify(execFile),{PGlite}=require('@electric-sql/pglite');
+const ffmpegPath=require('ffmpeg-static'),ffprobePath=require.resolve('@ffprobe-installer/linux-x64/ffprobe');
 const {createProcessor}=require('./processor'),{createServer}=require('./server');
 const {diskStorage}=require('../../browser-checks/support/private-object-store');
 const {createHttpMediaProcessingDrivers}=require('../../api/_lib/media-processing-driver');
@@ -10,7 +11,7 @@ const {createHandler}=require('../../api/_lib/selling-dashboard'),{catalogueRevi
 async function main(){
  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'demeos-video-acceptance-')),disk=await diskStorage({blobProtocol:true});
  const db=new PGlite(),repo=require('../../api/_lib/persistence').createPersistenceRepository(require('../../api/_lib/database').createDatabase(db));
- const token='isolated-video-processor-token-at-least-32-characters',processor=createProcessor({hosts:['storage.gate'],fetchImpl:disk.fetchImpl});
+ const token='isolated-video-processor-token-at-least-32-characters',processor=createProcessor({hosts:['storage.gate'],fetchImpl:disk.fetchImpl,ffmpegPath,ffprobePath});
  const server=createServer({token,processor});await new Promise(r=>server.listen(0,'127.0.0.1',r));
  const base='http://127.0.0.1:'+server.address().port;
  const driverFetch=(url,options)=>fetch(String(url).replace('https://processor.fixture',base),options);
@@ -33,7 +34,7 @@ async function main(){
   const playable=[];
   for(const [index,seconds,audio] of [[1,3,true],[2,60,false]]){
    const file=path.join(dir,'input-'+index+'.mov');
-   await exec('ffmpeg',['-hide_banner','-loglevel','error','-f','lavfi','-i','testsrc2=size=640x360:rate=30',...(audio?['-f','lavfi','-i','sine=frequency=440:sample_rate=48000']:[]),'-t',String(seconds),'-c:v','mpeg4','-q:v','5',...(audio?['-c:a','pcm_s16le']:[]),file],{timeout:30000});
+   await exec(ffmpegPath,['-hide_banner','-loglevel','error','-f','lavfi','-i','testsrc2=size=640x360:rate=30',...(audio?['-f','lavfi','-i','sine=frequency=440:sample_rate=48000']:[]),'-t',String(seconds),'-c:v','mpeg4','-q:v','5',...(audio?['-c:a','pcm_s16le']:[]),file],{timeout:30000});
    const bytes=await fs.readFile(file),item={productId:'video-product',assetId:'media-real-video-'+index,kind:'video',contentType:'video/quicktime',sizeBytes:bytes.length};
    const registered=await call('register-media',item);assert.equal(registered.code,201);
    assert.equal((await call('complete-media',{...item,...registered.body.uploadSession},'other-owner')).code,403);
@@ -43,7 +44,7 @@ async function main(){
    const saved=await repo.getBusinessMediaAsset(businessId,item.assetId);assert.equal(saved.state,'ready');assert.equal(saved.derivatives.length,2);assert.ok(saved.width&&saved.height);
    const profile=(await repo.getKnownBusiness(businessId)).businessProfile;assert.ok(profile.products[0].mediaGallery.assetIds.includes(item.assetId));assert.equal(profile.products[0].customerVisible,false);
    const encoded=await fs.readFile(disk.file(saved.processedStorageKey)),output=path.join(dir,'output-'+index+'.mp4');await fs.writeFile(output,encoded);
-   const metadata=JSON.parse((await exec('ffprobe',['-v','error','-show_streams','-of','json',output])).stdout);
+   const metadata=JSON.parse((await exec(ffprobePath,['-v','error','-show_streams','-of','json',output])).stdout);
    assert.equal(metadata.streams.find(s=>s.codec_type==='video').codec_name,'h264');assert.equal(metadata.streams.find(s=>s.codec_type==='video').pix_fmt,'yuv420p');
    if(audio)assert.equal(metadata.streams.find(s=>s.codec_type==='audio').codec_name,'aac');
    assert.ok(encoded.indexOf(Buffer.from('moov'))<encoded.indexOf(Buffer.from('mdat')),'MP4 metadata precedes media for fast-start playback');

@@ -21,14 +21,12 @@ jobs:
           # Avoid a second FFmpeg installation and its large apt dependency tree.
           node <<'NODE'
           const fs = require('node:fs');
-          const path = require('node:path');
           const { execFileSync } = require('node:child_process');
           const binaries = [require('ffmpeg-static'), require.resolve('@ffprobe-installer/linux-x64/ffprobe')];
           for (const binary of binaries) {
             fs.accessSync(binary, fs.constants.X_OK);
             console.log(execFileSync(binary, ['-version'], { encoding: 'utf8', timeout: 5000 }).split('\n')[0]);
           }
-          fs.appendFileSync(process.env.GITHUB_PATH, binaries.map(binary => path.dirname(binary)).join('\n') + '\n');
           NODE
           npx playwright install --with-deps chromium chrome
       - name: Verify real MOV encoding, private storage, SQL ownership and playback
