@@ -96,6 +96,7 @@ test('ROOT text composes real SQL claim, save, cache reuse, reload and private r
   for(const patch of [{confirmed:false},{saveConfirmed:false},{workspaceId:workspace('bob','business').workspaceId},{businessId:'borrowed'},{text:'x'.repeat(501)}])assert.equal((await call({...body,...patch})).code,400);
   assert.equal(calls,0);const first=await call(body);assert.equal(first.code,201);assert.equal(first.body.result.engine.kind,'native-root-text');assert.equal(first.body.result.conversation.verified,false);
   const duplicate=await call(body);assert.equal(duplicate.code,201);assert.equal(duplicate.body.work.work_id,first.body.work.work_id);assert.equal(calls,1);
+  assert.deepEqual(duplicate.body.result.conversation,first.body.result.conversation,'cache reuse must preserve the original inference evidence');
   assert.equal((await call({...body,text:'Different'})).code,429);assert.equal(calls,1);
   const saved=first.body.work;assert.equal((await call()).body.history.works.length,1);assert.equal((await call(undefined,'alice','customer')).body.history.works.length,0);assert.equal((await call(undefined,'bob')).body.history.works.length,0);
   const review={action:'review-work',audience:'business',confirmed:true,workId:saved.work_id,revision:1,decision:'corrected',text:'Owner correction'};
@@ -111,7 +112,11 @@ test('cached native evidence must match the exact request, context and reviewed 
  const ledger=fakeLedger();ledger.finish=async({result,uncertain})=>{if(result)saved=structuredClone(result);return {status:result?'succeeded':uncertain?'uncertain':'failed'};};
  const runner=native.createRunner({environment:env,ledger,authorize:async()=>true,transport:async()=>response()});
  assert.equal((await runner.execute(request)).status,'succeeded');
- for(const mutation of [v=>{v.output.reply='<unsafe>';},v=>{v.provenance.workspaceId=workspace('bob','business').workspaceId;},v=>{v.provenance.audience='customer';},v=>{v.provenance.runtimeCodeHash='f'.repeat(64);},v=>{v.provenance.inputHash='f'.repeat(64);}]){
+ for(const mutation of [v=>{v.output.reply='<unsafe>';},v=>{v.provenance.workspaceId=workspace('bob','business').workspaceId;},v=>{v.provenance.audience='customer';},v=>{v.provenance.runtimeCodeHash='f'.repeat(64);},v=>{v.provenance.inputHash='f'.repeat(64);},
+  v=>{v.code='unreviewed-success';},v=>{v.provenance.operator='other';},v=>{v.provenance.at='invalid';},
+  v=>{delete v.measurements;},v=>{v.measurements.durationMs=2001;},v=>{v.measurements.peakVramBytes=-1;},
+  v=>{v.resourceUsage.executions=0;},v=>{v.resourceUsage.retries=1;},v=>{v.resourceUsage.durationMs=2000;},
+  v=>{v.resourceUsage.inputBytes++;},v=>{v.resourceUsage.outputBytes++;}]){
   const cached=structuredClone(saved);mutation(cached);
   const cachedRunner=native.createRunner({environment:env,ledger:{...fakeLedger(),claim:async()=>({status:'cached',result:cached})},authorize:async()=>true,transport:async()=>{throw Error('cache cannot dispatch');}});
   assert.equal((await cachedRunner.execute(request)).code,'invalid-cache');
