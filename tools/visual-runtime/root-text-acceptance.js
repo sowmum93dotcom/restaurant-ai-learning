@@ -5,6 +5,7 @@
 const fs=require('node:fs'),{randomUUID,createHash}=require('node:crypto');
 const {sendNativeRequest,readBounded}=require('../../api/_lib/native-runtime-transport');
 const {CONTRACT,LIMITS,LOCALES,validateInput,validateOutput,digest}=require('../../api/_lib/root-text-contract');
+const {validHealth}=require('../../api/_lib/root-runtime-health');
 const {MODEL,REVISION}=require('../../api/_lib/selling-visual-runtime');
 const args=process.argv.slice(2),options={};
 for(let i=0;i<args.length;i+=2){if(!['--origin','--secret-file','--weights-manifest-hash','--runtime-code-hash','--output'].includes(args[i])||!args[i+1]||options[args[i]])throw Error('invalid-arguments');options[args[i]]=args[i+1];}
@@ -25,8 +26,10 @@ const checkpoint=()=>{const raw=JSON.stringify(report,null,2)+'\n';fs.ftruncateS
  try{
   checkpoint();const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),10000);
   try{
-   const health=JSON.parse((await readBounded(await fetch(config.origin+'/healthz',{redirect:'error',signal:controller.signal,headers:{Authorization:'Bearer '+secret}}),2048,controller.signal)).toString());
-   if(!health.ready||health.busy||health.modelId!==MODEL||['modelVersion','weightsManifestHash','runtimeCodeHash'].some(k=>health[k]!==manifest[k]))throw Error('health-provenance-mismatch');
+   const response=await fetch(config.origin+'/healthz',{redirect:'error',signal:controller.signal,headers:{Authorization:'Bearer '+secret}});
+   if(response.status!==200)throw Error('health-status-invalid');
+   const health=JSON.parse((await readBounded(response,2048,controller.signal)).toString());
+   if(!validHealth(health,manifest))throw Error('health-provenance-mismatch');
    report.health=health;checkpoint();
   }finally{clearTimeout(timer);controller.abort();}
   for(const item of cases){
