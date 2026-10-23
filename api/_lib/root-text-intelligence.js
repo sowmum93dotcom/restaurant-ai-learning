@@ -17,7 +17,19 @@ function createRunner({environment,ledger,authorize,fetchImpl=globalThis.fetch,c
  const config=configuration(environment);
  if(!config||!ledger||!['claim','finish'].every(k=>typeof ledger[k]==='function')||typeof authorize!=='function')return null;
  const model=structuredClone(config.manifest);
- const validCached=(result,input,inputHash)=>result?.status==='succeeded'&&result?.provenance?.inputHash===inputHash&&result.provenance.workspaceId===input.workspaceId&&result.provenance.audience===input.audience&&['modelId','modelVersion','runtimeCodeHash','weightsManifestHash','licenceReviewId','securityReviewId'].every(k=>result.provenance[k]===model[k])&&validateOutput(result.output);
+ // Cached replies retain the original execution evidence. Validate that evidence
+ // before reuse just as the live transport does; never manufacture fresh timing.
+ const validCached=(result,input,inputHash)=>{
+  const usage=result?.resourceUsage,measurement=result?.measurements,provenance=result?.provenance;
+  return result?.status==='succeeded'&&result.code==='reply-requires-review'&&provenance?.operator==='DEMEOS'&&
+   typeof provenance.at==='string'&&Number.isFinite(Date.parse(provenance.at))&&
+   provenance.inputHash===inputHash&&provenance.workspaceId===input.workspaceId&&provenance.audience===input.audience&&
+   ['modelId','modelVersion','runtimeCodeHash','weightsManifestHash','licenceReviewId','securityReviewId'].every(k=>provenance[k]===model[k])&&validateOutput(result.output)&&
+   usage?.executions===1&&usage.retries===0&&Number.isFinite(usage.durationMs)&&usage.durationMs>=0&&usage.durationMs<LIMITS.timeoutMs&&
+   usage.inputBytes===Buffer.byteLength(JSON.stringify(input))&&usage.outputBytes===Buffer.byteLength(JSON.stringify(result.output))&&
+   Number.isFinite(measurement?.durationMs)&&measurement.durationMs>=0&&measurement.durationMs<=LIMITS.timeoutMs&&
+   Number.isSafeInteger(measurement.peakVramBytes)&&measurement.peakVramBytes>=0;
+ };
  return {async execute(request){
   const metrics={executions:0,retries:0,inputBytes:0,outputBytes:0,durationMs:0};
   const fail=(code,status='failed')=>({status,code,output:null,resourceUsage:{...metrics}});
