@@ -1,6 +1,7 @@
 'use strict';
 // Shipped UI -> real HTTP handler -> authoritative registry. Clerk is a named
-// fixture here; this does NOT prove deployed sign-in, GPU or persistence.
+// fixture here; the text model transport is also a declared fixture. This
+// proves browser/HTTP/SQL composition, not deployed sign-in or GPU execution.
 const {chromium,webkit}=require('playwright');
 const assert=require('node:assert/strict'),http=require('node:http'),fs=require('node:fs'),path=require('node:path');
 const {createHandler}=require('../api/_lib/root-intelligence');
@@ -8,6 +9,11 @@ const copy=require('../js/root-ai-copy');
 const {PGlite}=require('@electric-sql/pglite'),{createDatabase}=require('../api/_lib/database'),{SCHEMA,createStore}=require('../api/_lib/root-work-store');
 const db=new PGlite(),database=createDatabase(db);
 const env={VERCEL_ENV:'preview',VERCEL_GIT_COMMIT_REF:'root-gate',DEMEOS_SELLING_DATA_ENVIRONMENT:'test',DEMEOS_SELLING_TEST_PREVIEW_BRANCH:'root-gate',DEMEOS_SELLING_TEST_DATABASE_HOST:'isolated.example',POSTGRES_URL:'postgresql://fixture:fixture@isolated.example/isolated',DEMEOS_ROOT_PERSISTENCE_ENABLED:'true',DEMEOS_ROOT_PREVIEW_OWNER_IDS:'["root-only-no-vendor"]'};
+const textNative=require('../api/_lib/root-text-intelligence'),textBudget=require('../api/_lib/root-native-ledger');
+const visualModel=require('../api/_lib/selling-visual-runtime');
+const textManifest={operator:'DEMEOS',modelId:visualModel.MODEL,modelVersion:visualModel.REVISION,weightsManifestHash:'a'.repeat(64),runtimeCodeHash:'b'.repeat(64),licenceReviewId:'fixture-only',securityReviewId:'fixture-only',benchmarkReviewId:'fixture-not-gpu',benchmarkTimeoutMs:2000,capabilities:['root-text-response']};
+Object.assign(env,{DEMEOS_VISUAL_RUNTIME_ORIGIN:'https://gpu-fixture.example',DEMEOS_VISUAL_RUNTIME_HOST:'gpu-fixture.example',DEMEOS_VISUAL_RUNTIME_SECRET:'fixture-only-secret-with-at-least-32-characters',DEMEOS_ROOT_TEXT_RUNTIME_MANIFEST:JSON.stringify(textManifest)});
+let nativeTextCalls=0;
 const baseDir=path.resolve(__dirname,'..');
 // Named catalogue/auth fixtures, through the actual existing search handler.
 // No model, live customer identity or published deployment evidence is implied.
@@ -20,7 +26,7 @@ customerAuth.resolveTrustedCustomerIdentityFromRequest=async()=>null;
 const customerSearchHandler=require('../api/customer/possibilities');
 persistence.getRepository=savedRepository;customerAuth.resolveTrustedCustomerIdentityFromRequest=savedIdentity;
 let customerSearchRequests=0;
-const handler=createHandler({authenticate:async req=>req.headers.authorization==='Bearer root-browser-auth-fixture'?{trustedIdentityId:'root-only-no-vendor'}:null,environment:()=>env,workStore:()=>createStore(database),customerSearchHandler:async(req,res)=>{customerSearchRequests++;return customerSearchHandler(req,res);}});
+const handler=createHandler({authenticate:async req=>req.headers.authorization==='Bearer root-browser-auth-fixture'?{trustedIdentityId:'root-only-no-vendor'}:null,environment:()=>env,workStore:()=>createStore(database),textLedgerFactory:options=>textBudget.createLedger(database,options),textRunnerFactory:options=>textNative.createRunner({...options,transport:async()=>{nativeTextCalls++;return {output:{schemaVersion:1,outputSchema:'demeos-root-text-output-v1',reply:'Unverified browser fixture reply.'},measurements:{durationMs:1,peakVramBytes:1}};}}),customerSearchHandler:async(req,res)=>{customerSearchRequests++;return customerSearchHandler(req,res);}});
 const server=http.createServer(async(req,res)=>{
  try{
   const url=new URL(req.url,'http://localhost');
@@ -36,11 +42,12 @@ const server=http.createServer(async(req,res)=>{
  }catch{res.statusCode=500;res.end();}
 });
 (async()=>{
- for(const statement of SCHEMA)await database.query(statement);
+ for(const statement of [...SCHEMA,...textBudget.SCHEMA])await database.query(statement);
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
  const browser=await(process.env.DEMEOS_BROWSER_ENGINE==='webkit'?webkit:chromium).launch({headless:true});
  try{
   for(const width of [375,820,1440]){
+   env.DEMEOS_ROOT_TEXT_PREVIEW_ENABLED='false';
    const context=await browser.newContext({viewport:{width,height:1000}});
    await context.addInitScript(()=>{window.__internal_ClerkUICtor={};const listeners=[];window.Clerk={user:{id:'root-only-no-vendor'},session:{id:'fixture-session',getToken:async()=>'root-browser-auth-fixture'},load:async()=>{},addListener:fn=>listeners.push(fn),signOut:async()=>{window.Clerk.user=null;window.Clerk.session=null;listeners.forEach(fn=>fn());}};});
    const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(String(e)));
@@ -79,7 +86,26 @@ const server=http.createServer(async(req,res)=>{
    }
    await page.locator('#language').selectOption('en');await page.locator('#workspace:not([hidden])').waitFor();await page.locator('#development-tools summary').click();await page.locator('#filter').fill('Groceries');assert.equal(await page.locator('#capabilities li').count(),1);
    await page.screenshot({path:path.join(process.env.DEMEOS_BROWSER_ARTIFACT_DIR||'/tmp','demeos-root-'+width+'.png'),fullPage:true});
-   await page.locator('#signout').click();await page.locator('#signin:not([hidden])').waitFor();assert.equal(await page.locator('#workspace').isVisible(),false);assert.deepEqual(errors,[]);await context.close();console.log('ROOT HTTP/browser fixture gate passed at',width,'px, ten locales; no genuine Clerk/GPU/persistence claim');
+   // Exercise the gated primary action through the real handler and SQL ledger.
+   // Only model output is a fixture; this never counts as native acceptance.
+   assert.equal(await page.locator('#text-runtime').isVisible(),false);
+   env.DEMEOS_ROOT_TEXT_PREVIEW_ENABLED='true';
+   await page.locator('#business').click();await page.locator('#workspace:not([hidden])').waitFor();
+   assert.equal(await page.locator('#text-runtime').isVisible(),true);assert.equal(await page.locator('#run').isVisible(),false);
+   const beforeNative=nativeTextCalls;
+   await page.locator('#text').fill('Meeting preparation '+width);await page.locator('#ask-root').click();assert.equal(nativeTextCalls,beforeNative,'no native request without consent');
+   await page.locator('#text-consent').check();await page.locator('#ask-root').click();await page.locator('#text-status').filter({hasText:copy.translate('en','modelDone')}).waitFor();
+   assert.equal(nativeTextCalls,beforeNative+1);assert.match(await page.locator('#evidence').innerText(),/Unverified browser fixture reply/);assert.equal(await page.locator('#evidence details').count(),0);
+   assert.equal(await page.locator('#text-consent').isChecked(),false);assert.equal(await page.locator('#analysis-save').isVisible(),false);assert.equal(await page.locator('#review-text').inputValue(),'Unverified browser fixture reply.');
+   await page.locator('#review-text').fill('Private native fixture correction '+width);await page.locator('#correct-work').click();await page.locator('#review-status').filter({hasText:copy.translate('en','reviewSaved')}).waitFor();
+   await page.reload();await page.locator('#workspace:not([hidden])').waitFor();await page.locator('#work-history button').filter({hasText:'Meeting preparation '+width}).click();
+   assert.equal(await page.locator('#review-text').inputValue(),'Private native fixture correction '+width);assert.match(await page.locator('#evidence').innerText(),/Unverified browser fixture reply/);
+   for(const locale of Object.keys(copy.rows)){
+    await page.locator('#language').selectOption(locale);await page.locator('#workspace:not([hidden])').waitFor();assert.equal(await page.locator('#ask-root').innerText(),copy.translate(locale,'askRoot'));assert.equal(await page.locator('#request-hint').innerText(),copy.translate(locale,'textHint'));assert.equal(await page.locator('#text-consent').isChecked(),false);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'native text overflow '+width+' '+locale);
+   }
+   await page.locator('#language').selectOption('en');await page.locator('#workspace:not([hidden])').waitFor();await page.locator('#work-history button').filter({hasText:'Meeting preparation '+width}).click();
+   await page.screenshot({path:path.join(process.env.DEMEOS_BROWSER_ARTIFACT_DIR||'/tmp','demeos-root-native-text-'+width+'.png'),fullPage:true});
+   await page.locator('#signout').click();await page.locator('#signin:not([hidden])').waitFor();assert.equal(await page.locator('#workspace').isVisible(),false);assert.deepEqual(errors,[]);await context.close();console.log('ROOT HTTP/browser fixture gate passed at',width,'px, ten locales; real SQL with declared Clerk/model fixtures; no genuine sign-in/GPU claim');
   }
  }finally{await browser.close();await new Promise(resolve=>server.close(resolve));await db.close();}
 })().catch(error=>{console.error(error);server.close();process.exitCode=1;});
