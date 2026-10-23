@@ -17,3 +17,15 @@ Five client checks passed, including reset/consent/context boundaries and defaul
 The accepted native worker generates bounded visual descriptions. It cannot be relabelled as a general conversational assistant. This interface makes the available request/search/review paths clearer; it does not implement general conversation. That capability needs a separately bounded ROOT-owned request, personal-workspace authorisation and job budget, native prompt/output/provenance contract, private retention/review policy and real GPU acceptance. Reusing a Selling business ID as implicit authority for independent ROOT callers would violate the approved architecture. No simulated chat response or hosted inference fallback is added.
 
 Independent language quality, live second-account isolation and physical-device acceptance remain pending. No merge or Production deployment.
+
+## Verified deployed checkpoint
+
+Application source `242de768edbf844b53036cec3cef62304fbde3b0`, Preview `dpl_5Hb4zBuFB3jkmMMw4nBWKW3ndkNS`, is READY, target null, London. Actual signed-in inspection reopened the exact saved native correction while all diagnostic disclosures were closed. Native work did not offer a second deterministic save. The GPU action remained hidden.
+
+Switching to Customer hid Business tools. The direct request “I am looking for a camping tent.” completed through the existing catalogue handler with explicit current-request consent and no category selection. It returned “No published offers match this request. Try different details.” Consent cleared afterward. Rules and analysis-save controls stayed hidden, while the existing separate Customer work history remained visible.
+
+Baseline 39884602141 and video 39884602045 succeeded. Both ROOT Chromium and WebKit steps passed in browser run 39884602086, at 375/820/1440 px in ten locales. Broader browser jobs were still running when this checkpoint was written; final PR metadata records any later observed completion. Source 91c537c's first WebKit run failed on an ambiguous test selector matching both nested summaries. Commit 9f0a11a corrected the selector without removing assertions; its ROOT Chromium/WebKit steps passed. The failed run is not counted as a pass.
+
+A source comparison confirmed no changes to native runtime, ROOT server orchestration, private work store or existing visual model boundary since the genuine live acceptance source 362afda. No new GPU result is claimed for this UI-only change. No GPU was restarted, credential transferred, permission expanded, Production deployment made or PR merged.
+
+Proof: `pr708-evidence-20261022/pr708-root-request-search-20261023.png`; structured checkpoint: `pr708-evidence-20261022/root-request-entry-20261023.json`.

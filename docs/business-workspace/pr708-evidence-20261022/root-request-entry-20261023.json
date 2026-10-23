@@ -1,0 +1,80 @@
+{
+  "date_uk": "2026-10-23",
+  "scope": "existing ROOT application, exact PR708 Preview branch only",
+  "source": "242de768edbf844b53036cec3cef62304fbde3b0",
+  "deployment": "dpl_5Hb4zBuFB3jkmMMw4nBWKW3ndkNS",
+  "state": "READY",
+  "target": null,
+  "regions": [
+    "lhr1"
+  ],
+  "ui": {
+    "natural_language_request_first": true,
+    "customer_search_below_request": true,
+    "text_diagnostics_closed": true,
+    "manual_category_diagnostics_closed": true,
+    "capability_diagnostics_closed": true,
+    "category_selection_required": false,
+    "analysis_save_controls_hidden_without_result": true,
+    "native_work_has_no_second_deterministic_save": true,
+    "business_tools_hidden_in_customer": true,
+    "general_conversation": "explicitly unavailable; not implemented",
+    "supported_interface_locales": 10
+  },
+  "actual_signed_in_checks": {
+    "native_correction_reopened": "Preview acceptance correction: blue, gold and silver logo. No product changes.",
+    "native_diagnostics_closed": true,
+    "gpu_action_visible": false,
+    "customer_query": "I am looking for a camping tent.",
+    "explicit_current_consent": true,
+    "customer_result": "No published offers match this request. Try different details.",
+    "consent_cleared_after_search": true,
+    "rules_button_visible": false,
+    "analysis_save_controls_visible": false,
+    "business_tools_visible_in_customer": false,
+    "separate_customer_saved_history_visible": true
+  },
+  "validation": {
+    "focused_root_tests": "26/26 passed before final save-control refinement",
+    "final_client_tests": "5/5 passed including native save-path guard",
+    "baseline": {
+      "run": 39884602141,
+      "conclusion": "success"
+    },
+    "video": {
+      "run": 39884602045,
+      "conclusion": "success"
+    },
+    "browser": {
+      "run": 39884602086,
+      "root_chromium_step": "success",
+      "root_webkit_step": "success",
+      "widths_px": [
+        375,
+        820,
+        1440
+      ],
+      "locales": 10,
+      "broader_jobs": "in progress at checkpoint"
+    },
+    "initial_webkit_failure": "91c537c: ambiguous nested-summary test selector; 9f0a11a direct-child selector fix retained all assertions and ROOT steps passed",
+    "test_authentication_and_catalogue": "explicit fixtures in CI; actual owner session separately inspected"
+  },
+  "preservation": {
+    "native_runtime_and_root_server_diff_since_live_362afda": "empty for runtime, ROOT orchestration/store, visual transport/model boundary",
+    "registry": "existing 171-category registry unchanged",
+    "native_model_reexecuted": false,
+    "gpu_restarted": false,
+    "permission_expanded": false,
+    "production_deployed": false,
+    "pr_merged": false
+  },
+  "remaining": [
+    "Native general conversation capability, ROOT-owned personal authorisation/job budget and live GPU acceptance",
+    "Independent multilingual semantic quality",
+    "Real second-account live isolation",
+    "Physical iPhone/iPad acceptance"
+  ],
+  "proof": "pr708-root-request-search-20261023.png",
+  "complete": false
+}
