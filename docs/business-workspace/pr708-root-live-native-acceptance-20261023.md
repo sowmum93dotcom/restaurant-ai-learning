@@ -15,7 +15,7 @@ The existing ROOT application completed a genuine authenticated Preview → nati
 
 ## Cleanup and spend
 
-Native service termination and empty compute processes were verified at 00:53:12 UTC. Nineteen evidence files were copied, SHA-256 read-back verified and synced to the original Global volume before stopping the pod. Temporary console is disabled; provider Details reports Not running and $0.00/hour with the original volume attached. Branch Preview execution flags were set false and its temporary sensitive runtime credential rotated. Port 18081 remains configured on the stopped pod; no active service remains.
+Native service termination and empty compute processes were verified at 00:53:12 UTC. Nineteen evidence files were copied, SHA-256 read-back verified and synced to the original Global volume before stopping the pod. Temporary console is disabled; provider Details reports Not running and $0.00/hour with the original volume attached. Branch Preview execution flags were set false and its temporary sensitive runtime credential rotated. The temporary HTTP port 18081 was subsequently removed. Reopening Edit Pod verified an empty HTTP-port field, TCP22 unchanged and UDP unchecked; compute remained stopped.
 
 RunPod displayed balance $19.72 at shutdown, compared with $20.19 before the new session; billing can lag. This is not an invoice or exact cost claim. No credit top-up is indicated. Existing storage remains retained. No Production deployment or merge.
 
@@ -30,3 +30,9 @@ A small follow-up copy correction removes the false “Nothing is saved” messa
 Controlled test execution is not independent multilingual semantic quality approval, full 171-category accuracy approval, physical iPhone/iPad Safari approval or real second-account isolation acceptance. The existing development interface remains temporary. A broader natural-language primary ROOT experience remains required; deterministic category matching must remain explicitly labelled.
 
 See `pr708-evidence-20261022/root-live-native-acceptance-20261023.json` for exact identifiers, timings, provenance, review records and preserved report hashes. Earlier failed results remain historical evidence, not current pass claims.
+
+## Deployed follow-up verification
+
+Source `7eeddceb909b39064a2588b93fa4bcd9d3108ec4`, Preview `dpl_5nUpbcUMmUW2p3atw4aWHGQy46RN`, is READY, target null, London. The authenticated saved native correction reopened with the exact persisted text. Model suggestions appear before a separate closed category diagnostic disclosure; opening it reveals the preserved literal category checks, and closing it hides them again. The two other development disclosures also remain closed. The existing registry still contains 171 rows and 172 select options including the empty option. GPU action is hidden.
+
+Baseline 39881796691 and video 39881796775 passed for that source. The ROOT Chromium and WebKit steps passed in browser run 39881796735; broader jobs were still running when this evidence checkpoint was written. No later completion is implied by this checkpoint. The final PR metadata records subsequently verified CI status.
