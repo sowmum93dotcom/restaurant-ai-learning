@@ -28,7 +28,9 @@ class RootTextTests(unittest.TestCase):
                 self.assertEqual(validate_request(job, WEIGHTS), [])
                 messages = root_text_messages(job['input']['text'], locale)
                 self.assertIn(OUTPUT_LANGUAGES[locale], messages[0]['content'][0]['text'])
-                self.assertEqual(messages[1]['content'], [{'type': 'text', 'text': job['input']['text']}])
+                self.assertEqual(messages[1]['content'][0], {'type': 'text', 'text': job['input']['text']})
+                self.assertEqual(len(messages[1]['content']), 2)
+                self.assertTrue(messages[1]['content'][1]['text'])
                 self.assertNotIn('image', json.dumps(messages))
 
     def test_text_contract_rejects_authority_media_extra_keys_and_malformed_bounds(self):

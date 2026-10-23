@@ -25,6 +25,9 @@ async function run(mode){
      return Response.json(health,{status:mode==='accepted-http'?202:200});
     }
     fs.appendFileSync(calls,'dispatch\\n');
+    if(mode==='server-timeout')return Response.json({code:'execution-timeout'},{status:504});
+    if(mode==='server-limit')return Response.json({code:'model-output-limit'},{status:502});
+    if(mode==='untrusted-error')return Response.json({code:'private server details'},{status:502});
     if(mode==='timeout')return new Promise((resolve,reject)=>options.signal.addEventListener('abort',()=>reject(new DOMException('Aborted','AbortError')),{once:true}));
     const job=JSON.parse(gunzipSync(options.body));
     return Response.json({protocolVersion:1,jobId:job.jobId,inputHash:job.inputHash,modelVersion:job.modelVersion,weightsManifestHash:job.weightsManifestHash,runtimeCodeHash:job.runtimeCodeHash,output:{schemaVersion:1,outputSchema:'demeos-root-text-output-v1',reply:mode==='invalid-output'?'<invalid>':'Fixture response only.'},measurements:{durationMs:1,peakVramBytes:1}});
@@ -45,6 +48,11 @@ test('ROOT text operator preserves invalid output and stops after one failed exe
 });
 test('ROOT text operator timeout stops without a second dispatch or automatic retry',async()=>{
  const {report,dispatches,exitCode}=await run('timeout');assert.equal(exitCode,1);assert.equal(dispatches,1);assert.equal(report.results.length,1);assert.equal(report.results[0].passed,false);assert.equal(report.results[0].retries,0);assert.equal(report.results[0].error,'execution-timeout');assert.equal(report.executionPassed,false);
+});
+test('ROOT text operator preserves fixed supervisor failures and discards arbitrary error text',async()=>{
+ for(const [mode,code] of [['server-timeout','execution-timeout'],['server-limit','model-output-limit'],['untrusted-error','native-request-failed']]){
+  const {report,dispatches,exitCode}=await run(mode);assert.equal(exitCode,1);assert.equal(dispatches,1);assert.equal(report.results.length,1);assert.equal(report.results[0].error,code);assert.equal(report.results[0].retries,0);assert.equal(report.executionPassed,false);assert.equal(JSON.stringify(report).includes('private server details'),false);
+ }
 });
 test('ROOT text operator records all controlled cases without granting quality or activation',async()=>{
  const {report,dispatches,exitCode}=await run('success');assert.equal(exitCode,0);assert.equal(dispatches,12);assert.equal(report.results.length,12);assert.equal(report.executionPassed,true);assert.equal(report.productAccuracyVerified,false);assert.equal(report.multilingualAccuracyVerified,false);assert.equal(report.activationApproved,false);
