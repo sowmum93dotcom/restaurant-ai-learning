@@ -1,6 +1,7 @@
 'use strict';
 // ROOT owns orchestration, not a second taxonomy or a second model executor.
-const {randomUUID, createHash}=require('node:crypto');
+const {randomUUID}=require('node:crypto');
+const {workspace}=require('./root-personal-workspace');
 const registry=require('./marketing-agent-categories');
 const fields=require('./selling-category-fields');
 const {interpretCategories}=require('./customer-category-classification');
@@ -16,11 +17,6 @@ function capabilityMap(){
       'image-understanding':'unavailable','video-understanding':'unavailable','model-recommendations':'unavailable'},
     fields:fields.definition(category.categoryId).fields.map(({key,label,required,maxLength})=>({key,label,required,maxLength}))}));
 }
-function workspace(identity,audience){
-  // Personal workspaces only. Selecting Business is NOT an organisation grant.
-  return {workspaceId:'root-'+createHash('sha256').update(JSON.stringify(['root-personal-v1',identity,audience])).digest('hex'),
-    kind:'personal',audience,permissions:['understand-supplied-text'],organisationAccess:false};
-}
 function analyze(input){
   if(!plain(input)||Object.keys(input).some(k=>!['action','audience','locale','text','categoryId'].includes(k))||input.action!=='understand'||!['business','customer'].includes(input.audience)||!LOCALES.includes(input.locale)||typeof input.text!=='string'||!input.text.trim()||input.text.length>500||typeof input.categoryId!=='string'||(input.categoryId&&!registry.getCategory(input.categoryId)))return null;
   const text=input.text.trim();
@@ -34,7 +30,7 @@ function analyze(input){
     limitations:['canonical-english-matching-only','supplied-text-not-independent-evidence','no-model-inference','no-commercial-writeback'],
     review:{status:'not-saved',requiresUserCorrection:true},persistence:'none'};
 }
-function createHandler({authenticate=authentication.resolveTrustedIdentityFromRequest,environment=()=>process.env,repository=()=>require('./persistence').getRepository(),workStore=()=>require('./root-work-store').createStore(require('./database').getDatabase()),visualRunnerFactory,customerSearchHandler}={}){
+function createHandler({authenticate=authentication.resolveTrustedIdentityFromRequest,environment=()=>process.env,repository=()=>require('./persistence').getRepository(),workStore=()=>require('./root-work-store').createStore(require('./database').getDatabase()),visualRunnerFactory,customerSearchHandler,textLedgerFactory=options=>require('./root-native-ledger').createLedger(require('./database').getDatabase(),options),textRunnerFactory=require('./root-text-intelligence').createRunner}={}){
   return async(req,res)=>{
     res.setHeader('Cache-Control','private, no-store');res.setHeader('Vercel-CDN-Cache-Control','no-store');res.setHeader('Vary','Cookie, Authorization');
     const reply=(status,code,data={})=>res.status(status).json({code,...data});
@@ -64,7 +60,32 @@ function createHandler({authenticate=authentication.resolveTrustedIdentityFromRe
         if(Object.keys(req.query||{}).some(k=>!['resource','audience'].includes(k)))return reply(400,'invalid-request');
         const history=persistenceAllowed(environment(),identity.trustedIdentityId)?{status:'available',works:await workStore().list(identity.trustedIdentityId,context)}:{status:'unavailable',reason:'persistence-review-pending'};
         return reply(200,'root-workspace',{workspace:context,registry:{datasetVersion:registry.DATASET_VERSION,sectors:registry.SECTORS,categories:capabilityMap()},locales:LOCALES,
-          runtime:{status:'unavailable',reason:'root-model-acceptance-pending',hostedInferenceFallback:false,controlledSellingVisual:persistenceAllowed(environment(),identity.trustedIdentityId)&&environment().DEMEOS_ROOT_VISUAL_PREVIEW_ENABLED==='true'&&Boolean(require('./selling-visual-runtime').configuration(environment()))},history});
+          runtime:{controlledText:persistenceAllowed(environment(),identity.trustedIdentityId)&&Boolean(require('./root-text-intelligence').configuration(environment())),status:'unavailable',reason:'root-model-acceptance-pending',hostedInferenceFallback:false,controlledSellingVisual:persistenceAllowed(environment(),identity.trustedIdentityId)&&environment().DEMEOS_ROOT_VISUAL_PREVIEW_ENABLED==='true'&&Boolean(require('./selling-visual-runtime').configuration(environment()))},history});
+      }
+      if(plain(req.body)&&req.body.action==='ask-root'){
+        const native=require('./root-text-intelligence');
+        const permitted=()=>persistenceAllowed(environment(),identity.trustedIdentityId)&&Boolean(native.configuration(environment()));
+        // Disabled or unapproved requests do not construct a database ledger or
+        // touch the model. ROOT authority is independent of Selling ownership.
+        if(!permitted())return reply(503,'root-model-unavailable');
+        if(req.body.confirmed!==true||req.body.saveConfirmed!==true)return reply(400,'explicit-sharing-and-save-required');
+        if(Object.keys(req.body).some(k=>!['action','audience','locale','text','confirmed','saveConfirmed','requestId'].includes(k)))return reply(400,'invalid-request');
+        const input={schemaVersion:1,inputSchema:native.CONTRACT.inputSchema,capability:native.CONTRACT.capability,
+          workspaceId:context.workspaceId,audience,requestId:req.body.requestId,outputLocale:req.body.locale,
+          text:typeof req.body.text==='string'?req.body.text.trim():req.body.text,media:[]};
+        if(!require('./root-text-contract').validateInput(input))return reply(400,'invalid-request');
+        // A configuration/credential change during an in-flight request revokes
+        // that exact execution; it cannot silently authorise a different worker.
+        const configured=native.configuration(environment());
+        const authorize=async candidate=>permitted()&&JSON.stringify(native.configuration(environment()))===JSON.stringify(configured)&&candidate.workspaceId===context.workspaceId&&candidate.audience===audience;
+        const runner=textRunnerFactory({environment:environment(),ledger:textLedgerFactory({identity:identity.trustedIdentityId,workspace:context}),authorize});
+        if(!runner)return reply(503,'root-model-unavailable');
+        const execution=await runner.execute(input);
+        if(execution.status!=='succeeded')return reply(execution.status==='limited'?429:execution.status==='rejected'?403:503,'root-text-'+execution.code);
+        if(!await authorize(input))return reply(403,'root-scope-revoked');
+        const saved=await workStore().save(identity.trustedIdentityId,context,input.requestId,native.toWorkResult(input,execution));
+        if(saved.status!=='saved')return reply(({conflict:409,denied:403,invalid:400,limited:429})[saved.status]||503,'root-work-not-saved');
+        return reply(201,'root-reply-requires-review',{workspace:context,result:saved.work.result,work:saved.work});
       }
       if(plain(req.body)&&req.body.action==='search-customer'){
         if(audience!=='customer'||req.body.confirmed!==true)return reply(403,'explicit-customer-sharing-required');

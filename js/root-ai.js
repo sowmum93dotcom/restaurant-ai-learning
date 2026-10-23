@@ -4,7 +4,10 @@ let locale='en',audience='business',clerk=null,context=null,sequence=0,sessionKe
 try{locale=shared.resolve(localStorage.getItem('demeos-customer-language')).code;}catch{}
 const t=key=>copy.translate(locale,key);
 function syncCustomerSearch(){
- $('request-hint').textContent=t(audience==='customer'?'requestCustomer':'requestBusiness');
+ const textEnabled=context?.runtime?.controlledText===true&&context?.history?.status==='available';
+ $('text-runtime').hidden=!textEnabled;$('text-consent').checked=false;$('text-status').textContent='';
+ $('ask-root').disabled=!textEnabled||!$('text').value.trim();
+ $('request-hint').textContent=t(textEnabled?'textHint':audience==='customer'?'requestCustomer':'requestBusiness');
  $('media-entry').hidden=audience!=='business';
  $('customer-search').hidden=audience!=='customer'||!context;
  $('search-consent').checked=false;$('search-status').textContent='';$('search-results').replaceChildren();
@@ -13,9 +16,9 @@ function syncCustomerSearch(){
 }
 function option(value,text){const n=document.createElement('option');n.value=value;n.textContent=text;return n;}
 shared.languages.forEach(l=>$('language').append(option(l.code,l.name)));
-function cancelRequest(){if(activeRequest){activeRequest.abort();activeRequest=null;}busy=false;['run','save-work','load-selling','share-selling','visual-run','runtime-preflight'].forEach(id=>$(id).disabled=false);$('visual-consent').checked=false;$('preflight-status').textContent='';}
+function cancelRequest(){if(activeRequest){activeRequest.abort();activeRequest=null;}busy=false;['run','save-work','load-selling','share-selling','visual-run','runtime-preflight','ask-root'].forEach(id=>$(id).disabled=false);$('visual-consent').checked=false;$('preflight-status').textContent='';}
 function reset(){sequence++;cancelRequest();$('text-diagnostics').open=false;$('category-diagnostics').open=false;$('development-tools').open=false;context=null;sharedProducts=[];$('share-consent').checked=false;$('selling-product').replaceChildren();$('selling-product').hidden=true;$('share-selling').hidden=true;$('load-selling').disabled=false;$('share-selling').disabled=false;$('integration-status').textContent='';$('integration').hidden=audience!=='business';$('workspace').hidden=true;$('result').hidden=true;$('analysis-save').hidden=true;$('text').value='';$('count').textContent='0 / 500';$('filter').value='';$('evidence').replaceChildren();$('capabilities').replaceChildren();$('category').replaceChildren();syncCustomerSearch();}
-function status(key){$('status').textContent=t(key);$('retry').hidden=key!=='error';}
+function status(key){$('status').textContent=t(key==='ready'&&context?.runtime?.controlledText?'textReady':key);$('retry').hidden=key!=='error';}
 function clearSaved(){$('analysis-save').hidden=true;selectedWork=null;saveRequestId=null;$('save-consent').checked=false;$('saved-work').hidden=true;$('work-review').hidden=true;$('work-history').replaceChildren();$('review-text').value='';$('save-status').textContent='';$('review-status').textContent='';$('save-work').disabled=false;$('visual-run').disabled=false;syncVisual();}
 function syncVisual(){const enabled=audience==='business'&&context?.runtime?.controlledSellingVisual===true&&sharedProducts.length>0&&$('share-consent').checked;$('visual-tool').hidden=!enabled;if(!enabled)$('visual-consent').checked=false;}
 function invalidate(){sequence++;cancelRequest();selectedWork=null;saveRequestId=null;$('save-consent').checked=false;$('work-review').hidden=true;$('save-work').disabled=false;$('run').disabled=false;$('load-selling').disabled=false;$('share-selling').disabled=false;$('result').hidden=true;$('analysis-save').hidden=true;syncCustomerSearch();}
@@ -38,7 +41,7 @@ async function load(){reset();clearSaved();const turn=sequence;busy=false;$('run
 function reviewState(work){return t(({pending:'reviewPending',accepted:'reviewAccepted',corrected:'reviewCorrected',rejected:'reviewRejected'})[work.review_state]||'reviewPending');}
 function showReview(work){
  selectedWork=work;['accept-work','correct-work','reject-work'].forEach(id=>$(id).disabled=false);$('work-review').hidden=false;$('work-review-state').textContent=reviewState(work);
- const suggestions=work.result.engine.modelExecuted?(work.result.visual?.proposals||[]).map(p=>typeof p.value==='string'?p.value:JSON.stringify(p.value)).filter(Boolean).join('\n'):work.result.source.text;
+ const suggestions=work.result.conversation?.reply||(work.result.engine.modelExecuted?(work.result.visual?.proposals||[]).map(p=>typeof p.value==='string'?p.value:JSON.stringify(p.value)).filter(Boolean).join('\n'):work.result.source.text);
  $('review-text').value=(work.reviewed_text??suggestions).slice(0,500);$('review-status').textContent='';
 }
 function renderHistory(){
@@ -68,9 +71,24 @@ function render(result){
   const p=document.createElement('p');p.textContent=t('modelEvidence');container.append(p);
   for(const proposal of result.visual.proposals||[]){const value=document.createElement('p');value.textContent=typeof proposal.value==='string'?proposal.value:JSON.stringify(proposal.value);container.append(value);}
  }
- if(native)container.append(diagnostics);
+ if(native&&result.conversation){const label=document.createElement('p'),reply=document.createElement('p');label.textContent=t('modelEvidence');reply.textContent=result.conversation.reply;container.append(label,reply);}
+ if(native&&!result.conversation)container.append(diagnostics);
  $('save-work').disabled=native;$('analysis-save').hidden=native||context?.history?.status!=='available';$('result').hidden=false;syncCustomerSearch();
 }
+$('ask-root').addEventListener('click',async()=>{
+ if(busy||!context?.runtime?.controlledText||context?.history?.status!=='available'||!$('text-consent').checked||!$('text').value.trim())return;
+ busy=true;saveRequestId=saveRequestId||crypto.randomUUID();const turn=++sequence;
+ $('ask-root').disabled=true;$('result').hidden=true;$('analysis-save').hidden=true;$('text-status').textContent=t('loading');
+ // Each request sends only its current text. History, category selections and
+ // Selling records are never included or implicitly turned into model tools.
+ try{
+  const data=await api({action:'ask-root',audience,locale,text:$('text').value,confirmed:true,saveConfirmed:true,requestId:saveRequestId});if(turn!==sequence)return;
+  if(data.result?.engine?.kind!=='native-root-text'||typeof data.result.conversation?.reply!=='string'||!data.work)throw Error('invalid-reply');
+  context.history.works=[data.work,...context.history.works.filter(w=>w.work_id!==data.work.work_id)].slice(0,50);
+  renderHistory();render(data.result);showReview(data.work);$('text-status').textContent=t('modelDone');status('textReady');
+ }catch{if(turn===sequence)$('text-status').textContent=t('error');}
+ finally{if(turn===sequence){busy=false;$('ask-root').disabled=false;$('text-consent').checked=false;}}
+});
 $('search-customer').addEventListener('click',async()=>{
  if(busy||!context||audience!=='customer'||!$('search-consent').checked||!$('text').value.trim())return;
  busy=true;const turn=++sequence;$('search-customer').disabled=true;$('search-results').replaceChildren();$('search-status').textContent=t('loading');

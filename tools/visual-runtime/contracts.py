@@ -69,6 +69,11 @@ def validate_request(value, weights_hash, now=None, code_hash=None):
         or not integer(value['deadline'], int(now + 1), int(now + TIMEOUT_MS))):
         raise ValueError('invalid-job')
     request = value['input']
+    if isinstance(request, dict) and request.get('capability') == 'root-text-response':
+        validate_root_text_input(request)
+        if value['media'] != []:
+            raise ValueError('invalid-media')
+        return []
     input_keys = ['schemaVersion', 'inputSchema', 'capability', 'businessId',
                   'productId', 'productRevision', 'mediaRevision', 'media', 'text']
     if isinstance(request, dict) and 'outputLocale' in request:
@@ -159,3 +164,45 @@ def validate_output(value, descriptors, output_locale=None):
             raise ValueError('invalid-proposal')
         validate_description_policy(proposal['value'], output_locale)
     return value
+
+
+def utf16_length(text):
+    # Match the existing JavaScript character limits, including astral symbols.
+    return len(text.encode('utf-16-le', errors='strict')) // 2
+
+
+def validate_root_text_input(value):
+    keys = ['schemaVersion', 'inputSchema', 'capability', 'workspaceId', 'audience',
+            'requestId', 'outputLocale', 'text', 'media']
+    if (not exact(value, keys) or type(value['schemaVersion']) is not int
+        or value['schemaVersion'] != 1 or value['inputSchema'] != 'demeos-root-text-input-v1'
+        or value['capability'] != 'root-text-response'
+        or not isinstance(value['workspaceId'], str)
+        or not re.fullmatch(r'root-[a-f0-9]{64}', value['workspaceId'])
+        or value['audience'] not in ['business', 'customer']
+        or not isinstance(value['requestId'], str)
+        or not re.fullmatch(r'[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}', value['requestId'], re.IGNORECASE)
+        or not isinstance(value['outputLocale'], str) or value['outputLocale'] not in OUTPUT_LANGUAGES
+        or not isinstance(value['text'], str) or value['text'] != value['text'].strip()
+        or not 1 <= utf16_length(value['text']) <= 500 or value['media'] != []
+        or len(json.dumps(value, ensure_ascii=False, separators=(',', ':')).encode()) > 16384):
+        raise ValueError('invalid-root-text-input')
+    return value
+
+
+def validate_root_text_output(value):
+    if (not exact(value, ['schemaVersion', 'outputSchema', 'reply'])
+        or type(value['schemaVersion']) is not int or value['schemaVersion'] != 1
+        or value['outputSchema'] != 'demeos-root-text-output-v1'
+        or not isinstance(value['reply'], str) or value['reply'] != value['reply'].strip()
+        or not 1 <= utf16_length(value['reply']) <= 500
+        or re.search(r'[<>\x00-\x08\x0b-\x1f\x7f]', value['reply'])
+        or len(json.dumps(value, ensure_ascii=False, separators=(',', ':')).encode()) > 8192):
+        raise ValueError('invalid-root-text-output')
+    return value
+
+
+def validate_job_output(value, request):
+    if request.get('capability') == 'root-text-response':
+        return validate_root_text_output(value)
+    return validate_output(value, request['media'], output_locale=request.get('outputLocale', 'en'))

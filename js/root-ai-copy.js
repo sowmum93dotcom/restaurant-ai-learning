@@ -108,6 +108,69 @@ zh:['您需要什么帮助？','您的请求','通用对话尚不可用。您可
 hi:['आपको किस काम में सहायता चाहिए?','आपका अनुरोध','सामान्य बातचीत अभी उपलब्ध नहीं है। सहेजा काम देखें या अधिकृत मीडिया का विश्लेषण करने के लिए वैकल्पिक Selling एकीकरण का उपयोग करें। पाठ जाँच नीचे विकास उपकरणों में है।','आवश्यक उत्पाद या सेवा का वर्णन करें, फिर प्रकाशित DEMEOS प्रस्ताव खोजने के लिए अनुरोध की पुष्टि करें।','विकास उपकरण: पाठ जाँच','अधिकृत उत्पाद मीडिया की समीक्षा करें'],
 ja:['どのようなお手伝いが必要ですか？','リクエスト','一般的な会話はまだ利用できません。保存済みの作業を確認するか、任意の Selling 連携で許可されたメディアを分析できます。テキスト確認は下の開発ツールにあります。','必要な商品やサービスを記述し、リクエストを確認して公開済みの DEMEOS オファーを検索してください。','開発ツール：テキスト確認','許可された商品メディアを確認']};
 keys.push('requestHeading','requestText','requestBusiness','requestCustomer','textDiagnostics','openMediaTools');Object.keys(rows).forEach(locale=>rows[locale].push(...requestCopy[locale]));
+const textRuntimeCopy={
+ "en": [
+  "Ask ROOT",
+  "Send only this request to DEMEOS Root and save its unverified reply privately in this context.",
+  "Ask for a short advisory reply. Each request stands alone, without conversation memory, browsing or account tools. Published-offer search is a separate action.",
+  "Personal ROOT workspace ready. Controlled native text replies are available."
+ ],
+ "es": [
+  "Preguntar a ROOT",
+  "Envía solo esta solicitud a DEMEOS Root y guarda su respuesta no verificada de forma privada en este contexto.",
+  "Solicita una respuesta breve orientativa. Cada solicitud es independiente, sin memoria, navegación ni herramientas de cuenta. La búsqueda de ofertas es una acción aparte.",
+  "Espacio personal ROOT listo. Respuestas de texto nativas controladas disponibles."
+ ],
+ "fr": [
+  "Demander à ROOT",
+  "Envoyer uniquement cette demande à DEMEOS Root et enregistrer sa réponse non vérifiée en privé dans ce contexte.",
+  "Demandez un bref conseil. Chaque demande est indépendante, sans mémoire, navigation ni outils de compte. La recherche d’offres est une action distincte.",
+  "Espace personnel ROOT prêt. Réponses textuelles natives contrôlées disponibles."
+ ],
+ "de": [
+  "ROOT fragen",
+  "Nur diese Anfrage an DEMEOS Root senden und die ungeprüfte Antwort privat in diesem Kontext speichern.",
+  "Bitten Sie um eine kurze Empfehlung. Jede Anfrage steht für sich, ohne Gesprächsspeicher, Webzugriff oder Kontowerkzeuge. Die Angebotssuche ist eine separate Aktion.",
+  "Persönlicher ROOT-Bereich bereit. Kontrollierte native Textantworten sind verfügbar."
+ ],
+ "pt": [
+  "Perguntar ao ROOT",
+  "Enviar apenas este pedido ao DEMEOS Root e guardar a resposta não verificada em privado neste contexto.",
+  "Peça uma breve orientação. Cada pedido é independente, sem memória, navegação ou ferramentas de conta. A pesquisa de ofertas é uma ação separada.",
+  "Espaço pessoal ROOT pronto. Respostas de texto nativas controladas disponíveis."
+ ],
+ "tr": [
+  "ROOT’a sor",
+  "Yalnızca bu isteği DEMEOS Root’a gönder ve doğrulanmamış yanıtı bu bağlamda özel olarak kaydet.",
+  "Kısa bir öneri isteyin. Her istek bağımsızdır; sohbet belleği, internet veya hesap araçları yoktur. Teklif araması ayrı bir işlemdir.",
+  "Kişisel ROOT alanı hazır. Kontrollü yerel metin yanıtları kullanılabilir."
+ ],
+ "ar": [
+  "اسأل ROOT",
+  "أرسل هذا الطلب فقط إلى DEMEOS Root واحفظ رده غير المتحقق منه بشكل خاص في هذا السياق.",
+  "اطلب رداً إرشادياً قصيراً. كل طلب مستقل، دون ذاكرة للمحادثة أو تصفح أو أدوات للحساب. البحث عن العروض إجراء منفصل.",
+  "مساحة ROOT الشخصية جاهزة. الردود النصية المحلية المضبوطة متاحة."
+ ],
+ "zh": [
+  "询问 ROOT",
+  "仅将此请求发送给 DEMEOS Root，并在当前情境中私下保存未经核实的回复。",
+  "请求简短的建议。每次请求独立处理，不保留对话记忆，不浏览网页，也不使用账户工具。搜索公开商品与服务是单独的操作。",
+  "ROOT 个人空间已就绪。受控的本地模型文本回复可用。"
+ ],
+ "hi": [
+  "ROOT से पूछें",
+  "केवल यह अनुरोध DEMEOS Root को भेजें और इसका अप्रमाणित उत्तर इसी संदर्भ में निजी रूप से सहेजें।",
+  "संक्षिप्त सलाह माँगें। हर अनुरोध अलग है; बातचीत की स्मृति, ब्राउज़िंग या खाते के उपकरण उपलब्ध नहीं हैं। प्रकाशित प्रस्तावों की खोज अलग कार्रवाई है।",
+  "निजी ROOT कार्यक्षेत्र तैयार है। नियंत्रित स्थानीय मॉडल के पाठ उत्तर उपलब्ध हैं।"
+ ],
+ "ja": [
+  "ROOT に質問",
+  "このリクエストだけを DEMEOS Root に送信し、未確認の回答をこのコンテキスト内に非公開で保存します。",
+  "短い助言を求められます。各リクエストは独立しており、会話の記憶、閲覧、アカウント操作はありません。公開オファーの検索は別の操作です。",
+  "個人用 ROOT ワークスペースの準備ができました。管理されたネイティブのテキスト回答を利用できます。"
+ ]
+};
+keys.push('askRoot','textConsent','textHint','textReady');Object.keys(rows).forEach(locale=>rows[locale].push(...textRuntimeCopy[locale]));
 const api={keys,rows,translate:(locale,key)=>{const index=keys.indexOf(key);return index<0?key:(rows[locale]||rows.en)[index];}};
 if(typeof module==='object'&&module.exports)module.exports=api;root.DEMEOSRootCopy=api;
 })(typeof window==='object'?window:{});

@@ -1,0 +1,29 @@
+# PR708: gated native ROOT text implementation
+
+The existing ROOT request field now has an opt-in native text path through the same DEMEOS-controlled GPU transport, supervisor, pinned offline Qwen3-VL-4B-Instruct model and worker. There is no second application, registry, model executor, hosted fallback or automatic Marketing Search invocation. The default interface continues to state that conversation is unavailable while the separate text gate is disabled.
+
+## Scope and controls
+
+`DEMEOS_ROOT_TEXT_PREVIEW_ENABLED=true` is required alongside exact isolated Preview branch/database verification, an independent ROOT owner allowlist, private persistence permission and a reviewed text-only manifest. The existing Selling visual flags can remain false. A ROOT personal context grants no business, product, organisation, public catalogue or commercial write access.
+
+The server derives the personal workspace from the authenticated identity and selected Business/Customer audience. Request bodies cannot supply authority, model, endpoint, media URLs or history. Explicit current-request sharing and private-save consent are mandatory. The worker receives only the current bounded text, opaque personal workspace, audience, request UUID and output locale. The system prompt has no tools; instructions are advisory controls, not an authorisation boundary.
+
+A separate additive ROOT ledger reserves one request per identity across both personal audiences, with 20 jobs/hour and 100 total. Failed and uncertain requests retain their consumed counts. A lost transport response retains its active reservation until termination is independently verified; there is no automatic expiry or retry. A late admission cannot dispatch after the two-second deadline. Admission, authorisation, dispatch, output validation and ledger completion are bounded by that deadline. Private work save follows runner completion and is not represented as part of the inference measurement.
+
+The strict text schema requires no media and does not accept the Selling visual schema's business/product identifiers. The model emits at most 64 new tokens; exhaustion is rejected, not truncated into success. The host wraps a bounded plain-text reply in a separate schema, checks model/code/weights provenance, rechecks authorisation and stores an unverified private result. Reusing an exact successful request can retry private persistence without repeating inference. Reuse retains the original model evidence and measurements; per-call cache status does not mutate saved evidence. Existing accepted/corrected/rejected review and audit records remain separate from immutable original model output.
+
+All new interface text exists in ten locales. The primary action is hidden unless controlled text and private history are both available. Changes of text, audience, language or session clear consent/results. Customer published-offer search remains an independent explicitly confirmed action through the existing Customer Experience endpoint. Deterministic supplied-text/category tools remain closed development disclosures.
+
+## Verification at implementation checkpoint
+
+- Seven focused text tests pass: default-off/Preview/pinned configuration, HMAC transport and provenance substitution, revoked scope/invalid output, hanging admission/auth/dispatch deadline, real SQL shared-context quotas and uncertainty, real SQL claim/save/cache/reload/private correction, and tampered cache rejection. Transport/model fixtures are explicitly declared; these are not GPU inference evidence.
+- Seven shipped-client tests pass, including current consent, exact text-only body, native reply rendering/review, context resets, stale-token cancellation, closed diagnostics and default-off rejection.
+- All 38 Python runtime/operator tests pass, including four new strict text contract/prompt/output tests. Existing image/video supervisor tests remain present.
+- Full local application suite: 1,598 passed, two failed because the packaged `node_modules/ffmpeg-static/ffmpeg` executable is absent (ENOENT and the consequent unavailable Preview driver). No assertion was weakened or system binary substituted. The final added cache-integrity test passed separately. CI must verify the packaged binary and full application/browser flows.
+- New native runtime hash: `e6c87ab1ed561d33735e23e6a0c5a5b2ed4adb70dc3cc5a2d99d84f4e6a02e90`. Previous genuine visual acceptance belongs to runtime `7368e842310e3f1cd76ba711936ed955964519c0b7b41c0ebbddcc91c44befa3` and does not prove this revised worker.
+
+## Required live follow-through
+
+No ROOT text schema migration or flag activation has been applied at this checkpoint. The approved existing EU-NL-1 L40S resource `7rptp0uyhzklfj` remains stopped, original Global volume retained, temporary HTTP/console removed; current provider readback shows $0/hour and $19.67 balance. No credit top-up is indicated by that readback.
+
+`tools/visual-runtime/root-text-acceptance.js` exercises twelve controlled text cases (ten locale requests plus private-record and instruction-injection cases) through the same signed native transport and persists raw output/timings. Its execution pass does not approve language quality, factual correctness or activation. Before enabling the branch Preview, rerun the existing 31-case visual pack on this exact revised worker and the new text pack on the approved L40S within the unchanged 2,000 ms limit. Preserve every failed outcome. Then verify the actual signed-in ROOT request → GPU → private save/reload/review flow. Keep independent multilingual review, real second-account isolation and physical iPhone/iPad acceptance explicitly pending until verified. No merge or Production deployment is authorised.

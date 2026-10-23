@@ -7,4 +7,4 @@ label.consent{display:flex;gap:.75rem;align-items:start}.consent input{width:24p
 
 .request-search{border-block-start:1px solid var(--bo-line);padding-block:1.25rem;margin-block:1.25rem}.request-search h2{font-size:1.1rem}#text-diagnostics{border-top:1px solid var(--bo-line);padding-top:.5rem;margin-top:1.25rem}#media-entry a{display:inline-block;min-height:44px;padding-block:.6rem}#request-hint{overflow-wrap:anywhere}
 
-#search-customer{color:#071326;background:linear-gradient(100deg,#c99a2e,#f0cf72);font-weight:700}
+#search-customer,#ask-root{color:#071326;background:linear-gradient(100deg,#c99a2e,#f0cf72);font-weight:700}

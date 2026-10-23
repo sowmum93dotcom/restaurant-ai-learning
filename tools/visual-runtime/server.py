@@ -19,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from contracts import (MAX_OUTPUT, MAX_REQUEST, MODEL_ID, MODEL_VERSION, TIMEOUT_MS,
                        MODEL_FAILURE_CODES, ModelOutputError, exact,
-                       strict_json, validate_output, validate_request)
+                       strict_json, validate_job_output, validate_request)
 
 
 def deny_outbound_network():
@@ -154,8 +154,7 @@ class Supervisor:
                     raise RuntimeError('invalid-worker-protocol')
                 raise ModelOutputError(result['error']['code'])
             try:
-                validate_output(result['output'], request['input']['media'],
-                                output_locale=request['input'].get('outputLocale', 'en'))
+                validate_job_output(result['output'], request['input'])
             except ValueError:
                 raise ModelOutputError('model-output-invalid') from None
             return result

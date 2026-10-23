@@ -19,12 +19,13 @@ async function client(works,settings={}){
  const session={id:'session',getToken:async()=>'fixture-token'};
  const window={DEMEOSRootCopy:copy,DEMEOSSellingCopy:{languages:[{code:'en',name:'English'}],resolve:()=>({code:'en',direction:'ltr'}),translate:(_locale,text)=>text},CustomerUnderstanding:{buildCustomerUnderstanding:(_old,text)=>text?{understanding:text}:null},__internal_ClerkUICtor:{},Clerk:{user:{id:'alice'},session,load:async()=>{},addListener(){}}};
  let preflightSignal;
- const context={registry:{categories:[]},runtime:{controlledSellingVisual:true},history:works?{status:'available',works}:{status:'unavailable'}};
+ const context={registry:{categories:[]},runtime:{controlledSellingVisual:true,controlledText:settings.textEnabled===true},history:works?{status:'available',works}:{status:'unavailable'}};
  const fetch=async(url,options={})=>{
   if(url==='/api/public-config')return {ok:true,json:async()=>({clerkPublishableKey:'pk_test_'+Buffer.from('fixture.example$').toString('base64')})};
   if(url.includes('locales'))return {ok:true,json:async()=>({})};
   const body=options.body?JSON.parse(options.body):null;calls.push(body);
   if(body?.action==='review-work'&&settings.conflict){context.history={status:'available',works:settings.latestWorks};return {ok:false,status:409};}
+  if(body?.action==='ask-root'){return {ok:true,json:async()=>({result:settings.textWork.result,work:settings.textWork})};}
   if(body?.action==='prepare-controlled-runtime'){
    preflightSignal=options.signal;
    return new Promise((resolve,reject)=>options.signal.addEventListener('abort',()=>reject(Error('aborted'))));
@@ -119,4 +120,26 @@ test('ROOT request entry keeps text diagnostics closed and separates Business to
  for(const locale of Object.keys(copy.rows))for(const key of ['requestHeading','requestText','requestBusiness','requestCustomer','textDiagnostics','openMediaTools']){
   assert.equal(typeof copy.translate(locale,key),'string');assert.notEqual(copy.translate(locale,key),key);
  }
+});
+
+
+test('ROOT native request requires current consent, sends no history or categories and privately reopens its reply',async()=>{
+ const result={source:{text:'Plan my meeting'},engine:{kind:'native-root-text',modelExecuted:true},conversation:{reply:'Declared fixture reply.',verified:false},literalCategoryEvidence:[],selectedCategory:null,checklist:[]};
+ const work={work_id:'fixture-text',result,review_state:'pending'};
+ const {nodes,calls}=await client([],{textEnabled:true,textWork:work});
+ assert.equal(nodes['text-runtime'].hidden,false);nodes.text.value=result.source.text;await nodes.text.fire('input');
+ await nodes['ask-root'].fire('click');assert.equal(calls.filter(b=>b?.action==='ask-root').length,0);
+ nodes['text-consent'].checked=true;await nodes['ask-root'].fire('click');
+ const sent=calls.find(b=>b?.action==='ask-root');assert.deepEqual(Object.keys(sent).sort(),['action','audience','confirmed','locale','requestId','saveConfirmed','text'].sort());
+ assert.equal(sent.text,result.source.text);assert.equal(nodes['text-consent'].checked,false);assert.equal(nodes['analysis-save'].hidden,true);
+ assert.equal(nodes['review-text'].value,result.conversation.reply);assert.ok(nodes.evidence.children.some(n=>n.textContent===result.conversation.reply));
+ assert.ok(!nodes.evidence.children.some(n=>n.tagName==='details'),'no category diagnostics accompany a text-only response');
+ nodes['text-consent'].checked=true;nodes.text.value='Changed';await nodes.text.fire('input');assert.equal(nodes['text-consent'].checked,false);
+ await nodes.customer.fire('click');assert.equal(nodes.text.value,'');assert.equal(nodes['text-consent'].checked,false);
+});
+
+test('ROOT default-off native entry cannot send an inference request',async()=>{
+ const {nodes,calls}=await client([]);assert.equal(nodes['text-runtime'].hidden,true);
+ nodes.text.value='Fixture';nodes['text-consent'].checked=true;await nodes['ask-root'].fire('click');
+ assert.equal(calls.filter(b=>b?.action==='ask-root').length,0);
 });
