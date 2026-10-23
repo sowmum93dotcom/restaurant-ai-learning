@@ -60,12 +60,15 @@ test('ROOT reopens native suggestions for review without replacing original evid
  const result={source:{text:'Original product text'},engine:{modelExecuted:true,modelId:'fixture-only'},visual:{proposals:[{value:'Unverified fixture suggestion'}]},literalCategoryEvidence:[],selectedCategory:null,checklist:[]};
  for(const state of ['pending','accepted','corrected','rejected']){
   const work={work_id:'fixture',result,review_state:state,reviewed_text:state==='corrected'?'Owner correction':null};
-  const {nodes}=await client([work]);
+  const {nodes,calls}=await client([work]);
   await nodes['work-history'].children[0].children[0].fire('click');
   assert.equal(nodes.text.value,'Original product text');
   assert.equal(nodes['review-text'].value,state==='corrected'?'Owner correction':'Unverified fixture suggestion');
   assert.equal(nodes['work-review-state'].textContent,copy.translate('en',({pending:'reviewPending',accepted:'reviewAccepted',corrected:'reviewCorrected',rejected:'reviewRejected'})[state]));
   assert.equal(nodes['save-work'].disabled,true,'native evidence cannot be re-saved as deterministic text');
+  assert.equal(nodes['analysis-save'].hidden,true,'native work is already saved; no second deterministic save is offered');
+  nodes['save-consent'].checked=true;await nodes['save-work'].fire('click');
+  assert.equal(calls.filter(body=>body?.action==='save-work').length,0,'native output cannot enter the supplied-text save path');
   assert.ok(nodes.evidence.children.some(node=>node.textContent===copy.translate('en','modelEvidence')));
   const diagnostics=nodes.evidence.children.find(node=>node.tagName==='details');
   assert.ok(diagnostics,'category checks have a separate disclosure');
@@ -97,6 +100,7 @@ test('ROOT review conflict preserves the draft and reloads the latest authorised
 test('ROOT request entry keeps text diagnostics closed and separates Business tools from Customer search',async()=>{
  const {nodes,calls}=await client();
  assert.equal(nodes['text-diagnostics'].open,false);
+ assert.equal(nodes['analysis-save'].hidden,true,'no analysis-save controls without a result');
  assert.equal(nodes['request-hint'].textContent,copy.translate('en','requestBusiness'));
  assert.equal(nodes['media-entry'].hidden,false);
  assert.equal(nodes['customer-search'].hidden,true);
