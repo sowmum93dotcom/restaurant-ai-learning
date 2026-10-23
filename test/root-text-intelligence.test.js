@@ -117,3 +117,14 @@ test('cached native evidence must match the exact request, context and reviewed 
   assert.equal((await cachedRunner.execute(request)).code,'invalid-cache');
  }
 });
+
+test('a hanging post-execution grant check or ledger completion cannot extend the deadline or fabricate success',async()=>{
+ await Promise.all(['post-grant','completion'].map(async stage=>{
+  let checks=0,calls=0,release;const pending=new Promise(resolve=>{release=resolve;});
+  const ledger=fakeLedger();if(stage==='completion')ledger.finish=()=>pending;
+  const runner=native.createRunner({environment:env,ledger,authorize:async()=>++checks===3&&stage==='post-grant'?pending:true,transport:async()=>{calls++;return response();}});
+  const started=Date.now(),result=await runner.execute(input());
+  assert.equal(result.code,'execution-timeout');assert.equal(result.status,'failed');assert.ok(Date.now()-started<2600);assert.equal(calls,1);
+  release(stage==='post-grant'?true:{status:'succeeded'});await new Promise(resolve=>setImmediate(resolve));assert.equal(calls,1);
+ }));
+});

@@ -33,7 +33,7 @@ function createRunner({environment,ledger,authorize,fetchImpl=globalThis.fetch,c
   const bounded=async operation=>{
    guard();let onAbort;
    const abort=new Promise((_,reject)=>{onAbort=()=>reject(timeout());controller.signal.addEventListener('abort',onAbort,{once:true});});
-   try{const value=await Promise.race([operation,abort]);guard();return value;}
+   try{const pending=Promise.resolve().then(()=>{guard();return operation();});const value=await Promise.race([pending,abort]);guard();return value;}
    finally{controller.signal.removeEventListener('abort',onAbort);}
   };
   const check=async()=>{try{return await authorize(structuredClone(input))===true;}catch{return false;}};
@@ -44,7 +44,7 @@ function createRunner({environment,ledger,authorize,fetchImpl=globalThis.fetch,c
    finished=true;
   };
   try{
-   if(!await bounded(check()))return fail('scope-revoked','rejected');
+   if(!await bounded(check))return fail('scope-revoked','rejected');
    const admission=Promise.resolve().then(()=>{guard();return ledger.claim({input,inputHash});}).then(value=>{
     // Preserve a late reservation safely; close it only as never dispatched.
     if((controller.signal.aborted||clock()>=deadline)&&value?.status==='claimed'&&value.claimId===input.requestId){
@@ -52,22 +52,22 @@ function createRunner({environment,ledger,authorize,fetchImpl=globalThis.fetch,c
     }
     return value;
    });
-   try{claim=await bounded(admission);}catch(error){if(error.message==='execution-timeout')throw error;return fail('ledger-unavailable','unavailable');}
-   if(claim?.status==='cached')return validCached(claim.result,input,inputHash)&&await bounded(check())?{...structuredClone(claim.result),cacheHit:true,reuseResourceUsage:metrics}:fail('invalid-cache');
+   try{claim=await bounded(()=>admission);}catch(error){if(error.message==='execution-timeout')throw error;return fail('ledger-unavailable','unavailable');}
+   if(claim?.status==='cached')return validCached(claim.result,input,inputHash)&&await bounded(check)?{...structuredClone(claim.result),cacheHit:true,reuseResourceUsage:metrics}:fail('invalid-cache');
    if(claim?.status!=='claimed')return fail(claim?.status==='conflict'?'request-conflict':'job-limit','limited');
    if(claim.claimId!==input.requestId)return fail('invalid-claim');
-   if(!await bounded(check())){await bounded(finish({code:'scope-revoked'}));return fail('scope-revoked','rejected');}
+   if(!await bounded(check)){await bounded(()=>finish({code:'scope-revoked'}));return fail('scope-revoked','rejected');}
    guard();metrics.inputBytes=Buffer.byteLength(JSON.stringify(input));metrics.executions=1;attempted=true;
    // One dispatch through the same native transport/worker, without media URLs,
    // Selling roles, caller-selected models or hosted inference fallbacks.
-   const body=await bounded(Promise.resolve().then(()=>{guard();return transport({config,input,inputHash,limits:LIMITS,deadline,signal:controller.signal,media:[],fetchImpl});}));
+   const body=await bounded(()=>{guard();return transport({config,input,inputHash,limits:LIMITS,deadline,signal:controller.signal,media:[],fetchImpl});});
    received=true;metrics.durationMs=Math.max(0,clock()-started);
-   if(!validateOutput(body.output)){await bounded(finish({code:'invalid-model-output'}));return fail('invalid-model-output');}
-   if(!await bounded(check())){await bounded(finish({code:'scope-revoked'}));return fail('scope-revoked','rejected');}
+   if(!validateOutput(body.output)){await bounded(()=>finish({code:'invalid-model-output'}));return fail('invalid-model-output');}
+   if(!await bounded(check)){await bounded(()=>finish({code:'scope-revoked'}));return fail('scope-revoked','rejected');}
    metrics.durationMs=Math.max(0,clock()-started);metrics.outputBytes=Buffer.byteLength(JSON.stringify(body.output));
    const provenance={operator:'DEMEOS',modelId:model.modelId,modelVersion:model.modelVersion,runtimeCodeHash:model.runtimeCodeHash,weightsManifestHash:model.weightsManifestHash,licenceReviewId:model.licenceReviewId,securityReviewId:model.securityReviewId,inputHash,workspaceId:input.workspaceId,audience:input.audience,at:new Date(clock()).toISOString()};
    const result={status:'succeeded',code:'reply-requires-review',output:structuredClone(body.output),provenance,resourceUsage:{...metrics},measurements:structuredClone(body.measurements)};
-   await bounded(finish({result,code:'reply-requires-review'}));return result;
+   await bounded(()=>finish({result,code:'reply-requires-review'}));return result;
   }catch(error){
    metrics.durationMs=Math.max(0,clock()-started);
    const code=controller.signal.aborted||error.message==='execution-timeout'?'execution-timeout':'native-runtime-failed';
@@ -76,7 +76,7 @@ function createRunner({environment,ledger,authorize,fetchImpl=globalThis.fetch,c
    if(claim?.status==='claimed'&&claim.claimId===input.requestId&&!finished){
     const cleanup=()=>finish({uncertain:attempted&&!received,code});
     if(controller.signal.aborted||clock()>=deadline)Promise.resolve().then(cleanup).catch(()=>{});
-    else await bounded(Promise.resolve().then(cleanup)).catch(()=>{});
+    else await bounded(cleanup).catch(()=>{});
    }
    return fail(code);
   }finally{clearTimeout(timer);controller.abort();}
