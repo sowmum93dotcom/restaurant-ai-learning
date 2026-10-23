@@ -41,10 +41,10 @@ test('ROOT text operator refuses malformed readiness and non-200 health before d
  }
 });
 test('ROOT text operator preserves invalid output and stops after one failed execution',async()=>{
- const {report,dispatches,exitCode}=await run('invalid-output');assert.equal(exitCode,1);assert.equal(dispatches,1);assert.equal(report.results.length,1);assert.equal(report.results[0].output.reply,'<invalid>');assert.equal(report.executionPassed,false);
+ const {report,dispatches,exitCode}=await run('invalid-output');assert.equal(exitCode,1);assert.equal(dispatches,1);assert.equal(report.results.length,1);assert.equal(report.results[0].output.reply,'<invalid>');assert.equal(report.results[0].error,'model-output-invalid');assert.equal(report.executionPassed,false);
 });
 test('ROOT text operator timeout stops without a second dispatch or automatic retry',async()=>{
- const {report,dispatches,exitCode}=await run('timeout');assert.equal(exitCode,1);assert.equal(dispatches,1);assert.equal(report.results.length,1);assert.equal(report.results[0].passed,false);assert.equal(report.results[0].retries,0);assert.equal(report.executionPassed,false);
+ const {report,dispatches,exitCode}=await run('timeout');assert.equal(exitCode,1);assert.equal(dispatches,1);assert.equal(report.results.length,1);assert.equal(report.results[0].passed,false);assert.equal(report.results[0].retries,0);assert.equal(report.results[0].error,'execution-timeout');assert.equal(report.executionPassed,false);
 });
 test('ROOT text operator records all controlled cases without granting quality or activation',async()=>{
  const {report,dispatches,exitCode}=await run('success');assert.equal(exitCode,0);assert.equal(dispatches,12);assert.equal(report.results.length,12);assert.equal(report.executionPassed,true);assert.equal(report.productAccuracyVerified,false);assert.equal(report.multilingualAccuracyVerified,false);assert.equal(report.activationApproved,false);

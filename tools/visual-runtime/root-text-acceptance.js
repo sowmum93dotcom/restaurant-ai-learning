@@ -43,7 +43,8 @@ const checkpoint=()=>{const raw=JSON.stringify(report,null,2)+'\n';fs.ftruncateS
     const body=await Promise.race([sendNativeRequest({config,input,inputHash,limits:LIMITS,deadline,signal:abort.signal}),failure]);
     result.endToEndMs=Date.now()-started;result.output=body.output;result.measurements=body.measurements;
     result.passed=result.endToEndMs<=LIMITS.timeoutMs&&validateOutput(body.output);
-   }catch(error){result.endToEndMs=Date.now()-started;result.error=['AbortError','TimeoutError'].includes(error.name)?'execution-timeout':'native-request-failed';}
+    if(!result.passed)result.error=result.endToEndMs>LIMITS.timeoutMs?'execution-timeout':'model-output-invalid';
+   }catch(error){result.endToEndMs=Date.now()-started;result.error=abort.signal.aborted||['AbortError','TimeoutError'].includes(error.name)||error.message==='execution-timeout'?'execution-timeout':'native-request-failed';}
    finally{clearTimeout(timer);abort.signal.removeEventListener('abort',onAbort);abort.abort();}
    report.results.push(result);checkpoint();console.log(item.id+': '+(result.passed?'passed':'failed'));
    if(!result.passed)break;
