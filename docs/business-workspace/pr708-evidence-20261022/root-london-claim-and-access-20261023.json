@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "dateLondon": "2026-10-23",
+  "testedImplementation": "69b644fe31798541e973f571df3a7524b6bbd839",
+  "previewDeployment": "dpl_Ajr9E4Ge6vGxDx3GLupvgtHNYTu6",
+  "target": null,
+  "functionOwnRegion": "lhr1",
+  "logEnvelopeRegion": "cle1",
+  "placementVerified": true,
+  "gpuLatencyImprovementMeasured": false,
+  "claim": {
+    "id": "16c23d36-5481-47e4-97c8-14d12c3d7ea8",
+    "active": false,
+    "jobs": 1,
+    "status": "failed",
+    "matchingAudit": true,
+    "ownerApproved": true
+  },
+  "l40": {
+    "id": "hv0517pk3fgfhu",
+    "totalUsdPerHourWhenRunning": 0.83,
+    "consoleEnabled": false,
+    "operatorAccessRejected": true,
+    "inferenceExecuted": false,
+    "stoppedVerified": true,
+    "originalGlobalVolumeAttached": true
+  },
+  "cpuBridge": {
+    "id": "xm3g09qr8v4xkr",
+    "usdPerHour": 0.3,
+    "within15Minutes": true,
+    "consoleDisabled": true,
+    "stoppedVerified": true
+  },
+  "vast": {
+    "id": 56929706,
+    "schedulingCancelled": true,
+    "inactiveVerified": true,
+    "newKeysAdded": 0
+  },
+  "all8RunpodRowsZeroCompute": true,
+  "runpodBalanceUsd": 20.19,
+  "vastBalanceUsd": 23.23,
+  "nativeResultsSaved": 0,
+  "newResources": 0,
+  "merged": false,
+  "productionChanged": false,
+  "acceptanceComplete": false
+}
