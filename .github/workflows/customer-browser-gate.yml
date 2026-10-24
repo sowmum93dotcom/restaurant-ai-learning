@@ -9,7 +9,8 @@ jobs:
   browser:
     env:
       DEMEOS_BROWSER_CHANNEL: chrome
-    runs-on: ubuntu-latest
+    # Playwright 1.55 is verified on 24.04; ubuntu-latest can select 26.04.
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - name: Checkout
@@ -32,6 +33,10 @@ jobs:
         run: git fetch --no-tags --depth=1 origin 8c4ccbc93af01480f41e6444446b79a321a11ef9
       - name: Run owner workspace SQL, permission and draft gate
         run: node browser-checks/business-workspace-gate.js
+      - name: Run independent ROOT HTTP, privacy and responsive gate
+        run: node browser-checks/root-ai-gate.js
+      - name: Run Selling foundation SQL, access and rendered dashboard gate
+        run: node browser-checks/selling-dashboard-gate.js
       - name: Run private administrative application review gate
         run: node browser-checks/admin-business-review-gate.js
       - name: Run business approval and separate application journey
@@ -74,6 +79,37 @@ jobs:
             /tmp/demeos-contact-*.png
             /tmp/demeos-account-*.png
             /tmp/demeos-owner-*.png
+            /tmp/demeos-selling-*.png
+            /tmp/demeos-root-*.png
             /tmp/demeos-owner-layout-*.json
             /tmp/demeos-admin-*.png
             /tmp/demeos-approval-*.png
+
+  selling-webkit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      DEMEOS_BROWSER_ENGINE: webkit
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install Selling test dependencies
+        run: npm install --no-save playwright@1.55.0
+      - name: Install WebKit and system libraries
+        run: npx playwright install --with-deps webkit
+      - name: Verify independent ROOT in WebKit
+        run: node browser-checks/root-ai-gate.js
+      - name: Verify Selling SQL, uploads, identity and workspaces in WebKit
+        run: node browser-checks/selling-dashboard-gate.js
+      - name: Preserve rendered Selling WebKit review images
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: selling-webkit-review
+          path: |
+            /tmp/demeos-selling-*.png
+            /tmp/demeos-root-*.png

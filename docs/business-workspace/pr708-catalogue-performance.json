@@ -1,0 +1,55 @@
+{
+  "runtime": "v24.19.0",
+  "database": "PGlite 0.5.8",
+  "method": "one warm-up, eight measured reads per operation; isolated process; SQL page only, excludes auth, profile hydration, private media signing and network",
+  "results": [
+    {
+      "products": 5,
+      "operation": "page",
+      "medianMs": 2.55,
+      "p95Ms": 3.06,
+      "returnedProducts": 5,
+      "pageBytes": 969
+    },
+    {
+      "products": 5,
+      "operation": "search",
+      "medianMs": 2.98,
+      "p95Ms": 4.4,
+      "returnedProducts": 1,
+      "pageBytes": 225
+    },
+    {
+      "products": 500,
+      "operation": "page",
+      "medianMs": 7.76,
+      "p95Ms": 9.97,
+      "returnedProducts": 25,
+      "pageBytes": 4870
+    },
+    {
+      "products": 500,
+      "operation": "search",
+      "medianMs": 8.05,
+      "p95Ms": 10.51,
+      "returnedProducts": 1,
+      "pageBytes": 233
+    },
+    {
+      "products": 5000,
+      "operation": "page",
+      "medianMs": 48.33,
+      "p95Ms": 76.25,
+      "returnedProducts": 25,
+      "pageBytes": 4962
+    },
+    {
+      "products": 5000,
+      "operation": "search",
+      "medianMs": 46.62,
+      "p95Ms": 60.36,
+      "returnedProducts": 1,
+      "pageBytes": 237
+    }
+  ]
+}

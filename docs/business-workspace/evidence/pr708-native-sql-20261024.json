@@ -1,0 +1,22 @@
+{
+  "jobs": {
+    "content": [
+      {
+        "type": "text",
+        "text": "[\n  {\n    \"state\": \"succeeded\",\n    \"executions\": 1,\n    \"resource_usage\": {\n      \"retries\": 0,\n      \"durationMs\": 1671,\n      \"executions\": 1,\n      \"inputBytes\": 346,\n      \"outputBytes\": 137\n    },\n    \"measurements\": {\n      \"durationMs\": 396.7017460381612,\n      \"peakVramBytes\": 8914720256\n    },\n    \"review_state\": \"accepted\",\n    \"revision\": 2,\n    \"reviewed_text\": null,\n    \"original_output\": {\n      \"reply\": \"Review the meeting agenda and gather relevant notes beforehand.\",\n      \"outputSchema\": \"demeos-root-text-output-v1\",\n      \"schemaVersion\": 1\n    }\n  },\n  {\n    \"state\": \"succeeded\",\n    \"executions\": 1,\n    \"resource_usage\": {\n      \"retries\": 0,\n      \"durationMs\": 719,\n      \"executions\": 1,\n      \"inputBytes\": 349,\n      \"outputBytes\": 160\n    },\n    \"measurements\": {\n      \"durationMs\": 548.1267439899966,\n      \"peakVramBytes\": 8914513408\n    },\n    \"review_state\": \"corrected\",\n    \"revision\": 2,\n    \"reviewed_text\": \"Prepare the agenda and check the meeting materials.\",\n    \"original_output\": {\n      \"reply\": \"Double-check meeting materials before the session to ensure all attendees have access.\",\n      \"outputSchema\": \"demeos-root-text-output-v1\",\n      \"schemaVersion\": 1\n    }\n  },\n  {\n    \"state\": \"succeeded\",\n    \"executions\": 1,\n    \"resource_usage\": {\n      \"retries\": 0,\n      \"durationMs\": 839,\n      \"executions\": 1,\n      \"inputBytes\": 354,\n      \"outputBytes\": 131\n    },\n    \"measurements\": {\n      \"durationMs\": 535.584049008321,\n      \"peakVramBytes\": 8915134976\n    },\n    \"review_state\": \"rejected\",\n    \"revision\": 2,\n    \"reviewed_text\": null,\n    \"original_output\": {\n      \"reply\": \"Don’t forget—arrive 5 minutes early for your meeting.\",\n      \"outputSchema\": \"demeos-root-text-output-v1\",\n      \"schemaVersion\": 1\n    }\n  }\n]"
+      }
+    ],
+    "structuredContent": null,
+    "isError": false
+  },
+  "final": {
+    "content": [
+      {
+        "type": "text",
+        "text": "[\n  {\n    \"works\": \"8\",\n    \"audits\": \"18\",\n    \"native_jobs\": \"3\",\n    \"active_claims\": \"0\",\n    \"catalogue_hash\": \"252b53ec5ff5beebc9c605b07759d593\",\n    \"businesses\": \"2\"\n  }\n]"
+      }
+    ],
+    "structuredContent": null,
+    "isError": false
+  }
+}

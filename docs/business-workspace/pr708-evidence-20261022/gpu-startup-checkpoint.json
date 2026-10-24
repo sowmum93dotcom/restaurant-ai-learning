@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-22",
+  "podId": "lv9zznlit6bhml",
+  "gpu": "RTX 4090",
+  "gpuCount": 1,
+  "gpuRateUsdPerHour": 0.89,
+  "temporaryDiskRateUsdPerHour": 0.004,
+  "auditStartLondon": "2026-10-22T22:20:30+01:00",
+  "auditStopLondon": "2026-10-22T22:41:03+01:00",
+  "auditIntervalSeconds": 1233,
+  "rateBasedIntervalCostUsd": 0.306195,
+  "rateBasedCostIsInvoice": false,
+  "exactFinalInvoiceAvailable": false,
+  "outcome": "Initialization persisted without logs or connection endpoints; stopped before any model execution",
+  "newGpuInferenceCount": 0,
+  "computeStoppedVerified": true,
+  "allRunpodRowsUsdPerHour": 0,
+  "globalVolume": {
+    "name": "dizzy_indigo_worm",
+    "mount": "/workspace",
+    "storedGbDisplayed": 13,
+    "objectCount": 225,
+    "verifiedBeforeAndAfterStop": true
+  },
+  "otherExistingAllocations": {
+    "5uwdkbmub1kr0j": "GPU unavailable; unchanged",
+    "hv0517pk3fgfhu": "GPU unavailable; unchanged",
+    "5jwi6xlfedfmd2": "GPU unavailable; unchanged",
+    "bbiq2rg1134zyb": "GPU unavailable; unchanged",
+    "r50cslfgj1dvd7": "Start returned stopped without fresh start audit"
+  },
+  "vast": {
+    "instanceId": 56929706,
+    "status": "Inactive",
+    "balanceUsdDisplayed": 23.33,
+    "retainedStorageUsdPerHour": 0.017
+  },
+  "runpodBalanceUsdDisplayed": 20.92,
+  "totalDepositsPreviouslyVerifiedUsd": 60,
+  "displayedCumulativeDeductionsUsd": 15.75,
+  "balanceDeductionsAreFinalInvoice": false,
+  "approvedCumulativeLimitUsd": 100,
+  "approvedGpuRateLimitUsdPerHour": 2.5,
+  "nativeRootSavedResultAcceptance": "incomplete",
+  "previewGpuFlagsEnabled": false,
+  "productionChanged": false
+}

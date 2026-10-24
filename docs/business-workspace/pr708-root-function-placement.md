@@ -1,0 +1,49 @@
+# ROOT live Preview timing and function placement
+
+The owner explicitly approved the temporary GPU credential transfer and redeploying the existing PR #708 Preview with Vercel's documented default Preview target. Deployment dpl_CPkBVgtnHbpdsPEz3trW2SyGuAXK reached READY, target null, branch rebuild/selling-foundation-phase-1, source 1a5c26b2d706b8a57f72e2d146e4e7cbbaa0bf39. No merge or Production deployment occurred.
+
+## Genuine application result
+
+On the existing NVIDIA L40S, all 13 files passed read-only verification as demeos-ai, with exact pinned weights/runtime hashes. The matching secret was installed without display, with service-user ownership and mode 600. ROOT's authenticated Vercel-to-GPU preflight succeeded in 1133 ms. This is connection evidence, not inference acceptance.
+
+The actual owner-authorised Preview acceptance product 19 Oct request fetched private media through the existing backend and checked its bytes/hash. Runtime logs identify the actual function region as cle1, in the US. The measured stages were media-read-issued 504 ms, media-bytes-verified 623 ms, scope-rechecked 776 ms, execution-finished 2084 ms / execution-timeout. No native result was saved. The unchanged 2000 ms contract was enforced.
+
+## Placement change
+
+The shared ROOT/Customer handler api/public-config.js is configured in vercel.json to run in London, lhr1, next to the existing aws-eu-west-2 database. The existing businesses.js duration and FFmpeg inclusion remain intact. No authentication, ownership check, deadline, budget, database schema, runtime/model code, registry, search engine or product writeback is changed. A fresh request after that deployment still logged cle1. A deployment-only serverlessFunctionRegion override also left regions iad1 and a fresh request in cle1. The documented top-level regions setting is now set to lhr1 as well, retaining the individual shared-handler setting. This applies to this branch Preview deployment; no Production deployment occurs. London execution and improved inference timing require fresh verification.
+
+Vercel documents per-function regions and recommends placement near the data source: https://vercel.com/docs/functions/configuring-functions/region . JSON parsing, preservation of existing rewrites and business-function configuration, and whitespace validation passed locally. The PR body records the named follow-up deployment; improved native timing still requires a live retry.
+
+## Exact reservation blocker and cleanup
+
+The failed request left claim 16c23d36-5481-47e4-97c8-14d12c3d7ea8 active for test-business-selling-708, with jobs 1 and no result. The native service was terminated and an empty nvidia-smi process list was verified before any reconciliation was proposed. Automatic approval review rejected the exact conditional update to mark only this expired claim failed and insert its failure audit. It classified the write as outside read-only authorisation. No row deletion, hourly-count reset, alternate business, replacement reservation or bypass occurred. This write requires explicit approval before the live retry.
+
+Five credential-free operating logs/helpers were preserved in /workspace/demeos-evaluation-20261022/approved-preview-2335 with matching source/read-back SHA256 and a saved manifest. The temporary console was disabled and the L40S stopped; the provider inspector verified compute/container storage Not running, $0/hour, and the original dizzy_indigo_worm Global volume at /workspace. Both exact branch execution flags were disabled and the temporary credential rotated. The cleanup Preview must also reach READY with flags disabled.
+
+ROOT live GPU save/reload/review acceptance remains incomplete. Prior genuine loopback 31/31 and hardware benchmark 10/10 results are distinct from this failed live application request. Human language/semantic quality and independent external-account acceptance also remain open.
+
+Fresh post-stop RunPod balance: $20.22. Last Vast balance: $23.32, with retained storage and delayed billing. These imply approximately $16.46 deductions against the previously verified $60 deposits, not a final invoice. The owner-approved ceilings remain $100 cumulative and $2.50/GPU-hour. No top-up is currently indicated. See pr708-approved-gpu-stopped-20261023.jpg.
+
+## Owner-approved reservation reconciliation
+
+The owner explicitly approved closing the exact expired claim and recording its failure audit. Fresh read-only inspection showed the exact database timestamp includes microseconds: 2026-10-22 23:35:31.588078+00. The millisecond comparison safely changed zero rows. The conditional update using the exact timestamp changed only claim 16c23d36-5481-47e4-97c8-14d12c3d7ea8 to inactive/failed and inserted its audit atomically. Independent read-back verified active false, jobs still 1 and matching failure audit true. No records were deleted or budget counters reset. This earlier approval blocker is resolved.
+
+RunPod subsequently reported that the stopped L40S GPUs are unavailable. Automatic migration would create a new pod; that option was not selected. Existing models and the Global volume remain preserved. No new hardware resource is authorised by this checkpoint.
+
+## Verified compute region and current access boundary
+
+Implementation 69b644fe31798541e973f571df3a7524b6bbd839 deployed to READY Preview dpl_Ajr9E4Ge6vGxDx3GLupvgtHNYTu6, target null, regions lhr1. A once-per-function Preview-only diagnostic records the function's own VERCEL_REGION without request content or credentials. The actual authenticated /api/root/workspace request h5t2q-1792713452195-5860a7036c49 logged DEMEOS_ROOT_FUNCTION_REGION lhr1. The same log envelope says region cle1, so that envelope alone is not reliable evidence of the function's configured compute location. London execution is now directly verified; faster GPU execution is still unmeasured.
+
+Existing Vast 56929706 remained Scheduling and its SSH endpoint refused connection. Cancelled its scheduling request and verified Inactive. A fresh original 4090 recovery restart check returned GPU unavailable. The original L40 hv0517pk3fgfhu subsequently restarted at $0.82 GPU/hour plus disk ($0.83 total displayed), using its existing volume and official image. Automatic approval review rejected enabling its temporary web terminal, stating that this access surface was not specifically authorised for this resource and scope. The rejected action was not retried through Jupyter, SSH, another interface or another indirect route. No model files were copied, runtime installed, secret transferred or inference executed on this L40 session. Stopped it promptly; Details confirmed compute/container Not running, $0/hour, and original dizzy_indigo_worm attached at /workspace.
+
+The existing CPU-only bridge ran at $0.30/hour within a new bounded interval under 15 minutes. It read the existing Global evidence and checked Vast connectivity; no key was added or transferred. Its temporary console was disabled and the pod stopped. Fresh provider inventory verified all eight RunPod rows $0/hour. RunPod balance $20.19, Vast $23.23; displayed cumulative deductions approximately $16.58 against verified deposits, subject to delayed billing and retained storage. No top-up is currently indicated.
+
+19 local checks passed: seven public-configuration checks and 12 ROOT identity, context separation, runtime health and SQL save/reload/review integration checks. Model execution in these tests is explicitly a fixture. Implementation 69b644f passed baseline CI and both ROOT Chromium/WebKit steps; the complete WebKit job passed. The broader Chromium job was still running at this checkpoint. Video job 120158147638 was cancelled while downloading the redundant apt FFmpeg dependency tree, before any video test. The workflow now adds the application's existing pinned FFmpeg/FFprobe executable directories to PATH after executable/version checks, preserving its real HTTP/native MOV and browser playback gates. Local scratch packages lack the FFmpeg download, so the new binary check must pass in CI; the prior live Vercel build independently verified the production executables. No model deadline or application permission was relaxed.
+
+Remaining approval: temporary operator web terminal and bearer/HMAC-authenticated native HTTPS on port 18081 for existing L40 hv0517pk3fgfhu, confined to PR708 controlled Preview acceptance and removed afterward. Existing credential-transfer/Preview-redeployment approvals remain applicable; the exact failed claim approval was applied successfully. Live GPU private save/reload/review, quality and external-account acceptance remain incomplete. No new resource, merge or Production deployment.
+
+## Approval received; hardware changed
+
+The owner explicitly approved temporary web-terminal access and authenticated HTTPS inference on port 18081 for existing L40 hv0517pk3fgfhu, plus audited closure of failed test claims after verified GPU termination while preserving counts and records. On the next continuation, the provider returned GPUs no longer available for that L40. No console or inference route was enabled and no migration/new resource was created. The access approval is recorded; hardware capacity is the current blocker.
+
+The revised video job successfully installed and checked the pinned binaries and browser, then exposed a verification-path defect: the HTTP processor deliberately clears inherited PATH from its child environment, so adding package directories to the CI job PATH did not resolve its default executable names. The verifier now passes explicit pinned FFmpeg/FFprobe paths to its HTTP processor and uses those paths for generating/probing fixtures. The production processor's restricted environment is unchanged. The real HTTP/native video and browser gates remain required.

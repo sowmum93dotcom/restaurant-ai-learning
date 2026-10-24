@@ -1,0 +1,13 @@
+'use strict';
+const test=require('node:test'),assert=require('node:assert/strict'),runtime=require('../api/_lib/selling-visual-runtime'),{check}=require('../api/_lib/root-runtime-health');
+test('explicit health preflight pins provenance and cannot claim inference or follow redirects',async()=>{
+ const manifest={operator:'DEMEOS',modelId:runtime.MODEL,modelVersion:runtime.REVISION,weightsManifestHash:'a'.repeat(64),runtimeCodeHash:'b'.repeat(64),licenceReviewId:'fixture-review',securityReviewId:'fixture-review',benchmarkReviewId:'fixture-review',benchmarkTimeoutMs:2000,capabilities:['image-semantics']};
+ const env={VERCEL_ENV:'preview',VERCEL_GIT_COMMIT_REF:'root',DEMEOS_SELLING_DATA_ENVIRONMENT:'test',DEMEOS_SELLING_TEST_PREVIEW_BRANCH:'root',POSTGRES_URL:'postgres://fixture@isolated.example/db',DEMEOS_SELLING_TEST_DATABASE_HOST:'isolated.example',DEMEOS_VISUAL_RUNTIME_ENABLED:'true',DEMEOS_VISUAL_RUNTIME_ORIGIN:'https://gpu.demeos.example',DEMEOS_VISUAL_RUNTIME_HOST:'gpu.demeos.example',DEMEOS_VISUAL_RUNTIME_SECRET:'fixture-secret-never-a-real-credential-32',DEMEOS_VISUAL_RUNTIME_MANIFEST:JSON.stringify(manifest),DEMEOS_VISUAL_MEDIA_HOSTS:'private.demeos.example'};
+ const healthy={ready:true,busy:false,modelId:manifest.modelId,modelVersion:manifest.modelVersion,runtimeCodeHash:manifest.runtimeCodeHash,weightsManifestHash:manifest.weightsManifestHash};
+ const result=await check(env,async(url,options)=>{assert.equal(url,'https://gpu.demeos.example/healthz');assert.equal(options.redirect,'error');assert.equal(options.method,'GET');return Response.json(healthy);});assert.equal(result.status,'ready');assert.equal(result.inferenceExecuted,false);assert.ok(Number.isFinite(result.connectionPreflightMs));
+ for(const patch of [{ready:false},{busy:true},{runtimeCodeHash:'c'.repeat(64)},{modelId:'foreign'},{extra:'untrusted'}])assert.equal((await check(env,async()=>Response.json({...healthy,...patch}))).status,'unavailable');
+ let fetched=false;assert.equal((await check({...env,VERCEL_ENV:'production'},async()=>{fetched=true;})).status,'unavailable');assert.equal(fetched,false);
+ assert.equal((await check(env,async()=>new Response('No auth',{status:401}))).status,'unavailable');
+ for(const status of [201,202,301,401,403,429,500,503])assert.equal((await check(env,async()=>Response.json(healthy,{status}))).status,'unavailable','HTTP '+status+' cannot establish readiness even with a valid-looking body');
+ assert.equal((await check(env,async()=>new Response(null,{status:204}))).status,'unavailable');
+});

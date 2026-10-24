@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "scope": "Preview only",
+  "ownerApproval": "Yes approval please continue building",
+  "projectId": "shiny-sun-84024932",
+  "branchId": "br-flat-snow-zatzl87u",
+  "claimId": "f3f88b98-d527-416f-84e8-157f8cf96e22",
+  "businessId": "test-business-selling-708",
+  "inputHash": "f36a9e3ec78a20088d32a7c118fc0eebac034af5b30054465e3e50fa77faef03",
+  "previousUpdatedAt": "2026-10-22 19:42:52.183163+00",
+  "reconciliation": "Exact compare-and-set on expired claim after worker shutdown; atomic failure audit",
+  "verifiedAfter": {
+    "active": false,
+    "jobs": 3,
+    "status": "failed",
+    "code": "execution-timeout",
+    "failureAuditPresent": true
+  },
+  "rowsDeleted": 0,
+  "jobsReset": false,
+  "nativeSavedResultCreated": false
+}

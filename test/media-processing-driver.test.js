@@ -30,3 +30,29 @@ test("processing driver drops malformed output capability sets",async()=>{
  await d.optimizeImage(asset,{width:1200,height:800},{outputDestinations:[{role:"customer",storageKey:"x",uploadUrl:"http://unsafe.example",contentType:"image/webp"}]});
  assert.equal(body.outputDestinations,undefined);
 });
+
+test('Sharp keeps its real image processing when approved HTTP video delegation is added',async()=>{
+ const {getConfiguredMediaProcessingDrivers}=require('../api/_lib/media-processing-driver');
+ const calls=[];
+ const fetchImpl=async(url,options)=>{calls.push({url,options});return {ok:true,json:async()=>({width:640,height:360,durationSeconds:12,contentType:'video/mp4'})};};
+ const imageOnly=getConfiguredMediaProcessingDrivers({DEMEOS_MEDIA_PROCESSING_PROVIDER:'sharp'},fetchImpl);
+ assert.equal(typeof imageOnly.inspectImage,'function');assert.equal(imageOnly.inspectVideo,undefined);
+ const drivers=getConfiguredMediaProcessingDrivers({DEMEOS_MEDIA_PROCESSING_PROVIDER:'sharp',DEMEOS_MEDIA_PROCESSING_URL:'https://processor.example',DEMEOS_MEDIA_PROCESSING_TOKEN:'server-only-fixture'},fetchImpl);
+ assert.equal(typeof drivers.optimizeImage,'function');assert.equal(typeof drivers.transcodeVideo,'function');
+ const asset={assetId:'media-video',businessId:'shop',storageKey:'private-original',contentType:'video/mp4'};
+ const result=await drivers.inspectVideo(asset,{sourceUrl:'https://private.example/source',sourceExpiresAt:'2030-01-01T00:00:00Z'});
+ assert.equal(result.durationSeconds,12);assert.equal(calls[0].url,'https://processor.example/inspect/video');assert.equal(calls[0].options.headers.authorization,'Bearer server-only-fixture');
+ assert.equal(JSON.parse(calls[0].options.body).sourceUrl,'https://private.example/source');
+});
+
+
+test('native video is explicitly opt-in for Preview and never enables itself in Production',()=>{
+ const base={DEMEOS_MEDIA_PROCESSING_PROVIDER:'sharp',DEMEOS_VIDEO_PROCESSING_PROVIDER:'ffmpeg'};
+ const production=getConfiguredMediaProcessingDrivers({...base,VERCEL_ENV:'production'});
+ assert.equal(typeof production.optimizeImage,'function');assert.equal(production.transcodeVideo,undefined);
+ const preview=getConfiguredMediaProcessingDrivers({...base,VERCEL_ENV:'preview'});
+ const nativeType=process.platform==='linux'&&process.arch==='x64'?'function':'undefined';
+ assert.equal(typeof preview.optimizeImage,'function');assert.equal(typeof preview.inspectVideo,nativeType);assert.equal(typeof preview.transcodeVideo,nativeType);
+ const disabled=getConfiguredMediaProcessingDrivers({DEMEOS_MEDIA_PROCESSING_PROVIDER:'sharp',VERCEL_ENV:'preview'});
+ assert.equal(disabled.transcodeVideo,undefined);
+});

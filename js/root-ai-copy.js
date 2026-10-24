@@ -1,0 +1,176 @@
+(function(root){'use strict';
+const keys=['heading','intro','personal','tool','understand','rules','text','category','run','result','correction','clear','availability','runtime','history','coverage','coverageNote','filter','loading','signedout','error','ready','none','matched','checklist','unreviewed','fields','preview','business','customer'];
+const rows={
+en:['Your independent intelligence workspace','For businesses and customers. No marketplace vendor account required.','Private personal workspace. Business mode does not grant organisation access.','Working tool · Text evidence','Understand a product or service','Rules, not model inference. Matches English category names only. Claims are not verified.','Product, service or question','Optional DEMEOS category','Check supplied evidence','Evidence and review','Review the supplied information. Product, price, stock and order records stay unchanged.','Clear this work','Tool availability','Image, video and model recommendations unavailable: ROOT runtime acceptance pending. No hosted AI fallback.','Conversation and review history unavailable. Work is not saved.','Category capabilities','171 categories use the existing registry. Not full-category accuracy approval.','Find a category','Opening your workspace…','Sign in to open ROOT. No vendor account required.','ROOT is unavailable. Please try again.','Personal ROOT workspace ready. Model execution unavailable.','No category selected','Literal category evidence','Fields to verify','Category-specific tools not reviewed','Reviewed field checklist','Development Preview','Business','Customer'],
+es:['Tu espacio de inteligencia independiente','Para empresas y clientes. No necesitas cuenta de vendedor.','Espacio personal privado. El modo Empresa no otorga acceso a una organización.','Herramienta · Evidencia textual','Comprende un producto o servicio','Reglas, no inferencia. Solo nombres de categorías en inglés. Las afirmaciones no están verificadas.','Producto, servicio o pregunta','Categoría DEMEOS opcional','Comprobar evidencia','Evidencia y revisión','Revisa la información proporcionada. Los registros de productos, precios, existencias y pedidos no cambian.','Borrar este trabajo','Herramientas disponibles','Imagen, vídeo y recomendaciones no disponibles: falta validar ROOT. Sin IA alojada externa.','Historial no disponible. El trabajo no se guarda.','Capacidades por categoría','171 categorías del registro existente. No acredita precisión completa.','Buscar categoría','Abriendo tu espacio…','Inicia sesión en ROOT. No necesitas cuenta de vendedor.','ROOT no está disponible. Inténtalo de nuevo.','Espacio personal listo. Inferencia no disponible.','Sin categoría','Evidencia literal de categoría','Campos por verificar','Herramientas específicas sin revisar','Lista de campos revisada','Vista previa de desarrollo','Empresa','Cliente'],
+fr:['Votre espace d’intelligence indépendant','Pour entreprises et clients. Aucun compte vendeur requis.','Espace personnel privé. Le mode Entreprise ne donne aucun accès organisationnel.','Outil · Preuves textuelles','Comprendre un produit ou service','Règles, sans inférence. Noms de catégories anglais uniquement. Affirmations non vérifiées.','Produit, service ou question','Catégorie DEMEOS facultative','Vérifier les éléments fournis','Preuves et vérification','Examinez les informations fournies. Les produits, prix, stocks et commandes restent inchangés.','Effacer ce travail','Disponibilité des outils','Images, vidéos et recommandations indisponibles : validation ROOT en attente. Aucune IA hébergée externe.','Historique indisponible. Le travail n’est pas enregistré.','Capacités par catégorie','171 catégories du registre existant. Précision complète non approuvée.','Chercher une catégorie','Ouverture de votre espace…','Connectez-vous à ROOT. Aucun compte vendeur requis.','ROOT est indisponible. Réessayez.','Espace personnel prêt. Inférence indisponible.','Aucune catégorie','Preuve littérale de catégorie','Champs à vérifier','Outils spécifiques non examinés','Liste de champs examinée','Aperçu de développement','Entreprise','Client'],
+de:['Ihr unabhängiger Intelligenz-Arbeitsbereich','Für Unternehmen und Kunden. Kein Händlerkonto erforderlich.','Privater persönlicher Bereich. Der Geschäftsmodus gewährt keinen Organisationszugriff.','Werkzeug · Textbelege','Produkt oder Dienstleistung verstehen','Regeln, keine Modellinferenz. Nur englische Kategorienamen. Aussagen sind nicht bestätigt.','Produkt, Dienstleistung oder Frage','Optionale DEMEOS-Kategorie','Textbelege prüfen','Belege und Prüfung','Prüfen Sie die angegebenen Informationen. Produkte, Preise, Bestände und Bestellungen bleiben unverändert.','Arbeit löschen','Werkzeugverfügbarkeit','Bild-, Video- und Modellempfehlungen nicht verfügbar: ROOT-Abnahme ausstehend. Keine extern gehostete KI.','Verlauf nicht verfügbar. Arbeit wird nicht gespeichert.','Kategoriefähigkeiten','171 Kategorien des bestehenden Registers. Keine vollständige Genauigkeitsfreigabe.','Kategorie suchen','Arbeitsbereich wird geöffnet…','Bei ROOT anmelden. Kein Händlerkonto erforderlich.','ROOT ist nicht verfügbar. Bitte erneut versuchen.','Persönlicher Bereich bereit. Modellinferenz nicht verfügbar.','Keine Kategorie','Wörtlicher Kategoriebeleg','Zu prüfende Felder','Spezifische Werkzeuge nicht geprüft','Geprüfte Feldliste','Entwicklungsvorschau','Unternehmen','Kunde'],
+pt:['O seu espaço de inteligência independente','Para empresas e clientes. Não requer conta de vendedor.','Espaço pessoal privado. O modo Empresa não concede acesso à organização.','Ferramenta · Evidência textual','Compreender produto ou serviço','Regras, não inferência. Apenas nomes de categorias em inglês. Afirmações não verificadas.','Produto, serviço ou pergunta','Categoria DEMEOS opcional','Verificar evidência','Evidência e revisão','Reveja as informações fornecidas. Os registos de produtos, preços, stock e encomendas permanecem inalterados.','Limpar trabalho','Disponibilidade de ferramentas','Imagem, vídeo e recomendações indisponíveis: validação ROOT pendente. Sem IA externa alojada.','Histórico indisponível. O trabalho não é guardado.','Capacidades por categoria','171 categorias do registo existente. Sem aprovação de precisão completa.','Procurar categoria','A abrir o espaço…','Inicie sessão no ROOT. Não requer conta de vendedor.','ROOT indisponível. Tente novamente.','Espaço pessoal pronto. Inferência indisponível.','Sem categoria','Evidência literal de categoria','Campos a verificar','Ferramentas específicas não revistas','Lista de campos revista','Pré-visualização de desenvolvimento','Empresa','Cliente'],
+tr:['Bağımsız zekâ çalışma alanınız','İşletmeler ve müşteriler için. Satıcı hesabı gerekmez.','Özel kişisel alan. İşletme modu kurumsal erişim vermez.','Araç · Metin kanıtı','Ürün veya hizmeti anlayın','Kurallar; model çıkarımı değil. Yalnızca İngilizce kategori adları. İddialar doğrulanmaz.','Ürün, hizmet veya soru','İsteğe bağlı DEMEOS kategorisi','Kanıtı kontrol et','Kanıt ve inceleme','Verilen bilgileri gözden geçirin. Ürün, fiyat, stok ve sipariş kayıtları değişmez.','Çalışmayı temizle','Araç durumu','Görsel, video ve model önerileri kullanılamıyor: ROOT kabulü bekleniyor. Harici barındırılan yapay zekâ yok.','Geçmiş kullanılamıyor. Çalışma kaydedilmez.','Kategori yetenekleri','Mevcut kayıttaki 171 kategori. Tam doğruluk onayı değildir.','Kategori bul','Alanınız açılıyor…','ROOT için giriş yapın. Satıcı hesabı gerekmez.','ROOT kullanılamıyor. Yeniden deneyin.','Kişisel alan hazır. Model çıkarımı kullanılamıyor.','Kategori yok','Birebir kategori kanıtı','Doğrulanacak alanlar','Özel araçlar incelenmedi','İncelenmiş alan listesi','Geliştirme önizlemesi','İşletme','Müşteri'],
+ar:['مساحة الذكاء المستقلة الخاصة بك','للأعمال والعملاء. لا يلزم حساب بائع.','مساحة شخصية خاصة. وضع الأعمال لا يمنح صلاحية مؤسسة.','أداة · أدلة نصية','فهم منتج أو خدمة','قواعد وليست استدلال نموذج. أسماء الفئات الإنجليزية فقط. الادعاءات غير مؤكدة.','منتج أو خدمة أو سؤال','فئة DEMEOS اختيارية','فحص الأدلة','الأدلة والمراجعة','راجع المعلومات المقدمة. تبقى سجلات المنتجات والأسعار والمخزون والطلبات دون تغيير.','مسح العمل','توفر الأدوات','الصور والفيديو وتوصيات النموذج غير متاحة: قبول ROOT قيد الانتظار. لا بديل ذكاء مستضاف خارجي.','السجل غير متاح. لا يتم حفظ العمل.','قدرات الفئات','١٧١ فئة من السجل الحالي. ليست موافقة على الدقة الشاملة.','البحث عن فئة','جارٍ فتح المساحة…','سجل الدخول إلى ROOT. لا يلزم حساب بائع.','ROOT غير متاح. حاول مجددًا.','المساحة الشخصية جاهزة. استدلال النموذج غير متاح.','بدون فئة','دليل الفئة الحرفي','حقول تحتاج التحقق','أدوات الفئة غير مراجعة','قائمة حقول مراجعة','معاينة تطوير','الأعمال','العميل'],
+zh:['您的独立智能工作空间','面向企业与客户。无需商家账户。','私人个人空间。企业模式不授予组织访问权限。','工具 · 文本证据','了解产品或服务','规则检查，非模型推理。仅匹配英文类别名称。声明未经核实。','产品、服务或问题','可选 DEMEOS 类别','检查所提供证据','证据与审核','检查所提供的信息。商品、价格、库存和订单记录保持不变。','清除此工作','工具可用性','图像、视频和模型建议不可用：ROOT 验收待完成。无外部托管 AI 替代。','历史记录不可用。工作不会保存。','类别能力','沿用现有注册表的171个类别。并非完整准确性批准。','查找类别','正在打开工作空间…','登录 ROOT，无需商家账户。','ROOT 暂不可用，请重试。','个人空间已就绪。模型推理不可用。','未选类别','类别字面证据','待核实字段','专用工具未经审核','已审核字段清单','开发预览','企业','客户'],
+hi:['आपका स्वतंत्र बुद्धिमत्ता कार्यक्षेत्र','व्यवसायों और ग्राहकों के लिए। विक्रेता खाता आवश्यक नहीं।','निजी व्यक्तिगत कार्यक्षेत्र। व्यवसाय मोड संगठन का अधिकार नहीं देता।','उपकरण · पाठ साक्ष्य','उत्पाद या सेवा समझें','नियम जाँच, मॉडल अनुमान नहीं। केवल अंग्रेज़ी श्रेणी नाम। दावे सत्यापित नहीं हैं।','उत्पाद, सेवा या प्रश्न','वैकल्पिक DEMEOS श्रेणी','दिए साक्ष्य की जाँच','साक्ष्य और समीक्षा','दी गई जानकारी की समीक्षा करें। उत्पाद, मूल्य, स्टॉक और ऑर्डर के रिकॉर्ड नहीं बदलते।','काम साफ़ करें','उपकरण उपलब्धता','चित्र, वीडियो और मॉडल सुझाव उपलब्ध नहीं: ROOT स्वीकृति लंबित। बाहरी होस्टेड AI विकल्प नहीं।','इतिहास उपलब्ध नहीं। काम सहेजा नहीं जाता।','श्रेणी क्षमताएँ','मौजूदा रजिस्ट्री की 171 श्रेणियाँ। पूर्ण सटीकता की स्वीकृति नहीं।','श्रेणी खोजें','कार्यक्षेत्र खुल रहा है…','ROOT में साइन इन करें। विक्रेता खाता आवश्यक नहीं।','ROOT उपलब्ध नहीं। फिर कोशिश करें।','व्यक्तिगत क्षेत्र तैयार। मॉडल अनुमान उपलब्ध नहीं।','कोई श्रेणी नहीं','शाब्दिक श्रेणी साक्ष्य','जाँचने योग्य फ़ील्ड','विशेष उपकरणों की समीक्षा नहीं हुई','समीक्षित फ़ील्ड सूची','विकास पूर्वावलोकन','व्यवसाय','ग्राहक'],
+ja:['独立したインテリジェンス作業環境','事業者と顧客向け。出店者アカウントは不要です。','非公開の個人用スペース。事業者モードは組織への権限を付与しません。','ツール · テキスト根拠','商品やサービスを理解する','ルール検査でありモデル推論ではありません。英語のカテゴリ名のみ。主張は未検証です。','商品、サービス、質問','任意の DEMEOS カテゴリ','提示された根拠を確認','根拠と確認','入力された情報を確認してください。商品、価格、在庫、注文の記録は変更されません。','作業を消去','ツールの利用状況','画像・動画・モデル提案は利用不可：ROOT 検証待ち。外部ホスト型 AI への切替なし。','履歴は利用できません。作業は保存されません。','カテゴリ別機能','既存の171カテゴリを使用。全カテゴリの精度承認ではありません。','カテゴリを検索','作業環境を開いています…','ROOT にログインしてください。出店者アカウントは不要です。','ROOT は利用できません。再試行してください。','個人用スペースの準備完了。モデル推論は利用不可。','カテゴリ未選択','カテゴリ名の字面の根拠','確認すべき項目','専用ツールは未審査','審査済み項目一覧','開発プレビュー','事業者','顧客']};
+const integrationCopy={
+en:['Optional Selling integration','Share a saved product with ROOT for this request only.','Choose an authorised Selling product','Check this saved product','No authorised saved products'],
+es:['Integración Selling opcional','Compartir un producto guardado con ROOT solo para esta solicitud.','Elegir producto autorizado de Selling','Comprobar producto guardado','Sin productos guardados autorizados'],
+fr:['Intégration Selling facultative','Partager un produit enregistré avec ROOT pour cette demande uniquement.','Choisir un produit Selling autorisé','Vérifier ce produit enregistré','Aucun produit enregistré autorisé'],
+de:['Optionale Selling-Integration','Gespeichertes Produkt nur für diese Anfrage mit ROOT teilen.','Berechtigtes Selling-Produkt auswählen','Gespeichertes Produkt prüfen','Keine berechtigten gespeicherten Produkte'],
+pt:['Integração Selling opcional','Partilhar produto guardado com ROOT apenas neste pedido.','Escolher produto Selling autorizado','Verificar produto guardado','Sem produtos guardados autorizados'],
+tr:['İsteğe bağlı Selling bağlantısı','Kayıtlı ürünü yalnızca bu istek için ROOT ile paylaş.','Yetkili Selling ürünü seç','Kayıtlı ürünü kontrol et','Yetkili kayıtlı ürün yok'],
+ar:['تكامل Selling اختياري','مشاركة منتج محفوظ مع ROOT لهذا الطلب فقط.','اختيار منتج Selling مصرح به','فحص المنتج المحفوظ','لا توجد منتجات محفوظة مصرح بها'],
+zh:['可选 Selling 集成','仅为本次请求与 ROOT 共享已保存产品。','选择获授权的 Selling 产品','检查此已保存产品','无获授权的已保存产品'],
+hi:['वैकल्पिक Selling एकीकरण','केवल इस अनुरोध के लिए सहेजा उत्पाद ROOT से साझा करें।','अधिकृत Selling उत्पाद चुनें','सहेजे उत्पाद की जाँच','कोई अधिकृत सहेजा उत्पाद नहीं'],
+ja:['任意の Selling 連携','このリクエストのみで保存済み商品を ROOT と共有します。','権限のある Selling 商品を選択','保存済み商品を確認','権限のある保存済み商品なし']};
+keys.push('integration','consent','loadSelling','shareSelling','noSelling');Object.keys(rows).forEach(locale=>rows[locale].push(...integrationCopy[locale]));
+const savedCopy={
+en:['Private saved work','Save this text and analysis privately in this ROOT workspace.','Save current analysis','Your correction','Accept','Save correction','Reject','Work saved privately','Review saved','History shows the latest 50 saved works. No automatic product changes.'],
+es:['Trabajo privado guardado','Guardar este texto y análisis de forma privada en este espacio ROOT.','Guardar análisis actual','Tu corrección','Aceptar','Guardar corrección','Rechazar','Trabajo guardado de forma privada','Revisión guardada','Últimos 50 trabajos guardados. Sin cambios automáticos en productos.'],
+fr:['Travail privé enregistré','Enregistrer ce texte et cette analyse dans cet espace ROOT privé.','Enregistrer l’analyse','Votre correction','Accepter','Enregistrer la correction','Refuser','Travail enregistré en privé','Vérification enregistrée','Les 50 derniers travaux. Aucune modification automatique des produits.'],
+de:['Private gespeicherte Arbeit','Text und Analyse privat in diesem ROOT-Bereich speichern.','Aktuelle Analyse speichern','Ihre Korrektur','Annehmen','Korrektur speichern','Ablehnen','Arbeit privat gespeichert','Prüfung gespeichert','Die letzten 50 Arbeiten. Keine automatischen Produktänderungen.'],
+pt:['Trabalho privado guardado','Guardar texto e análise em privado neste espaço ROOT.','Guardar análise atual','A sua correção','Aceitar','Guardar correção','Rejeitar','Trabalho guardado em privado','Revisão guardada','Últimos 50 trabalhos. Sem alterações automáticas de produtos.'],
+tr:['Özel kayıtlı çalışma','Metin ve analizi bu ROOT alanında özel olarak kaydet.','Mevcut analizi kaydet','Düzeltmeniz','Kabul et','Düzeltmeyi kaydet','Reddet','Çalışma özel kaydedildi','İnceleme kaydedildi','Son 50 kayıtlı çalışma. Otomatik ürün değişikliği yok.'],
+ar:['العمل الخاص المحفوظ','حفظ النص والتحليل بشكل خاص في مساحة ROOT هذه.','حفظ التحليل الحالي','تصحيحك','قبول','حفظ التصحيح','رفض','تم حفظ العمل بشكل خاص','تم حفظ المراجعة','آخر ٥٠ عملاً محفوظًا. لا تعديل تلقائي للمنتجات.'],
+zh:['私人已保存工作','将文本和分析私密保存到此 ROOT 工作空间。','保存当前分析','您的修正','接受','保存修正','拒绝','已私密保存工作','已保存审核','显示最近50项工作。不自动修改产品。'],
+hi:['निजी सहेजा काम','पाठ और विश्लेषण इस ROOT कार्यक्षेत्र में निजी रूप से सहेजें।','वर्तमान विश्लेषण सहेजें','आपका सुधार','स्वीकार','सुधार सहेजें','अस्वीकार','काम निजी रूप से सहेजा गया','समीक्षा सहेजी गई','हाल के 50 काम। कोई स्वचालित उत्पाद बदलाव नहीं।'],
+ja:['非公開の保存済み作業','この ROOT スペースにテキストと分析を非公開で保存します。','現在の分析を保存','あなたの修正','承認','修正を保存','却下','非公開で保存しました','確認を保存しました','最新50件の作業。商品の自動変更はありません。']};
+keys.push('savedWork','saveConsent','saveWork','correctionText','acceptWork','correctWork','rejectWork','workSaved','reviewSaved','savedHistory');Object.keys(rows).forEach(locale=>rows[locale].push(...savedCopy[locale]));
+const visualCopy={
+en:['Analyse authorised media and save unverified suggestions privately in ROOT.','Analyse saved media with DEMEOS GPU','Controlled Preview only. Existing deadlines and budgets apply.','Model suggestions saved. Review required.'],
+es:['Analizar medios autorizados y guardar sugerencias no verificadas en ROOT.','Analizar medios con la GPU DEMEOS','Solo vista previa controlada. Se mantienen plazos y límites.','Sugerencias guardadas. Revisión necesaria.'],
+fr:['Analyser les médias autorisés et enregistrer les suggestions non vérifiées dans ROOT.','Analyser avec le GPU DEMEOS','Aperçu contrôlé uniquement. Délais et budgets inchangés.','Suggestions enregistrées. Vérification requise.'],
+de:['Berechtigte Medien analysieren und ungeprüfte Vorschläge privat in ROOT speichern.','Medien mit DEMEOS-GPU analysieren','Nur kontrollierte Vorschau. Bestehende Fristen und Budgets gelten.','Modellvorschläge gespeichert. Prüfung erforderlich.'],
+pt:['Analisar meios autorizados e guardar sugestões não verificadas no ROOT.','Analisar com GPU DEMEOS','Apenas pré-visualização controlada. Prazos e limites mantidos.','Sugestões guardadas. Revisão necessária.'],
+tr:['Yetkili medyayı analiz et ve doğrulanmamış önerileri ROOT içinde özel kaydet.','DEMEOS GPU ile medyayı analiz et','Yalnız kontrollü önizleme. Süre ve bütçe sınırları geçerli.','Model önerileri kaydedildi. İnceleme gerekli.'],
+ar:['تحليل الوسائط المصرح بها وحفظ المقترحات غير المؤكدة بشكل خاص في ROOT.','تحليل الوسائط بوحدة DEMEOS GPU','معاينة مضبوطة فقط. المهل والميزانيات الحالية سارية.','تم حفظ المقترحات. المراجعة مطلوبة.'],
+zh:['分析获授权媒体，并在 ROOT 私密保存未经验证的建议。','使用 DEMEOS GPU 分析媒体','仅限受控预览。遵守现有时限与预算。','模型建议已保存，需要审核。'],
+hi:['अधिकृत मीडिया जाँचें और असत्यापित सुझाव ROOT में निजी सहेजें।','DEMEOS GPU से मीडिया विश्लेषण','केवल नियंत्रित पूर्वावलोकन। मौजूदा समय और बजट सीमा लागू।','मॉडल सुझाव सहेजे गए। समीक्षा आवश्यक।'],
+ja:['許可されたメディアを分析し、未検証の提案を ROOT に非公開で保存します。','DEMEOS GPU でメディアを分析','管理されたプレビューのみ。既存の期限・予算を適用。','モデルの提案を保存しました。確認が必要です。']};
+keys.push('visualConsent','visualRun','visualScope','modelDone');Object.keys(rows).forEach(locale=>rows[locale].push(...visualCopy[locale]));
+const healthCopy={en:['Check GPU connection · no inference','GPU connection ready. This is not inference acceptance.'],es:['Comprobar conexión GPU · sin inferencia','Conexión GPU lista. No acredita inferencia.'],fr:['Vérifier la connexion GPU · sans inférence','Connexion GPU prête. Ce n’est pas une validation d’inférence.'],de:['GPU-Verbindung prüfen · keine Inferenz','GPU-Verbindung bereit. Keine Inferenzabnahme.'],pt:['Verificar ligação GPU · sem inferência','Ligação GPU pronta. Não valida inferência.'],tr:['GPU bağlantısını kontrol et · çıkarım yok','GPU bağlantısı hazır. Çıkarım onayı değildir.'],ar:['فحص اتصال GPU · دون استدلال','اتصال GPU جاهز. ليس قبولًا للاستدلال.'],zh:['检查 GPU 连接 · 不执行推理','GPU 连接就绪。这并非推理验收。'],hi:['GPU कनेक्शन जाँचें · अनुमान नहीं','GPU कनेक्शन तैयार। यह अनुमान स्वीकृति नहीं है।'],ja:['GPU 接続確認 · 推論なし','GPU 接続準備完了。推論の検証ではありません。']};keys.push('preflight','connectionReady');Object.keys(rows).forEach(locale=>rows[locale].push(...healthCopy[locale]));
+const searchCopy={
+en:['Find published offers','Customer Experience searches published offers. Availability, participation and ordering stay there.','Confirm this request and send it to DEMEOS Customer Experience. Its history and privacy controls apply.','Search DEMEOS catalogue','Open Customer Experience','Enter your request above, then confirm it here.','Published matches for this request.','No published offers match this request. Try different details.'],
+es:['Buscar ofertas publicadas','Customer Experience busca ofertas publicadas. La disponibilidad, participación y pedidos se gestionan allí.','Confirmar esta solicitud y enviarla a DEMEOS Customer Experience. Se aplican sus controles de historial y privacidad.','Buscar en el catálogo DEMEOS','Abrir Customer Experience','Escribe tu solicitud arriba y confírmala aquí.','Coincidencias publicadas para esta solicitud.','No hay ofertas publicadas que coincidan. Prueba otros detalles.'],
+fr:['Trouver des offres publiées','Customer Experience recherche les offres publiées. La disponibilité, la participation et les commandes y sont gérées.','Confirmer cette demande et l’envoyer à DEMEOS Customer Experience. Ses règles d’historique et de confidentialité s’appliquent.','Rechercher dans le catalogue DEMEOS','Ouvrir Customer Experience','Saisissez votre demande ci-dessus, puis confirmez-la ici.','Offres publiées correspondant à cette demande.','Aucune offre publiée ne correspond. Essayez d’autres détails.'],
+de:['Veröffentlichte Angebote finden','Customer Experience durchsucht veröffentlichte Angebote. Verfügbarkeit, Teilnahme und Bestellungen werden dort verwaltet.','Diese Anfrage bestätigen und an DEMEOS Customer Experience senden. Dessen Verlaufs- und Datenschutzeinstellungen gelten.','DEMEOS-Katalog durchsuchen','Customer Experience öffnen','Anfrage oben eingeben und hier bestätigen.','Veröffentlichte Treffer für diese Anfrage.','Keine veröffentlichten Angebote passen. Bitte andere Angaben versuchen.'],
+pt:['Encontrar ofertas publicadas','Customer Experience pesquisa ofertas publicadas. Disponibilidade, participação e encomendas são geridas lá.','Confirmar este pedido e enviá-lo para DEMEOS Customer Experience. Aplicam-se os seus controlos de histórico e privacidade.','Pesquisar catálogo DEMEOS','Abrir Customer Experience','Introduza o pedido acima e confirme-o aqui.','Ofertas publicadas para este pedido.','Nenhuma oferta publicada corresponde. Experimente outros detalhes.'],
+tr:['Yayımlanmış teklifleri bul','Customer Experience yayımlanmış teklifleri arar. Uygunluk, katılım ve siparişler orada yönetilir.','Bu isteği onayla ve DEMEOS Customer Experience’a gönder. Geçmiş ve gizlilik denetimleri geçerlidir.','DEMEOS kataloğunda ara','Customer Experience’ı aç','İsteğinizi yukarıya yazın ve burada onaylayın.','Bu istekle eşleşen yayımlanmış teklifler.','Eşleşen yayımlanmış teklif yok. Farklı ayrıntılar deneyin.'],
+ar:['العثور على عروض منشورة','تبحث تجربة العملاء في العروض المنشورة. وتُدار الإتاحة والمشاركة والطلبات هناك.','تأكيد هذا الطلب وإرساله إلى تجربة عملاء DEMEOS. تنطبق ضوابط السجل والخصوصية الخاصة بها.','البحث في كتالوج DEMEOS','فتح تجربة العملاء','أدخل طلبك أعلاه ثم أكّده هنا.','عروض منشورة تطابق هذا الطلب.','لا توجد عروض منشورة تطابق هذا الطلب. جرّب تفاصيل أخرى.'],
+zh:['查找已发布的商品与服务','客户体验会搜索已发布的商品与服务。供应情况、参与和订单由该应用管理。','确认此请求并发送至 DEMEOS 客户体验。适用其历史记录和隐私设置。','搜索 DEMEOS 目录','打开客户体验','请在上方输入请求，然后在此确认。','与此请求匹配的已发布内容。','没有匹配的已发布内容。请尝试其他描述。'],
+hi:['प्रकाशित प्रस्ताव खोजें','Customer Experience प्रकाशित प्रस्ताव खोजता है। उपलब्धता, भागीदारी और ऑर्डर वहीं प्रबंधित होते हैं।','इस अनुरोध की पुष्टि करके DEMEOS Customer Experience को भेजें। उसके इतिहास और गोपनीयता नियंत्रण लागू होंगे।','DEMEOS कैटलॉग खोजें','Customer Experience खोलें','ऊपर अनुरोध लिखें, फिर यहाँ पुष्टि करें।','इस अनुरोध से मेल खाने वाले प्रकाशित प्रस्ताव।','कोई प्रकाशित प्रस्ताव मेल नहीं खाता। अन्य विवरण आज़माएँ।'],
+ja:['公開済みのオファーを探す','Customer Experience が公開済みのオファーを検索します。提供状況、参加、注文はそちらで管理されます。','このリクエストを確認し、DEMEOS Customer Experience に送信します。同アプリの履歴・プライバシー設定が適用されます。','DEMEOS カタログを検索','Customer Experience を開く','上にリクエストを入力し、ここで確認してください。','このリクエストに一致する公開済みのオファー。','一致する公開済みのオファーはありません。別の内容をお試しください。']};
+keys.push('searchHeading','searchScope','searchConsent','searchRun','searchContinue','searchPrompt','searchFound','searchEmpty');Object.keys(rows).forEach(locale=>rows[locale].push(...searchCopy[locale]));
+const diagnosticCopy={
+en:['Development diagnostics','Development tool: category verification'],
+es:['Diagnósticos de desarrollo','Herramienta de desarrollo: verificar categoría'],
+fr:['Diagnostics de développement','Outil de développement : vérification de catégorie'],
+de:['Entwicklungsdiagnose','Entwicklungswerkzeug: Kategorieprüfung'],
+zh:['开发诊断','开发工具：类别验证'],
+pt:['Diagnóstico de desenvolvimento','Ferramenta de desenvolvimento: verificar categoria'],
+ar:['تشخيصات التطوير','أداة تطوير: التحقق من الفئة'],
+tr:['Geliştirme tanılamaları','Geliştirme aracı: kategori doğrulama'],
+hi:['विकास निदान','विकास उपकरण: श्रेणी सत्यापन'],
+ja:['開発診断','開発ツール：カテゴリ検証']};
+keys.push('diagnostics','categoryDiagnostic');Object.keys(rows).forEach(locale=>rows[locale].push(...diagnosticCopy[locale]));
+const reviewCopy={
+en:['Pending review','Accepted','Corrected','Rejected','Your review records your decision. It does not independently verify the supplied information or model suggestions.','Model suggestions · unverified'],
+es:['Revisión pendiente','Aceptado','Corregido','Rechazado','La revisión registra tu decisión. No verifica de forma independiente la información ni las sugerencias.','Sugerencias del modelo · no verificadas'],
+fr:['À vérifier','Accepté','Corrigé','Refusé','La vérification enregistre votre décision. Elle ne valide pas indépendamment les informations ou suggestions.','Suggestions du modèle · non vérifiées'],
+de:['Prüfung ausstehend','Angenommen','Korrigiert','Abgelehnt','Die Prüfung speichert Ihre Entscheidung. Sie bestätigt Angaben oder Modellvorschläge nicht unabhängig.','Modellvorschläge · ungeprüft'],
+pt:['Revisão pendente','Aceite','Corrigido','Rejeitado','A revisão regista a sua decisão. Não verifica de forma independente informações ou sugestões.','Sugestões do modelo · não verificadas'],
+tr:['İnceleme bekliyor','Kabul edildi','Düzeltildi','Reddedildi','İnceleme kararınızı kaydeder. Bilgileri veya model önerilerini bağımsız olarak doğrulamaz.','Model önerileri · doğrulanmamış'],
+ar:['بانتظار المراجعة','مقبول','تم التصحيح','مرفوض','تسجل المراجعة قرارك. ولا تتحقق بشكل مستقل من المعلومات أو مقترحات النموذج.','مقترحات النموذج · غير مؤكدة'],
+zh:['待审核','已接受','已修正','已拒绝','审核记录您的决定，并不独立验证所提供的信息或模型建议。','模型建议 · 未经验证'],
+hi:['समीक्षा लंबित','स्वीकृत','सुधारा गया','अस्वीकृत','समीक्षा आपका निर्णय दर्ज करती है। यह जानकारी या मॉडल सुझावों का स्वतंत्र सत्यापन नहीं है।','मॉडल सुझाव · असत्यापित'],
+ja:['確認待ち','承認済み','修正済み','却下済み','確認はあなたの判断を記録します。情報やモデルの提案を独立して検証するものではありません。','モデルの提案 · 未検証']};
+keys.push('reviewPending','reviewAccepted','reviewCorrected','reviewRejected','reviewBoundary','modelEvidence');Object.keys(rows).forEach(locale=>rows[locale].push(...reviewCopy[locale]));
+const conflictCopy={
+en:'This saved work changed in another session. Your draft remains below. Reopen the latest saved version before reviewing again.',
+es:'Este trabajo cambió en otra sesión. Tu borrador sigue abajo. Abre la versión guardada más reciente antes de revisar de nuevo.',
+fr:'Ce travail a changé dans une autre session. Votre brouillon reste ci-dessous. Rouvrez la dernière version avant de vérifier à nouveau.',
+de:'Diese Arbeit wurde in einer anderen Sitzung geändert. Ihr Entwurf bleibt unten erhalten. Öffnen Sie vor der Prüfung die neueste Version.',
+pt:'Este trabalho mudou noutra sessão. O rascunho permanece abaixo. Reabra a versão guardada mais recente antes de rever.',
+tr:'Bu çalışma başka bir oturumda değişti. Taslağınız aşağıda duruyor. Yeniden incelemeden önce son kayıtlı sürümü açın.',
+ar:'تغير هذا العمل في جلسة أخرى. تظل مسودتك أدناه. أعد فتح أحدث نسخة محفوظة قبل المراجعة مجددًا.',
+zh:'此工作已在另一会话中更改。您的草稿保留在下方。再次审核前，请重新打开最新保存的版本。',
+hi:'यह काम दूसरे सत्र में बदला गया है। आपका मसौदा नीचे है। दोबारा समीक्षा से पहले नवीनतम सहेजा संस्करण खोलें।',
+ja:'別のセッションで変更されました。下書きは下に残っています。再確認する前に最新の保存版を開いてください。'};
+keys.push('reviewConflict');Object.keys(rows).forEach(locale=>rows[locale].push(conflictCopy[locale]));
+const requestCopy={
+en:['What would you like help with?','Your request','General conversation is not yet available. Review saved work or use the optional Selling integration to analyse authorised media. Supplied-text checks are in development tools below.','Describe the product or service you need, then confirm your request to search published DEMEOS offers.','Development tool: supplied-text checks','Review authorised product media'],
+es:['¿En qué necesitas ayuda?','Tu solicitud','La conversación general aún no está disponible. Revisa el trabajo guardado o usa la integración opcional con Selling para analizar medios autorizados. Las comprobaciones de texto están en las herramientas de desarrollo de abajo.','Describe el producto o servicio que necesitas y confirma tu solicitud para buscar ofertas publicadas de DEMEOS.','Herramienta de desarrollo: comprobar texto','Revisar medios autorizados de productos'],
+fr:['Comment pouvons-nous vous aider ?','Votre demande','La conversation générale n’est pas encore disponible. Consultez vos travaux enregistrés ou utilisez l’intégration Selling facultative pour analyser des médias autorisés. Les vérifications de texte sont dans les outils de développement ci-dessous.','Décrivez le produit ou service recherché, puis confirmez votre demande pour rechercher les offres DEMEOS publiées.','Outil de développement : vérification du texte','Examiner les médias produits autorisés'],
+de:['Wobei benötigen Sie Hilfe?','Ihre Anfrage','Allgemeine Gespräche sind noch nicht verfügbar. Prüfen Sie gespeicherte Arbeiten oder nutzen Sie die optionale Selling-Integration zur Analyse berechtigter Medien. Textprüfungen befinden sich unten in den Entwicklungswerkzeugen.','Beschreiben Sie das gewünschte Produkt oder die Dienstleistung und bestätigen Sie Ihre Anfrage, um veröffentlichte DEMEOS-Angebote zu suchen.','Entwicklungswerkzeug: Textprüfung','Berechtigte Produktmedien prüfen'],
+pt:['Em que precisa de ajuda?','O seu pedido','A conversa geral ainda não está disponível. Reveja trabalhos guardados ou use a integração opcional com Selling para analisar meios autorizados. As verificações de texto estão nas ferramentas de desenvolvimento abaixo.','Descreva o produto ou serviço pretendido e confirme o pedido para pesquisar ofertas DEMEOS publicadas.','Ferramenta de desenvolvimento: verificar texto','Rever meios autorizados de produtos'],
+tr:['Nasıl yardımcı olabiliriz?','İsteğiniz','Genel sohbet henüz kullanılamıyor. Kayıtlı çalışmaları inceleyin veya yetkili medyayı analiz etmek için isteğe bağlı Selling entegrasyonunu kullanın. Metin kontrolleri aşağıdaki geliştirme araçlarındadır.','İhtiyacınız olan ürün veya hizmeti açıklayın, ardından yayımlanmış DEMEOS tekliflerini aramak için isteğinizi onaylayın.','Geliştirme aracı: metin kontrolleri','Yetkili ürün medyasını incele'],
+ar:['كيف يمكننا مساعدتك؟','طلبك','المحادثة العامة غير متاحة بعد. راجع العمل المحفوظ أو استخدم تكامل Selling الاختياري لتحليل الوسائط المصرح بها. توجد فحوص النص في أدوات التطوير أدناه.','صف المنتج أو الخدمة التي تحتاجها، ثم أكّد طلبك للبحث عن عروض DEMEOS المنشورة.','أداة تطوير: فحص النص','مراجعة وسائط المنتجات المصرح بها'],
+zh:['您需要什么帮助？','您的请求','通用对话尚不可用。您可以审核已保存的工作，或通过可选的 Selling 集成分析获授权的媒体。文本检查位于下方的开发工具中。','描述您需要的产品或服务，然后确认请求以搜索已发布的 DEMEOS 商品与服务。','开发工具：文本检查','审核获授权的产品媒体'],
+hi:['आपको किस काम में सहायता चाहिए?','आपका अनुरोध','सामान्य बातचीत अभी उपलब्ध नहीं है। सहेजा काम देखें या अधिकृत मीडिया का विश्लेषण करने के लिए वैकल्पिक Selling एकीकरण का उपयोग करें। पाठ जाँच नीचे विकास उपकरणों में है।','आवश्यक उत्पाद या सेवा का वर्णन करें, फिर प्रकाशित DEMEOS प्रस्ताव खोजने के लिए अनुरोध की पुष्टि करें।','विकास उपकरण: पाठ जाँच','अधिकृत उत्पाद मीडिया की समीक्षा करें'],
+ja:['どのようなお手伝いが必要ですか？','リクエスト','一般的な会話はまだ利用できません。保存済みの作業を確認するか、任意の Selling 連携で許可されたメディアを分析できます。テキスト確認は下の開発ツールにあります。','必要な商品やサービスを記述し、リクエストを確認して公開済みの DEMEOS オファーを検索してください。','開発ツール：テキスト確認','許可された商品メディアを確認']};
+keys.push('requestHeading','requestText','requestBusiness','requestCustomer','textDiagnostics','openMediaTools');Object.keys(rows).forEach(locale=>rows[locale].push(...requestCopy[locale]));
+const textRuntimeCopy={
+ "en": [
+  "Ask ROOT",
+  "Send only this request to DEMEOS Root and save its unverified reply privately in this context.",
+  "Ask for a short advisory reply. Each request stands alone, without conversation memory, browsing or account tools. Published-offer search is a separate action.",
+  "Personal ROOT workspace ready. Controlled native text replies are available."
+ ],
+ "es": [
+  "Preguntar a ROOT",
+  "Envía solo esta solicitud a DEMEOS Root y guarda su respuesta no verificada de forma privada en este contexto.",
+  "Solicita una respuesta breve orientativa. Cada solicitud es independiente, sin memoria, navegación ni herramientas de cuenta. La búsqueda de ofertas es una acción aparte.",
+  "Espacio personal ROOT listo. Respuestas de texto nativas controladas disponibles."
+ ],
+ "fr": [
+  "Demander à ROOT",
+  "Envoyer uniquement cette demande à DEMEOS Root et enregistrer sa réponse non vérifiée en privé dans ce contexte.",
+  "Demandez un bref conseil. Chaque demande est indépendante, sans mémoire, navigation ni outils de compte. La recherche d’offres est une action distincte.",
+  "Espace personnel ROOT prêt. Réponses textuelles natives contrôlées disponibles."
+ ],
+ "de": [
+  "ROOT fragen",
+  "Nur diese Anfrage an DEMEOS Root senden und die ungeprüfte Antwort privat in diesem Kontext speichern.",
+  "Bitten Sie um eine kurze Empfehlung. Jede Anfrage steht für sich, ohne Gesprächsspeicher, Webzugriff oder Kontowerkzeuge. Die Angebotssuche ist eine separate Aktion.",
+  "Persönlicher ROOT-Bereich bereit. Kontrollierte native Textantworten sind verfügbar."
+ ],
+ "pt": [
+  "Perguntar ao ROOT",
+  "Enviar apenas este pedido ao DEMEOS Root e guardar a resposta não verificada em privado neste contexto.",
+  "Peça uma breve orientação. Cada pedido é independente, sem memória, navegação ou ferramentas de conta. A pesquisa de ofertas é uma ação separada.",
+  "Espaço pessoal ROOT pronto. Respostas de texto nativas controladas disponíveis."
+ ],
+ "tr": [
+  "ROOT’a sor",
+  "Yalnızca bu isteği DEMEOS Root’a gönder ve doğrulanmamış yanıtı bu bağlamda özel olarak kaydet.",
+  "Kısa bir öneri isteyin. Her istek bağımsızdır; sohbet belleği, internet veya hesap araçları yoktur. Teklif araması ayrı bir işlemdir.",
+  "Kişisel ROOT alanı hazır. Kontrollü yerel metin yanıtları kullanılabilir."
+ ],
+ "ar": [
+  "اسأل ROOT",
+  "أرسل هذا الطلب فقط إلى DEMEOS Root واحفظ رده غير المتحقق منه بشكل خاص في هذا السياق.",
+  "اطلب رداً إرشادياً قصيراً. كل طلب مستقل، دون ذاكرة للمحادثة أو تصفح أو أدوات للحساب. البحث عن العروض إجراء منفصل.",
+  "مساحة ROOT الشخصية جاهزة. الردود النصية المحلية المضبوطة متاحة."
+ ],
+ "zh": [
+  "询问 ROOT",
+  "仅将此请求发送给 DEMEOS Root，并在当前情境中私下保存未经核实的回复。",
+  "请求简短的建议。每次请求独立处理，不保留对话记忆，不浏览网页，也不使用账户工具。搜索公开商品与服务是单独的操作。",
+  "ROOT 个人空间已就绪。受控的本地模型文本回复可用。"
+ ],
+ "hi": [
+  "ROOT से पूछें",
+  "केवल यह अनुरोध DEMEOS Root को भेजें और इसका अप्रमाणित उत्तर इसी संदर्भ में निजी रूप से सहेजें।",
+  "संक्षिप्त सलाह माँगें। हर अनुरोध अलग है; बातचीत की स्मृति, ब्राउज़िंग या खाते के उपकरण उपलब्ध नहीं हैं। प्रकाशित प्रस्तावों की खोज अलग कार्रवाई है।",
+  "निजी ROOT कार्यक्षेत्र तैयार है। नियंत्रित स्थानीय मॉडल के पाठ उत्तर उपलब्ध हैं।"
+ ],
+ "ja": [
+  "ROOT に質問",
+  "このリクエストだけを DEMEOS Root に送信し、未確認の回答をこのコンテキスト内に非公開で保存します。",
+  "短い助言を求められます。各リクエストは独立しており、会話の記憶、閲覧、アカウント操作はありません。公開オファーの検索は別の操作です。",
+  "個人用 ROOT ワークスペースの準備ができました。管理されたネイティブのテキスト回答を利用できます。"
+ ]
+};
+keys.push('askRoot','textConsent','textHint','textReady');Object.keys(rows).forEach(locale=>rows[locale].push(...textRuntimeCopy[locale]));
+const api={keys,rows,translate:(locale,key)=>{const index=keys.indexOf(key);return index<0?key:(rows[locale]||rows.en)[index];}};
+if(typeof module==='object'&&module.exports)module.exports=api;root.DEMEOSRootCopy=api;
+})(typeof window==='object'?window:{});

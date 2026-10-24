@@ -1,0 +1,35 @@
+name: Selling Video Processor
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  real-video:
+    # Match the supported browser environment instead of a moving OS alias.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install isolated verification dependencies
+        run: npm install --no-save playwright@1.55.0
+      - name: Install actual video and browser runtimes
+        run: |
+          # Exercise the same pinned executables shipped by the application.
+          # Avoid a second FFmpeg installation and its large apt dependency tree.
+          node <<'NODE'
+          const fs = require('node:fs');
+          const { execFileSync } = require('node:child_process');
+          const binaries = [require('ffmpeg-static'), require.resolve('@ffprobe-installer/linux-x64/ffprobe')];
+          for (const binary of binaries) {
+            fs.accessSync(binary, fs.constants.X_OK);
+            console.log(execFileSync(binary, ['-version'], { encoding: 'utf8', timeout: 5000 }).split('\n')[0]);
+          }
+          NODE
+          npx playwright install --with-deps chromium chrome
+      - name: Verify real MOV encoding, private storage, SQL ownership and playback
+        run: |
+          node tools/video-processor/verify.js --browser
+          node tools/video-processor/verify.js --native --browser

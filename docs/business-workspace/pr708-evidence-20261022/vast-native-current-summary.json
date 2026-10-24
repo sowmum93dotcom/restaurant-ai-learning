@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-22",
+  "sourceCommit": "58b5d15187048f919c10ef56b9479f74f71435e4",
+  "instanceId": 56929706,
+  "hardware": {
+    "gpu": "NVIDIA GeForce RTX 4090",
+    "memoryMiB": 24564,
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "cudaAvailable": true
+  },
+  "modelId": "Qwen3-VL-4B-Instruct",
+  "modelVersion": "ebb281ec70b05090aa6165b016eac8ec08e71b17",
+  "weightsManifestHash": "e2c07fc24e1523d0987dfb6b082020c0eb74a04eb622f36c153fd97c5d254ae2",
+  "runtimeCodeHash": "7368e842310e3f1cd76ba711936ed955964519c0b7b41c0ebbddcc91c44befa3",
+  "readOnlyFilesVerifiedAsServiceUser": 13,
+  "serviceUser": "demeos-ai",
+  "route": "loopback-hardware-only",
+  "originalControlledAcceptance": {
+    "passed": 31,
+    "planned": 31,
+    "minimumMs": 260.87039802223444,
+    "maximumMs": 765.6604580115527,
+    "rawReport": "demeos-pr708-2238-original-acceptance.json",
+    "sha256": "dccb8b94d55eeeeca30d4fcbd17681522483d22acd88a188323685e5a26a7731"
+  },
+  "hardwareBenchmark": {
+    "passed": 10,
+    "planned": 10,
+    "singleImageCases": 5,
+    "fourFrameCases": 5,
+    "minimumMs": 190.10141515173018,
+    "maximumMs": 664.9098759517074,
+    "rawReport": "demeos-pr708-2238-benchmark.json",
+    "sha256": "1bb70941f14ccc3dea4af02bf6a52d5d50cd4578b8a545d902c4573db0d5810a"
+  },
+  "durableRawReports": {
+    "globalDirectory": "/workspace/demeos-evaluation-20261022/vast-current-2238",
+    "gpuSourceDirectory": "/root",
+    "copiedAndReadBackHashesMatched": true
+  },
+  "cleanup": {
+    "nativeProcessesTerminated": true,
+    "nvidiaComputeProcessesAfterTermination": 0,
+    "vastInactiveVerified": true,
+    "retainedStorageUsdPerHour": 0.017,
+    "temporaryInstanceKeyRemoved": 1648834,
+    "originalFourInstanceKeysPreserved": true,
+    "cpuBridgePod": "xm3g09qr8v4xkr",
+    "cpuBridgeStoppedVerified": true,
+    "cpuQuoteUsdPerHour": 0.3,
+    "cpuStopVerifiedBeforeUtc": "2026-10-22T22:47:21Z"
+  },
+  "productAccuracyVerified": false,
+  "multilingualAccuracyVerified": false,
+  "categoryAccuracyVerified": false,
+  "httpsAcceptancePassed": false,
+  "rootSavedNativeResultAcceptancePassed": false,
+  "activationApproved": false,
+  "productionChanged": false,
+  "prMerged": false,
+  "originalDataPreserved": true,
+  "newModelDownloads": 0,
+  "newResourcesCreated": 0,
+  "nextStage": {
+    "existingPod": "r50cslfgj1dvd7",
+    "gpu": "L40S",
+    "actualMemoryMiB": 46068,
+    "quotedTotalUsdPerHour": 1.1,
+    "statusAtCheckpoint": "running; staging original Global weights for HTTPS evaluation"
+  },
+  "ci": {
+    "commit": "58b5d15187048f919c10ef56b9479f74f71435e4",
+    "baselineRun": 39864467002,
+    "videoRun": 39864466816,
+    "browserRun": 39864466801,
+    "allCompletedSuccessfully": true,
+    "browserInference": "explicit fixture, not GPU"
+  }
+}

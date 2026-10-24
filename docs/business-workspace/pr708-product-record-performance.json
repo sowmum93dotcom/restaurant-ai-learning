@@ -1,0 +1,343 @@
+{
+  "runtime": "v24.19.0",
+  "database": "PGlite 0.5.8",
+  "method": "One warm-up/eight measured calls. Isolated embedded Postgres, no HTTP/Clerk/Neon network. Projection and product-record CAS are isolated preparation only, NOT the live catalogue path. Product-record writes include ownership, source stamp, revision lock and immutable audit. Whole-profile writes remain O(n); max is not a statistical p95. Repeated writes use the same controlled value.",
+  "results": [
+    {
+      "products": 50,
+      "operation": "authoritative-profile-hydration",
+      "medianMs": 2.515,
+      "maxMs": 3.162,
+      "payloadBytes": 10263,
+      "calls": 8
+    },
+    {
+      "products": 50,
+      "operation": "jsonb-product-lookup",
+      "medianMs": 0.619,
+      "maxMs": 1.058,
+      "payloadBytes": 206,
+      "calls": 8
+    },
+    {
+      "products": 50,
+      "operation": "jsonb-product-update-current-path",
+      "medianMs": 0.694,
+      "maxMs": 0.936,
+      "payloadBytes": 4,
+      "calls": 8
+    },
+    {
+      "products": 50,
+      "operation": "catalogue-page-current-path",
+      "medianMs": 2.163,
+      "maxMs": 2.85,
+      "payloadBytes": 5053,
+      "calls": 8
+    },
+    {
+      "products": 50,
+      "operation": "deterministic-duplicate-detection",
+      "medianMs": 0.044,
+      "maxMs": 0.076,
+      "payloadBytes": 2,
+      "calls": 8
+    },
+    {
+      "products": 50,
+      "operation": "product-revision-check",
+      "medianMs": 0.007,
+      "maxMs": 0.032,
+      "payloadBytes": 4,
+      "calls": 8
+    },
+    {
+      "products": 50,
+      "operation": "business-ownership-check",
+      "medianMs": 0.479,
+      "maxMs": 0.507,
+      "payloadBytes": 4,
+      "calls": 8
+    },
+    {
+      "products": 50,
+      "operation": "analysis-result-indexed-lookup",
+      "medianMs": 0.557,
+      "maxMs": 0.595,
+      "payloadBytes": 4,
+      "calls": 8
+    },
+    {
+      "products": 50,
+      "operation": "prepared-projection-product-lookup",
+      "medianMs": 0.488,
+      "maxMs": 1.321,
+      "payloadBytes": 200,
+      "calls": 8
+    },
+    {
+      "products": 50,
+      "operation": "prepared-projection-page",
+      "medianMs": 0.681,
+      "maxMs": 1.065,
+      "payloadBytes": 5314,
+      "calls": 8
+    },
+    {
+      "products": 50,
+      "operation": "jsonb-update-with-projection-trigger",
+      "medianMs": 1.222,
+      "maxMs": 1.539,
+      "payloadBytes": 4,
+      "calls": 8
+    },
+    {
+      "products": 50,
+      "operation": "product-record-owned-lookup",
+      "medianMs": 0.599,
+      "maxMs": 0.686,
+      "payloadBytes": 319,
+      "calls": 8
+    },
+    {
+      "products": 50,
+      "operation": "product-record-CAS-update-with-audit",
+      "medianMs": 1.889,
+      "maxMs": 2.843,
+      "payloadBytes": 17,
+      "calls": 8
+    },
+    {
+      "products": 50,
+      "operation": "product-record-indexed-page",
+      "medianMs": 0.916,
+      "maxMs": 1.288,
+      "payloadBytes": 5689,
+      "calls": 8
+    },
+    {
+      "products": 500,
+      "operation": "authoritative-profile-hydration",
+      "medianMs": 2.681,
+      "maxMs": 2.912,
+      "payloadBytes": 102414,
+      "calls": 8
+    },
+    {
+      "products": 500,
+      "operation": "jsonb-product-lookup",
+      "medianMs": 0.629,
+      "maxMs": 0.671,
+      "payloadBytes": 210,
+      "calls": 8
+    },
+    {
+      "products": 500,
+      "operation": "jsonb-product-update-current-path",
+      "medianMs": 2.595,
+      "maxMs": 3.379,
+      "payloadBytes": 4,
+      "calls": 8
+    },
+    {
+      "products": 500,
+      "operation": "catalogue-page-current-path",
+      "medianMs": 3.923,
+      "maxMs": 4.801,
+      "payloadBytes": 5145,
+      "calls": 8
+    },
+    {
+      "products": 500,
+      "operation": "deterministic-duplicate-detection",
+      "medianMs": 0.176,
+      "maxMs": 0.212,
+      "payloadBytes": 2,
+      "calls": 8
+    },
+    {
+      "products": 500,
+      "operation": "product-revision-check",
+      "medianMs": 0.003,
+      "maxMs": 0.007,
+      "payloadBytes": 4,
+      "calls": 8
+    },
+    {
+      "products": 500,
+      "operation": "business-ownership-check",
+      "medianMs": 0.324,
+      "maxMs": 0.354,
+      "payloadBytes": 4,
+      "calls": 8
+    },
+    {
+      "products": 500,
+      "operation": "analysis-result-indexed-lookup",
+      "medianMs": 0.36,
+      "maxMs": 0.438,
+      "payloadBytes": 4,
+      "calls": 8
+    },
+    {
+      "products": 500,
+      "operation": "prepared-projection-product-lookup",
+      "medianMs": 0.386,
+      "maxMs": 0.46,
+      "payloadBytes": 204,
+      "calls": 8
+    },
+    {
+      "products": 500,
+      "operation": "prepared-projection-page",
+      "medianMs": 1.024,
+      "maxMs": 1.23,
+      "payloadBytes": 5405,
+      "calls": 8
+    },
+    {
+      "products": 500,
+      "operation": "jsonb-update-with-projection-trigger",
+      "medianMs": 6.547,
+      "maxMs": 12.567,
+      "payloadBytes": 4,
+      "calls": 8
+    },
+    {
+      "products": 500,
+      "operation": "product-record-owned-lookup",
+      "medianMs": 0.544,
+      "maxMs": 0.674,
+      "payloadBytes": 323,
+      "calls": 8
+    },
+    {
+      "products": 500,
+      "operation": "product-record-CAS-update-with-audit",
+      "medianMs": 1.892,
+      "maxMs": 2.748,
+      "payloadBytes": 17,
+      "calls": 8
+    },
+    {
+      "products": 500,
+      "operation": "product-record-indexed-page",
+      "medianMs": 1.544,
+      "maxMs": 2.065,
+      "payloadBytes": 5780,
+      "calls": 8
+    },
+    {
+      "products": 5000,
+      "operation": "authoritative-profile-hydration",
+      "medianMs": 14.336,
+      "maxMs": 21.653,
+      "payloadBytes": 1041915,
+      "calls": 8
+    },
+    {
+      "products": 5000,
+      "operation": "jsonb-product-lookup",
+      "medianMs": 1.951,
+      "maxMs": 2.606,
+      "payloadBytes": 214,
+      "calls": 8
+    },
+    {
+      "products": 5000,
+      "operation": "jsonb-product-update-current-path",
+      "medianMs": 25.332,
+      "maxMs": 41.429,
+      "payloadBytes": 4,
+      "calls": 8
+    },
+    {
+      "products": 5000,
+      "operation": "catalogue-page-current-path",
+      "medianMs": 28.146,
+      "maxMs": 36.911,
+      "payloadBytes": 5237,
+      "calls": 8
+    },
+    {
+      "products": 5000,
+      "operation": "deterministic-duplicate-detection",
+      "medianMs": 2.735,
+      "maxMs": 3.274,
+      "payloadBytes": 2,
+      "calls": 8
+    },
+    {
+      "products": 5000,
+      "operation": "product-revision-check",
+      "medianMs": 0.007,
+      "maxMs": 0.061,
+      "payloadBytes": 4,
+      "calls": 8
+    },
+    {
+      "products": 5000,
+      "operation": "business-ownership-check",
+      "medianMs": 0.507,
+      "maxMs": 0.565,
+      "payloadBytes": 4,
+      "calls": 8
+    },
+    {
+      "products": 5000,
+      "operation": "analysis-result-indexed-lookup",
+      "medianMs": 0.54,
+      "maxMs": 0.668,
+      "payloadBytes": 4,
+      "calls": 8
+    },
+    {
+      "products": 5000,
+      "operation": "prepared-projection-product-lookup",
+      "medianMs": 0.46,
+      "maxMs": 0.621,
+      "payloadBytes": 208,
+      "calls": 8
+    },
+    {
+      "products": 5000,
+      "operation": "prepared-projection-page",
+      "medianMs": 0.637,
+      "maxMs": 0.717,
+      "payloadBytes": 5496,
+      "calls": 8
+    },
+    {
+      "products": 5000,
+      "operation": "jsonb-update-with-projection-trigger",
+      "medianMs": 56.598,
+      "maxMs": 88.546,
+      "payloadBytes": 4,
+      "calls": 8
+    },
+    {
+      "products": 5000,
+      "operation": "product-record-owned-lookup",
+      "medianMs": 0.585,
+      "maxMs": 0.639,
+      "payloadBytes": 327,
+      "calls": 8
+    },
+    {
+      "products": 5000,
+      "operation": "product-record-CAS-update-with-audit",
+      "medianMs": 2.223,
+      "maxMs": 5.393,
+      "payloadBytes": 17,
+      "calls": 8
+    },
+    {
+      "products": 5000,
+      "operation": "product-record-indexed-page",
+      "medianMs": 4.93,
+      "maxMs": 5.478,
+      "payloadBytes": 5871,
+      "calls": 8
+    }
+  ]
+}

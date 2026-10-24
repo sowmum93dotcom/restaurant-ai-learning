@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "dateLondon": "2026-10-23",
+  "sourceCommit": "1a5c26b2d706b8a57f72e2d146e4e7cbbaa0bf39",
+  "deploymentId": "dpl_CPkBVgtnHbpdsPEz3trW2SyGuAXK",
+  "deploymentTarget": null,
+  "deploymentEnvironment": "preview",
+  "branch": "rebuild/selling-foundation-phase-1",
+  "actualLoggedFunctionRegion": "cle1",
+  "modelId": "Qwen3-VL-4B-Instruct",
+  "modelVersion": "ebb281ec70b05090aa6165b016eac8ec08e71b17",
+  "weightsManifestHash": "e2c07fc24e1523d0987dfb6b082020c0eb74a04eb622f36c153fd97c5d254ae2",
+  "runtimeCodeHash": "7368e842310e3f1cd76ba711936ed955964519c0b7b41c0ebbddcc91c44befa3",
+  "filesVerifiedReadOnlyAsServiceUser": 13,
+  "gpu": "NVIDIA L40S",
+  "memoryMiB": 46068,
+  "authenticatedVercelToGpuPreflightMs": 1133,
+  "unchangedTimeoutMs": 2000,
+  "actualPrivateMediaRequest": {
+    "outcome": "execution-timeout",
+    "runnerObservedMs": 2084,
+    "stagesMs": {
+      "media-read-issued": 504,
+      "media-bytes-verified": 623,
+      "scope-rechecked": 776,
+      "execution-finished": 2084
+    },
+    "nativeSavedResults": 0,
+    "claimId": "16c23d36-5481-47e4-97c8-14d12c3d7ea8",
+    "businessId": "test-business-selling-708",
+    "claimCreatedAt": "2026-10-22T23:35:31.588Z",
+    "jobs": 1,
+    "reservationActiveAfterTimeout": true
+  },
+  "cleanup": {
+    "nativeProcessTerminationVerified": true,
+    "nvidiaComputeProcesses": 0,
+    "emptyProcessListVerifiedAtUtc": "2026-10-22T23:37:56Z",
+    "globalOperatingEvidenceDirectory": "/workspace/demeos-evaluation-20261022/approved-preview-2335",
+    "sourceAndReadBackHashesMatched": true,
+    "webTerminalDisabledVerified": true,
+    "gpuStoppedVerified": true,
+    "gpuStoppedCostUsdPerHour": 0,
+    "originalGlobalVolumeAttached": true,
+    "executionFlagsDisabled": true,
+    "credentialRotated": true,
+    "finalRunpodBalanceUsd": 20.22,
+    "lastVastBalanceUsd": 23.32,
+    "allRunpodRowsZeroComputeAfterReload": true
+  },
+  "database": {
+    "projectId": "shiny-sun-84024932",
+    "branchId": "br-flat-snow-zatzl87u",
+    "primary": false,
+    "previewEndpoint": "ep-fragrant-cake-za2a226e",
+    "productionEndpoint": "ep-lucky-sea-zak6kfvx",
+    "differentEndpointsIndependentlyVerified": true
+  },
+  "followUp": {
+    "implementation": "api/public-config.js function region set to lhr1 next to existing London database",
+    "performanceImprovementMeasured": false,
+    "retainsOtherFunctionsConfiguration": true,
+    "deadlinePermissionAndBudgetChanges": false,
+    "expiredClaimReconciliation": "automatic approval review rejected exact conditional failure update and audit insert; no retry or alternate business used"
+  },
+  "productionChanged": false,
+  "prMerged": false,
+  "newResources": 0,
+  "newModelDownloads": 0,
+  "acceptanceComplete": false
+}

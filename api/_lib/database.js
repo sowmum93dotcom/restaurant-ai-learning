@@ -7,6 +7,50 @@ const SCHEMA_STATEMENTS = [
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`,
+  // Latest private analysis per product; does not expand the catalogue JSONB.
+  `CREATE TABLE IF NOT EXISTS demeos_media_frame_jobs (
+    business_id TEXT NOT NULL REFERENCES demeos_businesses(business_id),asset_id TEXT NOT NULL,
+    input_hash TEXT NOT NULL,lease_id TEXT NOT NULL,state TEXT NOT NULL CHECK(state IN ('running','completed','failed','deleted')),
+    attempts INTEGER NOT NULL DEFAULT 1,metrics JSONB,updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY(business_id,asset_id)
+  )`,
+  `CREATE TABLE IF NOT EXISTS demeos_media_frame_events(lease_id TEXT NOT NULL,state TEXT NOT NULL,business_id TEXT NOT NULL,asset_id TEXT NOT NULL,input_hash TEXT NOT NULL,metrics JSONB,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),PRIMARY KEY(lease_id,state))`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS demeos_media_frame_one_active ON demeos_media_frame_jobs(business_id) WHERE state='running'`,
+  `CREATE TABLE IF NOT EXISTS demeos_visual_execution_slots (
+    business_id TEXT PRIMARY KEY REFERENCES demeos_businesses(business_id),
+    claim_id TEXT NOT NULL,
+    input_hash TEXT NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    window_start TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    jobs INTEGER NOT NULL DEFAULT 1,
+    result JSONB,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`,
+  `CREATE TABLE IF NOT EXISTS demeos_visual_execution_events (
+    claim_id TEXT PRIMARY KEY,
+    business_id TEXT NOT NULL REFERENCES demeos_businesses(business_id),
+    input_hash TEXT NOT NULL,
+    result JSONB NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`,
+  `CREATE TABLE IF NOT EXISTS demeos_selling_intelligence (
+    business_id TEXT NOT NULL REFERENCES demeos_businesses(business_id),
+    product_id TEXT NOT NULL,
+    input_hash TEXT NOT NULL CHECK (input_hash ~ '^[a-f0-9]{64}$'),
+    result JSONB NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (business_id, product_id)
+  )`,
+  `CREATE TABLE IF NOT EXISTS demeos_selling_intelligence_events (
+    business_id TEXT NOT NULL REFERENCES demeos_businesses(business_id),
+    product_id TEXT NOT NULL,
+    input_hash TEXT NOT NULL,
+    action TEXT NOT NULL CHECK (action IN ('analyzed','vendor-reviewed')),
+    actor TEXT NOT NULL,
+    result JSONB NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (business_id,product_id,input_hash,action)
+  )`,
   `CREATE TABLE IF NOT EXISTS demeos_business_application_reviews (
     business_id TEXT NOT NULL REFERENCES demeos_businesses(business_id),
     application_revision TEXT NOT NULL CHECK (application_revision ~ '^[a-f0-9]{64}$'),
@@ -75,6 +119,8 @@ const SCHEMA_STATEMENTS = [
     CHECK (record->>'state' = state),
     CHECK (record->>'paymentState' = 'not-started')
   )`,
+  `CREATE INDEX IF NOT EXISTS demeos_vendor_orders_business_page_idx
+    ON demeos_vendor_orders(business_id, created_at DESC, order_id DESC)`,
   `CREATE INDEX IF NOT EXISTS demeos_vendor_orders_expiry_idx
     ON demeos_vendor_orders(expires_at, order_id) WHERE state = 'reserved'`,
   `CREATE TABLE IF NOT EXISTS demeos_vendor_order_requests (
@@ -238,6 +284,7 @@ const SCHEMA_STATEMENTS = [
   )`,
   `CREATE INDEX IF NOT EXISTS demeos_business_media_assets_business_created_idx
     ON demeos_business_media_assets (business_id, created_at DESC)`,
+  `CREATE INDEX IF NOT EXISTS demeos_media_product_lookup ON demeos_business_media_assets (business_id, (asset->>'relatedEntityId'), asset_id)`,
   `CREATE TABLE IF NOT EXISTS demeos_media_processing_jobs (
     job_id BIGSERIAL PRIMARY KEY,
     asset_id TEXT NOT NULL REFERENCES demeos_business_media_assets(asset_id),

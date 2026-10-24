@@ -1,0 +1,87 @@
+{
+  "implementationCommit": "45d5c7bb567c2033c460a1a94ab3064bc32195ae",
+  "browserGateSelectorFixCommit": "31909903bf96e174d3e86962756a830b7364936f",
+  "scope": "existing-isolated-PR708-Preview",
+  "operatorRecorded": true,
+  "genuineNativeInference": false,
+  "livePreview": {
+    "deploymentId": "dpl_2V57HWXpDet6ehHTc3oB27fx26C5",
+    "deploymentState": "READY",
+    "deploymentTarget": null,
+    "request": "black waterproof jacket under £100",
+    "audience": "customer",
+    "confirmedSharing": true,
+    "displayedStatus": "No published offers match this request. Try different details.",
+    "publishedMatches": 0,
+    "consentAfterResponse": false,
+    "businessSwitch": {
+      "searchHidden": true,
+      "searchResults": 0,
+      "searchConsent": false,
+      "sellingHidden": false
+    },
+    "customerSwitch": {
+      "searchHidden": false,
+      "searchResults": 0,
+      "searchConsent": false,
+      "sellingHidden": true,
+      "requestReset": true
+    }
+  },
+  "ci": {
+    "fullNode": {
+      "commit": "45d5c7bb567c2033c460a1a94ab3064bc32195ae",
+      "runId": 39849350841,
+      "jobId": 120071052321,
+      "passed": 1585,
+      "failed": 0
+    },
+    "firstChromium": {
+      "runId": 39849350836,
+      "status": "failed",
+      "reason": "Existing broad blockquote assertion became ambiguous after adding the new confirmation quote. Scoped to #evidence blockquote in 3190990."
+    },
+    "selectorFixBrowserRun": 39850186981,
+    "selectorFixBrowserStatus": "ROOT Chromium step and complete WebKit job passed",
+    "guardedFullNode": {
+      "commit": "ea7f4cf8cd3ff9258fc4bd5125ee902b7f57ab1d",
+      "runId": 39850855063,
+      "jobId": 120076284100,
+      "passed": 1586,
+      "failed": 0
+    },
+    "guardedBrowserRun": 39850855097,
+    "guardedBrowserStatus": "WebKit job passed; Chromium job still installing browser dependencies",
+    "guardedWebkit": {
+      "runId": 39850855097,
+      "jobId": 120076284192,
+      "status": "completed",
+      "conclusion": "success"
+    }
+  },
+  "local": {
+    "focusedChecksPassed": 39,
+    "fullSuitePassed": 1583,
+    "fullSuiteFailed": 2,
+    "fullSuiteFailureReason": "Existing ffmpeg-static binary absent after dependency installation with scripts disabled. Full CI Node suite including both checks passed."
+  },
+  "remaining": [
+    "Positive live published match not demonstrated: current request returned an honest empty result; eligible positive matches covered by actual-handler catalogue fixtures.",
+    "Real second external identity not tested.",
+    "Native ROOT GPU-to-saved-result-to-review still incomplete; evaluation flags false and paid compute stopped.",
+    "Smaller-image diagnostics and expired Preview claim reconciliation require explicit approval after automatic review rejection."
+  ],
+  "guardCommit": "ea7f4cf8cd3ff9258fc4bd5125ee902b7f57ab1d",
+  "guardedLivePreview": {
+    "deploymentId": "dpl_5KqzzqKPtK5cs8GRVGBsbQQyLWjD",
+    "state": "READY",
+    "target": null,
+    "confirmedRequest": "black waterproof jacket under £100",
+    "displayedStatus": "No published offers match this request. Try different details.",
+    "publishedMatches": 0,
+    "consentAfterResponse": false,
+    "buttonEnabledAfterResponse": true,
+    "modelStatus": "Personal ROOT workspace ready. Model execution unavailable.",
+    "evidence": "Read-only DOM state. New screenshot captures were blank and are not accepted visual evidence; the earlier valid screenshot binds to 45d5c7b."
+  }
+}

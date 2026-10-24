@@ -1,0 +1,12 @@
+{
+  "commit": "42eddab27879c49f83aaefdc02535fa7b3d94c45",
+  "googleSignInVerified": true,
+  "authorisedTestBusinessVisible": true,
+  "previewDatabaseHostMatchesGuard": true,
+  "previewDatabaseDiffersProduction": true,
+  "runtimeReady": true,
+  "runtimeCodeHash": "896e7aa734ddd2f7a8a35da257cd1ca61956a26854fb9966fb107baaa50e4ed1",
+  "actualApplicationGpuAcceptancePassed": false,
+  "previewRedeploymentBlocked": true,
+  "customerReady": false
+}

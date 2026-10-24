@@ -1,0 +1,537 @@
+{
+  "route": "external-node-fetch-https",
+  "connection": "explicit-health-preflight",
+  "timeoutMs": 2000,
+  "packHash": "34be1d7cf089258fab4149ab0b596abfa578db0734a679e7dcd5bfc93113c05b",
+  "health": [
+    {
+      "status": 200,
+      "endToEndMs": 4519.294671,
+      "ready": true,
+      "busy": false,
+      "modelId": "Qwen3-VL-4B-Instruct",
+      "modelVersion": "ebb281ec70b05090aa6165b016eac8ec08e71b17",
+      "weightsManifestHash": "e2c07fc24e1523d0987dfb6b082020c0eb74a04eb622f36c153fd97c5d254ae2",
+      "runtimeCodeHash": "0e84f9208cb3ebd6202840dcc2c465e0339ba77218dacc5bc7b4a2888f5de5cd"
+    },
+    {
+      "status": 200,
+      "endToEndMs": 247.49355600000035,
+      "ready": true,
+      "busy": false,
+      "modelId": "Qwen3-VL-4B-Instruct",
+      "modelVersion": "ebb281ec70b05090aa6165b016eac8ec08e71b17",
+      "weightsManifestHash": "e2c07fc24e1523d0987dfb6b082020c0eb74a04eb622f36c153fd97c5d254ae2",
+      "runtimeCodeHash": "0e84f9208cb3ebd6202840dcc2c465e0339ba77218dacc5bc7b4a2888f5de5cd"
+    }
+  ],
+  "results": [
+    {
+      "caseId": "camping-en",
+      "locale": "en",
+      "humanReview": "pending",
+      "status": 200,
+      "endToEndMs": 1256.0875239999996,
+      "output": {
+        "schemaVersion": 2,
+        "outputSchema": "demeos-visual-output-v2",
+        "proposals": [
+          {
+            "kind": "description",
+            "value": "Tent beside lake fire",
+            "evidence": [
+              "f5ae495f5e6f279a60d68685f800ac9ec13fad7161f4fa3eade658cf588cbe47"
+            ],
+            "confidence": null
+          }
+        ]
+      },
+      "measurements": {
+        "durationMs": 388.27062700875103,
+        "peakVramBytes": 8989377024
+      },
+      "passed": true
+    },
+    {
+      "caseId": "football-en",
+      "locale": "en",
+      "humanReview": "pending",
+      "status": 200,
+      "endToEndMs": 1127.4913559999995,
+      "output": {
+        "schemaVersion": 2,
+        "outputSchema": "demeos-visual-output-v2",
+        "proposals": [
+          {
+            "kind": "description",
+            "value": "Football player in blue kit",
+            "evidence": [
+              "c5056b08db0e6edb884535b0d32b920be440f4c5916fbf061cb6931d6d8e2066"
+            ],
+            "confidence": null
+          }
+        ]
+      },
+      "measurements": {
+        "durationMs": 360.0240880041383,
+        "peakVramBytes": 8989599232
+      },
+      "passed": true
+    },
+    {
+      "caseId": "groceries-en",
+      "locale": "en",
+      "humanReview": "pending",
+      "status": 200,
+      "endToEndMs": 1190.7278420000002,
+      "output": {
+        "schemaVersion": 2,
+        "outputSchema": "demeos-visual-output-v2",
+        "proposals": [
+          {
+            "kind": "description",
+            "value": "Grocery advertisement showing produce",
+            "evidence": [
+              "274010507bf48b88cefe1aa166ee5412581fe98a133a3b8ad7957b7a14236038"
+            ],
+            "confidence": null
+          }
+        ]
+      },
+      "measurements": {
+        "durationMs": 361.7024440027308,
+        "peakVramBytes": 8989155840
+      },
+      "passed": true
+    },
+    {
+      "caseId": "camping-es",
+      "locale": "es",
+      "humanReview": "pending",
+      "status": 200,
+      "endToEndMs": 1416.842412,
+      "output": {
+        "schemaVersion": 2,
+        "outputSchema": "demeos-visual-output-v2",
+        "proposals": [
+          {
+            "kind": "description",
+            "value": "Tienda de campaña junto a un lago",
+            "evidence": [
+              "f5ae495f5e6f279a60d68685f800ac9ec13fad7161f4fa3eade658cf588cbe47"
+            ],
+            "confidence": null
+          }
+        ]
+      },
+      "measurements": {
+        "durationMs": 585.0738880108111,
+        "peakVramBytes": 8990043136
+      },
+      "passed": true
+    },
+    {
+      "caseId": "football-es",
+      "locale": "es",
+      "humanReview": "pending",
+      "status": 200,
+      "endToEndMs": 1350.4535269999997,
+      "output": {
+        "schemaVersion": 2,
+        "outputSchema": "demeos-visual-output-v2",
+        "proposals": [
+          {
+            "kind": "description",
+            "value": "Jugador con uniforme azul y blanco",
+            "evidence": [
+              "c5056b08db0e6edb884535b0d32b920be440f4c5916fbf061cb6931d6d8e2066"
+            ],
+            "confidence": null
+          }
+        ]
+      },
+      "measurements": {
+        "durationMs": 579.3724139803089,
+        "peakVramBytes": 8990707712
+      },
+      "passed": true
+    },
+    {
+      "caseId": "groceries-es",
+      "locale": "es",
+      "humanReview": "pending",
+      "status": 200,
+      "endToEndMs": 1675.7209660000008,
+      "output": {
+        "schemaVersion": 2,
+        "outputSchema": "demeos-visual-output-v2",
+        "proposals": [
+          {
+            "kind": "description",
+            "value": "Verduras y frutas en cestas y cajas",
+            "evidence": [
+              "274010507bf48b88cefe1aa166ee5412581fe98a133a3b8ad7957b7a14236038"
+            ],
+            "confidence": null
+          }
+        ]
+      },
+      "measurements": {
+        "durationMs": 796.4603049913421,
+        "peakVramBytes": 8990707712
+      },
+      "passed": true
+    },
+    {
+      "caseId": "camping-fr",
+      "locale": "fr",
+      "humanReview": "pending",
+      "status": 200,
+      "endToEndMs": 1592.0190839999996,
+      "output": {
+        "schemaVersion": 2,
+        "outputSchema": "demeos-visual-output-v2",
+        "proposals": [
+          {
+            "kind": "description",
+            "value": "Tente de camping au bord d’un lac",
+            "evidence": [
+              "f5ae495f5e6f279a60d68685f800ac9ec13fad7161f4fa3eade658cf588cbe47"
+            ],
+            "confidence": null
+          }
+        ]
+      },
+      "measurements": {
+        "durationMs": 576.3645400002133,
+        "peakVramBytes": 8990043136
+      },
+      "passed": true
+    },
+    {
+      "caseId": "football-fr",
+      "locale": "fr",
+      "humanReview": "pending",
+      "status": 200,
+      "endToEndMs": 1346.832735,
+      "output": {
+        "schemaVersion": 2,
+        "outputSchema": "demeos-visual-output-v2",
+        "proposals": [
+          {
+            "kind": "description",
+            "value": "Joueur en bleu marquant un but",
+            "evidence": [
+              "c5056b08db0e6edb884535b0d32b920be440f4c5916fbf061cb6931d6d8e2066"
+            ],
+            "confidence": null
+          }
+        ]
+      },
+      "measurements": {
+        "durationMs": 579.3294830073137,
+        "peakVramBytes": 8990929920
+      },
+      "passed": true
+    },
+    {
+      "caseId": "groceries-fr",
+      "locale": "fr",
+      "humanReview": "pending",
+      "status": 200,
+      "endToEndMs": 1302.4756089999992,
+      "output": {
+        "schemaVersion": 2,
+        "outputSchema": "demeos-visual-output-v2",
+        "proposals": [
+          {
+            "kind": "description",
+            "value": "Panier de légumes et fruits",
+            "evidence": [
+              "274010507bf48b88cefe1aa166ee5412581fe98a133a3b8ad7957b7a14236038"
+            ],
+            "confidence": null
+          }
+        ]
+      },
+      "measurements": {
+        "durationMs": 473.9992590039037,
+        "peakVramBytes": 8990043136
+      },
+      "passed": true
+    },
+    {
+      "caseId": "camping-ar",
+      "locale": "ar",
+      "humanReview": "pending",
+      "status": 200,
+      "endToEndMs": 1335.2077769999996,
+      "output": {
+        "schemaVersion": 2,
+        "outputSchema": "demeos-visual-output-v2",
+        "proposals": [
+          {
+            "kind": "description",
+            "value": "خيمة بجانب بحيرة",
+            "evidence": [
+              "f5ae495f5e6f279a60d68685f800ac9ec13fad7161f4fa3eade658cf588cbe47"
+            ],
+            "confidence": null
+          }
+        ]
+      },
+      "measurements": {
+        "durationMs": 514.2569220042787,
+        "peakVramBytes": 8990486528
+      },
+      "passed": true
+    },
+    {
+      "caseId": "football-ar",
+      "locale": "ar",
+      "humanReview": "pending",
+      "status": 200,
+      "endToEndMs": 1642.046460999998,
+      "output": {
+        "schemaVersion": 2,
+        "outputSchema": "demeos-visual-output-v2",
+        "proposals": [
+          {
+            "kind": "description",
+            "value": "لاعب كرة قدم يرتدي قميصًا أزرق",
+            "evidence": [
+              "c5056b08db0e6edb884535b0d32b920be440f4c5916fbf061cb6931d6d8e2066"
+            ],
+            "confidence": null
+          }
+        ]
+      },
+      "measurements": {
+        "durationMs": 870.1925299828872,
+        "peakVramBytes": 8991151104
+      },
+      "passed": true
+    },
+    {
+      "caseId": "groceries-ar",
+      "locale": "ar",
+      "humanReview": "pending",
+      "status": 200,
+      "endToEndMs": 1471.3985690000009,
+      "output": {
+        "schemaVersion": 2,
+        "outputSchema": "demeos-visual-output-v2",
+        "proposals": [
+          {
+            "kind": "description",
+            "value": "سلة خضروات وفواكه",
+            "evidence": [
+              "274010507bf48b88cefe1aa166ee5412581fe98a133a3b8ad7957b7a14236038"
+            ],
+            "confidence": null
+          }
+        ]
+      },
+      "measurements": {
+        "durationMs": 632.2798879991751,
+        "peakVramBytes": 8990929920
+      },
+      "passed": true
+    },
+    {
+      "caseId": "camping-pt",
+      "locale": "pt",
+      "humanReview": "pending",
+      "status": 200,
+      "endToEndMs": 1468.4884999999995,
+      "output": {
+        "schemaVersion": 2,
+        "outputSchema": "demeos-visual-output-v2",
+        "proposals": [
+          {
+            "kind": "description",
+            "value": "Tenda de campismo ao lado de lago",
+            "evidence": [
+              "f5ae495f5e6f279a60d68685f800ac9ec13fad7161f4fa3eade658cf588cbe47"
+            ],
+            "confidence": null
+          }
+        ]
+      },
+      "measurements": {
+        "durationMs": 626.4726840017829,
+        "peakVramBytes": 8990264320
+      },
+      "passed": true
+    },
+    {
+      "caseId": "football-pt",
+      "locale": "pt",
+      "humanReview": "pending",
+      "status": 200,
+      "endToEndMs": 1465.7131950000003,
+      "output": {
+        "schemaVersion": 2,
+        "outputSchema": "demeos-visual-output-v2",
+        "proposals": [
+          {
+            "kind": "description",
+            "value": "Jogador com uniforme azul e branco",
+            "evidence": [
+              "c5056b08db0e6edb884535b0d32b920be440f4c5916fbf061cb6931d6d8e2066"
+            ],
+            "confidence": null
+          }
+        ]
+      },
+      "measurements": {
+        "durationMs": 697.3402850271668,
+        "peakVramBytes": 8991594496
+      },
+      "passed": true
+    },
+    {
+      "caseId": "groceries-pt",
+      "locale": "pt",
+      "humanReview": "pending",
+      "status": 200,
+      "endToEndMs": 1368.7826690000002,
+      "output": {
+        "schemaVersion": 2,
+        "outputSchema": "demeos-visual-output-v2",
+        "proposals": [
+          {
+            "kind": "description",
+            "value": "Cesta de frutas e legumes",
+            "evidence": [
+              "274010507bf48b88cefe1aa166ee5412581fe98a133a3b8ad7957b7a14236038"
+            ],
+            "confidence": null
+          }
+        ]
+      },
+      "measurements": {
+        "durationMs": 517.4953909881879,
+        "peakVramBytes": 8991151104
+      },
+      "passed": true
+    },
+    {
+      "caseId": "camping-zh",
+      "locale": "zh",
+      "humanReview": "pending",
+      "status": 200,
+      "endToEndMs": 1248.4674860000014,
+      "output": {
+        "schemaVersion": 2,
+        "outputSchema": "demeos-visual-output-v2",
+        "proposals": [
+          {
+            "kind": "description",
+            "value": "湖边的露营帐篷",
+            "evidence": [
+              "f5ae495f5e6f279a60d68685f800ac9ec13fad7161f4fa3eade658cf588cbe47"
+            ],
+            "confidence": null
+          }
+        ]
+      },
+      "measurements": {
+        "durationMs": 427.1288620075211,
+        "peakVramBytes": 8989820416
+      },
+      "passed": true
+    },
+    {
+      "caseId": "football-zh",
+      "locale": "zh",
+      "humanReview": "pending",
+      "status": 200,
+      "endToEndMs": 1386.7629880000022,
+      "output": {
+        "schemaVersion": 2,
+        "outputSchema": "demeos-visual-output-v2",
+        "proposals": [
+          {
+            "kind": "description",
+            "value": "穿蓝色和红色球衣的足球运动员",
+            "evidence": [
+              "c5056b08db0e6edb884535b0d32b920be440f4c5916fbf061cb6931d6d8e2066"
+            ],
+            "confidence": null
+          }
+        ]
+      },
+      "measurements": {
+        "durationMs": 603.5020069975872,
+        "peakVramBytes": 8990486528
+      },
+      "passed": true
+    },
+    {
+      "caseId": "groceries-zh",
+      "locale": "zh",
+      "humanReview": "pending",
+      "status": 200,
+      "endToEndMs": 1167.5291859999998,
+      "output": {
+        "schemaVersion": 2,
+        "outputSchema": "demeos-visual-output-v2",
+        "proposals": [
+          {
+            "kind": "description",
+            "value": "蔬菜水果篮子",
+            "evidence": [
+              "274010507bf48b88cefe1aa166ee5412581fe98a133a3b8ad7957b7a14236038"
+            ],
+            "confidence": null
+          }
+        ]
+      },
+      "measurements": {
+        "durationMs": 318.6802450218238,
+        "peakVramBytes": 8990043136
+      },
+      "passed": true
+    },
+    {
+      "caseId": "camping-hi",
+      "locale": "hi",
+      "humanReview": "pending",
+      "status": 200,
+      "endToEndMs": 1846.593162000001,
+      "output": {
+        "schemaVersion": 2,
+        "outputSchema": "demeos-visual-output-v2",
+        "proposals": [
+          {
+            "kind": "description",
+            "value": "झील के किनारे तंबू",
+            "evidence": [
+              "f5ae495f5e6f279a60d68685f800ac9ec13fad7161f4fa3eade658cf588cbe47"
+            ],
+            "confidence": null
+          }
+        ]
+      },
+      "measurements": {
+        "durationMs": 1024.0321229794063,
+        "peakVramBytes": 8993590272
+      },
+      "passed": true
+    },
+    {
+      "caseId": "football-hi",
+      "locale": "hi",
+      "humanReview": "pending",
+      "status": 504,
+      "endToEndMs": 1992.2466080000013,
+      "code": "execution-timeout",
+      "passed": false
+    }
+  ],
+  "activationApproved": false,
+  "productAccuracyVerified": false,
+  "multilingualAccuracyVerified": false,
+  "executionPassed": false
+}

@@ -59,11 +59,36 @@
     {
       "source": "/marketing-business/results",
       "destination": "/business-results.html"
+    },
+    {
+      "source": "/selling-vendor",
+      "destination": "/selling-dashboard.html"
+    },
+    {
+      "source": "/selling-vendor/:section(overview|my-business|product-catalogue|images-videos|options-variants|stock-history|private-orders)",
+      "destination": "/selling-dashboard.html"
+    },
+    {
+      "source": "/root-ai",
+      "destination": "/root-ai.html"
+    },
+    {
+      "source": "/api/root/workspace",
+      "destination": "/api/public-config?resource=root-intelligence"
     }
   ],
   "functions": {
     "api/businesses.js": {
-      "maxDuration": 60
+      "maxDuration": 180,
+      "includeFiles": "node_modules/{ffmpeg-static/ffmpeg,@ffprobe-installer/linux-x64/ffprobe}"
+    },
+    "api/public-config.js": {
+      "regions": [
+        "lhr1"
+      ]
     }
-  }
+  },
+  "regions": [
+    "lhr1"
+  ]
 }

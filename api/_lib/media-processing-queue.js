@@ -27,7 +27,7 @@ async function processNextMediaJob(repository,processor,{maxAttempts=5}={}){
   if(!resultUpdates)throw new Error("Media processor returned an invalid optimized result.");
   const ready=transitionMediaAsset(asset,job.business_id,"ready",resultUpdates);
   if(!ready)throw new Error("Processed media could not enter ready state.");
-  const saved=await repository.saveBusinessMediaAsset(job.business_id,ready);
+  const saved=await (repository.saveProcessedBusinessMediaAsset||repository.saveBusinessMediaAsset).call(repository,job.business_id,ready);
   if(!saved)throw new Error("Processed media result could not be persisted.");
   await repository.finishMediaProcessingJob(job.job_id,true);
   return {jobId:String(job.job_id),assetId:job.asset_id,businessId:job.business_id,status:"completed",asset:saved,result};
