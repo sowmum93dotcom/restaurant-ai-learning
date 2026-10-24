@@ -21,8 +21,11 @@ async function probe(file,{ffprobePath='ffprobe'}={}){
  const [n,d]=String(video.avg_frame_rate).split('/').map(Number);if(!d||n/d>120)throw Error('Video frame rate exceeds 120 fps');
  return {contentType:'video/mp4',width:video.width,height:video.height,durationSeconds:duration};
 }
-function createProcessor({hosts=[],fetchImpl=globalThis.fetch,ffmpegPath='ffmpeg',ffprobePath='ffprobe'}={}){
+function createProcessor({hosts=[],fetchImpl=globalThis.fetch,ffmpegPath='ffmpeg',ffprobePath='ffprobe',transcodeTimeoutMs=22000}={}){
  if(!hosts.length)throw Error('STORAGE_HOSTS must contain exact approved Blob hostnames');
+ // Only the trusted native driver opts into the longer encoding window. The
+ // standalone HTTP processor retains its existing caller-compatible budget.
+ if(!Number.isSafeInteger(transcodeTimeoutMs)||transcodeTimeoutMs<1000||transcodeTimeoutMs>90000)throw Error('Invalid video encoding deadline');
  async function source(payload,file){
   const prefix=scope(payload);
   if(typeof payload.storageKey!=='string'||!payload.storageKey.startsWith(prefix)||payload.storageKey.slice(prefix.length).includes('..'))throw Error('Unscoped source');
@@ -65,7 +68,9 @@ function createProcessor({hosts=[],fetchImpl=globalThis.fetch,ffmpegPath='ffmpeg
     return {schemaVersion:1,sourceAssetId:payload.assetId,sourceHash:sourceDigest.digest('hex'),durationSeconds:inspected.durationSeconds,frames,limitation:'four-sampled-frames-not-full-video'};
    }
    // Decode only the downloaded file. Network protocols, subtitles and data streams are excluded.
-   await run(ffmpegPath,['-hide_banner','-loglevel','error','-nostdin','-threads','1','-protocol_whitelist','file,pipe','-i',original,'-map','0:v:0','-map','0:a:0?','-sn','-dn','-map_metadata','-1','-t','60','-vf',"scale=w='min(1280,iw)':h='min(1280,ih)':force_original_aspect_ratio=decrease:force_divisible_by=2",'-r','30','-c:v','libx264','-threads','1','-preset','veryfast','-crf','25','-maxrate','2500k','-bufsize','5000k','-pix_fmt','yuv420p','-c:a','aac','-b:a','128k','-ac','2','-movflags','+faststart','-f','mp4',output],22000);
+   // Discard excess input frames before scaling. Output-only -r still scales
+   // every high-frame-rate source frame before dropping it at the encoder.
+   await run(ffmpegPath,['-hide_banner','-loglevel','error','-nostdin','-threads','1','-protocol_whitelist','file,pipe','-i',original,'-map','0:v:0','-map','0:a:0?','-sn','-dn','-map_metadata','-1','-t','60','-vf',"fps=30,scale=w='min(1280,iw)':h='min(1280,ih)':force_original_aspect_ratio=decrease:force_divisible_by=2",'-r','30','-c:v','libx264','-threads','1','-preset','veryfast','-crf','25','-maxrate','2500k','-bufsize','5000k','-pix_fmt','yuv420p','-c:a','aac','-b:a','128k','-ac','2','-movflags','+faststart','-f','mp4',output],transcodeTimeoutMs);
    const encoded=await probe(output,{ffprobePath}),bytes=await fs.readFile(output);
    if(!bytes.length||bytes.length>MAX_BYTES)throw Error('Invalid encoded output');
    await Promise.all(destinations.map(async d=>{

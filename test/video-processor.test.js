@@ -19,6 +19,14 @@ test('video worker fails closed when a private source exceeds the byte limit',as
  await assert.rejects(()=>processor('inspect',{businessId:'shop',assetId:'video',storageKey:'businesses/shop/media/video/original',sourceUrl:'https://store.example/source',sourceExpiresAt:new Date(Date.now()+300000).toISOString()}),/too large/);
 });
 
+test('trusted encoding deadline remains bounded and terminates a stuck subprocess',async()=>{
+ for(const transcodeTimeoutMs of [NaN,Infinity,0,999,90001,'90000'])assert.throws(()=>createProcessor({hosts:['store.example'],transcodeTimeoutMs}),/deadline/);
+ const {run}=require('../tools/video-processor/processor');
+ const started=Date.now();
+ await assert.rejects(()=>run(process.execPath,['-e','setInterval(()=>{},1000)'],100),error=>error.killed===true&&error.signal==='SIGKILL');
+ assert.ok(Date.now()-started<5000,'timed-out encoding cannot retain the worker slot indefinitely');
+});
+
 
 test('media subprocesses never inherit hosting or storage credentials',async()=>{
  const {run}=require('../tools/video-processor/processor');

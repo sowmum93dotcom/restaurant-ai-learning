@@ -34,7 +34,10 @@ async function main(){
   const playable=[];
   for(const [index,seconds,audio] of [[1,3,true],[2,60,false]]){
    const file=path.join(dir,'input-'+index+'.mov');
-   await exec(ffmpegPath,['-hide_banner','-loglevel','error','-f','lavfi','-i','testsrc2=size=640x360:rate=30',...(audio?['-f','lavfi','-i','sine=frequency=440:sample_rate=48000']:[]),'-t',String(seconds),'-c:v','mpeg4','-q:v','5',...(audio?['-c:a','pcm_s16le']:[]),file],{timeout:30000});
+   // The short clip exercises a 120 fps source; the long clip covers the full
+   // permitted duration. Both must retain timing after conversion to 30 fps.
+   const inputRate=index===1?120:30;
+   await exec(ffmpegPath,['-hide_banner','-loglevel','error','-f','lavfi','-i',`testsrc2=size=640x360:rate=${inputRate}`,...(audio?['-f','lavfi','-i','sine=frequency=440:sample_rate=48000']:[]),'-t',String(seconds),'-c:v','mpeg4','-q:v','5',...(audio?['-c:a','pcm_s16le']:[]),file],{timeout:30000});
    const bytes=await fs.readFile(file),item={productId:'video-product',assetId:'media-real-video-'+index,kind:'video',contentType:'video/quicktime',sizeBytes:bytes.length};
    const registered=await call('register-media',item);assert.equal(registered.code,201);
    assert.equal((await call('complete-media',{...item,...registered.body.uploadSession},'other-owner')).code,403);
@@ -46,6 +49,9 @@ async function main(){
    const encoded=await fs.readFile(disk.file(saved.processedStorageKey)),output=path.join(dir,'output-'+index+'.mp4');await fs.writeFile(output,encoded);
    const metadata=JSON.parse((await exec(ffprobePath,['-v','error','-show_streams','-of','json',output])).stdout);
    assert.equal(metadata.streams.find(s=>s.codec_type==='video').codec_name,'h264');assert.equal(metadata.streams.find(s=>s.codec_type==='video').pix_fmt,'yuv420p');
+   const encodedVideo=metadata.streams.find(s=>s.codec_type==='video');
+   assert.equal(encodedVideo.avg_frame_rate,'30/1');
+   assert.ok(Math.abs(Number(encodedVideo.duration)-seconds)<0.1,'frame reduction preserves clip duration');
    if(audio)assert.equal(metadata.streams.find(s=>s.codec_type==='audio').codec_name,'aac');
    assert.ok(encoded.indexOf(Buffer.from('moov'))<encoded.indexOf(Buffer.from('mdat')),'MP4 metadata precedes media for fast-start playback');
    for(const d of saved.derivatives)assert.ok((await disk.driver.verifyUpload({storageKey:d.storageKey})).exists);

@@ -665,7 +665,7 @@
       async function post(nextAction,product){
         if(clerk.user?.id!==identity||context?.business?.businessId!==businessId)throw Error(t('Your account or business changed. Reload before continuing.'));
         const token=await bounded(clerk.session.getToken());if(!token)throw Error(t('Sign in again before changing media.'));
-        const response=await win.fetch('/api/businesses?resource=selling-dashboard&businessId='+encodeURIComponent(businessId),{method:'POST',credentials:'same-origin',signal:win.AbortSignal.timeout(90000),headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({action:nextAction,product,catalogueRevision:context?.business?.catalogueRevision})});
+        const response=await win.fetch('/api/businesses?resource=selling-dashboard&businessId='+encodeURIComponent(businessId),{method:'POST',credentials:'same-origin',signal:win.AbortSignal.timeout(185000),headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({action:nextAction,product,catalogueRevision:context?.business?.catalogueRevision})});
         const result=await response.json();if(!response.ok)throw Error(apiError(response,result));return result;
       }
       try{
